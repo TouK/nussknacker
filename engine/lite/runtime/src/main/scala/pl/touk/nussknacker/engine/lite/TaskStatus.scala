@@ -5,7 +5,7 @@ object TaskStatus extends Enumeration {
   type TaskStatus = Value
 
   //  Value.id determines the precedence of statuses (i.e. if one of the tasks is Restarting while others are During Deploy, Restarting status should be displayed)
-  val Running: Value = Value(0, "RUNNING")
+  val Running: Value      = Value(0, "RUNNING")
   val DuringDeploy: Value = Value(1, "DURING_DEPLOY")
-  val Restarting: Value = Value(2, "RESTARTING")
+  val Restarting: Value   = Value(2, "RESTARTING")
 }

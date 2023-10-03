@@ -24,7 +24,8 @@ class TestResultService extends Service {
 object TestResultService {
 
   def extractFromTestComponentsHolder[R](testComponentHolder: TestComponentsHolder): List[R] = {
-    testComponentHolder.components[Service]
+    testComponentHolder
+      .components[Service]
       .find(_.name == TestScenarioRunner.testResultService)
       .map(_.component)
       .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))

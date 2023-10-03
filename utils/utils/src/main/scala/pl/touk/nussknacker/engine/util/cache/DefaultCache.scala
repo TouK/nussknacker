@@ -10,18 +10,32 @@ private object DefaultCacheBuilder {
   implicit class ConfiguredExpiry[K, V](config: ExpiryConfig[K, V]) extends Expiry[K, V] {
 
     override def expireAfterCreate(key: K, value: V, currentTime: Long): Long =
-      expireOrOverrideByInfiniteCurrentDuration(config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime)
+      expireOrOverrideByInfiniteCurrentDuration(
+        config.expireAfterWriteFn(key, value, Deadline(currentTime, NANOSECONDS)),
+        currentTime
+      )
 
     override def expireAfterUpdate(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
       expireAfterCreate(key, value, currentTime)
 
     override def expireAfterRead(key: K, value: V, currentTime: Long, currentDuration: Long): Long =
-      expireOrPreserveCurrentDuration(config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS)), currentTime, currentDuration)
+      expireOrPreserveCurrentDuration(
+        config.expireAfterAccessFn(key, value, Deadline(currentTime, NANOSECONDS)),
+        currentTime,
+        currentDuration
+      )
 
-    private def expireOrOverrideByInfiniteCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long): Long =
+    private def expireOrOverrideByInfiniteCurrentDuration(
+        expirationDeadline: Option[Deadline],
+        currentTime: Long
+    ): Long =
       expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(Long.MaxValue)
 
-    private def expireOrPreserveCurrentDuration(expirationDeadline: Option[Deadline], currentTime: Long, currentDuration: Long): Long =
+    private def expireOrPreserveCurrentDuration(
+        expirationDeadline: Option[Deadline],
+        currentTime: Long,
+        currentDuration: Long
+    ): Long =
       expirationDeadline.map(_.time.toNanos - currentTime).getOrElse(currentDuration)
 
   }

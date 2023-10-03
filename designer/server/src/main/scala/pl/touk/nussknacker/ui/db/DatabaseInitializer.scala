@@ -20,18 +20,26 @@ object DatabaseInitializer {
       configDb.as[String]("url"),
       configDb.as[String]("user"),
       configDb.as[String]("password"),
-      configDb.getAs[String]("schema"))
+      configDb.getAs[String]("schema")
+    )
   }
 
-  private def configureFlyway(url: String, user: String, password: String, schema: Option[String]): FluentConfiguration = {
+  private def configureFlyway(
+      url: String,
+      user: String,
+      password: String,
+      schema: Option[String]
+  ): FluentConfiguration = {
     Flyway
       .configure()
       .failOnMissingLocations(true)
       .locations(
         (url match {
           case url if (new HSQLDBDatabaseType).handlesJDBCUrl(url) => Array("db/migration/hsql", "db/migration/common")
-          case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => Array("db/migration/postgres", "db/migration/common")
-          case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
+          case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) =>
+            Array("db/migration/postgres", "db/migration/common")
+          case _ =>
+            throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
       .dataSource(url, user, password)

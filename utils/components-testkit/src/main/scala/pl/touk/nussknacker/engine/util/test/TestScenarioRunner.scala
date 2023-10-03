@@ -25,14 +25,14 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult[R] = ValidatedNel[ProcessCompilationError, RunResult[R]]
+  type RunnerResult[R]     = ValidatedNel[ProcessCompilationError, RunResult[R]]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
   // Maybe we should replace ids with more meaningful: test-data, rest-result?
   val testDataSource = "source"
-  val noopSource = "noopSource"
+  val noopSource     = "noopSource"
   // Maybe we should unify those two test result nodes?
-  val testResultSink = "sink"
+  val testResultSink    = "sink"
   val testResultService = "invocationCollector"
 
   def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
@@ -58,7 +58,7 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
   // TODO: add generate test data support
-  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
+  def runWithData[T: ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
 }
 
 object RunResult {

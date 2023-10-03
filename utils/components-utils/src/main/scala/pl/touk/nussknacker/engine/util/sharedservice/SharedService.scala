@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
 
   TODO: there should be additional proxy layer to avoid situations when one service is returned twice.
  */
-abstract class SharedServiceHolder[CreationData, Service <: SharedService[CreationData] : ClassTag] extends LazyLogging {
+abstract class SharedServiceHolder[CreationData, Service <: SharedService[CreationData]: ClassTag] extends LazyLogging {
 
   private var sharedServices = Map[CreationData, (Service, Int)]()
 
@@ -55,7 +55,6 @@ abstract class SharedServiceHolder[CreationData, Service <: SharedService[Creati
   protected def createService(config: CreationData, metaData: MetaData): Service
 
 }
-
 
 trait SharedService[CreationData] extends AutoCloseable {
 

@@ -10,20 +10,22 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     ExpressionConfig(
       Map(
-        "GEO" -> anyCategory(geo),
-        "NUMERIC" -> anyCategory(numeric),
-        "CONV" -> anyCategory(conversion),
-        "COLLECTION" -> anyCategory(collection),
-        "DATE" -> anyCategory(date),
+        "GEO"         -> anyCategory(geo),
+        "NUMERIC"     -> anyCategory(numeric),
+        "CONV"        -> anyCategory(conversion),
+        "COLLECTION"  -> anyCategory(collection),
+        "DATE"        -> anyCategory(date),
         "DATE_FORMAT" -> anyCategory(dateFormat),
-        "UTIL" -> anyCategory(util),
+        "UTIL"        -> anyCategory(util),
       ),
       List()
     )
   }
 
   override def buildInfo(): Map[String, String] = {
-    pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) => k -> v.toString } + ("name" -> "defaultModel")
+    pl.touk.nussknacker.engine.version.BuildInfo.toMap.map { case (k, v) =>
+      k -> v.toString
+    } + ("name" -> "defaultModel")
   }
 
 }

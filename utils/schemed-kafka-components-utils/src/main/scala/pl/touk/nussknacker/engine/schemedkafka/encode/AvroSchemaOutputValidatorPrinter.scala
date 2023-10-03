@@ -17,13 +17,13 @@ object AvroSchemaOutputValidatorPrinter {
   }
 
   private def logicalTypesClassMapping: Map[Class[_], List[Class[_]]] = Map(
-    classOf[LogicalTypes.Decimal] -> List(classOf[java.nio.ByteBuffer]),
-    classOf[LogicalTypes.Date] -> List(classOf[java.lang.Integer]),
-    classOf[LogicalTypes.TimeMillis] -> List(classOf[java.lang.Integer]),
-    classOf[LogicalTypes.TimeMicros] -> List(classOf[java.lang.Long]),
+    classOf[LogicalTypes.Decimal]         -> List(classOf[java.nio.ByteBuffer]),
+    classOf[LogicalTypes.Date]            -> List(classOf[java.lang.Integer]),
+    classOf[LogicalTypes.TimeMillis]      -> List(classOf[java.lang.Integer]),
+    classOf[LogicalTypes.TimeMicros]      -> List(classOf[java.lang.Long]),
     classOf[LogicalTypes.TimestampMillis] -> List(classOf[java.lang.Long]),
     classOf[LogicalTypes.TimestampMicros] -> List(classOf[java.lang.Long]),
-    classOf[LogicalTypes] -> List(classOf[java.lang.Long]),
+    classOf[LogicalTypes]                 -> List(classOf[java.lang.Long]),
   )
 
   private def logicalTypesMapping: Map[LogicalType, List[Class[_]]] = Map(
@@ -32,16 +32,14 @@ object AvroSchemaOutputValidatorPrinter {
 
   private def schemaTypeMapping = Map(
     Schema.Type.FIXED -> List(classOf[java.nio.ByteBuffer], AvroStringSettings.stringTypingResult.klass),
-    Schema.Type.ENUM -> List(AvroStringSettings.stringTypingResult.klass),
+    Schema.Type.ENUM  -> List(AvroStringSettings.stringTypingResult.klass),
   )
 
   // We try to keep this representation convention similar to TypingResult.display convention
   def print(schema: Schema): String = {
     schema.getType match {
       case Schema.Type.RECORD =>
-        schema
-          .getFields
-          .asScala
+        schema.getFields.asScala
           .map(f => s"${f.name()}: ${print(f.schema())}")
           .mkString("Record{", ", ", "}")
       case Schema.Type.ARRAY =>
@@ -56,8 +54,8 @@ object AvroSchemaOutputValidatorPrinter {
   }
 
   private def printSchemaType(schema: Schema): String = {
-    val defaultDisplayType = baseDisplayType(schema) :: Nil
-    val typeDisplayType = schemaTypeMapping.getOrElse(schema.getType, Nil).map(_.getSimpleName)
+    val defaultDisplayType     = baseDisplayType(schema) :: Nil
+    val typeDisplayType        = schemaTypeMapping.getOrElse(schema.getType, Nil).map(_.getSimpleName)
     val logicalTypeDisplayType = printLogicalType(schema)
     (defaultDisplayType ::: logicalTypeDisplayType ::: typeDisplayType).printType
   }
@@ -66,8 +64,8 @@ object AvroSchemaOutputValidatorPrinter {
     val typed = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     schema.getType match {
       case Schema.Type.FIXED => s"${typed.display}[${schema.getFixedSize}]"
-      case Schema.Type.ENUM => s"${typed.display}[${schema.getEnumSymbols.asScala.toList.printType}]"
-      case _ => typed.display
+      case Schema.Type.ENUM  => s"${typed.display}[${schema.getEnumSymbols.asScala.toList.printType}]"
+      case _                 => typed.display
     }
   }
 

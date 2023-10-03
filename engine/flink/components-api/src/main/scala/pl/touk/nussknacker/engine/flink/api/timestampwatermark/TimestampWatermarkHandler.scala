@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime._
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
+import org.apache.flink.streaming.api.functions.{
+  AssignerWithPeriodicWatermarks,
+  AssignerWithPunctuatedWatermarks,
+  TimestampAssigner
+}
 
 import java.time.Duration
 
@@ -29,19 +33,28 @@ object StandardTimestampWatermarkHandler {
 
   }
 
-  private case class SerializableTimestampAssignerAdapter[T](simple: SimpleSerializableTimestampAssigner[T]) extends SerializableTimestampAssigner[T] {
+  private case class SerializableTimestampAssignerAdapter[T](simple: SimpleSerializableTimestampAssigner[T])
+      extends SerializableTimestampAssigner[T] {
     override def extractTimestamp(element: T, recordTimestamp: Long): Long = simple.extractTimestamp(element)
   }
 
   def toAssigner[T](simple: SimpleSerializableTimestampAssigner[T]): SerializableTimestampAssigner[T] =
     SerializableTimestampAssignerAdapter(simple)
 
-  def boundedOutOfOrderness[T](assigner: SimpleSerializableTimestampAssigner[T], maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
+  def boundedOutOfOrderness[T](
+      assigner: SimpleSerializableTimestampAssigner[T],
+      maxOutOfOrderness: Duration
+  ): TimestampWatermarkHandler[T] = {
     boundedOutOfOrderness(toAssigner(assigner), maxOutOfOrderness)
   }
 
-  def boundedOutOfOrderness[T](extract: SerializableTimestampAssigner[T], maxOutOfOrderness: Duration): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler(WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(extract))
+  def boundedOutOfOrderness[T](
+      extract: SerializableTimestampAssigner[T],
+      maxOutOfOrderness: Duration
+  ): TimestampWatermarkHandler[T] = {
+    new StandardTimestampWatermarkHandler(
+      WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(extract)
+    )
   }
 
   def afterEachEvent[T](assigner: SimpleSerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
@@ -49,12 +62,18 @@ object StandardTimestampWatermarkHandler {
   }
 
   def afterEachEvent[T](assigner: SerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler[T](WatermarkStrategy.forGenerator((_: WatermarkGeneratorSupplier.Context) => new WatermarkGenerator[T] {
-      override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
-        output.emitWatermark(new Watermark(eventTimestamp))
-      }
-      override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
-    }).withTimestampAssigner(assigner))
+    new StandardTimestampWatermarkHandler[T](
+      WatermarkStrategy
+        .forGenerator((_: WatermarkGeneratorSupplier.Context) =>
+          new WatermarkGenerator[T] {
+            override def onEvent(event: T, eventTimestamp: Long, output: WatermarkOutput): Unit = {
+              output.emitWatermark(new Watermark(eventTimestamp))
+            }
+            override def onPeriodicEmit(output: WatermarkOutput): Unit = {}
+          }
+        )
+        .withTimestampAssigner(assigner)
+    )
   }
 
 }
@@ -63,9 +82,9 @@ object StandardTimestampWatermarkHandler {
 class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     timestampAssigner match {
-      case periodic: AssignerWithPeriodicWatermarks[T@unchecked] =>
+      case periodic: AssignerWithPeriodicWatermarks[T @unchecked] =>
         dataStream.assignTimestampsAndWatermarks(periodic)
-      case punctuated: AssignerWithPunctuatedWatermarks[T@unchecked] =>
+      case punctuated: AssignerWithPunctuatedWatermarks[T @unchecked] =>
         dataStream.assignTimestampsAndWatermarks(punctuated)
     }
   }

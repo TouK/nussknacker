@@ -18,13 +18,19 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEn
 
 import scala.jdk.CollectionConverters._
 
-class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig)
-  extends StreamExecutionEnvironment(userFlinkClusterConfig) with LazyLogging with Matchers {
+class MiniClusterExecutionEnvironment(
+    flinkMiniClusterHolder: FlinkMiniClusterHolder,
+    userFlinkClusterConfig: Configuration,
+    envConfig: AdditionalEnvironmentConfig
+) extends StreamExecutionEnvironment(userFlinkClusterConfig)
+    with LazyLogging
+    with Matchers {
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
   // Running multiple parallel instances of job in one test class can cause stealing of data from sources between those instances.
-  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
+  def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T =
+    withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
 
   def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
     val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
@@ -53,34 +59,46 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     res
   }
 
-  def executeAndWaitForFinished(jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
+  def executeAndWaitForFinished(
+      jobName: String
+  )(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     val res = execute(jobName)
     waitForJobState(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
     res
   }
 
-  def waitForStart(jobID: JobID, name: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
+  def waitForStart(jobID: JobID, name: String)(
+      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+  ): Unit = {
     waitForJobState(jobID, name, ExecutionState.RUNNING, ExecutionState.FINISHED)(patience)
   }
 
-  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
+  def waitForJobState(jobID: JobID, name: String, expectedState: ExecutionState*)(
+      patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience
+  ): Unit = {
     Eventually.eventually {
 
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
       assertJobInitialized(executionGraph)
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
-      val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
-      assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
-    }(patience,implicitly[Retrying[Assertion]], implicitly[Position])
+      val notRunning        = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
+      assert(
+        notRunning.isEmpty,
+        s"Some vertices of $name are still not running: ${notRunning
+            .map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}"
+      )
+    }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
   def checkJobNotFailing(jobID: JobID): Unit = {
     val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
-    assert(!Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
-      s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}")
+    assert(
+      !Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
+      s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}"
+    )
   }
 
-  //Protected, to be overridden in Flink < 1.13 compatibility layer
+  // Protected, to be overridden in Flink < 1.13 compatibility layer
   protected def assertJobInitialized(executionGraph: AccessExecutionGraph): Assertion = {
     assert(executionGraph.getState != JobStatus.INITIALIZING)
   }
@@ -100,7 +118,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   def cancel(jobId: JobID): Unit =
     flinkMiniClusterHolder.cancelJob(jobId)
 
-  //this *has* to be done between tests, otherwise next .execute() will execute also current operators
+  // this *has* to be done between tests, otherwise next .execute() will execute also current operators
   def cleanupGraph(): Unit = {
     transformations.clear()
   }

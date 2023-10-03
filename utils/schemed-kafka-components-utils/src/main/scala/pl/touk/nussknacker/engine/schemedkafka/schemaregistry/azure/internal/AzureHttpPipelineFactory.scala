@@ -16,9 +16,9 @@ object AzureHttpPipelineFactory {
 
   def createPipeline(configuration: Configuration, credential: TokenCredential): HttpPipeline = {
     val httpLogOptions = new HttpLogOptions()
-    val properties = CoreUtils.getProperties("azure-data-schemaregistry.properties")
-    val clientName = properties.getOrDefault("name", "UnknownName")
-    val clientVersion = properties.getOrDefault("version", "UnknownVersion")
+    val properties     = CoreUtils.getProperties("azure-data-schemaregistry.properties")
+    val clientName     = properties.getOrDefault("name", "UnknownName")
+    val clientVersion  = properties.getOrDefault("version", "UnknownVersion")
 
     val policies = new util.ArrayList[HttpPipelinePolicy]
     policies.add(

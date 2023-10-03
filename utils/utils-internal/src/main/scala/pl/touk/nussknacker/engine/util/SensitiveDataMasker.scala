@@ -25,7 +25,8 @@ class SensitiveDataMasker(visiblePartSize: Int) {
         jsonNumber = _ => fromString(SensitiveDataMasker.placeholder),
         jsonString = str => fromString(mask(str)),
         jsonArray = _ => fromValues(Iterable.empty),
-        jsonObject = obj => fromJsonObject(obj.mapValues(maskJson)))
+        jsonObject = obj => fromJsonObject(obj.mapValues(maskJson))
+      )
     }
 
   }

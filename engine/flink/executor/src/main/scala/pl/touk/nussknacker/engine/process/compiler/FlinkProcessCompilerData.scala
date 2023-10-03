@@ -25,14 +25,15 @@ import scala.concurrent.duration.FiniteDuration
 
   NOTE: this class is *NOT* serializable, it should be created on each operator via FlinkProcessCompiler.
  */
-class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
-                               val jobData: JobData,
-                               // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
-                               exceptionHandler: FlinkExceptionHandler,
-                               val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
-                               val processTimeout: FiniteDuration,
-                               val componentUseCase: ComponentUseCase
-                              ) {
+class FlinkProcessCompilerData(
+    compiledProcess: ProcessCompilerData,
+    val jobData: JobData,
+    // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
+    exceptionHandler: FlinkExceptionHandler,
+    val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+    val processTimeout: FiniteDuration,
+    val componentUseCase: ComponentUseCase
+) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compiledProcess.lifecycle(nodesToUse)
@@ -50,7 +51,7 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
-    case Valid(r) => r
+    case Valid(r)     => r
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
@@ -71,5 +72,3 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
     exceptionHandler
   }
 }
-
-

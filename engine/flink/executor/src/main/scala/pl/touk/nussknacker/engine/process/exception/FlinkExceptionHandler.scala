@@ -8,8 +8,17 @@ import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, WithExceptionE
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
-import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{exceptionHandlerConfigPath, extractorConfigPath, typeConfigPath, withRateMeterConfigPath}
+import pl.touk.nussknacker.engine.flink.api.exception.{
+  ExceptionHandler,
+  FlinkEspExceptionConsumer,
+  FlinkEspExceptionConsumerProvider
+}
+import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler.{
+  exceptionHandlerConfigPath,
+  extractorConfigPath,
+  typeConfigPath,
+  withRateMeterConfigPath
+}
 import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -25,16 +34,18 @@ import scala.util.control.NonFatal
 object FlinkExceptionHandler {
 
   val exceptionHandlerConfigPath = "exceptionHandler"
-  val typeConfigPath = "type"
-  val withRateMeterConfigPath = "withRateMeter"
-  val extractorConfigPath = "exceptionExtractor"
+  val typeConfigPath             = "type"
+  val withRateMeterConfigPath    = "withRateMeter"
+  val extractorConfigPath        = "exceptionExtractor"
 
 }
 
-class FlinkExceptionHandler(metaData: MetaData,
-                            processObjectDependencies: ProcessObjectDependencies,
-                            listeners: Seq[ProcessListener],
-                            classLoader: ClassLoader) extends ExceptionHandler {
+class FlinkExceptionHandler(
+    metaData: MetaData,
+    processObjectDependencies: ProcessObjectDependencies,
+    listeners: Seq[ProcessListener],
+    classLoader: ClassLoader
+) extends ExceptionHandler {
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
     RestartStrategyFromConfiguration.readFromConfiguration(processObjectDependencies.config, metaData)
@@ -42,7 +53,7 @@ class FlinkExceptionHandler(metaData: MetaData,
   private val baseConfig = processObjectDependencies.config.getConfig(exceptionHandlerConfigPath)
 
   protected val consumer: FlinkEspExceptionConsumer = {
-    val baseConsumer: FlinkEspExceptionConsumer  = extractBaseConsumer(baseConfig)
+    val baseConsumer: FlinkEspExceptionConsumer = extractBaseConsumer(baseConfig)
     if (baseConfig.getAs[Boolean](withRateMeterConfigPath).getOrElse(true)) {
       new RateMeterExceptionConsumer(baseConsumer)
     } else {
@@ -61,13 +72,16 @@ class FlinkExceptionHandler(metaData: MetaData,
     try {
       Some(action)
     } catch {
-      case NonFatal(e) => handle(NuExceptionInfo(nodeComponentInfo, e, context))
+      case NonFatal(e) =>
+        handle(NuExceptionInfo(nodeComponentInfo, e, context))
         None
     }
 
   private def extractBaseConsumer(baseConfig: Config): FlinkEspExceptionConsumer = {
     val providerName = baseConfig.as[String](typeConfigPath)
-    ScalaServiceLoader.loadNamed[FlinkEspExceptionConsumerProvider](providerName, classLoader).create(metaData, baseConfig)
+    ScalaServiceLoader
+      .loadNamed[FlinkEspExceptionConsumerProvider](providerName, classLoader)
+      .create(metaData, baseConfig)
   }
 
   private def extractExceptionExtractor(baseConfig: Config): WithExceptionExtractor = {

@@ -9,7 +9,8 @@ sealed trait ScenarioTestRecord {
 }
 
 case class ScenarioTestJsonRecord(sourceId: NodeId, record: TestRecord) extends ScenarioTestRecord
-case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[String, Expression]) extends ScenarioTestRecord
+case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[String, Expression])
+    extends ScenarioTestRecord
 
 object ScenarioTestJsonRecord {
   def apply(sourceId: String, json: Json, timestamp: Option[Long] = None): ScenarioTestJsonRecord = {

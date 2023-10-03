@@ -16,7 +16,11 @@ import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.Per
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
+import pl.touk.nussknacker.engine.management.periodic.service.{
+  AdditionalDeploymentDataProvider,
+  PeriodicProcessListenerFactory,
+  ProcessConfigEnricherFactory
+}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import slick.jdbc
 import slick.jdbc.JdbcProfile
@@ -27,24 +31,30 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
 
-  def apply(delegate: DeploymentManager,
-            schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
-            processConfigEnricherFactory: ProcessConfigEnricherFactory,
-            periodicBatchConfig: PeriodicBatchConfig,
-            flinkConfig: FlinkConfig,
-            originalConfig: Config,
-            modelData: BaseModelData,
-            listenerFactory: PeriodicProcessListenerFactory,
-            additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
-            customActionsProviderFactory: PeriodicCustomActionsProviderFactory)
-           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Any]): PeriodicDeploymentManager = {
+  def apply(
+      delegate: DeploymentManager,
+      schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory,
+      processConfigEnricherFactory: ProcessConfigEnricherFactory,
+      periodicBatchConfig: PeriodicBatchConfig,
+      flinkConfig: FlinkConfig,
+      originalConfig: Config,
+      modelData: BaseModelData,
+      listenerFactory: PeriodicProcessListenerFactory,
+      additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
+      customActionsProviderFactory: PeriodicCustomActionsProviderFactory
+  )(
+      implicit ec: ExecutionContext,
+      system: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any]
+  ): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
-    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
-    val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
-    val listener = listenerFactory.create(originalConfig)
+    val scheduledProcessesRepository =
+      new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
+    val jarManager            = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
+    val listener              = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
     val service = new PeriodicProcessService(
       delegate,
@@ -58,7 +68,8 @@ object PeriodicDeploymentManager {
       clock
     )
     val deploymentActor = system.actorOf(DeploymentActor.props(service, periodicBatchConfig.deployInterval))
-    val rescheduleFinishedActor = system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
+    val rescheduleFinishedActor =
+      system.actorOf(RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval))
 
     val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
 
@@ -68,36 +79,55 @@ object PeriodicDeploymentManager {
       system.stop(rescheduleFinishedActor)
       db.close()
     }
-    new PeriodicDeploymentManager(delegate, service, schedulePropertyExtractorFactory(originalConfig), customActionsProvider, toClose)
+    new PeriodicDeploymentManager(
+      delegate,
+      service,
+      schedulePropertyExtractorFactory(originalConfig),
+      customActionsProvider,
+      toClose
+    )
   }
 }
 
-class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManager,
-                                                  service: PeriodicProcessService,
-                                                  schedulePropertyExtractor: SchedulePropertyExtractor,
-                                                  customActionsProvider: PeriodicCustomActionsProvider,
-                                                  toClose: () => Unit)
-                                                 (implicit val ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging {
+class PeriodicDeploymentManager private[periodic] (
+    val delegate: DeploymentManager,
+    service: PeriodicProcessService,
+    schedulePropertyExtractor: SchedulePropertyExtractor,
+    customActionsProvider: PeriodicCustomActionsProvider,
+    toClose: () => Unit
+)(implicit val ec: ExecutionContext)
+    extends DeploymentManager
+    with LazyLogging {
 
-
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+  override def validate(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess
+  ): Future[Unit] = {
     for {
       scheduledProperty <- extractScheduleProperty(canonicalProcess)
-      _ <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
-      _ <- delegate.validate(processVersion, deploymentData, canonicalProcess)
+      _                 <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
+      _                 <- delegate.validate(processVersion, deploymentData, canonicalProcess)
     } yield ()
   }
 
-  override def deploy(processVersion: ProcessVersion,
-                      deploymentData: DeploymentData,
-                      canonicalProcess: CanonicalProcess,
-                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess,
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]] = {
     extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
       // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
       // but NK API does, so we need to handle this situation.
-      service.schedule(scheduleProperty, processVersion, canonicalProcess, cancel(processVersion.processName, deploymentData.user))
+      service
+        .schedule(
+          scheduleProperty,
+          processVersion,
+          canonicalProcess,
+          cancel(processVersion.processName, deploymentData.user)
+        )
         .map(_ => None)
     }
   }
@@ -114,13 +144,20 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     service.deactivate(name).flatMap { deploymentIdsToStop =>
       // TODO: should return List of SavepointResult
-      Future.sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user))).map(_.headOption.getOrElse {
-        throw new IllegalStateException(s"No running deployment for scenario: $name found")
-      })
+      Future
+        .sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user)))
+        .map(_.headOption.getOrElse {
+          throw new IllegalStateException(s"No running deployment for scenario: $name found")
+        })
     }
   }
 
-  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+  override def stop(
+      name: ProcessName,
+      deploymentId: DeploymentId,
+      savepointDir: Option[String],
+      user: User
+  ): Future[SavepointResult] =
     Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
@@ -132,18 +169,30 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
     Future.failed(new UnsupportedOperationException(s"Cancelling of deployment it not supported"))
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
+  override def test[T](
+      name: ProcessName,
+      canonicalProcess: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
-  override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    throw new IllegalAccessException("PeriodicDeploymentManager.getProcessStates is not meant to be run directly - should be used getProcessState instead")
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    throw new IllegalAccessException(
+      "PeriodicDeploymentManager.getProcessStates is not meant to be run directly - should be used getProcessState instead"
+    )
   }
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]] = {
     service.getStatusDetails(idWithName.name).map { statusesWithFreshness =>
       statusesWithFreshness.map { cd =>
         // TODO: add "real" presentation of deployments in GUI
-        val mergedStatus = processStateDefinitionManager.processState(cd.copy(status = cd.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status))
+        val mergedStatus = processStateDefinitionManager
+          .processState(cd.copy(status = cd.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status))
         mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(cd.status))
       }
     }
@@ -164,6 +213,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def customActions: List[CustomAction] = customActionsProvider.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(
+      actionRequest: CustomActionRequest,
+      canonicalProcess: CanonicalProcess
+  ): Future[Either[CustomActionError, CustomActionResult]] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 }

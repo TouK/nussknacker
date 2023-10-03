@@ -29,7 +29,7 @@ object SynchronousLiteInterpreter {
 
   type SynchronousResult = Validated[NonEmptyList[ProcessCompilationError], (List[ErrorType], List[EndResult[AnyRef]])]
 
-  implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+  implicit val ec: ExecutionContext                             = SynchronousExecutionContext.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 
@@ -41,14 +41,22 @@ object SynchronousLiteInterpreter {
   }
   // TODO: add generate test data support
 
-  def run(modelData: ModelData,
-          scenario: CanonicalProcess,
-          data: ScenarioInputBatch[Any],
-          componentUseCase: ComponentUseCase,
-          runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): SynchronousResult = {
+  def run(
+      modelData: ModelData,
+      scenario: CanonicalProcess,
+      data: ScenarioInputBatch[Any],
+      componentUseCase: ComponentUseCase,
+      runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
+  ): SynchronousResult = {
 
     ScenarioInterpreterFactory
-      .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
+      .createInterpreter[Id, Any, AnyRef](
+        scenario,
+        modelData,
+        Nil,
+        ProductionServiceInvocationCollector,
+        componentUseCase
+      )
       .map { interpreter =>
         interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
         try {

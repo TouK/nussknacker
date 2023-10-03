@@ -1,3 +1,3 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-case class SavepointResult(path: String)
+final case class SavepointResult(path: String)

@@ -46,7 +46,7 @@ class OptionSerializer[A](val elemSerializer: TypeSerializer[A]) extends TypeSer
 
   override def copy(from: Option[A]): Option[A] = from match {
     case Some(a) => Some(elemSerializer.copy(a))
-    case None => from
+    case None    => from
   }
 
   override def copy(from: Option[A], reuse: Option[A]): Option[A] = copy(from)
@@ -105,14 +105,13 @@ object OptionSerializer {
    * We need to keep this to be compatible with snapshots taken in Flink 1.3.0. Once Flink 1.3.x is
    * no longer supported, this can be removed.
    */
-  class OptionSerializerConfigSnapshot[A]()
-    extends CompositeTypeSerializerConfigSnapshot[Option[A]] {
+  class OptionSerializerConfigSnapshot[A]() extends CompositeTypeSerializerConfigSnapshot[Option[A]] {
 
     override def getVersion: Int = OptionSerializerConfigSnapshot.VERSION
 
     override def resolveSchemaCompatibility(
-                                             newSerializer: TypeSerializer[Option[A]]
-                                           ): TypeSerializerSchemaCompatibility[Option[A]] = {
+        newSerializer: TypeSerializer[Option[A]]
+    ): TypeSerializerSchemaCompatibility[Option[A]] = {
       CompositeTypeSerializerUtil.delegateCompatibilityCheckToNewSnapshot(
         newSerializer,
         new ScalaOptionSerializerSnapshot[A](),

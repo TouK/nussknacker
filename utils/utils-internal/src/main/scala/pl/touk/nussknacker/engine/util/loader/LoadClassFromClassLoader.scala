@@ -16,7 +16,9 @@ trait LoadClassFromClassLoader {
       case Empty() =>
         throw new IllegalArgumentException(s"$prettyClassName not found. ${jarsUrlsHint(classLoader)}")
       case Many(muchEntities) =>
-        throw new IllegalArgumentException(s"Many $prettyClassName implementations found. Classes found: $muchEntities. ${jarsUrlsHint(classLoader)}")
+        throw new IllegalArgumentException(
+          s"Many $prettyClassName implementations found. Classes found: $muchEntities. ${jarsUrlsHint(classLoader)}"
+        )
       //        I've found it the easiest way to run tests in IntelliJ when there's wrong classpath
       //        muchEntities.last
       case One(only) => only

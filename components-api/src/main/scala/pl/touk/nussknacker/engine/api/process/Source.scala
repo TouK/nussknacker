@@ -44,7 +44,7 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  * Based on those fields UI creates a window allowing user to test scenario based on schema.
  */
 trait TestWithParametersSupport[+T] { self: Source =>
-  //TODO add support for dynamic parameters
+  // TODO add support for dynamic parameters
   def testParametersDefinition: List[Parameter]
   def parametersToTestData(params: Map[String, AnyRef]): T
 }
@@ -71,15 +71,17 @@ object SourceFactory {
   def noParamFromClassTag[T: ClassTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
     NoParamSourceFactory(_ => source, Typed.apply[T])
 
-  case class NoParamSourceFactory(createSource: NodeId => Source, inputType: TypingResult) extends SourceFactory with WithExplicitTypesToExtract {
+  case class NoParamSourceFactory(createSource: NodeId => Source, inputType: TypingResult)
+      extends SourceFactory
+      with WithExplicitTypesToExtract {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
       .implementedBy(createSource(nodeId))
 
-    override def typesToExtract: List[typing.TypedClass] = List(inputType).collect {
-      case single: SingleTypingResult => single.objType
+    override def typesToExtract: List[typing.TypedClass] = List(inputType).collect { case single: SingleTypingResult =>
+      single.objType
     }
 
   }

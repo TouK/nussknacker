@@ -17,26 +17,30 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
 
   private val parameterEvaluator = new ParameterEvaluator(expressionEvaluator)
 
-  def createObject[T](nodeDefinition: ObjectWithMethodDef,
-                      compiledParameters: List[(TypedParameter, Parameter)],
-                      outputVariableNameOpt: Option[String],
-                      additionalDependencies: Seq[AnyRef],
-                      componentUseCase: ComponentUseCase)
-                     (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
+  def createObject[T](
+      nodeDefinition: ObjectWithMethodDef,
+      compiledParameters: List[(TypedParameter, Parameter)],
+      outputVariableNameOpt: Option[String],
+      additionalDependencies: Seq[AnyRef],
+      componentUseCase: ComponentUseCase
+  )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, T] = {
     NodeValidationExceptionHandler.handleExceptions {
       create[T](nodeDefinition, compiledParameters, outputVariableNameOpt, additionalDependencies, componentUseCase)
     }
   }
 
-  private def create[T](objectWithMethodDef: ObjectWithMethodDef,
-                        params: List[(evaluatedparam.TypedParameter, Parameter)],
-                        outputVariableNameOpt: Option[String],
-                        additional: Seq[AnyRef],
-                        componentUseCase: ComponentUseCase)
-                       (implicit processMetaData: MetaData, nodeId: NodeId): T = {
-    val paramsMap = params.map {
-      case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
+  private def create[T](
+      objectWithMethodDef: ObjectWithMethodDef,
+      params: List[(evaluatedparam.TypedParameter, Parameter)],
+      outputVariableNameOpt: Option[String],
+      additional: Seq[AnyRef],
+      componentUseCase: ComponentUseCase
+  )(implicit processMetaData: MetaData, nodeId: NodeId): T = {
+    val paramsMap = params.map { case (tp, p) =>
+      p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
-    objectWithMethodDef.implementationInvoker.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional).asInstanceOf[T]
+    objectWithMethodDef.implementationInvoker
+      .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
+      .asInstanceOf[T]
   }
 }

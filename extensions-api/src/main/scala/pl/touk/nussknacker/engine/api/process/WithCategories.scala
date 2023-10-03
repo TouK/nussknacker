@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentCon
 
 // TODO: rename it? its no longer just a value with categories
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
-  def map[Y](f : T => Y): WithCategories[Y] = {
+  def map[Y](f: T => Y): WithCategories[Y] = {
     copy(value = f(value))
   }
 

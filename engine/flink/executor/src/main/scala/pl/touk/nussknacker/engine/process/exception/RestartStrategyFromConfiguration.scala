@@ -42,28 +42,30 @@ object RestartStrategyFromConfiguration {
         attempts: 50
       }
     }
-  */
+   */
   def readFromConfiguration(config: Config, metaData: MetaData): RestartStrategyConfiguration = {
     val restartConfig = config.getConfig(restartStrategyConfigPath)
     val restartConfigName = (for {
       property <- restartConfig.getAs[String](scenarioPropertyPath)
-      value <- MetaDataExtractor.extractProperty(metaData, property)
+      value    <- MetaDataExtractor.extractProperty(metaData, property)
       if StringUtils.isNotBlank(value)
     } yield value).getOrElse(defaultStrategyPath)
     readFromConfig(restartConfig.getConfig(restartConfigName))
   }
 
-  //We convert HOCON to Flink configuration, so that we can use Flink parsing mechanisms
-  //https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/dev/execution/task_failure_recovery/
+  // We convert HOCON to Flink configuration, so that we can use Flink parsing mechanisms
+  // https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/dev/execution/task_failure_recovery/
   private def readFromConfig(config: Config): RestartStrategyConfiguration = {
     val flinkConfig = new Configuration
-    //restart-strategy.fixed-delay.attempts
+    // restart-strategy.fixed-delay.attempts
     val strategy = config.getString(strategyPath)
     flinkConfig.setString(restartStrategyFlinkConfigPrefix, strategy)
     config.entrySet().asScala.foreach { entry =>
       flinkConfig.setString(s"$restartStrategyFlinkConfigPrefix.$strategy.${entry.getKey}", toString(entry.getValue))
     }
-    RestartStrategies.fromConfiguration(flinkConfig).asScala
+    RestartStrategies
+      .fromConfiguration(flinkConfig)
+      .asScala
       .getOrElse(throw new IllegalArgumentException(s"Failed to find configured restart strategy: $strategy"))
   }
 

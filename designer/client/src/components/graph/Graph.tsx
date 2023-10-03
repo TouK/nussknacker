@@ -26,10 +26,10 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
-import { cx } from "@emotion/css";
+import { handleGraphEvent } from "./utils/graphUtils";
 
 interface Props extends GraphProps {
     processCategory: string;
@@ -277,19 +277,20 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        if (isTouchDevice()) {
-            this.processGraphPaper.on(
-                Events.CELL_POINTERDOWN,
-                handleActionOnLongPress(showNodeDetails, selectNode, this.panAndZoom.getPinchEventActive),
-            );
-            this.processGraphPaper.on(
-                Events.LINK_POINTERDOWN,
+        this.processGraphPaper.on(
+            Events.CELL_POINTERDOWN,
+            handleGraphEvent(handleActionOnLongPress(showNodeDetails, selectNode, this.panAndZoom.getPinchEventActive), null),
+        );
+        this.processGraphPaper.on(
+            Events.LINK_POINTERDOWN,
+            handleGraphEvent(
                 handleActionOnLongPress(null, ({ model }) => model.remove(), this.panAndZoom.getPinchEventActive, LONG_PRESS_TIME * 1.5),
-            );
-        } else {
-            this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
-            this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails);
-        }
+                null,
+            ),
+        );
+
+        this.processGraphPaper.on(Events.CELL_POINTERCLICK, handleGraphEvent(null, selectNode));
+        this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, handleGraphEvent(null, showNodeDetails));
 
         this.processGraphPaper.on(Events.BLANK_POINTERUP, deselectNodes);
         this.hooverHandling();
@@ -599,7 +600,6 @@ export class Graph extends React.Component<Props> {
         return (
             <>
                 <GraphPaperContainer
-                    className={cx({ touch: isTouchDevice() })}
                     ref={this.setEspGraphRef}
                     onResize={isFragment ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
                     id={divId}

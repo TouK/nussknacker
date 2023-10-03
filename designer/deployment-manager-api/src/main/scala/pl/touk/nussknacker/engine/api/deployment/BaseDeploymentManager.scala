@@ -17,7 +17,12 @@ trait BaseDeploymentManager extends DeploymentManager with AlwaysFreshProcessSta
     Future.failed(new UnsupportedOperationException(s"Stopping of scenario is not supported"))
   }
 
-  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+  override def stop(
+      name: ProcessName,
+      deploymentId: DeploymentId,
+      savepointDir: Option[String],
+      user: User
+  ): Future[SavepointResult] =
     Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
@@ -26,7 +31,10 @@ trait BaseDeploymentManager extends DeploymentManager with AlwaysFreshProcessSta
 
   override def customActions: List[CustomAction] = List.empty
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(
+      actionRequest: CustomActionRequest,
+      canonicalProcess: CanonicalProcess
+  ): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
 }

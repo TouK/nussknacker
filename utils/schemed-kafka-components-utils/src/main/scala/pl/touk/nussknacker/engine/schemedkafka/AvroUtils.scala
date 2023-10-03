@@ -42,7 +42,8 @@ object AvroUtils extends LazyLogging {
       val copiedRecord = super.deepCopy(schema, value)
       value match {
         case withSchemaId: GenericRecordWithSchemaId =>
-          new GenericRecordWithSchemaId(copiedRecord.asInstanceOf[GenericData.Record], withSchemaId.getSchemaId, false).asInstanceOf[T]
+          new GenericRecordWithSchemaId(copiedRecord.asInstanceOf[GenericData.Record], withSchemaId.getSchemaId, false)
+            .asInstanceOf[T]
         case _ => copiedRecord
       }
     }
@@ -98,21 +99,20 @@ object AvroUtils extends LazyLogging {
     schemaType match {
       case "AVRO" => new AvroSchema(schemaContent)
       case "JSON" => OpenAPIJsonSchema(schemaContent)
-      case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
+      case other  => throw new IllegalArgumentException(s"Not supported schema type: $other")
     }
 
   def adjustParsedSchema(parsedSchema: ParsedSchema): ParsedSchema =
     parsedSchema match {
       case openAPIJsonSchema: OpenAPIJsonSchema => openAPIJsonSchema
-      case json: JsonSchema => OpenAPIJsonSchema(json.canonicalString())
-      case other => other
+      case json: JsonSchema                     => OpenAPIJsonSchema(json.canonicalString())
+      case other                                => other
     }
 
   // It is need because regards to that https://github.com/confluentinc/schema-registry/issues/1293 someone
   // could register schema with invalid default in lower avro version and despite this in newer version we want to read it
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
-
 
   // This method use Confluent's class under the hood but it hasn't got any Confluent specific logic
   def getSchema(obj: Any): Schema = {
@@ -132,7 +132,7 @@ object AvroUtils extends LazyLogging {
       val instance = clazz.getDeclaredConstructor().newInstance().asInstanceOf[SpecificRecord]
       Option(instance.getSchema)
     } catch {
-      case e@(_: InstantiationException | _: IllegalAccessException) =>
+      case e @ (_: InstantiationException | _: IllegalAccessException) =>
         logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
         None
     }
@@ -150,7 +150,7 @@ object AvroUtils extends LazyLogging {
   def serializeContainerToBytesArray(container: GenericContainer, output: OutputStream): Unit = {
     val data = container match {
       case non: NonRecordContainer => non.getValue
-      case any => any
+      case any                     => any
     }
 
     data match {
@@ -177,7 +177,7 @@ object AvroUtils extends LazyLogging {
       util.Arrays.copyOfRange(payload, offset, payload.length).asInstanceOf[T]
     } else {
       val decoder = DecoderFactory.get().binaryDecoder(payload, offset, payload.length - offset, null)
-      val reader = createGenericDatumReader[T](readerWriterSchema, readerWriterSchema)
+      val reader  = createGenericDatumReader[T](readerWriterSchema, readerWriterSchema)
       reader.read(null.asInstanceOf[T], decoder)
     }
   }
@@ -192,15 +192,15 @@ object AvroUtils extends LazyLogging {
           Option(schema).filter(_.getType == Schema.Type.UNION).flatMap(_.getTypes.asScala.find(_.getType == typ))
       }
       val SchemaContainsRecordSchema = new SchemaContainsType(Schema.Type.RECORD)
-      val SchemaContainsArraySchema = new SchemaContainsType(Schema.Type.ARRAY)
-      val SchemaContainsMapSchema = new SchemaContainsType(Schema.Type.MAP)
+      val SchemaContainsArraySchema  = new SchemaContainsType(Schema.Type.ARRAY)
+      val SchemaContainsMapSchema    = new SchemaContainsType(Schema.Type.MAP)
 
       (value, schema) match {
-        case (map: collection.Map[String@unchecked, _], SchemaContainsRecordSchema(recordSchema)) =>
+        case (map: collection.Map[String @unchecked, _], SchemaContainsRecordSchema(recordSchema)) =>
           createRecord(recordSchema, map)
         case (collection: Iterable[_], SchemaContainsArraySchema(arraySchema)) =>
           collection.map(createValue(_, arraySchema.getElementType)).toList.asJava
-        case (map: collection.Map[String@unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
+        case (map: collection.Map[String @unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
           map.toMap.mapValuesNow(createValue(_, mapSchema.getValueType)).asJava
         case _ => value
       }

@@ -21,7 +21,11 @@ trait SlickMigration extends BaseJavaMigration {
 
   override def migrate(context: Context): Unit = {
     val conn = context.getConnection
-    val database = Database.forDataSource(new AlwaysUsingSameConnectionDataSource(conn), None, AsyncExecutor.default("Slick migration", 20))
+    val database = Database.forDataSource(
+      new AlwaysUsingSameConnectionDataSource(conn),
+      None,
+      AsyncExecutor.default("Slick migration", 20)
+    )
     Await.result(database.run(migrateActions), Duration.Inf)
   }
 }
@@ -33,7 +37,8 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  override protected def migrateActions: DBIOAction[Seq[Int], NoStream, Effect.Read with Effect.Read with Effect.Write] = {
+  override protected def migrateActions
+      : DBIOAction[Seq[Int], NoStream, Effect.Read with Effect.Read with Effect.Write] = {
     for {
       allVersionIds <- processVersionsTableWithUnit.map(pve => (pve.id, pve.processId)).result
       updated <- DBIOAction.sequence(allVersionIds.zipWithIndex.map { case ((id, processId), scenarioIndex) =>
@@ -42,11 +47,16 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
     } yield updated
   }
 
-  private def updateOne(id: VersionId, processId: ProcessId,
-                        scenarioNo: Int, scenariosCount: Int): DBIOAction[Int, NoStream, Effect.Read with Effect.Write] = {
+  private def updateOne(
+      id: VersionId,
+      processId: ProcessId,
+      scenarioNo: Int,
+      scenariosCount: Int
+  ): DBIOAction[Int, NoStream, Effect.Read with Effect.Write] = {
     for {
       processJson <- processVersionsTable.filter(v => v.id === id && v.processId === processId).map(_.json).result.head
-      updatedJson <- processVersionsTable.filter(v => v.id === id && v.processId === processId)
+      updatedJson <- processVersionsTable
+        .filter(v => v.id === id && v.processId === processId)
         .map(_.json)
         .update {
           logger.trace("Migrate scenario ({}/{}), id: {}, version id: {}", scenarioNo, scenariosCount, processId, id)
@@ -57,7 +67,7 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
 
   private def prepareAndUpdateJson(json: String): String = {
     val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid scenario")
-    val updated = updateProcessJson(jsonProcess)
+    val updated     = updateProcessJson(jsonProcess)
     updated.getOrElse(jsonProcess).noSpaces
   }
 

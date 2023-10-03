@@ -1,6 +1,12 @@
 package pl.touk.nussknacker.engine.splittedgraph
 
-import pl.touk.nussknacker.engine.graph.node.{SubsequentNode => _, OneOutputSubsequentNode => _, EndingNode => _, SourceNode => _, _}
+import pl.touk.nussknacker.engine.graph.node.{
+  EndingNode => _,
+  OneOutputSubsequentNode => _,
+  SourceNode => _,
+  SubsequentNode => _,
+  _
+}
 import pl.touk.nussknacker.engine.splittedgraph.end.End
 import pl.touk.nussknacker.engine.splittedgraph.splittednode._
 
@@ -14,13 +20,15 @@ object part {
     def ends: List[End]
   }
 
-  case class SourcePart(node: SourceNode[StartingNodeData], nextParts: List[SubsequentPart], ends: List[End]) extends ProcessPart {
+  case class SourcePart(node: SourceNode[StartingNodeData], nextParts: List[SubsequentPart], ends: List[End])
+      extends ProcessPart {
     override type T = StartingNodeData
   }
 
   sealed trait SubsequentPart extends ProcessPart
 
-  case class CustomNodePart(node: SubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End]) extends SubsequentPart {
+  case class CustomNodePart(node: SubsequentNode[CustomNode], nextParts: List[SubsequentPart], ends: List[End])
+      extends SubsequentPart {
     override type T = CustomNode
   }
 
@@ -28,7 +36,7 @@ object part {
     override type T = Sink
 
     override def nextParts: List[SubsequentPart] = List.empty
-    override def ends: List[End] = List.empty
+    override def ends: List[End]                 = List.empty
   }
 
 }

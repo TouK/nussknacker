@@ -16,18 +16,31 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
   type Value = AnyRef
 
   @MethodToInvoke(returnType = classOf[Value])
-  def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
-              @ParamName("value") value: LazyParameter[Value])
-  = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
-    val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
-    setUidToNodeIdIfNeed(ctx,
-      start
-        .groupBy(groupBy)(ctx)
-        .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo), ctx.valueWithContextInfo.forType(valueTypeInfo)))}, value.returnType)
+  def execute(
+      @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
+      @ParamName("value") value: LazyParameter[Value]
+  ) = FlinkCustomStreamTransformation(
+    (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
+      val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
+      setUidToNodeIdIfNeed(
+        ctx,
+        start
+          .groupBy(groupBy)(ctx)
+          .flatMap(
+            new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo),
+            ctx.valueWithContextInfo.forType(valueTypeInfo)
+          )
+      )
+    },
+    value.returnType
+  )
 
-  class PreviousValueFunction(val parameter: LazyParameter[Value],
-                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper, typeInformation: TypeInformation[Value]) extends RichFlatMapFunction[ValueWithContext[String], ValueWithContext[AnyRef]]
-    with OneParamLazyParameterFunction[AnyRef] {
+  class PreviousValueFunction(
+      val parameter: LazyParameter[Value],
+      val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+      typeInformation: TypeInformation[Value]
+  ) extends RichFlatMapFunction[ValueWithContext[String], ValueWithContext[AnyRef]]
+      with OneParamLazyParameterFunction[AnyRef] {
 
     private[this] var state: ValueState[Value] = _
 
@@ -37,13 +50,12 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       state = getRuntimeContext.getState(info)
     }
 
-
     override def flatMap(valueWithContext: ValueWithContext[String], out: Collector[ValueWithContext[AnyRef]]): Unit = {
       collectHandlingErrors(valueWithContext.context, out) {
         val currentValue = evaluateParameter(valueWithContext.context)
-        val toReturn = Option(state.value()).getOrElse(currentValue)
+        val toReturn     = Option(state.value()).getOrElse(currentValue)
         state.update(currentValue)
-        ValueWithContext(toReturn, valueWithContext.context )
+        ValueWithContext(toReturn, valueWithContext.context)
       }
     }
 

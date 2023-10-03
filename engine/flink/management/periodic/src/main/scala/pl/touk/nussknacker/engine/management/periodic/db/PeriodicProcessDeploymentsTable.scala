@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, PeriodicProcessId}
+import pl.touk.nussknacker.engine.management.periodic.model.{
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentStatus,
+  PeriodicProcessId
+}
 import slick.jdbc.JdbcProfile
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -14,9 +18,11 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
 
   import profile.api._
 
-  implicit val periodicProcessDeploymentStatusColumnTyped = MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
+  implicit val periodicProcessDeploymentStatusColumnTyped =
+    MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
-  class PeriodicProcessDeploymentsTable(tag: Tag) extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_process_deployments") {
+  class PeriodicProcessDeploymentsTable(tag: Tag)
+      extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_process_deployments") {
 
     def id: Rep[PeriodicProcessDeploymentId] = column[PeriodicProcessDeploymentId]("id", O.PrimaryKey, O.AutoInc)
 
@@ -38,20 +44,33 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
 
     def status: Rep[PeriodicProcessDeploymentStatus] = column[PeriodicProcessDeploymentStatus]("status", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (id, periodicProcessId, createdAt, runAt, scheduleName, deployedAt, completedAt, retriesLeft, nextRetryAt, status) <>
+    override def * : ProvenShape[PeriodicProcessDeploymentEntity] = (
+      id,
+      periodicProcessId,
+      createdAt,
+      runAt,
+      scheduleName,
+      deployedAt,
+      completedAt,
+      retriesLeft,
+      nextRetryAt,
+      status
+    ) <>
       ((PeriodicProcessDeploymentEntity.apply _).tupled, PeriodicProcessDeploymentEntity.unapply)
   }
 
   object PeriodicProcessDeployments extends TableQuery(new PeriodicProcessDeploymentsTable(_))
 }
 
-case class PeriodicProcessDeploymentEntity(id: PeriodicProcessDeploymentId,
-                                           periodicProcessId: PeriodicProcessId,
-                                           createdAt: LocalDateTime,
-                                           runAt: LocalDateTime,
-                                           scheduleName: Option[String],
-                                           deployedAt: Option[LocalDateTime],
-                                           completedAt: Option[LocalDateTime],
-                                           retriesLeft: Int,
-                                           nextRetryAt: Option[LocalDateTime],
-                                           status: PeriodicProcessDeploymentStatus)
+case class PeriodicProcessDeploymentEntity(
+    id: PeriodicProcessDeploymentId,
+    periodicProcessId: PeriodicProcessId,
+    createdAt: LocalDateTime,
+    runAt: LocalDateTime,
+    scheduleName: Option[String],
+    deployedAt: Option[LocalDateTime],
+    completedAt: Option[LocalDateTime],
+    retriesLeft: Int,
+    nextRetryAt: Option[LocalDateTime],
+    status: PeriodicProcessDeploymentStatus
+)

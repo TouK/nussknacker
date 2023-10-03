@@ -34,11 +34,10 @@ object SwaggerOpenApiDefinitionDiscovery
       )
     )
 
-class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any])
-    extends LazyLogging {
+class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any]) extends LazyLogging {
 
   def discoverOpenAPIServices(
-    openAPIsConfig: OpenAPIServicesConfig
+      openAPIsConfig: OpenAPIServicesConfig
   ): List[Validated[ServiceParseError, SwaggerService]] = {
     val discoveryUrl = openAPIsConfig.url
     val definition = if (discoveryUrl.getProtocol == "file") {

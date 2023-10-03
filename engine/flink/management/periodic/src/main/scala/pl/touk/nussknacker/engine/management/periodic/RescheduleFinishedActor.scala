@@ -22,9 +22,10 @@ object RescheduleFinishedActor {
   private case object CheckStatesCompleted
 }
 
-class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteDuration) extends Actor
-  with Timers
-  with LazyLogging {
+class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteDuration)
+    extends Actor
+    with Timers
+    with LazyLogging {
 
   import context.dispatcher
 

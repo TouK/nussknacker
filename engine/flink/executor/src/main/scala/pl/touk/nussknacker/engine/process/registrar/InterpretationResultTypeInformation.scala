@@ -11,9 +11,12 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object InterpretationResultTypeInformation {
 
-  def create(detection: TypeInformationDetection, validationContext: ValidationContext): TypeInformation[InterpretationResult] = {
-    //TODO: here we still use Kryo :/
-    val reference = TypeInformation.of(classOf[PartReference])
+  def create(
+      detection: TypeInformationDetection,
+      validationContext: ValidationContext
+  ): TypeInformation[InterpretationResult] = {
+    // TODO: here we still use Kryo :/
+    val reference    = TypeInformation.of(classOf[PartReference])
     val finalContext = detection.forContext(validationContext)
 
     ConcreteCaseClassTypeInfo[InterpretationResult](
@@ -22,7 +25,10 @@ object InterpretationResultTypeInformation {
     )
   }
 
-  def create(detection: TypeInformationDetection, possibleContexts: Map[String, ValidationContext]): TypeInformation[InterpretationResult] = {
+  def create(
+      detection: TypeInformationDetection,
+      possibleContexts: Map[String, ValidationContext]
+  ): TypeInformation[InterpretationResult] = {
     InterpretationResultMapTypeInfo(possibleContexts.mapValuesNow(create(detection, _)))
   }
 }

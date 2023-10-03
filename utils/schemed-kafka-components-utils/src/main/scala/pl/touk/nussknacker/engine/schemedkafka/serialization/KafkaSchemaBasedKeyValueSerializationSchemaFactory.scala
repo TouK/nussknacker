@@ -20,20 +20,33 @@ import java.nio.charset.StandardCharsets
   */
 abstract class KafkaSchemaBasedValueSerializationSchemaFactory extends KafkaSchemaBasedSerializationSchemaFactory {
 
-  protected[schemedkafka] def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
+  protected[schemedkafka] def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] =
+    new CharSequenceSerializer
 
-  protected[schemedkafka] def createValueSerializer(schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Serializer[Any]
+  protected[schemedkafka] def createValueSerializer(
+      schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Serializer[Any]
 
-  override def create(topic: String, schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+  override def create(
+      topic: String,
+      schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
-      private lazy val keySerializer = createKeySerializer(kafkaConfig)
+      private lazy val keySerializer   = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt, kafkaConfig)
 
-      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(
+          element: KeyedValue[AnyRef, AnyRef],
+          timestamp: lang.Long
+      ): ProducerRecord[Array[Byte], Array[Byte]] = {
         // we have to create headers for each record because it can be enriched (mutated) by serializers
         val headers = new RecordHeaders()
-        val key = keySerializer.serialize(topic, headers, element.key)
-        schemaOpt.flatMap(_.schemaIdOpt).foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
+        val key     = keySerializer.serialize(topic, headers, element.key)
+        schemaOpt
+          .flatMap(_.schemaIdOpt)
+          .foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
         val value = valueSerializer.serialize(topic, headers, element.value)
         KafkaProducerHelper.createRecord(topic, key, value, timestamp, headers)
       }
@@ -51,18 +64,30 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
   // TODO We currently not support schema evolution for keys
   protected[schemedkafka] def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[Any]
 
-  protected[schemedkafka] def createValueSerializer(schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Serializer[Any]
+  protected[schemedkafka] def createValueSerializer(
+      schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Serializer[Any]
 
-  override def create(topic: String, schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+  override def create(
+      topic: String,
+      schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
-      private lazy val keySerializer = createKeySerializer(kafkaConfig)
+      private lazy val keySerializer   = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt, kafkaConfig)
 
-      override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
+      override def serialize(
+          element: KeyedValue[AnyRef, AnyRef],
+          timestamp: lang.Long
+      ): ProducerRecord[Array[Byte], Array[Byte]] = {
         // we have to create headers for each record because it can be enriched (mutated) by serializers
         val headers = new RecordHeaders()
-        val key = keySerializer.serialize(topic, headers, element.key)
-        schemaOpt.flatMap(_.schemaIdOpt).foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
+        val key     = keySerializer.serialize(topic, headers, element.key)
+        schemaOpt
+          .flatMap(_.schemaIdOpt)
+          .foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
         val value = valueSerializer.serialize(topic, headers, element.value)
         KafkaProducerHelper.createRecord(topic, key, value, timestamp, headers)
       }

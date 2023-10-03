@@ -12,21 +12,26 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   * Wrapper for ConsumerRecord fields used for test data serialization, eg. json serialization.
   * All fields apart from value are optional.
   */
-case class SerializableConsumerRecord[K, V](key: Option[K],
-                                            value: V,
-                                            topic: Option[String],
-                                            partition: Option[Int],
-                                            offset: Option[Long],
-                                            timestamp: Option[Long],
-                                            timestampType: Option[String],
-                                            headers: Option[Map[String, Option[String]]],
-                                            leaderEpoch: Option[Int]) {
+case class SerializableConsumerRecord[K, V](
+    key: Option[K],
+    value: V,
+    topic: Option[String],
+    partition: Option[Int],
+    offset: Option[Long],
+    timestamp: Option[Long],
+    timestampType: Option[String],
+    headers: Option[Map[String, Option[String]]],
+    leaderEpoch: Option[Int]
+) {
 
   /**
     * Converts SerializableConsumerRecord to ConsumerRecord, uses default values in case of missing attributes.
     */
-  @silent("deprecated") //using deprecated constructor for Flink 1.14/15 compatibility
-  def toKafkaConsumerRecord(formatterTopic: String, serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
+  def toKafkaConsumerRecord(
+      formatterTopic: String,
+      serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])
+  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     // serialize Key and Value to Array[Byte]
     val (keyBytes, valueBytes) = serializeKeyValue(key, value)
     // use defaults and ignore checksum, serializedKeySize and serializedValueSize
@@ -43,7 +48,7 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
       keyBytes,
       valueBytes,
       KafkaRecordUtils.toHeaders(headers.map(_.mapValuesNow(_.orNull).toMap).getOrElse(Map.empty)),
-      Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) //avoids covert null -> 0 conversion
+      Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) // avoids covert null -> 0 conversion
     )
   }
 }
@@ -59,7 +64,7 @@ object SerializableConsumerRecord {
       Option(deserializedRecord.timestamp()),
       Option(deserializedRecord.timestampType().name),
       Option(KafkaRecordUtils.toMap(deserializedRecord.headers()).mapValuesNow(s => Option(s))),
-      Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) //avoids covert null -> 0 conversion
+      Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) // avoids covert null -> 0 conversion
     )
   }
 }

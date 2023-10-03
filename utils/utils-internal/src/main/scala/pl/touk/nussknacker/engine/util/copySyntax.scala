@@ -22,8 +22,7 @@ trait UpdateRepr[T, R <: HList] {
 object UpdateRepr {
   import ops.record._
 
-  implicit def mergeUpdateRepr[T <: HList, R <: HList]
-    (implicit merger: Merger.Aux[T, R, T]): UpdateRepr[T, R] =
+  implicit def mergeUpdateRepr[T <: HList, R <: HList](implicit merger: Merger.Aux[T, R, T]): UpdateRepr[T, R] =
     new UpdateRepr[T, R] {
       def apply(t: T, r: R): T = merger(t, r)
     }
@@ -33,11 +32,10 @@ object UpdateRepr {
       def apply(t: CNil, r: R): CNil = t
     }
 
-  implicit def cconsUpdateRepr[H, T <: Coproduct, R <: HList]
-    (implicit
-      uh: Lazy[UpdateRepr[H, R]],
+  implicit def cconsUpdateRepr[H, T <: Coproduct, R <: HList](
+      implicit uh: Lazy[UpdateRepr[H, R]],
       ut: Lazy[UpdateRepr[T, R]]
-    ): UpdateRepr[H :+: T, R] =
+  ): UpdateRepr[H :+: T, R] =
     new UpdateRepr[H :+: T, R] {
       def apply(t: H :+: T, r: R): H :+: T = t match {
         case Inl(h) => Inl(uh.value(h, r))
@@ -45,22 +43,20 @@ object UpdateRepr {
       }
     }
 
-  implicit def genProdUpdateRepr[T, R <: HList, Repr <: HList]
-    (implicit
-      prod: HasProductGeneric[T],
+  implicit def genProdUpdateRepr[T, R <: HList, Repr <: HList](
+      implicit prod: HasProductGeneric[T],
       gen: LabelledGeneric.Aux[T, Repr],
       update: Lazy[UpdateRepr[Repr, R]]
-    ): UpdateRepr[T, R] =
+  ): UpdateRepr[T, R] =
     new UpdateRepr[T, R] {
       def apply(t: T, r: R): T = gen.from(update.value(gen.to(t), r))
     }
 
-  implicit def genCoprodUpdateRepr[T, R <: HList, Repr <: Coproduct]
-    (implicit
-      coprod: HasCoproductGeneric[T],
+  implicit def genCoprodUpdateRepr[T, R <: HList, Repr <: Coproduct](
+      implicit coprod: HasCoproductGeneric[T],
       gen: Generic.Aux[T, Repr],
       update: Lazy[UpdateRepr[Repr, R]]
-    ): UpdateRepr[T, R] =
+  ): UpdateRepr[T, R] =
     new UpdateRepr[T, R] {
       def apply(t: T, r: R): T = gen.from(update.value(gen.to(t), r))
     }

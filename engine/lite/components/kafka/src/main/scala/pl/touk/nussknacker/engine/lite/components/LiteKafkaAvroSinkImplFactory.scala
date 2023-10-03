@@ -11,8 +11,24 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
-  override def createSink(preparedTopic: PreparedKafkaTopic, keyParam: LazyParameter[AnyRef], valueParam: LazyParameter[AnyRef],
-                          kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], clientId: String,
-                          schema: RuntimeSchemaData[AvroSchema], validationMode: ValidationMode): Sink =
-    LiteKafkaUniversalSinkImplFactory.createSink(preparedTopic, keyParam, valueParam, kafkaConfig, serializationSchema, clientId, schema.toParsedSchemaData, validationMode)
+  override def createSink(
+      preparedTopic: PreparedKafkaTopic,
+      keyParam: LazyParameter[AnyRef],
+      valueParam: LazyParameter[AnyRef],
+      kafkaConfig: KafkaConfig,
+      serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
+      clientId: String,
+      schema: RuntimeSchemaData[AvroSchema],
+      validationMode: ValidationMode
+  ): Sink =
+    LiteKafkaUniversalSinkImplFactory.createSink(
+      preparedTopic,
+      keyParam,
+      valueParam,
+      kafkaConfig,
+      serializationSchema,
+      clientId,
+      schema.toParsedSchemaData,
+      validationMode
+    )
 }

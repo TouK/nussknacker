@@ -8,15 +8,16 @@ import java.lang
 
 object KafkaProducerHelper {
 
-  def createRecord(topic: String, key: Array[Byte], value: Array[Byte], timestamp: lang.Long, headers: Headers = KafkaRecordUtils.emptyHeaders): ProducerRecord[Array[Byte], Array[Byte]] = {
-    //Flink can use Long.MinValue (see StreamRecord.getTimestamp), we set it to null to let Kafka producer decide (probably set to currentTimeMillis)
+  def createRecord(
+      topic: String,
+      key: Array[Byte],
+      value: Array[Byte],
+      timestamp: lang.Long,
+      headers: Headers = KafkaRecordUtils.emptyHeaders
+  ): ProducerRecord[Array[Byte], Array[Byte]] = {
+    // Flink can use Long.MinValue (see StreamRecord.getTimestamp), we set it to null to let Kafka producer decide (probably set to currentTimeMillis)
     val timestampToSerialize: lang.Long = Option(timestamp).filter(_ >= 0).orNull
-    new ProducerRecord[Array[Byte], Array[Byte]](topic, null,
-      timestampToSerialize,
-      key,
-      value,
-      headers
-    )
+    new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestampToSerialize, key, value, headers)
   }
 
 }

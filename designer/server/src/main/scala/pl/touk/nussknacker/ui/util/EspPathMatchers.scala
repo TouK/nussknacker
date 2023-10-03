@@ -7,7 +7,7 @@ import scala.util.Try
 
 trait EspPathMatchers extends PathMatchers {
 
-  def EnumSegment[T<:Enumeration](enumCompanion:T) : PathMatcher1[enumCompanion.Value] =
+  def EnumSegment[T <: Enumeration](enumCompanion: T): PathMatcher1[enumCompanion.Value] =
     Segment.flatMap(value => Try(enumCompanion.withName(value)).toOption)
 
   def VersionIdSegment: PathMatcher1[VersionId] =

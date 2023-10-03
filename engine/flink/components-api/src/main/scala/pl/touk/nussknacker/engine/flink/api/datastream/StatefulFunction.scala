@@ -39,7 +39,7 @@ trait StatefulFunction[I, O, S] extends RichFunction {
     val (o, s: Option[S]) = fun(in, Option(state.value()))
     s match {
       case Some(v) => state.update(v)
-      case None => state.update(null.asInstanceOf[S])
+      case None    => state.update(null.asInstanceOf[S])
     }
     o
   }

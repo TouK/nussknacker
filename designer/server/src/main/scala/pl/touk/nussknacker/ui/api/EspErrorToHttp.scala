@@ -13,17 +13,16 @@ import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
-
 object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
-  def espErrorToHttp(error: EspError) : HttpResponse = {
+  def espErrorToHttp(error: EspError): HttpResponse = {
     val statusCode = error match {
-      case e: NotFoundError => StatusCodes.NotFound
-      case e: FatalError => StatusCodes.InternalServerError
-      case e: BadRequestError => StatusCodes.BadRequest
-      case e: FatalValidationError => StatusCodes.BadRequest
+      case e: NotFoundError         => StatusCodes.NotFound
+      case e: FatalError            => StatusCodes.InternalServerError
+      case e: BadRequestError       => StatusCodes.BadRequest
+      case e: FatalValidationError  => StatusCodes.BadRequest
       case e: IllegalOperationError => StatusCodes.Conflict
-      //unknown?
+      // unknown?
       case _ =>
         logger.error(s"Unknown EspError: ${error.getMessage}", error)
         StatusCodes.InternalServerError
@@ -31,9 +30,9 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     HttpResponse(status = statusCode, entity = error.getMessage)
   }
 
-  def errorToHttp : PartialFunction[Throwable, HttpResponse] = {
-    case e:EspError => espErrorToHttp(e)
-    case ex:IllegalArgumentException =>
+  def errorToHttp: PartialFunction[Throwable, HttpResponse] = {
+    case e: EspError => espErrorToHttp(e)
+    case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
@@ -43,13 +42,13 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def espErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
-    ExceptionHandler {
-      case NonFatal(e) => complete(errorToHttp(e))
+    ExceptionHandler { case NonFatal(e) =>
+      complete(errorToHttp(e))
     }
   }
 
   def toResponseEither[T: Encoder](either: Either[EspError, T]): ToResponseMarshallable = either match {
-    case Right(t) => t
+    case Right(t)  => t
     case Left(err) => espErrorToHttp(err)
   }
 
@@ -66,13 +65,12 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def toResponse(okStatus: StatusCode)(xor: Either[EspError, Unit]): HttpResponse = xor match {
     case Left(error) => espErrorToHttp(error)
-    case Right(_) => HttpResponse(status = okStatus)
+    case Right(_)    => HttpResponse(status = okStatus)
   }
 
   def toResponseTryPF(okStatus: StatusCode): PartialFunction[Try[Unit], HttpResponse] = {
     case Failure(ex) => errorToHttp(ex)
-    case Success(_) => HttpResponse(status = okStatus)
+    case Success(_)  => HttpResponse(status = okStatus)
   }
 
 }
-

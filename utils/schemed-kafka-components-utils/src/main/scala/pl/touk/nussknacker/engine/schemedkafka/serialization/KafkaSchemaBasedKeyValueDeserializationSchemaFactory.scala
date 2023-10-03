@@ -16,18 +16,25 @@ import scala.reflect.ClassTag
   * and wrap it in ConsumerRecord object (transforms raw event represented as ConsumerRecord from Array[Byte] domain to Key-Value-type domain).
   */
 abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
-  extends KafkaSchemaBasedDeserializationSchemaFactory {
+    extends KafkaSchemaBasedDeserializationSchemaFactory {
 
-  protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[K]
+  protected def createKeyDeserializer[K: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[K]
 
-  protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V]
+  protected def createValueDeserializer[V: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[V]
 
   protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
 
-  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                                valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
-                                               ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
+  override def create[K: ClassTag, V: ClassTag](
+      kafkaConfig: KafkaConfig,
+      keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
+  ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
     new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
 
@@ -40,9 +47,9 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
       @transient
       private lazy val valueDeserializer = createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
 
-      @silent("deprecated") //using deprecated constructor for Flink 1.14/15 compatibility
+      @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
+        val key   = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
         val value = valueDeserializer.deserialize(record.topic(), record.headers(), record.value())
         new ConsumerRecord[K, V](
           record.topic(),

@@ -15,9 +15,8 @@ import scala.io.Source
 // After this, all *.js in the extrajs directory will be injected into main.html in the lexicographic order. Notice that if you want to locally
 // develop with ./buildServer.sh and ./runServer.sh and place js in src/main/resource/web/static/extra, you should add
 // scripts.lst listing file next to them, because resources inside jars can't be listed
-class ExtraScriptsListingPreparer(classLoader: ClassLoader,
-                                  extraScriptsPath: Path,
-                                  webResourcesRoot: Path) extends LazyLogging {
+class ExtraScriptsListingPreparer(classLoader: ClassLoader, extraScriptsPath: Path, webResourcesRoot: Path)
+    extends LazyLogging {
 
   private val listingFilePath = extraScriptsPath.resolve("scripts.lst")
 
@@ -30,8 +29,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
       logger.debug(s"Neither listing file $listingFilePath nor listable directory $extraScriptsPath are available")
       Seq.empty[String]
     }
-    matchingFiles
-      .sorted
+    matchingFiles.sorted
       .map(name => webResourcesRoot.resolve(name).toString)
   }
 

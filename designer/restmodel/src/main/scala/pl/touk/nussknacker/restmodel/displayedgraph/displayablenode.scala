@@ -7,5 +7,5 @@ object displayablenode {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  @JsonCodec case class Edge(from: String, to: String, edgeType: Option[EdgeType])
+  @JsonCodec final case class Edge(from: String, to: String, edgeType: Option[EdgeType])
 }

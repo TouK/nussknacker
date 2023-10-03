@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters._
 /** TypeInformation for [[Option]]. */
 @Public
 class OptionTypeInfo[A, T <: Option[A]](private val elemTypeInfo: TypeInformation[A])
-  extends TypeInformation[T]
+    extends TypeInformation[T]
     with AtomicType[T] {
 
   @PublicEvolving

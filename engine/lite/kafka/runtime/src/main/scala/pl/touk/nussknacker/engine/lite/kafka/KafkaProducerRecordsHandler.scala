@@ -16,7 +16,11 @@ import scala.jdk.CollectionConverters._
 
 object KafkaProducerRecordsHandler extends LazyLogging {
 
-  def apply(engineConfig: KafkaInterpreterConfig, producerProperties: Properties, consumerGroupId: String): KafkaProducerRecordsHandler = {
+  def apply(
+      engineConfig: KafkaInterpreterConfig,
+      producerProperties: Properties,
+      consumerGroupId: String
+  ): KafkaProducerRecordsHandler = {
     val shouldProcessRecordsInTransactions = engineConfig.kafkaTransactionsEnabled.getOrElse {
       // Event hubs doesn't support transactional producers for now - it causes error on KafkaProducer.initTransactions()
       // see https://github.com/Azure/azure-event-hubs-for-kafka/issues/209#issuecomment-1412041269
@@ -46,7 +50,10 @@ trait KafkaProducerRecordsHandler extends AutoCloseable {
 
   def beforeRecordsProcessing(): Unit
 
-  def onRecordsSuccessfullyProcessed(records: ConsumerRecords[Array[Byte], Array[Byte]], consumer: KafkaConsumer[_, _]): Unit
+  def onRecordsSuccessfullyProcessed(
+      records: ConsumerRecords[Array[Byte], Array[Byte]],
+      consumer: KafkaConsumer[_, _]
+  ): Unit
 
   def onRecordsProcessingFailure(): Unit
 
@@ -63,8 +70,10 @@ trait KafkaProducerRecordsHandler extends AutoCloseable {
 
 }
 
-private class TransactionalProducerRecordsHandler private(protected val producer: KafkaProducer[Array[Byte], Array[Byte]], consumerGroupId: String)
-  extends KafkaProducerRecordsHandler {
+private class TransactionalProducerRecordsHandler private (
+    protected val producer: KafkaProducer[Array[Byte], Array[Byte]],
+    consumerGroupId: String
+) extends KafkaProducerRecordsHandler {
 
   override def enrichConsumerProperties(consumerProperties: Properties): Unit = {
     // default is read uncommitted which is not a good default for transactions
@@ -78,7 +87,10 @@ private class TransactionalProducerRecordsHandler private(protected val producer
   }
 
   @silent("deprecated")
-  override def onRecordsSuccessfullyProcessed(records: ConsumerRecords[Array[Byte], Array[Byte]], consumer: KafkaConsumer[_, _]): Unit = {
+  override def onRecordsSuccessfullyProcessed(
+      records: ConsumerRecords[Array[Byte], Array[Byte]],
+      consumer: KafkaConsumer[_, _]
+  ): Unit = {
     val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
     // group metadata commit API requires brokers to be on version 2.5 or above so for now we use deprecated api
     producer.sendOffsetsToTransaction(offsetsMap.asJava, consumerGroupId)
@@ -89,11 +101,20 @@ private class TransactionalProducerRecordsHandler private(protected val producer
     producer.abortTransaction()
   }
 
-  private def retrieveMaxOffsetsOffsets(records: ConsumerRecords[Array[Byte], Array[Byte]]): Map[TopicPartition, OffsetAndMetadata] = {
-    records.iterator().asScala.map { rec =>
-      val upcomingOffset = rec.offset() + 1
-      (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
-    }.toList.groupBy(_._1).mapValuesNow(_.map(_._2).max).mapValuesNow(new OffsetAndMetadata(_))
+  private def retrieveMaxOffsetsOffsets(
+      records: ConsumerRecords[Array[Byte], Array[Byte]]
+  ): Map[TopicPartition, OffsetAndMetadata] = {
+    records
+      .iterator()
+      .asScala
+      .map { rec =>
+        val upcomingOffset = rec.offset() + 1
+        (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
+      }
+      .toList
+      .groupBy(_._1)
+      .mapValuesNow(_.map(_._2).max)
+      .mapValuesNow(new OffsetAndMetadata(_))
   }
 
 }
@@ -101,7 +122,7 @@ private class TransactionalProducerRecordsHandler private(protected val producer
 private object TransactionalProducerRecordsHandler {
 
   def apply(producerProperties: Properties, consumerGroupId: String): TransactionalProducerRecordsHandler = {
-    //FIXME generate correct id - how to connect to topic/partition??
+    // FIXME generate correct id - how to connect to topic/partition??
     producerProperties.put("transactional.id", consumerGroupId + UUID.randomUUID().toString)
     val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProperties)
     producer.initTransactions()
@@ -110,7 +131,8 @@ private object TransactionalProducerRecordsHandler {
 
 }
 
-private class ManuallyCommittingProducerRecordsHandler(protected val producer: KafkaProducer[Array[Byte], Array[Byte]]) extends KafkaProducerRecordsHandler {
+private class ManuallyCommittingProducerRecordsHandler(protected val producer: KafkaProducer[Array[Byte], Array[Byte]])
+    extends KafkaProducerRecordsHandler {
 
   override def enrichConsumerProperties(consumerProperties: Properties): Unit = {
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
@@ -118,12 +140,13 @@ private class ManuallyCommittingProducerRecordsHandler(protected val producer: K
 
   override def beforeRecordsProcessing(): Unit = {}
 
-  override def onRecordsSuccessfullyProcessed(records: ConsumerRecords[Array[Byte], Array[Byte]], consumer: KafkaConsumer[_, _]): Unit = {
+  override def onRecordsSuccessfullyProcessed(
+      records: ConsumerRecords[Array[Byte], Array[Byte]],
+      consumer: KafkaConsumer[_, _]
+  ): Unit = {
     consumer.commitSync()
   }
 
   override def onRecordsProcessingFailure(): Unit = {}
 
 }
-
-

@@ -19,8 +19,15 @@ import java.time.{Instant, OffsetDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class ProcessReportResources(countsReporter: CountsReporter[Future], processCounter: ProcessCounter, val processRepository: FetchingProcessRepository[Future])
-                            (implicit val ec: ExecutionContext) extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+class ProcessReportResources(
+    countsReporter: CountsReporter[Future],
+    processCounter: ProcessCounter,
+    val processRepository: FetchingProcessRepository[Future]
+)(implicit val ec: ExecutionContext)
+    extends Directives
+    with FailFastCirceSupport
+    with RouteWithUser
+    with ProcessDirectives {
 
   private implicit val offsetDateTimeToInstant: Unmarshaller[String, Instant] = new Unmarshaller[String, Instant] {
     override def apply(value: String)(implicit ec: ExecutionContext, materializer: Materializer): Future[Instant] = {
@@ -30,13 +37,18 @@ class ProcessReportResources(countsReporter: CountsReporter[Future], processCoun
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
-      (get & processId(processName) & parameters(Symbol("dateFrom").as[Instant].optional, Symbol("dateTo").as[Instant].optional)) { (processId, dateFrom, dateTo) =>
+      (get & processId(processName) & parameters(
+        Symbol("dateFrom").as[Instant].optional,
+        Symbol("dateTo").as[Instant].optional
+      )) { (processId, dateFrom, dateTo) =>
         val request = prepareRequest(dateFrom, dateTo)
         complete {
-          processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {
-            case Some(process) =>  computeCounts(process.json, request)
-            case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-          }
+          processRepository
+            .fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id)
+            .flatMap[ToResponseMarshallable] {
+              case Some(process) => computeCounts(process.json, request)
+              case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+            }
         }
       }
     }
@@ -54,18 +66,26 @@ class ProcessReportResources(countsReporter: CountsReporter[Future], processCoun
     }
   }
 
-  private def computeCounts(process: DisplayableProcess, countsRequest: CountsRequest): Future[ToResponseMarshallable] = {
-    countsReporter.prepareRawCounts(process.id, countsRequest)
+  private def computeCounts(
+      process: DisplayableProcess,
+      countsRequest: CountsRequest
+  ): Future[ToResponseMarshallable] = {
+    countsReporter
+      .prepareRawCounts(process.id, countsRequest)
       .map(computeFinalCounts(process, _))
-      .recover {
-        case CannotFetchCountsError(msg) => HttpResponse(status = StatusCodes.BadRequest, entity = msg)
+      .recover { case CannotFetchCountsError(msg) =>
+        HttpResponse(status = StatusCodes.BadRequest, entity = msg)
       }
   }
 
-
-  private def computeFinalCounts(displayable: DisplayableProcess, nodeCountFunction: String => Option[Long]): ToResponseMarshallable = {
-    val computedCounts = processCounter.computeCounts(ProcessConverter.fromDisplayable(displayable),
-      nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0)))
+  private def computeFinalCounts(
+      displayable: DisplayableProcess,
+      nodeCountFunction: String => Option[Long]
+  ): ToResponseMarshallable = {
+    val computedCounts = processCounter.computeCounts(
+      ProcessConverter.fromDisplayable(displayable),
+      nodeId => nodeCountFunction(nodeId).map(count => RawCount(count, 0))
+    )
     computedCounts.asJson
   }
 

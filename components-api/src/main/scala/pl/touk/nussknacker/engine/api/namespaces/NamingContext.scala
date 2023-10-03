@@ -13,5 +13,5 @@ case object KafkaUsageKey extends UsageKey
  * and, in the current implementation, some of the metrics-related functionality will break - namely links
  * to metrics and counters. This issue will be addressed in the future.
  */
-case object FlinkUsageKey extends UsageKey
+case object FlinkUsageKey               extends UsageKey
 case class CustomUsageKey(name: String) extends UsageKey

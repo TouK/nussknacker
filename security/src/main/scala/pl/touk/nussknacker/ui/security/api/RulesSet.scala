@@ -10,11 +10,13 @@ class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
   import cats.syntax.semigroup._
 
   def permissions: Map[String, Set[Permission]] = {
-    rules.flatMap { rule =>
-      rule.categories
-        .flatMap(matchCategory)
-        .map(_ -> (if (isAdmin) Permission.ALL_PERMISSIONS else rule.permissions.toSet))
-    }.map(List(_).toMap)
+    rules
+      .flatMap { rule =>
+        rule.categories
+          .flatMap(matchCategory)
+          .map(_ -> (if (isAdmin) Permission.ALL_PERMISSIONS else rule.permissions.toSet))
+      }
+      .map(List(_).toMap)
       .foldLeft(Map.empty[String, Set[Permission]])(_ |+| _)
   }
 

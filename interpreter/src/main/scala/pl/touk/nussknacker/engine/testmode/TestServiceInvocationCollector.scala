@@ -11,18 +11,28 @@ import scala.language.higherKinds
 
 class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollector {
 
-  override def collectWithResponse[A, F[_] : Monad](contextId: ContextId, nodeId: NodeId, serviceRef: String, request: => ToCollect, mockValue: Option[A], action: => F[CollectableAction[A]], names: TransmissionNames): F[A] = {
+  override def collectWithResponse[A, F[_]: Monad](
+      contextId: ContextId,
+      nodeId: NodeId,
+      serviceRef: String,
+      request: => ToCollect,
+      mockValue: Option[A],
+      action: => F[CollectableAction[A]],
+      names: TransmissionNames
+  ): F[A] = {
     mockValue match {
       case Some(mockVal) =>
         ResultsCollectingListenerHolder.updateResults(
-          testRunId, _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, request)
+          testRunId,
+          _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, request)
         )
         mockVal.pure[F]
       case None =>
         action.map { case CollectableAction(resultToCollect, result) =>
           val invocationResult = Map("request" -> request, "response" -> resultToCollect())
           ResultsCollectingListenerHolder.updateResults(
-            testRunId, _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, invocationResult)
+            testRunId,
+            _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, invocationResult)
           )
           result
         }
@@ -34,6 +44,9 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
 case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) {
 
   def collect(context: Context, result: Any): Unit = {
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateExternalInvocationResult(nodeId, ContextId(context.id), ref, result))
+    ResultsCollectingListenerHolder.updateResults(
+      runId,
+      _.updateExternalInvocationResult(nodeId, ContextId(context.id), ref, result)
+    )
   }
 }

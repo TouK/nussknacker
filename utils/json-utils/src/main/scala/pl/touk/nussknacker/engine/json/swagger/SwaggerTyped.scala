@@ -20,7 +20,7 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
 @JsonCodec sealed trait AdditionalProperties
-case object AdditionalPropertiesDisabled extends AdditionalProperties
+case object AdditionalPropertiesDisabled                    extends AdditionalProperties
 case class AdditionalPropertiesEnabled(value: SwaggerTyped) extends AdditionalProperties
 
 @JsonCodec sealed trait SwaggerTyped {
@@ -57,26 +57,27 @@ case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 
 object SwaggerEnum {
   private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
-  private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
+  private implicit val decoder: Decoder[List[Any]] =
+    Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
   private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
-  private lazy val om = new ObjectMapper()
+  private lazy val om                              = new ObjectMapper()
   def apply(schema: Schema[_]): SwaggerEnum = {
     val list = schema.getEnum.asScala.toList.map {
       case j: ObjectNode => om.convertValue(j, new TypeReference[java.util.Map[String, Any]]() {})
-      case j: ArrayNode => om.convertValue(j, new TypeReference[java.util.List[Any]]() {})
-      case any => any
+      case j: ArrayNode  => om.convertValue(j, new TypeReference[java.util.List[Any]]() {})
+      case any           => any
     }
     SwaggerEnum(list)
   }
 }
 
-
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-@JsonCodec case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
-                                    additionalProperties: AdditionalProperties = AdditionalPropertiesEnabled(SwaggerAny),
-                                    patternProperties: List[PatternWithSwaggerTyped] = List.empty) extends SwaggerTyped
-
+@JsonCodec case class SwaggerObject(
+    elementType: Map[PropertyName, SwaggerTyped],
+    additionalProperties: AdditionalProperties = AdditionalPropertiesEnabled(SwaggerAny),
+    patternProperties: List[PatternWithSwaggerTyped] = List.empty
+) extends SwaggerTyped
 
 @JsonCodec case class PatternWithSwaggerTyped(pattern: String, propertyType: SwaggerTyped) {
   private lazy val compiledPattern: Pattern = Pattern.compile(pattern)
@@ -89,56 +90,77 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 object SwaggerAny extends SwaggerTyped
 
 object SwaggerTyped {
-  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
+  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped =
+    apply(schema, swaggerRefSchemas, Set.empty)
 
   @tailrec
-  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]): SwaggerTyped = schema match {
+  private[swagger] def apply(
+      schema: Schema[_],
+      swaggerRefSchemas: SwaggerRefSchemas,
+      usedSchemas: Set[String]
+  ): SwaggerTyped = schema match {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas, usedSchemas)
-    case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
-    case IsArraySchema(array) => SwaggerArray(array, swaggerRefSchemas, usedSchemas)
-    case _ => Option(schema.get$ref()) match {
-      //handle recursive schemas better
-      case Some(ref) if usedSchemas.contains(ref) =>
-        SwaggerAny
-      case Some(ref) =>
-        SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
-      case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (_, _) if schema.getEnum != null => SwaggerEnum(schema)
-        //TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
-        case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
-        // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
-        // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
-        case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
-        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
-        case (Some("boolean"), _) => SwaggerBool
-        case (Some("string"), Some("date-time")) => SwaggerDateTime
-        case (Some("string"), Some("date")) => SwaggerDate
-        case (Some("string"), Some("time")) => SwaggerTime
-        case (Some("string"), _) => SwaggerString
-        case (Some("integer"), _) => inferredIntType(schema.getMinimum, schema.getExclusiveMinimumValue, schema.getMaximum, schema.getExclusiveMaximumValue)
-        //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
-        case (Some("number"), None) => SwaggerBigDecimal
-        case (Some("number"), Some("double")) => SwaggerDouble
-        case (Some("number"), Some("float")) => SwaggerDouble
-        case (Some("null"), None) => SwaggerNull
-        case (None, _) => SwaggerAny
-        case (typeName, format) =>
-          val formatError = format.map(f => s" in format '$f'").getOrElse("")
-          throw new Exception(s"Type '${typeName.getOrElse("empty")}'$formatError is not supported")
+    case mapSchema: MapSchema       => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
+    case IsArraySchema(array)       => SwaggerArray(array, swaggerRefSchemas, usedSchemas)
+    case _ =>
+      Option(schema.get$ref()) match {
+        // handle recursive schemas better
+        case Some(ref) if usedSchemas.contains(ref) =>
+          SwaggerAny
+        case Some(ref) =>
+          SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
+        case None =>
+          (extractType(schema), Option(schema.getFormat)) match {
+            case (_, _) if schema.getEnum != null => SwaggerEnum(schema)
+            // TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
+            case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) =>
+              swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
+            // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
+            // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
+            case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) =>
+              swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
+            case (Some("object"), _) =>
+              SwaggerObject(schema.asInstanceOf[Schema[Object @unchecked]], swaggerRefSchemas, usedSchemas)
+            case (Some("boolean"), _)                => SwaggerBool
+            case (Some("string"), Some("date-time")) => SwaggerDateTime
+            case (Some("string"), Some("date"))      => SwaggerDate
+            case (Some("string"), Some("time"))      => SwaggerTime
+            case (Some("string"), _)                 => SwaggerString
+            case (Some("integer"), _) =>
+              inferredIntType(
+                schema.getMinimum,
+                schema.getExclusiveMinimumValue,
+                schema.getMaximum,
+                schema.getExclusiveMaximumValue
+              )
+            // we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
+            case (Some("number"), None)           => SwaggerBigDecimal
+            case (Some("number"), Some("double")) => SwaggerDouble
+            case (Some("number"), Some("float"))  => SwaggerDouble
+            case (Some("null"), None)             => SwaggerNull
+            case (None, _)                        => SwaggerAny
+            case (typeName, format) =>
+              val formatError = format.map(f => s" in format '$f'").getOrElse("")
+              throw new Exception(s"Type '${typeName.getOrElse("empty")}'$formatError is not supported")
+          }
       }
-    }
   }
 
   private object IsArraySchema {
     def unapply(schema: Schema[_]): Option[Schema[_]] = schema match {
       case a: ArraySchema => Some(a)
-      //this is how OpenAPI is parsed when `type: array` is used
-      case oth if Option(oth.getTypes).exists(_.equals(Collections.singleton("array"))) && oth.getItems != null => Some(oth)
+      // this is how OpenAPI is parsed when `type: array` is used
+      case oth if Option(oth.getTypes).exists(_.equals(Collections.singleton("array"))) && oth.getItems != null =>
+        Some(oth)
       case _ => None
     }
   }
 
-  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas, usedSchemas)).toList)
+  private def swaggerUnion(
+      schemas: java.util.List[Schema[_]],
+      swaggerRefSchemas: SwaggerRefSchemas,
+      usedSchemas: Set[String]
+  ) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas, usedSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)
@@ -178,61 +200,90 @@ object SwaggerTyped {
       TypedNull
   }
 
-  private def handleSwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
-                                  additionalProperties: AdditionalProperties,
-                                  patternProperties: List[PatternWithSwaggerTyped]): TypingResult = {
+  private def handleSwaggerObject(
+      elementType: Map[PropertyName, SwaggerTyped],
+      additionalProperties: AdditionalProperties,
+      patternProperties: List[PatternWithSwaggerTyped]
+  ): TypingResult = {
     import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
     def typedStringKeyMap(valueType: TypingResult) = {
       Typed.genericTypeClass(classOf[util.Map[_, _]], List(Typed[PropertyName], valueType))
     }
     if (elementType.isEmpty) {
-      val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) => typingResult(propertySwaggerTyped)}.toSet
+      val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) =>
+        typingResult(propertySwaggerTyped)
+      }.toSet
       additionalProperties match {
-        case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty => TypedObjectTypingResult(Map.empty[String, TypingResult])
+        case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty =>
+          TypedObjectTypingResult(Map.empty[String, TypingResult])
         case AdditionalPropertiesDisabled => typedStringKeyMap(Typed(patternPropertiesTypesSet))
-        case AdditionalPropertiesEnabled(value) => typedStringKeyMap(Typed(patternPropertiesTypesSet + typingResult(value)))
+        case AdditionalPropertiesEnabled(value) =>
+          typedStringKeyMap(Typed(patternPropertiesTypesSet + typingResult(value)))
       }
     } else {
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult))
     }
   }
 
-  private def inferredIntType(minValue: java.math.BigDecimal, exclusiveMinValue: java.math.BigDecimal, maxValue: java.math.BigDecimal, exclusiveMaxValue: java.math.BigDecimal): SwaggerTyped = {
+  private def inferredIntType(
+      minValue: java.math.BigDecimal,
+      exclusiveMinValue: java.math.BigDecimal,
+      maxValue: java.math.BigDecimal,
+      exclusiveMaxValue: java.math.BigDecimal
+  ): SwaggerTyped = {
 
-    val lowerBoundary: Option[BigDecimal] = List(Option(exclusiveMinValue).map(_.add(java.math.BigDecimal.ONE)), Option(minValue)).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal.reverse).headOption
-    val upperBoundary: Option[BigDecimal] = List(Option(exclusiveMaxValue).map(_.subtract(java.math.BigDecimal.ONE)), Option(maxValue)).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal).headOption
+    val lowerBoundary: Option[BigDecimal] = List(
+      Option(exclusiveMinValue).map(_.add(java.math.BigDecimal.ONE)),
+      Option(minValue)
+    ).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal.reverse).headOption
+    val upperBoundary: Option[BigDecimal] = List(
+      Option(exclusiveMaxValue).map(_.subtract(java.math.BigDecimal.ONE)),
+      Option(maxValue)
+    ).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal).headOption
 
     // We try to keep inferred type as narrow as possible,
     // but in the case when at least one boundary exceeds Long range we end up with BigInteger type.
     // That can have negative performance impact and can be inconvenient to use.
     List(lowerBoundary, upperBoundary).flatten match {
-      case min :: max :: Nil if min.isValidInt && max.isValidInt => SwaggerInteger
+      case min :: max :: Nil if min.isValidInt && max.isValidInt   => SwaggerInteger
       case min :: max :: Nil if min.isValidLong && max.isValidLong => SwaggerLong
-      case _ :: _ :: Nil => SwaggerBigInteger
-      case value :: Nil if !value.isValidLong => SwaggerBigInteger
-      case _ => SwaggerLong
+      case _ :: _ :: Nil                                           => SwaggerBigInteger
+      case value :: Nil if !value.isValidLong                      => SwaggerBigInteger
+      case _                                                       => SwaggerLong
     }
   }
 }
 object SwaggerArray {
-  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
+  private[swagger] def apply(
+      schema: Schema[_],
+      swaggerRefSchemas: SwaggerRefSchemas,
+      usedRefs: Set[String]
+  ): SwaggerArray =
     SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas, usedRefs))
 }
 
 object SwaggerObject {
 
-  private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
-    val properties = Option(schema.getProperties).map(_.asScala.toMap.mapValuesNow(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
+  private[swagger] def apply(
+      schema: Schema[Object],
+      swaggerRefSchemas: SwaggerRefSchemas,
+      usedRefs: Set[String]
+  ): SwaggerTyped = {
+    val properties = Option(schema.getProperties)
+      .map(_.asScala.toMap.mapValuesNow(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap)
+      .getOrElse(Map())
     val patternProperties = Option(schema.getPatternProperties)
       .map(_.asScala.toList)
       .getOrElse(List.empty)
-      .map { case (patternString, patternPropertySchema) => PatternWithSwaggerTyped(patternString, SwaggerTyped(patternPropertySchema, swaggerRefSchemas, usedRefs)) }
+      .map { case (patternString, patternPropertySchema) =>
+        PatternWithSwaggerTyped(patternString, SwaggerTyped(patternPropertySchema, swaggerRefSchemas, usedRefs))
+      }
 
     val additionalProperties = schema.getAdditionalProperties match {
-      case null => AdditionalPropertiesEnabled(SwaggerAny)
+      case null                                                       => AdditionalPropertiesEnabled(SwaggerAny)
       case schema: Schema[_] if schema.getBooleanSchemaValue == false => AdditionalPropertiesDisabled
       case schema: Schema[_] => AdditionalPropertiesEnabled(SwaggerTyped(schema, swaggerRefSchemas, usedRefs))
-      case additionalPropertyEnabled if additionalPropertyEnabled == true => AdditionalPropertiesEnabled(SwaggerAny)
+      case additionalPropertyEnabled if additionalPropertyEnabled == true  => AdditionalPropertiesEnabled(SwaggerAny)
       case additionalPropertyEnabled if additionalPropertyEnabled == false => AdditionalPropertiesDisabled
     }
     SwaggerObject(properties, additionalProperties, patternProperties)

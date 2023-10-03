@@ -12,7 +12,7 @@ trait WithExceptionExtractor extends NamedServiceProvider with LazyLogging {
 
   protected val transientExceptionExtractor: ExceptionExtractor[Exception]
 
-  protected val  nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException]
+  protected val nonTransientExceptionExtractor: ExceptionExtractor[NonTransientException]
 
   final def extractOrThrow(exceptionInfo: NuExceptionInfo[_ <: Throwable]): NuExceptionInfo[NonTransientException] = {
     exceptionInfo.throwable match {

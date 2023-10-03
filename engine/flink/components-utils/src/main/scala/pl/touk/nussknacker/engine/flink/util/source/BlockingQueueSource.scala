@@ -9,7 +9,11 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkContextInitializingFunction,
+  FlinkCustomNodeContext,
+  FlinkSource
+}
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
@@ -23,7 +27,8 @@ import scala.collection.concurrent.TrieMap
   */
 @silent("deprecated")
 class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource with Serializable {
+    extends FlinkSource
+    with Serializable {
 
   private val id = UUID.randomUUID().toString
 
@@ -36,7 +41,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
     val copyOfAssigner = timestampAssigner
-    val copyOfId = id
+    val copyOfId       = id
     new SourceFunction[T] {
 
       @volatile private var isRunning = true
@@ -64,13 +69,19 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     }
   }
 
-  override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+  override def sourceStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStream[Context] = {
     env
       .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
-      .map(new FlinkContextInitializingFunction(
-        contextInitializer, flinkNodeContext.nodeId,
-        flinkNodeContext.convertToEngineRuntimeContext),
+      .map(
+        new FlinkContextInitializingFunction(
+          contextInitializer,
+          flinkNodeContext.nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext
+        ),
         flinkNodeContext.contextTypeInfo
       )
   }
@@ -84,7 +95,10 @@ object BlockingQueueSource {
   private def getForId[T](id: String): BlockingQueue[Option[T]] =
     queueById.getOrElseUpdate(id, new LinkedBlockingQueue).asInstanceOf[BlockingQueue[Option[T]]]
 
-  def create[T: TypeInformation](extractTimestampFun: T => Long, maxOutOfOrderness: Duration): BlockingQueueSource[T] = {
+  def create[T: TypeInformation](
+      extractTimestampFun: T => Long,
+      maxOutOfOrderness: Duration
+  ): BlockingQueueSource[T] = {
     val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
       override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
     }

@@ -8,22 +8,29 @@ import scala.jdk.CollectionConverters._
 
 object ProcessConfigCreatorMapping {
 
-
-    def toProcessConfigCreator(creator: process.ProcessConfigCreator): ProcessConfigCreator =
-      javaToScala(creator)
+  def toProcessConfigCreator(creator: process.ProcessConfigCreator): ProcessConfigCreator =
+    javaToScala(creator)
 
   private def javaToScala(jcreator: process.ProcessConfigCreator): ProcessConfigCreator = {
     val creator = new ProcessConfigCreator {
-      override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
+      override def customStreamTransformers(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[CustomStreamTransformer]] = {
         jcreator.customStreamTransformers(processObjectDependencies).asScala.toMap
       }
-      override def services(processObjectDependencies: ProcessObjectDependencies) : Map[String, WithCategories[Service]] = {
+      override def services(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[Service]] = {
         jcreator.services(processObjectDependencies).asScala.toMap
       }
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+      override def sourceFactories(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[SourceFactory]] = {
         jcreator.sourceFactories(processObjectDependencies).asScala.toMap
       }
-      override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
+      override def sinkFactories(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[SinkFactory]] = {
         jcreator.sinkFactories(processObjectDependencies).asScala.toMap
       }
       override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = {
@@ -46,16 +53,21 @@ object ProcessConfigCreatorMapping {
       override def buildInfo(): Map[String, String] = {
         jcreator.buildInfo().asScala.toMap
       }
-      override def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = {
+      override def asyncExecutionContextPreparer(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Option[AsyncExecutionContextPreparer] = {
         Option(jcreator.asyncExecutionContextPreparer(processObjectDependencies).orElse(null))
       }
-      override def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings = {
+      override def classExtractionSettings(
+          processObjectDependencies: ProcessObjectDependencies
+      ): ClassExtractionSettings = {
         val jSettings = jcreator.classExtractionSettings(processObjectDependencies)
         ClassExtractionSettings(
           jSettings.getExcludeClassPredicates.asScala.toSeq,
           jSettings.getExcludeClassMemberPredicates.asScala.toSeq,
           jSettings.getIncludeClassMemberPredicates.asScala.toSeq,
-          jSettings.getPropertyExtractionStrategy)
+          jSettings.getPropertyExtractionStrategy
+        )
       }
     }
     creator

@@ -30,13 +30,13 @@ trait FragmentRepository {
 
 }
 
-case class FragmentDetails(canonical: CanonicalProcess, category: String)
+final case class FragmentDetails(canonical: CanonicalProcess, category: String)
 
 class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepository {
 
   private val dbioRunner = DBIOActionRunner(db)
 
-  //TODO: make it return Future?
+  // TODO: make it return Future?
   override def loadFragments(versions: Map[String, VersionId]): Set[FragmentDetails] = {
     Await.result(listFragments(versions, None), 10 seconds)
   }
@@ -55,7 +55,7 @@ class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepo
 
   implicit val iec = ec
 
-  //Fetches fragment in given version if specified, fetches latest version otherwise
+  // Fetches fragment in given version if specified, fetches latest version otherwise
   def listFragments(versions: Map[String, VersionId], category: Option[String]): Future[Set[FragmentDetails]] = {
     val versionFragments = Future.sequence {
       versions.map { case (fragmentId, fragmentVersion) =>
@@ -63,19 +63,25 @@ class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepo
       }
     }
     val fetchedFragments = for {
-      fragments <- versionFragments
+      fragments       <- versionFragments
       latestFragments <- listLatestFragments(category)
-    } yield latestFragments.groupBy(_.canonical.metaData.id).mapValuesNow(_.head) ++ fragments.groupBy(_.canonical.metaData.id).mapValuesNow(_.head)
+    } yield latestFragments.groupBy(_.canonical.metaData.id).mapValuesNow(_.head) ++ fragments
+      .groupBy(_.canonical.metaData.id)
+      .mapValuesNow(_.head)
 
     fetchedFragments.map(_.values.toSet)
   }
 
   private def listLatestFragments(category: Option[String]): Future[Set[FragmentDetails]] = {
     val action = for {
-      latestProcesses <- processVersionsTableWithUnit.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
-        .join(processVersionsTableWithScenarioJson).on { case (((processId, latestVersionDate)), processVersion) =>
-        processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(fragmentsQuery(category))
+      latestProcesses <- processVersionsTableWithUnit
+        .groupBy(_.processId)
+        .map { case (n, group) => (n, group.map(_.createDate).max) }
+        .join(processVersionsTableWithScenarioJson)
+        .on { case (((processId, latestVersionDate)), processVersion) =>
+          processVersion.processId === processId && processVersion.createDate === latestVersionDate
+        }
+        .join(fragmentsQuery(category))
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
@@ -85,23 +91,32 @@ class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepo
     dbioRunner.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchFragment(fragmentName: ProcessName, version: VersionId, category: Option[String]): Future[FragmentDetails] = {
+  private def fetchFragment(
+      fragmentName: ProcessName,
+      version: VersionId,
+      category: Option[String]
+  ): Future[FragmentDetails] = {
     val action = for {
-      fragmentVersion <- processVersionsTableWithScenarioJson.filter(p => p.id === version)
+      fragmentVersion <- processVersionsTableWithScenarioJson
+        .filter(p => p.id === version)
         .join(fragmentsQueryByName(fragmentName, category))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
-        .result.headOption
+        .result
+        .headOption
     } yield fragmentVersion.flatMap { case (processVersion, process) =>
       createFragmentDetails(process, processVersion)
     }
 
     dbioRunner.run(action).flatMap {
       case Some(frag) => Future.successful(frag)
-      case None => Future.failed(new Exception(s"Fragment $fragmentName, version: $version not found"))
+      case None       => Future.failed(new Exception(s"Fragment $fragmentName, version: $version not found"))
     }
   }
 
-  private def createFragmentDetails(process: ProcessEntityData, processVersion: ProcessVersionEntityData): Option[FragmentDetails] =
+  private def createFragmentDetails(
+      process: ProcessEntityData,
+      processVersion: ProcessVersionEntityData
+  ): Option[FragmentDetails] =
     processVersion.json.map { canonical => FragmentDetails(canonical, process.processCategory) }
 
   private def fragmentsQuery(category: Option[String]) = {
@@ -115,5 +130,3 @@ class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepo
   private def fragmentsQueryByName(fragmentName: ProcessName, category: Option[String]) =
     fragmentsQuery(category).filter(_.name === fragmentName)
 }
-
-

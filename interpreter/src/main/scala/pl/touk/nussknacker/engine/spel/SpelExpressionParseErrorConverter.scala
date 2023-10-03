@@ -11,8 +11,8 @@ case class SpelExpressionParseErrorConverter(methodInfo: MethodInfo, invocationA
 
     error match {
       case GenericFunctionTypingError.ArgumentTypeError =>
-        val expectedSignatures = methodInfo.signatures.map(info =>
-          Signature(info.noVarArgs.map(_.refClazz), info.varArg.map(_.refClazz)))
+        val expectedSignatures =
+          methodInfo.signatures.map(info => Signature(info.noVarArgs.map(_.refClazz), info.varArg.map(_.refClazz)))
         ArgumentTypeError(methodInfo.name, givenSignature, expectedSignatures)
       case e: GenericFunctionTypingError.CustomError =>
         GenericFunctionError(e.message)

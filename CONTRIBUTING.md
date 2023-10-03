@@ -224,3 +224,4 @@ Below you can find out some hints how to achieve that:
 - Be careful with `ClassTag`/`TypeTag` - should be always option to pass simple `Class[_]` or sth similar
 - Prefer to use methods instead of member functions (def foo: (T) => R)
 - Avoid using AnyVal if the class is in API that will be used from Java
+- Prefer adding the `final` keyword to `case classes` definitions if you have no serious reason to skip it
