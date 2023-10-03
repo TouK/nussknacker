@@ -15,9 +15,11 @@ object JsonToNuStruct {
   import scala.jdk.CollectionConverters._
 
   case class JsonToObjectError(json: Json, definition: SwaggerTyped, path: String)
-    extends Exception(s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json")
+      extends Exception(
+        s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json"
+      )
 
-  //TODO: remove flow control using exceptions
+  // TODO: remove flow control using exceptions
   def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
@@ -35,25 +37,27 @@ object JsonToNuStruct {
 
       extract[JsonObject](
         _.asObject,
-        jo => TypedMap(
-          jo.toMap.collect {
-            case (key, value) if obj.elementType.contains(key) =>
-              key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
-            case keyValue@KeyMatchingPatternSchema(patternPropertySchema) =>
-              val (key, value) = keyValue
-              key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
-            case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesEnabled =>
-                key -> JsonToNuStruct(value, add.value, addPath(key))
-              case _ =>
-                key -> jsonToAny(value)
+        jo =>
+          TypedMap(
+            jo.toMap.collect {
+              case (key, value) if obj.elementType.contains(key) =>
+                key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+              case keyValue @ KeyMatchingPatternSchema(patternPropertySchema) =>
+                val (key, value) = keyValue
+                key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
+              case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled =>
+                obj.additionalProperties match {
+                  case add: AdditionalPropertiesEnabled =>
+                    key -> JsonToNuStruct(value, add.value, addPath(key))
+                  case _ =>
+                    key -> jsonToAny(value)
+                }
             }
-          }
-        )
+          )
       )
     }
 
-    //we handle null here to enable pattern matching exhaustive check
+    // we handle null here to enable pattern matching exhaustive check
     if (json.isNull) {
       null
     } else {
@@ -67,7 +71,7 @@ object JsonToNuStruct {
         case SwaggerInteger =>
           extract[JsonNumber](_.asNumber, n => int2Integer(n.toDouble.toInt))
         case SwaggerLong =>
-          //FIXME: to ok?
+          // FIXME: to ok?
           extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
         case SwaggerBigInteger =>
           extract[JsonNumber](_.asNumber, _.toBigInt.map(_.bigInteger).orNull)
@@ -82,36 +86,51 @@ object JsonToNuStruct {
         case SwaggerBigDecimal =>
           extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
         case SwaggerArray(elementType) =>
-          extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
+          extract[Vector[Json]](
+            _.asArray,
+            _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava
+          )
         case obj: SwaggerObject => extractObject(obj)
-        case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
-          .headOption.getOrElse(throw JsonToObjectError(json, u, path))
+        case u @ SwaggerUnion(types) =>
+          types.view
+            .flatMap(aType => Try(apply(json, aType)).toOption)
+            .headOption
+            .getOrElse(throw JsonToObjectError(json, u, path))
         case SwaggerAny => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
-        //should not happen as we handle null above
+        // should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }
     }
 
   }
 
-  //we want to accept empty string - just in case...
-  //some of the implementations allow timezone to be optional, we are strict
-  //see e.g. https://github.com/OAI/OpenAPI-Specification/issues/1498#issuecomment-369680369
+  // we want to accept empty string - just in case...
+  // some of the implementations allow timezone to be optional, we are strict
+  // see e.g. https://github.com/OAI/OpenAPI-Specification/issues/1498#issuecomment-369680369
   private def parseDateTime(dateTime: String): ZonedDateTime = {
-    Option(dateTime).filterNot(_.isEmpty).map { dateTime =>
-      ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_DATE_TIME)
-    }.orNull
+    Option(dateTime)
+      .filterNot(_.isEmpty)
+      .map { dateTime =>
+        ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_DATE_TIME)
+      }
+      .orNull
   }
 
   private def parseDate(date: String): LocalDate = {
-    Option(date).filterNot(_.isEmpty).map { date =>
-      LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
-    }.orNull
+    Option(date)
+      .filterNot(_.isEmpty)
+      .map { date =>
+        LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
+      }
+      .orNull
   }
 
   private def parseTime(time: String): OffsetTime = {
-    Option(time).filterNot(_.isEmpty).map { time =>
-      OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
-    }.orNull
+    Option(time)
+      .filterNot(_.isEmpty)
+      .map { time =>
+        OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
+      }
+      .orNull
   }
 }

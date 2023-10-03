@@ -21,37 +21,38 @@ object ToolbarPanelTypeConfig extends Enumeration {
   type ToolbarPanelType = Value
 
   private lazy val toolbarsWithButtons: List[ToolbarPanelType] = List(
-    ProcessInfoPanel, ButtonsPanel
+    ProcessInfoPanel,
+    ButtonsPanel
   )
 
   private lazy val toolbarsWithIdentity: List[ToolbarPanelType] = List(
     ButtonsPanel
   )
 
-  val TipsPanel: Value = Value("tips-panel")
-  val CreatorPanel: Value = Value("creator-panel")
-  val VersionsPanel: Value = Value("versions-panel")
-  val CommentsPanel: Value = Value("comments-panel")
+  val TipsPanel: Value        = Value("tips-panel")
+  val CreatorPanel: Value     = Value("creator-panel")
+  val VersionsPanel: Value    = Value("versions-panel")
+  val CommentsPanel: Value    = Value("comments-panel")
   val AttachmentsPanel: Value = Value("attachments-panel")
   val ProcessInfoPanel: Value = Value("process-info-panel")
-  val ButtonsPanel: Value = Value("buttons-panel")
+  val ButtonsPanel: Value     = Value("buttons-panel")
 
-  //Some of panels require buttons not empty list param, this method verify that..
+  // Some of panels require buttons not empty list param, this method verify that..
   def requiresButtonsParam(`type`: ToolbarPanelType): Boolean =
     toolbarsWithButtons.contains(`type`)
 
-  //Some of panels require id param, this method verify that..
+  // Some of panels require id param, this method verify that..
   def requiresIdParam(`type`: ToolbarPanelType): Boolean =
     toolbarsWithIdentity.contains(`type`)
 }
 
 case class ToolbarPanelConfig(
-  `type`: ToolbarPanelType,
-  id: Option[String],
-  title: Option[String],
-  buttonsVariant: Option[ToolbarButtonVariant],
-  buttons: Option[List[ToolbarButtonConfig]],
-  hidden: Option[ToolbarCondition]
+    `type`: ToolbarPanelType,
+    id: Option[String],
+    title: Option[String],
+    buttonsVariant: Option[ToolbarButtonVariant],
+    buttons: Option[List[ToolbarButtonConfig]],
+    hidden: Option[ToolbarCondition]
 ) {
 
   if (ToolbarPanelTypeConfig.requiresIdParam(`type`)) {

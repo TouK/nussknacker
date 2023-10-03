@@ -8,10 +8,12 @@ import java.time.LocalDateTime
 
 case class PeriodicProcessId(value: Long) extends MappedTo[Long]
 
-case class PeriodicProcess(id: PeriodicProcessId,
-                           deploymentData: DeploymentWithJarData,
-                           scheduleProperty: ScheduleProperty,
-                           active: Boolean,
-                           createdAt: LocalDateTime) {
+case class PeriodicProcess(
+    id: PeriodicProcessId,
+    deploymentData: DeploymentWithJarData,
+    scheduleProperty: ScheduleProperty,
+    active: Boolean,
+    createdAt: LocalDateTime
+) {
   val processVersion: ProcessVersion = deploymentData.processVersion
 }

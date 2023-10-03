@@ -12,9 +12,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessingTypeDataProviderFactory {
 
-  def create(designerConfig: ConfigWithUnresolvedVersion,
-             deploymentServiceSupplier: Supplier[DeploymentService],
-             categoriesService: ProcessCategoryService)
-            (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-             sttpBackend: SttpBackend[Future, Any]): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+  def create(
+      designerConfig: ConfigWithUnresolvedVersion,
+      deploymentServiceSupplier: Supplier[DeploymentService],
+      categoriesService: ProcessCategoryService
+  )(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any]
+  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
 }

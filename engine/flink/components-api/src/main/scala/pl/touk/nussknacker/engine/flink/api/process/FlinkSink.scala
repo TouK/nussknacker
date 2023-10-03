@@ -18,10 +18,15 @@ trait FlinkSink extends Sink with Serializable {
 
   def prepareTestValue(value: Value): AnyRef = value
 
-  def prepareValue(dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]]
+  def prepareValue(
+      dataStream: DataStream[Context],
+      flinkCustomNodeContext: FlinkCustomNodeContext
+  ): DataStream[ValueWithContext[Value]]
 
-  def registerSink(dataStream: DataStream[ValueWithContext[Value]],
-                   flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_]
+  def registerSink(
+      dataStream: DataStream[ValueWithContext[Value]],
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStreamSink[_]
 
 }
 
@@ -32,12 +37,28 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
 
   def typeResult: TypingResult = Unknown
 
-  override def prepareValue(dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] =
-    dataStream.flatMap(valueFunction(flinkCustomNodeContext.lazyParameterHelper), flinkCustomNodeContext.valueWithContextInfo.forType(typeResult))
+  override def prepareValue(
+      dataStream: DataStream[Context],
+      flinkCustomNodeContext: FlinkCustomNodeContext
+  ): DataStream[ValueWithContext[Value]] =
+    dataStream.flatMap(
+      valueFunction(flinkCustomNodeContext.lazyParameterHelper),
+      flinkCustomNodeContext.valueWithContextInfo.forType(typeResult)
+    )
 
-  override def registerSink(dataStream: DataStream[ValueWithContext[Value]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
-    setUidToNodeIdIfNeed(flinkNodeContext, dataStream.map((k: ValueWithContext[Value]) => k.value, flinkNodeContext
-      .typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]).addSink(toFlinkFunction))
+  override def registerSink(
+      dataStream: DataStream[ValueWithContext[Value]],
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStreamSink[_] =
+    setUidToNodeIdIfNeed(
+      flinkNodeContext,
+      dataStream
+        .map(
+          (k: ValueWithContext[Value]) => k.value,
+          flinkNodeContext.typeInformationDetection.forType(typeResult).asInstanceOf[TypeInformation[Value]]
+        )
+        .addSink(toFlinkFunction)
+    )
 
   def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[Value]]
 

@@ -13,8 +13,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 
 import scala.util.{Failure, Success, Try}
 
-class TypeReferenceTyper(evaluationContext: EvaluationContext,
-                         typeDefinitionSet: TypeDefinitionSet) {
+class TypeReferenceTyper(evaluationContext: EvaluationContext, typeDefinitionSet: TypeDefinitionSet) {
 
   def typeTypeReference(typeReference: TypeReference): Writer[List[ExpressionParseError], TypingResult] = {
 
@@ -30,12 +29,14 @@ class TypeReferenceTyper(evaluationContext: EvaluationContext,
           case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Writer(List.empty, clazzDefinition.clazzName)
           case None => Writer(List(TypeReferenceError(typeReferenceClazz.toString)), Unknown)
         }
-      case Success(other) => throw new IllegalStateException(s"Not expected returned type: $other for TypeReference. Should be Class[_]")
+      case Success(other) =>
+        throw new IllegalStateException(s"Not expected returned type: $other for TypeReference. Should be Class[_]")
       // SpEL's TypeReference handles in a specific way situation when type starts with lower case and has no dot - it looks for
       // things like T(object), T(double) etc. If it can't find it, it throws IllegalArgumentException
-      case Failure(_: IllegalArgumentException) => Writer(List(UnknownClassError(extractClassName(typeReference))), Unknown)
+      case Failure(_: IllegalArgumentException) =>
+        Writer(List(UnknownClassError(extractClassName(typeReference))), Unknown)
       case Failure(_: EvaluationException) => Writer(List(UnknownClassError(extractClassName(typeReference))), Unknown)
-      case Failure(exception) => throw exception
+      case Failure(exception)              => throw exception
     }
 
   }

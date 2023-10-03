@@ -20,7 +20,7 @@ import scala.util.Try
   *
   * For now it's easiest way to convert GenericContainer record to wanted schema.
   */
-class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin  {
+class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin {
 
   private def recordDeserializer = new AvroRecordDeserializer(DecoderFactory.get())
 
@@ -41,18 +41,22 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.
     */
-   private def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): GenericContainer = {
+  private def deserializePayloadToSchema(
+      payload: Array[Byte],
+      writerSchema: Schema,
+      readerSchema: Schema
+  ): GenericContainer = {
     try {
       // We always want to create generic record at the end, because specific can has other fields than expected
       val reader = AvroUtils.createGenericDatumReader[AnyRef](writerSchema, readerSchema)
       val buffer = ByteBuffer.wrap(payload)
-      val data = recordDeserializer.deserializeRecord(readerSchema, reader, buffer)
+      val data   = recordDeserializer.deserializeRecord(readerSchema, reader, buffer)
       data match {
         case c: GenericContainer => c
-        case _ => new NonRecordContainer(readerSchema, data)
+        case _                   => new NonRecordContainer(readerSchema, data)
       }
     } catch {
-      case exc@(_: RuntimeException | _: IOException) =>
+      case exc @ (_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
         throw new AvroSchemaEvolutionException(s"Error at deserialization payload to record.", exc)
     }

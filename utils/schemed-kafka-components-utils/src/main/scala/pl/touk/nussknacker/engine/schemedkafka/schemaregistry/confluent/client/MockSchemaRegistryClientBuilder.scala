@@ -10,18 +10,28 @@ class MockConfluentSchemaRegistryClientBuilder {
 
   private val registry: ListBuffer[RegistryItem] = ListBuffer()
 
-  def register(topic: String, schema: Schema, version: Int, isKey: Boolean): MockConfluentSchemaRegistryClientBuilder = {
+  def register(
+      topic: String,
+      schema: Schema,
+      version: Int,
+      isKey: Boolean
+  ): MockConfluentSchemaRegistryClientBuilder = {
     registry.append(RegistryItem(topic, schema, version, isKey))
     this
   }
 
-  def register(topic: String, schema: String, version: Int, isKey: Boolean): MockConfluentSchemaRegistryClientBuilder = {
-    registry.append(RegistryItem(topic,schema, version, isKey))
+  def register(
+      topic: String,
+      schema: String,
+      version: Int,
+      isKey: Boolean
+  ): MockConfluentSchemaRegistryClientBuilder = {
+    registry.append(RegistryItem(topic, schema, version, isKey))
     this
   }
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {
-    val subject = ConfluentUtils.topicSubject(item.topic, item.isKey)
+    val subject      = ConfluentUtils.topicSubject(item.topic, item.isKey)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(item.schema, Some(item.version))
     mockSchemaRegistry.register(subject, parsedSchema, item.version, item.id)
   }
@@ -37,7 +47,7 @@ private[client] case class RegistryItem(topic: String, schema: Schema, version: 
 
 private[client] object RegistryItem {
 
-  //Default value for autoincrement mock id
+  // Default value for autoincrement mock id
   private val AutoIncId = -1
 
   def apply(topic: String, schema: String, version: Int, isKey: Boolean): RegistryItem =

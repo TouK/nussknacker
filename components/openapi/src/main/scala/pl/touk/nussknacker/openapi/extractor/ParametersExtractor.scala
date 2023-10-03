@@ -39,10 +39,22 @@ object ParametersExtractor {
   }
 
   private def prepareParameter(propertyName: PropertyName, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
-    ParameterWithBodyFlag(Parameter(propertyName, swaggerType.typingResult,
-      editor = swaggerType.editorOpt, validators = List.empty, defaultValue = None,
-      additionalVariables = Map.empty, variablesToHide = Set.empty,
-      branchParam = false, isLazyParameter = true, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = isBodyPart)
+    ParameterWithBodyFlag(
+      Parameter(
+        propertyName,
+        swaggerType.typingResult,
+        editor = swaggerType.editorOpt,
+        validators = List.empty,
+        defaultValue = None,
+        additionalVariables = Map.empty,
+        variablesToHide = Set.empty,
+        branchParam = false,
+        isLazyParameter = true,
+        scalaOptionParameter = false,
+        javaOptionalParameter = false
+      ),
+      isBodyPart = isBodyPart
+    )
   }
 
   case class ParameterWithBodyFlag(parameter: Parameter, isBodyPart: Boolean)
@@ -53,27 +65,35 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
 
   import ParametersExtractor._
 
-  val parametersWithFlag: List[ParameterWithBodyFlag] = swaggerService.parameters.flatMap {
-    case e: SingleBodyParameter =>
-      flattenBodyParameter(e)
-    case e =>
-      List(prepareParameter(e.name, e.`type`, isBodyPart = false))
-  }.filterNot(parameter => fixedParams.contains(parameter.parameter.name))
+  val parametersWithFlag: List[ParameterWithBodyFlag] = swaggerService.parameters
+    .flatMap {
+      case e: SingleBodyParameter =>
+        flattenBodyParameter(e)
+      case e =>
+        List(prepareParameter(e.name, e.`type`, isBodyPart = false))
+    }
+    .filterNot(parameter => fixedParams.contains(parameter.parameter.name))
 
   val parameterDefinition: List[Parameter] = parametersWithFlag.map(_.parameter)
 
   def prepareParams(params: Map[String, Any]): Map[String, Any] = {
 
     val baseMap = parametersWithFlag.map { pwb =>
-      (pwb, params.getOrElse(pwb.parameter.name, throw new IllegalArgumentException(s"No param ${pwb.parameter.name}, should not happen")))
+      (
+        pwb,
+        params.getOrElse(
+          pwb.parameter.name,
+          throw new IllegalArgumentException(s"No param ${pwb.parameter.name}, should not happen")
+        )
+      )
     }
 
-    val plainParams = baseMap.collect {
-      case (ParameterWithBodyFlag(p, false), value) => p.name -> value
+    val plainParams = baseMap.collect { case (ParameterWithBodyFlag(p, false), value) =>
+      p.name -> value
     }.toMap
 
-    val bodyParams = Map(SingleBodyParameter.name -> baseMap.collect {
-      case (ParameterWithBodyFlag(p, true), value) => p.name -> value
+    val bodyParams = Map(SingleBodyParameter.name -> baseMap.collect { case (ParameterWithBodyFlag(p, true), value) =>
+      p.name -> value
     }.toMap)
 
     val preparedFixedParams = fixedParams.mapValuesNow(_.apply())

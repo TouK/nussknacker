@@ -7,17 +7,23 @@ import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeIn
 
 object ContextTypeHelpers {
 
-  private def infoFromVariablesAndParent(variables: TypeInformation[Map[String, Any]],
-                                 parentCtx: TypeInformation[Option[Context]]): TypeInformation[Context] =
-    ConcreteCaseClassTypeInfo (
+  private def infoFromVariablesAndParent(
+      variables: TypeInformation[Map[String, Any]],
+      parentCtx: TypeInformation[Option[Context]]
+  ): TypeInformation[Context] =
+    ConcreteCaseClassTypeInfo(
       ("id", TypeInformation.of(classOf[String])),
       ("variables", variables),
       ("parentContext", parentCtx)
     )
 
-  def infoFromVariablesAndParentOption(variables: TypeInformation[Map[String, Any]],
-                                       parentOpt: Option[TypeInformation[Context]]): TypeInformation[Context] = {
-    val parentCtx = new OptionTypeInfo[Context, Option[Context]](parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo))
+  def infoFromVariablesAndParentOption(
+      variables: TypeInformation[Map[String, Any]],
+      parentOpt: Option[TypeInformation[Context]]
+  ): TypeInformation[Context] = {
+    val parentCtx = new OptionTypeInfo[Context, Option[Context]](
+      parentOpt.getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)
+    )
     infoFromVariablesAndParent(variables, parentCtx)
   }
 

@@ -8,9 +8,9 @@ import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BasicAuthenticationResources(realm: String, configuration: BasicAuthenticationConfiguration)
-                                  (implicit executionContext: ExecutionContext)
-  extends AuthenticationResources
+class BasicAuthenticationResources(realm: String, configuration: BasicAuthenticationConfiguration)(
+    implicit executionContext: ExecutionContext
+) extends AuthenticationResources
     with AnonymousAccess {
 
   val name: String = configuration.name

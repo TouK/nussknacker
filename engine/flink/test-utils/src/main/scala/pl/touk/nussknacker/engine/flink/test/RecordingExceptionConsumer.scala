@@ -28,7 +28,7 @@ class RecordingExceptionConsumer(id: String) extends FlinkEspExceptionConsumer {
 }
 
 object RecordingExceptionConsumerProvider {
-  final val providerName: String = "RecordingException"
+  final val providerName: String            = "RecordingException"
   final val recordingConsumerIdPath: String = "recordingConsumerId"
 
   def configWithProvider(config: Config, consumerId: String): Config =

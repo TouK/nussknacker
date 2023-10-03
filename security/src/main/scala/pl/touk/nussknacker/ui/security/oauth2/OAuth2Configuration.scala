@@ -18,27 +18,28 @@ import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 import scala.util.Using
 
-case class OAuth2Configuration(usersFile: URI,
-                               authorizeUri: URI,
-                               clientSecret: String,
-                               clientId: String,
-                               profileUri: URI,
-                               profileFormat: Option[ProfileFormat],
-                               accessTokenUri: URI,
-                               redirectUri: Option[URI],
-                               implicitGrantEnabled: Boolean = false,
-                               jwt: Option[JwtConfiguration],
-                               accessTokenParams: Map[String, String] = Map.empty,
-                               authorizeParams: Map[String, String] = Map.empty,
-                               headers: Map[String, String] = Map.empty,
-                               authorizationHeader: String = HeaderNames.Authorization,
-                               accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
-                               defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
-                               anonymousUserRole: Option[String] = None,
-                               tokenCookie: Option[TokenCookieConfig] = None,
-                               overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
-                               usernameClaim: Option[UsernameClaim] = None,
-                              ) extends AuthenticationConfiguration {
+case class OAuth2Configuration(
+    usersFile: URI,
+    authorizeUri: URI,
+    clientSecret: String,
+    clientId: String,
+    profileUri: URI,
+    profileFormat: Option[ProfileFormat],
+    accessTokenUri: URI,
+    redirectUri: Option[URI],
+    implicitGrantEnabled: Boolean = false,
+    jwt: Option[JwtConfiguration],
+    accessTokenParams: Map[String, String] = Map.empty,
+    authorizeParams: Map[String, String] = Map.empty,
+    headers: Map[String, String] = Map.empty,
+    authorizationHeader: String = HeaderNames.Authorization,
+    accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
+    defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
+    anonymousUserRole: Option[String] = None,
+    tokenCookie: Option[TokenCookieConfig] = None,
+    overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
+    usernameClaim: Option[UsernameClaim] = None,
+) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
   override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
@@ -47,7 +48,8 @@ case class OAuth2Configuration(usersFile: URI,
     Uri(authorizeUri)
       .addParam("client_id", clientId)
       .addParam("redirect_uri", redirectUri.map(_.toString))
-      .addParams(authorizeParams))
+      .addParams(authorizeParams)
+  )
     .map(_.toJavaUri)
 
   def authSeverPublicKey: Option[PublicKey] = Option.empty
@@ -64,7 +66,7 @@ object OAuth2Configuration {
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 
-  val name = "OAuth2"
+  val name                                        = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
 }
 
@@ -73,15 +75,15 @@ case class TokenCookieConfig(name: String, path: Option[String], domain: Option[
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
   val GITHUB = Value("github")
-  val OIDC = Value("oidc")
+  val OIDC   = Value("oidc")
 }
 
 object UsernameClaim extends Enumeration {
   type UsernameClaim = Value
   val PreferredUsername: UsernameClaim = Value("preferred_username")
-  val GivenName: UsernameClaim = Value("given_name")
-  val Nickname: UsernameClaim = Value("nickname")
-  val Name: UsernameClaim = Value("name")
+  val GivenName: UsernameClaim         = Value("given_name")
+  val Nickname: UsernameClaim          = Value("nickname")
+  val Name: UsernameClaim              = Value("name")
 }
 
 trait JwtConfiguration {
@@ -105,14 +107,16 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(accessTokenIsJwt: Boolean = false,
-                               userinfoFromIdToken: Boolean = false,
-                               audience: Option[String],
-                               publicKey: Option[String],
-                               publicKeyFile: Option[String],
-                               certificate: Option[String],
-                               certificateFile: Option[String],
-                               idTokenNonceVerificationRequired: Boolean = false) extends JwtConfiguration {
+  private case class JwtConfig(
+      accessTokenIsJwt: Boolean = false,
+      userinfoFromIdToken: Boolean = false,
+      audience: Option[String],
+      publicKey: Option[String],
+      publicKeyFile: Option[String],
+      certificate: Option[String],
+      certificateFile: Option[String],
+      idTokenNonceVerificationRequired: Boolean = false
+  ) extends JwtConfiguration {
     def authServerPublicKey: Some[PublicKey] = {
       val charset: Charset = StandardCharsets.UTF_8
 
@@ -122,9 +126,14 @@ object JwtConfiguration {
         })
 
       getContent(publicKey, publicKeyFile).map(CertificatesAndKeys.publicKeyFromString(_, charset)) orElse
-        getContent(certificate, certificateFile).map(CertificatesAndKeys.publicKeyFromStringCertificate(_, charset)) match {
-        case x@Some(_) => x
-        case _ => throw new Exception("one of the: 'publicKey', 'publicKeyFile', 'certificate', 'certificateFile' fields should be provided in the authentication.jwt configuration")
+        getContent(certificate, certificateFile).map(
+          CertificatesAndKeys.publicKeyFromStringCertificate(_, charset)
+        ) match {
+        case x @ Some(_) => x
+        case _ =>
+          throw new Exception(
+            "one of the: 'publicKey', 'publicKeyFile', 'certificate', 'certificateFile' fields should be provided in the authentication.jwt configuration"
+          )
       }
     }
   }

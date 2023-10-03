@@ -36,7 +36,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
-    //we don't use default close not to block indefinitely
+    // we don't use default close not to block indefinitely
     val releasable = new Releasable[Admin] {
       override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
     }
@@ -44,7 +44,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def sanitizeClientId(originalId: String): String =
-    //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
+    // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
   def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
@@ -85,7 +85,6 @@ trait KafkaUtils extends LazyLogging {
     props
   }
 
-
   def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
@@ -94,41 +93,54 @@ trait KafkaUtils extends LazyLogging {
     withPropertiesFromConfig(props, config)
   }
 
-  def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
+  def readLastMessages(
+      topic: String,
+      size: Int,
+      config: KafkaConfig
+  ): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
-        consumer.partitionsFor(topic).asScala.map(no => new TopicPartition(topic, no.partition())).view.flatMap { tp =>
-          val partitions = Collections.singletonList(tp)
-          consumer.assign(partitions)
-          consumer.seekToEnd(partitions)
-          val lastOffset = consumer.position(tp)
-          val offsetToSearch = Math.max(0, lastOffset - size)
-          consumer.seek(tp, offsetToSearch)
-          val result = new ArrayBuffer[ConsumerRecord[Array[Byte], Array[Byte]]](size)
-          result.appendAll(consumer.poll(java.time.Duration.ofMillis(100)).records(tp).asScala)
-          // result might be empty if we shift offset to far and there will be
-          // no messages on the topic due to retention
-          if(result.isEmpty){
-            consumer.seekToBeginning(partitions)
-          }
-          var currentOffset = consumer.position(tp)
-          // Trying to poll records until desired size OR till the end of the topic.
-          // So when trying to read 70 msgs from topic with only 50, we will return 50 immediately
-          // instead of waiting for another 20 to be written to the topic.
-          while(result.size < size && currentOffset < lastOffset) {
+        consumer
+          .partitionsFor(topic)
+          .asScala
+          .map(no => new TopicPartition(topic, no.partition()))
+          .view
+          .flatMap { tp =>
+            val partitions = Collections.singletonList(tp)
+            consumer.assign(partitions)
+            consumer.seekToEnd(partitions)
+            val lastOffset     = consumer.position(tp)
+            val offsetToSearch = Math.max(0, lastOffset - size)
+            consumer.seek(tp, offsetToSearch)
+            val result = new ArrayBuffer[ConsumerRecord[Array[Byte], Array[Byte]]](size)
             result.appendAll(consumer.poll(java.time.Duration.ofMillis(100)).records(tp).asScala)
-            currentOffset = consumer.position(tp)
+            // result might be empty if we shift offset to far and there will be
+            // no messages on the topic due to retention
+            if (result.isEmpty) {
+              consumer.seekToBeginning(partitions)
+            }
+            var currentOffset = consumer.position(tp)
+            // Trying to poll records until desired size OR till the end of the topic.
+            // So when trying to read 70 msgs from topic with only 50, we will return 50 immediately
+            // instead of waiting for another 20 to be written to the topic.
+            while (result.size < size && currentOffset < lastOffset) {
+              result.appendAll(consumer.poll(java.time.Duration.ofMillis(100)).records(tp).asScala)
+              currentOffset = consumer.position(tp)
+            }
+            consumer.unsubscribe()
+            result.take(size)
           }
-          consumer.unsubscribe()
-          result.take(size)
-        }.take(size).toList
+          .take(size)
+          .toList
       } finally {
         consumer.unsubscribe()
       }
     }
   }
 
-  private def doWithTempKafkaConsumer[T](config: KafkaConfig, groupId: Option[String])(fun: KafkaConsumer[Array[Byte], Array[Byte]] => T) = {
+  private def doWithTempKafkaConsumer[T](config: KafkaConfig, groupId: Option[String])(
+      fun: KafkaConsumer[Array[Byte], Array[Byte]] => T
+  ) = {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
@@ -145,23 +157,30 @@ trait KafkaUtils extends LazyLogging {
     consumerProperties.putIfAbsent(ConsumerConfig.ISOLATION_LEVEL_CONFIG, isolationLevel.toString.toLowerCase)
   }
 
-  private def readTimeoutForTempConsumer(config: KafkaConfig): Long = config.kafkaProperties.flatMap(_.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
+  private def readTimeoutForTempConsumer(config: KafkaConfig): Long =
+    config.kafkaProperties.flatMap(_.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
 
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {
-    val partitions = consumer.partitionsFor(topic).asScala.map { partition => new TopicPartition(partition.topic(), partition.partition()) }
+    val partitions = consumer.partitionsFor(topic).asScala.map { partition =>
+      new TopicPartition(partition.topic(), partition.partition())
+    }
     consumer.assign(partitions.asJava)
     consumer.seekToEnd(partitions.asJava)
-    partitions.foreach(p => consumer.position(p)) //`seekToEnd` is lazy, we have to invoke `position` to change offset
+    partitions.foreach(p => consumer.position(p)) // `seekToEnd` is lazy, we have to invoke `position` to change offset
     consumer.commitSync()
   }
 
-  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
+  def sendToKafkaWithTempProducer(topic: String, key: Array[Byte], value: Array[Byte])(
+      kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]
+  ): Future[RecordMetadata] = {
     sendToKafkaWithTempProducer(new ProducerRecord(topic, key, value))(kafkaProducerCreator)
   }
 
-  def sendToKafkaWithTempProducer(record: ProducerRecord[Array[Byte], Array[Byte]])(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
-    //returned future is completed, as this method flushes producer cache
-    Using.resource(kafkaProducerCreator.createProducer("temp-"+record.topic())) { producer =>
+  def sendToKafkaWithTempProducer(
+      record: ProducerRecord[Array[Byte], Array[Byte]]
+  )(kafkaProducerCreator: KafkaProducerCreator[Array[Byte], Array[Byte]]): Future[RecordMetadata] = {
+    // returned future is completed, as this method flushes producer cache
+    Using.resource(kafkaProducerCreator.createProducer("temp-" + record.topic())) { producer =>
       sendToKafka(record)(producer)
     }
   }
@@ -190,5 +209,3 @@ trait KafkaUtils extends LazyLogging {
 }
 
 case class PreparedKafkaTopic(original: String, prepared: String)
-
-

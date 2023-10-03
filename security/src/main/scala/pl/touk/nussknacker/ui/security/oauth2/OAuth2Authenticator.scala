@@ -14,9 +14,11 @@ import sttp.client3.SttpBackend
 import java.security.Key
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])
-                         (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
-  extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] with LazyLogging {
+class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])(
+    implicit ec: ExecutionContext,
+    sttpBackend: SttpBackend[Future, Any]
+) extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser]
+    with LazyLogging {
 
   def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] =
     authenticate(credentials)
@@ -24,7 +26,7 @@ class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])
   private[security] def authenticate(credentials: Credentials): Future[Option[AuthenticatedUser]] = {
     credentials match {
       case Provided(token) => authenticate(token)
-      case _ => Future.successful(Option.empty)
+      case _               => Future.successful(Option.empty)
     }
   }
 
@@ -37,9 +39,9 @@ class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(service: OAuth2Service[AuthenticatedUser, _])
-           (implicit ec: ExecutionContext,
-            sttpBackend: SttpBackend[Future, Any]): OAuth2Authenticator =
+  def apply(
+      service: OAuth2Service[AuthenticatedUser, _]
+  )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2Authenticator =
     new OAuth2Authenticator(service)
 }
 
@@ -48,8 +50,8 @@ object OAuth2ErrorHandler {
   def unapply(t: Throwable): Option[Throwable] = Some(t).filter(apply)
 
   def apply(t: Throwable): Boolean = t match {
-    case OAuth2CompoundException(errors) => errors.toList.collectFirst { case e@OAuth2ServerError(_) => e }.isEmpty
-    case _ => false
+    case OAuth2CompoundException(errors) => errors.toList.collectFirst { case e @ OAuth2ServerError(_) => e }.isEmpty
+    case _                               => false
   }
 
   trait OAuth2Error {
@@ -57,7 +59,8 @@ object OAuth2ErrorHandler {
   }
 
   case class OAuth2CompoundException(errors: NonEmptyList[OAuth2Error]) extends Exception {
-    override def getMessage: String = errors.toList.mkString("OAuth2 exception with the following errors:\n - ", "\n - ", "")
+    override def getMessage: String =
+      errors.toList.mkString("OAuth2 exception with the following errors:\n - ", "\n - ", "")
   }
 
   trait OAuth2JwtError extends OAuth2Error
@@ -71,11 +74,14 @@ object OAuth2ErrorHandler {
   }
 
   case class OAuth2JwtDecodeClaimsError(token: ParsedJwtToken, key: Key, cause: Throwable) extends OAuth2JwtError {
-    override def msg: String = s"Failure in decoding json using key: ${cause.getLocalizedMessage}. Token: ${token.masked}"
+    override def msg: String =
+      s"Failure in decoding json using key: ${cause.getLocalizedMessage}. Token: ${token.masked}"
   }
 
-  case class OAuth2JwtDecodeClaimsJsonError(token: ParsedJwtToken, key: Key, tokenClaimsJson: Json, cause: Throwable) extends OAuth2JwtError {
-    override def msg: String = s"Failure in decoding token claims: ${mask(cause)}. Token: ${token.masked}, token claims: ${tokenClaimsJson.masked.noSpaces}"
+  case class OAuth2JwtDecodeClaimsJsonError(token: ParsedJwtToken, key: Key, tokenClaimsJson: Json, cause: Throwable)
+      extends OAuth2JwtError {
+    override def msg: String =
+      s"Failure in decoding token claims: ${mask(cause)}. Token: ${token.masked}, token claims: ${tokenClaimsJson.masked.noSpaces}"
   }
 
   private def mask(cause: Throwable) = {

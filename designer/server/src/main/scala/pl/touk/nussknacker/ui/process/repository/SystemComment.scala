@@ -17,4 +17,3 @@ case class MigrationComment(migrationsApplied: List[ProcessMigration]) extends S
 
   override def value: String = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
 }
-

@@ -13,7 +13,8 @@ object MapLikePropertyTyper {
   // exclusion list - we have strings here because they are in optional dependencies
   private val ExcludedMapLikeInterfaces = Set(
     // For avro specific records (generated) we want to verify exact fields
-    "org.apache.avro.specific.SpecificRecord")
+    "org.apache.avro.specific.SpecificRecord"
+  )
 
   /**
    * @param typ typed class
@@ -23,7 +24,7 @@ object MapLikePropertyTyper {
     case TypedClass(cl, _) if isExcludedMapLikeClass(cl) => None
     // see MapPropertyAccessor
     case TypedClass(cl, _ :: valueParam :: Nil) if classOf[util.Map[_, _]].isAssignableFrom(cl) => Some(valueParam)
-    case TypedClass(cl, _) if classOf[util.Map[_, _]].isAssignableFrom(cl) => Some(Unknown)
+    case TypedClass(cl, _) if classOf[util.Map[_, _]].isAssignableFrom(cl)                      => Some(Unknown)
     case TypedClass(cl, _) => getMethodReturnType(cl)
   }
 

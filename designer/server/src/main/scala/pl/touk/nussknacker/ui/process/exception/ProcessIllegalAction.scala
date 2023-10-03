@@ -9,8 +9,15 @@ case class ProcessIllegalAction(message: String) extends Exception(message) with
 
 object ProcessIllegalAction {
 
-  def apply(action: ProcessActionType, processIdWithName: ProcessIdWithName, state: ProcessState): ProcessIllegalAction =
-    ProcessIllegalAction(s"Action: $action is not allowed in scenario (${processIdWithName.name.value}) state: ${state.status.name}, allowed actions: ${state.allowedActions.mkString(",")}.")
+  def apply(
+      action: ProcessActionType,
+      processIdWithName: ProcessIdWithName,
+      state: ProcessState
+  ): ProcessIllegalAction =
+    ProcessIllegalAction(
+      s"Action: $action is not allowed in scenario (${processIdWithName.name.value}) state: ${state.status.name}, allowed actions: ${state.allowedActions
+          .mkString(",")}."
+    )
 
   def archived(action: ProcessActionType, processIdWithName: ProcessIdWithName): ProcessIllegalAction =
     ProcessIllegalAction(s"Forbidden action: $action for archived scenario: ${processIdWithName.name.value}.")

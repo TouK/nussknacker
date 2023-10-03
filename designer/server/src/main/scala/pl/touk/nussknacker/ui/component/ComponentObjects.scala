@@ -10,13 +10,16 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
-private[component] case class ComponentObjects(templates: List[(ComponentGroupName, ComponentTemplate)],
-                                               config: ComponentsUiConfig)
+private[component] case class ComponentObjects(
+    templates: List[(ComponentGroupName, ComponentTemplate)],
+    config: ComponentsUiConfig
+)
 
 private[component] object ComponentObjects {
 
   def apply(uIProcessObjects: UIProcessObjects): ComponentObjects = {
-    val templates = uIProcessObjects.componentGroups.flatMap(group => group.components.map(component => (group.name, component)))
+    val templates =
+      uIProcessObjects.componentGroups.flatMap(group => group.components.map(component => (group.name, component)))
     ComponentObjects(templates, uIProcessObjects.componentsConfig)
   }
 
@@ -29,7 +32,10 @@ private[component] object ComponentObjects {
  */
 private[component] class ComponentObjectsService(categoryService: ProcessCategoryService) {
 
-  def prepareWithoutFragments(processingType: ProcessingType, processingTypeData: ProcessingTypeData): ComponentObjects = {
+  def prepareWithoutFragments(
+      processingType: ProcessingType,
+      processingTypeData: ProcessingTypeData
+  ): ComponentObjects = {
     val uiProcessObjects = createUIProcessObjects(
       processingType,
       processingTypeData,
@@ -39,25 +45,29 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
     ComponentObjects(uiProcessObjects)
   }
 
-  def prepare(processingType: ProcessingType,
-              processingTypeData: ProcessingTypeData,
-              user: LoggedUser,
-              fragments: Set[FragmentDetails]): ComponentObjects = {
+  def prepare(
+      processingType: ProcessingType,
+      processingTypeData: ProcessingTypeData,
+      user: LoggedUser,
+      fragments: Set[FragmentDetails]
+  ): ComponentObjects = {
     val uiProcessObjects = createUIProcessObjects(processingType, processingTypeData, user, fragments)
     ComponentObjects(uiProcessObjects)
   }
 
-  private def createUIProcessObjects(processingType: ProcessingType,
-                                     processingTypeData: ProcessingTypeData,
-                                     user: LoggedUser,
-                                     fragments: Set[FragmentDetails]): UIProcessObjects = {
+  private def createUIProcessObjects(
+      processingType: ProcessingType,
+      processingTypeData: ProcessingTypeData,
+      user: LoggedUser,
+      fragments: Set[FragmentDetails]
+  ): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
       staticObjectsDefinition = processingTypeData.staticObjectsDefinition,
       deploymentManager = processingTypeData.deploymentManager,
       user = user,
       fragmentsDetails = fragments,
-      isFragment = false, //It excludes fragment's components: input / output
+      isFragment = false, // It excludes fragment's components: input / output
       processCategoryService = categoryService,
       additionalPropertiesConfig = processingTypeData.additionalPropertiesConfig,
       processingType = processingType

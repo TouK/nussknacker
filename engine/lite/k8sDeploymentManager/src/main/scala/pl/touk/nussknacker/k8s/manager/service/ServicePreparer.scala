@@ -22,13 +22,20 @@ class ServicePreparer(config: K8sDeploymentManagerConfig) {
     }
   }
 
-  private def prepareRequestResponseService(processVersion: ProcessVersion, rrMetaData: RequestResponseMetaData): Service = {
-    val objectName = serviceName(config.nussknackerInstanceName, determineSlug(processVersion.processName, rrMetaData, config.nussknackerInstanceName))
+  private def prepareRequestResponseService(
+      processVersion: ProcessVersion,
+      rrMetaData: RequestResponseMetaData
+  ): Service = {
+    val objectName = serviceName(
+      config.nussknackerInstanceName,
+      determineSlug(processVersion.processName, rrMetaData, config.nussknackerInstanceName)
+    )
     val annotations = versionAnnotationForScenario(processVersion)
-    val labels = labelsForScenario(processVersion, config.nussknackerInstanceName)
+    val labels      = labelsForScenario(processVersion, config.nussknackerInstanceName)
     val selectors = Map(
-      //here we use id to avoid sanitization problems
-      scenarioIdLabel -> processVersion.processId.value.toString) ++ config.nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
+      // here we use id to avoid sanitization problems
+      scenarioIdLabel -> processVersion.processId.value.toString
+    ) ++ config.nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
 
     Service(
       metadata = ObjectMeta(name = objectName, labels = labels, annotations = annotations),

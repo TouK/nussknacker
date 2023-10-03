@@ -16,15 +16,22 @@ import scala.reflect.ClassTag
   * @tparam K - event key type with provided Encoder/Decoder
   * @tparam V - event value type with provided Encoder/Decoder
   */
-class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
+class ConsumerRecordToJsonFormatterFactory[K: Encoder: Decoder, V: Encoder: Decoder] extends RecordFormatterFactory {
 
-  override def create[KK: ClassTag, VV: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
-    new ConsumerRecordToJsonFormatter[K, V](kafkaSourceDeserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]])
+  override def create[KK: ClassTag, VV: ClassTag](
+      kafkaConfig: KafkaConfig,
+      kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]
+  ): RecordFormatter = {
+    new ConsumerRecordToJsonFormatter[K, V](
+      kafkaSourceDeserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]]
+    )
   }
 
 }
 
-class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]) extends RecordFormatter {
+class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
+    kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]
+) extends RecordFormatter {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
@@ -45,7 +52,8 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
+    val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =
+      deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
     val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))
@@ -58,7 +66,7 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     json match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
       case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+      case other           => other.noSpaces.getBytes(StandardCharsets.UTF_8)
     }
   }
 

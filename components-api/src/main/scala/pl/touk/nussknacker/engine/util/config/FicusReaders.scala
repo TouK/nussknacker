@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 
 object FicusReaders {
 
-  def forDecoder[T:Decoder:ClassTag]: ValueReader[T] = ValueReader.relative(config => {
+  def forDecoder[T: Decoder: ClassTag]: ValueReader[T] = ValueReader.relative(config => {
     val json = config.root().render(ConfigRenderOptions.concise().setJson(true))
     CirceUtil.decodeJsonUnsafe[T](json, s"Invalid value of ${implicitly[ClassTag[T]].runtimeClass.getSimpleName}")
   })

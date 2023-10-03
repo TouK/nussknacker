@@ -14,14 +14,18 @@ object richflink {
 
   implicit class FlinkKeyOperations(dataStream: DataStream[Context]) {
 
-    def groupBy(groupBy: LazyParameter[CharSequence])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] = {
+    def groupBy(
+        groupBy: LazyParameter[CharSequence]
+    )(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] = {
       val typeInfo = ctx.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
       dataStream
         .flatMap(new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy), typeInfo)
         .keyBy((k: ValueWithContext[String]) => k.value)
     }
 
-    def groupByWithValue[T <: AnyRef: TypeTag](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] = {
+    def groupByWithValue[T <: AnyRef: TypeTag](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(
+        implicit ctx: FlinkCustomNodeContext
+    ): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] = {
       val typeInfo = keyed.typeInfo(ctx, groupBy.map[String]((k: CharSequence) => k.toString), value)
       dataStream
         .flatMap(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value), typeInfo)
@@ -31,13 +35,16 @@ object richflink {
 
   implicit class ExplicitUid[T](dataStream: DataStream[T]) {
 
-    //we set operator name to nodeId in custom transformers, so that some internal Flink metrics (e.g. RocksDB) are
-    //reported with operator_name tag equal to nodeId.
-    //in most cases uid should be set together with operator name, if this is not the case - use ExplicitUidInOperatorsSupport explicitly
-    def setUidWithName(implicit ctx: FlinkCustomNodeContext, explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean): DataStream[T] =
+    // we set operator name to nodeId in custom transformers, so that some internal Flink metrics (e.g. RocksDB) are
+    // reported with operator_name tag equal to nodeId.
+    // in most cases uid should be set together with operator name, if this is not the case - use ExplicitUidInOperatorsSupport explicitly
+    def setUidWithName(
+        implicit ctx: FlinkCustomNodeContext,
+        explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
+    ): DataStream[T] =
       ExplicitUidInOperatorsSupport.setUidIfNeed[T](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream) match {
         case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId)
-        case other => other
+        case other                                   => other
       }
   }
 

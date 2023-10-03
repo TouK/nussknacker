@@ -23,4 +23,3 @@ object NotNothing {
 
   implicit def notNothingEvidence[T](implicit n: T =:= T): NotNothing[T] = evidence.asInstanceOf[NotNothing[T]]
 }
-

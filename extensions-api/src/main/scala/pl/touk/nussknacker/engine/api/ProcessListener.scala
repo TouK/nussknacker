@@ -12,17 +12,25 @@ trait ProcessListener extends Lifecycle {
 
   def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
 
-  def expressionEvaluated(nodeId: String, expressionId: String,
-                          expression: String, context: Context, processMetaData: MetaData, result: Any): Unit
+  def expressionEvaluated(
+      nodeId: String,
+      expressionId: String,
+      expression: String,
+      context: Context,
+      processMetaData: MetaData,
+      result: Any
+  ): Unit
 
-  def serviceInvoked(nodeId: String,
-                     id: String,
-                     context: Context,
-                     processMetaData: MetaData,
-                     params: Map[String, Any],
-                     result: Try[Any]): Unit
+  def serviceInvoked(
+      nodeId: String,
+      id: String,
+      context: Context,
+      processMetaData: MetaData,
+      params: Map[String, Any],
+      result: Try[Any]
+  ): Unit
 
-  def exceptionThrown(exceptionInfo: NuExceptionInfo[_<:Throwable]) : Unit
+  def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit
 
 }
 
@@ -33,9 +41,23 @@ trait EmptyProcessListener extends ProcessListener {
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
 
-  override def expressionEvaluated(nodeId: String, expressionId: String, expression: String, context: Context, processMetaData: MetaData, result: Any): Unit = {}
+  override def expressionEvaluated(
+      nodeId: String,
+      expressionId: String,
+      expression: String,
+      context: Context,
+      processMetaData: MetaData,
+      result: Any
+  ): Unit = {}
 
-  override def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, params: Map[String, Any], result: Try[Any]): Unit = {}
+  override def serviceInvoked(
+      nodeId: String,
+      id: String,
+      context: Context,
+      processMetaData: MetaData,
+      params: Map[String, Any],
+      result: Try[Any]
+  ): Unit = {}
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {}
 }

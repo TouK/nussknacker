@@ -10,7 +10,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
+  StandardTimestampWatermarkHandler,
+  TimestampWatermarkHandler
+}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreator._
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
@@ -25,11 +28,19 @@ import scala.util.Random
  */
 object UnitTestsProcessConfigCreator {
 
-  @JsonCodec case class Notification(msisdn: String, notificationType: Int, finalCharge: BigDecimal, tariffId: Long, timestamp: Long) extends DisplayJsonWithEncoder[Notification]
+  @JsonCodec case class Notification(
+      msisdn: String,
+      notificationType: Int,
+      finalCharge: BigDecimal,
+      tariffId: Long,
+      timestamp: Long
+  ) extends DisplayJsonWithEncoder[Notification]
 
-  @JsonCodec case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String) extends DisplayJsonWithEncoder[Transaction]
+  @JsonCodec case class Transaction(clientId: String, date: LocalDateTime, amount: Int, `type`: String)
+      extends DisplayJsonWithEncoder[Transaction]
 
-  @JsonCodec case class PageVisit(clientId: String, date:LocalDateTime, path: String, ip: String) extends DisplayJsonWithEncoder[PageVisit]
+  @JsonCodec case class PageVisit(clientId: String, date: LocalDateTime, path: String, ip: String)
+      extends DisplayJsonWithEncoder[PageVisit]
 
   case class Client(clientId: String, age: Long, isVip: Boolean, country: String)
 
@@ -51,33 +62,53 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   override def services(processObjectDependencies: ProcessObjectDependencies) = Map(
     "CustomerDataService" -> all(new CustomerDataService),
-    "TariffService"  -> all(new TariffService)
+    "TariffService"       -> all(new TariffService)
   )
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies) = {
     Map(
-      "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
-        s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-        json => CirceUtil.decodeJsonUnsafe[PageVisit](json))(TypeInformation.of(classOf[PageVisit]))),
-      "Transactions" -> fraud(new RunningSourceFactory[Transaction]((count: Int) => Transaction(s"${count % 20}", LocalDateTime.now(),
-        count % 34, if (count % 3 == 1) "PREMIUM" else "NORMAL"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-        json => CirceUtil.decodeJsonUnsafe[Transaction](json))(TypeInformation.of(classOf[Transaction]))),
-      "Notifications" -> fraud(new RunningSourceFactory[Notification]((count: Int) =>
-        Notification(
-          msisdn = s"4869312312${count % 9}",
-          notificationType = count % 4,
-          finalCharge = BigDecimal(count % 5) + BigDecimal((count % 3) / 10d),
-          tariffId = count % 5 + 1000,
-          timestamp = System.currentTimeMillis()
-        ), _.timestamp,
-        json => CirceUtil.decodeJsonUnsafe[Notification](json))(TypeInformation.of(classOf[Notification])))
+      "PageVisits" -> recommendation(
+        new RunningSourceFactory[PageVisit](
+          (count: Int) =>
+            PageVisit(
+              s"${count % 20}",
+              LocalDateTime.now(),
+              s"/products/product${count % 14}",
+              s"10.1.3.${count           % 15}"
+            ),
+          _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
+          json => CirceUtil.decodeJsonUnsafe[PageVisit](json)
+        )(TypeInformation.of(classOf[PageVisit]))
+      ),
+      "Transactions" -> fraud(
+        new RunningSourceFactory[Transaction](
+          (count: Int) =>
+            Transaction(s"${count % 20}", LocalDateTime.now(), count % 34, if (count % 3 == 1) "PREMIUM" else "NORMAL"),
+          _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
+          json => CirceUtil.decodeJsonUnsafe[Transaction](json)
+        )(TypeInformation.of(classOf[Transaction]))
+      ),
+      "Notifications" -> fraud(
+        new RunningSourceFactory[Notification](
+          (count: Int) =>
+            Notification(
+              msisdn = s"4869312312${count % 9}",
+              notificationType = count % 4,
+              finalCharge = BigDecimal(count % 5) + BigDecimal((count % 3) / 10d),
+              tariffId = count % 5 + 1000,
+              timestamp = System.currentTimeMillis()
+            ),
+          _.timestamp,
+          json => CirceUtil.decodeJsonUnsafe[Notification](json)
+        )(TypeInformation.of(classOf[Notification]))
+      )
     )
   }
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies) = Map(
     "ReportFraud" -> fraud(SinkFactory.noParam(EmptySink)),
-    "Recommend" -> recommendation(SinkFactory.noParam(EmptySink)),
-    "KafkaSink" -> fraud(SinkFactory.noParam(EmptySink))
+    "Recommend"   -> recommendation(SinkFactory.noParam(EmptySink)),
+    "KafkaSink"   -> fraud(SinkFactory.noParam(EmptySink))
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List()
@@ -91,10 +122,14 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
 
   override def buildInfo() = Map(
     "process-version" -> "0.1",
-    "engine-version" -> "0.1"
+    "engine-version"  -> "0.1"
   )
 
-  class RunningSourceFactory[T <: DisplayJson :TypeInformation](generate: Int => T, timestamp: SimpleSerializableTimestampAssigner[T], parser: Json => T) extends SourceFactory {
+  class RunningSourceFactory[T <: DisplayJson: TypeInformation](
+      generate: Int => T,
+      timestamp: SimpleSerializableTimestampAssigner[T],
+      parser: Json => T
+  ) extends SourceFactory {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {
@@ -113,13 +148,15 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
           }
 
           override def run(ctx: SourceContext[T]) = while (running) {
-            Thread.sleep(1000 * 60/rate)
+            Thread.sleep(1000 * 60 / rate)
             count = count + 1
             ctx.collect(generate(count))
           }
         }
 
-        override val timestampAssigner = Some(StandardTimestampWatermarkHandler.boundedOutOfOrderness(timestamp, Duration.ofMinutes(10)))
+        override val timestampAssigner = Some(
+          StandardTimestampWatermarkHandler.boundedOutOfOrderness(timestamp, Duration.ofMinutes(10))
+        )
 
         override def generateTestData(size: Int): TestData = {
           TestData((1 to size).toList.map(generate).map(_.asJson).map(TestRecord(_)))
@@ -138,7 +175,9 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     override protected def serviceName: String = "tariffService"
 
     @MethodToInvoke
-      def invoke(@ParamName("tariffId") tariffId: Long, @ParamName("tariffType") tariffType: TariffType)(implicit ec: ExecutionContext) = {
+    def invoke(@ParamName("tariffId") tariffId: Long, @ParamName("tariffType") tariffType: TariffType)(
+        implicit ec: ExecutionContext
+    ) = {
       measuring {
         val tariffs = Map(
           1000L -> "family tariff",
@@ -170,4 +209,3 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
   @JsonCodec case class CustomerData(msisdn: String, pesel: String) extends DisplayJsonWithEncoder[CustomerData]
 
 }
-

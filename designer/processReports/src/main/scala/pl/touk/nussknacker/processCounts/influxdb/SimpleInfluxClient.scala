@@ -24,13 +24,14 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
 
   private implicit class RequestExtensions[U[_], T, -R](val request: RequestT[U, T, R]) {
     def withAuthentication(): RequestT[U, T, R] = (for {
-      user <- config.user
+      user     <- config.user
       password <- config.password
     } yield request.auth.basic(user, password)).getOrElse(request)
   }
 
   def query(query: String): F[List[InfluxSeries]] = {
-    basicRequest.get(config.uri.addParams("db" -> config.database, "q" -> query))
+    basicRequest
+      .get(config.uri.addParams("db" -> config.database, "q" -> query))
       .withAuthentication()
       .headers(config.additionalHeaders)
       .response(asJson[InfluxResponse])
@@ -38,9 +39,9 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
       .flatMap(SttpJson.failureToError[F, InfluxResponse])
       .handleError {
         case ex: DeserializationException[_] => monadError.error(InvalidInfluxResponse(ex.getMessage, ex))
-        case ex: HttpError[_] => monadError.error(InfluxHttpError(config.influxUrl, s"${ex.body}", ex))
+        case ex: HttpError[_]                => monadError.error(InfluxHttpError(config.influxUrl, s"${ex.body}", ex))
       }
-      //we assume only one query
+      // we assume only one query
       .map(_.results.head.series)
   }
 
@@ -65,12 +66,17 @@ object InfluxSeries {
   import io.circe.generic.extras.semiauto._
 
   private implicit val numberOrStringDecoder: Decoder[Any] =
-    Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder.const[Any]("")
+    Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder
+      .const[Any]("")
   implicit val decoder: Decoder[InfluxSeries] = deriveConfiguredDecoder[InfluxSeries]
 
 }
 
-case class InfluxSeries(name: String, tags: Option[Map[String, String]], columns: List[String], values: List[List[Any]] = Nil) {
+case class InfluxSeries(
+    name: String,
+    tags: Option[Map[String, String]],
+    columns: List[String],
+    values: List[List[Any]] = Nil
+) {
   val toMap: List[Map[String, Any]] = values.map(value => columns.zip(value).toMap)
 }
-

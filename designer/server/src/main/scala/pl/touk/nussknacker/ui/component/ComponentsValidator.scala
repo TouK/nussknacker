@@ -5,28 +5,39 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
-import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{ComponentGroupNameAttribute, ComponentTypeAttribute, IconAttribute, NameAttribute, WrongConfigurationAttribute}
+import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
+  ComponentGroupNameAttribute,
+  ComponentTypeAttribute,
+  IconAttribute,
+  NameAttribute,
+  WrongConfigurationAttribute
+}
 
 private[component] object ComponentsValidator {
 
-  def checkUnsafe(componentObjectsMap: Map[ProcessingType, ComponentObjects], componentIdProvider: ComponentIdProvider): Unit = {
-    val components = componentObjectsMap.toList.flatMap {
-      case (processingType, componentObjects) =>
-        extractComponents(processingType, componentObjects, componentIdProvider)
+  def checkUnsafe(
+      componentObjectsMap: Map[ProcessingType, ComponentObjects],
+      componentIdProvider: ComponentIdProvider
+  ): Unit = {
+    val components = componentObjectsMap.toList.flatMap { case (processingType, componentObjects) =>
+      extractComponents(processingType, componentObjects, componentIdProvider)
     }
     validateComponents(components)
-      .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
+      .valueOr(wrongConfigurations =>
+        throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations)
+      )
   }
 
-  //TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
-  private def extractComponents(processingType: ProcessingType,
-                                componentObjects: ComponentObjects,
-                                componentIdProvider: ComponentIdProvider): List[ComponentValidationData]  = {
-    componentObjects
-      .templates
+  // TODO: right now we don't support hidden components, see how works UIProcessObjectsFactory.prepareUIProcessObjects
+  private def extractComponents(
+      processingType: ProcessingType,
+      componentObjects: ComponentObjects,
+      componentIdProvider: ComponentIdProvider
+  ): List[ComponentValidationData] = {
+    componentObjects.templates
       .map { case (groupName, com) =>
         val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
-        val icon = getComponentIcon(componentObjects.config, com)
+        val icon        = getComponentIcon(componentObjects.config, com)
 
         ComponentValidationData(
           id = componentId,
@@ -38,22 +49,30 @@ private[component] object ComponentsValidator {
       }
   }
 
-  private def validateComponents(components: List[ComponentValidationData]): ValidatedNel[ComponentWrongConfiguration[_], Unit] = {
+  private def validateComponents(
+      components: List[ComponentValidationData]
+  ): ValidatedNel[ComponentWrongConfiguration[_], Unit] = {
     val wrongComponents = components
       .groupBy(_.id)
       .flatMap {
-        case (_, _ :: Nil) => Nil
+        case (_, _ :: Nil)             => Nil
         case (componentId, components) => computeWrongConfigurations(componentId, components)
       }
       .toList
     NonEmptyList.fromList(wrongComponents) match {
-      case None => Validated.valid(())
+      case None                          => Validated.valid(())
       case Some(nonEmptyWrongComponents) => Validated.invalid(nonEmptyWrongComponents)
     }
   }
 
-  private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[ComponentValidationData]): List[ComponentWrongConfiguration[_]] = {
-    def checkUniqueAttributeValue[T](attribute: WrongConfigurationAttribute, values: Iterable[T]): Option[ComponentWrongConfiguration[T]] =
+  private def computeWrongConfigurations(
+      componentId: ComponentId,
+      components: Iterable[ComponentValidationData]
+  ): List[ComponentWrongConfiguration[_]] = {
+    def checkUniqueAttributeValue[T](
+        attribute: WrongConfigurationAttribute,
+        values: Iterable[T]
+    ): Option[ComponentWrongConfiguration[T]] =
       values.toList.distinct match {
         case _ :: Nil => None
         case elements => Some(ComponentWrongConfiguration(componentId, attribute, elements))
@@ -61,26 +80,40 @@ private[component] object ComponentsValidator {
 
     val wrongConfiguredNames = checkUniqueAttributeValue(NameAttribute, components.map(_.name))
     val wrongConfiguredIcons = checkUniqueAttributeValue(IconAttribute, components.map(_.icon))
-    val wrongConfiguredGroups = checkUniqueAttributeValue(ComponentGroupNameAttribute, components.map(_.componentGroupName))
+    val wrongConfiguredGroups =
+      checkUniqueAttributeValue(ComponentGroupNameAttribute, components.map(_.componentGroupName))
     val wrongConfiguredTypes = checkUniqueAttributeValue(ComponentTypeAttribute, components.map(_.componentType))
-    val wrongConfigurations = wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
+    val wrongConfigurations =
+      wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
     wrongConfigurations.toList
   }
 
 }
 
-private final case class ComponentValidationData(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName)
+private final case class ComponentValidationData(
+    id: ComponentId,
+    name: String,
+    icon: String,
+    componentType: ComponentType,
+    componentGroupName: ComponentGroupName
+)
 
-private final case class ComponentWrongConfiguration[T](id: ComponentId, attribute: WrongConfigurationAttribute, duplications: List[T])
+private final case class ComponentWrongConfiguration[T](
+    id: ComponentId,
+    attribute: WrongConfigurationAttribute,
+    duplications: List[T]
+)
 
 private object WrongConfigurationAttribute extends Enumeration {
   type WrongConfigurationAttribute = Value
 
-  val NameAttribute = Value("name")
-  val IconAttribute = Value("icon")
-  val ComponentTypeAttribute = Value("componentType")
+  val NameAttribute               = Value("name")
+  val IconAttribute               = Value("icon")
+  val ComponentTypeAttribute      = Value("componentType")
   val ComponentGroupNameAttribute = Value("componentGroupName")
 }
 
-private case class ComponentConfigurationException(message: String, wrongConfigurations: NonEmptyList[ComponentWrongConfiguration[_]])
-  extends RuntimeException(s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.id.value)}.")
+private case class ComponentConfigurationException(
+    message: String,
+    wrongConfigurations: NonEmptyList[ComponentWrongConfiguration[_]]
+) extends RuntimeException(s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.id.value)}.")

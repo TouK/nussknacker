@@ -5,13 +5,14 @@ import io.circe._
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 
 trait V1_013__GroupNodesChange extends ProcessJsonMigration {
-  
+
   override def updateProcessJson(jsonProcess: Json): Option[Json] =
     jsonProcess.hcursor
-    .downField("metaData")
-    .downField("additionalFields")
-    .downField("groups")
-    .withFocus(updateGroups).top
+      .downField("metaData")
+      .downField("additionalFields")
+      .downField("groups")
+      .withFocus(updateGroups)
+      .top
 
   private def updateGroups(groups: Json): Json = fromValues(groups.asArray.getOrElse(List()).map { group =>
     group.arrayOrObject(group, transformGroupArray, _ => group)

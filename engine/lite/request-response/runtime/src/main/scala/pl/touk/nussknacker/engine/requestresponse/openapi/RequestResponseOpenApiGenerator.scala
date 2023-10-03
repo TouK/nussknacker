@@ -6,16 +6,28 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class RequestResponseOpenApiGenerator(oApiVersion: String, oApiInfo: OApiInfo) {
 
-  def generateOpenApiDefinition(rootPathDefinitionGenerator: PathOpenApiDefinitionGenerator, serverDescriptions: List[OApiServer], defaultServerUrl: String): Json = {
-    generateOpenApiDefinition(List("/" -> rootPathDefinitionGenerator), Option(serverDescriptions).filter(_.nonEmpty).orElse(Some(List(OApiServer(defaultServerUrl, None)))))
+  def generateOpenApiDefinition(
+      rootPathDefinitionGenerator: PathOpenApiDefinitionGenerator,
+      serverDescriptions: List[OApiServer],
+      defaultServerUrl: String
+  ): Json = {
+    generateOpenApiDefinition(
+      List("/" -> rootPathDefinitionGenerator),
+      Option(serverDescriptions).filter(_.nonEmpty).orElse(Some(List(OApiServer(defaultServerUrl, None))))
+    )
   }
 
-  def generateOpenApiDefinition(pathWithDefinitionGenerators: List[(String, PathOpenApiDefinitionGenerator)], serverDescriptions: Option[List[OApiServer]]): Json = {
+  def generateOpenApiDefinition(
+      pathWithDefinitionGenerators: List[(String, PathOpenApiDefinitionGenerator)],
+      serverDescriptions: Option[List[OApiServer]]
+  ): Json = {
     val paths = generatePathsDefinition(pathWithDefinitionGenerators)
     OApiDocumentation(oApiVersion, oApiInfo, serverDescriptions, paths).asJson
   }
 
-  private def generatePathsDefinition(pathWithDefinitionGenerators: List[(String, PathOpenApiDefinitionGenerator)]): Json = {
+  private def generatePathsDefinition(
+      pathWithDefinitionGenerators: List[(String, PathOpenApiDefinitionGenerator)]
+  ): Json = {
     (for {
       pathWithDefinitionGenerator <- pathWithDefinitionGenerators
       (path, pathDefinitionGenerator) = pathWithDefinitionGenerator
@@ -29,42 +41,49 @@ object RequestResponseOpenApiGenerator {
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
 
-  private[requestresponse] def generateScenarioDefinition(operationId: String,
-                                                          summary: String,
-                                                          description: String,
-                                                          tags: List[String],
-                                                          requestDefinition: Json,
-                                                          responseDefinition: Json): Json = {
-    val postOpenApiDefinition = generatePostJsonOApiPathDefinition(
-      operationId,
-      summary,
-      description,
-      tags,
-      requestDefinition,
-      responseDefinition)
+  private[requestresponse] def generateScenarioDefinition(
+      operationId: String,
+      summary: String,
+      description: String,
+      tags: List[String],
+      requestDefinition: Json,
+      responseDefinition: Json
+  ): Json = {
+    val postOpenApiDefinition =
+      generatePostJsonOApiPathDefinition(operationId, summary, description, tags, requestDefinition, responseDefinition)
     val openApiDefinition = generateOApiDefinition(
       postOpenApiDefinition,
-      Map(), //TODO generate openApi for GET sources
+      Map(), // TODO generate openApi for GET sources
     )
     jsonEncoder.encode(openApiDefinition)
   }
 
-  private def generateOApiDefinition(postOpenApiDefinition: Map[String, Any], getOpenApiDefinition: Map[String, Any]) = {
+  private def generateOApiDefinition(
+      postOpenApiDefinition: Map[String, Any],
+      getOpenApiDefinition: Map[String, Any]
+  ) = {
     Map.empty[String, Any] ++
-      (if(postOpenApiDefinition.isEmpty) Map.empty else Map("post" -> postOpenApiDefinition)) ++
-      (if(getOpenApiDefinition.isEmpty) Map.empty else Map("get" -> getOpenApiDefinition))
+      (if (postOpenApiDefinition.isEmpty) Map.empty else Map("post" -> postOpenApiDefinition)) ++
+      (if (getOpenApiDefinition.isEmpty) Map.empty else Map("get" -> getOpenApiDefinition))
   }
 
-  private def generatePostJsonOApiPathDefinition(operationId: String, summary: String, description: String, tags: List[String], requestSchema: Json, responseSchema: Json) =
+  private def generatePostJsonOApiPathDefinition(
+      operationId: String,
+      summary: String,
+      description: String,
+      tags: List[String],
+      requestSchema: Json,
+      responseSchema: Json
+  ) =
     Map(
       "operationId" -> operationId,
-      "summary" -> summary,
+      "summary"     -> summary,
       "description" -> description,
-      "tags" -> tags,
-      "consumes" -> List("application/json"),
-      "produces" -> List("application/json"),
+      "tags"        -> tags,
+      "consumes"    -> List("application/json"),
+      "produces"    -> List("application/json"),
       "requestBody" -> generateOApiRequestBody(requestSchema),
-      "responses" -> generateOApiResponse(responseSchema)
+      "responses"   -> generateOApiResponse(responseSchema)
     )
 
   private def generateOApiRequestBody(schema: Json) = Map(

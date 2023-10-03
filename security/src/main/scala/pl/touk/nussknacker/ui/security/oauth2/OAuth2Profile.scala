@@ -8,7 +8,11 @@ trait OAuth2Profile[ProfileResponse] {
 }
 
 object OAuth2Profile {
-  def getUserRoles(identity: String, configuration: OAuth2Configuration, defaults: Set[String] = Set.empty): Set[String] =
+  def getUserRoles(
+      identity: String,
+      configuration: OAuth2Configuration,
+      defaults: Set[String] = Set.empty
+  ): Set[String] =
     configuration
       .findUserById(identity)
       .map(_.roles ++ defaults)

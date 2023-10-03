@@ -31,11 +31,10 @@ package object component {
     case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
   }
 
-
   object ComponentLink {
-    val DocumentationId = "documentation"
+    val DocumentationId           = "documentation"
     val DocumentationTile: String = "Documentation"
-    val documentationIcon: URI = URI.create("/assets/icons/documentation.svg")
+    val documentationIcon: URI    = URI.create("/assets/icons/documentation.svg")
 
     def createDocumentationLink(docUrl: String): ComponentLink =
       ComponentLink(DocumentationId, DocumentationTile, documentationIcon, URI.create(docUrl))
@@ -49,44 +48,49 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentListElement(id: ComponentId,
-                                        name: String,
-                                        icon: String,
-                                        componentType: ComponentType,
-                                        componentGroupName: ComponentGroupName,
-                                        categories: List[String],
-                                        links: List[ComponentLink],
-                                        usageCount: Long)
+  final case class ComponentListElement(
+      id: ComponentId,
+      name: String,
+      icon: String,
+      componentType: ComponentType,
+      componentGroupName: ComponentGroupName,
+      categories: List[String],
+      links: List[ComponentLink],
+      usageCount: Long
+  )
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario = ComponentUsagesInScenario(
-      id = process.id, //Right now we assume that scenario id is name..
-      name = process.idWithName.name,
-      processId = process.processId,
-      nodesUsagesData = nodesUsagesData,
-      isFragment = process.isFragment,
-      processCategory = process.processCategory,
-      modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
-      modifiedAt = process.modifiedAt,
-      modifiedBy = process.modifiedBy,
-      createdAt = process.createdAt,
-      createdBy = process.createdBy,
-      lastAction = process.lastAction
-    )
+    def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario =
+      ComponentUsagesInScenario(
+        id = process.id, // Right now we assume that scenario id is name..
+        name = process.idWithName.name,
+        processId = process.processId,
+        nodesUsagesData = nodesUsagesData,
+        isFragment = process.isFragment,
+        processCategory = process.processCategory,
+        modificationDate = process.modificationDate, // TODO: Deprecated, please use modifiedAt
+        modifiedAt = process.modifiedAt,
+        modifiedBy = process.modifiedBy,
+        createdAt = process.createdAt,
+        createdBy = process.createdBy,
+        lastAction = process.lastAction
+      )
   }
 
   @JsonCodec
-  final case class ComponentUsagesInScenario(id: String,
-                                             name: ProcessName,
-                                             processId: ProcessId,
-                                             nodesUsagesData: List[NodeUsageData],
-                                             isFragment: Boolean,
-                                             processCategory: String,
-                                             modificationDate: Instant,
-                                             modifiedAt: Instant,
-                                             modifiedBy: String,
-                                             createdAt: Instant,
-                                             createdBy: String,
-                                             lastAction: Option[ProcessAction])
+  final case class ComponentUsagesInScenario(
+      id: String,
+      name: ProcessName,
+      processId: ProcessId,
+      nodesUsagesData: List[NodeUsageData],
+      isFragment: Boolean,
+      processCategory: String,
+      modificationDate: Instant,
+      modifiedAt: Instant,
+      modifiedBy: String,
+      createdAt: Instant,
+      createdBy: String,
+      lastAction: Option[ProcessAction]
+  )
 
 }

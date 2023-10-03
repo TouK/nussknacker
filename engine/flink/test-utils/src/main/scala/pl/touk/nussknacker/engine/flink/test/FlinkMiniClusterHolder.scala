@@ -48,9 +48,11 @@ trait FlinkMiniClusterHolder {
 
 }
 
-class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource,
-                                 protected val userFlinkClusterConfig: Configuration,
-                                 protected val envConfig: AdditionalEnvironmentConfig) extends FlinkMiniClusterHolder {
+class FlinkMiniClusterHolderImpl(
+    flinkMiniCluster: MiniClusterWithClientResource,
+    protected val userFlinkClusterConfig: Configuration,
+    protected val envConfig: AdditionalEnvironmentConfig
+) extends FlinkMiniClusterHolder {
 
   override def start(): Unit = {
     flinkMiniCluster.before()
@@ -81,23 +83,35 @@ class FlinkMiniClusterHolderImpl(flinkMiniCluster: MiniClusterWithClientResource
 
 object FlinkMiniClusterHolder {
 
-  def apply(userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()): FlinkMiniClusterHolder = {
+  def apply(
+      userFlinkClusterConfig: Configuration,
+      envConfig: AdditionalEnvironmentConfig = AdditionalEnvironmentConfig()
+  ): FlinkMiniClusterHolder = {
     userFlinkClusterConfig.setBoolean(CoreOptions.FILESYTEM_DEFAULT_OVERRIDE, true)
     val resource = prepareMiniClusterResource(userFlinkClusterConfig)
     new FlinkMiniClusterHolderImpl(resource, userFlinkClusterConfig, envConfig)
   }
 
   def prepareMiniClusterResource(userFlinkClusterConfig: Configuration): MiniClusterWithClientResource = {
-    val taskManagerNumber = ConfigOptions.key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER).intType().defaultValue(ConfigConstants.DEFAULT_LOCAL_NUMBER_JOB_MANAGER)
+    val taskManagerNumber = ConfigOptions
+      .key(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER)
+      .intType()
+      .defaultValue(ConfigConstants.DEFAULT_LOCAL_NUMBER_JOB_MANAGER)
     val clusterConfig: MiniClusterResourceConfiguration = new MiniClusterResourceConfiguration.Builder()
       .setNumberTaskManagers(userFlinkClusterConfig.get(taskManagerNumber))
-      .setNumberSlotsPerTaskManager(userFlinkClusterConfig.getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue()))
+      .setNumberSlotsPerTaskManager(
+        userFlinkClusterConfig
+          .getInteger(TaskManagerOptions.NUM_TASK_SLOTS, TaskManagerOptions.NUM_TASK_SLOTS.defaultValue())
+      )
       .setConfiguration(userFlinkClusterConfig)
       .build
     new MiniClusterWithClientResource(clusterConfig)
   }
 
-  case class AdditionalEnvironmentConfig(detachedClient: Boolean = true,
-                                         defaultWaitForStatePatience: PatienceConfig = PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis))))
+  case class AdditionalEnvironmentConfig(
+      detachedClient: Boolean = true,
+      defaultWaitForStatePatience: PatienceConfig =
+        PatienceConfig(timeout = scaled(Span(20, Seconds)), interval = scaled(Span(100, Millis)))
+  )
 
 }

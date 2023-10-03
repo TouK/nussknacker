@@ -15,7 +15,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{
+  BaseProcessDetails,
+  BasicProcess,
+  ProcessDetails,
+  ProcessShapeFetchStrategy,
+  ValidatedProcessDetails
+}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
@@ -39,15 +45,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
-                          val processRepository: FetchingProcessRepository[Future],
-                          processService: ProcessService,
-                          deploymentService: DeploymentService,
-                          processToolbarService: ProcessToolbarService,
-                          processResolving: UIProcessResolving,
-                          val processAuthorizer: AuthorizeProcess,
-                          processChangeListener: ProcessChangeListener
-                        )(implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives
+    val processRepository: FetchingProcessRepository[Future],
+    processService: ProcessService,
+    deploymentService: DeploymentService,
+    processToolbarService: ProcessToolbarService,
+    processResolving: UIProcessResolving,
+    val processAuthorizer: AuthorizeProcess,
+    processChangeListener: ProcessChangeListener
+)(implicit val ec: ExecutionContext, mat: Materializer)
+    extends Directives
     with FailFastCirceSupport
     with EspPathMatchers
     with RouteWithUser
@@ -69,7 +75,8 @@ class ProcessesResources(
         (post & processId(processName)) { processId =>
           canWrite(processId) {
             complete {
-              processService.unArchiveProcess(processId)
+              processService
+                .unArchiveProcess(processId)
                 .map(toResponse(StatusCodes.OK))
                 .withSideEffect(_ => sideEffectAction(OnUnarchived(processId.id)))
             }
@@ -79,7 +86,8 @@ class ProcessesResources(
         (post & processId(processName)) { processId =>
           canWrite(processId) {
             complete {
-              processService.archiveProcess(processId)
+              processService
+                .archiveProcess(processId)
                 .map(toResponse(StatusCodes.OK))
                 .withSideEffect(_ => sideEffectAction(OnArchived(processId.id)))
             }
@@ -91,8 +99,10 @@ class ProcessesResources(
             complete {
               // To not overload engine, for list of processes we provide statuses that can be cached
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-              processRepository.fetchProcessesDetails[Unit](query.toRepositoryQuery)
-                .flatMap(_.map(enrichDetailsWithProcessState[Unit]).sequence).toBasicProcess
+              processRepository
+                .fetchProcessesDetails[Unit](query.toRepositoryQuery)
+                .flatMap(_.map(enrichDetailsWithProcessState[Unit]).sequence)
+                .toBasicProcess
             }
           }
         }
@@ -112,7 +122,7 @@ class ProcessesResources(
           complete {
             for {
               processes <- processService.getProcesses[Unit]
-              statuses <- fetchProcessStatesForProcesses(processes)
+              statuses  <- fetchProcessStatesForProcesses(processes)
             } yield statuses
           }
         }
@@ -132,7 +142,7 @@ class ProcessesResources(
       } ~ path("processes" / Segment / "deployments") { processName =>
         processId(processName) { processId =>
           complete {
-            //FIXME: We should provide Deployment definition and return there all deployments, not actions..
+            // FIXME: We should provide Deployment definition and return there all deployments, not actions..
             processService.getProcessActions(processId.id)
           }
         }
@@ -151,9 +161,11 @@ class ProcessesResources(
                 complete {
                   processService
                     .updateProcess(processId, updateCommand)
-                    .withSideEffect(response => sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
-                      OnSaved(resp.id, resp.versionId)
-                    })
+                    .withSideEffect(response =>
+                      sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
+                        OnSaved(resp.id, resp.versionId)
+                      }
+                    )
                     .map(_.map(_.validationResult))
                     .map(toResponseEither[ValidationResult])
                 }
@@ -162,11 +174,15 @@ class ProcessesResources(
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-              processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).flatMap[ToResponseMarshallable] {
-                case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
-                case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
-                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-              }
+              processRepository
+                .fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id)
+                .flatMap[ToResponseMarshallable] {
+                  case Some(process) if skipValidateAndResolve =>
+                    enrichDetailsWithProcessState(process).map(toProcessDetails)
+                  case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
+                  case None =>
+                    Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+                }
             }
           }
         }
@@ -176,9 +192,11 @@ class ProcessesResources(
             complete {
               processService
                 .renameProcess(processId, ProcessName(newName))
-                .withSideEffect(response => sideEffectAction(response) { resp =>
-                  OnRenamed(processId.id, resp.oldName, resp.newName)
-                })
+                .withSideEffect(response =>
+                  sideEffectAction(response) { resp =>
+                    OnRenamed(processId.id, resp.oldName, resp.newName)
+                  }
+                )
                 .map(toResponseEither[UpdateProcessNameResponse])
             }
           }
@@ -187,11 +205,15 @@ class ProcessesResources(
         (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).flatMap[ToResponseMarshallable] {
-              case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
-              case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
-              case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
-            }
+            processRepository
+              .fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId)
+              .flatMap[ToResponseMarshallable] {
+                case Some(process) if skipValidateAndResolve =>
+                  enrichDetailsWithProcessState(process).map(toProcessDetails)
+                case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
+                case None =>
+                  Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
+              }
           }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
@@ -202,10 +224,14 @@ class ProcessesResources(
                 post {
                   complete {
                     processService
-                      .createProcess(CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName))
-                      .withSideEffect(response => sideEffectAction(response) { process =>
-                        OnSaved(process.id, process.versionId)
-                      })
+                      .createProcess(
+                        CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
+                      )
+                      .withSideEffect(response =>
+                        sideEffectAction(response) { process =>
+                          OnSaved(process.id, process.versionId)
+                        }
+                      )
                       .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
                   }
                 }
@@ -235,23 +261,26 @@ class ProcessesResources(
             complete {
               processService
                 .updateCategory(processId, category)
-                .withSideEffect(response => sideEffectAction(response) { resp =>
-                  OnCategoryChanged(processId.id, resp.oldCategory, resp.newCategory)
-                })
+                .withSideEffect(response =>
+                  sideEffectAction(response) { resp =>
+                    OnCategoryChanged(processId.id, resp.oldCategory, resp.newCategory)
+                  }
+                )
                 .map(toResponseEither[UpdateProcessCategoryResponse])
             }
           }
         }
-      } ~ path("processes" / Segment / VersionIdSegment / "compare" / VersionIdSegment) { (processName, thisVersion, otherVersion) =>
-        (get & processId(processName)) { processId =>
-          complete {
-            withJson(processId.id, thisVersion) { thisDisplayable =>
-              withJson(processId.id, otherVersion) { otherDisplayable =>
-                ProcessComparator.compare(thisDisplayable, otherDisplayable)
+      } ~ path("processes" / Segment / VersionIdSegment / "compare" / VersionIdSegment) {
+        (processName, thisVersion, otherVersion) =>
+          (get & processId(processName)) { processId =>
+            complete {
+              withJson(processId.id, thisVersion) { thisDisplayable =>
+                withJson(processId.id, otherVersion) { otherDisplayable =>
+                  ProcessComparator.compare(thisDisplayable, otherDisplayable)
+                }
               }
             }
           }
-        }
       }
 
     }
@@ -262,59 +291,92 @@ class ProcessesResources(
     processChangeListener.handle(event)
   }
 
-  private def sideEffectAction[T](response: XError[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+  private def sideEffectAction[T](
+      response: XError[T]
+  )(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     sideEffectAction(response.toOption)(eventAction)
   }
 
-  private def sideEffectAction[T](response: Option[T])(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+  private def sideEffectAction[T](
+      response: Option[T]
+  )(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
 
-  private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def fetchProcessStatesForProcesses(
+      processes: List[BaseProcessDetails[Unit]]
+  )(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     // To not overload engine, for list of processes we provide statuses that can be cached
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-    processes.map(process => deploymentService.getProcessState(process).map(status => process.name -> status))
-      .sequence[Future, (String, ProcessState)].map(_.toMap)
+    processes
+      .map(process => deploymentService.getProcessState(process).map(status => process.name -> status))
+      .sequence[Future, (String, ProcessState)]
+      .map(_.toMap)
   }
 
-  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
-                                                                          (implicit user: LoggedUser,
-                                                                           freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
+  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](
+      process: BaseProcessDetails[PS]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
     if (process.isFragment)
       Future.successful(process)
     else
       deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
   }
 
-  private def withJson(processId: ProcessId, version: VersionId)
-                      (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
-  = processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
-    maybeProcess.map(_.json) match {
-      case Some(displayable) => process(displayable)
-      case None => HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario $processId in version $version not found"): ToResponseMarshallable
+  private def withJson(processId: ProcessId, version: VersionId)(
+      process: DisplayableProcess => ToResponseMarshallable
+  )(implicit user: LoggedUser): ToResponseMarshallable =
+    processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map { maybeProcess =>
+      maybeProcess.map(_.json) match {
+        case Some(displayable) => process(displayable)
+        case None =>
+          HttpResponse(
+            status = StatusCodes.NotFound,
+            entity = s"Scenario $processId in version $version not found"
+          ): ToResponseMarshallable
+      }
     }
-  }
 
-  private def validateAndReverseResolveAll(processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]): Future[List[ValidatedProcessDetails]] = {
+  private def validateAndReverseResolveAll(
+      processDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]
+  ): Future[List[ValidatedProcessDetails]] = {
     processDetails.flatMap(all => Future.sequence(all.map(validateAndReverseResolve)))
   }
 
-  private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess]): Future[ValidatedProcessDetails] = {
+  private def validateAndReverseResolve(
+      processDetails: BaseProcessDetails[CanonicalProcess]
+  ): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
-      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
-      processResolving.reverseResolveExpressions(canonical, processingType, processDetails.processCategory, validationResult)
+      val validationResult =
+        processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
+      processResolving.reverseResolveExpressions(
+        canonical,
+        processingType,
+        processDetails.processCategory,
+        validationResult
+      )
     }
     Future.successful(validatedDetails)
   }
 
-  private def toProcessDetails(canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]): Future[ProcessDetails] = {
-    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType, canonicalProcessDetails.processCategory))
+  private def toProcessDetails(
+      canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]
+  ): Future[ProcessDetails] = {
+    val processDetails = canonicalProcessDetails.mapProcess(canonical =>
+      ProcessConverter.toDisplayable(
+        canonical,
+        canonicalProcessDetails.processingType,
+        canonicalProcessDetails.processCategory
+      )
+    )
     Future.successful(processDetails)
   }
 
-  private def toProcessDetailsAll(canonicalProcessDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]): Future[List[ProcessDetails]] = {
+  private def toProcessDetailsAll(
+      canonicalProcessDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]
+  ): Future[List[ProcessDetails]] = {
     canonicalProcessDetails.flatMap(all => Future.sequence(all.map(toProcessDetails)))
   }
 
@@ -341,13 +403,14 @@ class ProcessesResources(
 object ProcessesResources {
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
-  case class ProcessesQuery(isFragment: Option[Boolean],
-                            isArchived: Option[Boolean],
-                            isDeployed: Option[Boolean],
-                            categories: Option[Seq[String]],
-                            processingTypes: Option[Seq[String]],
-                            names: Option[Seq[String]],
-                           ) {
+  case class ProcessesQuery(
+      isFragment: Option[Boolean],
+      isArchived: Option[Boolean],
+      isDeployed: Option[Boolean],
+      categories: Option[Seq[String]],
+      processingTypes: Option[Seq[String]],
+      names: Option[Seq[String]],
+  ) {
     def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
       isFragment = isFragment,
       isArchived = isArchived,

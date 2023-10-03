@@ -20,7 +20,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaBasedParameter,
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.serialization.AzureAvroSerializerFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
+  ConfluentSchemaRegistryClient,
+  OpenAPIJsonSchema
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
@@ -29,7 +32,7 @@ import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.Parameter
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
-  protected implicit class RichParsedSchema(p: ParsedSchema){
+  protected implicit class RichParsedSchema(p: ParsedSchema) {
     def cast(): S = p.asInstanceOf[S]
   }
 }
@@ -43,27 +46,50 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     }
   }
 
-  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, isKey: Boolean): Serializer[Any] = {
+  override def serializer(
+      schemaOpt: Option[ParsedSchema],
+      client: SchemaRegistryClient,
+      isKey: Boolean
+  ): Serializer[Any] = {
     client match {
       case confluentClient: ConfluentSchemaRegistryClient if kafkaConfig.avroAsJsonSerialization.contains(true) =>
-        new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast()), isKey = isKey)
+        new ConfluentJsonPayloadKafkaSerializer(
+          kafkaConfig,
+          confluentClient,
+          new DefaultAvroSchemaEvolution,
+          schemaOpt.map(_.cast()),
+          isKey = isKey
+        )
       case confluentClient: ConfluentSchemaRegistryClient =>
         ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
       case azureClient: AzureSchemaRegistryClient =>
         AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
       case _ =>
-        throw new IllegalArgumentException(s"Not supported schema registry client: ${client.getClass}. " +
-          s"Avro serialization is currently supported only for Confluent schema registry implementation")
+        throw new IllegalArgumentException(
+          s"Not supported schema registry client: ${client.getClass}. " +
+            s"Avro serialization is currently supported only for Confluent schema registry implementation"
+        )
     }
 
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult =
+    AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])
-                               (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+  override def extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
-      Validated.Valid(SingleSchemaBasedParameter(rawParameter, new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())))
+      Validated.Valid(
+        SingleSchemaBasedParameter(
+          rawParameter,
+          new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+        )
+      )
     } else {
       AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames)
     }
@@ -80,39 +106,51 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
     } else {
       // We pass None to schema, because message readers should not do schema evolution.
       // It is done this way because we want to keep messages in the original format as they were serialized on Kafka
-      val createSerializer = serializer(None, schemaRegistryClient, _)
-      val avroKeySerializer = createSerializer(true)
+      val createSerializer    = serializer(None, schemaRegistryClient, _)
+      val avroKeySerializer   = createSerializer(true)
       val avroValueSerializer = createSerializer(false)
-      new AvroPayloadRecordFormatterSupport(new AvroMessageReader(avroKeySerializer), new AvroMessageReader(avroValueSerializer))
+      new AvroPayloadRecordFormatterSupport(
+        new AvroMessageReader(avroKeySerializer),
+        new AvroMessageReader(avroValueSerializer)
+      )
     }
   }
 }
-
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
-    (topic: String, data: Any) => data match {
-      case j: Json => j.noSpaces.getBytes()
-      case _ => throw new SerializationException(s"Expecting json but got: $data")
-    }
+    (topic: String, data: Any) =>
+      data match {
+        case j: Json => j.noSpaces.getBytes()
+        case _       => throw new SerializationException(s"Expecting json but got: $data")
+      }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
-  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+  override def extractParameter(
+      schema: ParsedSchema,
+      rawMode: Boolean,
+      validationMode: ValidationMode,
+      rawParameter: Parameter,
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
       Validated.Valid(
-        SingleSchemaBasedParameter(rawParameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema()))
+        SingleSchemaBasedParameter(
+          rawParameter,
+          new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())
+        )
       )
     } else {
-      //in editor mode we use lax validation mode, to be backward compatible
+      // in editor mode we use lax validation mode, to be backward compatible
       JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)
     }
   }
 
-  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
-    (value: Any) => BestEffortJsonSchemaEncoder.encodeOrError(value, schema.cast().rawSchema())
+  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = { (value: Any) =>
+    BestEffortJsonSchemaEncoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =

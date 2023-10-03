@@ -21,8 +21,12 @@ class ConfigProcessToolbarService(config: Config, categories: List[String]) exte
       .toMap
 
   override def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings = {
-    val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(process.processCategory,
-      throw new IllegalArgumentException(s"Try to get scenario toolbar settings for not existing category: ${process.processCategory}. Available categories: ${categoriesProcessToolbarConfig.keys.mkString(",")}.")
+    val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(
+      process.processCategory,
+      throw new IllegalArgumentException(
+        s"Try to get scenario toolbar settings for not existing category: ${process.processCategory}. Available categories: ${categoriesProcessToolbarConfig.keys
+            .mkString(",")}."
+      )
     )
 
     ProcessToolbarSettings.fromConfig(toolbarConfig, process)
@@ -36,21 +40,40 @@ object ProcessToolbarSettings {
   def fromConfig(processToolbarConfig: ProcessToolbarsConfig, process: BaseProcessDetails[_]): ProcessToolbarSettings =
     ProcessToolbarSettings(
       createProcessToolbarId(processToolbarConfig, process),
-      processToolbarConfig.topLeft.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.bottomLeft.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.topRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process)),
-      processToolbarConfig.bottomRight.filterNot(tp => verifyCondition(tp.hidden, process)).map(tp => ToolbarPanel.fromConfig(tp, process))
+      processToolbarConfig.topLeft
+        .filterNot(tp => verifyCondition(tp.hidden, process))
+        .map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.bottomLeft
+        .filterNot(tp => verifyCondition(tp.hidden, process))
+        .map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.topRight
+        .filterNot(tp => verifyCondition(tp.hidden, process))
+        .map(tp => ToolbarPanel.fromConfig(tp, process)),
+      processToolbarConfig.bottomRight
+        .filterNot(tp => verifyCondition(tp.hidden, process))
+        .map(tp => ToolbarPanel.fromConfig(tp, process))
     )
 }
 
 @JsonCodec
-case class ProcessToolbarSettings(id: String, topLeft: List[ToolbarPanel], bottomLeft: List[ToolbarPanel], topRight: List[ToolbarPanel], bottomRight: List[ToolbarPanel])
+case class ProcessToolbarSettings(
+    id: String,
+    topLeft: List[ToolbarPanel],
+    bottomLeft: List[ToolbarPanel],
+    topRight: List[ToolbarPanel],
+    bottomRight: List[ToolbarPanel]
+)
 
 object ToolbarPanel {
 
   import ToolbarHelper._
 
-  def apply(`type`: ToolbarPanelType, title: Option[String], buttonsVariant: Option[ToolbarButtonVariant], buttons: Option[List[ToolbarButton]]): ToolbarPanel =
+  def apply(
+      `type`: ToolbarPanelType,
+      title: Option[String],
+      buttonsVariant: Option[ToolbarButtonVariant],
+      buttons: Option[List[ToolbarButton]]
+  ): ToolbarPanel =
     ToolbarPanel(`type`.toString, title, buttonsVariant, buttons)
 
   def fromConfig(config: ToolbarPanelConfig, process: BaseProcessDetails[_]): ToolbarPanel =
@@ -69,7 +92,12 @@ object ToolbarPanel {
 }
 
 @JsonCodec
-case class ToolbarPanel(id: String, title: Option[String], buttonsVariant: Option[ToolbarButtonVariant], buttons: Option[List[ToolbarButton]])
+case class ToolbarPanel(
+    id: String,
+    title: Option[String],
+    buttonsVariant: Option[ToolbarButtonVariant],
+    buttons: Option[List[ToolbarButton]]
+)
 
 object ToolbarButton {
 
@@ -86,12 +114,20 @@ object ToolbarButton {
 }
 
 @JsonCodec
-case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
+case class ToolbarButton(
+    `type`: ToolbarButtonType,
+    name: Option[String],
+    title: Option[String],
+    icon: Option[String],
+    url: Option[String],
+    disabled: Boolean
+)
 
 private[process] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
-    s"${config.uuidCode}-${if (process.isArchived) "archived" else "not-archived"}-${if (process.isFragment) "fragment" else "scenario"}"
+    s"${config.uuidCode}-${if (process.isArchived) "archived" else "not-archived"}-${if (process.isFragment) "fragment"
+      else "scenario"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
     val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name
@@ -117,7 +153,11 @@ private[process] object ToolbarHelper {
   private def verifyArchivedCondition(condition: ToolbarCondition, process: BaseProcessDetails[_]) =
     verifyCondition(process.isArchived, condition.archived, condition.shouldMatchAllOfConditions)
 
-  //When we should match all conditions and expected condition is empty (not set) then we ignore this condition
-  private def verifyCondition(toVerify: Boolean, expected: Option[Boolean], shouldMatchAllOfConditions: Boolean): Boolean =
+  // When we should match all conditions and expected condition is empty (not set) then we ignore this condition
+  private def verifyCondition(
+      toVerify: Boolean,
+      expected: Option[Boolean],
+      shouldMatchAllOfConditions: Boolean
+  ): Boolean =
     (shouldMatchAllOfConditions && expected.isEmpty) || expected.contains(toVerify)
 }

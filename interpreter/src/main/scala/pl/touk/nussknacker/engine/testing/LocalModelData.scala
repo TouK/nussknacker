@@ -11,19 +11,30 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 object LocalModelData {
 
-  def apply(inputConfig: Config,
-            configCreator: ProcessConfigCreator,
-            migrations: ProcessMigrations = ProcessMigrations.empty,
-            modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
-            modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
-            objectNaming: ObjectNaming = DefaultNamespacedObjectNaming): LocalModelData =
-    new LocalModelData(InputConfigDuringExecution(inputConfig), modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
+  def apply(
+      inputConfig: Config,
+      configCreator: ProcessConfigCreator,
+      migrations: ProcessMigrations = ProcessMigrations.empty,
+      modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
+      modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
+      objectNaming: ObjectNaming = DefaultNamespacedObjectNaming
+  ): LocalModelData =
+    new LocalModelData(
+      InputConfigDuringExecution(inputConfig),
+      modelConfigLoader,
+      configCreator,
+      migrations,
+      modelClassLoader,
+      objectNaming
+    )
 
 }
 
-case class LocalModelData(inputConfigDuringExecution: InputConfigDuringExecution,
-                          modelConfigLoader: ModelConfigLoader,
-                          configCreator: ProcessConfigCreator,
-                          migrations: ProcessMigrations,
-                          modelClassLoader: ModelClassLoader,
-                          objectNaming: ObjectNaming) extends ModelData
+case class LocalModelData(
+    inputConfigDuringExecution: InputConfigDuringExecution,
+    modelConfigLoader: ModelConfigLoader,
+    configCreator: ProcessConfigCreator,
+    migrations: ProcessMigrations,
+    modelClassLoader: ModelClassLoader,
+    objectNaming: ObjectNaming
+) extends ModelData

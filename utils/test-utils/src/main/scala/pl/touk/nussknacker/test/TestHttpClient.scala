@@ -19,7 +19,7 @@ trait WithTestHttpClientCreator extends WithSttpTestUtils {
         acquire = IO {
           val httpClient = sslContext match {
             case Some(ssl) => HttpClient.newBuilder().sslContext(ssl).build()
-            case None => HttpClient.newBuilder().build()
+            case None      => HttpClient.newBuilder().build()
           }
           val backend = HttpClientSyncBackend.usingClient(httpClient)
           LoggingBackend(

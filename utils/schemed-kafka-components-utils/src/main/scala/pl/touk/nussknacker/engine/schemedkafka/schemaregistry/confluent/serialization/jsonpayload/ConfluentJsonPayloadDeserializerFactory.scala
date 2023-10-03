@@ -58,20 +58,23 @@ import scala.reflect.ClassTag
   */
 object ConfluentJsonPayloadDeserializerFactory extends SchemaRegistryBasedDeserializerFactory {
 
-  override def createDeserializer[T: ClassTag](schemaRegistryClient: SchemaRegistryClient,
-                                               kafkaConfig: KafkaConfig,
-                                               schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                               isKey: Boolean): Deserializer[T] = {
+  override def createDeserializer[T: ClassTag](
+      schemaRegistryClient: SchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      isKey: Boolean
+  ): Deserializer[T] = {
     val specificClass = {
       val clazz = implicitly[ClassTag[T]].runtimeClass
-      //This is a bit tricky, Allegro decoder requires SpecificRecordBase instead of SpecificRecord
-      if (classOf[SpecificRecordBase].isAssignableFrom(clazz)) Some(clazz.asInstanceOf[Class[SpecificRecordBase]]) else None
+      // This is a bit tricky, Allegro decoder requires SpecificRecordBase instead of SpecificRecord
+      if (classOf[SpecificRecordBase].isAssignableFrom(clazz)) Some(clazz.asInstanceOf[Class[SpecificRecordBase]])
+      else None
     }
 
     val avroSchemaDataOpt = schemaDataOpt.map { schemaData =>
       schemaData.schema match {
         case _: AvroSchema => schemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
-        case other => throw new IllegalArgumentException(s"Unsupported schema class: ${other.getClass}")
+        case other         => throw new IllegalArgumentException(s"Unsupported schema class: ${other.getClass}")
       }
     }
 
@@ -80,11 +83,17 @@ object ConfluentJsonPayloadDeserializerFactory extends SchemaRegistryBasedDeseri
       avroSchemaDataOpt,
       schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient],
       isKey,
-      specificClass.isDefined) {
+      specificClass.isDefined
+    ) {
 
       private val converter = new JsonPayloadToAvroConverter(specificClass)
 
-      override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData[AvroSchema]]): AnyRef = {
+      override protected def deserialize(
+          topic: String,
+          isKey: lang.Boolean,
+          payload: Array[Byte],
+          readerSchema: Option[RuntimeSchemaData[AvroSchema]]
+      ): AnyRef = {
         val schema = readerSchema.get.schema.rawSchema()
         converter.convert(payload, schema)
       }

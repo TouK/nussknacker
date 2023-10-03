@@ -25,15 +25,20 @@ class DateFormatUtils(defaultLocale: Locale) extends HideToString {
   def parseZonedDateTime(text: String): ZonedDateTime = ZonedDateTime.parse(text)
 
   @Documentation(description = "Parse LocalTime in DateTimeFormatter format")
-  def parseLocalTime(text: String, format: String): LocalTime = LocalTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+  def parseLocalTime(text: String, format: String): LocalTime =
+    LocalTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
   @Documentation(description = "Parse LocalDate in DateTimeFormatter format")
-  def parseLocalDate(text: String, format: String): LocalDate = LocalDate.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+  def parseLocalDate(text: String, format: String): LocalDate =
+    LocalDate.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
   @Documentation(description = "Parse LocalDateTime in DateTimeFormatter format")
-  def parseLocalDateTime(text: String, format: String): LocalDateTime = LocalDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+  def parseLocalDateTime(text: String, format: String): LocalDateTime =
+    LocalDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
   @Documentation(description = "Parse OffsetDateTime in DateTimeFormatter format")
-  def parseOffsetDateTime(text: String, format: String): OffsetDateTime = OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+  def parseOffsetDateTime(text: String, format: String): OffsetDateTime =
+    OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
   @Documentation(description = "Parse ZonedDateTime in DateTimeFormatter format")
-  def parseZonedDateTime(text: String, format: String): ZonedDateTime = ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+  def parseZonedDateTime(text: String, format: String): ZonedDateTime =
+    ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
 
   @Documentation(description = "Parse LocalTime using given formatter")
   def parseLocalTime(text: String, format: DateTimeFormatter): LocalTime = LocalTime.parse(text, format)
@@ -46,15 +51,17 @@ class DateFormatUtils(defaultLocale: Locale) extends HideToString {
   @Documentation(description = "Parse ZonedDateTime using given formatter")
   def parseZonedDateTime(text: String, format: DateTimeFormatter): ZonedDateTime = ZonedDateTime.parse(text, format)
 
-  @Documentation(description = "Render LocalTime, LocalDate, LocalDateTime, OffsetDateTime or ZonedDateTime in ISO-8601 format")
+  @Documentation(description =
+    "Render LocalTime, LocalDate, LocalDateTime, OffsetDateTime or ZonedDateTime in ISO-8601 format"
+  )
   def format(temporal: TemporalAccessor): String = {
     val formatter = temporal match {
-      case _: Instant => DateTimeFormatter.ISO_INSTANT
-      case _: LocalDate => DateTimeFormatter.ISO_LOCAL_DATE
-      case _: LocalTime => DateTimeFormatter.ISO_LOCAL_TIME
-      case _: LocalDateTime => DateTimeFormatter.ISO_LOCAL_DATE_TIME
+      case _: Instant        => DateTimeFormatter.ISO_INSTANT
+      case _: LocalDate      => DateTimeFormatter.ISO_LOCAL_DATE
+      case _: LocalTime      => DateTimeFormatter.ISO_LOCAL_TIME
+      case _: LocalDateTime  => DateTimeFormatter.ISO_LOCAL_DATE_TIME
       case _: OffsetDateTime => DateTimeFormatter.ISO_OFFSET_DATE_TIME
-      case _: ZonedDateTime => DateTimeFormatter.ISO_ZONED_DATE_TIME
+      case _: ZonedDateTime  => DateTimeFormatter.ISO_ZONED_DATE_TIME
     }
     formatter.format(temporal)
   }

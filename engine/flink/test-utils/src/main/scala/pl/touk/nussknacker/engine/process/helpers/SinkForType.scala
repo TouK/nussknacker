@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
 import pl.touk.nussknacker.engine.process.helpers.SinkForType.SinkForTypeFunction
 import pl.touk.nussknacker.test.WithDataList
 
-
 trait SinkForType[T <: AnyRef] extends WithDataList[T] with Serializable {
 
   def toSinkFactory: SinkFactory = new SingleValueSinkFactory(toSinkFunction)

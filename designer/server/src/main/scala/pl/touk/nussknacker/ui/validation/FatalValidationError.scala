@@ -21,7 +21,6 @@ object FatalValidationError {
     }
   }
 
-
 }
 
 case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {

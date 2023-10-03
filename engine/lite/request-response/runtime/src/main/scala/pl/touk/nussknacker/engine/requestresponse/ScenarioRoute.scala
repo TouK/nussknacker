@@ -22,11 +22,11 @@ import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApi
 import scala.concurrent.Future
 
 private[requestresponse] class ScenarioRoute(
-                                              handler: RequestResponseHttpHandler[Future],
-                                              config: RequestResponseConfig,
-                                              scenarioName: ProcessName
-                                            ) extends Directives
-  with LazyLogging {
+    handler: RequestResponseHttpHandler[Future],
+    config: RequestResponseConfig,
+    scenarioName: ProcessName
+) extends Directives
+    with LazyLogging {
 
   // Regarding https://spec.openapis.org/oas/v3.1.0#serverObject server url accept urls "relative to the location where the OpenAPI document is being served"
   // We use this relative reference instead of default '/' because runtime can by server reverse proxies (i.e. ingress controller) that can rewrite this url
@@ -35,12 +35,12 @@ private[requestresponse] class ScenarioRoute(
   val securityDirectiveOpt: Option[AuthenticationDirective[String]] = {
     def prepareAuthenticator(basicAuthConfig: BasicAuthConfig): Credentials => Option[String] = {
       val password = basicAuthConfig.password
-      val user = basicAuthConfig.user
+      val user     = basicAuthConfig.user
 
       def rrAuthenticator(credentials: Credentials): Option[String] =
         credentials match {
-          case p@Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
-          case _ => None
+          case p @ Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
+          case _                                                                            => None
         }
 
       rrAuthenticator
@@ -99,7 +99,7 @@ private[requestresponse] class ScenarioRoute(
     }
     val invocationRouteWithSecurity: Route = securityDirectiveOpt match {
       case Some(securityDirective) => securityDirective { _: String => invocationRoutePath }
-      case None => invocationRoutePath
+      case None                    => invocationRoutePath
     }
     SwaggerUiRoute.route ~ path("definition") {
       definitionRoute

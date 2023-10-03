@@ -11,9 +11,10 @@ trait EmptySink extends BasicFlinkSink {
 
   type Value = AnyRef
 
-  override def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
+  override def valueFunction(
+      helper: FlinkLazyParameterFunctionHelper
+  ): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
     (_, _) => {}
 
   override def toFlinkFunction: SinkFunction[AnyRef] = new DiscardingSink[AnyRef]
 }
-

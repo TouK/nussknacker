@@ -41,16 +41,18 @@ package openapi {
 
   case class PathParameterPart(parameterName: String) extends PathPart
 
-  @JsonCodec final case class SwaggerService(name: ServiceName,
-                                             categories: List[String],
-                                             documentation: Option[String],
-                                             pathParts: List[PathPart],
-                                             parameters: List[SwaggerParameter],
-                                             responseSwaggerType: Option[SwaggerTyped],
-                                             method: String,
-                                             servers: List[String],
-                                             securities: List[SwaggerSecurity],
-                                             requestContentType: Option[String])
+  @JsonCodec final case class SwaggerService(
+      name: ServiceName,
+      categories: List[String],
+      documentation: Option[String],
+      pathParts: List[PathPart],
+      parameters: List[SwaggerParameter],
+      responseSwaggerType: Option[SwaggerTyped],
+      method: String,
+      servers: List[String],
+      securities: List[SwaggerSecurity],
+      requestContentType: Option[String]
+  )
 
   case class ServiceName(value: String)
 

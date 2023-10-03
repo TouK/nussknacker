@@ -13,63 +13,92 @@ import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor.KeyToLabelReplacin
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitutionsCollector, ExpressionSubstitutor}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
-import pl.touk.nussknacker.engine.spel.ast.{OptionallyTypedNode, ReplacingStrategy, SpelSubstitutionsCollector, TypedTreeLevel}
+import pl.touk.nussknacker.engine.spel.ast.{
+  OptionallyTypedNode,
+  ReplacingStrategy,
+  SpelSubstitutionsCollector,
+  TypedTreeLevel
+}
 
-class ProcessDictSubstitutor(dictRegistry: DictRegistry,
-                             replacingStrategy: ReplacingStrategy,
-                             prepareSubstitutionsCollector: (ExpressionTypingInfo, ReplacingStrategy) => Option[ExpressionSubstitutionsCollector]) extends LazyLogging {
+class ProcessDictSubstitutor(
+    dictRegistry: DictRegistry,
+    replacingStrategy: ReplacingStrategy,
+    prepareSubstitutionsCollector: (ExpressionTypingInfo, ReplacingStrategy) => Option[ExpressionSubstitutionsCollector]
+) extends LazyLogging {
 
-  def substitute(process: CanonicalProcess, processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
+  def substitute(
+      process: CanonicalProcess,
+      processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]
+  ): CanonicalProcess = {
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
-      val nodeExpressionId = exprIdWithMetadata.expressionId
-      val nodeTypingInfo = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
+      val nodeExpressionId             = exprIdWithMetadata.expressionId
+      val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
-      val substitutedExpression = optionalExpressionTypingInfo.flatMap(prepareSubstitutionsCollector(_, replacingStrategy)).map { substitutionsCollector =>
-        val substitutions = substitutionsCollector.collectSubstitutions(expr)
-        val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
-        if (substitutions.nonEmpty)
-          logger.debug(s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
-            s"Expression: '${expr.expression}' replaced with '$afterSubstitution'")
-        afterSubstitution
-      }.getOrElse(expr.expression)
+      val substitutedExpression = optionalExpressionTypingInfo
+        .flatMap(prepareSubstitutionsCollector(_, replacingStrategy))
+        .map { substitutionsCollector =>
+          val substitutions     = substitutionsCollector.collectSubstitutions(expr)
+          val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
+          if (substitutions.nonEmpty)
+            logger.debug(
+              s"Found ${substitutions.size} substitutions in expression: ${process.metaData.id} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
+                s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
+            )
+          afterSubstitution
+        }
+        .getOrElse(expr.expression)
       expr.copy(expression = substitutedExpression)
     }
 
     rewriter.rewriteProcess(process)
   }
 
-  def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(dictRegistry, new KeyToLabelReplacingStrategy(dictRegistry), prepareSubstitutionsCollector)
+  def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(
+    dictRegistry,
+    new KeyToLabelReplacingStrategy(dictRegistry),
+    prepareSubstitutionsCollector
+  )
 
 }
 
 object ProcessDictSubstitutor extends LazyLogging {
 
   def apply(dictRegistry: DictRegistry): ProcessDictSubstitutor = {
-    new ProcessDictSubstitutor(dictRegistry, new LabelToKeyReplacingStrategy(dictRegistry), prepareSubstitutionsCollector)
+    new ProcessDictSubstitutor(
+      dictRegistry,
+      new LabelToKeyReplacingStrategy(dictRegistry),
+      prepareSubstitutionsCollector
+    )
   }
 
   // TODO: add ExpressionSubstitutionsCollector "type class" for ExpressionTypingInfo so it will be possible to add new ExpressionParser without changing this class...
-  private def prepareSubstitutionsCollector(typingInfo: ExpressionTypingInfo, replacingStrategy: ReplacingStrategy) = typingInfo match {
-    case SpelExpressionTypingInfo(intermediateResults, _) =>
-      Some(new SpelSubstitutionsCollector(n => intermediateResults.get(SpelNodeId(n)), replacingStrategy))
-    case _ =>
-      None
-  }
+  private def prepareSubstitutionsCollector(typingInfo: ExpressionTypingInfo, replacingStrategy: ReplacingStrategy) =
+    typingInfo match {
+      case SpelExpressionTypingInfo(intermediateResults, _) =>
+        Some(new SpelSubstitutionsCollector(n => intermediateResults.get(SpelNodeId(n)), replacingStrategy))
+      case _ =>
+        None
+    }
 
   trait BaseReplacingStrategy extends ReplacingStrategy {
 
     protected def dictRegistry: DictRegistry
 
     def findReplacement(typedNodeTree: List[TypedTreeLevel]): Option[String] = typedNodeTree match {
-      case
-        TypedTreeLevel(OptionallyTypedNode(indexerKey: StringLiteral, _) :: Nil) ::
-          TypedTreeLevel(OptionallyTypedNode(_: Indexer, _) :: OptionallyTypedNode(_, Some(dict: TypedDict)) :: _) :: _ =>
+      case TypedTreeLevel(OptionallyTypedNode(indexerKey: StringLiteral, _) :: Nil) ::
+          TypedTreeLevel(
+            OptionallyTypedNode(_: Indexer, _) :: OptionallyTypedNode(_, Some(dict: TypedDict)) :: _
+          ) :: _ =>
         val indexerKeyValue = indexerKey.getLiteralValue.getValue.toString
-        val replacement = findDictReplacement(dict, indexerKeyValue)
+        val replacement     = findDictReplacement(dict, indexerKeyValue)
 
         replacement.map(key => s"'$key'")
-      case
-        TypedTreeLevel(OptionallyTypedNode(property: PropertyOrFieldReference, _) :: OptionallyTypedNode(_, Some(dict: TypedDict)) :: Nil) :: _ =>
+      case TypedTreeLevel(
+            OptionallyTypedNode(property: PropertyOrFieldReference, _) :: OptionallyTypedNode(
+              _,
+              Some(dict: TypedDict)
+            ) :: Nil
+          ) :: _ =>
         val propertyName = property.getName
         findDictReplacement(dict, propertyName)
       case _ => None
@@ -78,7 +107,9 @@ object ProcessDictSubstitutor extends LazyLogging {
     private def findDictReplacement(dict: TypedDict, value: String): Option[String] = {
       dictLookup(dict, value) match {
         case Invalid(DictEntryWithKeyNotExists(_, key, possibleKeys)) =>
-          logger.warn(s"Can't find label for key: $key in ${dict.display}, possible keys: ${possibleKeys}. Probable change in dict definition. Will be used key in this place.")
+          logger.warn(
+            s"Can't find label for key: $key in ${dict.display}, possible keys: ${possibleKeys}. Probable change in dict definition. Will be used key in this place."
+          )
           None
         case Invalid(err) => // shouldn't happen
           logger.error(s"Unexpected error: $err. Should be handled in typing phase.")

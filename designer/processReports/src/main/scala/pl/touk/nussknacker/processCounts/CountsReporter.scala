@@ -18,11 +18,9 @@ object CountsReporterCreator {
 //@see NussknackerApp#prepareCountsReporter
 trait CountsReporterCreator {
 
-  def createReporter(env: String, config: Config)
-                    (implicit backend: SttpBackend[Future, Any]): CountsReporter[Future]
+  def createReporter(env: String, config: Config)(implicit backend: SttpBackend[Future, Any]): CountsReporter[Future]
 
 }
-
 
 trait CountsReporter[F[_]] extends AutoCloseable {
 
@@ -35,7 +33,9 @@ object CannotFetchCountsError {
   private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   def restartsDetected(dates: List[Instant]): CannotFetchCountsError = CannotFetchCountsError(
-    s"Counts unavailable, as scenario was restarted/deployed on following dates: ${dates.map(_.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)).mkString(", ")}"
+    s"Counts unavailable, as scenario was restarted/deployed on following dates: ${dates
+        .map(_.atZone(ZoneId.systemDefault()).format(dateTimeFormatter))
+        .mkString(", ")}"
   )
 }
 
@@ -46,4 +46,3 @@ sealed trait CountsRequest
 case class RangeCount(fromDate: Instant, toDate: Instant) extends CountsRequest
 
 case class ExecutionCount(pointInTime: Instant) extends CountsRequest
-

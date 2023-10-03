@@ -7,13 +7,19 @@ trait EitherValuesDetailedMessage {
 
   import scala.language.implicitConversions
 
-  implicit def convertEitherToValuable[L, R](either: Either[L, R])(implicit pos: source.Position): EitherValuable[L, R] = new EitherValuable(either, pos)
+  implicit def convertEitherToValuable[L, R](either: Either[L, R])(
+      implicit pos: source.Position
+  ): EitherValuable[L, R] = new EitherValuable(either, pos)
 
   class EitherValuable[L, R](either: Either[L, R], pos: source.Position) {
     def leftValue: L = {
       either match {
         case Right(value) =>
-          throw new TestFailedException((_: StackDepthException) => Some(s"The Either on which leftValue was invoked was defined as Right($value)"), None, pos)
+          throw new TestFailedException(
+            (_: StackDepthException) => Some(s"The Either on which leftValue was invoked was defined as Right($value)"),
+            None,
+            pos
+          )
         case Left(value) => value
       }
     }
@@ -22,7 +28,11 @@ trait EitherValuesDetailedMessage {
       either match {
         case Right(value) => value
         case Left(value) =>
-          throw new TestFailedException((_: StackDepthException) => Some(s"The Either on which rightValue was invoked was defined as Left($value)"), None, pos)
+          throw new TestFailedException(
+            (_: StackDepthException) => Some(s"The Either on which rightValue was invoked was defined as Left($value)"),
+            None,
+            pos
+          )
       }
     }
   }

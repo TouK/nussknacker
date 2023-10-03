@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import scala.collection.immutable.HashMap
 import scala.jdk.CollectionConverters._
 
-
 object TypingUtils {
 
   def typeMapDefinition(definition: java.util.Map[String, _]): TypingResult = {
@@ -16,7 +15,7 @@ object TypingUtils {
   }
 
   def typeMapDefinition(definition: Map[String, _]): TypingResult = {
-    //we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
+    // we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
     TypedObjectTypingResult(Map(definition.mapValuesNow(typedMapDefinitionFromParameters).toList: _*))
   }
 
@@ -27,25 +26,27 @@ object TypingUtils {
       Typed(clazz)
     case a: String =>
       loadClassFromName(a)
-    case a: Map[String@unchecked, _] =>
+    case a: Map[String @unchecked, _] =>
       typeMapDefinition(a)
-    case a: java.util.Map[String@unchecked, _] =>
+    case a: java.util.Map[String @unchecked, _] =>
       typeMapDefinition(a)
     case list: Seq[_] if list.nonEmpty =>
       typeListDefinition(list)
     case list: util.List[_] if !list.isEmpty =>
       typeListDefinition(list.asScala.toSeq)
     case a =>
-      throw new IllegalArgumentException(s"Type definition currently supports only class names, nested maps or lists, got $a instead")
+      throw new IllegalArgumentException(
+        s"Type definition currently supports only class names, nested maps or lists, got $a instead"
+      )
   }
 
   private def typeListDefinition(list: Seq[_]): TypingResult = {
-    //TODO: how to handle list definitions better?
+    // TODO: how to handle list definitions better?
     val mapTypingResult = typedMapDefinitionFromParameters(list.head)
     Typed.genericTypeClass[java.util.List[_]](List(mapTypingResult))
   }
 
-  //TODO: how to handle classloaders??
+  // TODO: how to handle classloaders??
   def loadClassFromName(name: String): TypingResult = {
     val nameIntFixed = if (name == "Int") "Integer" else name // scala.Int to java.lang.Integer
     val langAppended = if (!nameIntFixed.contains(".")) "java.lang." + nameIntFixed else nameIntFixed

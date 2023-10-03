@@ -7,10 +7,12 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
 
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
     Option(parameters).filter(_.isOptional).map { _ =>
-      val lang = parameters.determinedEditor.collect {
-        case SpelTemplateParameterEditor => Expression.Language.SpelTemplate
-        case SqlParameterEditor => Expression.Language.SpelTemplate
-      }.getOrElse(Expression.Language.Spel)
+      val lang = parameters.determinedEditor
+        .collect {
+          case SpelTemplateParameterEditor => Expression.Language.SpelTemplate
+          case SqlParameterEditor          => Expression.Language.SpelTemplate
+        }
+        .getOrElse(Expression.Language.Spel)
 
       Expression(lang, "")
     }

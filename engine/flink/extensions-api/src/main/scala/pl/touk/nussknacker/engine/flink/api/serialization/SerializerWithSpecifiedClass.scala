@@ -4,7 +4,8 @@ import com.esotericsoftware.kryo.Serializer
 import org.apache.flink.api.common.ExecutionConfig
 
 abstract class SerializerWithSpecifiedClass[T](acceptsNull: Boolean, immutable: Boolean)
-  extends Serializer[T](acceptsNull, immutable) with Serializable {
+    extends Serializer[T](acceptsNull, immutable)
+    with Serializable {
 
   def clazz: Class[_]
 

@@ -6,14 +6,18 @@ import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import at.favre.lib.crypto.bcrypt.BCrypt
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.{AuthCredentials, AuthenticatedUser}
-import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
+import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{
+  EncryptedPassword,
+  PlainPassword,
+  UserWithPassword
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)
-                            (implicit executionContext: ExecutionContext)
-  extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] {
-  //If we want use always reloaded config then we need just prepareUsers()
+class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)(
+    implicit executionContext: ExecutionContext
+) extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] {
+  // If we want use always reloaded config then we need just prepareUsers()
   private val users = prepareUsers()
 
   private val hashesCache =
@@ -21,8 +25,8 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)
 
   def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] = Future.successful {
     credentials match {
-      case d@Provided(_) => doAuthenticate(d)
-      case _ => None
+      case d @ Provided(_) => doAuthenticate(d)
+      case _               => None
     }
   }
 
@@ -60,10 +64,12 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)
   private def prepareUsers(): Map[String, UserWithPassword] = {
     configuration.users.map { u =>
       val password = (u.password, u.encryptedPassword) match {
-        case (Some(plain), None) => PlainPassword(plain)
+        case (Some(plain), None)     => PlainPassword(plain)
         case (None, Some(encrypted)) => EncryptedPassword(encrypted)
-        case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.identity)
-        case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.identity)
+        case (Some(_), Some(_)) =>
+          throw new IllegalStateException("Specified both password and encrypted password for user: " + u.identity)
+        case (None, None) =>
+          throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.identity)
       }
       u.identity -> UserWithPassword(u.identity, u.username.getOrElse(u.identity), password, u.roles)
     }.toMap
@@ -71,14 +77,15 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)
 }
 
 object BasicHttpAuthenticator {
-  def apply(config: BasicAuthenticationConfiguration)
-           (implicit executionContext: ExecutionContext): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)
+  def apply(config: BasicAuthenticationConfiguration)(
+      implicit executionContext: ExecutionContext
+  ): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)
 
   private sealed trait Password {
     def value: String
   }
 
-  private case class PlainPassword(value: String) extends Password
+  private case class PlainPassword(value: String)     extends Password
   private case class EncryptedPassword(value: String) extends Password
   private case class UserWithPassword(identity: String, username: String, password: Password, roles: Set[String])
 }

@@ -19,23 +19,40 @@ import java.net.URL
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {
 
-  def prepareScenarioInterpreter(scenario: CanonicalProcess, runtimeConfig: Config, deploymentConfig: Config, system: ActorSystem): RunnableScenarioInterpreter = {
+  def prepareScenarioInterpreter(
+      scenario: CanonicalProcess,
+      runtimeConfig: Config,
+      deploymentConfig: Config,
+      system: ActorSystem
+  ): RunnableScenarioInterpreter = {
     val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-    val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
-    val metricRegistry = prepareMetricRegistry(runtimeConfig)
-    val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+    val modelData           = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
+    val metricRegistry      = prepareMetricRegistry(runtimeConfig)
+    val preparer            = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty)
 
     prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
   }
 
-  private def prepareScenarioInterpreter(scenario: CanonicalProcess, runtimeConfig: Config, jobData: JobData, deploymentConfig: Config,
-                                         modelData: ModelData, preparer: LiteEngineRuntimeContextPreparer)(implicit system: ActorSystem) = {
+  private def prepareScenarioInterpreter(
+      scenario: CanonicalProcess,
+      runtimeConfig: Config,
+      jobData: JobData,
+      deploymentConfig: Config,
+      modelData: ModelData,
+      preparer: LiteEngineRuntimeContextPreparer
+  )(implicit system: ActorSystem) = {
     import system.dispatcher
     scenario.metaData.typeSpecificData match {
       case _: LiteStreamMetaData =>
-        KafkaTransactionalScenarioInterpreter(scenario, jobData, deploymentConfig.as[LiteKafkaJobData], modelData, preparer)
+        KafkaTransactionalScenarioInterpreter(
+          scenario,
+          jobData,
+          deploymentConfig.as[LiteKafkaJobData],
+          modelData,
+          preparer
+        )
       case _: RequestResponseMetaData =>
         val requestResponseConfig = runtimeConfig.as[RequestResponseConfig]("request-response")
         new RequestResponseRunnableScenarioInterpreter(jobData, scenario, modelData, preparer, requestResponseConfig)

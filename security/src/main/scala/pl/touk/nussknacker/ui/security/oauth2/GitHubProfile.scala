@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 object GitHubProfile extends OAuth2Profile[GitHubProfileResponse] {
   def getAuthenticatedUser(profile: GitHubProfileResponse, configuration: OAuth2Configuration): AuthenticatedUser = {
     val userRoles = getUserRoles(profile.login, configuration)
-    val username = profile.login
+    val username  = profile.login
     AuthenticatedUser(id = profile.id.toString, username = username, userRoles)
   }
 }

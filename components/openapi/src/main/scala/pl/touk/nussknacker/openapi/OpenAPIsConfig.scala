@@ -9,14 +9,16 @@ import sttp.model.StatusCode
 import java.net.URL
 import scala.util.matching.Regex
 
-case class OpenAPIServicesConfig(url: URL,
-                                 //by default we allow only GET, as enrichers should be idempotent and not change data
-                                 allowedMethods: List[String] = List(HttpMethod.GET.name()),
-                                 codesToInterpretAsEmpty: List[Int] = List(StatusCode.NotFound.code),
-                                 namePattern: Regex = ".*".r,
-                                 rootUrl: Option[URL] = None,
-                                 security: Option[Map[String, OpenAPISecurityConfig]] = None,
-                                 httpClientConfig: HttpClientConfig = DefaultHttpClientConfig())
+case class OpenAPIServicesConfig(
+    url: URL,
+    // by default we allow only GET, as enrichers should be idempotent and not change data
+    allowedMethods: List[String] = List(HttpMethod.GET.name()),
+    codesToInterpretAsEmpty: List[Int] = List(StatusCode.NotFound.code),
+    namePattern: Regex = ".*".r,
+    rootUrl: Option[URL] = None,
+    security: Option[Map[String, OpenAPISecurityConfig]] = None,
+    httpClientConfig: HttpClientConfig = DefaultHttpClientConfig()
+)
 
 sealed trait OpenAPISecurityConfig
 
@@ -27,14 +29,15 @@ object OpenAPIsConfig {
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
-  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
+  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] =
+    ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
 
   implicit val regexReader: ValueReader[Regex] = (config: Config, path: String) => new Regex(config.getString(path))
 
   implicit val openAPISecurityConfigVR: ValueReader[OpenAPISecurityConfig] = ValueReader.relative(conf => {
     conf.as[String]("type") match {
       case "apiKey" => conf.rootAs[ApiKeyConfig]
-      case typ => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
+      case typ      => throw new Exception(s"Not supported swagger security type '$typ' in the configuration")
     }
   })
 
