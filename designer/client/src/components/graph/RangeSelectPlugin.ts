@@ -20,10 +20,7 @@ export class RangeSelectPlugin {
     private readonly rectangle = new shapes.standard.Rectangle();
     private readonly pressedKeys = pressedKeys.map((events) => events.map((e) => e.key));
     private keys: string[];
-    private selectStart: {
-        x: number;
-        y: number;
-    };
+    private selectStart: g.PlainPoint | null;
     private getPinchEventActive: () => boolean;
 
     constructor(private paper: dia.Paper, getPinchEventActive: () => boolean) {
@@ -88,42 +85,50 @@ export class RangeSelectPlugin {
         };
     }
 
-    private startSelection(event: dia.Event, x: number, y: number) {
+    private startSelection(event: dia.Event) {
         event.stopImmediatePropagation();
         this.cursorMask.enable("crosshair");
+
+        this.selectStart = {
+            x: event.clientX,
+            y: event.clientY,
+        };
+
         this.updateRectangleSize(
             {
-                x,
-                y,
+                ...this.getLocalPoint(this.selectStart),
                 width: 0,
                 height: 0,
             },
             isTouchEvent(event),
         ).addTo(this.paper.model);
-
-        this.selectStart = {
-            x,
-            y,
-        };
     }
 
-    private onInit(event: dia.Event, x: number, y: number) {
+    private onInit(event: dia.Event) {
         if (isTouchEvent(event)) {
-            this.handleLongPress(this.startSelection.bind(this))(event, x, y);
+            this.handleLongPress(this.startSelection.bind(this))(event);
         } else {
-            this.hasModifier(event) && this.startSelection(event, x, y);
+            this.hasModifier(event) && this.startSelection(event);
         }
+    }
+
+    private getLocalPoint(point: g.PlainPoint): g.Point {
+        return this.paper.pageToLocalPoint(point).round();
     }
 
     private hasModifier(event: dia.Event): boolean {
         return event?.shiftKey || event?.ctrlKey || event?.metaKey;
     }
 
-    private onChange(event: dia.Event, x: number, y: number) {
+    private onChange(event: dia.Event) {
         if (this.selectStart) {
-            const { selectStart } = this;
-            const dx = x - selectStart.x;
-            const dy = y - selectStart.y;
+            const selectStart = this.getLocalPoint(this.selectStart);
+            const selectEnd = this.getLocalPoint({
+                x: event.clientX,
+                y: event.clientY,
+            });
+            const dx = selectEnd.x - selectStart.x;
+            const dy = selectEnd.y - selectStart.y;
 
             event.stopImmediatePropagation();
             event.stopPropagation();
