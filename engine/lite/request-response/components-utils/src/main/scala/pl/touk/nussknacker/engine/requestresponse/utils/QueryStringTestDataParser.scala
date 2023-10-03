@@ -10,16 +10,21 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class QueryStringTestDataParser extends TestRecordParser[TypedMap] {
   override def parse(testRecord: TestRecord): TypedMap = {
     val queryString = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
-    val paramMap = queryString.split("&").map { param =>
-      param.split("=").toList match {
-        case name :: value :: Nil => (name, value)
-        case _ => throw new IllegalArgumentException(s"Failed to parse $queryString as query string")
+    val paramMap = queryString
+      .split("&")
+      .map { param =>
+        param.split("=").toList match {
+          case name :: value :: Nil => (name, value)
+          case _ => throw new IllegalArgumentException(s"Failed to parse $queryString as query string")
+        }
       }
-    }.toList.groupBy(_._1).mapValuesNow {
-      case oneElement :: Nil => oneElement._2
-      case more => more.map(_._2).asJava
-    }
-    //TODO: validation??
+      .toList
+      .groupBy(_._1)
+      .mapValuesNow {
+        case oneElement :: Nil => oneElement._2
+        case more              => more.map(_._2).asJava
+      }
+    // TODO: validation??
     TypedMap(paramMap)
   }
 }

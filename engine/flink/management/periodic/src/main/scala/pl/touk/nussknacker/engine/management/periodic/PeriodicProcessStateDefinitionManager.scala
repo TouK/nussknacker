@@ -1,19 +1,24 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  OverridingProcessStateDefinitionManager,
+  ProcessStateDefinitionManager,
+  StateStatus
+}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
 
-class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends OverridingProcessStateDefinitionManager(
-  statusActionsPF = PeriodicStateStatus.statusActionsPF,
-  statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
-  statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
-  customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
-  delegate = delegate
-) {
+class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager)
+    extends OverridingProcessStateDefinitionManager(
+      statusActionsPF = PeriodicStateStatus.statusActionsPF,
+      statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
+      statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
+      customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
+      delegate = delegate
+    ) {
   override def statusTooltip(stateStatus: StateStatus): String = {
     stateStatus match {
       case periodic: PeriodicProcessStatus => PeriodicProcessStateDefinitionManager.statusTooltip(periodic)
-      case _ => super.statusTooltip(stateStatus)
+      case _                               => super.statusTooltip(stateStatus)
     }
   }
 
@@ -22,8 +27,8 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
 object PeriodicProcessStateDefinitionManager {
 
   def statusTooltip(processStatus: PeriodicProcessStatus): String = {
-    processStatus.limitedAndSortedDeployments.map {
-      case d@DeploymentStatus(_, scheduleId, runAt, status, _, _) =>
+    processStatus.limitedAndSortedDeployments
+      .map { case d @ DeploymentStatus(_, scheduleId, runAt, status, _, _) =>
         val refinedStatus = {
           if (d.isCanceled) {
             "Canceled"
@@ -33,13 +38,16 @@ object PeriodicProcessStateDefinitionManager {
             status.toString
           }
         }
-        val prefix = scheduleId.scheduleName.value.map { definedScheduleName =>
-          s"Schedule $definedScheduleName scheduled at:"
-        }.getOrElse {
-          s"Scheduled at:"
-        }
+        val prefix = scheduleId.scheduleName.value
+          .map { definedScheduleName =>
+            s"Schedule $definedScheduleName scheduled at:"
+          }
+          .getOrElse {
+            s"Scheduled at:"
+          }
         s"$prefix ${runAt.format(PeriodicStateStatus.Format)} status: $refinedStatus"
-    }.mkString(",\n")
+      }
+      .mkString(",\n")
   }
 
 }

@@ -10,9 +10,9 @@ trait DbMetaDataProvider {
   def getSchemaDefinition(): SchemaDefinition
 }
 
-case class DialectMetaData(identifierQuote: String)
+final case class DialectMetaData(identifierQuote: String)
 
-case class SchemaDefinition(tables: List[String])
+final case class SchemaDefinition(tables: List[String])
 
 object SchemaDefinition {
   def empty(): SchemaDefinition = SchemaDefinition(List())
@@ -24,6 +24,6 @@ class SqlDialect(metaData: DialectMetaData) {
     metaData.identifierQuote + identifier + metaData.identifierQuote
 }
 
-case class DbParameterMetaData(parameterCount: Int)
+final case class DbParameterMetaData(parameterCount: Int)
 
-case class TableMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)
+final case class TableMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)

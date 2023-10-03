@@ -36,10 +36,10 @@ import scala.reflect.runtime.universe
  */
 @SerialVersionUID(1L)
 class ScalaCaseClassSerializer[T <: Product](
-                                              clazz: Class[T],
-                                              scalaFieldSerializers: Array[TypeSerializer[_]]
-                                            ) extends CaseClassSerializer[T](clazz, scalaFieldSerializers)
-  with SelfResolvingTypeSerializer[T] {
+    clazz: Class[T],
+    scalaFieldSerializers: Array[TypeSerializer[_]]
+) extends CaseClassSerializer[T](clazz, scalaFieldSerializers)
+    with SelfResolvingTypeSerializer[T] {
 
   @transient
   private var constructor = lookupConstructor(clazz)
@@ -52,7 +52,9 @@ class ScalaCaseClassSerializer[T <: Product](
     new ScalaCaseClassSerializerSnapshot[T](this)
   }
 
-  @silent override def resolveSchemaCompatibilityViaRedirectingToNewSnapshotClass(s: TypeSerializerConfigSnapshot[T]): TypeSerializerSchemaCompatibility[T] = {
+  @silent override def resolveSchemaCompatibilityViaRedirectingToNewSnapshotClass(
+      s: TypeSerializerConfigSnapshot[T]
+  ): TypeSerializerSchemaCompatibility[T] = {
 
     require(s.isInstanceOf[TupleSerializerConfigSnapshot[_]])
 
@@ -82,7 +84,7 @@ class ScalaCaseClassSerializer[T <: Product](
 object ScalaCaseClassSerializer {
 
   def lookupConstructor[T](cls: Class[T]): Array[AnyRef] => T = {
-    val rootMirror = universe.runtimeMirror(cls.getClassLoader)
+    val rootMirror  = universe.runtimeMirror(cls.getClassLoader)
     val classSymbol = rootMirror.classSymbol(cls)
 
     require(
@@ -99,13 +101,13 @@ object ScalaCaseClassSerializer {
       .decl(universe.termNames.CONSTRUCTOR)
       .alternatives
       .collectFirst {
-        case constructorSymbol: universe.MethodSymbol@unchecked if constructorSymbol.isPrimaryConstructor =>
+        case constructorSymbol: universe.MethodSymbol @unchecked if constructorSymbol.isPrimaryConstructor =>
           constructorSymbol
       }
       .head
       .asMethod
 
-    val classMirror = rootMirror.reflectClass(classSymbol)
+    val classMirror             = rootMirror.reflectClass(classSymbol)
     val constructorMethodMirror = classMirror.reflectConstructor(primaryConstructorSymbol)
 
     arr: Array[AnyRef] => {

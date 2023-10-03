@@ -10,8 +10,11 @@ import pl.touk.nussknacker.engine.migration.NodeMigration
 object SinkExpressionMigration extends NodeMigration {
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case sink@Sink(_, ref@SinkRef(typ, parameters), Some(legacyEndResult), _, _) if typ == "kafka-string" =>
-      sink.copy(legacyEndResultExpression = None, ref = ref.copy(parameters = Parameter("value", legacyEndResult) :: parameters))
+    case sink @ Sink(_, ref @ SinkRef(typ, parameters), Some(legacyEndResult), _, _) if typ == "kafka-string" =>
+      sink.copy(
+        legacyEndResultExpression = None,
+        ref = ref.copy(parameters = Parameter("value", legacyEndResult) :: parameters)
+      )
   }
 
   override def description: String = "Remove endResult from kafka-json"

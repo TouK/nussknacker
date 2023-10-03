@@ -25,12 +25,13 @@ import scala.jdk.CollectionConverters._
 trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
-  protected def checkExceptions(configCreator: ProcessConfigCreator)
-                               (prepareScenario: (GraphBuilder[SourceNode], ExceptionGenerator) => NonEmptyList[SourceNode]): Unit = {
-    val generator = new ExceptionGenerator
+  protected def checkExceptions(
+      configCreator: ProcessConfigCreator
+  )(prepareScenario: (GraphBuilder[SourceNode], ExceptionGenerator) => NonEmptyList[SourceNode]): Unit = {
+    val generator                 = new ExceptionGenerator
     val NonEmptyList(start, rest) = prepareScenario(GraphBuilder.source("source", "source"), generator)
-    val scenario = ScenarioBuilder.streaming("test").sources(start, rest: _*)
-    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
+    val scenario                  = ScenarioBuilder.streaming("test").sources(start, rest: _*)
+    val recordingCreator          = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
     registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
@@ -42,7 +43,11 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   /**
     * TestFlinkRunner should be invoked, it's not accessible in this module
     */
-  protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: CanonicalProcess): Unit
+  protected def registerInEnvironment(
+      env: MiniClusterExecutionEnvironment,
+      modelData: ModelData,
+      scenario: CanonicalProcess
+  ): Unit
 
   class ExceptionGenerator {
 
@@ -62,26 +67,40 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
 
 class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) extends EmptyProcessConfigCreator {
 
-  private val samples = (0 to samplesCount).map(sample => (0 to samplesCount).map(idx => if (sample == idx) 0 else 1).toList.asJava).toList
+  private val samples =
+    (0 to samplesCount).map(sample => (0 to samplesCount).map(idx => if (sample == idx) 0 else 1).toList.asJava).toList
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = {
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
-    val inputType = Typed.fromDetailedType[java.util.List[Int]]
-    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(
-      samples,
-      Some(timestamps),
-      inputType
-    )(TypeInformation.of(classOf[AnyRef])), inputType)))
+    val inputType  = Typed.fromDetailedType[java.util.List[Int]]
+    Map(
+      "source" -> WithCategories(
+        SourceFactory.noParam(
+          CollectionSource(
+            samples,
+            Some(timestamps),
+            inputType
+          )(TypeInformation.of(classOf[AnyRef])),
+          inputType
+        )
+      )
+    )
   }
 
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]
-    = delegate.customStreamTransformers(processObjectDependencies)
+  override def customStreamTransformers(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[CustomStreamTransformer]] = delegate.customStreamTransformers(processObjectDependencies)
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
-    = delegate.services(processObjectDependencies)
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    delegate.services(processObjectDependencies)
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
-    = delegate.sinkFactories(processObjectDependencies) + ("empty" -> WithCategories(SinkFactory.noParam(EmptySink)))
+  override def sinkFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SinkFactory]] =
+    delegate.sinkFactories(processObjectDependencies) + ("empty" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = delegate.expressionConfig(processObjectDependencies)
+  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+    delegate.expressionConfig(processObjectDependencies)
 }

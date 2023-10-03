@@ -7,7 +7,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaIdFromMessageExtractor, SchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaId,
+  SchemaIdFromMessageExtractor,
+  SchemaRegistryClient
+}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -36,7 +40,8 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
     } else {
       schemaIdFromMessageExtractor.getSchemaId(record.headers(), record.key(), isKey = true).map(_.value)
     }
-    val valueSchemaIdOpt = schemaIdFromMessageExtractor.getSchemaId(record.headers(), record.value(), isKey = false).map(_.value)
+    val valueSchemaIdOpt =
+      schemaIdFromMessageExtractor.getSchemaId(record.headers(), record.value(), isKey = false).map(_.value)
     val deserializedRecord = deserialize(record, valueSchemaIdOpt)
 
     val serializableRecord = SchemaBasedSerializableConsumerRecord(
@@ -47,23 +52,31 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
     TestRecord(consumerRecordEncoder(keySchemaIdOpt, valueSchemaIdOpt)(serializableRecord))
   }
 
-  protected def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]], valueSchemaIdOpt: Option[SchemaId]): ConsumerRecord[K, V] = {
+  protected def deserialize(
+      record: ConsumerRecord[Array[Byte], Array[Byte]],
+      valueSchemaIdOpt: Option[SchemaId]
+  ): ConsumerRecord[K, V] = {
     deserializationSchema.deserialize(record)
   }
 
-  private def consumerRecordEncoder(keySchemaIdOpt: Option[SchemaId], valueSchemaIdOpt: Option[SchemaId]): Encoder[SchemaBasedSerializableConsumerRecord[K, V]] = {
+  private def consumerRecordEncoder(
+      keySchemaIdOpt: Option[SchemaId],
+      valueSchemaIdOpt: Option[SchemaId]
+  ): Encoder[SchemaBasedSerializableConsumerRecord[K, V]] = {
     implicit val kE: Encoder[K] = createKeyEncoder(keySchemaIdOpt)
     implicit val vE: Encoder[V] = createValueEncoder(valueSchemaIdOpt)
-    implicit val srE: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder[SerializableConsumerRecord[K, V]]
+    implicit val srE: Encoder[SerializableConsumerRecord[K, V]] =
+      deriveConfiguredEncoder[SerializableConsumerRecord[K, V]]
     deriveConfiguredEncoder
   }
 
   private def createKeyEncoder(schemaIdOpt: Option[SchemaId]): Encoder[K] = {
     case str: String => Json.fromString(str)
-    case key => formatMessage(schemaIdOpt, key)
+    case key         => formatMessage(schemaIdOpt, key)
   }
 
-  private def createValueEncoder(schemaIdOpt: Option[SchemaId]): Encoder[V] = (value: V) => formatMessage(schemaIdOpt, value)
+  private def createValueEncoder(schemaIdOpt: Option[SchemaId]): Encoder[V] = (value: V) =>
+    formatMessage(schemaIdOpt, value)
 
   protected def formatMessage(schemaIdOpt: Option[SchemaId], data: Any): Json
 
@@ -80,16 +93,17 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
         keyOpt match {
           // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
           case Some(j) if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-          case None => null
-          case _ => throw new IllegalStateException()
+          case None                  => null
+          case _                     => throw new IllegalStateException()
         }
       } else {
         val keySchemaOpt = record.keySchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
-        keyOpt.map(keyJson => readRecordKeyMessage(keySchemaOpt, topic, keyJson))
+        keyOpt
+          .map(keyJson => readRecordKeyMessage(keySchemaOpt, topic, keyJson))
           .getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
       }
       val valueSchemaOpt = record.valueSchemaId.map(schemaRegistryClient.getSchemaById).map(_.schema)
-      val valueBytes = readValueMessage(valueSchemaOpt, topic, value)
+      val valueBytes     = readValueMessage(valueSchemaOpt, topic, value)
       (keyBytes, valueBytes)
     }
 
@@ -102,15 +116,18 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
 }
 
-case class SchemaBasedSerializableConsumerRecord[K, V](keySchemaId: Option[SchemaId],
-                                                       valueSchemaId: Option[SchemaId],
-                                                       consumerRecord: SerializableConsumerRecord[K, V])
+case class SchemaBasedSerializableConsumerRecord[K, V](
+    keySchemaId: Option[SchemaId],
+    valueSchemaId: Option[SchemaId],
+    consumerRecord: SerializableConsumerRecord[K, V]
+)
 
 object SchemaBasedSerializableConsumerRecord {
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
   implicit val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
-  val consumerRecordDecoder: Decoder[SchemaBasedSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
+  val consumerRecordDecoder: Decoder[SchemaBasedSerializableConsumerRecord[Json, Json]]   = deriveConfiguredDecoder
   implicit val serializableRecordEncoder: Encoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredEncoder
-  implicit val consumerRecordEncoder: Encoder[SchemaBasedSerializableConsumerRecord[Json, Json]] = deriveConfiguredEncoder
+  implicit val consumerRecordEncoder: Encoder[SchemaBasedSerializableConsumerRecord[Json, Json]] =
+    deriveConfiguredEncoder
 }

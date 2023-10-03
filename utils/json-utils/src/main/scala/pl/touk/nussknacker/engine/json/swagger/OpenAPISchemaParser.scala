@@ -14,13 +14,16 @@ object OpenAPISchemaParser {
   def parseSchema(schema: String): media.Schema[_] = {
     mapper.readTree(schema) match {
       case objectNode: ObjectNode => parseSchema(objectNode)
-      case node => throw new IllegalArgumentException(s"Schema must be in object representation at this point, but was: ${node.getNodeType}")
+      case node =>
+        throw new IllegalArgumentException(
+          s"Schema must be in object representation at this point, but was: ${node.getNodeType}"
+        )
     }
   }
 
   def parseSchema(jsonNode: ObjectNode): media.Schema[_] = {
     val deserializer: OpenAPIDeserializer = new OpenAPIDeserializer()
-    val parseResult = new OpenAPIDeserializer.ParseResult()
+    val parseResult                       = new OpenAPIDeserializer.ParseResult()
     parseResult.setOpenapi31(true)
     // it looks like location is not important on this level
     deserializer.getSchema(jsonNode, "", parseResult)

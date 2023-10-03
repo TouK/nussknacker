@@ -16,9 +16,12 @@ trait EmbeddedDictDefinition extends DictDefinition {
 
 }
 
-private[embedded] case class SimpleDictDefinition(labelByKey: Map[String, String]) extends EmbeddedDictDefinition with ReturningKeyWithoutTransformation
+private[embedded] case class SimpleDictDefinition(labelByKey: Map[String, String])
+    extends EmbeddedDictDefinition
+    with ReturningKeyWithoutTransformation
 
-private[embedded] case class EnumDictDefinition(valueClass: TypedClass, private val enumValueByName: Map[String, Any]) extends EmbeddedDictDefinition {
+private[embedded] case class EnumDictDefinition(valueClass: TypedClass, private val enumValueByName: Map[String, Any])
+    extends EmbeddedDictDefinition {
 
   override def labelByKey: Map[String, String] = enumValueByName.keys.map(name => name -> name).toMap
 
@@ -37,7 +40,7 @@ object EmbeddedDictDefinition {
   }
 
   private def checkLabelsAreUnique(labelByKey: Map[String, String]): Unit = {
-    val labels = labelByKey.values.toList
+    val labels           = labelByKey.values.toList
     val duplicatedValues = labels.diff(labels.distinct).distinct
     assert(duplicatedValues.isEmpty, s"Duplicated labels for dict: $labels")
   }
@@ -47,15 +50,15 @@ object EmbeddedDictDefinition {
     EnumDictDefinition(Typed.typedClass(javaEnumClass), enumValueByName)
   }
 
-  def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] = new ScalaEnumTypedDictBuilder[T](scalaEnum)
+  def forScalaEnum[T <: Enumeration](scalaEnum: Enumeration): ScalaEnumTypedDictBuilder[T] =
+    new ScalaEnumTypedDictBuilder[T](scalaEnum)
 
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
-    def withValueClass[V <: T#Value : ClassTag]: EmbeddedDictDefinition = {
+    def withValueClass[V <: T#Value: ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
       EnumDictDefinition(Typed.typedClass[V], enumValueByName)
     }
   }
-
 
   /**
    * Creates TypedDictInstance with runtimeClass = class Enumeration's Value class and dictId based on Enumeration's Value class name

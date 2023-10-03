@@ -12,10 +12,14 @@ trait V1_032__StandaloneToRequestResponseDefinition extends ProcessJsonMigration
 object V1_032__StandaloneToRequestResponseDefinition {
 
   private[migration] def migrateMetadata(jsonProcess: Json): Option[Json] = {
-    jsonProcess.hcursor.downField("metaData").downField("typeSpecificData").downField("type")
-      .withFocus { typeSpecificDataType => typeSpecificDataType.asString match {
+    jsonProcess.hcursor
+      .downField("metaData")
+      .downField("typeSpecificData")
+      .downField("type")
+      .withFocus { typeSpecificDataType =>
+        typeSpecificDataType.asString match {
           case Some("StandaloneMetaData") => Json.fromString("RequestResponseMetaData")
-          case _ => typeSpecificDataType
+          case _                          => typeSpecificDataType
         }
       }
   }.top

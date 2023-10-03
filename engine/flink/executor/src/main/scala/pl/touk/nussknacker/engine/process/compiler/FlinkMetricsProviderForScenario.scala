@@ -23,7 +23,9 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
   }
 
   override def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long): Histogram = {
-    val histogramInstance = new DropwizardHistogramWrapper(new metrics.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS)))
+    val histogramInstance = new DropwizardHistogramWrapper(
+      new metrics.Histogram(new SlidingTimeWindowReservoir(instantTimerWindowInSeconds, TimeUnit.SECONDS))
+    )
     histogram(identifier.name, identifier.tags, histogramInstance).update _
   }
 
@@ -32,12 +34,16 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
     group.counter(name)
   }
 
-  def gauge[T, Y<: flink.metrics.Gauge[T]](nameParts: NonEmptyList[String], tags: Map[String, String], gauge: Y): Y = {
+  def gauge[T, Y <: flink.metrics.Gauge[T]](nameParts: NonEmptyList[String], tags: Map[String, String], gauge: Y): Y = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.gauge[T, Y](name, gauge)
   }
 
-  def histogram(nameParts: NonEmptyList[String], tags: Map[String, String], histogram: flink.metrics.Histogram): flink.metrics.Histogram = {
+  def histogram(
+      nameParts: NonEmptyList[String],
+      tags: Map[String, String],
+      histogram: flink.metrics.Histogram
+  ): flink.metrics.Histogram = {
     val (group, name) = groupsWithName(nameParts, tags)
     group.histogram(name, histogram)
   }
@@ -53,8 +59,8 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
 
   private def tagMode(nameParts: NonEmptyList[String], tags: Map[String, String]): (MetricGroup, String) = {
     val lastName = nameParts.last
-    //all but last
-    val metricNameParts = nameParts.init
+    // all but last
+    val metricNameParts    = nameParts.init
     val groupWithNameParts = metricNameParts.foldLeft[MetricGroup](runtimeContext.getMetricGroup)(_.addGroup(_))
 
     val finalGroup = tags.toList.sortBy(_._1).foldLeft[MetricGroup](groupWithNameParts) {
@@ -66,10 +72,8 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
   private def extractTags(nkGlobalParameters: Option[NkGlobalParameters]): Map[String, String] = {
     nkGlobalParameters.map(_.namingParameters) match {
       case Some(Some(params)) => params.tags
-      case _ => Map()
+      case _                  => Map()
     }
   }
 
 }
-
-

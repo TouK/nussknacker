@@ -8,7 +8,7 @@ object JsonUtils {
   def jsonToAny(json: Json): Any = json.fold(
     jsonNull = null,
     jsonBoolean = identity[Boolean],
-    jsonNumber = _.toBigDecimal.map(_.bigDecimal).orNull, //we need here java BigDecimal type
+    jsonNumber = _.toBigDecimal.map(_.bigDecimal).orNull, // we need here java BigDecimal type
     jsonString = identity[String],
     jsonArray = _.map(jsonToAny).asJava,
     jsonObject = _.toMap.mapValuesNow(jsonToAny).asJava

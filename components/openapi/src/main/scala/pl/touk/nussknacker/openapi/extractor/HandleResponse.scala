@@ -9,9 +9,10 @@ object HandleResponse {
   def apply(res: Option[Json], responseType: SwaggerTyped): AnyRef = res match {
     case Some(json) =>
       JsonToNuStruct(json, responseType)
-    case None => responseType match {
-      case _: SwaggerArray => Collections.EMPTY_LIST
-      case _ => null
-    }
+    case None =>
+      responseType match {
+        case _: SwaggerArray => Collections.EMPTY_LIST
+        case _               => null
+      }
   }
 }

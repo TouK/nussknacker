@@ -27,7 +27,10 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
   override protected def resolveConfig(config: Config): Config =
     RecordingExceptionConsumerProvider
       .configWithProvider(super.resolveConfig(config), runId)
-      .withValue("checkpointConfig.checkpointInterval", fromAnyRef("1s")) //avoid long waits for closing on test Flink minicluster, it's needed for proper testing
+      .withValue(
+        "checkpointConfig.checkpointInterval",
+        fromAnyRef("1s")
+      ) // avoid long waits for closing on test Flink minicluster, it's needed for proper testing
 
   /**
     * Override this when you use own Configuration implementation (e.g. Flink 1.9)

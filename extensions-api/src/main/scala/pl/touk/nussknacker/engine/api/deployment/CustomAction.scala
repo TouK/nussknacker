@@ -18,19 +18,18 @@ Things to consider in future changes:
 2. Storing custom actions taken in DB.
  */
 
-case class CustomAction(name: String,
-                        // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
-                        allowedStateStatusNames: List[String],
-                        parameters: List[CustomActionParameter] = Nil,
-                        icon: Option[URI] = None)
+case class CustomAction(
+    name: String,
+    // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
+    allowedStateStatusNames: List[String],
+    parameters: List[CustomActionParameter] = Nil,
+    icon: Option[URI] = None
+)
 
 //TODO: validators?
 case class CustomActionParameter(name: String, editor: ParameterEditor)
 
-case class CustomActionRequest(name: String,
-                               processVersion: ProcessVersion,
-                               user: User,
-                               params: Map[String, String])
+case class CustomActionRequest(name: String, processVersion: ProcessVersion, user: User, params: Map[String, String])
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)
 

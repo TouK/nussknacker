@@ -12,13 +12,23 @@ import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParameter
 
 object DynamicParametersSource extends SourceFactory with DynamicParametersMixin {
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
-    new CollectionSource[Any](List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)(TypeInformation.of(classOf[Any]))
+  override def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): AnyRef = {
+    new CollectionSource[Any](List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)(
+      TypeInformation.of(classOf[Any])
+    )
   }
 
-  override protected def result(validationContext: ValidationContext,
-                                otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
+  override protected def result(
+      validationContext: ValidationContext,
+      otherParams: List[(String, BaseDefinedParameter)]
+  )(implicit nodeId: NodeId): FinalResults = {
     val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }.toMap
-    FinalResults.forValidation(validationContext)(_.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None))
+    FinalResults.forValidation(validationContext)(
+      _.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None)
+    )
   }
 }

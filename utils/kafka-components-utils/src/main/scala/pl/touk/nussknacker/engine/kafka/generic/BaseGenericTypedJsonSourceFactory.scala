@@ -16,18 +16,30 @@ trait BaseGenericTypedJsonSourceFactory extends KafkaSourceFactory[String, Typed
     TypeParameter
   )
 
-  override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((TopicParamName, DefinedEagerParameter(topic: String, _)) ::
-      (TypeDefinitionParamName, DefinedEagerParameter(definition: Any, _)) :: Nil, _) =>
+  override protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case step @ TransformationStep(
+          (TopicParamName, DefinedEagerParameter(topic: String, _)) ::
+          (TypeDefinitionParamName, DefinedEagerParameter(definition: Any, _)) :: Nil,
+          _
+        ) =>
       val topicValidationErrors = topicsValidationErrors(topic)
       calculateTypingResult(definition) match {
         case Valid((_, typingResult)) =>
-          prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, topicValidationErrors)
+          prepareSourceFinalResults(
+            context,
+            dependencies,
+            step.parameters,
+            keyTypingResult,
+            typingResult,
+            topicValidationErrors
+          )
         case Invalid(exc) =>
           val errors = topicValidationErrors ++ List(exc.toCustomNodeError(nodeId))
           prepareSourceFinalErrors(context, dependencies, step.parameters, errors)
       }
-    case step@TransformationStep((TopicParamName, top) :: (TypeDefinitionParamName, typ) :: Nil, _) =>
+    case step @ TransformationStep((TopicParamName, top) :: (TypeDefinitionParamName, typ) :: Nil, _) =>
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 

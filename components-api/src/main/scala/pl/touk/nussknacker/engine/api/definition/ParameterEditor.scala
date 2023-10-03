@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-
 import java.time.temporal.ChronoUnit
 
 import io.circe.generic.extras.ConfiguredJsonCodec
@@ -70,11 +69,13 @@ object PeriodParameterEditor {
  */
 case object CronParameterEditor extends SimpleParameterEditor
 
-@JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue]) extends SimpleParameterEditor
+@JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
+    extends SimpleParameterEditor
 
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
-@JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode) extends ParameterEditor
+@JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
+    extends ParameterEditor
 
 object DualParameterEditor {
   implicit val dualEditorModeEncoder: Encoder[DualEditorMode] = {

@@ -16,35 +16,45 @@ import java.nio.charset.StandardCharsets
 import scala.io.Source
 
 class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig)
-  extends KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] {
+    extends KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] {
 
-  override def serialize(exceptionInfo: NuExceptionInfo[NonTransientException], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-    val key = s"${metaData.id}-${exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("")}".getBytes(StandardCharsets.UTF_8)
-    val value = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
+  override def serialize(
+      exceptionInfo: NuExceptionInfo[NonTransientException],
+      timestamp: lang.Long
+  ): ProducerRecord[Array[Byte], Array[Byte]] = {
+    val key =
+      s"${metaData.id}-${exceptionInfo.nodeComponentInfo.map(_.nodeId).getOrElse("")}".getBytes(StandardCharsets.UTF_8)
+    val value           = KafkaExceptionInfo(metaData, exceptionInfo, consumerConfig)
     val serializedValue = value.asJson.spaces2.getBytes(StandardCharsets.UTF_8)
     new ProducerRecord(consumerConfig.topic, key, serializedValue)
   }
 
 }
 
-@JsonCodec case class KafkaExceptionInfo(processName: String,
-                                         nodeId: Option[String],
-                                         message: Option[String],
-                                         exceptionInput: Option[String],
-                                         inputEvent: Option[Json],
-                                         stackTrace: Option[String],
-                                         timestamp: Long,
-                                         host: Option[String],
-                                         additionalData: Map[String, String])
+@JsonCodec case class KafkaExceptionInfo(
+    processName: String,
+    nodeId: Option[String],
+    message: Option[String],
+    exceptionInput: Option[String],
+    inputEvent: Option[Json],
+    stackTrace: Option[String],
+    timestamp: Long,
+    host: Option[String],
+    additionalData: Map[String, String]
+)
 
 object KafkaExceptionInfo {
 
   private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
-  //TODO: better hostname (e.g. from some Flink config)
+  // TODO: better hostname (e.g. from some Flink config)
   private lazy val hostName = InetAddress.getLocalHost.getHostName
 
-  def apply(metaData: MetaData, exceptionInfo: NuExceptionInfo[NonTransientException], config: KafkaExceptionConsumerConfig): KafkaExceptionInfo = {
+  def apply(
+      metaData: MetaData,
+      exceptionInfo: NuExceptionInfo[NonTransientException],
+      config: KafkaExceptionConsumerConfig
+  ): KafkaExceptionInfo = {
     new KafkaExceptionInfo(
       metaData.id,
       exceptionInfo.nodeComponentInfo.map(_.nodeId),

@@ -8,7 +8,7 @@ object NussknackerApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     for {
       appFactory <- IO(new NussknackerAppFactory())
-      _ <- appFactory.createApp().use { _ => IO.never }
+      _          <- appFactory.createApp().use { _ => IO.never }
     } yield ExitCode.Success
   }
 }

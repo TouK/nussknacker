@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.db.schema
 
 import pl.touk.nussknacker.engine.api.typed.TypedObjectDefinition
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import java.sql.ResultSetMetaData
 
@@ -23,7 +23,7 @@ object TableDefinition {
   }
 }
 
-case class TableDefinition(columnDefs: List[ColumnDefinition]) {
+final case class TableDefinition(columnDefs: List[ColumnDefinition]) {
   val rowType: TypedObjectTypingResult = TypedObjectTypingResult(columnDefs.map(col => col.name -> col.typing).toMap)
 
   val resultSetType: TypingResult = Typed.genericTypeClass(classOf[java.util.List[_]], rowType :: Nil)

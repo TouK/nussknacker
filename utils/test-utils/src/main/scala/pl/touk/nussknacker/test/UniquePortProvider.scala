@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.test
 
-
 import java.util.concurrent.atomic.AtomicInteger
 
 import java.net.ServerSocket
@@ -45,4 +44,3 @@ private object RetryingUniquePortProvider {
     }
   }
 }
-

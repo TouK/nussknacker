@@ -7,13 +7,15 @@ import scala.concurrent.Future
 
 case object MultipleParamsService extends Service {
   @MethodToInvoke
-  def invoke(@ParamName("foo") foo: String,
-             @ParamName("bar")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-               defaultMode = DualEditorMode.SIMPLE
-             )
-             bar: String,
-             @ParamName("baz") baz: String,
-             @ParamName("quax") quax: String) = Future.successful(())
+  def invoke(
+      @ParamName("foo") foo: String,
+      @ParamName("bar")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      bar: String,
+      @ParamName("baz") baz: String,
+      @ParamName("quax") quax: String
+  ) = Future.successful(())
 }

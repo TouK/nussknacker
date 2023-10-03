@@ -33,7 +33,10 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
     * @param inputConfig configuration from scenarioTypes.{type_name}.modelConfig
     * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
-  final def resolveInputConfigDuringExecution(inputConfig: ConfigWithUnresolvedVersion, classLoader: ClassLoader): InputConfigDuringExecution = {
+  final def resolveInputConfigDuringExecution(
+      inputConfig: ConfigWithUnresolvedVersion,
+      classLoader: ClassLoader
+  ): InputConfigDuringExecution = {
     val (potentiallyResolvedInputConfig, potentiallyResolvedConfigWithDefaults) = if (shouldResolveEnvVariables) {
       logger.debug("Using input model config with resolved env variables")
       val resolvedConfigWithDefaults = resolveConfigUsingDefaults(inputConfig.resolved, classLoader)
@@ -43,7 +46,11 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
       val configWithDefaults = withFallbackToDefaults(inputConfig.withUnresolvedEnvVariables, classLoader)
       (inputConfig.withUnresolvedEnvVariables, configWithDefaults)
     }
-    resolveInputConfigDuringExecution(potentiallyResolvedInputConfig, potentiallyResolvedConfigWithDefaults, classLoader)
+    resolveInputConfigDuringExecution(
+      potentiallyResolvedInputConfig,
+      potentiallyResolvedConfigWithDefaults,
+      classLoader
+    )
   }
 
   /**
@@ -52,13 +59,18 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
     * It is especially useful for local development. Remember that when you turn it off, you can't
     * use optional substitutions (e.g. ${?KAFKA_ADDRESS} in model config. Otherwise they will be removed.
     */
-  protected def shouldResolveEnvVariables: Boolean = sys.env.get("INPUT_CONFIG_RESOLVE_ENV_VARIABLES").forall(_.toBoolean)
+  protected def shouldResolveEnvVariables: Boolean =
+    sys.env.get("INPUT_CONFIG_RESOLVE_ENV_VARIABLES").forall(_.toBoolean)
 
   /**
     * Same as [[resolveInputConfigDuringExecution]] but with provided param configWithDefaults containing inputConfig
     * with resolved default values.
     */
-  protected def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution
+  protected def resolveInputConfigDuringExecution(
+      inputConfig: Config,
+      configWithDefaults: Config,
+      classLoader: ClassLoader
+  ): InputConfigDuringExecution
 
   /**
     * Resolves full config used inside [[pl.touk.nussknacker.engine.api.process.ProcessConfigCreator]]. Invoked both
@@ -87,8 +99,8 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
       By using separate model.conf we can define configs there like:
       service1Url: ${baseUrl}/service1
       and have baseUrl taken from application config
-    */
-    //We want to respect overrides (like system properties) and standard fallbacks (like reference.conf)
+     */
+    // We want to respect overrides (like system properties) and standard fallbacks (like reference.conf)
     ConfigFactory.load(classLoader, withFallbackToDefaults(inputConfig, classLoader))
   }
 
@@ -97,7 +109,7 @@ abstract class ModelConfigLoader extends Serializable with LazyLogging {
     inputConfig.withFallback(configFallbackFromModel)
   }
 
-  //only for testing
+  // only for testing
   private[engine] def modelConfigResource: String = defaultModelConfigResource
 
 }

@@ -12,12 +12,14 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
  *
  * When using this class it's important that aggregator, passedType and unwrap must match: unwrap result is of passedType and can be processed by aggregator
  */
-class UnwrappingAggregateFunction[Input](aggregator: Aggregator,
-                                         passedType: TypingResult,
-                                         unwrapAggregatedValue: Input => AnyRef)
-  extends AggregateFunction[ValueWithContext[StringKeyedValue[Input]], AnyRef, AnyRef] {
+class UnwrappingAggregateFunction[Input](
+    aggregator: Aggregator,
+    passedType: TypingResult,
+    unwrapAggregatedValue: Input => AnyRef
+) extends AggregateFunction[ValueWithContext[StringKeyedValue[Input]], AnyRef, AnyRef] {
 
-  private val expectedType = aggregator.computeOutputType(passedType)
+  private val expectedType = aggregator
+    .computeOutputType(passedType)
     .valueOr(msg => throw new IllegalArgumentException(msg))
 
   override def createAccumulator(): AnyRef = aggregator.createAccumulator()

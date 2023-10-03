@@ -10,7 +10,14 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
   * TODO: maybe icon/docs/componentGroup should be somehow separated as they are UI related?
   * TODO: componentId is work around for components duplication across multiple scenario types
   */
-@JsonCodec case class SingleComponentConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], componentGroup: Option[ComponentGroupName], componentId: Option[ComponentId], disabled: Boolean = false) {
+@JsonCodec case class SingleComponentConfig(
+    params: Option[Map[String, ParameterConfig]],
+    icon: Option[String],
+    docsUrl: Option[String],
+    componentGroup: Option[ComponentGroupName],
+    componentId: Option[ComponentId],
+    disabled: Boolean = false
+) {
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
@@ -20,9 +27,9 @@ object SingleComponentConfig {
 
   implicit val semigroup: Semigroup[SingleComponentConfig] = {
     implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
-      case (None, None) => None
+      case (None, None)    => None
       case (None, Some(x)) => Some(x)
-      case (Some(x), _) => Some(x)
+      case (Some(x), _)    => Some(x)
     }
 
     implicit def takeLeftMapSemi[K, V]: Semigroup[Map[K, V]] = Semigroup.instance[Map[K, V]] { (x, y) =>
@@ -33,9 +40,9 @@ object SingleComponentConfig {
     }
 
     implicit def naturalOptionMapSemi[K, V]: Semigroup[Option[Map[K, V]]] = Semigroup.instance[Option[Map[K, V]]] {
-      case (None, None) => None
-      case (Some(x), None) => Some(x)
-      case (None, Some(x)) => Some(x)
+      case (None, None)       => None
+      case (Some(x), None)    => Some(x)
+      case (None, Some(x))    => Some(x)
       case (Some(x), Some(y)) => Some(x |+| y)
     }
 
@@ -51,19 +58,23 @@ object SingleComponentConfig {
   }
 }
 
-@JsonCodec case class ParameterConfig(defaultValue: Option[String],
-                                      editor: Option[ParameterEditor],
-                                      validators: Option[List[ParameterValidator]],
-                                      label: Option[String])
+@JsonCodec case class ParameterConfig(
+    defaultValue: Option[String],
+    editor: Option[ParameterEditor],
+    validators: Option[List[ParameterValidator]],
+    label: Option[String]
+)
 
 object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None)
 }
 
-@JsonCodec case class AdditionalPropertyConfig(defaultValue: Option[String],
-                                               editor: Option[SimpleParameterEditor],
-                                               validators: Option[List[ParameterValidator]],
-                                               label: Option[String])
+@JsonCodec case class AdditionalPropertyConfig(
+    defaultValue: Option[String],
+    editor: Option[SimpleParameterEditor],
+    validators: Option[List[ParameterValidator]],
+    label: Option[String]
+)
 
 object AdditionalPropertyConfig {
   val empty: AdditionalPropertyConfig = AdditionalPropertyConfig(None, None, None, None)

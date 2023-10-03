@@ -6,7 +6,8 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.util.Collector
 
-abstract class ProcessFunctionInterceptor[IN, OUT](underlying: KeyedProcessFunction[String, IN, OUT]) extends KeyedProcessFunction[String, IN, OUT] {
+abstract class ProcessFunctionInterceptor[IN, OUT](underlying: KeyedProcessFunction[String, IN, OUT])
+    extends KeyedProcessFunction[String, IN, OUT] {
 
   override def open(parameters: Configuration): Unit = {
     underlying.open(parameters)
@@ -16,7 +17,11 @@ abstract class ProcessFunctionInterceptor[IN, OUT](underlying: KeyedProcessFunct
     underlying.setRuntimeContext(ctx)
   }
 
-  override final def processElement(value: IN, ctx: KeyedProcessFunction[String, IN, OUT]#Context, out: Collector[OUT]): Unit = {
+  override final def processElement(
+      value: IN,
+      ctx: KeyedProcessFunction[String, IN, OUT]#Context,
+      out: Collector[OUT]
+  ): Unit = {
     beforeProcessElement(value)
     underlying.processElement(value, ctx, out)
     afterProcessElement(value)
@@ -26,7 +31,11 @@ abstract class ProcessFunctionInterceptor[IN, OUT](underlying: KeyedProcessFunct
 
   protected def afterProcessElement(value: IN): Unit = {}
 
-  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, IN, OUT]#OnTimerContext, out: Collector[OUT]): Unit = {
+  override def onTimer(
+      timestamp: Long,
+      ctx: KeyedProcessFunction[String, IN, OUT]#OnTimerContext,
+      out: Collector[OUT]
+  ): Unit = {
     underlying.onTimer(timestamp, ctx, out)
   }
 

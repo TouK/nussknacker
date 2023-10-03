@@ -12,7 +12,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.ExecutionContext
 
 class ComponentResource(componentService: ComponentService)(implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser {
+    extends Directives
+    with FailFastCirceSupport
+    with RouteWithUser {
   override def securedRoute(implicit user: LoggedUser): Route =
     encodeResponse {
       path("components") {

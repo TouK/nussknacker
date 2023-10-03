@@ -13,24 +13,44 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object FlinkVerificationMain extends FlinkRunner {
 
-  def run(modelData: ModelData, process: CanonicalProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String, configuration: Configuration): Unit =
-    new FlinkVerificationMain(modelData, process, processVersion, deploymentData, savepointPath, configuration).runTest()
+  def run(
+      modelData: ModelData,
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      savepointPath: String,
+      configuration: Configuration
+  ): Unit =
+    new FlinkVerificationMain(modelData, process, processVersion, deploymentData, savepointPath, configuration)
+      .runTest()
 
 }
 
-
-class FlinkVerificationMain(val modelData: ModelData, val process: CanonicalProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, savepointPath: String,
-                            val configuration: Configuration) extends FlinkStubbedRunner {
+class FlinkVerificationMain(
+    val modelData: ModelData,
+    val process: CanonicalProcess,
+    processVersion: ProcessVersion,
+    deploymentData: DeploymentData,
+    savepointPath: String,
+    val configuration: Configuration
+) extends FlinkStubbedRunner {
 
   def runTest(): Unit = {
-    val env = createEnv
+    val env       = createEnv
     val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData))
+    FlinkProcessRegistrar(
+      new VerificationFlinkProcessCompiler(
+        process,
+        modelData.configCreator,
+        modelData.processConfig,
+        modelData.objectNaming
+      ),
+      ExecutionConfigPreparer.defaultChain(modelData)
+    )
   }
 }

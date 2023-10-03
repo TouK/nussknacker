@@ -8,7 +8,7 @@ import java.io.File
 import scala.concurrent.Future
 
 trait FlinkClient {
-  
+
   def deleteJarIfExists(jarFileName: String): Future[Unit]
 
   def findJobsByName(jobName: String): Future[List[JobOverview]]
@@ -21,9 +21,10 @@ trait FlinkClient {
 
   def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult]
 
-  def runProgram(jarFile: File,
-                 mainClass: String,
-                 args: List[String],
-                 savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
+  def runProgram(
+      jarFile: File,
+      mainClass: String,
+      args: List[String],
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]]
 }
-

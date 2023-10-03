@@ -17,4 +17,3 @@ case class EspProcess(metaData: MetaData, roots: NonEmptyList[SourceNode]) {
 
   def toCanonicalProcess: CanonicalProcess = ProcessCanonizer.canonize(this)
 }
-

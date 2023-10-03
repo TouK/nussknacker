@@ -14,7 +14,8 @@ trait Expression {
 
 sealed trait TypedValue
 
-case class TypedExpression(expression: Expression, returnType: TypingResult, typingInfo: ExpressionTypingInfo) extends TypedValue
+case class TypedExpression(expression: Expression, returnType: TypingResult, typingInfo: ExpressionTypingInfo)
+    extends TypedValue
 
 case class TypedExpressionMap(valueByKey: Map[String, TypedExpression]) extends TypedValue
 

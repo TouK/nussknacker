@@ -14,13 +14,15 @@ import scala.concurrent.duration._
   * @param deploymentRetry {@link DeploymentRetryConfig}  for deployment failure recovery.
   * @param jarsDir Directory for jars storage.
   */
-case class PeriodicBatchConfig(db: Config,
-                               processingType: String,
-                               rescheduleCheckInterval: FiniteDuration = 13 seconds,
-                               deployInterval: FiniteDuration = 17 seconds,
-                               deploymentRetry: DeploymentRetryConfig,
-                               executionConfig: PeriodicExecutionConfig,
-                               jarsDir: String)
+case class PeriodicBatchConfig(
+    db: Config,
+    processingType: String,
+    rescheduleCheckInterval: FiniteDuration = 13 seconds,
+    deployInterval: FiniteDuration = 17 seconds,
+    deploymentRetry: DeploymentRetryConfig,
+    executionConfig: PeriodicExecutionConfig,
+    jarsDir: String
+)
 
 /**
   * Periodic Flink scenarios deployment retry configuration. Used by {@link PeriodicBatchConfig}

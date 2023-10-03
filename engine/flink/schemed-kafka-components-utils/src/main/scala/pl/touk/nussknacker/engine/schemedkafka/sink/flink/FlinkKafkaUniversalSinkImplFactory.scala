@@ -12,15 +12,26 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 
 object FlinkKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
 
-  def createSink(preparedTopic: PreparedKafkaTopic,
-                 key: LazyParameter[AnyRef],
-                 value: LazyParameter[AnyRef],
-                 kafkaConfig: KafkaConfig,
-                 serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
-                 clientId: String,
-                 schema: RuntimeSchemaData[ParsedSchema],
-                 validationMode: ValidationMode): Sink = {
-    new FlinkKafkaUniversalSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema, validationMode)
+  def createSink(
+      preparedTopic: PreparedKafkaTopic,
+      key: LazyParameter[AnyRef],
+      value: LazyParameter[AnyRef],
+      kafkaConfig: KafkaConfig,
+      serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
+      clientId: String,
+      schema: RuntimeSchemaData[ParsedSchema],
+      validationMode: ValidationMode
+  ): Sink = {
+    new FlinkKafkaUniversalSink(
+      preparedTopic,
+      key,
+      value,
+      kafkaConfig,
+      serializationSchema,
+      clientId,
+      schema.serializableSchema,
+      validationMode
+    )
   }
 
 }

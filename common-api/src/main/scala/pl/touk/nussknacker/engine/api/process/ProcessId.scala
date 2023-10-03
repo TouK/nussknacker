@@ -12,6 +12,6 @@ object ProcessId {
 
   def apply(value: String): ProcessId = Try(value.toLong) match {
     case Success(id) => ProcessId(id)
-    case Failure(_) => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
+    case Failure(_)  => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
   }
 }

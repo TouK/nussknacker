@@ -19,12 +19,22 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
     val docsConfig: DocsConfig = new DocsConfig(config)
     import docsConfig._
 
-    val factory = new MetaDataProviderFactory()
+    val factory         = new MetaDataProviderFactory()
     val componentConfig = config.getConfig("config")
     val dbQueryEnricher = readEnricherConfigIfPresent(componentConfig, "databaseQueryEnricher")
-      .map(queryConfig => ComponentDefinition(name = queryConfig.name, component = new DatabaseQueryEnricher(queryConfig.dbPool, factory.create(queryConfig.dbPool))).withRelativeDocs("Enrichers#databasequeryenricher"))
+      .map(queryConfig =>
+        ComponentDefinition(
+          name = queryConfig.name,
+          component = new DatabaseQueryEnricher(queryConfig.dbPool, factory.create(queryConfig.dbPool))
+        ).withRelativeDocs("Enrichers#databasequeryenricher")
+      )
     val dbLookupEnricher = readEnricherConfigIfPresent(componentConfig, "databaseLookupEnricher")
-      .map(lookupConfig => ComponentDefinition(name = lookupConfig.name, component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))).withRelativeDocs("Enrichers#databaselookupenricher"))
+      .map(lookupConfig =>
+        ComponentDefinition(
+          name = lookupConfig.name,
+          component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))
+        ).withRelativeDocs("Enrichers#databaselookupenricher")
+      )
 
     List(dbQueryEnricher, dbLookupEnricher).filter(_.isDefined).map(_.get)
   }

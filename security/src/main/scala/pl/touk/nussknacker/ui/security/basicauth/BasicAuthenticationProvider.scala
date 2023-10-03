@@ -10,10 +10,10 @@ class BasicAuthenticationProvider extends AuthenticationProvider {
 
   override val name: String = BasicAuthenticationConfiguration.name
 
-  override def createAuthenticationResources(config: Config,
-                                             classLoader: ClassLoader)
-                                            (implicit ec: ExecutionContext,
-                                             sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
+  override def createAuthenticationResources(
+      config: Config,
+      classLoader: ClassLoader
+  )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     val configuration = BasicAuthenticationConfiguration.create(config)
     new BasicAuthenticationResources(realm, configuration)
   }

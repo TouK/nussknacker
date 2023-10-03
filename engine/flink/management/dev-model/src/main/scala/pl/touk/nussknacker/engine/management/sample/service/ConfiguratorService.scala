@@ -10,21 +10,19 @@ import scala.concurrent.Future
 
 object ConfiguratorService extends Service with Serializable {
   @MethodToInvoke
-  def invoke(@ParamName("Template ID")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-               defaultMode = DualEditorMode.SIMPLE
-             )
-             @NotBlank
-             template: String,
-
-             @ParamName("Version")
-             @Literal
-             version: Int,
-
-             @ParamName("JsonConfig")
-             @Nullable
-             jsonConfig: String
-            ): Future[Unit]
-    = Future.successful(())
+  def invoke(
+      @ParamName("Template ID")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      @NotBlank
+      template: String,
+      @ParamName("Version")
+      @Literal
+      version: Int,
+      @ParamName("JsonConfig")
+      @Nullable
+      jsonConfig: String
+  ): Future[Unit] = Future.successful(())
 }

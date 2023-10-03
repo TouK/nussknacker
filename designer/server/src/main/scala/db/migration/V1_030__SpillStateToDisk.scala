@@ -21,8 +21,7 @@ object V1_030__SpillStateToDisk {
         splitStateToDisk match {
           case Some(oldValue) =>
             return typeSpecificDataCursor.withFocus { json =>
-              json.mapObject(_.add("spillStateToDisk", oldValue))
-                .hcursor.downField("splitStateToDisk").delete.top.get
+              json.mapObject(_.add("spillStateToDisk", oldValue)).hcursor.downField("splitStateToDisk").delete.top.get
             }.top
           case None => typeSpecificData
         }

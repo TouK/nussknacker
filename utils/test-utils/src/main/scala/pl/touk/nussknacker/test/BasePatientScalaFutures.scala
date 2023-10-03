@@ -22,5 +22,4 @@ trait BasePatientScalaFutures extends ScalaFutures with Eventually {
     }
   }
 
-
 }

@@ -10,12 +10,11 @@ import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
 import scala.concurrent.ExecutionContext
 
 class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext: ExecutionContext)
-  extends AkkaHttpServerInterpreter
+    extends AkkaHttpServerInterpreter
     with LazyLogging {
 
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
-    AkkaHttpServerOptions
-      .customiseInterceptors
+    AkkaHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
       .options
 
@@ -33,7 +32,7 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   private def isMissingAuthorizationHeaderFailure(ctx: DecodeFailureContext) = {
     (ctx.failingInput, ctx.failure) match {
       case (Header("Authorization", _, _), DecodeResult.Missing) => true
-      case _ => false
+      case _                                                     => false
     }
   }
 }

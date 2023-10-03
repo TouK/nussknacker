@@ -10,7 +10,7 @@ import scala.language.higherKinds
 class DBIOActionRunner(dbRef: DbRef) {
 
   protected lazy val profile: JdbcProfile = dbRef.profile
-  protected lazy val api : profile.API = profile.api
+  protected lazy val api: profile.API     = profile.api
   import api._
 
   def runInTransaction[T](action: DB[T]): Future[T] =

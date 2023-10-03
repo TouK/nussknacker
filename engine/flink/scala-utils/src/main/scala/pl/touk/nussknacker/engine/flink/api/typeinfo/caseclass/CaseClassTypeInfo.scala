@@ -21,7 +21,11 @@ import org.apache.flink.annotation.{Public, PublicEvolving}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.operators.Keys.ExpressionKeys
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.CompositeType.{FlatFieldDescriptor, InvalidFieldReferenceException, TypeComparatorBuilder}
+import org.apache.flink.api.common.typeutils.CompositeType.{
+  FlatFieldDescriptor,
+  InvalidFieldReferenceException,
+  TypeComparatorBuilder
+}
 import org.apache.flink.api.common.typeutils._
 import org.apache.flink.api.java.typeutils.TupleTypeInfoBase
 
@@ -36,26 +40,25 @@ import scala.collection.mutable.ArrayBuffer
  */
 @Public
 abstract class CaseClassTypeInfo[T <: Product](
-                                                clazz: Class[T],
-                                                val typeParamTypeInfos: Array[TypeInformation[_]],
-                                                fieldTypes: Seq[TypeInformation[_]],
-                                                val fieldNames: Seq[String])
-  extends TupleTypeInfoBase[T](clazz, fieldTypes: _*) {
+    clazz: Class[T],
+    val typeParamTypeInfos: Array[TypeInformation[_]],
+    fieldTypes: Seq[TypeInformation[_]],
+    val fieldNames: Seq[String]
+) extends TupleTypeInfoBase[T](clazz, fieldTypes: _*) {
 
   @PublicEvolving
   override def getGenericParameters: java.util.Map[String, TypeInformation[_]] = {
     typeParamTypeInfos.zipWithIndex
-      .map {
-        case (info, index) =>
-          "T" + (index + 1) -> info
+      .map { case (info, index) =>
+        "T" + (index + 1) -> info
       }
       .toMap[String, TypeInformation[_]]
       .asJava
   }
 
-  private val REGEX_INT_FIELD: String = "[0-9]+"
-  private val REGEX_STR_FIELD: String = "[\\p{L}_\\$][\\p{L}\\p{Digit}_\\$]*"
-  private val REGEX_FIELD: String = REGEX_STR_FIELD + "|" + REGEX_INT_FIELD
+  private val REGEX_INT_FIELD: String     = "[0-9]+"
+  private val REGEX_STR_FIELD: String     = "[\\p{L}_\\$][\\p{L}\\p{Digit}_\\$]*"
+  private val REGEX_FIELD: String         = REGEX_STR_FIELD + "|" + REGEX_INT_FIELD
   private val REGEX_NESTED_FIELDS: String = "(" + REGEX_FIELD + ")(\\.(.+))?"
   private val REGEX_NESTED_FIELDS_WILDCARD: String = REGEX_NESTED_FIELDS + "|\\" +
     ExpressionKeys.SELECT_ALL_CHAR + "|\\" + ExpressionKeys.SELECT_ALL_CHAR_SCALA
@@ -72,23 +75,23 @@ abstract class CaseClassTypeInfo[T <: Product](
 
   @PublicEvolving
   override def getFlatFields(
-                              fieldExpression: String,
-                              offset: Int,
-                              result: java.util.List[FlatFieldDescriptor]): Unit = {
+      fieldExpression: String,
+      offset: Int,
+      result: java.util.List[FlatFieldDescriptor]
+  ): Unit = {
     val matcher: Matcher = PATTERN_NESTED_FIELDS_WILDCARD.matcher(fieldExpression)
 
     if (!matcher.matches) {
       throw new InvalidFieldReferenceException(
         "Invalid tuple field reference \"" +
-          fieldExpression + "\".")
+          fieldExpression + "\"."
+      )
     }
 
     var field: String = matcher.group(0)
 
-    if (
-      (field == ExpressionKeys.SELECT_ALL_CHAR) ||
-        (field == ExpressionKeys.SELECT_ALL_CHAR_SCALA)
-    ) {
+    if ((field == ExpressionKeys.SELECT_ALL_CHAR) ||
+      (field == ExpressionKeys.SELECT_ALL_CHAR_SCALA)) {
       var keyPosition: Int = 0
       for (fType <- fieldTypes) {
         fType match {
@@ -116,7 +119,8 @@ abstract class CaseClassTypeInfo[T <: Product](
           if (index >= fieldNames.size) {
             throw new InvalidFieldReferenceException(
               "Unable to find field \"" + field +
-                "\" in type " + this + ".")
+                "\" in type " + this + "."
+            )
           } else if (field == fieldNames(index)) {
             // found field
             fieldTypes(index) match {
@@ -137,7 +141,8 @@ abstract class CaseClassTypeInfo[T <: Product](
           if (index >= fieldNames.size) {
             throw new InvalidFieldReferenceException(
               "Unable to find field \"" + field +
-                "\" in type " + this + ".")
+                "\" in type " + this + "."
+            )
           } else if (field == fieldNames(index)) {
             // found field
             fieldTypes(index) match {
@@ -146,7 +151,8 @@ abstract class CaseClassTypeInfo[T <: Product](
               case _ =>
                 throw new InvalidFieldReferenceException(
                   "Nested field expression \"" + tail +
-                    "\" not possible on atomic type " + fieldTypes(index) + ".")
+                    "\" not possible on atomic type " + fieldTypes(index) + "."
+                )
             }
           } else {
             extractFlatFields(index + 1, pos + fieldTypes(index).getTotalFields())
@@ -163,20 +169,19 @@ abstract class CaseClassTypeInfo[T <: Product](
 
     val matcher: Matcher = PATTERN_NESTED_FIELDS.matcher(fieldExpression)
     if (!matcher.matches) {
-      if (
-        fieldExpression.startsWith(ExpressionKeys.SELECT_ALL_CHAR) ||
-          fieldExpression.startsWith(ExpressionKeys.SELECT_ALL_CHAR_SCALA)
-      ) {
+      if (fieldExpression.startsWith(ExpressionKeys.SELECT_ALL_CHAR) ||
+        fieldExpression.startsWith(ExpressionKeys.SELECT_ALL_CHAR_SCALA)) {
         throw new InvalidFieldReferenceException("Wildcard expressions are not allowed here.")
       } else {
         throw new InvalidFieldReferenceException(
           "Invalid format of case class field expression \""
-            + fieldExpression + "\".")
+            + fieldExpression + "\"."
+        )
       }
     }
 
     var field = matcher.group(1)
-    val tail = matcher.group(3)
+    val tail  = matcher.group(3)
 
     val intFieldMatcher = PATTERN_INT_FIELD.matcher(field)
     if (intFieldMatcher.matches()) {
@@ -195,14 +200,16 @@ abstract class CaseClassTypeInfo[T <: Product](
             case _ =>
               throw new InvalidFieldReferenceException(
                 "Nested field expression \"" + tail +
-                  "\" not possible on atomic type " + fieldTypes(i) + ".")
+                  "\" not possible on atomic type " + fieldTypes(i) + "."
+              )
           }
         }
       }
     }
     throw new InvalidFieldReferenceException(
       "Unable to find field \"" + field +
-        "\" in type " + this + ".")
+        "\" in type " + this + "."
+    )
   }
 
   @PublicEvolving
@@ -225,7 +232,7 @@ abstract class CaseClassTypeInfo[T <: Product](
 
   private class CaseClassTypeComparatorBuilder extends TypeComparatorBuilder[T] {
     val fieldComparators: ArrayBuffer[TypeComparator[_]] = new ArrayBuffer[TypeComparator[_]]()
-    val logicalKeyFields: ArrayBuffer[Int] = new ArrayBuffer[Int]()
+    val logicalKeyFields: ArrayBuffer[Int]               = new ArrayBuffer[Int]()
 
     override def initializeTypeComparatorBuilder(size: Int): Unit = {
       fieldComparators.sizeHint(size)
@@ -261,9 +268,9 @@ abstract class CaseClassTypeInfo[T <: Product](
     obj match {
       case caseClass: CaseClassTypeInfo[_] =>
         caseClass.canEqual(this) &&
-          super.equals(caseClass) &&
-          typeParamTypeInfos.sameElements(caseClass.typeParamTypeInfos) &&
-          fieldNames.equals(caseClass.fieldNames)
+        super.equals(caseClass) &&
+        typeParamTypeInfos.sameElements(caseClass.typeParamTypeInfos) &&
+        fieldNames.equals(caseClass.fieldNames)
       case _ => false
     }
   }

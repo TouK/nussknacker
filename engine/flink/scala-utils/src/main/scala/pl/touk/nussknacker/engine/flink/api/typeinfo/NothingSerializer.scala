@@ -64,7 +64,7 @@ class NothingSerializer extends TypeSerializer[Any] {
   override def equals(obj: Any): Boolean = {
     obj match {
       case nothingSerializer: NothingSerializer => true
-      case _ => false
+      case _                                    => false
     }
   }
 
@@ -74,6 +74,6 @@ class NothingSerializer extends TypeSerializer[Any] {
 }
 
 class NothingSerializerSnapshot
-  extends SimpleTypeSerializerSnapshot[Any](new Supplier[TypeSerializer[Any]] {
-    override def get(): TypeSerializer[Any] = new NothingSerializer
-  }) {}
+    extends SimpleTypeSerializerSnapshot[Any](new Supplier[TypeSerializer[Any]] {
+      override def get(): TypeSerializer[Any] = new NothingSerializer
+    }) {}

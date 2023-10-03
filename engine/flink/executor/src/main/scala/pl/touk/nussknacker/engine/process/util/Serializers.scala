@@ -22,12 +22,14 @@ object Serializers extends LazyLogging {
 
   def registerSerializers(modelData: ModelData, config: ExecutionConfig): Unit = {
     (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
-    ScalaServiceLoader.load[SerializersRegistrar](getClass.getClassLoader).foreach(_.register(modelData.processConfig, config))
+    ScalaServiceLoader
+      .load[SerializersRegistrar](getClass.getClassLoader)
+      .foreach(_.register(modelData.processConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }
 
   @SerialVersionUID(4481573264636646884L)
-  //this is not so great, but is OK for now
+  // this is not so great, but is OK for now
   object CaseClassSerializer extends SerializerWithSpecifiedClass[Product](false, true) with Serializable {
 
     override def clazz: Class[_] = classOf[Product]
@@ -40,20 +42,24 @@ object Serializers extends LazyLogging {
 
         // in inner classes definition, '$outer' field is at the end, but in constructor it is the first parameter
         // we look for '$outer` in getFields not getDeclaredFields, cause it can be also parent's field
-        val fields = obj.getClass
-          .getFields
+        val fields = obj.getClass.getFields
           .find(_.getName == "$outer")
           .toList ++ obj.getClass.getDeclaredFields
 
-        assume(fields.size >= constructorParamsCount, "To little fields to serialize -> It will be impossible to deserialize this thing anyway")
+        assume(
+          fields.size >= constructorParamsCount,
+          "To little fields to serialize -> It will be impossible to deserialize this thing anyway"
+        )
 
-        fields.take(constructorParamsCount).foreach(field => {
-          field.setAccessible(true)
-          kryo.writeClassAndObject(output, field.get(obj))
-        })
+        fields
+          .take(constructorParamsCount)
+          .foreach(field => {
+            field.setAccessible(true)
+            kryo.writeClassAndObject(output, field.get(obj))
+          })
       }
 
-      val arity = obj.productArity
+      val arity                  = obj.productArity
       val constructorParamsCount = obj.getClass.getConstructors.headOption.map(_.getParameterCount)
 
       if (arity == constructorParamsCount.getOrElse(0)) {
@@ -68,19 +74,19 @@ object Serializers extends LazyLogging {
 
     override def read(kryo: Kryo, input: Input, obj: Class[Product]): Product = {
       val constructorParamsCount = input.readInt()
-      val constructors = obj.getConstructors
+      val constructors           = obj.getConstructors
 
       if (constructorParamsCount == 0 && constructors.isEmpty) {
-        Try(EspTypeUtils.companionObject(obj)).recoverWith {
-          case e => logger.error(s"Failed to load companion for $obj"); Failure(e)
+        Try(EspTypeUtils.companionObject(obj)).recoverWith { case e =>
+          logger.error(s"Failed to load companion for $obj"); Failure(e)
         }.get
       } else {
         Try({
-          val cons = constructors(0)
+          val cons   = constructors(0)
           val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
           cons.newInstance(params: _*).asInstanceOf[Product]
-        }).recoverWith {
-          case e => logger.error(s"Failed to load obj of class $obj", e); Failure(e)
+        }).recoverWith { case e =>
+          logger.error(s"Failed to load obj of class $obj", e); Failure(e)
         }.get
       }
     }

@@ -48,8 +48,7 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
   def computeOutputTypeUnsafe(input: TypingResult): TypingResult = computeOutputType(input)
     .valueOr(e => throw new IllegalArgumentException(s"Error $e, should be handled with Validation"))
 
-
-  //this can be used e.g. to compute Flink TypeInformation to store
+  // this can be used e.g. to compute Flink TypeInformation to store
   @Hidden
   def computeStoredType(input: TypingResult): Validated[String, TypingResult]
 
@@ -61,23 +60,27 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
   override final def createAccumulator(): AnyRef = zero
 
   @Hidden
-  override final def add(value: AnyRef, accumulator: AnyRef): AnyRef = addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
+  override final def add(value: AnyRef, accumulator: AnyRef): AnyRef =
+    addElement(value.asInstanceOf[Element], accumulator.asInstanceOf[Aggregate])
 
   @Hidden
   override final def getResult(accumulator: AnyRef): AnyRef = result(accumulator.asInstanceOf[Aggregate])
 
   @Hidden
-  override final def merge(a: AnyRef, b: AnyRef): AnyRef = mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
+  override final def merge(a: AnyRef, b: AnyRef): AnyRef =
+    mergeAggregates(a.asInstanceOf[Aggregate], b.asInstanceOf[Aggregate])
 
   @Hidden
-  final def toContextTransformation(variableName: String, emitContext: Boolean, aggregateBy: LazyParameter[_])(implicit nodeId: NodeId):
-    ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
+  final def toContextTransformation(variableName: String, emitContext: Boolean, aggregateBy: LazyParameter[_])(
+      implicit nodeId: NodeId
+  ): ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext] = validationCtx =>
     computeOutputType(aggregateBy.returnType)
-    //TODO: better error?
+      // TODO: better error?
       .leftMap(message => NonEmptyList.of(CannotCreateObjectError(message, nodeId.id)))
       .andThen { outputType =>
         val ctx = if (emitContext) validationCtx else validationCtx.clearVariables
         ctx.withVariable(variableName, outputType, paramName = None)
-      }.andThen(KeyEnricher.contextTransformation)
+      }
+      .andThen(KeyEnricher.contextTransformation)
 
 }
