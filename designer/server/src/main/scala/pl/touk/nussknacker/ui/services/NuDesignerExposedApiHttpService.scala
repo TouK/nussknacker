@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.services
 
+import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
@@ -17,14 +18,21 @@ class NuDesignerExposedApiHttpService(appApiHttpService: AppApiHttpService) {
         pathPrefix = "api" :: "docs" :: Nil,
         yamlName = "nu-designer-openapi.yaml"
       ),
-      openAPIInterpreterOptions = NuDesignerApiAvailableToExpose.openAPIDocsOptions
+      openAPIInterpreterOptions = NuDesignerExposedApiHttpService.openAPIDocsOptions
     ).fromEndpoints(
       endpointDefinitions,
-      NuDesignerApiAvailableToExpose.name,
+      NuDesignerExposedApiHttpService.openApiDocumentTitle,
       "" // we don't want to have versioning of this API yet
     )
 
   def allEndpoints: List[ServerEndpoint[Any, Future]] = {
     swaggerEndpoints ::: apiEndpoints
   }
+}
+object NuDesignerExposedApiHttpService {
+
+  val openApiDocumentTitle = "Nussknacker Designer API"
+
+  val openAPIDocsOptions: OpenAPIDocsOptions = OpenAPIDocsOptions.default
+    .copy(markOptionsAsNullable = true)
 }

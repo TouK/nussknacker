@@ -1,6 +1,5 @@
 import sbt.Keys.runMain
-import sbt.taskKey
-import sbt.Compile
+import sbt.{Test, taskKey}
 
 object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
   override def trigger = noTrigger
@@ -13,7 +12,7 @@ object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
 
   override def projectSettings = Seq(
     generateDesignerOpenApi := {
-      (Compile / runMain)
+      (Test / runMain)
         .toTask(
           " pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile docs-internal/api/nu-designer-openapi.yaml"
         )
