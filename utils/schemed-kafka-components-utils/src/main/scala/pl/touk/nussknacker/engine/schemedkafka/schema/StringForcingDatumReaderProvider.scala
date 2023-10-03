@@ -5,12 +5,13 @@ import org.apache.avro.generic.{GenericData, GenericDatumReader}
 import org.apache.avro.reflect.{ReflectData, ReflectDatumReader}
 import org.apache.avro.specific.{SpecificData, SpecificDatumReader}
 
-trait StringForcingDatumReader[T] extends GenericDatumReader[T]  {
+trait StringForcingDatumReader[T] extends GenericDatumReader[T] {
   self: GenericDatumReader[T] =>
 
   override def findStringClass(schema: Schema): Class[_] = {
-    //This method is invoked e.g. when determining class for map key
-    if ((schema.getType == Schema.Type.STRING || schema.getType == Schema.Type.MAP) && AvroStringSettings.forceUsingStringForStringSchema) classOf[String]
+    // This method is invoked e.g. when determining class for map key
+    if ((schema.getType == Schema.Type.STRING || schema.getType == Schema.Type.MAP) && AvroStringSettings.forceUsingStringForStringSchema)
+      classOf[String]
     else super.findStringClass(schema)
   }
 }

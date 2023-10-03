@@ -20,19 +20,23 @@ sealed trait SchemaBasedParameter {
     case SchemaBasedRecordParameter(fields) => fields.values.toList.flatMap(_.flatten)
   }
 
-  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
+  def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, Unit]
 }
 
 object SchemaBasedParameter {
   type RecordFieldName = String
-  type ParameterName = String
+  type ParameterName   = String
 }
 
 case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {
-  override def validateParams(resultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    val paramName = value.name
+  override def validateParams(
+      resultTypes: Map[ParameterName, BaseDefinedParameter]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    val paramName       = value.name
     val paramResultType = resultTypes(paramName)
-    val converter = new OutputValidatorErrorsConverter(paramName)
+    val converter       = new OutputValidatorErrorsConverter(paramName)
     validator
       .validate(paramResultType.returnType)
       .leftMap(converter.convertValidationErrors)
@@ -41,8 +45,11 @@ case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultV
   }
 }
 
-case class SchemaBasedRecordParameter(fields: ListMap[RecordFieldName, SchemaBasedParameter]) extends SchemaBasedParameter {
-  override def validateParams(actualResultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+case class SchemaBasedRecordParameter(fields: ListMap[RecordFieldName, SchemaBasedParameter])
+    extends SchemaBasedParameter {
+  override def validateParams(
+      actualResultTypes: Map[ParameterName, BaseDefinedParameter]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     flatten.map(_.validateParams(actualResultTypes)).sequence.map(_ => ())
   }
 }

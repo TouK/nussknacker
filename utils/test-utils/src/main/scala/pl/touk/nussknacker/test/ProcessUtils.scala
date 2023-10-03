@@ -52,7 +52,7 @@ object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutur
   }
 
   def checkIfSucceedEventually(exitCodeFuture: Future[Int]): Assertion = {
-    successExitCodes should contain (exitCodeFuture.futureValue)
+    successExitCodes should contain(exitCodeFuture.futureValue)
   }
 
   def destroyProcessEventually[T](process: Process)(run: => T): T = {

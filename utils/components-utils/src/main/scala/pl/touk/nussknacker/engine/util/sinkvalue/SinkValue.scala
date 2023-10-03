@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, S
 
 object SinkValue {
   case class InvalidSinkValue(parameterName: String)
-    extends Exception(s"Parameter: $parameterName must be a LazyParameter[AnyRef] instance.")
+      extends Exception(s"Parameter: $parameterName must be a LazyParameter[AnyRef] instance.")
 
   def applyUnsafe(sinkParameter: SchemaBasedParameter, parameterValues: Map[String, Any]): SinkValue =
     sinkParameter match {

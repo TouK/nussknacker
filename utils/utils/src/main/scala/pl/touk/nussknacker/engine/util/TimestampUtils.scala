@@ -15,13 +15,14 @@ object TimestampUtils {
   )
 
   def supportedTypeToMillis(value: Any, fieldName: String): Long = value match {
-    case v: Long => v
-    case v: Int => v
-    case v: Instant => v.toEpochMilli
-    case v: ZonedDateTime => v.toInstant.toEpochMilli
+    case v: Long           => v
+    case v: Int            => v
+    case v: Instant        => v.toEpochMilli
+    case v: ZonedDateTime  => v.toInstant.toEpochMilli
     case v: OffsetDateTime => v.toInstant.toEpochMilli
-    case other => throw new IllegalArgumentException(
-      s"Field $fieldName is of an invalid type for a timestamp field: ${if (other == null) "null" else other.getClass}"
-    )
+    case other =>
+      throw new IllegalArgumentException(
+        s"Field $fieldName is of an invalid type for a timestamp field: ${if (other == null) "null" else other.getClass}"
+      )
   }
 }

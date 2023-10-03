@@ -13,27 +13,36 @@ import java.sql.{Connection, PreparedStatement}
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: cache prepared statement?
-class DatabaseEnricherInvoker(query: String,
-                              argsCount: Int,
-                              tableDef: TableDefinition,
-                              strategy: QueryResultStrategy,
-                              queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
-                              val returnType: typing.TypingResult,
-                              val getConnection: () => Connection,
-                              val getTimeMeasurement: () => AsyncExecutionTimeMeasurement) extends ServiceInvoker with WithDBConnectionPool {
+class DatabaseEnricherInvoker(
+    query: String,
+    argsCount: Int,
+    tableDef: TableDefinition,
+    strategy: QueryResultStrategy,
+    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    val returnType: typing.TypingResult,
+    val getConnection: () => Connection,
+    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+) extends ServiceInvoker
+    with WithDBConnectionPool {
 
   protected val queryExecutor: QueryExecutor = strategy match {
     case SingleResultStrategy => new SingleResultQueryExecutor(tableDef)
-    case ResultSetStrategy => new ResultSetQueryExecutor(tableDef)
+    case ResultSetStrategy    => new ResultSetQueryExecutor(tableDef)
   }
 
-  override def invokeService(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] =
+  override def invokeService(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector,
+      contextId: ContextId,
+      componentUseCase: ComponentUseCase
+  ): Future[queryExecutor.QueryResult] =
     getTimeMeasurement().measuring {
       queryDatabase(queryArgumentsExtractor(argsCount, params))
     }
 
-  protected def queryDatabase(queryArguments: QueryArguments)(implicit ec: ExecutionContext): Future[queryExecutor.QueryResult] =
+  protected def queryDatabase(
+      queryArguments: QueryArguments
+  )(implicit ec: ExecutionContext): Future[queryExecutor.QueryResult] =
     Future {
       withConnection(query) { statement =>
         setQueryArguments(statement, queryArguments)

@@ -12,9 +12,11 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
     val content = scenarioTestData.testRecords
       .map(_.asJson.noSpaces)
       .mkString("\n")
-    Either.cond(content.length <= testDataSettings.testDataMaxLength,
+    Either.cond(
+      content.length <= testDataSettings.testDataMaxLength,
       RawScenarioTestData(content),
-      s"Too much data generated, limit is: ${testDataSettings.testDataMaxLength}")
+      s"Too much data generated, limit is: ${testDataSettings.testDataMaxLength}"
+    )
   }
 
   def deserialize(rawTestData: RawScenarioTestData): Either[String, PreliminaryScenarioTestData] = {
@@ -23,9 +25,11 @@ class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
     import cats.syntax.traverse._
 
     val rawRecords = rawTestData.content.linesIterator.toList
-    val limitedRawRecords = Either.cond(rawRecords.size <= testDataSettings.maxSamplesCount,
+    val limitedRawRecords = Either.cond(
+      rawRecords.size <= testDataSettings.maxSamplesCount,
       rawRecords,
-      s"Too many samples: ${rawRecords.size}, limit is: ${testDataSettings.maxSamplesCount}")
+      s"Too many samples: ${rawRecords.size}, limit is: ${testDataSettings.maxSamplesCount}"
+    )
     val records: Either[String, List[PreliminaryScenarioTestRecord]] = limitedRawRecords.flatMap { rawRecords =>
       rawRecords.map { rawTestRecord =>
         val record = parser.decode[PreliminaryScenarioTestRecord](rawTestRecord)

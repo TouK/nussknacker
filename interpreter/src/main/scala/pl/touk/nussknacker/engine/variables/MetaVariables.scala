@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithType
 
-
 final case class MetaVariables(processName: String, properties: TypedMap)
 
 object MetaVariables {
@@ -19,10 +18,12 @@ object MetaVariables {
     MetaVariables(metaData.id, properties(metaData))
 
   @Hidden
-  def typingResult(metaData: MetaData): TypingResult = TypedObjectTypingResult(Map(
-    "processName" -> Typed[String],
-    "properties" -> propertiesType(metaData)
-  ))
+  def typingResult(metaData: MetaData): TypingResult = TypedObjectTypingResult(
+    Map(
+      "processName" -> Typed[String],
+      "properties"  -> propertiesType(metaData)
+    )
+  )
 
   private def properties(meta: MetaData): TypedMap = {
     TypedMap(meta.additionalFields.properties)

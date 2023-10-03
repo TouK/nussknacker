@@ -7,31 +7,56 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  ValidationErrors,
+  ValidationResult,
+  ValidationWarnings
+}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], processValidation: ProcessValidation) {
+class TestModelMigrations(
+    migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
+    processValidation: ProcessValidation
+) {
 
-  def testMigrations(processes: List[ValidatedProcessDetails], fragments: List[ValidatedProcessDetails]): List[TestMigrationResult] = {
+  def testMigrations(
+      processes: List[ValidatedProcessDetails],
+      fragments: List[ValidatedProcessDetails]
+  ): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidation.withFragmentResolver(new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory)))))
+    val validation = processValidation.withFragmentResolver(
+      new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
+    )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
       val validationResult = validation.validate(migrationDetails.newProcess)
-      val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
-      TestMigrationResult(new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult), newErrors, migrationDetails.shouldFail)
+      val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
+      TestMigrationResult(
+        new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
+        newErrors,
+        migrationDetails.shouldFail
+      )
     }
   }
 
   private def migrateProcess(process: ValidatedProcessDetails): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
-      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable), skipEmptyMigrations = false)
+      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
+        process.mapProcess(_.toDisplayable),
+        skipEmptyMigrations = false
+      )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
-      MigratedProcessDetails(displayable, process.json.validationResult, migrations.exists(_.failOnNewValidationError), process.processCategory)
+      MigratedProcessDetails(
+        displayable,
+        process.json.validationResult,
+        migrations.exists(_.failOnNewValidationError),
+        process.processCategory
+      )
     }
   }
 
@@ -59,9 +84,11 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     }
 
     def diffOnMap(before: Map[String, List[NodeValidationError]], after: Map[String, List[NodeValidationError]]) = {
-      after.map {
-        case (nodeId, errorsAfter) => (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))
-      }.filterNot(_._2.isEmpty)
+      after
+        .map { case (nodeId, errorsAfter) =>
+          (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))
+        }
+        .filterNot(_._2.isEmpty)
     }
 
     ValidationResult(
@@ -70,16 +97,26 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
         diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
         diffErrorLists(before.errors.globalErrors, after.errors.globalErrors)
       ),
-      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty
+      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)),
+      Map.empty
     )
   }
 
 }
 
-@JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
+@JsonCodec final case class TestMigrationResult(
+    converted: ValidatedDisplayableProcess,
+    newErrors: ValidationResult,
+    shouldFailOnNewErrors: Boolean
+) {
   def shouldFail: Boolean = {
     shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
   }
 }
 
-private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)
+private final case class MigratedProcessDetails(
+    newProcess: DisplayableProcess,
+    oldProcessErrors: ValidationResult,
+    shouldFail: Boolean,
+    processCategory: String
+)

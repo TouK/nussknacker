@@ -16,23 +16,38 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * Source factory for specific records - mainly generated from schema.
  */
-class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                                          schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-                                                                          processObjectDependencies: ProcessObjectDependencies,
-                                                                          implProvider: KafkaSourceImplFactory[Any, V])
-  extends KafkaAvroSourceFactory[Any, V](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, implProvider) {
+class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](
+    schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    processObjectDependencies: ProcessObjectDependencies,
+    implProvider: KafkaSourceImplFactory[Any, V]
+) extends KafkaAvroSourceFactory[Any, V](
+      schemaRegistryClientFactory,
+      schemaBasedMessagesSerdeProvider,
+      processObjectDependencies,
+      implProvider
+    ) {
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition =
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition =
     topicParamStep orElse {
-      case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic:String, _)) :: Nil, _) =>
+      case step @ TransformationStep((`topicParamName`, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
         val preparedTopic = prepareTopic(topic)
 
-        val clazz = classTag[V].runtimeClass.asInstanceOf[Class[V]]
+        val clazz      = classTag[V].runtimeClass.asInstanceOf[Class[V]]
         val schemaData = RuntimeSchemaData(schema = AvroUtils.extractAvroSpecificSchema(clazz), schemaIdOpt = None)
 
-        prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters, Nil)
+        prepareSourceFinalResults(
+          preparedTopic,
+          Valid((Some(schemaData), Typed.typedClass(clazz))),
+          context,
+          dependencies,
+          step.parameters,
+          Nil
+        )
 
-      case step@TransformationStep((`topicParamName`, _) :: Nil, _) =>
+      case step @ TransformationStep((`topicParamName`, _) :: Nil, _) =>
         prepareSourceFinalErrors(context, dependencies, step.parameters, List.empty)
     }
 

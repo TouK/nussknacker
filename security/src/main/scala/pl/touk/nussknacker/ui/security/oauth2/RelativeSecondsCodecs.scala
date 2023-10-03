@@ -9,7 +9,8 @@ protected[oauth2] trait RelativeSecondsCodecs {
   import cats.syntax.either._
   implicit val decodeFiniteDuration: Decoder[FiniteDuration] = new Decoder[FiniteDuration] {
     def apply(c: HCursor): Decoder.Result[FiniteDuration] = {
-      c.value.asNumber.flatMap(_.toLong)
+      c.value.asNumber
+        .flatMap(_.toLong)
         .map(FiniteDuration(_, SECONDS))
         .map(Right(_))
         .getOrElse(Left(DecodingFailure("FiniteDuration", c.history)))
@@ -25,4 +26,3 @@ protected[oauth2] trait EpochSecondsCodecs {
   implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
   implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
 }
-

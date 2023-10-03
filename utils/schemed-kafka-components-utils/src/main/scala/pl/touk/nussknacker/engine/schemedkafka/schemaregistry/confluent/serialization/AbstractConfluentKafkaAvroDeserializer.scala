@@ -23,9 +23,18 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
   private lazy val confluentAvroPayloadDeserializer = new AvroPayloadDeserializer(
-    useSchemaReflection, useSpecificAvroReader, genericRecordSchemaIdSerializationSupport, decoderFactory)
+    useSchemaReflection,
+    useSpecificAvroReader,
+    genericRecordSchemaIdSerializationSupport,
+    decoderFactory
+  )
 
-  protected def deserialize(topic: String, isKey: java.lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData[AvroSchema]]): AnyRef = {
+  protected def deserialize(
+      topic: String,
+      isKey: java.lang.Boolean,
+      payload: Array[Byte],
+      readerSchema: Option[RuntimeSchemaData[AvroSchema]]
+  ): AnyRef = {
     val buffer = ConfluentUtils.parsePayloadToByteBuffer(payload).valueOr(ex => throw ex)
     read(buffer, readerSchema)
   }
@@ -35,13 +44,17 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
 
     try {
       schemaId = buffer.getInt
-      val parsedSchema = schemaRegistry.getSchemaById(schemaId)
+      val parsedSchema     = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(AvroUtils.extractSchema(parsedSchema), Some(SchemaId.fromInt(schemaId)))
-      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer)
+      confluentAvroPayloadDeserializer.deserialize(
+        expectedSchemaData.map(_.toParsedSchemaData),
+        writerSchemaData.toParsedSchemaData,
+        buffer
+      )
     } catch {
       case exc: RestClientException =>
         throw new SerializationException(s"Error retrieving Avro schema for id : $schemaId", exc)
-      case exc@(_: RuntimeException | _: IOException) =>
+      case exc @ (_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
         throw new SerializationException(s"Error deserializing Avro message for id: $schemaId", exc)
     }

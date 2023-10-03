@@ -7,7 +7,11 @@ trait SchemaRegistryClient extends Serializable {
 
   def getSchemaById(id: SchemaId): SchemaWithMetadata
 
-  protected def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
+  protected def getByTopicAndVersion(
+      topic: String,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata]
 
   /**
     * Latest fresh schema by topic - it should be always fresh schema
@@ -18,7 +22,11 @@ trait SchemaRegistryClient extends Serializable {
     */
   protected def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
-  def getFreshSchema(topic: String, version: Option[Int], isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  def getFreshSchema(
+      topic: String,
+      version: Option[Int],
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     version
       .map(ver => getByTopicAndVersion(topic, ver, isKey))
       .getOrElse(getLatestFreshSchema(topic, isKey))

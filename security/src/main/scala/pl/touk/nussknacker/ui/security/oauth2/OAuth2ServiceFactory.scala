@@ -21,12 +21,17 @@ trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData
   along with an authorization code to obtain an access token. At this step, the URI is used solely for verification.
    String comparison is performed by the authorization server, hence the type.
    */
-  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)]
+  def obtainAuthorizationAndUserInfo(
+      authorizationCode: String,
+      redirectUri: String
+  ): Future[(AuthorizationData, UserInfoData)]
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])]
 }
 
-
 trait OAuth2ServiceFactory {
-  def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
+  def create(configuration: OAuth2Configuration)(
+      implicit ec: ExecutionContext,
+      sttpBackend: SttpBackend[Future, Any]
+  ): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
     throw new NotImplementedError("Trying to use the new version of the interface, which is not implemented yet")
 }

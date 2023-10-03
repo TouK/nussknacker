@@ -13,27 +13,31 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
-                                        schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
-                                        processConfigEnricherFactory: ProcessConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
-                                        listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
-                                        additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
-                                        customActionsProviderFactory: PeriodicCustomActionsProviderFactory = PeriodicCustomActionsProviderFactory.noOp
-                                       ) extends DeploymentManagerProvider with LazyLogging {
+class PeriodicDeploymentManagerProvider(
+    delegate: DeploymentManagerProvider,
+    schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
+    processConfigEnricherFactory: ProcessConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
+    listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
+    additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
+    customActionsProviderFactory: PeriodicCustomActionsProviderFactory = PeriodicCustomActionsProviderFactory.noOp
+) extends DeploymentManagerProvider
+    with LazyLogging {
 
   override def name: String = s"${delegate.name}Periodic"
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Any],
-                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any],
+      deploymentService: ProcessingTypeDeploymentService
+  ): DeploymentManager = {
     logger.info("Creating periodic scenario manager")
     val delegateDeploymentManager = delegate.createDeploymentManager(modelData, config)
 
     import net.ceedubs.ficus.Ficus._
     import net.ceedubs.ficus.readers.ArbitraryTypeReader._
     val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
-    val flinkConfig = config.rootAs[FlinkConfig]
+    val flinkConfig         = config.rootAs[FlinkConfig]
     PeriodicDeploymentManager(
       delegate = delegateDeploymentManager,
       schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
@@ -50,5 +54,6 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def metaDataInitializer(config: Config): MetaDataInitializer = delegate.metaDataInitializer(config)
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig(config)
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
+    delegate.additionalPropertiesConfig(config)
 }

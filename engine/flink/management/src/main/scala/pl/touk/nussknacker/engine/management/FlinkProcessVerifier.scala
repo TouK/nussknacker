@@ -11,10 +11,19 @@ import pl.touk.nussknacker.engine.util.StaticMethodRunner
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(modelData.modelClassLoader.classLoader,
-  "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain", "run") with LazyLogging {
+class FlinkProcessVerifier(modelData: ModelData)
+    extends StaticMethodRunner(
+      modelData.modelClassLoader.classLoader,
+      "pl.touk.nussknacker.engine.process.runner.FlinkVerificationMain",
+      "run"
+    )
+    with LazyLogging {
 
-  def verify(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, savepointPath: String): Future[Unit] = {
+  def verify(
+      processVersion: ProcessVersion,
+      canonicalProcess: CanonicalProcess,
+      savepointPath: String
+  ): Future[Unit] = {
     val processId = processVersion.processName
     try {
       logger.info(s"Starting to verify $processId")
@@ -25,7 +34,11 @@ class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(mode
       case NonFatal(e) =>
         logger.info(s"Failed to verify $processId", e)
         Future.failed(
-          new IllegalArgumentException("State is incompatible, please stop scenario and start again with clean state", e))
+          new IllegalArgumentException(
+            "State is incompatible, please stop scenario and start again with clean state",
+            e
+          )
+        )
     }
   }
 }

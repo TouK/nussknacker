@@ -11,15 +11,29 @@ import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDefinitions: TypeDefinitionSet, uiDictServices: UiDictServices, classLoader: ClassLoader) {
+class ExpressionSuggester(
+    expressionConfig: ExpressionDefinition[_],
+    typeDefinitions: TypeDefinitionSet,
+    uiDictServices: UiDictServices,
+    classLoader: ClassLoader
+) {
 
-  private val spelExpressionSuggester = new SpelExpressionSuggester(expressionConfig, typeDefinitions, uiDictServices, classLoader)
+  private val spelExpressionSuggester =
+    new SpelExpressionSuggester(expressionConfig, typeDefinitions, uiDictServices, classLoader)
 
-  def expressionSuggestions(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
-                           (implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
+  def expressionSuggestions(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d,
+      variables: Map[String, TypingResult]
+  )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
-      case Language.Spel | Language.SpelTemplate => spelExpressionSuggester.expressionSuggestions(expression, caretPosition2d.normalizedCaretPosition(expression.expression), variables)
+      case Language.Spel | Language.SpelTemplate =>
+        spelExpressionSuggester.expressionSuggestions(
+          expression,
+          caretPosition2d.normalizedCaretPosition(expression.expression),
+          variables
+        )
       case _ => Future.successful(Nil)
     }
   }
@@ -27,12 +41,17 @@ class ExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDefinit
 
 object ExpressionSuggester {
   def apply(modelData: ModelData): ExpressionSuggester = {
-    new ExpressionSuggester(modelData.modelDefinition.expressionConfig, modelData.modelDefinitionWithTypes.typeDefinitions, modelData.uiDictServices, modelData.modelClassLoader.classLoader)
+    new ExpressionSuggester(
+      modelData.modelDefinition.expressionConfig,
+      modelData.modelDefinitionWithTypes.typeDefinitions,
+      modelData.uiDictServices,
+      modelData.modelClassLoader.classLoader
+    )
   }
 }
 
 @JsonCodec(decodeOnly = true)
-case class CaretPosition2d(row: Int, column: Int) {
+final case class CaretPosition2d(row: Int, column: Int) {
   def normalizedCaretPosition(inputValue: String): Int = {
     inputValue.split("\n").take(row).map(_.length).sum + row + column
   }

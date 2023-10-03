@@ -11,7 +11,7 @@ object ProcessToolbarsConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  //It provides empty list when toolbar panel is not set
+  // It provides empty list when toolbar panel is not set
   implicit val panelListReader: ValueReader[List[ToolbarPanelConfig]] = new ValueReader[List[ToolbarPanelConfig]] {
     override def read(config: Config, path: String): List[ToolbarPanelConfig] = {
       config.getOrElse[List[Config]](path, List.empty).map(_.as[ToolbarPanelConfig])
@@ -19,7 +19,13 @@ object ProcessToolbarsConfig {
   }
 }
 
-case class ProcessToolbarsConfig(uuid: Option[UUID], topLeft: List[ToolbarPanelConfig], bottomLeft: List[ToolbarPanelConfig], topRight: List[ToolbarPanelConfig], bottomRight: List[ToolbarPanelConfig]) {
+final case class ProcessToolbarsConfig(
+    uuid: Option[UUID],
+    topLeft: List[ToolbarPanelConfig],
+    bottomLeft: List[ToolbarPanelConfig],
+    topRight: List[ToolbarPanelConfig],
+    bottomRight: List[ToolbarPanelConfig]
+) {
   lazy val uuidCode: UUID = uuid.getOrElse(UUID.nameUUIDFromBytes(hashCode().toString.getBytes))
 }
 
@@ -28,7 +34,7 @@ object ProcessToolbarsConfigProvider extends LazyLogging {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import ProcessToolbarsConfig._
 
-  private val defaultProcessToolbarConfigPath = "processToolbarConfig.defaultConfig"
+  private val defaultProcessToolbarConfigPath  = "processToolbarConfig.defaultConfig"
   private val categoryProcessToolbarConfigPath = "processToolbarConfig.categoryConfig"
 
   /**

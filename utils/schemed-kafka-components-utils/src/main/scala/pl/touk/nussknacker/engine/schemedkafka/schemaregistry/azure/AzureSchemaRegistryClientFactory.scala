@@ -13,8 +13,23 @@ import org.apache.avro.Schema
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{AzureConfigurationFactory, AzureHttpPipelineFactory, AzureTokenCredentialFactory, EnhancedSchemasImpl, SchemaRegistryJsonSerializer}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration, SchemaRegistryError, SchemaRegistryUnknownError, SchemaTopicError, SchemaVersionError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{
+  AzureConfigurationFactory,
+  AzureHttpPipelineFactory,
+  AzureTokenCredentialFactory,
+  EnhancedSchemasImpl,
+  SchemaRegistryJsonSerializer
+}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaId,
+  SchemaRegistryClientFactoryWithRegistration,
+  SchemaRegistryClientWithRegistration,
+  SchemaRegistryError,
+  SchemaRegistryUnknownError,
+  SchemaTopicError,
+  SchemaVersionError,
+  SchemaWithMetadata
+}
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets
@@ -34,11 +49,11 @@ object AzureSchemaRegistryClientFactory extends SchemaRegistryClientFactoryWithR
 
 class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends SchemaRegistryClientWithRegistration {
 
-  private val azureConfiguration = AzureConfigurationFactory.createFromKafkaProperties(config.kafkaProperties)
-  private val credential = AzureTokenCredentialFactory.createCredential(azureConfiguration)
-  private val httpPipeline = AzureHttpPipelineFactory.createPipeline(azureConfiguration, credential)
+  private val azureConfiguration      = AzureConfigurationFactory.createFromKafkaProperties(config.kafkaProperties)
+  private val credential              = AzureTokenCredentialFactory.createCredential(azureConfiguration)
+  private val httpPipeline            = AzureHttpPipelineFactory.createPipeline(azureConfiguration, credential)
   private val fullyQualifiedNamespace = config.kafkaProperties("schema.registry.url")
-  private val schemaGroup = config.kafkaProperties("schema.group")
+  private val schemaGroup             = config.kafkaProperties("schema.group")
 
   private val schemaRegistryClient = new SchemaRegistryClientBuilder()
     .fullyQualifiedNamespace(fullyQualifiedNamespace)
@@ -51,20 +66,27 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     fullyQualifiedNamespace,
     SchemaRegistryVersion.getLatest.getVersion,
     httpPipeline,
-    SchemaRegistryJsonSerializer)
+    SchemaRegistryJsonSerializer
+  )
 
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     toSchemaWithMetada(schemaRegistryClient.getSchema(id.asString))
   }
 
-  override protected def getByTopicAndVersion(topicName: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] = {
-    getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
-      try {
-        Valid(schemaRegistryClient.getSchema(schemaGroup, fullSchemaName, version))
-      } catch {
-        case NonFatal(ex) => Invalid(SchemaVersionError(ex.getMessage))
+  override protected def getByTopicAndVersion(
+      topicName: String,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+    getOneMatchingSchemaName(topicName, isKey)
+      .andThen { fullSchemaName =>
+        try {
+          Valid(schemaRegistryClient.getSchema(schemaGroup, fullSchemaName, version))
+        } catch {
+          case NonFatal(ex) => Invalid(SchemaVersionError(ex.getMessage))
+        }
       }
-    }.map(toSchemaWithMetada)
+      .map(toSchemaWithMetada)
 
   }
 
@@ -72,14 +94,21 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     SchemaWithMetadata(new AvroSchema(result.getDefinition), SchemaId.fromString(result.getProperties.getId))
   }
 
-  override protected def getLatestFreshSchema(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+  override protected def getLatestFreshSchema(
+      topicName: String,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
     getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
       try {
-        FluxUtil.withContext(enhancedSchemasService.getSchemaByNameWithResponseAsync(schemaGroup, fullSchemaName, _))
-          .map[Validated[SchemaRegistryError, SchemaWithMetadata]](asJavaFunction((response: SchemasGetByIdResponse) =>
-            // must to be done in async context - otherwise schema string is closed
-            Valid(toSchemaWithMetadata(response))
-          )).block()
+        FluxUtil
+          .withContext(enhancedSchemasService.getSchemaByNameWithResponseAsync(schemaGroup, fullSchemaName, _))
+          .map[Validated[SchemaRegistryError, SchemaWithMetadata]](
+            asJavaFunction((response: SchemasGetByIdResponse) =>
+              // must to be done in async context - otherwise schema string is closed
+              Valid(toSchemaWithMetadata(response))
+            )
+          )
+          .block()
       } catch {
         case NonFatal(ex) => Invalid(SchemaRegistryUnknownError(ex.getMessage, ex))
       }
@@ -93,8 +122,8 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] = {
     val fullSchemaNames = getAllFullSchemaNames
-    fullSchemaNames.map(_.collect {
-      case FullSchemaNameDecomposed(topicName, _, false) => topicName
+    fullSchemaNames.map(_.collect { case FullSchemaNameDecomposed(topicName, _, false) =>
+      topicName
     })
   }
 
@@ -105,7 +134,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   private def getOneMatchingSchemaName(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, String] = {
     getAllFullSchemaNames.andThen { fullSchemaNames =>
       val matchingFullSchemaNames = fullSchemaNames.collect {
-        case fullSchemaName@FullSchemaNameDecomposed(`topicName`, _, `isKey`) =>
+        case fullSchemaName @ FullSchemaNameDecomposed(`topicName`, _, `isKey`) =>
           fullSchemaName
       }
       matchingFullSchemaNames match {
@@ -131,12 +160,14 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
       .map(_.getValue.getSchemas().asScala.toList)
   }
 
-
   override def registerSchema(topicName: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {
     val schemaNameBasedOnTopic = SchemaNameTopicMatchStrategy.schemaNameFromTopicName(topicName, isKey)
-    val avroSchema = checkAvroSchema(schema).rawSchema()
+    val avroSchema             = checkAvroSchema(schema).rawSchema()
     if (avroSchema.getType == Schema.Type.RECORD) {
-      require(avroSchema.getName == schemaNameBasedOnTopic, s"Invalid record schema name ${avroSchema.getName} Should be: $schemaNameBasedOnTopic.")
+      require(
+        avroSchema.getName == schemaNameBasedOnTopic,
+        s"Invalid record schema name ${avroSchema.getName} Should be: $schemaNameBasedOnTopic."
+      )
       SchemaId.fromString(registerSchemaVersionIfNotExists(schema).getId)
     } else {
       // for primitive types we have to register schema on two names - one for listing of topics purpose and second one based on name, to be possible to serialize such object
@@ -149,10 +180,13 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   // forceSchemaNameOpt is for special purposes like primitive schemas when there is no name
-  def registerSchemaVersionIfNotExists(schema: ParsedSchema, forceSchemaNameOpt: Option[String] = None): SchemaProperties = {
-    val avroSchema = checkAvroSchema(schema).rawSchema()
+  def registerSchemaVersionIfNotExists(
+      schema: ParsedSchema,
+      forceSchemaNameOpt: Option[String] = None
+  ): SchemaProperties = {
+    val avroSchema   = checkAvroSchema(schema).rawSchema()
     val schemaString = schema.canonicalString()
-    val name = forceSchemaNameOpt.getOrElse(avroSchema.getFullName)
+    val name         = forceSchemaNameOpt.getOrElse(avroSchema.getFullName)
     try {
       schemaRegistryClient.getSchemaProperties(schemaGroup, name, schemaString, SchemaFormat.AVRO)
     } catch {
@@ -162,7 +196,11 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   def getSchemaIdByContent(schema: AvroSchema): SchemaId = {
-    SchemaId.fromString(schemaRegistryClient.getSchemaProperties(schemaGroup, schema.rawSchema().getFullName, schema.canonicalString(), SchemaFormat.AVRO).getId)
+    SchemaId.fromString(
+      schemaRegistryClient
+        .getSchemaProperties(schemaGroup, schema.rawSchema().getFullName, schema.canonicalString(), SchemaFormat.AVRO)
+        .getId
+    )
   }
 
   private def checkAvroSchema(schema: ParsedSchema): AvroSchema = {

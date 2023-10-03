@@ -15,14 +15,16 @@ object K8sDeploymentManagerConfig {
   def parse(config: Config): K8sDeploymentManagerConfig = config.rootAs[K8sDeploymentManagerConfig]
 }
 
-case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
-                                      dockerImageTag: String = s"${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
-                                      scalingConfig: Option[K8sScalingConfig] = None,
-                                      configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
-                                      nussknackerInstanceName: Option[String] = None,
-                                      logbackConfigPath: Option[String] = None,
-                                      commonConfigMapForLogback: Option[String] = None,
-                                      ingress: Option[IngressConfig] = None,
-                                      servicePort: Int = 80,
-                                      scenarioStateIdleTimeout: FiniteDuration = 3 seconds)
+case class K8sDeploymentManagerConfig(
+    dockerImageName: String = "touk/nussknacker-lite-runtime-app",
+    dockerImageTag: String = s"${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
+    scalingConfig: Option[K8sScalingConfig] = None,
+    configExecutionOverrides: Config = ConfigFactory.empty(),
+    k8sDeploymentConfig: Config = ConfigFactory.empty(),
+    nussknackerInstanceName: Option[String] = None,
+    logbackConfigPath: Option[String] = None,
+    commonConfigMapForLogback: Option[String] = None,
+    ingress: Option[IngressConfig] = None,
+    servicePort: Int = 80,
+    scenarioStateIdleTimeout: FiniteDuration = 3 seconds
+)

@@ -14,7 +14,7 @@ import scala.language.higherKinds
  * After invocation of read-only methods, you shouldn't invoke methods that potentially mutate object because
  * Exception can be thrown.
  */
-trait FlinkRangeMap[MapT[K,V]] extends Serializable {
+trait FlinkRangeMap[MapT[K, V]] extends Serializable {
 
   def typeInformation[K: TypeInformation, V: TypeInformation]: TypeInformation[MapT[K, V]]
 
@@ -60,8 +60,8 @@ object FlinkRangeMap {
 
     override def to[K: Ordering, V](map: SortedMap[K, V], key: K): SortedMap[K, V] = map.rangeTo(key)
 
-    override def filterKeys[K, V](map: SortedMap[K, V], p: K => Boolean): SortedMap[K, V] = map.filter {
-      case (k, _) => p(k)
+    override def filterKeys[K, V](map: SortedMap[K, V], p: K => Boolean): SortedMap[K, V] = map.filter { case (k, _) =>
+      p(k)
     }
 
     override def updated[K, V](map: SortedMap[K, V], key: K, value: V): SortedMap[K, V] = map.updated(key, value)

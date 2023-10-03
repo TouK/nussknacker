@@ -7,11 +7,13 @@ import java.util.logging.Logger
 import javax.sql.DataSource
 
 private[migration] class AlwaysUsingSameConnectionDataSource(conn: Connection) extends DataSource {
-  private val notClosingConnection = Proxy.newProxyInstance(
-    ClassLoader.getSystemClassLoader,
-    Array[Class[_]](classOf[Connection]),
-    SuppressCloseHandler
-  ).asInstanceOf[Connection]
+  private val notClosingConnection = Proxy
+    .newProxyInstance(
+      ClassLoader.getSystemClassLoader,
+      Array[Class[_]](classOf[Connection]),
+      SuppressCloseHandler
+    )
+    .asInstanceOf[Connection]
 
   object SuppressCloseHandler extends InvocationHandler {
     override def invoke(proxy: AnyRef, method: Method, args: Array[AnyRef]): AnyRef = {

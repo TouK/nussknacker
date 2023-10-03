@@ -3,7 +3,10 @@ package pl.touk.nussknacker.engine.util.namespaces
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.namespaces._
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNamingParameters.{namespaceTag, originalNameTag}
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNamingParameters.{
+  namespaceTag,
+  originalNameTag
+}
 
 import scala.util.matching.Regex
 
@@ -30,7 +33,11 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
       originalName
     }
 
-  override def objectNamingParameters(originalName: String, config: Config, namingContext: NamingContext): Option[ObjectNamingParameters] = {
+  override def objectNamingParameters(
+      originalName: String,
+      config: Config,
+      namingContext: NamingContext
+  ): Option[ObjectNamingParameters] = {
     forNamespace(config) { namespace =>
       DefaultNamespacedObjectNamingParameters(originalName, namespace)
     }
@@ -41,7 +48,7 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
       val patternMatcher = namespacePattern(namespace)
       preparedName match {
         case patternMatcher(value) => Some(value)
-        case _ => Option.empty
+        case _                     => Option.empty
       }
     }.getOrElse(Some(preparedName))
   }
@@ -62,16 +69,16 @@ object DefaultNamespacedObjectNaming extends ObjectNaming with LazyLogging {
 object DefaultNamespacedObjectNamingParameters {
 
   final val originalNameTag = "originalProcessName"
-  final val namespaceTag = "namespace"
+  final val namespaceTag    = "namespace"
 
 }
 
-case class DefaultNamespacedObjectNamingParameters(originalName: String,
-                                                   namespace: String) extends ObjectNamingParameters {
+case class DefaultNamespacedObjectNamingParameters(originalName: String, namespace: String)
+    extends ObjectNamingParameters {
   override def toTags: Map[String, String] = {
     Map(
       originalNameTag -> originalName,
-      namespaceTag -> namespace
+      namespaceTag    -> namespace
     )
   }
 }

@@ -10,7 +10,7 @@ object AvroSchemaValidator extends SchemaValidator {
   override def validateSchema(schema: ParsedSchema): ValidatedNel[SchemaRegistryError, Unit] = {
     schema match {
       case _: AvroSchema => Valid(())
-      case schema => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
+      case schema        => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
     }
   }
 }

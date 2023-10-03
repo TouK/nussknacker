@@ -4,12 +4,12 @@ import io.circe.{Decoder, Encoder, Json}
 
 sealed trait SchemaId {
   def asInt: Int = this match {
-    case IntSchemaId(value) => value
+    case IntSchemaId(value)  => value
     case str: StringSchemaId => throw new IllegalStateException(s"Schema in a string format: $str")
   }
 
   def asString: String = this match {
-    case int: IntSchemaId => throw new IllegalStateException(s"Schema in an int format: $int")
+    case int: IntSchemaId      => throw new IllegalStateException(s"Schema in an int format: $int")
     case StringSchemaId(value) => value
   }
 
@@ -26,7 +26,7 @@ object SchemaId {
   def fromString(value: String): SchemaId = StringSchemaId(value)
 
   implicit val schemaIdEncoder: Encoder[SchemaId] = Encoder.instance[SchemaId] {
-    case IntSchemaId(value) => Json.fromInt(value)
+    case IntSchemaId(value)    => Json.fromInt(value)
     case StringSchemaId(value) => Json.fromString(value)
   }
 

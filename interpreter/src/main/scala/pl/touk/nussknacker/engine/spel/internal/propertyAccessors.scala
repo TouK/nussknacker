@@ -18,7 +18,7 @@ object propertyAccessors {
 
     Seq(
       new ReflectivePropertyAccessor(),
-      NullPropertyAccessor, //must come before other non-standard ones
+      NullPropertyAccessor,              // must come before other non-standard ones
       ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
       JavaOptionalOrNullPropertyAccessor,
       NoParamMethodPropertyAccessor,
@@ -38,7 +38,7 @@ object propertyAccessors {
     override def canRead(context: EvaluationContext, target: Any, name: String): Boolean = target == null
 
     override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
-      //can we extract anything else here?
+      // can we extract anything else here?
       throw NonTransientException(name, s"Cannot invoke method/property $name on null object")
   }
 
@@ -55,41 +55,60 @@ object propertyAccessors {
       findMethodFromClass(propertyName, clazz).orNull
     }
 
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(m => !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.getMethods.find(m =>
+        !ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
+      )
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): AnyRef = {
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): AnyRef = {
       method.invoke(target)
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
-  //Spring bytecode generation fails when we try to invoke methods on primitives, so we
-  //*do not* extend ReflectivePropertyAccessor and we force interpreted mode
-  //TODO: figure out how to make bytecode generation work also in this case
+  // Spring bytecode generation fails when we try to invoke methods on primitives, so we
+  // *do not* extend ReflectivePropertyAccessor and we force interpreted mode
+  // TODO: figure out how to make bytecode generation work also in this case
   object PrimitiveOrWrappersPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any
-      = method.invoke(target)
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = method.invoke(target)
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m => ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
+      target.getMethods.find(m =>
+        ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
+      )
     }
   }
 
   object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.asInstanceOf[Class[_]].getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers)
-      )
+      target
+        .asInstanceOf[Class[_]]
+        .getMethods
+        .find(m => m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers))
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = {
       method.invoke(target)
     }
 
@@ -100,11 +119,18 @@ object propertyAccessors {
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
   object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.getMethods.find(m =>
+        m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType)
+      )
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = {
       method.invoke(target).asInstanceOf[Option[Any]].orNull
     }
 
@@ -115,11 +141,18 @@ object propertyAccessors {
   //       - see test for similar case for Futures: "usage of methods with some argument returning future"
   object JavaOptionalOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
 
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType))
+    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
+      target.getMethods.find(m =>
+        m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType)
+      )
     }
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = {
       method.invoke(target).asInstanceOf[Optional[Any]].orElse(null)
     }
 
@@ -138,7 +171,7 @@ object propertyAccessors {
   }
 
   object TypedDictInstancePropertyAccessor extends PropertyAccessor with ReadOnly {
-    //in theory this always happends, because we typed it properly ;)
+    // in theory this always happends, because we typed it properly ;)
     override def canRead(context: EvaluationContext, target: scala.Any, key: String) =
       true
 
@@ -152,7 +185,12 @@ object propertyAccessors {
   // mainly for avro's GenericRecord purpose
   object MapLikePropertyAccessor extends PropertyAccessor with Caching with ReadOnly {
 
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
+    override protected def invokeMethod(
+        propertyName: String,
+        method: Method,
+        target: Any,
+        context: EvaluationContext
+    ): Any = {
       method.invoke(target, propertyName)
     }
 
@@ -176,7 +214,8 @@ object propertyAccessors {
     override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
       target.isInstanceOf[Class[_]] && findMethod(name, target).isDefined
 
-    override protected def extractClassFromTarget(target: Any): Option[Class[_]] = Option(target).map(_.asInstanceOf[Class[_]])
+    override protected def extractClassFromTarget(target: Any): Option[Class[_]] =
+      Option(target).map(_.asInstanceOf[Class[_]])
   }
 
   trait CachingBase { self: PropertyAccessor =>
@@ -190,8 +229,9 @@ object propertyAccessors {
         .getOrElse(throw new IllegalAccessException("Property is not readable"))
 
     protected def findMethod(name: String, target: Any): Option[Method] = {
-      //this should *not* happen as we have NullPropertyAccessor
-      val targetClass = extractClassFromTarget(target).getOrElse(throw new IllegalArgumentException(s"Null target for $name"))
+      // this should *not* happen as we have NullPropertyAccessor
+      val targetClass =
+        extractClassFromTarget(target).getOrElse(throw new IllegalArgumentException(s"Null target for $name"))
       findMethodFromClass(name, targetClass)
     }
 
@@ -199,10 +239,9 @@ object propertyAccessors {
       methodsCache.getOrElseUpdate((name, targetClass), reallyFindMethod(name, targetClass))
     }
 
-
     protected def extractClassFromTarget(target: Any): Option[Class[_]]
     protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any
-    protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method]
+    protected def reallyFindMethod(name: String, target: Class[_]): Option[Method]
   }
 
   trait ReadOnly { self: PropertyAccessor =>

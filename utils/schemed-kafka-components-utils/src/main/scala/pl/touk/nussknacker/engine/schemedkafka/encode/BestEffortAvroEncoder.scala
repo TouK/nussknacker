@@ -44,9 +44,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encode(nonRecord.getValue, schema).map(new NonRecordContainer(schema, _))
       case (Schema.Type.RECORD, container: GenericContainer) =>
         encodeGenericContainer(container, schema)
-      case (Schema.Type.RECORD, map: collection.Map[String@unchecked, _]) =>
+      case (Schema.Type.RECORD, map: collection.Map[String @unchecked, _]) =>
         encodeRecord(map, schema)
-      case (Schema.Type.RECORD, map: util.Map[String@unchecked, _]) =>
+      case (Schema.Type.RECORD, map: util.Map[String @unchecked, _]) =>
         encodeRecord(map, schema)
       case (Schema.Type.ENUM, symbol: CharSequence) =>
         encodeEnumOrError(symbol.toString, schema, fieldName)
@@ -61,11 +61,16 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case (Schema.Type.MAP, map: util.Map[_, _]) =>
         encodeMap(map.asScala, schema)
       case (Schema.Type.UNION, _) =>
-        schema.getTypes.asScala.to(LazyList).flatMap { subTypeSchema =>
-          encode(value, subTypeSchema).toOption
-        }.headOption.map(Valid(_)).getOrElse {
-          error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
-        }
+        schema.getTypes.asScala
+          .to(LazyList)
+          .flatMap { subTypeSchema =>
+            encode(value, subTypeSchema).toOption
+          }
+          .headOption
+          .map(Valid(_))
+          .getOrElse {
+            error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
+          }
       case (Schema.Type.FIXED, fixed: Fixed) =>
         encodeFixed(fixed.bytes(), schema)
       case (Schema.Type.FIXED, str: CharSequence) =>
@@ -89,19 +94,27 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         Valid(ByteBuffer.wrap(bytes))
       case (Schema.Type.BYTES, buffer: ByteBuffer) =>
         Valid(buffer)
-      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal)
+          if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(decimal, schema))
-      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number)
+          if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
       case (Schema.Type.INT, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMillis() =>
         Valid(time)
       case (Schema.Type.INT, time: LocalDate) if schema.getLogicalType == LogicalTypes.date() =>
         Valid(time)
-      case (Schema.Type.LONG, instant: Instant) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+      case (Schema.Type.LONG, instant: Instant)
+          if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
+            .timestampMicros() =>
         Valid(instant)
-      case (Schema.Type.LONG, zoned: ChronoZonedDateTime[_]) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+      case (Schema.Type.LONG, zoned: ChronoZonedDateTime[_])
+          if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
+            .timestampMicros() =>
         Valid(zoned.toInstant)
-      case (Schema.Type.LONG, offset: OffsetDateTime) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+      case (Schema.Type.LONG, offset: OffsetDateTime)
+          if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
+            .timestampMicros() =>
         Valid(offset.toInstant)
       case (Schema.Type.LONG, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMicros() =>
         Valid(time)
@@ -156,20 +169,27 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   def encodeRecord(fields: util.Map[String, _], schema: Schema): WithError[GenericData.Record] = {
-    fields.asScala.map(kv => (kv, schema.getField(kv._1))).collect {
-      case ((fieldName, value), field) if field != null =>
-        val fieldSchema = field.schema()
-        encode(value, fieldSchema, Some(fieldName)).map(fieldName -> _)
-      case ((fieldName, _), null) if validationMode != ValidationMode.lax =>
-        error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
-    }.toList.sequence.map { values =>
-      val builder = new LogicalTypesGenericRecordBuilder(schema)
-      values.foreach {
-        case (k, v) => builder.set(k, v)
+    fields.asScala
+      .map(kv => (kv, schema.getField(kv._1)))
+      .collect {
+        case ((fieldName, value), field) if field != null =>
+          val fieldSchema = field.schema()
+          encode(value, fieldSchema, Some(fieldName)).map(fieldName -> _)
+        case ((fieldName, _), null) if validationMode != ValidationMode.lax =>
+          error(
+            s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant"
+          )
       }
-      builder.build()
-    }
-    //TODO: Check optional?
+      .toList
+      .sequence
+      .map { values =>
+        val builder = new LogicalTypesGenericRecordBuilder(schema)
+        values.foreach { case (k, v) =>
+          builder.set(k, v)
+        }
+        builder.build()
+      }
+    // TODO: Check optional?
   }
 
   private def encodeGenericContainer(container: GenericContainer, schema: Schema): WithError[GenericContainer] = {
@@ -181,14 +201,19 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, AnyRef]] = {
-    map.asInstanceOf[collection.Map[AnyRef, AnyRef]].map {
-      case (k: String, v) =>
-        encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
-      case (k: CharSequence, v) =>
-        encode(v, schema.getValueType, Some(k.toString)).map(k -> _)
-      case (k, v) =>
-        error(s"Not expected type: ${k.getClass.getName} as a key of map for schema: $schema")
-    }.toList.sequence.map(m => new util.HashMap(m.toMap.asJava))
+    map
+      .asInstanceOf[collection.Map[AnyRef, AnyRef]]
+      .map {
+        case (k: String, v) =>
+          encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
+        case (k: CharSequence, v) =>
+          encode(v, schema.getValueType, Some(k.toString)).map(k -> _)
+        case (k, v) =>
+          error(s"Not expected type: ${k.getClass.getName} as a key of map for schema: $schema")
+      }
+      .toList
+      .sequence
+      .map(m => new util.HashMap(m.toMap.asJava))
   }
 
   private def encodeCollection(collection: Iterable[_], schema: Schema): WithError[java.util.List[AnyRef]] = {
@@ -206,9 +231,11 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   private def encodeUUIDorError(stringUuid: String): WithError[UUID] =
-    Try(UUID.fromString(stringUuid)).toOption.map(Valid(_)).getOrElse(
-      error(s"Value '$stringUuid' is not a UUID.")
-    )
+    Try(UUID.fromString(stringUuid)).toOption
+      .map(Valid(_))
+      .getOrElse(
+        error(s"Value '$stringUuid' is not a UUID.")
+      )
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
@@ -222,5 +249,6 @@ object BestEffortAvroEncoder {
 
   final private val DefaultSchemaEvolution = new DefaultAvroSchemaEvolution
 
-  def apply(validationMode: ValidationMode): BestEffortAvroEncoder = new BestEffortAvroEncoder(DefaultSchemaEvolution, validationMode)
+  def apply(validationMode: ValidationMode): BestEffortAvroEncoder =
+    new BestEffortAvroEncoder(DefaultSchemaEvolution, validationMode)
 }

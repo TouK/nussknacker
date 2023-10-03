@@ -7,54 +7,82 @@ import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  ChainedSchemaIdFromMessageExtractor,
+  SchemaRegistryClient
+}
 
 import scala.reflect.ClassTag
 
-class UniversalKafkaDeserializer[T](schemaRegistryClient: SchemaRegistryClient,
-                                    kafkaConfig: KafkaConfig,
-                                    schemaIdFromMessageExtractor: ChainedSchemaIdFromMessageExtractor,
-                                    readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                    isKey: Boolean) extends Deserializer[T] {
+class UniversalKafkaDeserializer[T](
+    schemaRegistryClient: SchemaRegistryClient,
+    kafkaConfig: KafkaConfig,
+    schemaIdFromMessageExtractor: ChainedSchemaIdFromMessageExtractor,
+    readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+    isKey: Boolean
+) extends Deserializer[T] {
 
   private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
-    throw new IllegalAccessException(s"Operation not supported. ${this.getClass.getSimpleName} requires kafka headers to perform deserialization.")
+    throw new IllegalAccessException(
+      s"Operation not supported. ${this.getClass.getSimpleName} requires kafka headers to perform deserialization."
+    )
   }
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
-    val writerSchemaId = schemaIdFromMessageExtractor.withFallbackSchemaId(readerSchemaDataOpt.flatMap(_.schemaIdOpt))
+    val writerSchemaId = schemaIdFromMessageExtractor
+      .withFallbackSchemaId(readerSchemaDataOpt.flatMap(_.schemaIdOpt))
       .getSchemaId(headers, data, isKey)
       .getOrElse(throw MessageWithoutSchemaIdException)
     val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
 
-    readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
-      if (readerSchemaType != writerSchema.schemaType())
-        throw new MismatchReaderWriterSchemaException(readerSchemaType, writerSchema.schemaType()) //TODO: test this case when supporting json schema
-    })
+    readerSchemaDataOpt
+      .map(_.schema.schemaType())
+      .foreach(readerSchemaType => {
+        if (readerSchemaType != writerSchema.schemaType())
+          throw new MismatchReaderWriterSchemaException(
+            readerSchemaType,
+            writerSchema.schemaType()
+          ) // TODO: test this case when supporting json schema
+      })
 
-    val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
+    val writerSchemaData =
+      new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    schemaSupportDispatcher.forSchemaType(writerSchema.schemaType())
+    schemaSupportDispatcher
+      .forSchemaType(writerSchema.schemaType())
       .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]
   }
 }
 
-object MessageWithoutSchemaIdException extends IllegalArgumentException("Missing schemaId in kafka headers, in payload, and no fallback provided")
+object MessageWithoutSchemaIdException
+    extends IllegalArgumentException("Missing schemaId in kafka headers, in payload, and no fallback provided")
 
-class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with $actualType schema type")
+class MismatchReaderWriterSchemaException(expectedType: String, actualType: String)
+    extends IllegalArgumentException(
+      s"Expecting schema of type $expectedType. but got payload with $actualType schema type"
+    )
 
-class UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor)
-  extends SchemaRegistryBasedDeserializerFactory {
+class UniversalKafkaDeserializerFactory(
+    createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor
+) extends SchemaRegistryBasedDeserializerFactory {
 
-  def createDeserializer[T: ClassTag](schemaRegistryClient: SchemaRegistryClient,
-                                      kafkaConfig: KafkaConfig,
-                                      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                      isKey: Boolean): Deserializer[T] = {
-    new UniversalKafkaDeserializer[T](schemaRegistryClient, kafkaConfig, createSchemaIdFromMessageExtractor(schemaRegistryClient), schemaDataOpt, isKey)
+  def createDeserializer[T: ClassTag](
+      schemaRegistryClient: SchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      isKey: Boolean
+  ): Deserializer[T] = {
+    new UniversalKafkaDeserializer[T](
+      schemaRegistryClient,
+      kafkaConfig,
+      createSchemaIdFromMessageExtractor(schemaRegistryClient),
+      schemaDataOpt,
+      isKey
+    )
   }
 
 }

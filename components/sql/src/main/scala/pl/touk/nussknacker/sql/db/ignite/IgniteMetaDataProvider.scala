@@ -10,10 +10,13 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
 
   private val queryHelper = new IgniteQueryHelper(getConnection)
 
-  override def getQueryMetaData(query: String): TableMetaData = throw new NotImplementedError("Generic query typing is not implemented for Ignite")
+  override def getQueryMetaData(query: String): TableMetaData = throw new NotImplementedError(
+    "Generic query typing is not implemented for Ignite"
+  )
 
   override def getTableMetaData(tableName: String): TableMetaData = {
-    val tableDefinition = queryHelper.fetchTablesMeta.getOrElse(tableName, throw new IllegalArgumentException("Table metadata not present"))
+    val tableDefinition =
+      queryHelper.fetchTablesMeta.getOrElse(tableName, throw new IllegalArgumentException("Table metadata not present"))
     Using.resource(getConnection()) { connection =>
       Using.resource(connection.prepareStatement(query(tableName))) { statement =>
         TableMetaData(

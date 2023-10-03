@@ -21,11 +21,14 @@ object Implicits {
 
   }
 
-  implicit class RichMapIterable[K,V](m: Map[K, Iterable[V]]) {
+  implicit class RichMapIterable[K, V](m: Map[K, Iterable[V]]) {
     def sequenceMap: Map[V, Iterable[K]] = {
       m.map { case (k, values) =>
         values.map(v => v -> k)
-      }.toList.flatten.groupBy(_._1).mapValuesNow(_.map(_._2))
+      }.toList
+        .flatten
+        .groupBy(_._1)
+        .mapValuesNow(_.map(_._2))
     }
   }
 
@@ -48,7 +51,7 @@ object Implicits {
     def withSideEffect(f: A => Unit)(implicit ec: ExecutionContext): Future[A] = {
       future.onComplete {
         case Success(result) => f(result)
-        case Failure(_) => // ignoring - side effect should be applied only when success
+        case Failure(_)      => // ignoring - side effect should be applied only when success
       }
       future
     }
@@ -61,12 +64,14 @@ object Implicits {
   }
 
   implicit class RichIterableMap[T](list: Iterable[Map[String, T]]) {
-    def reduceUnique: Map[String, T] = list.foldLeft(Map.empty[String, T]) {
-      case (acc, element) =>
-        val duplicates = acc.keySet.intersect(element.keySet)
-        if (duplicates.isEmpty) {
-          acc ++ element
-        } else throw new IllegalArgumentException(s"Found duplicate keys: ${duplicates.mkString(", ")}, please correct configuration")
+    def reduceUnique: Map[String, T] = list.foldLeft(Map.empty[String, T]) { case (acc, element) =>
+      val duplicates = acc.keySet.intersect(element.keySet)
+      if (duplicates.isEmpty) {
+        acc ++ element
+      } else
+        throw new IllegalArgumentException(
+          s"Found duplicate keys: ${duplicates.mkString(", ")}, please correct configuration"
+        )
     }
   }
 
@@ -77,7 +82,7 @@ object Implicits {
   implicit class RichIterable[T](iterable: Iterable[T]) {
     def exactlyOne: Option[T] = iterable match {
       case head :: Nil => Some(head)
-      case _ => None
+      case _           => None
     }
   }
 }

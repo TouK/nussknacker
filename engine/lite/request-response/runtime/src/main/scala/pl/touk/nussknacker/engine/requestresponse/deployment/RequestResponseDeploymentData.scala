@@ -6,4 +6,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 //TODO: now we pass process version to runtime, we don't have to use deploymentTime, can be removed
-@JsonCodec case class RequestResponseDeploymentData(processJson: CanonicalProcess, deploymentTime: Long, processVersion: ProcessVersion, deploymentData: DeploymentData)
+@JsonCodec final case class RequestResponseDeploymentData(
+    processJson: CanonicalProcess,
+    deploymentTime: Long,
+    processVersion: ProcessVersion,
+    deploymentData: DeploymentData
+)

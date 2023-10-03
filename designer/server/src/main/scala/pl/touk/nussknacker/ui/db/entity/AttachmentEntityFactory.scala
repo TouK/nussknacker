@@ -13,7 +13,7 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
   import profile.api._
 
   class AttachmentEntity(tag: Tag) extends Table[AttachmentEntityData](tag, "process_attachments") {
-    
+
     def id = column[Long]("id", PrimaryKey, O.AutoInc)
 
     def processId = column[ProcessId]("process_id", NotNull)
@@ -34,10 +34,18 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 
   }
 
-  val attachmentsTable: LTableQuery[AttachmentEntityFactory#AttachmentEntity] = LTableQuery(new AttachmentEntity(_)) 
-  
+  val attachmentsTable: LTableQuery[AttachmentEntityFactory#AttachmentEntity] = LTableQuery(new AttachmentEntity(_))
+
 }
 
-case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, data: Array[Byte], user: String, createDate: Timestamp) {
+final case class AttachmentEntityData(
+    id: Long,
+    processId: ProcessId,
+    processVersionId: VersionId,
+    fileName: String,
+    data: Array[Byte],
+    user: String,
+    createDate: Timestamp
+) {
   val createDateTime: Instant = createDate.toInstant
 }

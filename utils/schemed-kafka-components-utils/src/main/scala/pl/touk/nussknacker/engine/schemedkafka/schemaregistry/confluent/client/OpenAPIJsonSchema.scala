@@ -7,9 +7,10 @@ import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 
 case class OpenAPIJsonSchema(schemaString: String) extends JsonSchema(schemaString) {
 
-  val returnType: typing.TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(rawSchema()).typingResult
+  val returnType: typing.TypingResult =
+    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(rawSchema()).typingResult
 
-  //we want to create it once, as it can be a bit costly
+  // we want to create it once, as it can be a bit costly
   val deserializer = new CirceJsonDeserializer(rawSchema())
 
 }

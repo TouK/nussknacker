@@ -17,8 +17,10 @@ object InvocationCollectors {
       @action - e.g. REST service invocation, stubbed e.g. during tests
       @names - in more complex scenarios we may want to distinguish different invocations
      */
-    def collect[A](request: => ToCollect, mockValue: Option[A])(action: => Future[A], names: TransmissionNames = TransmissionNames.default)
-                  (implicit ec: ExecutionContext): Future[A] = {
+    def collect[A](request: => ToCollect, mockValue: Option[A])(
+        action: => Future[A],
+        names: TransmissionNames = TransmissionNames.default
+    )(implicit ec: ExecutionContext): Future[A] = {
       collectWithResponse[A](request, mockValue)(action.map(a => CollectableAction(() => "", a)), names)
     }
 
@@ -29,8 +31,10 @@ object InvocationCollectors {
         "raw" format, e.g. REST service response
       @names - in more complex scenarios we may want to distinguish different invocations
      */
-    def collectWithResponse[A](request: => ToCollect, mockValue: Option[A])(action: => Future[CollectableAction[A]], names: TransmissionNames = TransmissionNames.default)
-                              (implicit ec: ExecutionContext): Future[A]
+    def collectWithResponse[A](request: => ToCollect, mockValue: Option[A])(
+        action: => Future[CollectableAction[A]],
+        names: TransmissionNames = TransmissionNames.default
+    )(implicit ec: ExecutionContext): Future[A]
   }
 
   case class TransmissionNames(invocationName: String, resultName: String)

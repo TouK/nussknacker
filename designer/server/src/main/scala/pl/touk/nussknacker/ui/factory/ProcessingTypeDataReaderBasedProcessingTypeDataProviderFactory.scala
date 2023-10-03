@@ -11,13 +11,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory extends ProcessingTypeDataProviderFactory {
 
-  override def create(designerConfig: ConfigWithUnresolvedVersion,
-                      deploymentServiceSupplier: Supplier[DeploymentService],
-                      categoriesService: ProcessCategoryService)
-                     (implicit ec: ExecutionContext,
-                      actorSystem: ActorSystem,
-                      sttpBackend: SttpBackend[Future, Any]): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    implicit val deploymentService: DeploymentService = deploymentServiceSupplier.get()
+  override def create(
+      designerConfig: ConfigWithUnresolvedVersion,
+      deploymentServiceSupplier: Supplier[DeploymentService],
+      categoriesService: ProcessCategoryService
+  )(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any]
+  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+    implicit val deploymentService: DeploymentService         = deploymentServiceSupplier.get()
     implicit val categoriesServiceImp: ProcessCategoryService = categoriesService
     ProcessingTypeDataReader.loadProcessingTypeData(designerConfig)
   }

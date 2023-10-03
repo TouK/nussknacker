@@ -8,7 +8,7 @@ object UiAdditionalPropertyEditorDeterminer {
   def determine(config: AdditionalPropertyConfig): SimpleParameterEditor = {
     config.editor match {
       case Some(editor: SimpleParameterEditor) => editor
-      case None => StringParameterEditor
+      case None                                => StringParameterEditor
     }
   }
 }

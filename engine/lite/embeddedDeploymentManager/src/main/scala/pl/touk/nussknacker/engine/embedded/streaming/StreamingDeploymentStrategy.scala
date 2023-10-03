@@ -20,17 +20,28 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
     logger.error(s"Scenario: $version failed unexpectedly", throwable)
   }
 
-  override def onScenarioAdded(jobData: JobData,
-                               parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[StreamingDeployment] = {
+  override def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
+      implicit ec: ExecutionContext
+  ): Try[StreamingDeployment] = {
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount = parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1))
-    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer))
+    val liteKafkaJobData = LiteKafkaJobData(tasksCount =
+      parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1)
+    )
+    val interpreterTry = Try(
+      KafkaTransactionalScenarioInterpreter(
+        parsedResolvedScenario,
+        jobData,
+        liteKafkaJobData,
+        modelData,
+        contextPreparer
+      )
+    )
     interpreterTry.flatMap { interpreter =>
       val runTry = Try {
         val result = interpreter.run()
         result.onComplete {
           case Failure(exception) => handleUnexpectedError(jobData.processVersion, exception)
-          case Success(_) => //closed without problems
+          case Success(_)         => // closed without problems
         }
       }
       runTry.transform(
@@ -38,17 +49,18 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
         ex => {
           interpreter.close()
           Failure(ex)
-        })
+        }
+      )
     }
   }
 
   class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
 
     override def status(): StateStatus = interpreter.status() match {
-      case TaskStatus.Running => SimpleStateStatus.Running
+      case TaskStatus.Running      => SimpleStateStatus.Running
       case TaskStatus.DuringDeploy => SimpleStateStatus.DuringDeploy
-      case TaskStatus.Restarting => SimpleStateStatus.Restarting
-      case other => throw new IllegalStateException(s"Not supporter task status: $other")
+      case TaskStatus.Restarting   => SimpleStateStatus.Restarting
+      case other                   => throw new IllegalStateException(s"Not supporter task status: $other")
     }
 
     override def close(): Unit = {
@@ -58,4 +70,3 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
   }
 
 }
-

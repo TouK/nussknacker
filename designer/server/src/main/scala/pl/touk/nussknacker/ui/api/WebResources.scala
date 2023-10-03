@@ -12,19 +12,25 @@ import scala.util.Try
 
 class WebResources(publicPath: String) extends Directives with LazyLogging {
 
-  //see config.js comment
+  // see config.js comment
   private lazy val mainContentFile = {
     val mainPath = "/web/static/main.html"
-    val data = Try(ResourceLoader.load(mainPath))
+    val data     = Try(ResourceLoader.load(mainPath))
     val content = data.toOption.getOrElse {
-      logger.error(s"Failed to find $mainPath - probably frontend resources are not packaged in jar. Frontend won't work properly!")
+      logger.error(
+        s"Failed to find $mainPath - probably frontend resources are not packaged in jar. Frontend won't work properly!"
+      )
       ""
     }
 
     val extraScripts = {
-      val extraStaticRoot = Path.of("static", "extra")
+      val extraStaticRoot  = Path.of("static", "extra")
       val webResourcesRoot = Path.of(Option(publicPath).filterNot(_.isBlank).getOrElse("/")).resolve(extraStaticRoot)
-      new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of("web").resolve(extraStaticRoot), webResourcesRoot).scriptsListing
+      new ExtraScriptsListingPreparer(
+        getClass.getClassLoader,
+        Path.of("web").resolve(extraStaticRoot),
+        webResourcesRoot
+      ).scriptsListing
     }
 
     val withPublicPathSubstituted = content

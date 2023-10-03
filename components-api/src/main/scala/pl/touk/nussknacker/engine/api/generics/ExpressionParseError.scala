@@ -12,7 +12,6 @@ case class Signature(noVarArgs: List[TypingResult], varArg: Option[TypingResult]
 
   def display(name: String): String = varArg match {
     case Some(x) => s"$name(${typesToString(noVarArgs :+ x)}...)"
-    case None => s"$name(${typesToString(noVarArgs)})"
+    case None    => s"$name(${typesToString(noVarArgs)})"
   }
 }
-

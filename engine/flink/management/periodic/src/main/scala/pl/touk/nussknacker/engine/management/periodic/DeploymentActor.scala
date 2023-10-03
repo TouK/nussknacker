@@ -2,7 +2,11 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import akka.actor.{Actor, Props, Timers}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{CheckToBeDeployed, DeploymentCompleted, WaitingForDeployment}
+import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.{
+  CheckToBeDeployed,
+  DeploymentCompleted,
+  WaitingForDeployment
+}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
@@ -15,9 +19,11 @@ object DeploymentActor {
     props(service.findToBeDeployed, service.deploy, interval)
   }
 
-  private[periodic] def props(findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
-                              deploy: PeriodicProcessDeployment => Future[Unit],
-                              interval: FiniteDuration) = {
+  private[periodic] def props(
+      findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+      deploy: PeriodicProcessDeployment => Future[Unit],
+      interval: FiniteDuration
+  ) = {
     Props(new DeploymentActor(findToBeDeployed, deploy, interval))
   }
 
@@ -28,11 +34,13 @@ object DeploymentActor {
   private case object DeploymentCompleted
 }
 
-class DeploymentActor(findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
-                      deploy: PeriodicProcessDeployment => Future[Unit],
-                      interval: FiniteDuration) extends Actor
-  with Timers
-  with LazyLogging {
+class DeploymentActor(
+    findToBeDeployed: => Future[Seq[PeriodicProcessDeployment]],
+    deploy: PeriodicProcessDeployment => Future[Unit],
+    interval: FiniteDuration
+) extends Actor
+    with Timers
+    with LazyLogging {
 
   import context.dispatcher
 

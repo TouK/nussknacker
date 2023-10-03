@@ -11,7 +11,7 @@ import org.apache.flink.util.Collector
 abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] {
 
   @transient
-  protected var lastEventTimeForKey : ValueState[java.lang.Long] = _
+  protected var lastEventTimeForKey: ValueState[java.lang.Long] = _
 
   @transient
   protected var state: ValueState[StateType] = _
@@ -20,11 +20,17 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    lastEventTimeForKey = getRuntimeContext.getState[java.lang.Long](new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long]))
+    lastEventTimeForKey = getRuntimeContext.getState[java.lang.Long](
+      new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
+    )
     state = getRuntimeContext.getState(stateDescriptor)
   }
 
-  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+  override def onTimer(
+      timestamp: Long,
+      ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext,
+      out: Collector[Out]
+  ): Unit = {
     val noNewerEventsArrived = lastEventTimeForKey.value() == timestamp
     if (noNewerEventsArrived) {
       state.clear()
@@ -32,20 +38,20 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
     }
   }
 
-  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context) : Unit= {
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
     val time = ctx.timestamp() + offset
-    //we don't delete former timer, because it's inefficient
+    // we don't delete former timer, because it's inefficient
     ctx.timerService().registerEventTimeTimer(time)
     lastEventTimeForKey.update(time)
   }
 }
 
-
-abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends EvictableStateFunction[In, Out, MultiMap[Long, StateType]] {
+abstract class TimestampedEvictableStateFunction[In, Out, StateType]
+    extends EvictableStateFunction[In, Out, MultiMap[Long, StateType]] {
 
   override protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
     super.moveEvictionTime(offset, ctx)
-    state.update( stateValue.from(ctx.timestamp() - offset))
+    state.update(stateValue.from(ctx.timestamp() - offset))
   }
 
   protected def stateValue: MultiMap[Long, StateType] = {
@@ -54,26 +60,38 @@ abstract class TimestampedEvictableStateFunction[In, Out, StateType] extends Evi
 
 }
 
-abstract class LatelyEvictableStateFunction[In, Out, StateType] extends KeyedProcessFunction[String, In, Out] with LatelyEvictableStateFunctionMixin[StateType] {
+abstract class LatelyEvictableStateFunction[In, Out, StateType]
+    extends KeyedProcessFunction[String, In, Out]
+    with LatelyEvictableStateFunctionMixin[StateType] {
 
-  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+  override def onTimer(
+      timestamp: Long,
+      ctx: KeyedProcessFunction[String, In, Out]#OnTimerContext,
+      out: Collector[Out]
+  ): Unit = {
     handleOnTimer(timestamp, ctx.timerService)
   }
 
-  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context) : Unit= {
-    doMoveEvictionTime(ctx.timestamp() + offset,  ctx.timerService())
+  protected def moveEvictionTime(offset: Long, ctx: KeyedProcessFunction[String, In, Out]#Context): Unit = {
+    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
   }
 
 }
 
-abstract class LatelyEvictableStateCoFunction[In1, In2, Out, StateType] extends CoProcessFunction[In1, In2, Out] with LatelyEvictableStateFunctionMixin[StateType] {
+abstract class LatelyEvictableStateCoFunction[In1, In2, Out, StateType]
+    extends CoProcessFunction[In1, In2, Out]
+    with LatelyEvictableStateFunctionMixin[StateType] {
 
-  override def onTimer(timestamp: Long, ctx: CoProcessFunction[In1, In2, Out]#OnTimerContext, out: Collector[Out]): Unit = {
+  override def onTimer(
+      timestamp: Long,
+      ctx: CoProcessFunction[In1, In2, Out]#OnTimerContext,
+      out: Collector[Out]
+  ): Unit = {
     handleOnTimer(timestamp, ctx.timerService)
   }
 
   protected def moveEvictionTime(offset: Long, ctx: CoProcessFunction[In1, In2, Out]#Context): Unit = {
-    doMoveEvictionTime(ctx.timestamp() + offset,  ctx.timerService())
+    doMoveEvictionTime(ctx.timestamp() + offset, ctx.timerService())
   }
 
 }
@@ -81,27 +99,28 @@ abstract class LatelyEvictableStateCoFunction[In1, In2, Out, StateType] extends 
 trait LatelyEvictableStateFunctionMixin[StateType] extends RichFunction with StateHolder[StateType] {
 
   @transient
-  protected var latestEvictionTimeForKey : ValueState[java.lang.Long] = _
+  protected var latestEvictionTimeForKey: ValueState[java.lang.Long] = _
 
   @transient
   protected var state: ValueState[StateType] = _
 
   override def open(parameters: Configuration): Unit = {
-    latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long]))
+    latestEvictionTimeForKey = getRuntimeContext.getState[java.lang.Long](
+      new ValueStateDescriptor[java.lang.Long]("timers", classOf[java.lang.Long])
+    )
     state = getRuntimeContext.getState(stateDescriptor)
   }
 
   override protected def readState(): StateType = state.value()
 
-  override protected def updateState(stateValue: StateType,
-                                     stateValidity: Long, timeService: TimerService): Unit = {
+  override protected def updateState(stateValue: StateType, stateValidity: Long, timeService: TimerService): Unit = {
     state.update(stateValue)
     doMoveEvictionTime(stateValidity, timeService)
   }
 
   protected def handleOnTimer(timestamp: Long, timerService: TimerService): Unit = {
     val latestEvictionTimeValue = latestEvictionTimeForKey.value()
-    val noLaterEventsArrived = latestEvictionTimeValue == timestamp
+    val noLaterEventsArrived    = latestEvictionTimeValue == timestamp
     if (noLaterEventsArrived) {
       evictStates()
     } else if (latestEvictionTimeValue != null) {
@@ -135,8 +154,7 @@ trait StateHolder[StateType] {
 
   protected def readState(): StateType
 
-  protected def updateState(stateValue: StateType,
-                            stateValidity: Long, timeService: TimerService): Unit
+  protected def updateState(stateValue: StateType, stateValidity: Long, timeService: TimerService): Unit
 
   protected def doMoveEvictionTime(time: Long, timeService: TimerService): Unit
 

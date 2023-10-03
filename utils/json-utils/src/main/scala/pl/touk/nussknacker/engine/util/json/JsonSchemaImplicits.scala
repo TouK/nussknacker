@@ -17,23 +17,27 @@ object JsonSchemaImplicits {
 
     def isNullableSchema: Boolean = schema match {
       case combined: CombinedSchema => combined.getSubschemas.asScala.exists(isNullSchema)
-      case sch: Schema => isNullSchema(sch)
+      case sch: Schema              => isNullSchema(sch)
     }
 
-    //validate can change json object.. e.g. fill default values
+    // validate can change json object.. e.g. fill default values
     def validateData(data: AnyRef): Validated[String, AnyRef] =
-      Validated.fromTry(Try(schema.validate(data))).leftMap{
-        case ve: ValidationException => ve.getAllMessages.asScala.mkString("\n\n")
-        case je: JSONException => s"Invalid JSON: ${je.getMessage}"
-        case exc => s"Unknown error message type: ${exc.getMessage}"
-      }.map(_ => data)
+      Validated
+        .fromTry(Try(schema.validate(data)))
+        .leftMap {
+          case ve: ValidationException => ve.getAllMessages.asScala.mkString("\n\n")
+          case je: JSONException       => s"Invalid JSON: ${je.getMessage}"
+          case exc                     => s"Unknown error message type: ${exc.getMessage}"
+        }
+        .map(_ => data)
 
   }
 
   implicit class ExtendedObjectSchema(schema: ObjectSchema) {
     def hasPatternProperties: Boolean = schema.patternProperties.nonEmpty
 
-    def acceptsEverythingAsAdditionalProperty: Boolean = schema.permitsAdditionalProperties() && schema.getSchemaOfAdditionalProperties == null
+    def acceptsEverythingAsAdditionalProperty: Boolean =
+      schema.permitsAdditionalProperties() && schema.getSchemaOfAdditionalProperties == null
 
     @silent("deprecated")
     def patternProperties: Map[Pattern, Schema] = {
@@ -53,7 +57,7 @@ object JsonSchemaImplicits {
 
   private def isNullSchema(sch: Schema): Boolean = sch match {
     case _: NullSchema => true
-    case _ => false
+    case _             => false
   }
 
 }

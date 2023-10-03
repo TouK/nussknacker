@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext, Context => NkContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
@@ -29,23 +29,35 @@ import scala.language.higherKinds
 // Flinks SlidingWindows are something that is often called HoppingWindow. They consume a lot of memory because each element
 // is stored in multiple windows with different offsets.
 // NOTE: it would be much cleaner if we evaluated aggregateBy here. However, FLINK-10250 prevents us from doing this and we *have* to compute it before
-class AggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                    override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
-                                    protected override val aggregateTypeInformation: TypeInformation[AnyRef],
-                                    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-                                   (implicit override val rangeMap: FlinkRangeMap[MapT])
-  extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
-  with AggregatorFunctionMixin[MapT] {
+class AggregatorFunction[MapT[K, V]](
+    protected val aggregator: Aggregator,
+    protected val timeWindowLengthMillis: Long,
+    override val nodeId: NodeId,
+    protected val aggregateElementType: TypingResult,
+    protected override val aggregateTypeInformation: TypeInformation[AnyRef],
+    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+)(implicit override val rangeMap: FlinkRangeMap[MapT])
+    extends LatelyEvictableStateFunction[
+      ValueWithContext[StringKeyedValue[AnyRef]],
+      ValueWithContext[AnyRef],
+      MapT[Long, AnyRef]
+    ]
+    with AggregatorFunctionMixin[MapT] {
 
-  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+  type FlinkCtx =
+    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
 
-  override def processElement(value: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement(
+      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      ctx: FlinkCtx,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     handleNewElementAdded(value, ctx.timestamp(), ctx.timerService(), out)
   }
 
 }
 
-trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolder[MapT[Long, AnyRef]] =>
+trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHolder[MapT[Long, AnyRef]] =>
 
   protected def convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
 
@@ -57,18 +69,19 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
 
   protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.id)
 
-  protected def newHistogram()
-    = new DropwizardHistogramWrapper(new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS)))
+  protected def newHistogram() = new DropwizardHistogramWrapper(
+    new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS))
+  )
 
   protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
 
-  protected lazy val timeHistogram: util.metrics.Histogram
-    = metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "time"), tags), 10)
+  protected lazy val timeHistogram: util.metrics.Histogram =
+    metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "time"), tags), 10)
 
-  //this metric does *not* calculate histogram of sizes of maps in the whole state,
-  //but of those that are processed, so "hot" keys would be counted much more often.
-  protected lazy val retrievedBucketsHistogram: util.metrics.Histogram
-    = metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "retrievedBuckets"), tags), 10)
+  // this metric does *not* calculate histogram of sizes of maps in the whole state,
+  // but of those that are processed, so "hot" keys would be counted much more often.
+  protected lazy val retrievedBucketsHistogram: util.metrics.Histogram =
+    metricsProvider.histogram(MetricIdentifier(NonEmptyList.of(name, "retrievedBuckets"), tags), 10)
 
   protected def minimalResolutionMs: Long = 60000L
 
@@ -80,15 +93,19 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
 
   protected def aggregateElementType: TypingResult
 
-  protected val outputType: TypingResult = aggregator.computeOutputType(aggregateElementType).valueOr(e =>
-    throw new IllegalArgumentException("Failed to compute output type: " + e))
+  protected val outputType: TypingResult = aggregator
+    .computeOutputType(aggregateElementType)
+    .valueOr(e => throw new IllegalArgumentException("Failed to compute output type: " + e))
 
   protected implicit def rangeMap: FlinkRangeMap[MapT]
 
-  protected def handleNewElementAdded(value: ValueWithContext[StringKeyedValue[AnyRef]],
-                                      timestamp: Long, timeService: TimerService,
-                                      out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val start = System.nanoTime()
+  protected def handleNewElementAdded(
+      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      timestamp: Long,
+      timeService: TimerService,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
+    val start    = System.nanoTime()
     val newState = addElementToState(value, timestamp, timeService, out)
     val finalVal = computeFinalValue(newState, timestamp)
     timeHistogram.update(System.nanoTime() - start)
@@ -96,15 +113,22 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
 
   }
 
-  protected def addElementToState(value: ValueWithContext[StringKeyedValue[AnyRef]],
-                                  timestamp: Long, timeService: TimerService,
-                                  out: Collector[ValueWithContext[AnyRef]]): MapT[Long, aggregator.Aggregate] = {
-    val newElementInStateTimestamp = computeTimestampToStore(timestamp)
-    val newElement = value.value.value.asInstanceOf[aggregator.Element]
+  protected def addElementToState(
+      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      timestamp: Long,
+      timeService: TimerService,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): MapT[Long, aggregator.Aggregate] = {
+    val newElementInStateTimestamp  = computeTimestampToStore(timestamp)
+    val newElement                  = value.value.value.asInstanceOf[aggregator.Element]
     val (newState, stateWasChanged) = computeNewState(newElementInStateTimestamp, newElement)
 
     if (stateWasChanged) {
-      updateState(newState.asInstanceOf[MapT[Long, AnyRef]], newElementInStateTimestamp + timeWindowLengthMillis, timeService)
+      updateState(
+        newState.asInstanceOf[MapT[Long, AnyRef]],
+        newElementInStateTimestamp + timeWindowLengthMillis,
+        timeService
+      )
     } else {
       doMoveEvictionTime(newElementInStateTimestamp + timeWindowLengthMillis, timeService)
     }
@@ -114,9 +138,13 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
   }
 
   // for extending classes purpose
-  protected def handleElementAddedToState(newElementInStateTimestamp: Long, newElement: aggregator.Element, nkCtx: NkContext,
-                                          timeService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-  }
+  protected def handleElementAddedToState(
+      newElementInStateTimestamp: Long,
+      newElement: aggregator.Element,
+      nkCtx: NkContext,
+      timeService: TimerService,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {}
 
   protected def computeFinalValue(newState: MapT[Long, aggregator.Aggregate], timestamp: Long): AnyRef = {
     aggregator.alignToExpectedType(computeFoldedAggregatedValue(newState, timestamp), outputType)
@@ -127,16 +155,22 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
     val foldedState = if (newStateTruncatedToTimestamp.toScalaMapRO.isEmpty) {
       aggregator.createAccumulator()
     } else {
-      //here we need ordering for start, end etc.
+      // here we need ordering for start, end etc.
       newStateTruncatedToTimestamp.toScalaMapRO.values.reduce(aggregator.merge)
     }
     aggregator.getResult(foldedState)
   }
 
   // Return state after adding newValue and information about if state was changed or not
-  private def computeNewState(newElementInStateTimestamp: Long, newValue: aggregator.Element): (MapT[Long, aggregator.Aggregate], Boolean) = {
-    val current: MapT[Long, aggregator.Aggregate] = stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
-    val currentAggregate = current.toScalaMapRO.getOrElse(newElementInStateTimestamp, aggregator.createAccumulator()).asInstanceOf[aggregator.Aggregate]
+  private def computeNewState(
+      newElementInStateTimestamp: Long,
+      newValue: aggregator.Element
+  ): (MapT[Long, aggregator.Aggregate], Boolean) = {
+    val current: MapT[Long, aggregator.Aggregate] =
+      stateForTimestampToSave(readStateOrInitial(), newElementInStateTimestamp)
+    val currentAggregate = current.toScalaMapRO
+      .getOrElse(newElementInStateTimestamp, aggregator.createAccumulator())
+      .asInstanceOf[aggregator.Aggregate]
 
     // We do not create aggregate and add to it neutral element to avoid unnecessary buckets in our state
     if (aggregator.isNeutralForAccumulator(newValue, currentAggregate)) {
@@ -152,11 +186,15 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
   }
 
   protected def stateForTimestampToSave[T](stateValue: MapT[Long, T], timestamp: Long): MapT[Long, T] = {
-    stateValue.from(timestamp - timeWindowLengthMillis + 1 - allowedOutOfOrderMs) // we must have exclusive range like Flink's sliding/tumbling have
+    stateValue.from(
+      timestamp - timeWindowLengthMillis + 1 - allowedOutOfOrderMs
+    ) // we must have exclusive range like Flink's sliding/tumbling have
   }
 
   protected def stateForTimestampToRead[T](stateValue: MapT[Long, T], timestamp: Long): MapT[Long, T] = {
-    stateForTimestampToReadUntilEnd(stateValue, timestamp).toRO(timestamp) // we must have exclusive range like Flink's sliding/tumbling have
+    stateForTimestampToReadUntilEnd(stateValue, timestamp).toRO(
+      timestamp
+    ) // we must have exclusive range like Flink's sliding/tumbling have
   }
 
   protected def stateForTimestampToReadUntilEnd[T](stateValue: MapT[Long, T], timestamp: Long): MapT[Long, T] = {
@@ -164,11 +202,14 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
   }
 
   protected def readStateOrInitial(): MapT[Long, aggregator.Aggregate] =
-    Option(readState().asInstanceOf[MapT[Long, aggregator.Aggregate]]).getOrElse(rangeMap.empty[Long, aggregator.Aggregate])
+    Option(readState().asInstanceOf[MapT[Long, aggregator.Aggregate]])
+      .getOrElse(rangeMap.empty[Long, aggregator.Aggregate])
 
   override protected def stateDescriptor: ValueStateDescriptor[MapT[Long, AnyRef]] =
-    new ValueStateDescriptor[MapT[Long, AnyRef]]("state",
-      rangeMap.typeInformation[Long, AnyRef](TypeInformation.of(classOf[Long]), aggregateTypeInformation))
+    new ValueStateDescriptor[MapT[Long, AnyRef]](
+      "state",
+      rangeMap.typeInformation[Long, AnyRef](TypeInformation.of(classOf[Long]), aggregateTypeInformation)
+    )
 
   protected def aggregateTypeInformation: TypeInformation[AnyRef]
 

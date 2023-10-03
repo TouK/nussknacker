@@ -25,7 +25,7 @@ export class PanZoomPlugin {
         touched?: boolean;
     };
 
-    private disabledPan = false;
+    private disabledPan = true;
 
     constructor(private paper: dia.Paper) {
         this.cursorMask = new CursorMask();
@@ -73,10 +73,9 @@ export class PanZoomPlugin {
     private initMove(event: MouseEvent): void {
         const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
         if (!isModified) {
-            if (!isTouchDevice()) {
+            if (!isTouchEvent(event)) {
                 this.cursorMask.enable("move");
             }
-
             this.panStart = {
                 x: event.clientX,
                 y: event.clientY,
@@ -192,8 +191,8 @@ export class PanZoomPlugin {
         const hammer = new Hammer(paper.el);
         hammer.get("pan").set({ threshold: 2 });
 
-        paper.on("cell:pointerdown", () => {
-            this.disabledPan = true;
+        paper.on("blank:pointerdown", (e) => {
+            this.disabledPan = e.target?.parentElement?.id !== "nk-graph-main";
         });
 
         hammer.on("panstart", (event) => {
@@ -228,7 +227,7 @@ export class PanZoomPlugin {
                 event.pointers[0].stopImmediatePropagation();
             }
             this.cleanup();
-            this.disabledPan = false;
+            this.disabledPan = true;
         });
     };
 

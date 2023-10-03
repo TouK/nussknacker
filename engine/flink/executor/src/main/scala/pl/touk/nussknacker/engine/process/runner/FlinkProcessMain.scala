@@ -19,13 +19,20 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
       val args = FlinkArgsDecodeHack.prepareProgramArgs(argsWithHack)
 
       require(args.nonEmpty, "Scenario json should be passed as a first argument")
-      val process = readProcessFromArg(args(0))
+      val process        = readProcessFromArg(args(0))
       val processVersion = parseProcessVersion(args(1))
       val deploymentData = parseDeploymentData(args(2))
       val config: Config = readConfigFromArgs(args)
-      val modelData = ModelData.duringExecution(config)
-      val env = getExecutionEnvironment
-      runProcess(env, modelData, process, processVersion, deploymentData, ExecutionConfigPreparer.defaultChain(modelData))
+      val modelData      = ModelData.duringExecution(config)
+      val env            = getExecutionEnvironment
+      runProcess(
+        env,
+        modelData,
+        process,
+        processVersion,
+        deploymentData,
+        ExecutionConfigPreparer.defaultChain(modelData)
+      )
     } catch {
       // marker exception for graph optimalization
       // should be necessary only in Flink <=1.9
@@ -41,12 +48,14 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
 
   protected def getConfig(env: Env): ExecutionConfig
 
-  protected def runProcess(env: Env,
-                           modelData: ModelData,
-                           process: CanonicalProcess,
-                           processVersion: ProcessVersion,
-                           deploymentData: DeploymentData,
-                           prepareExecutionConfig: ExecutionConfigPreparer): Unit
+  protected def runProcess(
+      env: Env,
+      modelData: ModelData,
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      prepareExecutionConfig: ExecutionConfigPreparer
+  ): Unit
 
   private def parseProcessVersion(json: String): ProcessVersion =
     CirceUtil.decodeJsonUnsafe[ProcessVersion](json, "invalid scenario version")
