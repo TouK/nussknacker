@@ -85,17 +85,21 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
   }
 }
 
-case class LiteralRegExpParameterValidator(pattern: String, message: String, description: String) extends ParameterValidator {
+case class LiteralRegExpParameterValidator(pattern: String, message: String, description: String)
+    extends ParameterValidator {
 
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
   // Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    def toResult(validated: Boolean) = if (validated) valid(()) else invalid(MismatchParameter(message, description, paramName, nodeId.id))
+  override def isValid(paramName: String, value: String, label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    def toResult(validated: Boolean) =
+      if (validated) valid(()) else invalid(MismatchParameter(message, description, paramName, nodeId.id))
 
-    if (value.matches("^'.*'$")) { //workaround for SpEL comprehension
-      val trimmedSpELValue = value.replaceAll("^'|'$", "")
-      toResult(regexpPattern.matcher(trimmedSpELValue).matches())
+    if (value.matches("^'.*'$")) { // workaround for SpEL comprehension
+      val trimmedSPeLValue = value.replaceAll("^'|'$", "")
+      toResult(regexpPattern.matcher(trimmedSPeLValue).matches())
     } else {
       toResult(StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
     }
@@ -246,4 +250,3 @@ object NumberValidatorHelper {
   def normalizeStringToNumber(value: String): String =
     numberRegexp.replaceAllIn(value, "")
 }
-
