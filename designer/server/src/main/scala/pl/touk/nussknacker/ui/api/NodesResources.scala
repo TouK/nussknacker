@@ -190,7 +190,8 @@ object NodesResources {
 
   def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-    implicit val nodeNameRequestDecoder: Decoder[NodeNameValidationRequest] = deriveConfiguredDecoder[NodeNameValidationRequest]
+    implicit val nodeNameRequestDecoder: Decoder[NodeNameValidationRequest] =
+      deriveConfiguredDecoder[NodeNameValidationRequest]
     deriveConfiguredDecoder[NodeValidationRequest]
   }
 
@@ -263,7 +264,8 @@ class NodeValidator {
           case _                            => false
         }
 
-        val uiErrors = (errors ++ nodeIdErrors).filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
+        val uiErrors =
+          (errors ++ nodeIdErrors).filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
         NodeValidationResult(
           parameters = uiParams,
           expressionType = expressionType,
@@ -353,7 +355,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
     // TODO: remove Option when FE is ready
     outgoingEdges: Option[List[Edge]],
-  nodeNameRequest: NodeNameValidationRequest
+    nodeNameRequest: NodeNameValidationRequest
 )
 
 @JsonCodec(encodeOnly = true) final case class NodeNameValidationRequest(newName: String)

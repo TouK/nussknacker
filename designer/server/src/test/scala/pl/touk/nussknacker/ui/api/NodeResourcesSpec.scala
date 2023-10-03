@@ -8,7 +8,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyNodeId, ExpressionParserCompilationError, InvalidPropertyFixedValue}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  EmptyNodeId,
+  ExpressionParserCompilationError,
+  InvalidPropertyFixedValue
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -32,43 +36,71 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
-class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class NodeResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
   private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
 
-  private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new FragmentResolver(fragmentRepository))
+  private val validation = ProcessValidation(
+    typeToConfig.mapValues(_.modelData),
+    typeToConfig.mapValues(_.additionalPropertiesConfig),
+    typeToConfig.mapValues(_.additionalValidators),
+    new FragmentResolver(fragmentRepository)
+  )
   private val nodeRoute = new NodesResources(
     futureFetchingProcessRepository,
     fragmentRepository,
     typeToConfig.mapValues(_.modelData),
     validation,
-    typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices, v.modelData.modelClassLoader.classLoader))
+    typeToConfig.mapValues(v =>
+      new ExpressionSuggester(
+        v.modelData.modelDefinition.expressionConfig,
+        v.modelData.modelDefinitionWithTypes.typeDefinitions,
+        v.modelData.uiDictServices,
+        v.modelData.modelClassLoader.classLoader
+      )
+    )
   )
 
-  private implicit val typingResultDecoder: Decoder[TypingResult]
-  = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
-  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+  private implicit val typingResultDecoder: Decoder[TypingResult] =
+    NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
+  private implicit val uiParameterDecoder: Decoder[UIParameter]       = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
   private val processProperties = ProcessProperties.combineTypeSpecificProperties(
     StreamMetaData(),
-    additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"), StreamMetaData.typeName)
+    additionalFields =
+      ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"), StreamMetaData.typeName)
   )
 
-  //see SampleNodeAdditionalInfoProvider
+  // see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
     saveProcess(testProcess) {
-      val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      val data: NodeData =
+        Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
           case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a") =>
         }
       }
 
       val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[Option[AdditionalInfo]] shouldBe None
       }
     }
@@ -77,31 +109,77 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates filter nodes") {
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None, NodeNameValidationRequest(data.id))
+      val request = NodeValidationRequest(
+        data,
+        ProcessProperties(StreamMetaData()),
+        Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
+        None,
+        None,
+        NodeNameValidationRequest(data.id)
+      )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = Some(typing.Unknown),
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
-          validationPerformed = true)
+          validationErrors = List(
+            PrettyValidationErrors.formatErrorMessage(
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: Boolean, found: String",
+                data.id,
+                Some(DefaultExpressionId),
+                data.expression.expression
+              )
+            )
+          ),
+          validationPerformed = true
+        )
       }
     }
   }
 
   test("validates sink expression") {
     saveProcess(testProcess) {
-      val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
-        Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
-        Parameter(TopicParamName, Expression.spel("'test-topic'")))),
-        None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None, NodeNameValidationRequest(data.id))
+      val data: node.Sink = node.Sink(
+        "mysink",
+        SinkRef(
+          "kafka-string",
+          List(
+            Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
+            Parameter(TopicParamName, Expression.spel("'test-topic'"))
+          )
+        ),
+        None,
+        None
+      )
+      val request = NodeValidationRequest(
+        data,
+        ProcessProperties(StreamMetaData()),
+        Map("existButString" -> Typed[String], "longValue" -> Typed[Long]),
+        None,
+        None,
+        NodeNameValidationRequest(data.id)
+      )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[NodeValidationResult] should matchPattern {
-          case NodeValidationResult(_, _, validationErrors, _) if validationErrors == List(
-            PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-              data.id, Some(SinkValueParamName), "notvalidspelexpression"))) =>
+          case NodeValidationResult(_, _, validationErrors, _)
+              if validationErrors == List(
+                PrettyValidationErrors.formatErrorMessage(
+                  ExpressionParserCompilationError(
+                    "Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+                    data.id,
+                    Some(SinkValueParamName),
+                    "notvalidspelexpression"
+                  )
+                )
+              ) =>
         }
       }
     }
@@ -110,35 +188,64 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates nodes using dictionaries") {
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None, NodeNameValidationRequest(data.id))
+      val request = NodeValidationRequest(
+        data,
+        ProcessProperties(StreamMetaData()),
+        Map(),
+        None,
+        None,
+        NodeNameValidationRequest(data.id)
+      )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = Some(Typed[Boolean]),
           validationErrors = Nil,
-          validationPerformed = true)
+          validationPerformed = true
+        )
       }
     }
+
   }
 
   test("handles global variables in NodeValidationRequest") {
     saveProcess(testProcess) {
-      val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
-        Parameter("additional data value", "#longValue")
-      ), List(
-        BranchParameters("b1", List(Parameter("role", "'Events'"))),
-        BranchParameters("b2", List(Parameter("role", "'Additional data'")))
-      ), None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), Some(
-        Map(
-          //It's a bit tricky, because FE does not distinguish between global and local vars...
-          "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
-          "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
-        )
-      ), None, NodeNameValidationRequest(data.id))
+      val data = node.Join(
+        "id",
+        Some("output"),
+        "enrichWithAdditionalData",
+        List(
+          Parameter("additional data value", "#longValue")
+        ),
+        List(
+          BranchParameters("b1", List(Parameter("role", "'Events'"))),
+          BranchParameters("b2", List(Parameter("role", "'Additional data'")))
+        ),
+        None
+      )
+      val request = NodeValidationRequest(
+        data,
+        ProcessProperties(StreamMetaData()),
+        Map(),
+        Some(
+          Map(
+            // It's a bit tricky, because FE does not distinguish between global and local vars...
+            "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
+            "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
+          )
+        ),
+        None,
+        NodeNameValidationRequest(data.id)
+      )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         val res = responseAs[NodeValidationResult]
         res.validationErrors shouldBe Nil
       }
@@ -148,12 +255,22 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates nodes empty id") {
     saveProcess(testProcess) {
       val data: node.Variable = node.Variable("", "varName", Expression.spel("'true'"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None, NodeNameValidationRequest(data.id))
+      val request = NodeValidationRequest(
+        data,
+        ProcessProperties(StreamMetaData()),
+        Map(),
+        None,
+        None,
+        NodeNameValidationRequest(data.id)
+      )
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[NodeValidationResult] should matchPattern {
-          case NodeValidationResult(_, _, validationErrors, _) if validationErrors == List(
-            PrettyValidationErrors.formatErrorMessage(EmptyNodeId)) =>
+          case NodeValidationResult(_, _, validationErrors, _)
+              if validationErrors == List(PrettyValidationErrors.formatErrorMessage(EmptyNodeId)) =>
         }
       }
     }
@@ -163,7 +280,10 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     saveProcess(testProcess) {
       import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
 
-      Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
           case MarkdownAdditionalInfo(content) if content.equals("2 threads will be used on environment 'test'") =>
         }
@@ -173,17 +293,31 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   test("validate properties") {
     saveProcess(testProcess) {
-      val request = PropertiesValidationRequest(ProcessProperties.combineTypeSpecificProperties(
-        StreamMetaData(),
-        additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test"), StreamMetaData.typeName)
-      ))
+      val request = PropertiesValidationRequest(
+        ProcessProperties.combineTypeSpecificProperties(
+          StreamMetaData(),
+          additionalFields = ProcessAdditionalFields(
+            None,
+            Map("numberOfThreads" -> "a", "environment" -> "test"),
+            StreamMetaData.typeName
+          )
+        )
+      )
 
-      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), ""))),
-          validationPerformed = true)
+          validationErrors = List(
+            PrettyValidationErrors.formatErrorMessage(
+              InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), "")
+            )
+          ),
+          validationPerformed = true
+        )
       }
     }
   }
