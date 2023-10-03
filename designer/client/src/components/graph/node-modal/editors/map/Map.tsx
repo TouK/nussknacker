@@ -8,6 +8,7 @@ import MapKey from "./MapKey";
 import MapValue from "./MapValue";
 import { isEqual } from "lodash";
 import { useDiffMark } from "../../PathsToMark";
+import { DndItems } from "../../fragment-input-definition/DndItems";
 
 export interface MapCommonProps {
     setProperty: (path: string, newValue: unknown) => void;
@@ -80,6 +81,8 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
         [isMarked, namespace, setProperty, readOnly, showValidation],
     );
 
+    const changeOrder = useCallback((value) => setProperty(namespace, value), [namespace, setProperty]);
+
     const items = useMemo(
         () =>
             fields?.map(appendTypeInfo).map((item, index, list) => {
@@ -97,7 +100,7 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
 
     return (
         <NodeRowFields label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
-            <Items items={items} />
+            <DndItems disabled={readOnly} items={items} onChange={changeOrder} />
         </NodeRowFields>
     );
 }
