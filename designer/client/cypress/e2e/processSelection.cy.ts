@@ -1,4 +1,4 @@
-describe.skip("Process mouse drag", () => {
+describe("Process mouse drag", () => {
     const NAME = "processSelection";
     const snapshotParams: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.0001,
@@ -22,15 +22,16 @@ describe.skip("Process mouse drag", () => {
             .within(() => {
                 cy.get("#nk-graph-main svg", { timeout: 20000 }).as("canvas");
             });
-        cy.get("[title='toggle left panel']").click();
         cy.layoutScenario();
+        cy.get("[title='toggle left panel']").click();
     });
 
     it("should allow pan view", () => {
         cy.get("@canvas")
-            .trigger("mousedown", 10, 10, { force: true })
-            .trigger("mousemove", 200, 100, { force: true, moveThreshold: 5 })
-            .trigger("mouseup", { force: true })
+            .trigger("pointerdown", { force: true, button: 0 })
+            .trigger("pointermove", 10, 10, { force: true }) // hammerjs' panstart
+            .trigger("pointermove", 200, 100, { force: true }) // hammerjs' panmove
+            .trigger("pointerup", { force: true, button: 0 })
             .wait(200);
         cy.get("@graph").matchImage(snapshotParams);
     });
