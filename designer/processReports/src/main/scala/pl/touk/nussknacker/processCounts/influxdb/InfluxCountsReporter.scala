@@ -8,16 +8,15 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 import java.time.Instant
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 
 /*
   Base reporter for counts
  */
-class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig, waitForClose: F[Unit] => Unit)(implicit backend: SttpBackend[F, Any]) extends CountsReporter[F] with LazyLogging {
+class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit backend: SttpBackend[F, Any]) extends CountsReporter[F] with LazyLogging {
 
-  val influxGenerator = new InfluxGenerator(config, env)
+  private val influxGenerator = new InfluxGenerator(config, env)
 
   private implicit val monadError: MonadError[F] = backend.responseMonad
 
@@ -28,7 +27,7 @@ class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig, waitForClose
     case ExecutionCount(pointInTime) => influxGenerator.queryBySingleDifference(processId, None, pointInTime, metricsConfig)
   }).map(_.get)
 
-  override def close(): Unit = waitForClose(influxGenerator.close())
+  override def close(): Unit = {}
 
   private def prepareRangeCounts(processId: String, fromDate: Instant, toDate: Instant): F[Map[String, Long]] = {
 
@@ -62,7 +61,7 @@ class InfluxCountsReporterCreator extends CountsReporterCreator {
   override def createReporter(env: String, config: Config)
                              (implicit backend: SttpBackend[Future, Any]): CountsReporter[Future] = {
     //TODO: logger
-    new InfluxCountsReporter(env, config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath), Await.result(_, 10 seconds))
+    new InfluxCountsReporter(env, config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath))
   }
 
 }
