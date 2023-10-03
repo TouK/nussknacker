@@ -93,7 +93,7 @@ class JsonSchemaRequestResponseSource(
           }
           .getOrElse {
             throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
-              s"Expected CombinedSchema with ${SinkRawValueParamName} parameter but ${cs} was found"
+              s"Expected combined schema with ${SinkRawValueParamName} parameter but ${cs} was found"
             )
           }
       }
@@ -109,7 +109,7 @@ class JsonSchemaRequestResponseSource(
       .flatMap { s => s.validateData(JsonSchemaUtils.circeToJson(json)).toOption.map(_ => s) }
       .headOption
       .getOrElse(
-        throw new IllegalArgumentException(s"There is no valid input for provided combined schemas ${combinedSchema}")
+        throw new IllegalArgumentException(s"There is no valid input for provided combined schema ${combinedSchema}")
       )
   }
 
