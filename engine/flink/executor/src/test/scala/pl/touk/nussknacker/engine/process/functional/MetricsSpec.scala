@@ -17,7 +17,12 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.Date
 
-class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
+class MetricsSpec
+    extends FixtureAnyFunSuite
+    with Matchers
+    with VeryPatientScalaFutures
+    with ProcessTestHelpers
+    with BeforeAndAfterEach {
 
   private val reporterName = getClass.getName
 
@@ -31,13 +36,13 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
   type FixtureParam = ProcessName
 
   def withFixture(test: OneArgTest): Outcome = {
-    //this *has* to be scenario name in the test
+    // this *has* to be scenario name in the test
     withFixture(test.toNoArgTest(ProcessName(test.name)))
   }
 
   test("measure time for service") { implicit scenarioName =>
-
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
       .emptySink("out", "monitor")
@@ -56,8 +61,8 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
   }
 
   test("measure errors") { implicit scenarioName =>
-
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "1 / #input.value1")
       .emptySink("out", "monitor")
@@ -66,7 +71,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
     )
     processInvoker.invokeWithSampleData(process, data)
 
-    //we measure counts, as instant rate is reset after read so it's quite unstable...
+    // we measure counts, as instant rate is reset after read so it's quite unstable...
     val totalCounter = reporter.testMetrics[Counter]("error.instantRate.count")
     totalCounter.exists(_.getCount > 0) shouldBe true
 
@@ -76,17 +81,17 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
   }
 
   test("measure node counts") { implicit scenarioName =>
-
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
-      .split("split1",
+      .split(
+        "split1",
         GraphBuilder.emptySink("out2", "monitor"),
         GraphBuilder
           .processor("proc2", "logService", "all" -> "#input.value2")
           .emptySink("out", "monitor")
       )
-
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0)),
@@ -109,12 +114,14 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
       SimpleRecord("1", 12, "a", new Date(0)),
     )
 
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("source", "input")
       .filter("filter", "#input.value1 > 10")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.emptySink("sink", "monitor"),
-        GraphBuilder.processorEnd("processor", "logService", "all" -> "#input.value2"),
+        GraphBuilder.processorEnd("processor", "logService", "all"                         -> "#input.value2"),
         GraphBuilder.endingCustomNode("custom node", None, "optionalEndingCustom", "param" -> "#input.id")
       )
 
@@ -138,10 +145,14 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
       SimpleRecord("1", 13, "a", new Date(0)),
     )
 
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("source", "input")
       .filter("filter1", "#input.value1 > 10")
-      .switch("switch2", "#input.value1", "output",
+      .switch(
+        "switch2",
+        "#input.value1",
+        "output",
         Case("#input.value1 > 12", GraphBuilder.emptySink("out", "monitor"))
       )
 
@@ -153,8 +164,9 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
     gauge("dead_end.nodeId.switch2.instantRate") should be >= 0.0d
   }
 
-  test("open measuring service"){ implicit scenarioName =>
-    val process = ScenarioBuilder.streaming(scenarioName.value)
+  test("open measuring service") { implicit scenarioName =>
+    val process = ScenarioBuilder
+      .streaming(scenarioName.value)
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
       .emptySink("out", "sinkForStrings", SingleValueParamName -> "#outputValue")
@@ -168,26 +180,37 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
   }
 
   test("initializes counts, ends, dead ends") { implicit scenarioName =>
-
-    val scenario = ScenarioBuilder.streaming(scenarioName.value).sources(
-      GraphBuilder.source("id", "input")
-        .split("split",
-          GraphBuilder.filter("left", "false").branchEnd("end1", "join1"),
-          GraphBuilder.filter("right", "false").branchEnd("end2", "join1")
-        ),
-      GraphBuilder.join("join1", "joinBranchExpression", Some("any"),
-        List(
-          "end1" -> List("value" -> "''"),
-          "end2" -> List("value" -> "''")
-        ))
-        .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
-        .processor("proc1", "lifecycleService")
-        .switch("switch1", "false", "any2",
-          GraphBuilder.emptySink("outE1", "sinkForStrings", SingleValueParamName -> "''"),
-          Case("true", GraphBuilder.processorEnd("procE1", "lifecycleService")),
-          Case("false", GraphBuilder.endingCustomNode("customE1", None,"optionalEndingCustom", "param" -> "''"))
-        )
-    )
+    val scenario = ScenarioBuilder
+      .streaming(scenarioName.value)
+      .sources(
+        GraphBuilder
+          .source("id", "input")
+          .split(
+            "split",
+            GraphBuilder.filter("left", "false").branchEnd("end1", "join1"),
+            GraphBuilder.filter("right", "false").branchEnd("end2", "join1")
+          ),
+        GraphBuilder
+          .join(
+            "join1",
+            "joinBranchExpression",
+            Some("any"),
+            List(
+              "end1" -> List("value" -> "''"),
+              "end2" -> List("value" -> "''")
+            )
+          )
+          .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
+          .processor("proc1", "lifecycleService")
+          .switch(
+            "switch1",
+            "false",
+            "any2",
+            GraphBuilder.emptySink("outE1", "sinkForStrings", SingleValueParamName -> "''"),
+            Case("true", GraphBuilder.processorEnd("procE1", "lifecycleService")),
+            Case("false", GraphBuilder.endingCustomNode("customE1", None, "optionalEndingCustom", "param" -> "''"))
+          )
+      )
     val allNodes = scenario.collectAllNodes
 
     processInvoker.invokeWithSampleData(scenario, Nil)
@@ -207,7 +230,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
     reporter.testMetrics[Counter](name).loneElement.getCount
   }
 
-  private def gauge(name: String)(implicit scenarioName: ProcessName): Double = withClue(s"gauge $name"){
+  private def gauge(name: String)(implicit scenarioName: ProcessName): Double = withClue(s"gauge $name") {
     reporter.testMetrics[Gauge[Double]](name).loneElement.getValue
   }
 

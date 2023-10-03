@@ -5,7 +5,13 @@ import java.time.{Instant, LocalDate, LocalTime}
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 
-case class GeneratedAvroClassWithLogicalTypesNewSchema(var dateTime: Instant, var date: LocalDate, var time: LocalTime, var text2: CharSequence, var decimal: java.math.BigDecimal) extends SpecificRecordBase {
+case class GeneratedAvroClassWithLogicalTypesNewSchema(
+    var dateTime: Instant,
+    var date: LocalDate,
+    var time: LocalTime,
+    var text2: CharSequence,
+    var decimal: java.math.BigDecimal
+) extends SpecificRecordBase {
 
   override def getSchema: Schema = GeneratedAvroClassWithLogicalTypesNewSchema.schema
 
@@ -91,4 +97,3 @@ object GeneratedAvroClassWithLogicalTypesNewSchema extends TestSchema {
       |}""".stripMargin
 
 }
-

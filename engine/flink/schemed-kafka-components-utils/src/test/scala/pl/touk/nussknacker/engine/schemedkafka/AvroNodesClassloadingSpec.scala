@@ -20,15 +20,18 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
   override protected val schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.getClientForScope("testScope")
 
   private val configCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    override protected def schemaRegistryClientFactory =
+      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
   private def withFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 
   private val scenario = ScenarioBuilder
     .streaming("test")
-    .source("source", "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName ->  "'not_exist'",
+    .source(
+      "source",
+      "kafka",
+      KafkaUniversalComponentTransformer.TopicParamName         -> "'not_exist'",
       KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink("dead", "dead_end")
@@ -37,11 +40,10 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
 
   test("should load classes correctly for tests") {
 
-    //we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
+    // we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
       new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario) shouldBe TestingCapabilities.Disabled
     }
   }
-
 
 }

@@ -25,10 +25,10 @@ object PeriodicProcessGen {
   }
 
   def buildCanonicalProcess(cronProperty: String = "0 0 * * * ?"): CanonicalProcess = {
-      ScenarioBuilder
-        .streaming("test")
-        .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
-        .source("test", "test")
-        .emptySink("test", "test")
+    ScenarioBuilder
+      .streaming("test")
+      .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
+      .source("test", "test")
+      .emptySink("test", "test")
   }
 }

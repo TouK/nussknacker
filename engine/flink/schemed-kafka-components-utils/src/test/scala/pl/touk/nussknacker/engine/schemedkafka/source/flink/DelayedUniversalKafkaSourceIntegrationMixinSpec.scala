@@ -1,4 +1,3 @@
-
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.generic.GenericRecord
@@ -9,30 +8,45 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
-import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
+import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
+  DelayParameterName,
+  TimestampFieldParamName
+}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName, SinkValueParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  SchemaVersionParamName,
+  SinkValueParamName,
+  TopicParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{MockSchemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
+  MockSchemaRegistryClientFactory,
+  UniversalSchemaBasedSerdeProvider
+}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  SchemaBasedSerdeProvider,
+  SchemaRegistryClientFactory,
+  SchemaVersionOption
+}
 import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Instant
 
-trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter  {
+trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
+    MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -55,19 +69,25 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
     }
   }
 
-  protected def createProcessWithDelayedSource(topic: String, version: SchemaVersionOption, timestampField: String, delay: String): CanonicalProcess = {
+  protected def createProcessWithDelayedSource(
+      topic: String,
+      version: SchemaVersionOption,
+      timestampField: String,
+      delay: String
+  ): CanonicalProcess = {
 
     import spel.Implicits._
 
-    ScenarioBuilder.streaming("kafka-universal-delayed-test")
+    ScenarioBuilder
+      .streaming("kafka-universal-delayed-test")
       .parallelism(1)
       .source(
         "start",
         "kafka-universal-delayed",
-        s"$TopicParamName" -> s"'${topic}'",
-        s"$SchemaVersionParamName" -> asSpelExpression(formatVersionParam(version)),
+        s"$TopicParamName"          -> s"'${topic}'",
+        s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
         s"$TimestampFieldParamName" -> s"${timestampField}",
-        s"$DelayParameterName" -> s"${delay}"
+        s"$DelayParameterName"      -> s"${delay}"
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
   }
@@ -76,17 +96,29 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
 
 class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "kafka-universal-delayed" -> defaultCategory(new DelayedUniversalKafkaSourceFactory[String, GenericRecord](schemaRegistryClientFactory, createSchemaBasedMessagesSerdeProvider,
-        processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, UniversalTimestampFieldAssigner(_))))
+      "kafka-universal-delayed" -> defaultCategory(
+        new DelayedUniversalKafkaSourceFactory[String, GenericRecord](
+          schemaRegistryClientFactory,
+          createSchemaBasedMessagesSerdeProvider,
+          processObjectDependencies,
+          new FlinkKafkaDelayedSourceImplFactory(None, UniversalTimestampFieldAssigner(_))
+        )
+      )
     )
   }
 
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
+  override def customStreamTransformers(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[CustomStreamTransformer]] =
     Map.empty
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
+  override def sinkFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SinkFactory]] = {
     Map(
       "sinkForLongs" -> defaultCategory(SinkForLongs.toSinkFactory)
     )
@@ -96,8 +128,10 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
     super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
 
-  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
+    UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
+    MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
 }

@@ -15,7 +15,10 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.OpenApiDefinitionConfig.defaultOpenApiVersion
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{
+  InputSchemaProperty,
+  OutputSchemaProperty
+}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
@@ -28,11 +31,14 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
 
   import spel.Implicits._
 
-  private val inputSchema = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
+  private val inputSchema  = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
   private val outputSchema = """{"type" : "object", "properties": {"place": {"type": "string"}}}"""
   private val scenario = ScenarioBuilder
     .requestResponse("test")
-    .additionalFields(description = Some("description"), properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
+    .additionalFields(
+      description = Some("description"),
+      properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema)
+    )
     .source("start", "request")
     .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
@@ -41,16 +47,29 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
 
   private val interpreter = RequestResponseInterpreter[Future](
-    scenario, ProcessVersion.empty.copy(processName = scenarioName), LiteEngineRuntimeContextPreparer.noOp, modelData,
-    Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime
+    scenario,
+    ProcessVersion.empty.copy(processName = scenarioName),
+    LiteEngineRuntimeContextPreparer.noOp,
+    modelData,
+    Nil,
+    ProductionServiceInvocationCollector,
+    ComponentUseCase.EngineRuntime
   ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
-  private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(List(OApiServer("https://nussknacker.io", Some("request response test"))))
+  private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(
+    List(OApiServer("https://nussknacker.io", Some("request response test")))
+  )
   private val requestResponseConfig: RequestResponseConfig = RequestResponseConfig(definitionConfig)
-  private val openRoutes = new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
+  private val openRoutes =
+    new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
   private val password = "password"
-  private val securityConfig: RequestResponseSecurityConfig = RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
-  private val securedRoutes = new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig.copy(security = Some(securityConfig)), scenarioName).combinedRoute
+  private val securityConfig: RequestResponseSecurityConfig =
+    RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
+  private val securedRoutes = new ScenarioRoute(
+    new RequestResponseHttpHandler(interpreter),
+    requestResponseConfig.copy(security = Some(securityConfig)),
+    scenarioName
+  ).combinedRoute
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -62,8 +81,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     super.afterAll()
   }
 
-  private val expectedOApiDef = parse(
-    s"""{
+  private val expectedOApiDef = parse(s"""{
        |  "openapi" : "${defaultOpenApiVersion}",
        |  "info" : {
        |    "title" : "test",
@@ -154,20 +172,29 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   }
 
   test("reject post with bad password on secured route") {
-    val msg = """{"city":"London"}"""
+    val msg              = """{"city":"London"}"""
     val wrongCredentials = BasicHttpCredentials("publisher", "WRONG_PASSWORD")
-    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(wrongCredentials) ~> securedRoutes ~> check {
-      rejection shouldBe server.AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8")))
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(
+      wrongCredentials
+    ) ~> securedRoutes ~> check {
+      rejection shouldBe server.AuthenticationFailedRejection(
+        CredentialsRejected,
+        HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8"))
+      )
     }
   }
 
   test("reject post with bad user on secured route") {
-    val msg = """{"city":"London"}"""
+    val msg              = """{"city":"London"}"""
     val wrongCredentials = BasicHttpCredentials("BAD_USER", "password")
-    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(wrongCredentials) ~> securedRoutes ~> check {
-      rejection shouldBe server.AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8")))
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(
+      wrongCredentials
+    ) ~> securedRoutes ~> check {
+      rejection shouldBe server.AuthenticationFailedRejection(
+        CredentialsRejected,
+        HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8"))
+      )
     }
   }
 
 }
-

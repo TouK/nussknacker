@@ -63,7 +63,9 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
 
   it should "convert standalone type" in {
     // we need to apply both migrations because both has influence on shape of expected metadata
-    val migrateMetadata = V1_032__StandaloneToRequestResponseDefinition.migrateMetadata _ andThen { o => o.flatMap(V1_033__RequestResponseUrlToSlug.migrateMetadata) }
+    val migrateMetadata = V1_032__StandaloneToRequestResponseDefinition.migrateMetadata _ andThen { o =>
+      o.flatMap(V1_033__RequestResponseUrlToSlug.migrateMetadata)
+    }
     migrateMetadata(legacyStandaloneScenario).get shouldBe newRequestResponseScenario
     migrateMetadata(requestResponseScenario).get shouldBe newRequestResponseScenario
     migrateMetadata(streamScenario).get shouldBe streamScenario

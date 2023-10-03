@@ -13,23 +13,36 @@ import pl.touk.nussknacker.ui.config.AnalyticsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 
-class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class SettingsResourcesSpec
+    extends AnyFunSpec
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
-  private val authenticationConfig: BasicAuthenticationConfiguration = BasicAuthenticationConfiguration.create(testConfig)
+  private val authenticationConfig: BasicAuthenticationConfiguration =
+    BasicAuthenticationConfiguration.create(testConfig)
   private val analyticsConfig: Option[AnalyticsConfig] = AnalyticsConfig(testConfig)
 
-  private val settingsRoute = new SettingsResources(featureTogglesConfig, authenticationConfig.name, analyticsConfig, UsageStatisticsReportsSettings(enabled = false, "http://just.test"))
+  private val settingsRoute = new SettingsResources(
+    featureTogglesConfig,
+    authenticationConfig.name,
+    analyticsConfig,
+    UsageStatisticsReportsSettings(enabled = false, "http://just.test")
+  )
 
-  //Values are exists at test/resources/application.conf
-  private val intervalTimeProcesses = 20000
+  // Values are exists at test/resources/application.conf
+  private val intervalTimeProcesses   = 20000
   private val intervalTimeHealthCheck = 30000
 
   it("should return base intervalSettings") {
     getSettings ~> check {
       status shouldBe StatusCodes.OK
       val responseSettings = responseAs[UISettings]
-      val data = responseSettings.features
+      val data             = responseSettings.features
 
       data.intervalTimeSettings.processes shouldBe intervalTimeProcesses
       data.intervalTimeSettings.healthCheck shouldBe intervalTimeHealthCheck

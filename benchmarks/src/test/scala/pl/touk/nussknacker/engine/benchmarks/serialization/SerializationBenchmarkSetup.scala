@@ -1,4 +1,3 @@
-
 package pl.touk.nussknacker.engine.benchmarks.serialization
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -8,8 +7,11 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
 
-class SerializationBenchmarkSetup[T](typeInfo: TypeInformation[T], val record: T, prepareConfig: ExecutionConfig => Unit = _ => {})
-  extends LazyLogging{
+class SerializationBenchmarkSetup[T](
+    typeInfo: TypeInformation[T],
+    val record: T,
+    prepareConfig: ExecutionConfig => Unit = _ => {}
+) extends LazyLogging {
 
   private val config = {
     val c = new ExecutionConfig
@@ -17,7 +19,7 @@ class SerializationBenchmarkSetup[T](typeInfo: TypeInformation[T], val record: T
     c
   }
 
-  private val data = new ByteArrayOutputStream(10* 1024)
+  private val data = new ByteArrayOutputStream(10 * 1024)
 
   private val serializer = typeInfo.createSerializer(config)
 
@@ -30,7 +32,7 @@ class SerializationBenchmarkSetup[T](typeInfo: TypeInformation[T], val record: T
     data.reset()
     serializer.serialize(record, new DataOutputViewStreamWrapper(data))
     val input = data.toByteArray
-    val out = serializer.deserialize(new DataInputViewStreamWrapper(new ByteArrayInputStream(input)))
+    val out   = serializer.deserialize(new DataInputViewStreamWrapper(new ByteArrayInputStream(input)))
     (out, input.length)
   }
 

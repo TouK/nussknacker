@@ -20,7 +20,7 @@ class MetaDataTest extends AnyFunSuite with Matchers {
     forAll(fullMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         val mergedProperties = nonTypeSpecificProperties ++ properties
-        val metaData = MetaData(testId, ProcessAdditionalFields(None, mergedProperties, metaDataName))
+        val metaData         = MetaData(testId, ProcessAdditionalFields(None, mergedProperties, metaDataName))
         metaData.typeSpecificData shouldBe typeSpecificData
         metaData.additionalFields.properties shouldBe mergedProperties
     }
@@ -36,10 +36,9 @@ class MetaDataTest extends AnyFunSuite with Matchers {
   }
 
   test("create empty MetaData from no properties") {
-    forAll(invalidTypeAndEmptyMetaDataCases) {
-      (_, metaDataName: String, emptyTypeSpecificData: TypeSpecificData) =>
-        val metaData = MetaData(testId, ProcessAdditionalFields(None,  Map.empty, metaDataName))
-        metaData.typeSpecificData shouldBe emptyTypeSpecificData
+    forAll(invalidTypeAndEmptyMetaDataCases) { (_, metaDataName: String, emptyTypeSpecificData: TypeSpecificData) =>
+      val metaData = MetaData(testId, ProcessAdditionalFields(None, Map.empty, metaDataName))
+      metaData.typeSpecificData shouldBe emptyTypeSpecificData
     }
   }
 
@@ -50,13 +49,11 @@ class MetaDataTest extends AnyFunSuite with Matchers {
   }
 
   test("should create map from TypeSpecificData") {
-    forAll(fullMetaDataCases) {
-      (properties: Map[String, String], _, typeSpecificData: TypeSpecificData) =>
-        typeSpecificData.toMap shouldBe properties
+    forAll(fullMetaDataCases) { (properties: Map[String, String], _, typeSpecificData: TypeSpecificData) =>
+      typeSpecificData.toMap shouldBe properties
     }
-    forAll(emptyMetaDataCases) {
-      (properties: Map[String, String], _, emptyTypeSpecificData: TypeSpecificData) =>
-        emptyTypeSpecificData.toMap shouldBe properties
+    forAll(emptyMetaDataCases) { (properties: Map[String, String], _, emptyTypeSpecificData: TypeSpecificData) =>
+      emptyTypeSpecificData.toMap shouldBe properties
     }
   }
 

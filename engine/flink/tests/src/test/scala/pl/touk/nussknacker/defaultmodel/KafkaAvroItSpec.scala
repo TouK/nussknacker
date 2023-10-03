@@ -19,35 +19,42 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
   import spel.Implicits._
 
   private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(
-    Map("first" -> "Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
+    Map("first" -> "Jan", "middle" -> null, "last" -> "Kowalski"),
+    RecordSchemaV2
   )
 
   private val givenMatchingAvroObjV2 = avroEncoder.encodeRecordOrError(
-    Map("first" -> "Jan", "middle" -> "Tomek", "last" -> "Kowalski"), RecordSchemaV2
+    Map("first" -> "Jan", "middle" -> "Tomek", "last" -> "Kowalski"),
+    RecordSchemaV2
   )
 
   private val givenSecondMatchingAvroObj = avroEncoder.encodeRecordOrError(
-    Map("firstname" -> "Jan"), SecondRecordSchemaV1
+    Map("firstname" -> "Jan"),
+    SecondRecordSchemaV1
   )
 
-  private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+  private def avroProcess(
+      topicConfig: TopicConfig,
+      versionOption: SchemaVersionOption,
+      validationMode: ValidationMode = ValidationMode.strict
+  ) =
     ScenarioBuilder
       .streaming("avro-test")
       .parallelism(1)
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
         KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
-        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
@@ -59,18 +66,18 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
         KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
-        KafkaUniversalComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> s"{first: #input.first, last: #input.last}",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> "'1'"
+        KafkaUniversalComponentTransformer.SchemaVersionParamName          -> "'1'"
       )
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
@@ -127,7 +134,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
   }
 
   test("should throw exception when record doesn't match to schema") {
-    val topicConfig = createAndRegisterAvroTopicConfig("error-record-matching", RecordSchemas)
+    val topicConfig       = createAndRegisterAvroTopicConfig("error-record-matching", RecordSchemas)
     val secondTopicConfig = createAndRegisterAvroTopicConfig("error-second-matching", SecondRecordSchemaV1)
 
     sendAvro(givenSecondMatchingAvroObj, secondTopicConfig.input)
@@ -141,6 +148,9 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
   }
 
   private def consumeOneAvroMessage(topic: String) =
-    valueDeserializer.deserialize(topic, kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(1).head.value())
+    valueDeserializer.deserialize(
+      topic,
+      kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(1).head.value()
+    )
 
 }

@@ -11,14 +11,14 @@ import java.sql.{Connection, DriverManager}
 trait WithIgniteDB extends BeforeAndAfterAll {
   self: Suite =>
 
-  var ignitePort: Int = AvailablePortFinder.findAvailablePorts(1).head
-  var ignite: Ignite = _
+  var ignitePort: Int  = AvailablePortFinder.findAvailablePorts(1).head
+  var ignite: Ignite   = _
   var conn: Connection = _
 
   private val driverClassName = "org.apache.ignite.IgniteJdbcThinDriver"
-  private val url = s"jdbc:ignite:thin://127.0.0.1:${ignitePort}"
-  private val username = "ignite"
-  private val password = "ignite"
+  private val url             = s"jdbc:ignite:thin://127.0.0.1:${ignitePort}"
+  private val username        = "ignite"
+  private val password        = "ignite"
 
   val igniteDbConf: DBPoolConfig = DBPoolConfig(
     driverClassName = driverClassName,
@@ -29,28 +29,32 @@ trait WithIgniteDB extends BeforeAndAfterAll {
 
   val igniteConfigValues: Map[String, String] = Map(
     "driverClassName" -> driverClassName,
-    "username" -> username,
-    "password" -> password,
-    "url" -> url
+    "username"        -> username,
+    "password"        -> password,
+    "url"             -> url
   )
 
   def prepareIgniteDDLs: List[String]
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    //DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
-    //We must ensue that they are load manually
+    // DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
+    // We must ensue that they are load manually
     DriverManager.registerDriver(new IgniteJdbcThinDriver())
-    ignite = Ignition.getOrStart(new IgniteConfiguration()
-      .setWorkDirectory("/tmp/")
-      .setClientConnectorConfiguration(
-        new ClientConnectorConfiguration()
-          .setPort(ignitePort)))
+    ignite = Ignition.getOrStart(
+      new IgniteConfiguration()
+        .setWorkDirectory("/tmp/")
+        .setClientConnectorConfiguration(
+          new ClientConnectorConfiguration()
+            .setPort(ignitePort)
+        )
+    )
 
     conn = DriverManager.getConnection(url, username, password)
     prepareIgniteDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
-      try ddlStatement.execute() finally ddlStatement.close()
+      try ddlStatement.execute()
+      finally ddlStatement.close()
     }
   }
 

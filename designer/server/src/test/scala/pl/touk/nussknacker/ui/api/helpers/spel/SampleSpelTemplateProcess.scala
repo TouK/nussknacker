@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicP
 
 object SampleSpelTemplateProcess {
 
-
   val processName: ProcessName = ProcessName(this.getClass.getName)
 
   val process: CanonicalProcess = {
@@ -21,11 +20,16 @@ object SampleSpelTemplateProcess {
   }
 
   private def endWithMessage: SubsequentNode = {
-    val idSuffix = "suffix"
+    val idSuffix   = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 
     GraphBuilder
       .buildVariable("message" + idSuffix, "output", "message" -> spelTemplate(endMessage))
-      .emptySink("end" + idSuffix, "kafka-string", TopicParamName -> spelTemplate("end.topic"), SinkValueParamName -> spelTemplate("#output"))
+      .emptySink(
+        "end" + idSuffix,
+        "kafka-string",
+        TopicParamName     -> spelTemplate("end.topic"),
+        SinkValueParamName -> spelTemplate("#output")
+      )
   }
 }

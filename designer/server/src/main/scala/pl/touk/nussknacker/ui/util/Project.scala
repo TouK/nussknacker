@@ -7,7 +7,7 @@ object Project {
 
   def root: File = {
     val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
-    val rootDir = targetItClassesDir.getParent.getParent.getParent.getParent.getParent
+    val rootDir            = targetItClassesDir.getParent.getParent.getParent.getParent.getParent
     File(rootDir)
   }
 }

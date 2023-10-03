@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.utils
 
-import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -16,22 +16,26 @@ import scala.concurrent.ExecutionContext
 
 trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  implicit val contextId: ContextId = ContextId("")
-  implicit val metaData: MetaData = MetaData("", StreamMetaData())
+  implicit val ec: ExecutionContext                  = ExecutionContext.Implicits.global
+  implicit val contextId: ContextId                  = ContextId("")
+  implicit val metaData: MetaData                    = MetaData("", StreamMetaData())
   implicit val collector: ServiceInvocationCollector = EmptyInvocationCollector.Instance
-  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
+  implicit val componentUseCase: ComponentUseCase    = ComponentUseCase.TestRuntime
 
   val jobData: JobData = JobData(MetaData("", StreamMetaData()), ProcessVersion.empty)
 
   val service: Service
 
-  protected def returnType(service: DatabaseQueryEnricher, state: DatabaseQueryEnricher.TransformationState): typing.TypingResult = {
+  protected def returnType(
+      service: DatabaseQueryEnricher,
+      state: DatabaseQueryEnricher.TransformationState
+  ): typing.TypingResult = {
     val varName = "varName1"
-    service.contextTransformation(ValidationContext.empty,
-      List(OutputVariableNameValue(varName)))(NodeId("test"))(service.TransformationStep(List(("notUsed", FailedToDefineParameter)), Some(state))) match {
+    service.contextTransformation(ValidationContext.empty, List(OutputVariableNameValue(varName)))(NodeId("test"))(
+      service.TransformationStep(List(("notUsed", FailedToDefineParameter)), Some(state))
+    ) match {
       case service.FinalResults(finalContext, _, _) => finalContext.apply(varName)
-      case a => throw new AssertionError(s"Should not happen: $a")
+      case a                                        => throw new AssertionError(s"Should not happen: $a")
     }
   }
 }

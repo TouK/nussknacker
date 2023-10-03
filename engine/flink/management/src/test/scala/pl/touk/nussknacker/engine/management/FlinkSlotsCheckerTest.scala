@@ -28,32 +28,54 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   test("check available slots count") {
     val slotsChecker = createSlotsChecker()
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), List.empty).futureValue
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), List.empty)
+      .futureValue
 
     val requestedSlotsCount = availableSlotsCount + 1
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(requestedSlotsCount)), List.empty).failed.futureValue shouldEqual
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(requestedSlotsCount)), List.empty)
+      .failed
+      .futureValue shouldEqual
       NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(0, requestedSlotsCount))
   }
 
   test("take an account of slots that will be released be job that will be cancelled during redeploy") {
     val slotsChecker = createSlotsChecker()
     // +1 because someCurrentJobId uses one slot now
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount + 1)), List(ExternalDeploymentId("someCurrentJobId"))).futureValue
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(
+        prepareCanonicalProcess(Some(availableSlotsCount + 1)),
+        List(ExternalDeploymentId("someCurrentJobId"))
+      )
+      .futureValue
 
     val requestedSlotsCount = availableSlotsCount + 2
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(requestedSlotsCount)),  List(ExternalDeploymentId("someCurrentJobId"))).failed.futureValue shouldEqual
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(
+        prepareCanonicalProcess(Some(requestedSlotsCount)),
+        List(ExternalDeploymentId("someCurrentJobId"))
+      )
+      .failed
+      .futureValue shouldEqual
       NotEnoughSlotsException(availableSlotsCount, availableSlotsCount, SlotsBalance(1, requestedSlotsCount))
   }
 
   test("check available slots count when parallelism is not defined") {
-    val slotsChecker = createSlotsChecker(clusterOverviewResult = Success(ClusterOverview(`slots-total` = 0, `slots-available` = 0)))
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(None), List.empty).failed.futureValue shouldEqual
+    val slotsChecker =
+      createSlotsChecker(clusterOverviewResult = Success(ClusterOverview(`slots-total` = 0, `slots-available` = 0)))
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(None), List.empty)
+      .failed
+      .futureValue shouldEqual
       NotEnoughSlotsException(0, 0, SlotsBalance(0, CoreOptions.DEFAULT_PARALLELISM.defaultValue()))
   }
 
   test("omit slots checking if flink api returned error during cluster overview") {
     val slotsChecker = createSlotsChecker(clusterOverviewResult = Failure(new ConnectException("Some connect error")))
-    slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), List.empty).futureValue
+    slotsChecker
+      .checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(Some(availableSlotsCount)), List.empty)
+      .futureValue
   }
 
   test("omit slots checking if flink api returned error during jobmanager config") {
@@ -61,31 +83,40 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
     slotsChecker.checkRequiredSlotsExceedAvailableSlots(prepareCanonicalProcess(None), List.empty).futureValue
   }
 
-  private def createSlotsChecker(statuses: List[JobOverview] = List(),
-                                 statusCode: StatusCode = StatusCode.Ok,
-                                 clusterOverviewResult: Try[ClusterOverview] = Success(ClusterOverview(`slots-total` = 1000, `slots-available` = availableSlotsCount)),
-                                 jobManagerConfigResult: Try[Configuration] = Success(Configuration.fromMap(Collections.emptyMap())) // be default used config with all default values
-                                ): FlinkSlotsChecker = {
+  private def createSlotsChecker(
+      statuses: List[JobOverview] = List(),
+      statusCode: StatusCode = StatusCode.Ok,
+      clusterOverviewResult: Try[ClusterOverview] = Success(
+        ClusterOverview(`slots-total` = 1000, `slots-available` = availableSlotsCount)
+      ),
+      jobManagerConfigResult: Try[Configuration] = Success(
+        Configuration.fromMap(Collections.emptyMap())
+      ) // be default used config with all default values
+  ): FlinkSlotsChecker = {
     import scala.jdk.CollectionConverters._
-    val slotsChecker = createSlotsCheckerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
-      val toReturn = (req.uri.path, req.method) match {
-        case (List("jobs", "overview"), Method.GET) =>
-          JobsResponse(statuses)
-        case (List("jobs", jobId, "config"), Method.GET) =>
-          JobConfig(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
-        case (List("overview"), Method.GET) =>
-          clusterOverviewResult.recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
-          }.get
-        case (List("jobmanager", "config"), Method.GET) =>
-          jobManagerConfigResult.map(_.toMap.asScala.toList.map {
-            case (key, value) => KeyValueEntry(key, value)
-          }).recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
-          }.get
-        case _ => throw new IllegalStateException()
-      }
-      Response(Right(toReturn), statusCode)
+    val slotsChecker = createSlotsCheckerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
+      case req =>
+        val toReturn = (req.uri.path, req.method) match {
+          case (List("jobs", "overview"), Method.GET) =>
+            JobsResponse(statuses)
+          case (List("jobs", jobId, "config"), Method.GET) =>
+            JobConfig(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
+          case (List("overview"), Method.GET) =>
+            clusterOverviewResult.recoverWith { case ex: Exception =>
+              Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
+            }.get
+          case (List("jobmanager", "config"), Method.GET) =>
+            jobManagerConfigResult
+              .map(_.toMap.asScala.toList.map { case (key, value) =>
+                KeyValueEntry(key, value)
+              })
+              .recoverWith { case ex: Exception =>
+                Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
+              }
+              .get
+          case _ => throw new IllegalStateException()
+        }
+        Response(Right(toReturn), statusCode)
     })
     slotsChecker
   }
@@ -97,7 +128,9 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private def prepareCanonicalProcess(parallelism: Option[Int]) = {
     val baseProcessBuilder = ScenarioBuilder.streaming("processTestingTMSlots")
-    parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
+    parallelism
+      .map(baseProcessBuilder.parallelism)
+      .getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")
   }

@@ -6,13 +6,17 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 
 class ParameterSpec extends AnyFunSuite with Matchers {
   private def checkConversions(args: List[TypingResult], varArg: Option[TypingResult]) = {
-    val noVarArgParameters = args.zipWithIndex.map{ case (typ, i) => Parameter(i.toString, typ) }
-    val varArgParameterFull = varArg.map(x => Parameter("v", Typed.genericTypeClass[Array[Object]](x :: Nil)))
+    val noVarArgParameters   = args.zipWithIndex.map { case (typ, i) => Parameter(i.toString, typ) }
+    val varArgParameterFull  = varArg.map(x => Parameter("v", Typed.genericTypeClass[Array[Object]](x :: Nil)))
     val varArgParameterSmall = varArg.map(Parameter("v", _))
 
     val parameterList = noVarArgParameters ::: varArgParameterFull.toList
 
-    MethodTypeInfo.fromList(parameterList, varArg.isDefined, Unknown) shouldBe MethodTypeInfo(noVarArgParameters, varArgParameterSmall, Unknown)
+    MethodTypeInfo.fromList(parameterList, varArg.isDefined, Unknown) shouldBe MethodTypeInfo(
+      noVarArgParameters,
+      varArgParameterSmall,
+      Unknown
+    )
     MethodTypeInfo(noVarArgParameters, varArgParameterSmall, Unknown).parametersToList shouldBe parameterList
   }
 

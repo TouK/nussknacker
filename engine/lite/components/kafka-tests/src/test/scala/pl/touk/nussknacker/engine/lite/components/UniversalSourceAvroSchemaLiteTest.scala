@@ -20,10 +20,9 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val inputTopic = "input"
+  private val inputTopic  = "input"
   private val outputTopic = "output"
-  private val schema = AvroUtils.parseSchema(
-    s"""{
+  private val schema = AvroUtils.parseSchema(s"""{
        |  "type": "record",
        |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
        |  "name": "FullName",
@@ -35,20 +34,36 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
        |}
     """.stripMargin)
 
-  private val scenario = ScenarioBuilder.streamingLite("check json serialization")
-    .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
-      "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
+  private val scenario = ScenarioBuilder
+    .streamingLite("check json serialization")
+    .source(
+      "my-source",
+      KafkaUniversalName,
+      TopicParamName         -> s"'$inputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+    )
+    .emptySink(
+      "my-sink",
+      KafkaUniversalName,
+      TopicParamName         -> s"'$outputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+      SinkKeyParamName       -> "",
+      SinkRawEditorParamName -> "false",
+      "first"                -> s"#input.first",
+      "last"                 -> "#input.last",
+      "age"                  -> "#input.age"
+    )
 
   test("should read data with json payload on avro schema based topic") {
-    //Given
-    val config = ConfigFactory.load()
+    // Given
+    val config = ConfigFactory
+      .load()
       .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     val runner = TestScenarioRunner.kafkaLiteBased(config).build()
     runner.registerAvroSchema(inputTopic, schema)
     runner.registerAvroSchema(outputTopic, schema)
 
-    //When
+    // When
     val jsonRecord =
       """{
         |  "first": "John",
@@ -59,12 +74,12 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], jsonRecord)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runner.runWithRawData(scenario, list).validValue
-    val resultWithValue = result.copy(success = result.successes.map(_.value()))
+    val result                                               = runner.runWithRawData(scenario, list).validValue
+    val resultWithValue                                      = result.copy(success = result.successes.map(_.value()))
 
-    //Then
+    // Then
     val resultJson = new String(resultWithValue.successes.head)
-    val expected = new String(jsonRecord)
+    val expected   = new String(jsonRecord)
     parse(expected) shouldBe parse(resultJson)
   }
 

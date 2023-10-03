@@ -6,9 +6,8 @@ import org.scalatest.matchers.should.Matchers
 
 class CronSchedulePropertyTest extends AnyFunSuite with Matchers {
 
-  private val clock_2020_07_28_12_20 = Clock.fixed(
-    ZonedDateTime.of(2020, 7, 28, 12, 20, 10, 0, ZoneId.systemDefault()).toInstant, ZoneId.systemDefault())
-
+  private val clock_2020_07_28_12_20 =
+    Clock.fixed(ZonedDateTime.of(2020, 7, 28, 12, 20, 10, 0, ZoneId.systemDefault()).toInstant, ZoneId.systemDefault())
 
   test("should return closest to now nextRunAt date") {
     CronScheduleProperty(
@@ -23,6 +22,7 @@ class CronSchedulePropertyTest extends AnyFunSuite with Matchers {
 
   test("should fail for invalid expression") {
     CronScheduleProperty("invalid")
-      .nextRunAt(Clock.systemDefaultZone()).isLeft shouldBe true
+      .nextRunAt(Clock.systemDefaultZone())
+      .isLeft shouldBe true
   }
 }

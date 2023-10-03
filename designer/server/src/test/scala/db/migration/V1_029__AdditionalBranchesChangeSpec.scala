@@ -24,7 +24,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_029__AdditionalBranchesChange.updateAdditionalBranches(oldJson)
 
     converted shouldBe expectedJson
@@ -41,7 +41,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_029__AdditionalBranchesChange.updateAdditionalBranches(oldJson)
 
     converted shouldBe expectedJson
@@ -59,7 +59,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_029__AdditionalBranchesChange.updateAdditionalBranches(oldJson)
 
     converted shouldBe Some(oldJson)

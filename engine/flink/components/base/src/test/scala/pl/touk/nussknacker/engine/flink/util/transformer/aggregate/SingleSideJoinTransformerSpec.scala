@@ -51,32 +51,39 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
   private val OutVariableName = "outVar"
 
   test("join aggregate into main stream") {
-    val process =  ScenarioBuilder.streaming("sample-join-last").sources(
-      GraphBuilder.source("source", "start-main")
-        .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
-        .branchEnd(MainBranchId, JoinNodeId),
-      GraphBuilder.source("joined-source", "start-joined")
-        .branchEnd(JoinedBranchId, JoinNodeId),
-      GraphBuilder
-        .join(JoinNodeId, customElementName, Some(OutVariableName),
-          List(
-            MainBranchId -> List(
-              "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
-              "key" -> s"#$KeyVariableName"
+    val process = ScenarioBuilder
+      .streaming("sample-join-last")
+      .sources(
+        GraphBuilder
+          .source("source", "start-main")
+          .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
+          .branchEnd(MainBranchId, JoinNodeId),
+        GraphBuilder
+          .source("joined-source", "start-joined")
+          .branchEnd(JoinedBranchId, JoinNodeId),
+        GraphBuilder
+          .join(
+            JoinNodeId,
+            customElementName,
+            Some(OutVariableName),
+            List(
+              MainBranchId -> List(
+                "branchType" -> s"T(${classOf[BranchType].getName}).MAIN",
+                "key"        -> s"#$KeyVariableName"
+              ),
+              JoinedBranchId -> List(
+                "branchType" -> s"T(${classOf[BranchType].getName}).JOINED",
+                "key"        -> "#input.key"
+              )
             ),
-            JoinedBranchId -> List(
-              "branchType" -> s"T(${classOf[BranchType].getName}).JOINED",
-              "key" -> "#input.key"
-            )
-          ),
-          "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
-          "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
-          "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
-        )
-        .emptySink(EndNodeId, "end")
-    )
+            "aggregator" -> s"#AGG.map({last: #AGG.last, list: #AGG.list, approxCardinality: #AGG.approxCardinality, sum: #AGG.sum})",
+            "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
+            "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
+          )
+          .emptySink(EndNodeId, "end")
+      )
 
-    val key = "fooKey"
+    val key    = "fooKey"
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val input2 = List(
       OneRecord(key, 1, 123)
@@ -95,26 +102,38 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
     stoppableEnv.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
 
-    val outValues = collectingListener.results[Any].nodeResults(EndNodeId)
+    val outValues = collectingListener
+      .results[Any]
+      .nodeResults(EndNodeId)
       .filter(_.variableTyped(KeyVariableName).contains(key))
       .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
     outValues shouldEqual List(
-      Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum" -> 0),
-      Map("approxCardinality" -> 1, "last" -> 123, "list" -> singletonList(123), "sum" -> 123)
+      Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),
+      Map("approxCardinality" -> 1, "last" -> 123, "list"  -> singletonList(123), "sum" -> 123)
     )
   }
 
-  private def runProcess(testProcess: CanonicalProcess, input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) = {
-    val model = modelData(input1, input2, collectingListener)
+  private def runProcess(
+      testProcess: CanonicalProcess,
+      input1: BlockingQueueSource[OneRecord],
+      input2: List[OneRecord],
+      collectingListener: ResultsCollectingListener
+  ) = {
+    val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+    val registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)
   }
 
-  private def modelData(input1: BlockingQueueSource[OneRecord], input2: List[OneRecord], collectingListener: ResultsCollectingListener) =
+  private def modelData(
+      input1: BlockingQueueSource[OneRecord],
+      input2: List[OneRecord],
+      collectingListener: ResultsCollectingListener
+  ) =
     LocalModelData(ConfigFactory.empty(), new SingleSideJoinTransformerSpec.Creator(input1, input2, collectingListener))
 
 }
@@ -127,33 +146,60 @@ object SingleSideJoinTransformerSpec {
 
   val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
-  class Creator(mainRecordsSource: BlockingQueueSource[OneRecord], joinedRecords: List[OneRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
+  class Creator(
+      mainRecordsSource: BlockingQueueSource[OneRecord],
+      joinedRecords: List[OneRecord],
+      collectingListener: ResultsCollectingListener
+  ) extends EmptyProcessConfigCreator {
 
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(
-        customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
-          override protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult,
-                                                           storedTypeInfo: TypeInformation[AnyRef], convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-                                                          (implicit nodeId: NodeId):
-          CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
-            new CoProcessFunctionInterceptor(super.prepareAggregatorFunction(aggregator, stateTimeout, aggregateElementType, storedTypeInfo, convertToEngineRuntimeContext)) {
-              override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
-                elementsAddedToState.add(value.value)
-              }
+    override def customStreamTransformers(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[CustomStreamTransformer]] =
+      Map(customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
+        override protected def prepareAggregatorFunction(
+            aggregator: Aggregator,
+            stateTimeout: FiniteDuration,
+            aggregateElementType: TypingResult,
+            storedTypeInfo: TypeInformation[AnyRef],
+            convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+        )(implicit nodeId: NodeId): CoProcessFunction[ValueWithContext[String], ValueWithContext[
+          StringKeyedValue[AnyRef]
+        ], ValueWithContext[AnyRef]] = {
+          new CoProcessFunctionInterceptor(
+            super.prepareAggregatorFunction(
+              aggregator,
+              stateTimeout,
+              aggregateElementType,
+              storedTypeInfo,
+              convertToEngineRuntimeContext
+            )
+          ) {
+            override protected def afterProcessElement2(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
+              elementsAddedToState.add(value.value)
             }
           }
-        }))
+        }
+      }))
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
       Seq(collectingListener)
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+    override def sourceFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SourceFactory]] =
       Map(
         "start-main" -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories(SourceFactory.noParam[OneRecord](
-          EmitWatermarkAfterEachElementCollectionSource.create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1)))))
+        "start-joined" -> WithCategories(
+          SourceFactory.noParam[OneRecord](
+            EmitWatermarkAfterEachElementCollectionSource
+              .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
+          )
+        )
+      )
 
-    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
+    override def sinkFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
 
   }

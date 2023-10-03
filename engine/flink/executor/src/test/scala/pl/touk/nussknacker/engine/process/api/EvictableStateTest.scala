@@ -29,15 +29,16 @@ class EvictableStateTest extends AnyFlatSpec with Matchers with BeforeAndAfter w
     val env = StreamExecutionEnvironment.createLocalEnvironment(1, FlinkTestConfiguration.configuration())
     env.enableCheckpointing(500)
 
-    env.addSource(StaticSource)
+    env
+      .addSource(StaticSource)
       .keyBy((_: String) => "staticKey")
       .process(new TestOperator)
-      .addSink(new SinkFunction[String]{
+      .addSink(new SinkFunction[String] {
         override def invoke(value: String, context: SinkFunction.Context): Unit = ()
       })
 
     futureResult = Future {
-      //We need to set context loader to avoid forking in sbt
+      // We need to set context loader to avoid forking in sbt
       ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
         env.execute()
       }
@@ -76,15 +77,18 @@ class EvictableStateTest extends AnyFlatSpec with Matchers with BeforeAndAfter w
 
   }
 
-
 }
 
+class TestOperator extends EvictableStateFunction[String, String, List[String]] {
 
-class TestOperator extends EvictableStateFunction[String, String, List[String]]  {
+  override protected def stateDescriptor: ValueStateDescriptor[List[String]] =
+    new ValueStateDescriptor("st1", classOf[List[String]])
 
-  override protected def stateDescriptor: ValueStateDescriptor[List[String]] = new ValueStateDescriptor("st1", classOf[List[String]])
-
-  override def processElement(value: String, ctx: KeyedProcessFunction[String, String, String]#Context, out: Collector[String]): Unit = {
+  override def processElement(
+      value: String,
+      ctx: KeyedProcessFunction[String, String, String]#Context,
+      out: Collector[String]
+  ): Unit = {
     moveEvictionTime(5000, ctx)
 
     val newState = Option(state.value()).getOrElse(List()) :+ value
@@ -97,7 +101,7 @@ class TestOperator extends EvictableStateFunction[String, String, List[String]] 
 
 }
 
-object TestOperator{
+object TestOperator {
 
   @volatile var buffer = List[List[String]]()
 

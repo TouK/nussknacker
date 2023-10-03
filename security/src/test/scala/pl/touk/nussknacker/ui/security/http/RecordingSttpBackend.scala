@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.security.http
 
-
 import scala.language.higherKinds
 import sttp.capabilities.Effect
 import sttp.client3.{DelegateSttpBackend, Request, Response, SttpBackend}
