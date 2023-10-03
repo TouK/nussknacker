@@ -40,7 +40,7 @@ trait CommentEntityFactory extends BaseEntityFactory {
 
 }
 
-case class CommentEntityData(
+final case class CommentEntityData(
     id: Long,
     processId: ProcessId,
     processVersionId: VersionId,

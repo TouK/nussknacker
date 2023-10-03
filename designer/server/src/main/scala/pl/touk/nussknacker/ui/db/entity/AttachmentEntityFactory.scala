@@ -38,7 +38,7 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 
 }
 
-case class AttachmentEntityData(
+final case class AttachmentEntityData(
     id: Long,
     processId: ProcessId,
     processVersionId: VersionId,

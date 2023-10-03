@@ -15,7 +15,7 @@ import java.net.URI
 import java.security.PublicKey
 import scala.concurrent.{ExecutionContext, Future}
 
-case class OidcAuthenticationConfiguration(
+final case class OidcAuthenticationConfiguration(
     usersFile: URI,
     anonymousUserRole: Option[String] = None,
     issuer: URI,

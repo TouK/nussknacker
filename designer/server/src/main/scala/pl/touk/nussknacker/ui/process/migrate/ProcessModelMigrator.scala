@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
 
-case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
+final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
   def id: String = process.metaData.id
 

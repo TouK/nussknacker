@@ -54,7 +54,7 @@ object DeploymentComment {
 
 }
 
-case class CommentValidationError(message: String) extends Exception(message)
+final case class CommentValidationError(message: String) extends Exception(message)
 
 object CommentValidationError {
   def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {

@@ -63,11 +63,11 @@ object ProcessComparator {
     override def id: String = s"Node '$nodeId'"
   }
 
-  case class NodeDifferent(nodeId: String, currentNode: NodeData, otherNode: NodeData) extends NodeDifference
+  final case class NodeDifferent(nodeId: String, currentNode: NodeData, otherNode: NodeData) extends NodeDifference
 
-  case class NodeNotPresentInOther(nodeId: String, currentNode: NodeData) extends NodeDifference
+  final case class NodeNotPresentInOther(nodeId: String, currentNode: NodeData) extends NodeDifference
 
-  case class NodeNotPresentInCurrent(nodeId: String, otherNode: NodeData) extends NodeDifference
+  final case class NodeNotPresentInCurrent(nodeId: String, otherNode: NodeData) extends NodeDifference
 
   sealed trait EdgeDifference extends Difference {
     def fromId: String
@@ -76,13 +76,14 @@ object ProcessComparator {
     override def id: String = s"Edge from '$fromId' to '$toId'"
   }
 
-  case class EdgeDifferent(fromId: String, toId: String, currentEdge: Edge, otherEdge: Edge) extends EdgeDifference
+  final case class EdgeDifferent(fromId: String, toId: String, currentEdge: Edge, otherEdge: Edge)
+      extends EdgeDifference
 
-  case class EdgeNotPresentInOther(fromId: String, toId: String, currentEdge: Edge) extends EdgeDifference
+  final case class EdgeNotPresentInOther(fromId: String, toId: String, currentEdge: Edge) extends EdgeDifference
 
-  case class EdgeNotPresentInCurrent(fromId: String, toId: String, otherEdge: Edge) extends EdgeDifference
+  final case class EdgeNotPresentInCurrent(fromId: String, toId: String, otherEdge: Edge) extends EdgeDifference
 
-  case class PropertiesDifferent(currentProperties: ProcessProperties, otherProperties: ProcessProperties)
+  final case class PropertiesDifferent(currentProperties: ProcessProperties, otherProperties: ProcessProperties)
       extends Difference {
     override def id: String = "Properties"
   }

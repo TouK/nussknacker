@@ -13,4 +13,4 @@ object CustomActionResponse {
 }
 
 @JsonCodec
-case class CustomActionResponse(isSuccess: Boolean, msg: String)
+final case class CustomActionResponse(isSuccess: Boolean, msg: String)

@@ -37,9 +37,9 @@ package openapi {
     val name = "body"
   }
 
-  case class PlainPart(value: String) extends PathPart
+  final case class PlainPart(value: String) extends PathPart
 
-  case class PathParameterPart(parameterName: String) extends PathPart
+  final case class PathParameterPart(parameterName: String) extends PathPart
 
   @JsonCodec final case class SwaggerService(
       name: ServiceName,
@@ -54,7 +54,7 @@ package openapi {
       requestContentType: Option[String]
   )
 
-  case class ServiceName(value: String)
+  final case class ServiceName(value: String)
 
   object ServiceName {
     implicit val encoder: Encoder[ServiceName] = Encoder.encodeString.contramap(_.value)

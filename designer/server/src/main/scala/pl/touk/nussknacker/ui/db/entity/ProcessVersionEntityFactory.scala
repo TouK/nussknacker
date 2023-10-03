@@ -161,7 +161,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
 }
 
-case class ProcessVersionEntityData(
+final case class ProcessVersionEntityData(
     id: VersionId,
     processId: ProcessId,
     json: Option[CanonicalProcess],
@@ -172,7 +172,7 @@ case class ProcessVersionEntityData(
 )
 
 @JsonCodec
-private[entity] case class ComponentUsages(
+private[entity] final case class ComponentUsages(
     componentName: Option[String],
     componentType: ComponentType,
     nodeIds: List[NodeId]

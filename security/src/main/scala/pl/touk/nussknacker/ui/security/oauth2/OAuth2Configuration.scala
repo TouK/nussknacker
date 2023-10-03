@@ -18,7 +18,7 @@ import scala.concurrent.duration.{FiniteDuration, HOURS}
 import scala.io.Source
 import scala.util.Using
 
-case class OAuth2Configuration(
+final case class OAuth2Configuration(
     usersFile: URI,
     authorizeUri: URI,
     clientSecret: String,
@@ -70,7 +70,7 @@ object OAuth2Configuration {
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
 }
 
-case class TokenCookieConfig(name: String, path: Option[String], domain: Option[String])
+final case class TokenCookieConfig(name: String, path: Option[String], domain: Option[String])
 
 object ProfileFormat extends Enumeration {
   type ProfileFormat = Value
@@ -107,7 +107,7 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(
+  private final case class JwtConfig(
       accessTokenIsJwt: Boolean = false,
       userinfoFromIdToken: Boolean = false,
       audience: Option[String],

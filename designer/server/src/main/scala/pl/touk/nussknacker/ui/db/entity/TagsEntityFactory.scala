@@ -30,4 +30,4 @@ trait TagsEntityFactory extends BaseEntityFactory {
   val tagsTable: LTableQuery[TagsEntityFactory#TagsEntity] = LTableQuery(new TagsEntity(_))
 }
 
-case class TagsEntityData(name: String, processId: ProcessId)
+final case class TagsEntityData(name: String, processId: ProcessId)

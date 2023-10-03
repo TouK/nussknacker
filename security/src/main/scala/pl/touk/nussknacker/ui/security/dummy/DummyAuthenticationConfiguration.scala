@@ -13,4 +13,4 @@ object DummyAuthenticationConfiguration {
     config.as[DummyAuthenticationConfiguration](authenticationConfigPath)
 }
 
-case class DummyAuthenticationConfiguration(anonymousUserRole: String)
+final case class DummyAuthenticationConfiguration(anonymousUserRole: String)

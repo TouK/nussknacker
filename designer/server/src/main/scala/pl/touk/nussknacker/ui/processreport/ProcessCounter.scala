@@ -66,6 +66,6 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
 
 }
 
-case class RawCount(all: Long, errors: Long)
+final case class RawCount(all: Long, errors: Long)
 
-@JsonCodec case class NodeCount(all: Long, errors: Long, fragmentCounts: Map[String, NodeCount] = Map())
+@JsonCodec final case class NodeCount(all: Long, errors: Long, fragmentCounts: Map[String, NodeCount] = Map())

@@ -15,7 +15,7 @@ object HealthCheckProcessResponseStatus {
     deriveEnumerationDecoder[HealthCheckProcessResponseStatus]
 }
 
-@JsonCodec case class HealthCheckProcessResponse(
+@JsonCodec final case class HealthCheckProcessResponse(
     status: HealthCheckProcessResponseStatus,
     message: Option[String],
     processes: Option[Set[String]]

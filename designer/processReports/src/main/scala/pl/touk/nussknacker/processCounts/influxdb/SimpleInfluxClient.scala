@@ -11,10 +11,10 @@ import sttp.monad.MonadError
 import scala.language.{higherKinds, implicitConversions}
 
 class InfluxException(cause: Throwable) extends Exception(cause)
-case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
+final case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Influx query failed with message '$message'"
 }
-case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) extends InfluxException(cause) {
+final case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Connection to influx failed with message '$body'"
 }
 
@@ -47,14 +47,14 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
 
 }
 
-case class InfluxResponse(results: List[InfluxResult] = Nil)
+final case class InfluxResponse(results: List[InfluxResult] = Nil)
 
 object InfluxResponse {
   import io.circe.generic.extras.semiauto._
   implicit val decoder: Decoder[InfluxResponse] = deriveConfiguredDecoder
 }
 
-case class InfluxResult(series: List[InfluxSeries] = Nil)
+final case class InfluxResult(series: List[InfluxSeries] = Nil)
 
 object InfluxResult {
   import io.circe.generic.extras.semiauto._
@@ -72,7 +72,7 @@ object InfluxSeries {
 
 }
 
-case class InfluxSeries(
+final case class InfluxSeries(
     name: String,
     tags: Option[Map[String, String]],
     columns: List[String],

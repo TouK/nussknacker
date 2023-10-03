@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.requestresponse.OpenApiDefinitionConfig.defaul
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 
 // Warning: openApiVersion config is undocumented feature - it changes only version in generated definition - not the way how it is generated
-case class OpenApiDefinitionConfig(
+final case class OpenApiDefinitionConfig(
     servers: List[OApiServer] = List.empty,
     openApiVersion: String = defaultOpenApiVersion
 )
@@ -16,11 +16,11 @@ object OpenApiDefinitionConfig {
 
 }
 
-case class BasicAuthConfig(user: String, password: String)
+final case class BasicAuthConfig(user: String, password: String)
 
-case class RequestResponseSecurityConfig(basicAuth: Option[BasicAuthConfig] = None)
+final case class RequestResponseSecurityConfig(basicAuth: Option[BasicAuthConfig] = None)
 
-case class RequestResponseConfig(
+final case class RequestResponseConfig(
     definitionMetadata: OpenApiDefinitionConfig = OpenApiDefinitionConfig(),
     security: Option[RequestResponseSecurityConfig] = None
 )

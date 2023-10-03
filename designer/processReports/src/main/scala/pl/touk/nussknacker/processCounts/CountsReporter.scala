@@ -39,10 +39,10 @@ object CannotFetchCountsError {
   )
 }
 
-case class CannotFetchCountsError(msg: String) extends Exception(msg)
+final case class CannotFetchCountsError(msg: String) extends Exception(msg)
 
 sealed trait CountsRequest
 
-case class RangeCount(fromDate: Instant, toDate: Instant) extends CountsRequest
+final case class RangeCount(fromDate: Instant, toDate: Instant) extends CountsRequest
 
-case class ExecutionCount(pointInTime: Instant) extends CountsRequest
+final case class ExecutionCount(pointInTime: Instant) extends CountsRequest

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
-private[component] case class ComponentObjects(
+private[component] final case class ComponentObjects(
     templates: List[(ComponentGroupName, ComponentTemplate)],
     config: ComponentsUiConfig
 )
@@ -39,7 +39,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
     val uiProcessObjects = createUIProcessObjects(
       processingType,
       processingTypeData,
-      user = NussknackerInternalUser, // We need admin user to receive all components info
+      user = NussknackerInternalUser.instance, // We need admin user to receive all components info
       fragments = Set.empty,
     )
     ComponentObjects(uiProcessObjects)

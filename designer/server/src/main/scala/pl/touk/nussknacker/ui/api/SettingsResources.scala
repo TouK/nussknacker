@@ -54,21 +54,21 @@ class SettingsResources(
 
 }
 
-@JsonCodec case class MetricsSettings(
+@JsonCodec final case class MetricsSettings(
     url: String,
     defaultDashboard: String,
     scenarioTypeToDashboard: Option[Map[String, String]]
 )
 
-@JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
+@JsonCodec final case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 
-@JsonCodec case class EnvironmentAlert(content: String, color: String)
+@JsonCodec final case class EnvironmentAlert(content: String, color: String)
 
-@JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
+@JsonCodec final case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+@JsonCodec final case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
-@JsonCodec case class SurveySettings(key: String, text: String, link: URL)
+@JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
   def create(
@@ -87,11 +87,11 @@ object DeploymentCommentSettings {
   }
 }
 
-case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
+final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
 
-@JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
+@JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
+@JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
 
 object TopTabType extends Enumeration {
 
@@ -101,7 +101,7 @@ object TopTabType extends Enumeration {
   val Local, Remote, IFrame, Url = Value
 }
 
-@JsonCodec case class TopTab(
+@JsonCodec final case class TopTab(
     id: String,
     title: Option[String],
     `type`: TopTabType.Value,
@@ -110,7 +110,7 @@ object TopTabType extends Enumeration {
     addAccessTokenInQueryParam: Option[Boolean]
 )
 
-@JsonCodec case class ToggleFeaturesOptions(
+@JsonCodec final case class ToggleFeaturesOptions(
     counts: Boolean,
     metrics: Option[MetricsSettings],
     remoteEnvironment: Option[RemoteEnvironmentConfig],
@@ -125,16 +125,16 @@ object TopTabType extends Enumeration {
     usageStatisticsReports: UsageStatisticsReportsSettings,
 )
 
-@JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
+@JsonCodec final case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
-@JsonCodec case class AuthenticationSettings(provider: String)
+@JsonCodec final case class AuthenticationSettings(provider: String)
 
-@JsonCodec case class ProcessStateSettings(
+@JsonCodec final case class ProcessStateSettings(
     icons: Map[String, Map[String, String]],
     tooltips: Map[String, Map[String, String]]
 )
 
-@JsonCodec case class UISettings(
+@JsonCodec final case class UISettings(
     features: ToggleFeaturesOptions,
     authentication: AuthenticationSettings,
     analytics: Option[AnalyticsSettings]

@@ -57,7 +57,7 @@ object ParametersExtractor {
     )
   }
 
-  case class ParameterWithBodyFlag(parameter: Parameter, isBodyPart: Boolean)
+  final case class ParameterWithBodyFlag(parameter: Parameter, isBodyPart: Boolean)
 
 }
 

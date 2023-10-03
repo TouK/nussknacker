@@ -4,7 +4,7 @@ import pdi.jwt.JwtUtils
 import pdi.jwt.exceptions.JwtLengthException
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker
 
-case class RawJwtToken(token: String) {
+final case class RawJwtToken(token: String) {
 
   // claim can have some personal data like e-mail and signature can be used for session hijacking
   def masked: String =

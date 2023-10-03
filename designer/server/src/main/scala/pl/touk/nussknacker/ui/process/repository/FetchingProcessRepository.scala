@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 object FetchingProcessRepository {
-  case class FetchProcessesDetailsQuery(
+  final case class FetchProcessesDetailsQuery(
       isFragment: Option[Boolean] = None,
       isArchived: Option[Boolean] = None,
       isDeployed: Option[Boolean] = None,

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 
-@JsonCodec case class Notification(
+@JsonCodec final case class Notification(
     id: String,
     scenarioName: Option[ProcessName],
     message: String,

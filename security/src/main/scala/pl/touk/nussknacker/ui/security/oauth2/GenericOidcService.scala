@@ -47,7 +47,7 @@ class GenericOidcService[
   }
 }
 
-@ConfiguredJsonCodec case class DefaultOidcAuthorizationData(
+@ConfiguredJsonCodec final case class DefaultOidcAuthorizationData(
     @JsonKey("access_token") accessToken: String,
     @JsonKey("token_type") tokenType: String,
     @JsonKey("refresh_token") refreshToken: Option[String] = None,

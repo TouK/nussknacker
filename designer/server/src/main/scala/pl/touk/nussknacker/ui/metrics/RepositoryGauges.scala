@@ -30,7 +30,7 @@ class RepositoryGauges(
 
   private class GlobalGauge extends CachedGauge[Values](repositoryGaugesCacheDuration.toSeconds, TimeUnit.SECONDS) {
     override def loadValue(): Values = {
-      implicit val user: LoggedUser = NussknackerInternalUser
+      implicit val user: LoggedUser = NussknackerInternalUser.instance
       val result =
         processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map {
           scenarios =>
@@ -45,6 +45,6 @@ class RepositoryGauges(
     def derivative(transform: Values => Long): Gauge[Long] = () => transform(getValue)
   }
 
-  private case class Values(scenarios: Long, deployedScenarios: Long, fragments: Long)
+  private sealed case class Values(scenarios: Long, deployedScenarios: Long, fragments: Long)
 
 }

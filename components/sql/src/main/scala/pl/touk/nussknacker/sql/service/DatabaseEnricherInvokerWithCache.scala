@@ -15,8 +15,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object DatabaseEnricherInvokerWithCache {
 
-  case class CacheKey(query: String, queryArguments: QueryArguments)
-  case class CacheEntry[+A](value: A)
+  final case class CacheKey(query: String, queryArguments: QueryArguments)
+  final case class CacheEntry[+A](value: A)
 }
 
 class DatabaseEnricherInvokerWithCache(

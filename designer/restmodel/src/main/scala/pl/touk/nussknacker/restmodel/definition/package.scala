@@ -18,7 +18,7 @@ import java.net.URI
 
 package object definition {
 
-  @JsonCodec(encodeOnly = true) case class UIProcessObjects(
+  @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
       processDefinition: UIProcessDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
@@ -28,7 +28,7 @@ package object definition {
       defaultAsyncInterpretation: Boolean
   )
 
-  @JsonCodec(encodeOnly = true) case class UIProcessDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
       services: Map[String, UIObjectDefinition],
       sourceFactories: Map[String, UIObjectDefinition],
       sinkFactories: Map[String, UIObjectDefinition],
@@ -42,24 +42,28 @@ package object definition {
       customStreamTransformers ++ globalVariables ++ fragmentInputs.mapValuesNow(_.toUIObjectDefinition)
   }
 
-  @JsonCodec(encodeOnly = true) case class UIClazzDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIClazzDefinition(
       clazzName: TypingResult,
       methods: Map[String, UIMethodInfo],
       staticMethods: Map[String, UIMethodInfo]
   )
 
-  @JsonCodec(encodeOnly = true) case class UIMethodInfo(
+  @JsonCodec(encodeOnly = true) final case class UIMethodInfo(
       parameters: List[UIBasicParameter],
       refClazz: TypingResult,
       description: Option[String],
       varArgs: Boolean
   )
 
-  @JsonCodec(encodeOnly = true) case class UIBasicParameter(name: String, refClazz: TypingResult)
+  @JsonCodec(encodeOnly = true) final case class UIBasicParameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class UIValueParameter(name: String, typ: TypingResult, expression: Expression)
+  @JsonCodec(encodeOnly = true) final case class UIValueParameter(
+      name: String,
+      typ: TypingResult,
+      expression: Expression
+  )
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(
+  @JsonCodec(encodeOnly = true) final case class UIParameter(
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
@@ -74,7 +78,7 @@ package object definition {
 
   }
 
-  @JsonCodec(encodeOnly = true) case class UIObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
@@ -85,7 +89,7 @@ package object definition {
 
   }
 
-  @JsonCodec(encodeOnly = true) case class UIFragmentObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIFragmentObjectDefinition(
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
@@ -96,11 +100,11 @@ package object definition {
       UIObjectDefinition(parameters, returnType, categories, componentConfig)
   }
 
-  @JsonCodec(encodeOnly = true) case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
+  @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
-  @JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)
+  @JsonCodec final case class NodeTypeId(`type`: String, id: Option[String] = None)
 
-  @JsonCodec case class NodeEdges(
+  @JsonCodec final case class NodeEdges(
       nodeId: NodeTypeId,
       edges: List[EdgeType],
       canChooseNodes: Boolean,
@@ -119,7 +123,7 @@ package object definition {
       ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
   }
 
-  @JsonCodec(encodeOnly = true) case class ComponentTemplate(
+  @JsonCodec(encodeOnly = true) final case class ComponentTemplate(
       `type`: ComponentType,
       label: String,
       node: NodeData,
@@ -127,9 +131,12 @@ package object definition {
       branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
   )
 
-  @JsonCodec(encodeOnly = true) case class ComponentGroup(name: ComponentGroupName, components: List[ComponentTemplate])
+  @JsonCodec(encodeOnly = true) final case class ComponentGroup(
+      name: ComponentGroupName,
+      components: List[ComponentTemplate]
+  )
 
-  @JsonCodec case class UiAdditionalPropertyConfig(
+  @JsonCodec final case class UiAdditionalPropertyConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
       validators: List[ParameterValidator],
@@ -153,13 +160,13 @@ package object definition {
     )
   }
 
-  @JsonCodec case class UICustomAction(
+  @JsonCodec final case class UICustomAction(
       name: String,
       allowedStateStatusNames: List[String],
       icon: Option[URI],
       parameters: List[UICustomActionParameter]
   )
 
-  @JsonCodec case class UICustomActionParameter(name: String, editor: ParameterEditor)
+  @JsonCodec final case class UICustomActionParameter(name: String, editor: ParameterEditor)
 
 }

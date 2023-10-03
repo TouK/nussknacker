@@ -208,7 +208,7 @@ class EmbeddedDeploymentManager(
 
   override protected def executionContext: ExecutionContext = ec
 
-  private case class ScenarioDeploymentData(
+  private sealed case class ScenarioDeploymentData(
       deploymentId: DeploymentId,
       processVersion: ProcessVersion,
       scenarioDeployment: Try[Deployment]

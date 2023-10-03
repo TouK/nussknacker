@@ -26,9 +26,9 @@ package object component {
   }
 
   object NodeUsageData {
-    case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
+    final case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
 
-    case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
+    final case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
   }
 
   object ComponentLink {

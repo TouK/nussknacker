@@ -36,7 +36,7 @@ object OidcDiscovery extends LazyLogging {
 }
 
 @ConfiguredJsonCodec
-case class OidcDiscovery(
+final case class OidcDiscovery(
     issuer: URI,
     @JsonKey("authorization_endpoint") authorizationEndpoint: URI,
     @JsonKey("token_endpoint") tokenEndpoint: URI,

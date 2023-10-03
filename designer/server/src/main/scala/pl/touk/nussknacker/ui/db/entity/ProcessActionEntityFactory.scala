@@ -74,7 +74,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
   }
 }
 
-case class ProcessActionEntityData(
+final case class ProcessActionEntityData(
     id: ProcessActionId,
     processId: ProcessId,
     processVersionId: Option[VersionId],

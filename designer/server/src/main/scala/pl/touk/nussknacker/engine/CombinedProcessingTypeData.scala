@@ -5,7 +5,7 @@ import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentId
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
 
-case class CombinedProcessingTypeData(
+final case class CombinedProcessingTypeData(
     statusNameToStateDefinitionsMapping: StatusNameToStateDefinitionsMapping,
     componentIdProvider: ComponentIdProvider,
 )

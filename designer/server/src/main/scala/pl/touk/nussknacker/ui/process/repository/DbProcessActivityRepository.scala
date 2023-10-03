@@ -27,7 +27,7 @@ trait ProcessActivityRepository {
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
 }
 
-case class DbProcessActivityRepository(dbRef: DbRef)
+final case class DbProcessActivityRepository(dbRef: DbRef)
     extends ProcessActivityRepository
     with LazyLogging
     with BasicRepository
@@ -95,9 +95,9 @@ case class DbProcessActivityRepository(dbRef: DbRef)
 
 object DbProcessActivityRepository {
 
-  @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
+  @JsonCodec final case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 
-  @JsonCodec case class Attachment(
+  @JsonCodec final case class Attachment(
       id: Long,
       processId: String,
       processVersionId: VersionId,
@@ -119,7 +119,7 @@ object DbProcessActivityRepository {
     }
   }
 
-  @JsonCodec case class Comment(
+  @JsonCodec final case class Comment(
       id: Long,
       processId: String,
       processVersionId: VersionId,

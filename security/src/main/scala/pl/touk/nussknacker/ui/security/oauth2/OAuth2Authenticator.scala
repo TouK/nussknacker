@@ -58,28 +58,33 @@ object OAuth2ErrorHandler {
     def msg: String
   }
 
-  case class OAuth2CompoundException(errors: NonEmptyList[OAuth2Error]) extends Exception {
+  final case class OAuth2CompoundException(errors: NonEmptyList[OAuth2Error]) extends Exception {
     override def getMessage: String =
       errors.toList.mkString("OAuth2 exception with the following errors:\n - ", "\n - ", "")
   }
 
   trait OAuth2JwtError extends OAuth2Error
 
-  case class OAuth2JwtDecodeRawError(rawToken: RawJwtToken, cause: Throwable) extends OAuth2JwtError {
+  final case class OAuth2JwtDecodeRawError(rawToken: RawJwtToken, cause: Throwable) extends OAuth2JwtError {
     override def msg: String = s"Failure in jwt decode: ${cause.getLocalizedMessage}. Token: ${rawToken.masked}"
   }
 
-  case class OAuth2JwtKeyDetermineError(token: ParsedJwtToken, cause: Throwable) extends OAuth2JwtError {
+  final case class OAuth2JwtKeyDetermineError(token: ParsedJwtToken, cause: Throwable) extends OAuth2JwtError {
     override def msg: String = s"Failure in key determining: ${cause.getLocalizedMessage}. Token: ${token.masked}"
   }
 
-  case class OAuth2JwtDecodeClaimsError(token: ParsedJwtToken, key: Key, cause: Throwable) extends OAuth2JwtError {
+  final case class OAuth2JwtDecodeClaimsError(token: ParsedJwtToken, key: Key, cause: Throwable)
+      extends OAuth2JwtError {
     override def msg: String =
       s"Failure in decoding json using key: ${cause.getLocalizedMessage}. Token: ${token.masked}"
   }
 
-  case class OAuth2JwtDecodeClaimsJsonError(token: ParsedJwtToken, key: Key, tokenClaimsJson: Json, cause: Throwable)
-      extends OAuth2JwtError {
+  final case class OAuth2JwtDecodeClaimsJsonError(
+      token: ParsedJwtToken,
+      key: Key,
+      tokenClaimsJson: Json,
+      cause: Throwable
+  ) extends OAuth2JwtError {
     override def msg: String =
       s"Failure in decoding token claims: ${mask(cause)}. Token: ${token.masked}, token claims: ${tokenClaimsJson.masked.noSpaces}"
   }
@@ -88,9 +93,9 @@ object OAuth2ErrorHandler {
     cause.getLocalizedMessage.replaceAll("Got value '.*'", s"Got value '${SensitiveDataMasker.placeholder}'")
   }
 
-  case class OAuth2AuthenticationRejection(msg: String) extends OAuth2Error
+  final case class OAuth2AuthenticationRejection(msg: String) extends OAuth2Error
 
-  case class OAuth2AccessTokenRejection(msg: String) extends OAuth2Error
+  final case class OAuth2AccessTokenRejection(msg: String) extends OAuth2Error
 
-  case class OAuth2ServerError(msg: String) extends OAuth2Error
+  final case class OAuth2ServerError(msg: String) extends OAuth2Error
 }

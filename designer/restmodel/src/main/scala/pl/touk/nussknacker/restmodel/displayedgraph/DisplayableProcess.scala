@@ -12,10 +12,10 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-//it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
+//it would be better to have two classes but it would either to derivce from each other, which is not easy for final case classes
 //or we'd have to do composition which would break many things in client
 // TODO: id type should be ProcessName
-@JsonCodec case class DisplayableProcess(
+@JsonCodec final case class DisplayableProcess(
     id: String,
     properties: ProcessProperties,
     nodes: List[NodeData],
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 }
 
-@JsonCodec case class ValidatedDisplayableProcess(
+@JsonCodec final case class ValidatedDisplayableProcess(
     id: String,
     properties: ProcessProperties,
     nodes: List[NodeData],
@@ -55,7 +55,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 }
 
-case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
+final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,

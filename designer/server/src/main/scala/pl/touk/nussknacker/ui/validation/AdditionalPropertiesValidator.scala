@@ -98,7 +98,7 @@ class AdditionalPropertiesValidator(
   }
 }
 
-private case class MissingRequiredPropertyValidator(actualPropertyNames: List[String]) {
+private final case class MissingRequiredPropertyValidator(actualPropertyNames: List[String]) {
 
   def isValid(propertyName: String, label: Option[String] = None)(
       implicit nodeId: NodeId
@@ -108,7 +108,7 @@ private case class MissingRequiredPropertyValidator(actualPropertyNames: List[St
   }
 }
 
-private case class UnknownPropertyValidator(config: Map[String, AdditionalPropertyConfig]) {
+private final case class UnknownPropertyValidator(config: Map[String, AdditionalPropertyConfig]) {
 
   def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 

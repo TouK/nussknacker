@@ -40,7 +40,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
   }
 }
 
-case class ProcessEntityData(
+final case class ProcessEntityData(
     id: ProcessId,
     name: ProcessName,
     description: Option[String],

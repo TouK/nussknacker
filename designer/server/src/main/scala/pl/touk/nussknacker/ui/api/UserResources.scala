@@ -23,7 +23,7 @@ class UserResources(processCategoryService: ProcessCategoryService)(implicit ec:
     }
 }
 
-@JsonCodec case class DisplayableUser private (
+@JsonCodec final case class DisplayableUser private (
     id: String,
     username: String,
     isAdmin: Boolean,

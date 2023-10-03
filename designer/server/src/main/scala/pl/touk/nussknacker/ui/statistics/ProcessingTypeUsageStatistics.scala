@@ -5,7 +5,7 @@ import net.ceedubs.ficus.Ficus._
 
 // deploymentManagerType is optional which rather shouldn't happen in normal usage, but we don't want to throw
 // an exception if someone has some specific programmatically created setup
-case class ProcessingTypeUsageStatistics(deploymentManagerType: Option[String], processingMode: Option[String])
+final case class ProcessingTypeUsageStatistics(deploymentManagerType: Option[String], processingMode: Option[String])
 
 object ProcessingTypeUsageStatistics {
   // TODO: handle only enabled managers by category configuration

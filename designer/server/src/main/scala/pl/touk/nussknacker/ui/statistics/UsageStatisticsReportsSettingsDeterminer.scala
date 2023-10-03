@@ -127,4 +127,4 @@ class UsageStatisticsReportsSettingsDeterminer(
 
 }
 
-@JsonCodec case class UsageStatisticsReportsSettings(enabled: Boolean, url: String)
+@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean, url: String)

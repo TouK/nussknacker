@@ -54,9 +54,9 @@ trait RemoteEnvironment {
   ): Future[Either[EspError, List[TestMigrationResult]]]
 }
 
-case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
+final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
 
-case class MigrationValidationError(errors: ValidationErrors) extends EspError {
+final case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   override def getMessage: String = {
     val messages = errors.globalErrors.map(_.message) ++
       errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
@@ -66,12 +66,12 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
-case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
+final case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
   def getMessage =
     s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
 }
 
-case class HttpRemoteEnvironmentConfig(
+final case class HttpRemoteEnvironmentConfig(
     user: String,
     password: String,
     targetEnvironmentId: String,
@@ -108,7 +108,7 @@ class HttpRemoteEnvironment(
   }
 }
 
-case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
+final case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
 
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {

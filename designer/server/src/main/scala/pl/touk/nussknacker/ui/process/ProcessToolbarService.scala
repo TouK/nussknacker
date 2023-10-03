@@ -56,7 +56,7 @@ object ProcessToolbarSettings {
 }
 
 @JsonCodec
-case class ProcessToolbarSettings(
+final case class ProcessToolbarSettings(
     id: String,
     topLeft: List[ToolbarPanel],
     bottomLeft: List[ToolbarPanel],
@@ -92,7 +92,7 @@ object ToolbarPanel {
 }
 
 @JsonCodec
-case class ToolbarPanel(
+final case class ToolbarPanel(
     id: String,
     title: Option[String],
     buttonsVariant: Option[ToolbarButtonVariant],
@@ -114,7 +114,7 @@ object ToolbarButton {
 }
 
 @JsonCodec
-case class ToolbarButton(
+final case class ToolbarButton(
     `type`: ToolbarButtonType,
     name: Option[String],
     title: Option[String],

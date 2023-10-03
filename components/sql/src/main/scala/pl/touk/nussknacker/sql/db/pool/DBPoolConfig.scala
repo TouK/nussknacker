@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.db.pool
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-case class DBPoolConfig(
+final case class DBPoolConfig(
     driverClassName: String,
     url: String,
     username: String,

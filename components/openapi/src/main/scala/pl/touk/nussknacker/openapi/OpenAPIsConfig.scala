@@ -9,7 +9,7 @@ import sttp.model.StatusCode
 import java.net.URL
 import scala.util.matching.Regex
 
-case class OpenAPIServicesConfig(
+final case class OpenAPIServicesConfig(
     url: URL,
     // by default we allow only GET, as enrichers should be idempotent and not change data
     allowedMethods: List[String] = List(HttpMethod.GET.name()),
@@ -22,7 +22,7 @@ case class OpenAPIServicesConfig(
 
 sealed trait OpenAPISecurityConfig
 
-case class ApiKeyConfig(apiKeyValue: String) extends OpenAPISecurityConfig
+final case class ApiKeyConfig(apiKeyValue: String) extends OpenAPISecurityConfig
 
 object OpenAPIsConfig {
 

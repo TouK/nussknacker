@@ -8,9 +8,7 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
-import java.time.{Duration, Instant}
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -77,7 +75,7 @@ class JwtOAuth2Service[
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 }
 
-@ConfiguredJsonCodec(decodeOnly = true) case class DefaultJwtAccessToken(
+@ConfiguredJsonCodec(decodeOnly = true) final case class DefaultJwtAccessToken(
     @JsonKey("iss") issuer: Option[String],
     @JsonKey("sub") subject: Option[String],
     @JsonKey("aud") audience: Option[Either[List[String], String]],

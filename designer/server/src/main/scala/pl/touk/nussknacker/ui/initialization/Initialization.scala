@@ -23,7 +23,7 @@ import scala.concurrent.{Await, ExecutionContext}
 
 object Initialization {
 
-  implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
+  implicit val nussknackerUser: LoggedUser = NussknackerInternalUser.instance
   def init(
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
