@@ -12,10 +12,14 @@ object ConfigTypedGlobalVariable extends TypedGlobalVariable {
   import scala.jdk.CollectionConverters._
 
   private val configurations = Map(
-      "prod" -> List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 2, "b" -> "BB"))).asJava
-    ).withDefaultValue(
-      List(TypedMap(Map[String, Any]("a" -> 1)), TypedMap(Map[String, Any]("a" -> 2)), TypedMap(Map[String, Any]("a" -> 3))).asJava
-    )
+    "prod" -> List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 2, "b" -> "BB"))).asJava
+  ).withDefaultValue(
+    List(
+      TypedMap(Map[String, Any]("a" -> 1)),
+      TypedMap(Map[String, Any]("a" -> 2)),
+      TypedMap(Map[String, Any]("a" -> 3))
+    ).asJava
+  )
 
   override def value(metadata: MetaData): Any = {
     configurations(readProperty(metadata))

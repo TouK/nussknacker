@@ -11,7 +11,10 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
 
   def name: String = "Oidc"
 
-  override def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2AuthenticationResources = {
+  override def createAuthenticationResources(
+      config: Config,
+      classLoader: ClassLoader
+  )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2AuthenticationResources = {
     new OidcAuthenticationResources(
       name,
       realm,

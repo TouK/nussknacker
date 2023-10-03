@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, IncCon
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 
-case class FlinkEngineRuntimeContextImpl(jobData: JobData, runtimeContext: RuntimeContext) extends FlinkEngineRuntimeContext {
+case class FlinkEngineRuntimeContextImpl(jobData: JobData, runtimeContext: RuntimeContext)
+    extends FlinkEngineRuntimeContext {
   override val metricsProvider: MetricsProviderForScenario = new FlinkMetricsProviderForScenario(runtimeContext)
 
   override def contextIdGenerator(nodeId: String): ContextIdGenerator =

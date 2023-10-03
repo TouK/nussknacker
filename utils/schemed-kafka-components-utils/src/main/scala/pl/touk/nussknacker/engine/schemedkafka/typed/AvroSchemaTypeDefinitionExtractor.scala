@@ -31,9 +31,7 @@ object AvroSchemaTypeDefinitionExtractor {
   def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
     schema.getType match {
       case Schema.Type.RECORD => {
-        val fields = schema
-          .getFields
-          .asScala
+        val fields = schema.getFields.asScala
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toMap
 
@@ -44,7 +42,9 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.ARRAY =>
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
       case Schema.Type.MAP =>
-        Typed.genericTypeClass[java.util.Map[_, _]](List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType, possibleTypes)))
+        Typed.genericTypeClass[java.util.Map[_, _]](
+          List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType, possibleTypes))
+        )
       case Schema.Type.UNION =>
         val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch, possibleTypes)).toSet
         Typed(childTypeDefinitions)
@@ -52,11 +52,14 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
         Typed[UUID]
       // See org.apache.avro.DecimalConversion
-      case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+      case Schema.Type.BYTES | Schema.Type.FIXED
+          if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         Typed[java.math.BigDecimal]
       case Schema.Type.STRING =>
         val baseType = AvroStringSettings.stringTypingResult
-        Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty)).map(Typed.taggedDictValue(baseType, _)).getOrElse(baseType)
+        Option(schema.getProp(AvroSchemaTypeDefinitionExtractor.dictIdProperty))
+          .map(Typed.taggedDictValue(baseType, _))
+          .getOrElse(baseType)
       case Schema.Type.BYTES =>
         Typed[ByteBuffer]
       case Schema.Type.FIXED =>
@@ -68,7 +71,9 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.INT =>
         Typed[Int]
       // See org.apache.avro.data.TimeConversions
-      case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+      case Schema.Type.LONG
+          if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
+            .timestampMicros() =>
         Typed[Instant]
       case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timeMicros() =>
         Typed[LocalTime]

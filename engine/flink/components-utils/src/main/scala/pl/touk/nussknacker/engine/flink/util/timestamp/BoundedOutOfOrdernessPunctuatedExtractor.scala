@@ -6,14 +6,10 @@ import org.apache.flink.streaming.api.watermark.Watermark
 
 @silent("deprecated")
 abstract class BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrdernessMillis: Long)
-  extends AssignerWithPunctuatedWatermarks[T] {
+    extends AssignerWithPunctuatedWatermarks[T] {
 
   override def checkAndGetNextWatermark(lastElement: T, extractedTimestamp: Long): Watermark = {
     new Watermark(extractedTimestamp - maxOutOfOrdernessMillis)
   }
 
 }
-
-
-
-

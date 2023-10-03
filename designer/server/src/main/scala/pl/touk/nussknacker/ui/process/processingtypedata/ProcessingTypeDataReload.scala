@@ -28,9 +28,13 @@ trait Initialization {
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]) extends ProcessingTypeDataReload with LazyLogging {
+class BasicProcessingTypeDataReload(
+    loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+) extends ProcessingTypeDataReload
+    with LazyLogging {
 
-  @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = loadMethod()
+  @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] =
+    loadMethod()
 
   override def reloadAll(): Unit = synchronized {
     logger.info("Closing old models")
@@ -43,7 +47,10 @@ class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider
 
 object BasicProcessingTypeDataReload {
 
-  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]): (
+      ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData],
+      ProcessingTypeDataReload with Initialization
+  ) = {
     // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
     val provider = new ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] {
@@ -62,6 +69,3 @@ object BasicProcessingTypeDataReload {
   }
 
 }
-
-
-

@@ -18,14 +18,17 @@ object EmbeddedRequestResponseScenarioValidator extends CustomProcessValidator {
         validateRequestResponse(ProcessName(scenario.id), rrMetaData)
       case _: FragmentSpecificData =>
         Valid(())
-      //should not happen
+      // should not happen
       case other =>
         throw new IllegalArgumentException("This validator supports only Request-Response mode, got: " + other)
     }
   }
 
-  private def validateRequestResponse(scenarioName: ProcessName, rrMetaData: RequestResponseMetaData): ValidatedNel[ProcessCompilationError, Unit] = {
-    val slug = RequestResponseDeploymentStrategy.determineSlug(scenarioName, rrMetaData)
+  private def validateRequestResponse(
+      scenarioName: ProcessName,
+      rrMetaData: RequestResponseMetaData
+  ): ValidatedNel[ProcessCompilationError, Unit] = {
+    val slug             = RequestResponseDeploymentStrategy.determineSlug(scenarioName, rrMetaData)
     val withSanitization = UrlUtils.sanitizeUrlSlug(slug)
     Validated.cond(withSanitization == slug, (), NonEmptyList.of(IllegalRequestResponseSlug(slug)))
   }
@@ -34,6 +37,9 @@ object EmbeddedRequestResponseScenarioValidator extends CustomProcessValidator {
 
 object IllegalRequestResponseSlug {
   def apply(slug: String): ProcessCompilationError = {
-    SpecificDataValidationError(RequestResponseMetaData.slugName, s"Illegal slug: $slug. Slug should contain only unreserved url path characters: ${UrlUtils.unreservedUrlCharactersRegex}")
+    SpecificDataValidationError(
+      RequestResponseMetaData.slugName,
+      s"Illegal slug: $slug. Slug should contain only unreserved url path characters: ${UrlUtils.unreservedUrlCharactersRegex}"
+    )
   }
 }

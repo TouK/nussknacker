@@ -11,7 +11,9 @@ class GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled: Bo
   def wrapWithRecordWithSchemaIdIfNeeded(data: AnyRef, readerSchemaData: RuntimeSchemaData[AvroSchema]): AnyRef = {
     data match {
       case genericRecord: GenericData.Record if schemaIdSerializationEnabled =>
-        val readerSchemaId = readerSchemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
+        val readerSchemaId = readerSchemaData.schemaIdOpt.getOrElse(
+          throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data")
+        )
         new GenericRecordWithSchemaId(genericRecord, readerSchemaId, false)
       case _ => data
     }

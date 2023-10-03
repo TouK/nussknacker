@@ -6,7 +6,7 @@ import io.circe.generic.JsonCodec
 
 object Expression {
   object Language {
-    val Spel = "spel"
+    val Spel         = "spel"
     val SpelTemplate = "spelTemplate"
   }
 

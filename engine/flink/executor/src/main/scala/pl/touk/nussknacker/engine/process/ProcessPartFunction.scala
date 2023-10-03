@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 //Helper trait to deal with lifecycle of single process part (e.g. handling open/close)
 trait ProcessPartFunction extends ExceptionHandlerFunction {
 
-  protected def node: SplittedNode[_<:NodeData]
+  protected def node: SplittedNode[_ <: NodeData]
 
   private val nodesUsed = SplittedNodesCollector.collectNodes(node).map(_.data)
 
@@ -36,7 +36,9 @@ trait ExceptionHandlerFunction extends RichFunction {
 
   protected var exceptionHandler: FlinkExceptionHandler = _
 
-  protected lazy val compiledProcessWithDeps : FlinkProcessCompilerData = compiledProcessWithDepsProvider(getRuntimeContext.getUserCodeClassLoader)
+  protected lazy val compiledProcessWithDeps: FlinkProcessCompilerData = compiledProcessWithDepsProvider(
+    getRuntimeContext.getUserCodeClassLoader
+  )
 
   override def close(): Unit = {
     if (exceptionHandler != null) {

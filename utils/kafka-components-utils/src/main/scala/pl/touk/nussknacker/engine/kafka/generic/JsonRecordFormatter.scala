@@ -13,7 +13,13 @@ object JsonRecordFormatter extends RecordFormatter {
     TestRecord(toJson(record.value()))
 
   override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), testRecord.json.noSpaces.getBytes(StandardCharsets.UTF_8))
+    new ConsumerRecord[Array[Byte], Array[Byte]](
+      topic,
+      0,
+      0L,
+      Array[Byte](),
+      testRecord.json.noSpaces.getBytes(StandardCharsets.UTF_8)
+    )
   }
 
 }

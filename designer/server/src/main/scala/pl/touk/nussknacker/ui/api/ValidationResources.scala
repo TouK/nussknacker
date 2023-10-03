@@ -10,8 +10,14 @@ import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ValidationResources(val processRepository: FetchingProcessRepository[Future], processResolving: UIProcessResolving)(implicit val ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives {
+class ValidationResources(
+    val processRepository: FetchingProcessRepository[Future],
+    processResolving: UIProcessResolving
+)(implicit val ec: ExecutionContext)
+    extends Directives
+    with FailFastCirceSupport
+    with RouteWithUser
+    with ProcessDirectives {
 
   def securedRoute(implicit user: LoggedUser): Route =
     path("processValidation") {
@@ -25,9 +31,10 @@ class ValidationResources(val processRepository: FetchingProcessRepository[Futur
     }
 
   private def validate(displayable: DisplayableProcess) = {
-    EspErrorToHttp.toResponseEither(FatalValidationError.renderNotAllowedAsError(
-      processResolving.validateBeforeUiResolving(displayable)
-    ))
+    EspErrorToHttp.toResponseEither(
+      FatalValidationError.renderNotAllowedAsError(
+        processResolving.validateBeforeUiResolving(displayable)
+      )
+    )
   }
 }
-

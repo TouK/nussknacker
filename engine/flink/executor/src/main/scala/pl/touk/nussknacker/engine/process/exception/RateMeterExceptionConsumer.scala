@@ -8,7 +8,9 @@ import pl.touk.nussknacker.engine.util.metrics.WithMetrics
 
 //For Flink we count metrics in ExceptionHandler, not e.g. in NodeCountListener, so that it's easier to
 //handle errors consistently in CustomStreamTransformers
-class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer) extends FlinkEspExceptionConsumer with WithMetrics {
+class RateMeterExceptionConsumer(val underlying: FlinkEspExceptionConsumer)
+    extends FlinkEspExceptionConsumer
+    with WithMetrics {
 
   @transient private var exceptionRateMeter: ExceptionRateMeter = _
 

@@ -20,7 +20,10 @@ trait MetricsProviderForScenario {
 
   def defaultInstantTimerWindowInSeconds = 10
 
-  def espTimer(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): EspTimer
+  def espTimer(
+      identifier: MetricIdentifier,
+      instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds
+  ): EspTimer
 
   def instantRateMeterWithCount(identifier: MetricIdentifier): RateMeter
 
@@ -28,7 +31,10 @@ trait MetricsProviderForScenario {
 
   def counter(identifier: MetricIdentifier): Counter
 
-  def histogram(identifier: MetricIdentifier, instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds): Histogram
+  def histogram(
+      identifier: MetricIdentifier,
+      instantTimerWindowInSeconds: Long = defaultInstantTimerWindowInSeconds
+  ): Histogram
 
   def remove(metricIdentifier: MetricIdentifier): Unit
 

@@ -3,7 +3,7 @@ import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrapped
 import io.circe.{Decoder, Encoder}
 
 final case class ComponentGroupName(value: String) {
-  def toLowerCase: String = value.toLowerCase
+  def toLowerCase: String       = value.toLowerCase
   override def toString: String = value
 }
 

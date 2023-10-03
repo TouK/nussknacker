@@ -9,27 +9,45 @@ import pl.touk.nussknacker.restmodel.component.ComponentLink
 
 import java.net.URI
 
-case class ComponentLinkConfig(id: String, title: String, icon: URI, url: URI, supportedComponentTypes: Option[List[ComponentType]]) {
+final case class ComponentLinkConfig(
+    id: String,
+    title: String,
+    icon: URI,
+    url: URI,
+    supportedComponentTypes: Option[List[ComponentType]]
+) {
   import ComponentLinkConfig._
 
-  def isAvailable(componentType: ComponentType): Boolean = supportedComponentTypes.isEmpty || supportedComponentTypes.exists(_.contains(componentType))
+  def isAvailable(componentType: ComponentType): Boolean =
+    supportedComponentTypes.isEmpty || supportedComponentTypes.exists(_.contains(componentType))
 
   def toComponentLink(componentId: ComponentId, componentName: String): ComponentLink = ComponentLink(
-      id,
-      fillByComponentData(title, componentId, componentName),
-      URI.create(fillByComponentData(icon.toString, componentId, componentName, urlOption = true)),
-      URI.create(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
-    )
+    id,
+    fillByComponentData(title, componentId, componentName),
+    URI.create(fillByComponentData(icon.toString, componentId, componentName, urlOption = true)),
+    URI.create(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
+  )
 }
 
 object ComponentLinkConfig {
-  val ComponentIdTemplate = "$componentId"
+  val ComponentIdTemplate   = "$componentId"
   val ComponentNameTemplate = "$componentName"
 
-  def create(id: String, title: String, icon: String, url: String, supportedComponentTypes: Option[List[ComponentType]]): ComponentLinkConfig =
+  def create(
+      id: String,
+      title: String,
+      icon: String,
+      url: String,
+      supportedComponentTypes: Option[List[ComponentType]]
+  ): ComponentLinkConfig =
     ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes)
 
-  def fillByComponentData(text: String, componentId: ComponentId, componentName: String, urlOption: Boolean = false): String = {
+  def fillByComponentData(
+      text: String,
+      componentId: ComponentId,
+      componentName: String,
+      urlOption: Boolean = false
+  ): String = {
     val name = if (urlOption) UriUtils.encodeURIComponent(componentName) else componentName
 
     text
@@ -55,7 +73,8 @@ object ComponentLinksConfigExtractor {
       .map(_.map(_.as[ComponentLinkConfig]))
 
   def extract(config: Config): ComponentLinksConfig =
-    config.as[Option[ComponentLinksConfig]](ComponentsLinkNamespace)
+    config
+      .as[Option[ComponentLinksConfig]](ComponentsLinkNamespace)
       .getOrElse(List.empty)
 
 }

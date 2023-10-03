@@ -10,8 +10,10 @@ object DateProcessHelper extends HideToString {
   )
   def nowTimestamp(): Long = System.currentTimeMillis()
 
-  @Documentation(description = "Just parses a date.\n" +
-    "Lorem ipsum dolor sit amet enim. Etiam ullamcorper. Suspendisse a pellentesque dui, non felis. Maecenas malesuada elit lectus felis, malesuada ultricies. Curabitur et ligula")
+  @Documentation(description =
+    "Just parses a date.\n" +
+      "Lorem ipsum dolor sit amet enim. Etiam ullamcorper. Suspendisse a pellentesque dui, non felis. Maecenas malesuada elit lectus felis, malesuada ultricies. Curabitur et ligula"
+  )
   def parseDate(@ParamName("dateString") dateString: String): LocalDateTime = {
     LocalDateTime.parse(dateString)
   }

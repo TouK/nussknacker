@@ -20,10 +20,13 @@ object LoggingListener extends ProcessListener with Serializable {
   private val loggerMap = new ConcurrentHashMap[List[String], Logger]()
 
   private def debug(keys: List[String], message: => String): Unit = {
-    val logger = loggerMap.computeIfAbsent(keys, (ks: List[String]) => {
-      val loggerKey = ks.mkString(".")
-      LoggerFactory.getLogger(s"$className.$loggerKey")
-    })
+    val logger = loggerMap.computeIfAbsent(
+      keys,
+      (ks: List[String]) => {
+        val loggerKey = ks.mkString(".")
+        LoggerFactory.getLogger(s"$className.$loggerKey")
+      }
+    )
     if (logger.isDebugEnabled()) {
       logger.debug(message)
     }
@@ -41,15 +44,29 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
-  override def expressionEvaluated(nodeId: String, expressionId: String, expr: String, context: Context, metadata: MetaData, result: Any): Unit = {
+  override def expressionEvaluated(
+      nodeId: String,
+      expressionId: String,
+      expr: String,
+      context: Context,
+      metadata: MetaData,
+      result: Any
+  ): Unit = {
     debug(List(metadata.id, nodeId, "expression"), s"invoked expression: $expr with result $result. Context: $context")
   }
 
-  override def serviceInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, params: Map[String, Any], result: Try[Any]): Unit = {
+  override def serviceInvoked(
+      nodeId: String,
+      id: String,
+      context: Context,
+      metadata: MetaData,
+      params: Map[String, Any],
+      result: Try[Any]
+  ): Unit = {
     debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
-    //TODO:??
+    // TODO:??
   }
 }

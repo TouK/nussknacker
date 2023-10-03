@@ -11,15 +11,17 @@ import scala.concurrent.ExecutionContext
 
 class DictResources(implicit ec: ExecutionContext) extends Directives with FailFastCirceSupport {
 
-  def route(modelDataForType: ModelData)
-           (implicit user: LoggedUser): Route =
+  def route(modelDataForType: ModelData)(implicit user: LoggedUser): Route =
     path("dict" / Segment / "entry") { dictId =>
       get {
         parameter("label".as[String]) { labelPattern =>
           complete {
-            modelDataForType.uiDictServices.dictQueryService.queryEntriesByLabel(dictId, labelPattern)
+            modelDataForType.uiDictServices.dictQueryService
+              .queryEntriesByLabel(dictId, labelPattern)
               .map(ToResponseMarshallable(_))
-              .valueOr(error => HttpResponse(status = StatusCodes.NotFound, entity = s"Dictionary: ${error.dictId} not found"))
+              .valueOr(error =>
+                HttpResponse(status = StatusCodes.NotFound, entity = s"Dictionary: ${error.dictId} not found")
+              )
           }
         }
       }

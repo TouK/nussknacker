@@ -10,11 +10,13 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.time.Instant
 import scala.concurrent.ExecutionContext
 
-class NotificationResources(notificationsService: NotificationService)
-                           (implicit ec: ExecutionContext, system: ActorSystem)
-  extends Directives
+class NotificationResources(notificationsService: NotificationService)(
+    implicit ec: ExecutionContext,
+    system: ActorSystem
+) extends Directives
     with LazyLogging
-    with RouteWithUser with FailFastCirceSupport {
+    with RouteWithUser
+    with FailFastCirceSupport {
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("notifications") {
@@ -29,4 +31,3 @@ class NotificationResources(notificationsService: NotificationService)
   }
 
 }
-

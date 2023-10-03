@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 /**
   * Interface of Enricher/Processor. It has to have one method annotated with
   * [[pl.touk.nussknacker.engine.api.MethodToInvoke]]. This method is called for every service invocation.
@@ -23,7 +22,6 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 abstract class Service extends Lifecycle with Component
 
-
 /*
   This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
   Lifecycle is handled on EagerService level (like in standard Service).
@@ -37,10 +35,11 @@ abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
-  def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
-                                              collector: InvocationCollectors.ServiceInvocationCollector,
-                                              contextId: ContextId,
-                                              componentUseCase: ComponentUseCase): Future[Any]
-  
+  def invokeService(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: InvocationCollectors.ServiceInvocationCollector,
+      contextId: ContextId,
+      componentUseCase: ComponentUseCase
+  ): Future[Any]
 
 }

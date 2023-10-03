@@ -5,7 +5,10 @@ import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfo
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{
+  TypeInformationDetection,
+  TypingResultAwareTypeInformationCustomisation
+}
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 
@@ -30,8 +33,10 @@ object InputMetaTypeInformationProvider {
   * Implementation of customisation for TypeInformationDetection that provides type information for InputMeta.
   */
 class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-  override def customise(originalDetection: TypeInformationDetection): PartialFunction[TypingResult, TypeInformation[_]] = {
-    case a:TypedObjectTypingResult if a.objType.klass == classOf[InputMeta[_]] =>
+  override def customise(
+      originalDetection: TypeInformationDetection
+  ): PartialFunction[TypingResult, TypeInformation[_]] = {
+    case a: TypedObjectTypingResult if a.objType.klass == classOf[InputMeta[_]] =>
       InputMetaTypeInformationProvider.typeInformation(originalDetection.forType(a.fields(InputMeta.keyParameterName)))
   }
 

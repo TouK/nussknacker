@@ -17,12 +17,16 @@ object MultipartUtils {
   def readFile(byteSource: Source[ByteString, Any])(implicit ec: ExecutionContext, mat: Materializer): Future[String] =
     readFileBytes(byteSource).map(new String(_, StandardCharsets.UTF_8))
 
-  def readFileBytes(byteSource: Source[ByteString, Any])(implicit ec: ExecutionContext, mat: Materializer): Future[Array[Byte]] =
+  def readFileBytes(
+      byteSource: Source[ByteString, Any]
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[Array[Byte]] =
     byteSource.runWith(Sink.seq).map(_.flatten.toArray)
 
   def prepareMultiPart(content: String, name: String, fileName: String = "file.json"): FormData.Strict =
-    Multipart.FormData(Multipart.FormData.BodyPart.Strict(name,
-      HttpEntity(ContentTypes.`text/plain(UTF-8)`, content), Map("filename" -> fileName)))
+    Multipart.FormData(
+      Multipart.FormData.BodyPart
+        .Strict(name, HttpEntity(ContentTypes.`text/plain(UTF-8)`, content), Map("filename" -> fileName))
+    )
 
   def prepareMultiParts(nameContent: (String, String)*)(fileName: String = "file.json"): FormData.Strict = {
     val bodyPart = nameContent.map { case (name, content) =>
@@ -35,10 +39,10 @@ object MultipartUtils {
     Multipart.FormData(bodyPart: _*)
   }
 
-  def sttpPrepareMultiParts(nameContent: (String, String)*)
-                           (fileName: String = "file.json"): Seq[Part[RequestBody[Any]]] = {
-    nameContent
-      .toList
+  def sttpPrepareMultiParts(
+      nameContent: (String, String)*
+  )(fileName: String = "file.json"): Seq[Part[RequestBody[Any]]] = {
+    nameContent.toList
       .map { case (name, content) =>
         multipart(name, content)
           .fileName(fileName)

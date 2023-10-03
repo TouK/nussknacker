@@ -18,26 +18,44 @@ import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 //TODO: Move it to source package
 object sources {
 
-  class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, java.util.Map[_, _]](
-    new FixedValueDeserializationSchemaFactory(JsonMapDeserialization), jsonFormatterFactory, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+  class GenericJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
+      extends KafkaSourceFactory[String, java.util.Map[_, _]](
+        new FixedValueDeserializationSchemaFactory(JsonMapDeserialization),
+        jsonFormatterFactory,
+        processObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
+      )
 
-  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies) extends KafkaSourceFactory[String, TypedMap](
-    new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization), jsonFormatterFactory, processObjectDependencies, new FlinkKafkaSourceImplFactory(None)) with BaseGenericTypedJsonSourceFactory
+  class GenericTypedJsonSourceFactory(processObjectDependencies: ProcessObjectDependencies)
+      extends KafkaSourceFactory[String, TypedMap](
+        new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
+        jsonFormatterFactory,
+        processObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
+      )
+      with BaseGenericTypedJsonSourceFactory
 
-  class DelayedGenericTypedJsonSourceFactory(formatterFactory: RecordFormatterFactory,
-                                             processObjectDependencies: ProcessObjectDependencies,
-                                             timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]])
-    extends DelayedKafkaSourceFactory[String, TypedMap](
-      new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
-      formatterFactory,
-      processObjectDependencies,
-      new FlinkKafkaDelayedSourceImplFactory(timestampAssigner, TypedJsonTimestampFieldAssigner(_)))
+  class DelayedGenericTypedJsonSourceFactory(
+      formatterFactory: RecordFormatterFactory,
+      processObjectDependencies: ProcessObjectDependencies,
+      timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]]
+  ) extends DelayedKafkaSourceFactory[String, TypedMap](
+        new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
+        formatterFactory,
+        processObjectDependencies,
+        new FlinkKafkaDelayedSourceImplFactory(timestampAssigner, TypedJsonTimestampFieldAssigner(_))
+      )
 
-  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)(TypeInformation.of(new TypeHint[java.util.Map[_, _]] {}))
+  object JsonMapDeserialization
+      extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)(
+        TypeInformation.of(new TypeHint[java.util.Map[_, _]] {})
+      )
 
-  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](deserializeToTypedMap)(TypeInformation.of(classOf[TypedMap]))
+  object JsonTypedMapDeserialization
+      extends EspDeserializationSchema[TypedMap](deserializeToTypedMap)(TypeInformation.of(classOf[TypedMap]))
 
-  //TOOD: better error handling?
-  class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](CirceUtil.decodeJsonUnsafe[T](_))
+  // TOOD: better error handling?
+  class JsonDecoderDeserialization[T: Decoder: TypeInformation]
+      extends EspDeserializationSchema[T](CirceUtil.decodeJsonUnsafe[T](_))
 
 }

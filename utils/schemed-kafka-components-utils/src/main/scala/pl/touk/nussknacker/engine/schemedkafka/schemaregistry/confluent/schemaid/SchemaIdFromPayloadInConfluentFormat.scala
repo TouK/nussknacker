@@ -1,6 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
 
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GetSchemaIdArgs, SchemaIdFromMessageExtractor, SchemaIdWithPositionedBuffer}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  GetSchemaIdArgs,
+  SchemaIdFromMessageExtractor,
+  SchemaIdWithPositionedBuffer
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 object SchemaIdFromPayloadInConfluentFormat extends SchemaIdFromMessageExtractor {

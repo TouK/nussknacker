@@ -29,33 +29,45 @@ trait RecordFormatterSupport {
 }
 
 object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
-  override def formatMessage(data: Any): Json = BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
+  override def formatMessage(data: Any): Json =
+    BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
 
-  override def readKeyMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] = readMessage(topic, schemaOpt, jsonObj)
+  override def readKeyMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
+    readMessage(topic, schemaOpt, jsonObj)
 
-  override def readValueMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] = readMessage(topic, schemaOpt, jsonObj)
+  override def readValueMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
+    readMessage(topic, schemaOpt, jsonObj)
 
   private def readMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] = jsonObj match {
     // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
     case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-    case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+    case other           => other.noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 }
 
-class AvroPayloadRecordFormatterSupport(keyMessageReader: AvroMessageReader, valueMessageReader: AvroMessageReader) extends RecordFormatterSupport {
+class AvroPayloadRecordFormatterSupport(keyMessageReader: AvroMessageReader, valueMessageReader: AvroMessageReader)
+    extends RecordFormatterSupport {
 
   override def formatMessage(data: Any): Json = AvroMessageFormatter.asJson(data)
 
   override def readKeyMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
     keyMessageReader.readJson(
       jsonObj,
-      schemaOpt.getOrElse(throw new IllegalArgumentException("Schema is required for Avro message reader, but got None."))
-        .asInstanceOf[AvroSchema].rawSchema(), topic)
+      schemaOpt
+        .getOrElse(throw new IllegalArgumentException("Schema is required for Avro message reader, but got None."))
+        .asInstanceOf[AvroSchema]
+        .rawSchema(),
+      topic
+    )
 
   override def readValueMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
     valueMessageReader.readJson(
       jsonObj,
-      schemaOpt.getOrElse(throw new IllegalArgumentException("Schema is required for Avro message reader, but got None."))
-        .asInstanceOf[AvroSchema].rawSchema(), topic)
+      schemaOpt
+        .getOrElse(throw new IllegalArgumentException("Schema is required for Avro message reader, but got None."))
+        .asInstanceOf[AvroSchema]
+        .rawSchema(),
+      topic
+    )
 
 }

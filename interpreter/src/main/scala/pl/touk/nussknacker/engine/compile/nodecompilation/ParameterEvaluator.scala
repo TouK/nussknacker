@@ -15,7 +15,10 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
   private val contextToUse: Context = Context("objectCreate")
 
-  def prepareParameter(typedParameter: TypedParameter, definition: ParameterDef)(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
+  def prepareParameter(
+      typedParameter: TypedParameter,
+      definition: ParameterDef
+  )(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
     if (definition.isLazyParameter) {
       prepareLazyParameter(typedParameter, definition)
     } else {
@@ -23,9 +26,11 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(implicit nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
+  private def prepareLazyParameter[T](param: TypedParameter, definition: ParameterDef)(
+      implicit nodeId: NodeId
+  ): (AnyRef, BaseDefinedParameter) = {
     param.typedValue match {
-      case e:TypedExpression if !definition.branchParam =>
+      case e: TypedExpression if !definition.branchParam =>
         (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
         (valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)), DefinedLazyBranchParameter(valueByKey))
@@ -33,16 +38,19 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def evaluateParam[T](param: TypedParameter, definition: ParameterDef)
-                              (implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
+  private def evaluateParam[T](
+      param: TypedParameter,
+      definition: ParameterDef
+  )(implicit processMetaData: MetaData, nodeId: NodeId): (AnyRef, BaseDefinedParameter) = {
 
-    val additionaldefinitions = definition.additionalVariables.collect { case (name, AdditionalVariableWithFixedValue(value, _)) =>
-      name -> value
+    val additionaldefinitions = definition.additionalVariables.collect {
+      case (name, AdditionalVariableWithFixedValue(value, _)) =>
+        name -> value
     }
     val augumentedCtx = contextToUse.withVariables(additionaldefinitions)
 
     param.typedValue match {
-      case e:TypedExpression if !definition.branchParam =>
+      case e: TypedExpression if !definition.branchParam =>
         val evaluated = evaluateSync(Parameter(e, definition), augumentedCtx)
         (evaluated, DefinedEagerParameter(evaluated, e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
@@ -52,12 +60,21 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
     }
   }
 
-  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(implicit nodeId: NodeId): ExpressionLazyParameter[Nothing] = {
-    ExpressionLazyParameter(nodeId, definition,
-      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original), exprValue.returnType)
+  private def prepareLazyParameterExpression[T](definition: ParameterDef, exprValue: TypedExpression)(
+      implicit nodeId: NodeId
+  ): ExpressionLazyParameter[Nothing] = {
+    ExpressionLazyParameter(
+      nodeId,
+      definition,
+      graph.expression.Expression(exprValue.expression.language, exprValue.expression.original),
+      exprValue.returnType
+    )
   }
 
-  private def evaluateSync(param: Parameter, ctx: Context)(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
+  private def evaluateSync(
+      param: Parameter,
+      ctx: Context
+  )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
     expressionEvaluator.evaluateParameter(param, ctx).value
   }
 

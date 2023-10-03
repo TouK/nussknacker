@@ -6,10 +6,12 @@ import net.ceedubs.ficus.readers.ValueReader
 import java.io.File
 import java.net.URL
 
-case class ProcessingTypeConfig(engineType: String,
-                                classPath: List[URL],
-                                deploymentConfig: Config,
-                                modelConfig: ConfigWithUnresolvedVersion)
+case class ProcessingTypeConfig(
+    engineType: String,
+    classPath: List[URL],
+    deploymentConfig: Config,
+    modelConfig: ConfigWithUnresolvedVersion
+)
 
 object ProcessingTypeConfig {
 

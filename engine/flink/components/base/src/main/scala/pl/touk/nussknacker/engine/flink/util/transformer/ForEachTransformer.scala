@@ -17,24 +17,37 @@ import scala.jdk.CollectionConverters._
 object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
-             @OutputVariableName outputVariable: String): FlinkCustomStreamTransformation with ReturningType = {
-    FlinkCustomStreamTransformation({ (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
-      stream
-        .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
-        .flatMap((valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
-          valueWithContext.value.asScala.zipWithIndex
-            .map { case (partToRun, index) =>
-              new ValueWithContext[AnyRef](partToRun, valueWithContext.context.copy(id=s"${valueWithContext.context.id}-$index"))
-            }
-            .foreach(c.collect)
-        }, ctx.valueWithContextInfo.forType[AnyRef](returnType(elements)))
-    }, returnType(elements))
+  def invoke(
+      @ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
+      @OutputVariableName outputVariable: String
+  ): FlinkCustomStreamTransformation with ReturningType = {
+    FlinkCustomStreamTransformation(
+      { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+        stream
+          .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
+          .flatMap(
+            (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
+              valueWithContext.value.asScala.zipWithIndex
+                .map { case (partToRun, index) =>
+                  new ValueWithContext[AnyRef](
+                    partToRun,
+                    valueWithContext.context.copy(id = s"${valueWithContext.context.id}-$index")
+                  )
+                }
+                .foreach(c.collect)
+            },
+            ctx.valueWithContextInfo.forType[AnyRef](returnType(elements))
+          )
+      },
+      returnType(elements)
+    )
   }
 
-  private def returnType(elements: LazyParameter[util.Collection[AnyRef]]): typing.TypingResult = elements.returnType match {
-    case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[util.Collection[_]]) && tc.objType.params.nonEmpty =>
-      tc.objType.params.head
-    case _ => Unknown
-  }
+  private def returnType(elements: LazyParameter[util.Collection[AnyRef]]): typing.TypingResult =
+    elements.returnType match {
+      case tc: SingleTypingResult
+          if tc.objType.canBeSubclassOf(Typed[util.Collection[_]]) && tc.objType.params.nonEmpty =>
+        tc.objType.params.head
+      case _ => Unknown
+    }
 }

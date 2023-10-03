@@ -17,8 +17,12 @@ object JsonDefaultExpressionDeterminer {
 
   private val extractorWithHandleNotSupported = new JsonDefaultExpressionDeterminer(true)
 
-  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-    extractorWithHandleNotSupported.determine(schema).leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = paramName)))
+  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
+    extractorWithHandleNotSupported
+      .determine(schema)
+      .leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = paramName)))
 
   private def createCustomNodeError(errMsg: String): CustomNodeError = CustomNodeError("", errMsg, None)
 
@@ -43,33 +47,37 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
     else
       Valid(None)
 
-  //TODO: Add support for others type: enum, const, combined, etc..
+  // TODO: Add support for others type: enum, const, combined, etc..
   private def doDetermine(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     schema match {
       case s: NumberSchema if s.requiresInteger() => withValidation[Number](schema, l => s"${l}L")
-      case _: NumberSchema => withValidation[Number](schema, _.toString)
-      case _: BooleanSchema => withValidation[java.lang.Boolean](schema, _.toString)
-      case _: NullSchema => validatedNullExpression
-      case _: StringSchema => withValidation[String](schema, str => s"'$str'")
-      case _: ObjectSchema => withNullValidation(schema)
-      case _: ArraySchema => withNullValidation(schema)
-      case _ => typeNotSupported(schema)
+      case _: NumberSchema                        => withValidation[Number](schema, _.toString)
+      case _: BooleanSchema                       => withValidation[java.lang.Boolean](schema, _.toString)
+      case _: NullSchema                          => validatedNullExpression
+      case _: StringSchema                        => withValidation[String](schema, str => s"'$str'")
+      case _: ObjectSchema                        => withNullValidation(schema)
+      case _: ArraySchema                         => withNullValidation(schema)
+      case _                                      => typeNotSupported(schema)
     }
 
-  private def withValidation[T <: AnyRef : ClassTag](schema: Schema, toExpression: T => Expression): ValidatedNel[CustomNodeError, Option[Expression]] = {
+  private def withValidation[T <: AnyRef: ClassTag](
+      schema: Schema,
+      toExpression: T => Expression
+  ): ValidatedNel[CustomNodeError, Option[Expression]] = {
     Option.apply(schema.getDefaultValue) match {
       case Some(JSONObject.NULL) if schema.isNullable => validatedNullExpression
-      case Some(value: T) => Valid(Option(toExpression(value)))
-      case Some(_) => Invalid(InvalidValue).toValidatedNel
-      case None => Invalid(NullNotAllowed).toValidatedNel
+      case Some(value: T)                             => Valid(Option(toExpression(value)))
+      case Some(_)                                    => Invalid(InvalidValue).toValidatedNel
+      case None                                       => Invalid(NullNotAllowed).toValidatedNel
     }
   }
 
-  //Right now we use nullable = true, default = null as kind of union type..
-  private def withNullValidation(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] = Option.apply(schema.getDefaultValue) match {
-    case Some(JSONObject.NULL) if schema.isNullable => validatedNullExpression
-    case _ => typeNotSupported(schema)
-  }
+  // Right now we use nullable = true, default = null as kind of union type..
+  private def withNullValidation(schema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
+    Option.apply(schema.getDefaultValue) match {
+      case Some(JSONObject.NULL) if schema.isNullable => validatedNullExpression
+      case _                                          => typeNotSupported(schema)
+    }
 
   private def typeNotSupported(implicit fieldSchema: Schema): ValidatedNel[CustomNodeError, Option[Expression]] =
     if (handleNotSupported)

@@ -12,8 +12,11 @@ private[engine] class NodeCountingListener(nodeIds: Iterable[String]) extends Em
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
-    counters = nodeIds.map(nodeId => nodeId -> metricsProvider.counter(MetricIdentifier(
-        NonEmptyList.of("nodeCount"), Map(nodeIdTag -> nodeId)))).toMap
+    counters = nodeIds
+      .map(nodeId =>
+        nodeId -> metricsProvider.counter(MetricIdentifier(NonEmptyList.of("nodeCount"), Map(nodeIdTag -> nodeId)))
+      )
+      .toMap
   }
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {

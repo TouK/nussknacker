@@ -15,9 +15,13 @@ object ValidationResults {
 
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
-  //TODO: consider extracting additional DTO class
-  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, nodeResults: Map[String, NodeTypingData]) {
-    val hasErrors: Boolean = errors != ValidationErrors.success
+  // TODO: consider extracting additional DTO class
+  @JsonCodec final case class ValidationResult(
+      errors: ValidationErrors,
+      warnings: ValidationWarnings,
+      nodeResults: Map[String, NodeTypingData]
+  ) {
+    val hasErrors: Boolean   = errors != ValidationErrors.success
     val hasWarnings: Boolean = warnings != ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
@@ -51,30 +55,38 @@ object ValidationResults {
   }
 
   object NodeTypingData {
-    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = TypeEncoders.typingResultEncoder.contramap(_.typingResult)
-    //FIXME: BaseFlowTest fails otherwise??
-    implicit val typingInfoDecoder: Decoder[Map[String, ExpressionTypingInfo]] = Decoder.const(Map.empty) //Decoder.failedWithMessage("typingInfo shouldn't be decoded")
+    implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] =
+      TypeEncoders.typingResultEncoder.contramap(_.typingResult)
+    // FIXME: BaseFlowTest fails otherwise??
+    implicit val typingInfoDecoder: Decoder[Map[String, ExpressionTypingInfo]] =
+      Decoder.const(Map.empty) // Decoder.failedWithMessage("typingInfo shouldn't be decoded")
   }
 
-  @JsonCodec case class NodeTypingData(variableTypes: Map[String, TypingResult],
-                                       parameters: Option[List[UIParameter]],
-                                       // currently we not showing typing info in gui but maybe in near future will
-                                       // be used for enhanced typing in FE
-                                       typingInfo: Map[String, ExpressionTypingInfo])
+  @JsonCodec final case class NodeTypingData(
+      variableTypes: Map[String, TypingResult],
+      parameters: Option[List[UIParameter]],
+      // currently we not showing typing info in gui but maybe in near future will
+      // be used for enhanced typing in FE
+      typingInfo: Map[String, ExpressionTypingInfo]
+  )
 
-  @JsonCodec case class ValidationErrors(invalidNodes: Map[String, List[NodeValidationError]],
-                                         processPropertiesErrors: List[NodeValidationError],
-                                         globalErrors: List[NodeValidationError]) {
+  @JsonCodec final case class ValidationErrors(
+      invalidNodes: Map[String, List[NodeValidationError]],
+      processPropertiesErrors: List[NodeValidationError],
+      globalErrors: List[NodeValidationError]
+  ) {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
-  @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
+  @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
-  @JsonCodec case class NodeValidationError(typ: String,
-                                            message: String,
-                                            description: String,
-                                            fieldName: Option[String],
-                                            errorType: NodeValidationErrorType.Value)
+  @JsonCodec final case class NodeValidationError(
+      typ: String,
+      message: String,
+      description: String,
+      fieldName: Option[String],
+      errorType: NodeValidationErrorType.Value
+  )
 
   object ValidationErrors {
     val success: ValidationErrors = ValidationErrors(Map.empty, List(), List())
@@ -91,11 +103,15 @@ object ValidationResults {
     def globalErrors(globalErrors: List[NodeValidationError]): ValidationResult =
       ValidationResult.errors(Map(), List(), globalErrors)
 
-    def errors(invalidNodes: Map[String, List[NodeValidationError]],
-               processPropertiesErrors: List[NodeValidationError],
-               globalErrors: List[NodeValidationError]): ValidationResult = {
+    def errors(
+        invalidNodes: Map[String, List[NodeValidationError]],
+        processPropertiesErrors: List[NodeValidationError],
+        globalErrors: List[NodeValidationError]
+    ): ValidationResult = {
       ValidationResult(
-        ValidationErrors(invalidNodes = invalidNodes, processPropertiesErrors = processPropertiesErrors,
+        ValidationErrors(
+          invalidNodes = invalidNodes,
+          processPropertiesErrors = processPropertiesErrors,
           globalErrors = globalErrors
         ),
         ValidationWarnings.success,
@@ -106,7 +122,8 @@ object ValidationResults {
     def warnings(invalidNodes: Map[String, List[NodeValidationError]]): ValidationResult = {
       ValidationResult(
         ValidationErrors.success,
-        ValidationWarnings(invalidNodes = invalidNodes), Map.empty
+        ValidationWarnings(invalidNodes = invalidNodes),
+        Map.empty
       )
     }
 
@@ -117,7 +134,7 @@ object ValidationResults {
     type NodeValidationErrorType = Value
     implicit val encoder: Encoder[NodeValidationErrorType.Value] = Encoder.encodeEnumeration(NodeValidationErrorType)
     implicit val decoder: Decoder[NodeValidationErrorType.Value] = Decoder.decodeEnumeration(NodeValidationErrorType)
-    val RenderNotAllowed, SaveNotAllowed, SaveAllowed = Value
+    val RenderNotAllowed, SaveNotAllowed, SaveAllowed            = Value
   }
 
 }

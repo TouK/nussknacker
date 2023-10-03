@@ -34,29 +34,36 @@ abstract class FixedValueTypeInformationHelper[T] extends TypeSerializerSingleto
 
 object FixedValueTypeInformationHelper {
 
-  def emptyMapTypeInfo: BasicTypeInfo[Map[String, AnyRef]] = new BasicTypeInfo[Map[String, AnyRef]](classOf[Map[String, AnyRef]],
-    Array.empty, EmptyMapSerializer.asInstanceOf[TypeSerializer[Map[String, AnyRef]]], null) {}
+  def emptyMapTypeInfo: BasicTypeInfo[Map[String, AnyRef]] = new BasicTypeInfo[Map[String, AnyRef]](
+    classOf[Map[String, AnyRef]],
+    Array.empty,
+    EmptyMapSerializer.asInstanceOf[TypeSerializer[Map[String, AnyRef]]],
+    null
+  ) {}
 
-  def nullValueTypeInfo[T: ClassTag]: BasicTypeInfo[T]
-  = new BasicTypeInfo[T](implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]],
-    Array.empty, NullSerializer.asInstanceOf[TypeSerializer[T]], null) {}
-
+  def nullValueTypeInfo[T: ClassTag]: BasicTypeInfo[T] = new BasicTypeInfo[T](
+    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]],
+    Array.empty,
+    NullSerializer.asInstanceOf[TypeSerializer[T]],
+    null
+  ) {}
 
   object EmptyMapSerializer extends FixedValueTypeInformationHelper[Map[String, AnyRef]] {
     override def value: Map[String, AnyRef] = Map.empty
 
-    override def snapshotConfiguration(): TypeSerializerSnapshot[Map[String, AnyRef]] = new SimpleTypeSerializerSnapshot(new Supplier[TypeSerializer[Map[String, AnyRef]]] {
-      override def get(): TypeSerializer[Map[String, AnyRef]] = EmptyMapSerializer
-    }) {}
+    override def snapshotConfiguration(): TypeSerializerSnapshot[Map[String, AnyRef]] =
+      new SimpleTypeSerializerSnapshot(new Supplier[TypeSerializer[Map[String, AnyRef]]] {
+        override def get(): TypeSerializer[Map[String, AnyRef]] = EmptyMapSerializer
+      }) {}
   }
 
   object NullSerializer extends FixedValueTypeInformationHelper[AnyRef] {
     override def value: AnyRef = null
 
-    override def snapshotConfiguration(): TypeSerializerSnapshot[AnyRef] = new SimpleTypeSerializerSnapshot[AnyRef](new Supplier[TypeSerializer[AnyRef]] {
-      override def get(): TypeSerializer[AnyRef] = NullSerializer
-    }) {}
+    override def snapshotConfiguration(): TypeSerializerSnapshot[AnyRef] =
+      new SimpleTypeSerializerSnapshot[AnyRef](new Supplier[TypeSerializer[AnyRef]] {
+        override def get(): TypeSerializer[AnyRef] = NullSerializer
+      }) {}
   }
 
 }
-

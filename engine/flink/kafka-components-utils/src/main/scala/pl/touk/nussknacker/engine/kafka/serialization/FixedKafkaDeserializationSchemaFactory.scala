@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @tparam T type of deserialized object
   */
 case class FixedKafkaDeserializationSchemaFactory[T](deserializationSchema: KafkaDeserializationSchema[T])
-  extends KafkaDeserializationSchemaFactory[T] {
+    extends KafkaDeserializationSchemaFactory[T] {
 
   override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] =
     deserializationSchema
@@ -20,7 +20,9 @@ case class FixedKafkaDeserializationSchemaFactory[T](deserializationSchema: Kafk
 object FixedKafkaDeserializationSchemaFactory {
 
   def apply[T](deserializationSchema: DeserializationSchema[T]): FixedKafkaDeserializationSchemaFactory[T] = {
-    new FixedKafkaDeserializationSchemaFactory(FlinkSerializationSchemaConversions.wrapToNuDeserializationSchema(deserializationSchema))
+    new FixedKafkaDeserializationSchemaFactory(
+      FlinkSerializationSchemaConversions.wrapToNuDeserializationSchema(deserializationSchema)
+    )
   }
 
 }

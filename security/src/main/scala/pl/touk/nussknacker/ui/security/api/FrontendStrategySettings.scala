@@ -11,11 +11,13 @@ object FrontendStrategySettings {
 
   case object Browser extends FrontendStrategySettings
 
-  case class OAuth2(authorizeUrl: Option[String],
-                    jwtAuthServerPublicKey: Option[String],
-                    jwtIdTokenNonceVerificationRequired: Boolean,
-                    implicitGrantEnabled: Boolean,
-                    anonymousAccessAllowed: Boolean) extends FrontendStrategySettings
+  final case class OAuth2(
+      authorizeUrl: Option[String],
+      jwtAuthServerPublicKey: Option[String],
+      jwtIdTokenNonceVerificationRequired: Boolean,
+      implicitGrantEnabled: Boolean,
+      anonymousAccessAllowed: Boolean
+  ) extends FrontendStrategySettings
 
-  case class Remote(moduleUrl: String) extends FrontendStrategySettings
+  final case class Remote(moduleUrl: String) extends FrontendStrategySettings
 }

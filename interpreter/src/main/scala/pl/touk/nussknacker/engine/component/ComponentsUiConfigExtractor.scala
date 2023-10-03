@@ -15,17 +15,19 @@ object ComponentsUiConfigExtractor {
 
   type ComponentsUiConfig = Map[String, SingleComponentConfig]
 
-  private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] = (config: Config, path: String) =>
-    OptionReader
-    .optionValueReader[String]
-    .read(config, path)
-    .map(ComponentGroupName(_))
+  private implicit val componentsUiGroupNameReader: ValueReader[Option[ComponentGroupName]] =
+    (config: Config, path: String) =>
+      OptionReader
+        .optionValueReader[String]
+        .read(config, path)
+        .map(ComponentGroupName(_))
 
-  private implicit val componentsUiComponentIdReader: ValueReader[Option[ComponentId]] = (config: Config, path: String) =>
-    OptionReader
-      .optionValueReader[String]
-      .read(config, path)
-      .map(ComponentId.apply)
+  private implicit val componentsUiComponentIdReader: ValueReader[Option[ComponentId]] =
+    (config: Config, path: String) =>
+      OptionReader
+        .optionValueReader[String]
+        .read(config, path)
+        .map(ComponentId.apply)
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 

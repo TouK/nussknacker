@@ -19,7 +19,12 @@ import scala.jdk.CollectionConverters._
 
 object AzureAvroSerializerFactory {
 
-  def createSerializer(schemaRegistryClient: AzureSchemaRegistryClient, kafkaConfig: KafkaConfig, avroSchemaOpt: Option[AvroSchema], isKey: Boolean): Serializer[Any] = {
+  def createSerializer(
+      schemaRegistryClient: AzureSchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      avroSchemaOpt: Option[AvroSchema],
+      isKey: Boolean
+  ): Serializer[Any] = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
       createJsonPayloadSerializer(schemaRegistryClient, kafkaConfig, avroSchemaOpt, isKey)
     } else {
@@ -30,10 +35,26 @@ object AzureAvroSerializerFactory {
   // For json payload we use Confluent version with some modifications. There is a risk that it won't be compatible
   // with Azure's implementation but on the other hand, it is impossible to pass own Encoder to Azure serializer
   // without copying almost all classes. Encoder is created in com.azure.data.schemaregistry.apacheavro.AvroSerializer
-  private def createJsonPayloadSerializer(schemaRegistryClient: AzureSchemaRegistryClient, kafkaConfig: KafkaConfig, avroSchemaOpt: Option[AvroSchema], isKey: Boolean) = {
+  private def createJsonPayloadSerializer(
+      schemaRegistryClient: AzureSchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      avroSchemaOpt: Option[AvroSchema],
+      isKey: Boolean
+  ) = {
     val confluentClient = new DefaultConfluentSchemaRegistryClient(null)
-    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey) {
-      override protected def autoRegisterSchemaIfNeeded(topic: String, data: Any, isKey: Boolean, avroSchema: AvroSchema): SchemaId = {
+    new ConfluentJsonPayloadKafkaSerializer(
+      kafkaConfig,
+      confluentClient,
+      new DefaultAvroSchemaEvolution,
+      avroSchemaOpt,
+      isKey = isKey
+    ) {
+      override protected def autoRegisterSchemaIfNeeded(
+          topic: String,
+          data: Any,
+          isKey: Boolean,
+          avroSchema: AvroSchema
+      ): SchemaId = {
         schemaRegistryClient.getSchemaIdByContent(avroSchema)
       }
       override protected def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = {
@@ -44,7 +65,11 @@ object AzureAvroSerializerFactory {
     }
   }
 
-  private def createAvroPayloadSerializer(kafkaConfig: KafkaConfig, avroSchemaOpt: Option[AvroSchema], isKey: Boolean) = {
+  private def createAvroPayloadSerializer(
+      kafkaConfig: KafkaConfig,
+      avroSchemaOpt: Option[AvroSchema],
+      isKey: Boolean
+  ) = {
     val azureSerializer = new KafkaAvroSerializer[Any]
     val serializer = avroSchemaOpt
       .map { schema =>
@@ -54,7 +79,7 @@ object AzureAvroSerializerFactory {
           override protected def preprocessData(data: Any, topic: String, headers: Headers): Any = {
             data match {
               case generic: GenericContainer => schemaEvolution.alignRecordToSchema(generic, schema.rawSchema())
-              case other => other
+              case other                     => other
             }
           }
         }

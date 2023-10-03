@@ -31,8 +31,8 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
   override def send(measurement: lang.StringBuilder): Unit = {
     val stringValue = measurement.toString
-    //TODO: this is quick solution for https://github.com/influxdata/influxdb-java/pull/616
-    //In the future we'll use micrometer which should handle those better...
+    // TODO: this is quick solution for https://github.com/influxdata/influxdb-java/pull/616
+    // In the future we'll use micrometer which should handle those better...
     if (!stringValue.contains(Double.NaN.toString)) {
       buffer.append(stringValue)
     }
@@ -40,7 +40,7 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
 
   override def flush(): Unit = {
     if (buffer.isEmpty) {
-      //this can be useful e.g. in some test environments where we don't really have Influx
+      // this can be useful e.g. in some test environments where we don't really have Influx
       logger.debug("No metrics to send, skipping")
     } else {
       val data = buffer.mkString
@@ -51,7 +51,7 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
       answer match {
         case Success(res) if res.code.isSuccess => // nothing
         case Success(res) => logger.warn(s"Failed to send data to influx: ${res.code.code}, ${res.body}")
-        case Failure(ex) => logger.warn(s"Failed to send data to influx: ${ex.getMessage}", ex)
+        case Failure(ex)  => logger.warn(s"Failed to send data to influx: ${ex.getMessage}", ex)
       }
     }
   }
@@ -63,19 +63,22 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
   override def close(): Unit = {}
 }
 
+case class InfluxSenderConfig(
+    url: String,
+    database: String,
+    retentionPolicy: Option[String],
+    username: Option[String],
+    password: Option[String],
+    reporterPolling: Duration = 10 seconds
+) {
 
-case class InfluxSenderConfig(url: String,
-                              database: String,
-                              retentionPolicy: Option[String],
-                              username: Option[String],
-                              password: Option[String],
-                              reporterPolling: Duration = 10 seconds) {
-
-
-  private val params = ("db" -> database) :: username.map("u" -> _).toList ::: password.map("p" -> _).toList ::: retentionPolicy.map("rp" -> _).toList
+  private val params = ("db" -> database) :: username
+    .map("u" -> _)
+    .toList ::: password.map("p" -> _).toList ::: retentionPolicy.map("rp" -> _).toList
 
   // must be eager (val) because we want to validate uri during parsing
-  val req: RequestT[Identity, Either[String, String], Any] = basicRequest.post(uri"$url?$params")
+  val req: RequestT[Identity, Either[String, String], Any] = basicRequest
+    .post(uri"$url?$params")
     .contentType("application/json", StandardCharsets.UTF_8.name())
 
   require(req.uri.isAbsolute, s"URL should be absolute, but got '$url'")

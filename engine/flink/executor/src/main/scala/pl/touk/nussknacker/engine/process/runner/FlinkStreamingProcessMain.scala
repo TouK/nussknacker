@@ -13,20 +13,24 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 
 object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
 
-  override protected def getExecutionEnvironment: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+  override protected def getExecutionEnvironment: StreamExecutionEnvironment =
+    StreamExecutionEnvironment.getExecutionEnvironment
 
   override protected def getConfig(env: StreamExecutionEnvironment): ExecutionConfig = env.getConfig
 
-  override protected def runProcess(env: StreamExecutionEnvironment,
-                                    modelData: ModelData,
-                                    process: CanonicalProcess,
-                                    processVersion: ProcessVersion,
-                                    deploymentData: DeploymentData,
-                                    prepareExecutionConfig: ExecutionConfigPreparer): Unit = {
-    val compiler = new FlinkProcessCompiler(modelData)
+  override protected def runProcess(
+      env: StreamExecutionEnvironment,
+      modelData: ModelData,
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      prepareExecutionConfig: ExecutionConfigPreparer
+  ): Unit = {
+    val compiler                         = new FlinkProcessCompiler(modelData)
     val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(compiler, prepareExecutionConfig)
     registrar.register(env, process, processVersion, deploymentData)
-    val preparedName = modelData.objectNaming.prepareName(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey))
+    val preparedName =
+      modelData.objectNaming.prepareName(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey))
     env.execute(preparedName)
   }
 

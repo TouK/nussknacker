@@ -35,9 +35,13 @@ class SampleComponentProvider extends ComponentProvider {
 
 case class SampleProvidedComponent(param: String) extends EagerServiceWithStaticParametersAndReturnType {
 
-
-  override def invoke(params: Map[String, Any])
-                     (implicit ec: ExecutionContext, collector: InvocationCollectors.ServiceInvocationCollector, contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[Any] = {
+  override def invoke(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: InvocationCollectors.ServiceInvocationCollector,
+      contextId: ContextId,
+      metaData: MetaData,
+      componentUseCase: ComponentUseCase
+  ): Future[Any] = {
     Future.successful(null)
   }
 

@@ -12,12 +12,18 @@ import java.util.Collections
 
 object SwaggerParser extends LazyLogging {
 
-  def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[Validated[ServiceParseError, SwaggerService]] = {
+  def parse(
+      rawSwagger: String,
+      openAPIsConfig: OpenAPIServicesConfig
+  ): List[Validated[ServiceParseError, SwaggerService]] = {
     val openapi = parseToSwagger(rawSwagger)
     ParseToSwaggerServices(openapi, openAPIsConfig)
   }
 
-  def loadFromResource(path: String, openAPIsConfig: OpenAPIServicesConfig): List[Validated[ServiceParseError, SwaggerService]] =
+  def loadFromResource(
+      path: String,
+      openAPIsConfig: OpenAPIServicesConfig
+  ): List[Validated[ServiceParseError, SwaggerService]] =
     parse(ResourceLoader.load(path), openAPIsConfig)
 
   private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {
@@ -25,7 +31,9 @@ object SwaggerParser extends LazyLogging {
     parserConfig.setResolve(true)
 
     val parserResult = new OpenAPIParser().readContents(rawSwagger, Collections.emptyList(), parserConfig)
-    Option(parserResult.getOpenAPI).getOrElse(throw new IllegalArgumentException(s"Failed to parse OpenAPI specification: ${parserResult.getMessages}"))
+    Option(parserResult.getOpenAPI).getOrElse(
+      throw new IllegalArgumentException(s"Failed to parse OpenAPI specification: ${parserResult.getMessages}")
+    )
   }
 
 }

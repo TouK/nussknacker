@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
+import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
@@ -11,22 +11,20 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class AppApiEndpoints(auth: Auth[AuthCredentials, _])
-  extends BaseEndpointDefinitions {
+class AppApiEndpoints(auth: Auth[AuthCredentials, _]) extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos.Codecs._
   import AppApiEndpoints.Dtos._
 
   lazy val appHealthCheckEndpoint: PublicEndpoint[Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiEndpoint
-      .get
+    baseNuApiEndpoint.get
       .in("app" / "healthCheck")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
 
-  lazy val processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiEndpoint
-      .get
+  lazy val processDeploymentHealthCheckEndpoint
+      : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+    baseNuApiEndpoint.get
       .in("app" / "healthCheck" / "process" / "deployment")
       .out(
         statusCode(Ok).and(jsonBody[HealthCheckProcessSuccessResponseDto.type])
@@ -36,9 +34,9 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       )
       .withSecurity(auth)
 
-  lazy val processValidationHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiEndpoint
-      .get
+  lazy val processValidationHealthCheckEndpoint
+      : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+    baseNuApiEndpoint.get
       .in("app" / "healthCheck" / "process" / "validation")
       .out(
         statusCode(Ok).and(jsonBody[HealthCheckProcessSuccessResponseDto.type])
@@ -49,8 +47,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       .withSecurity(auth)
 
   lazy val buildInfoEndpoint: PublicEndpoint[Unit, Unit, BuildInfoDto, Any] =
-    baseNuApiEndpoint
-      .get
+    baseNuApiEndpoint.get
       .in("app" / "buildInfo")
       .out(statusCode(Ok))
       .out(jsonBody[BuildInfoDto])
@@ -64,7 +61,8 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
         statusCode(Ok).and(jsonBody[ServerConfigInfoDto])
       )
 
-  lazy val userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
+  lazy val userCategoriesWithProcessingTypesEndpoint
+      : SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
     baseNuApiEndpoint
       .withSecurity(auth)
       .get
@@ -86,15 +84,16 @@ object AppApiEndpoints {
 
     object HealthCheckProcessSuccessResponseDto
 
-    final case class HealthCheckProcessErrorResponseDto(message: Option[String],
-                                                        processes: Option[Set[String]])
+    final case class HealthCheckProcessErrorResponseDto(message: Option[String], processes: Option[Set[String]])
 
-    final case class BuildInfoDto(name: String,
-                                  gitCommit: String,
-                                  buildTime: String,
-                                  version: String,
-                                  processingType: Map[String, Map[String, String]],
-                                  otherProperties: Map[String, String])
+    final case class BuildInfoDto(
+        name: String,
+        gitCommit: String,
+        buildTime: String,
+        version: String,
+        processingType: Map[String, Map[String, String]],
+        otherProperties: Map[String, String]
+    )
 
     final case class ServerConfigInfoDto(configJson: Json)
 
@@ -108,19 +107,21 @@ object AppApiEndpoints {
         CirceCodec.from(
           Decoder
             .forProduct3[HealthCheckProcessSuccessResponseDto.type, String, Option[String], Option[Set[String]]](
-            "status", "message", "processes"
-          ) {
-            case ("OK", None, None) =>
-              HealthCheckProcessSuccessResponseDto
-            case invalid =>
-              throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
-          },
+              "status",
+              "message",
+              "processes"
+            ) {
+              case ("OK", None, None) =>
+                HealthCheckProcessSuccessResponseDto
+              case invalid =>
+                throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
+            },
           Encoder
             .forProduct3[HealthCheckProcessSuccessResponseDto.type, String, Option[String], Option[Set[String]]](
-            "status", "message", "processes"
-          )(
-            _ => ("OK", None, None)
-          )
+              "status",
+              "message",
+              "processes"
+            )(_ => ("OK", None, None))
         )
       }
 
@@ -128,7 +129,9 @@ object AppApiEndpoints {
         CirceCodec.from(
           Decoder
             .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
-              "status", "message", "processes"
+              "status",
+              "message",
+              "processes"
             ) {
               case ("ERROR", message, processes) =>
                 HealthCheckProcessErrorResponseDto(message, processes)
@@ -137,10 +140,10 @@ object AppApiEndpoints {
             },
           Encoder
             .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
-              "status", "message", "processes"
-            )(
-              dto => ("ERROR", dto.message, dto.processes)
-            )
+              "status",
+              "message",
+              "processes"
+            )(dto => ("ERROR", dto.message, dto.processes))
         )
       }
 
@@ -148,24 +151,23 @@ object AppApiEndpoints {
         CirceCodec.from(
           Decoder.instance { c =>
             for {
-              name <- c.downField("name").as[String]
-              version <- c.downField("version").as[String]
-              buildTime <- c.downField("buildTime").as[String]
-              gitCommit <- c.downField("gitCommit").as[String]
-              processingType <- c.downField("processingType").as[Map[String, Map[String, String]]]
+              name            <- c.downField("name").as[String]
+              version         <- c.downField("version").as[String]
+              buildTime       <- c.downField("buildTime").as[String]
+              gitCommit       <- c.downField("gitCommit").as[String]
+              processingType  <- c.downField("processingType").as[Map[String, Map[String, String]]]
               otherProperties <- c.toMapExcluding("name", "version", "buildTime", "gitCommit", "processingType")
             } yield BuildInfoDto(name, gitCommit, buildTime, version, processingType, otherProperties)
           },
           Encoder.encodeJson.contramap { buildInfo =>
-            buildInfo
-              .otherProperties.asJson
+            buildInfo.otherProperties.asJson
               .deepMerge {
                 Json
                   .obj(
-                    "name" -> Json.fromString(buildInfo.name),
-                    "version" -> Json.fromString(buildInfo.version),
-                    "buildTime" -> Json.fromString(buildInfo.buildTime),
-                    "gitCommit" -> Json.fromString(buildInfo.gitCommit),
+                    "name"           -> Json.fromString(buildInfo.name),
+                    "version"        -> Json.fromString(buildInfo.version),
+                    "buildTime"      -> Json.fromString(buildInfo.buildTime),
+                    "gitCommit"      -> Json.fromString(buildInfo.gitCommit),
                     "processingType" -> buildInfo.processingType.asJson
                   )
               }

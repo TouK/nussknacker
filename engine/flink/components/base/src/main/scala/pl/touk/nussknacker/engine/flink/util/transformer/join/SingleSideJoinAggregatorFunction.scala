@@ -15,24 +15,38 @@ import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.language.higherKinds
 
-class SingleSideJoinAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                          override val nodeId: NodeId,
-                                                          protected val aggregateElementType: TypingResult,
-                                                          override protected val aggregateTypeInformation: TypeInformation[AnyRef],
-                                                          val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-                                                         (implicit override val rangeMap: FlinkRangeMap[MapT])
-  extends LatelyEvictableStateCoFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
+class SingleSideJoinAggregatorFunction[MapT[K, V]](
+    protected val aggregator: Aggregator,
+    protected val timeWindowLengthMillis: Long,
+    override val nodeId: NodeId,
+    protected val aggregateElementType: TypingResult,
+    override protected val aggregateTypeInformation: TypeInformation[AnyRef],
+    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+)(implicit override val rangeMap: FlinkRangeMap[MapT])
+    extends LatelyEvictableStateCoFunction[ValueWithContext[String], ValueWithContext[
+      StringKeyedValue[AnyRef]
+    ], ValueWithContext[AnyRef], MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
 
-  type FlinkCtx = CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+  type FlinkCtx = CoProcessFunction[ValueWithContext[String], ValueWithContext[
+    StringKeyedValue[AnyRef]
+  ], ValueWithContext[AnyRef]]#Context
 
-  override def processElement1(in1: ValueWithContext[String], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement1(
+      in1: ValueWithContext[String],
+      ctx: FlinkCtx,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     val current: MapT[Long, aggregator.Aggregate] = readStateOrInitial()
-    val finalVal = computeFinalValue(current, ctx.timestamp())
+    val finalVal                                  = computeFinalValue(current, ctx.timestamp())
     out.collect(ValueWithContext(finalVal, in1.context))
   }
 
-  override def processElement2(in2: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement2(
+      in2: ValueWithContext[StringKeyedValue[AnyRef]],
+      ctx: FlinkCtx,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     addElementToState(in2, ctx.timestamp(), ctx.timerService(), out)
   }
 

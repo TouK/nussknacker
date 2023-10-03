@@ -10,5 +10,4 @@ package object parser {
 
   type SwaggerRefSchemas = Map[SwaggerRef, Schema[_]]
 
-
 }
