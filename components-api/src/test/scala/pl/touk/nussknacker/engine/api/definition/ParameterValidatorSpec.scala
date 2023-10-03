@@ -26,9 +26,9 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     }
   }
 
-  test("RegExpParameterValidator") {
-    val mailValidator = RegExpParameterValidator("^[^<>]+@nussknacker\\.io$", "", "")
-    val alaValidator = RegExpParameterValidator("^ala$", "", "")
+  test("LiteralRegExpParameterValidator") {
+    val mailValidator = LiteralRegExpParameterValidator("^[^<>]+@nussknacker\\.io$", "", "")
+    val alaValidator = LiteralRegExpParameterValidator("^ala$", "", "")
 
     forAll(Table(
       ("inputExpression", "validator", "isValid"),
