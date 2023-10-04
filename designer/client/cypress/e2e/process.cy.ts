@@ -153,17 +153,7 @@ describe("Process", () => {
 
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
-            cy.contains(/^deploy$/i).click();
-            cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-            cy.get("[data-testid=window] textarea").click().type("issues/123");
-            cy.get("[data-testid=window]").matchImage();
-            cy.contains(/^ok$/i).should("be.enabled").click();
-            cy.wait(["@deploy", "@fetch"], {
-                timeout: 20000,
-                log: true,
-            }).each((res) => {
-                cy.wrap(res).its("response.statusCode").should("eq", 200);
-            });
+            cy.deployScenario(undefined, true);
 
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
