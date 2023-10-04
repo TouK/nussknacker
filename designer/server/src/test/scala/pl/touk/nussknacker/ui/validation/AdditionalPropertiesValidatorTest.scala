@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesValidator,
   LiteralParameterValidator,
   MandatoryParameterValidator,
-  RegExpParameterValidator,
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
