@@ -21,6 +21,10 @@ export type DynamicTabData = {
     requiredPermission?: string;
     type: "Local" | "IFrame" | "Remote" | "Url";
     addAccessTokenInQueryParam?: boolean;
+    accessTokenInQuery?: {
+        enabled: boolean;
+        parameterName: string;
+    };
 };
 
 export interface RemoteComponentProps {
@@ -50,11 +54,22 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     );
 };
 
-export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url"> }) => {
-    const { addAccessTokenInQueryParam, url } = tab;
-    const accessToken = addAccessTokenInQueryParam && SystemUtils.getAccessToken();
+export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "accessTokenInQuery" | "url"> }) => {
+    const { addAccessTokenInQueryParam, accessTokenInQuery, url } = tab;
+    const accessToken = (addAccessTokenInQueryParam || accessTokenInQuery?.enabled) && SystemUtils.getAccessToken();
+    const accessTokenParam = {};
+    if (accessToken != null) {
+        // accessToken name is for backward compatibility reasons
+        const accessTokenParamName = addAccessTokenInQueryParam ? "accessToken" : accessTokenInQuery.parameterName;
+        accessTokenParam[accessTokenParamName] = accessToken;
+    }
     return (
-        <iframe src={queryString.stringifyUrl({ url, query: { iframe: true, accessToken } })} width="100%" height="100%" frameBorder="0" />
+        <iframe
+            src={queryString.stringifyUrl({ url, query: { iframe: true, ...accessTokenParam } })}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+        />
     );
 };
 
@@ -73,7 +88,7 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
 
 export const DynamicTab = memo(function DynamicComponent<
     P extends {
-        tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type">;
+        tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "accessTokenInQuery" | "url" | "type">;
     },
 >({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
