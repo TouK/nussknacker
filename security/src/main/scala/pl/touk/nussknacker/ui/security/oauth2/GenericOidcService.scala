@@ -26,13 +26,13 @@ class GenericOidcService[
 
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
 
-  override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
+  override protected def authenticateUser(authorization: AuthorizationData): Future[UserData] = {
     if (useIdToken) {
       val idToken = authorization.idToken.get
       introspectJwtToken[UserData](idToken)
         .filter(_.audienceAsList == List(configuration.clientId))
     } else {
-      super.obtainUserInfo(authorization)
+      super.authenticateUser(authorization)
     }
   }
 

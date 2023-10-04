@@ -18,13 +18,13 @@ class BaseOAuth2Service[
     extends OAuth2Service[UserInfoData, AuthorizationData]
     with LazyLogging {
 
-  final def obtainAuthorizationAndUserInfo(
+  final def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, UserInfoData)] = {
     for {
       authorizationData <- obtainAuthorization(authorizationCode, redirectUri)
-      userInfo          <- obtainUserInfo(authorizationData)
+      userInfo          <- authenticateUser(authorizationData)
     } yield (authorizationData, userInfo)
   }
 
@@ -45,7 +45,7 @@ class BaseOAuth2Service[
   that provides information about a user only with his valid access token.
   The following two methods shall call such a resource.
    */
-  protected def obtainUserInfo(authorizationData: AuthorizationData): Future[UserInfoData] =
+  protected def authenticateUser(authorizationData: AuthorizationData): Future[UserInfoData] =
     authenticateUser(authorizationData.accessToken, IntrospectedAccessTokenData.empty)
 
   override private[oauth2] def authenticateUser(

@@ -22,12 +22,12 @@ abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2Authoriz
   along with an authorization code to obtain an access token. At this step, the URI is used solely for verification.
    String comparison is performed by the authorization server, hence the type.
    */
-  def obtainAuthorizationAndUserInfo(
+  def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, UserInfoData)]
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
+  def checkAuthorizationAndAuthenticateUser(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     for {
       accessTokenData <- introspectAccessToken(accessToken)
       userInfo        <- authenticateUser(accessToken, accessTokenData)

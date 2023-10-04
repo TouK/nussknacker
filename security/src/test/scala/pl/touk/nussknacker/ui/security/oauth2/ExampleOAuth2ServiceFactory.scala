@@ -16,13 +16,13 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 ) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData]
     with LazyLogging {
 
-  def obtainAuthorizationAndUserInfo(
+  def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
     for {
       accessTokenResponse <- clientApi.accessTokenRequest(authorizationCode, redirectUri)
-      authenticatedUser   <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
+      authenticatedUser   <- checkAuthorizationAndAuthenticateUser(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
   override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =

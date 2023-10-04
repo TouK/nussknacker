@@ -12,12 +12,12 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
 )(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
     extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
-  def obtainAuthorizationAndUserInfo(
+  def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, AuthenticatedUser)] = {
     for {
-      (authorization, userInfo) <- delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+      (authorization, userInfo) <- delegate.obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri)
       authenticatedUser <- authenticatedUserFrom(
         new AuthenticatedUserParameters(IntrospectedAccessTokenData.empty, () => Future.successful(userInfo))
       )

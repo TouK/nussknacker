@@ -48,11 +48,11 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
       val (authData, userData) =
-        open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
+        open.obtainAuthorizationAndAuthenticateUser(authorizationCode, config.redirectUri.get.toString).futureValue
       userData.username shouldBe "user1"
       userData.roles should contain("ARole")
 
-      val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
+      val profile = open.checkAuthorizationAndAuthenticateUser(authData.accessToken).futureValue
       profile._1.username shouldBe "user1"
       profile._1.roles should contain("ARole")
     }

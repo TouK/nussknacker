@@ -62,7 +62,12 @@ class JwtOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers wi
       JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
     val seconds =
-      jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(validAccessToken).futureValue._2.get.getEpochSecond - Instant
+      jwtOAuth2Service
+        .checkAuthorizationAndAuthenticateUser(validAccessToken)
+        .futureValue
+        ._2
+        .get
+        .getEpochSecond - Instant
         .now()
         .getEpochSecond
 
