@@ -32,12 +32,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
     val config = oauth2Conf
     val oidcService = new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
       new OidcService(config),
-      params =>
-        OpenIdConnectProfile.authenticateUser(
-          params.accessTokenData,
-          params.getUserInfo(),
-          config.oAuth2Configuration
-        )
+      new OpenIdConnectProfileAuthentication(config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)

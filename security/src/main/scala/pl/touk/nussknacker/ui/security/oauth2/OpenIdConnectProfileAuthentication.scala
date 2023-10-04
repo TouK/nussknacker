@@ -4,7 +4,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usernameBasedOnUsersConfiguration}
+import pl.touk.nussknacker.ui.security.oauth2.AuthenticationStrategy.{getUserRoles, usernameBasedOnUsersConfiguration}
 
 import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,11 +65,10 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
     rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
-object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
+class OpenIdConnectProfileAuthentication(configuration: OAuth2Configuration) extends AuthenticationStrategy[OpenIdConnectUserInfo] {
   override def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
-      getProfile: => Future[OpenIdConnectUserInfo],
-      configuration: OAuth2Configuration
+      getProfile: => Future[OpenIdConnectUserInfo]
   )(implicit ec: ExecutionContext): Future[AuthenticatedUser] = {
     authenticateUserBasedOnAccessTokenDataAndUsersConfigurationOnly(accessTokenData, configuration).getOrElse(
       authenticateUserBasedOnProfile(accessTokenData, getProfile, configuration)

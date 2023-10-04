@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData: Decoder](
     delegate: OAuth2Service[UserInfoData, AuthorizationData],
-    authenticatedUserFrom: AuthenticatedUserParameters[UserInfoData] => Future[AuthenticatedUser]
+    authenticationStrategy: AuthenticationStrategy[UserInfoData]
 )(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
     extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
@@ -18,8 +18,9 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
   ): Future[(AuthorizationData, AuthenticatedUser)] = {
     for {
       (authorization, userInfo) <- delegate.obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri)
-      authenticatedUser <- authenticatedUserFrom(
-        new AuthenticatedUserParameters(IntrospectedAccessTokenData.empty, () => Future.successful(userInfo))
+      authenticatedUser <- authenticationStrategy.authenticateUser(
+        IntrospectedAccessTokenData.empty,
+        Future.successful(userInfo)
       )
     } yield (authorization, authenticatedUser)
   }
@@ -31,14 +32,7 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
       accessToken: String,
       accessTokenData: IntrospectedAccessTokenData
   ): Future[AuthenticatedUser] = {
-    authenticatedUserFrom(
-      new AuthenticatedUserParameters(accessTokenData, () => delegate.authenticateUser(accessToken, accessTokenData))
-    )
+    authenticationStrategy.authenticateUser(accessTokenData, delegate.authenticateUser(accessToken, accessTokenData))
   }
 
 }
-
-final class AuthenticatedUserParameters[UserInfoData](
-    val accessTokenData: IntrospectedAccessTokenData,
-    val getUserInfo: () => Future[UserInfoData]
-)
