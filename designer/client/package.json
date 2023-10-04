@@ -209,7 +209,7 @@
         "moment-locales-webpack-plugin": "1.2.0",
         "patch-package": "7.0.0",
         "path-browserify": "1.0.1",
-        "postcss": "8.4.5",
+        "postcss": "8.4.31",
         "postcss-import": "14.1.0",
         "postcss-loader": "6.2.1",
         "postcss-move-props-to-bg-image-query": "4.0.0",
