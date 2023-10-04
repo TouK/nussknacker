@@ -10,18 +10,21 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, Me
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 
 class TypeInfosSpec extends AnyFunSuite with Matchers {
+
   private val noVarArgsMethodInfo =
     StaticMethodInfo(
       MethodTypeInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double]),
       "f",
       None
     )
+
   private val varArgsMethodInfo =
     StaticMethodInfo(
       MethodTypeInfo(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int])), Typed[Float]),
       "f",
       None
     )
+
   private val superclassMethodInfo =
     StaticMethodInfo(
       MethodTypeInfo(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number])), Typed[String]),
@@ -131,4 +134,5 @@ class TypeInfosSpec extends AnyFunSuite with Matchers {
       methodInfo.computeResultType(Typed[String] :: Nil)
     }.getMessage shouldBe "Generic function f returned type Integer that does not match any of declared types (String) when called with arguments (String)"
   }
+
 }

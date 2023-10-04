@@ -14,6 +14,7 @@ trait StringForcingDatumReader[T] extends GenericDatumReader[T] {
       classOf[String]
     else super.findStringClass(schema)
   }
+
 }
 
 object StringForcingDatumReaderProvider {

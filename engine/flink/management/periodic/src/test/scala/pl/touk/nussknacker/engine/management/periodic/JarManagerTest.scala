@@ -21,6 +21,7 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
     ProcessVersion.empty.copy(processName = ProcessName(processName), versionId = VersionId(processVersionId))
   private val jarsDir             = Files.createTempDirectory("jars-dir")
   private val modelJarFileContent = "abc".getBytes
+
   private val currentModelJarFile = {
     val tempFile = Files.createTempFile("currentModelJarFile", ".jar")
     Files.write(tempFile, modelJarFileContent)
@@ -79,4 +80,5 @@ class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with Pa
 
     result shouldBe (())
   }
+
 }

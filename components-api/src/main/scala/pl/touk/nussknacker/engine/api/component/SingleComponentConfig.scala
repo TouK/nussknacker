@@ -56,6 +56,7 @@ object SingleComponentConfig {
       )
     }
   }
+
 }
 
 @JsonCodec case class ParameterConfig(

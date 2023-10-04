@@ -49,6 +49,7 @@ class KafkaSchemaRegistryBasedValueSerializationSchemaFactory(
       kafkaConfig: KafkaConfig
   ): Serializer[Any] =
     createSerializer(kafkaConfig, schemaOpt, isKey = false)
+
 }
 
 class KafkaSchemaRegistryBasedKeyValueSerializationSchemaFactory(

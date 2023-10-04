@@ -21,4 +21,5 @@ trait ProcessingTypeDataProviderFactory {
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any]
   ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
+
 }

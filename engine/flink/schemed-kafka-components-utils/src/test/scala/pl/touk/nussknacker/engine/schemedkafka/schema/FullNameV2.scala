@@ -25,6 +25,7 @@ case class FullNameV2(var first: CharSequence, var middle: CharSequence, var las
       case 2 => last = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
+
 }
 
 object FullNameV2 extends TestSchemaWithSpecificRecord {
@@ -59,4 +60,5 @@ object FullNameV2 extends TestSchemaWithSpecificRecord {
       Map("first" -> FullNameV1.BaseFirst, "last" -> FullNameV1.BaseLast, "middle" -> null),
       schema
     )
+
 }

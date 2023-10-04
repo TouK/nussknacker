@@ -19,6 +19,7 @@ import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
+
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
@@ -103,4 +104,5 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       }
       .futureValue
   }
+
 }

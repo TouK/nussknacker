@@ -17,7 +17,9 @@ trait BaseEndpointDefinitions {
       endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]
   ): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
     new ToSecure(endpoint)
+
 }
+
 object BaseEndpointDefinitions {
 
   type EndpointError[ERROR] = Either[SecurityError, ERROR]
@@ -58,9 +60,11 @@ object BaseEndpointDefinitions {
           )
         )
     }
+
   }
 
   private object Codecs {
+
     implicit val authenticationErrorCodec
         : Codec[String, SecurityError.AuthenticationError.type, CodecFormat.TextPlain] = {
       Codec.string.map(
@@ -78,10 +82,13 @@ object BaseEndpointDefinitions {
         )
       )
     }
+
   }
+
 }
 
 sealed trait SecurityError
+
 object SecurityError {
   case object AuthenticationError extends SecurityError
   case object AuthorizationError  extends SecurityError

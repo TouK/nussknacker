@@ -6,6 +6,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 
 object ProcessComparator {
+
   def compare(currentProcess: DisplayableProcess, otherProcess: DisplayableProcess): Map[String, Difference] = {
     val nodes = getDifferences(
       currentProcess.nodes.map(node => node.id -> node).toMap,
@@ -87,4 +88,5 @@ object ProcessComparator {
       extends Difference {
     override def id: String = "Properties"
   }
+
 }

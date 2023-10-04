@@ -154,6 +154,7 @@ class StandardRemoteEnvironmentSpec
           throw new AssertionError(s"Not expected $uri")
       }
     }
+
   }
 
   private def parseBodyToJson(request: MessageEntity) = {
@@ -420,4 +421,5 @@ class StandardRemoteEnvironmentSpec
       _.converted.id
     ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.id)
   }
+
 }

@@ -32,4 +32,5 @@ class SplitFunction(
     }
     ctx.output(new OutputTag[InterpretationResult](tagName, typeInfo), interpretationResult)
   }
+
 }

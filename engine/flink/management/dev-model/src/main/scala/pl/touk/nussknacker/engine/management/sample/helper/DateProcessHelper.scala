@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 object DateProcessHelper extends HideToString {
+
   @Documentation(
     description = "Returns current time in milliseconds"
   )
@@ -25,4 +26,5 @@ object DateProcessHelper extends HideToString {
   def paramsOnlyMethod(@ParamName("number") number: Int, @ParamName("format") format: String): String = {
     ""
   }
+
 }

@@ -36,4 +36,5 @@ class DynamicComponentProvider extends ComponentProvider {
   case object DynamicProvidedService extends Service {
     @MethodToInvoke def invoke(): Future[Unit] = Future.unit
   }
+
 }

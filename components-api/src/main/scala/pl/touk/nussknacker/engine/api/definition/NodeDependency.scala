@@ -37,6 +37,7 @@ case class TypedNodeDependency[T](clazz: Class[_]) extends NodeDependency with V
       }
       .getOrElse(throw new IllegalStateException(s"Missing node dependency of class: $clazz"))
   }
+
 }
 
 object TypedNodeDependency {
@@ -55,6 +56,7 @@ case object OutputVariableNameDependency extends NodeDependency with ValueExtrac
       }
       .getOrElse(throw MissingOutputVariableException)
   }
+
 }
 
 object Parameter {
@@ -145,9 +147,11 @@ sealed trait AdditionalVariable {
 }
 
 object AdditionalVariableProvidedInRuntime {
+
   def apply[T: TypeTag]: AdditionalVariableProvidedInRuntime = AdditionalVariableProvidedInRuntime(
     Typed.fromDetailedType[T]
   )
+
 }
 
 case class AdditionalVariableProvidedInRuntime(typingResult: TypingResult) extends AdditionalVariable

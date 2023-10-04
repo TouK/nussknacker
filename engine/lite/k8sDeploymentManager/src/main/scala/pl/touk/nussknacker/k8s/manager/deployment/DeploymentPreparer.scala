@@ -190,4 +190,5 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       case _             => throw new IllegalStateException("Deployment should have only one 'runtime' container")
     }) ++ nonRuntimeContainers
   }
+
 }

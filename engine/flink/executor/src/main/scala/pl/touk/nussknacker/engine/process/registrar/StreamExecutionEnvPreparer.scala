@@ -38,6 +38,7 @@ trait StreamExecutionEnvPreparer {
       singleOutputStreamOperator: SingleOutputStreamOperator[_],
       outputTag: OutputTag[T]
   ): DataStream[T]
+
 }
 
 class DefaultStreamExecutionEnvPreparer(

@@ -23,6 +23,7 @@ import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 
 object ExampleFunctions {
+
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head[T >: Null](list: java.util.List[T]): T =
@@ -38,6 +39,7 @@ object ExampleFunctions {
       case TypedClass(`listClass`, _) :: Nil        => throw new AssertionError("Lists must have one parameter")
       case _                                        => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   @Documentation(description = "returns example of given type")
@@ -72,6 +74,7 @@ object ExampleFunctions {
       case _ =>
         GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   @Documentation(description = "fails to compile when given object without field 'a'")
@@ -79,6 +82,7 @@ object ExampleFunctions {
   def getFieldA(obj: Any): Any = ???
 
   private class RequiresFiledAHelper extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
@@ -90,6 +94,7 @@ object ExampleFunctions {
       case _ =>
         GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   @Documentation(description = "adds field 'a' to given object")
@@ -97,6 +102,7 @@ object ExampleFunctions {
   def addFieldA(obj: Any): Any = ???
 
   private class AddFieldAHelper extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
@@ -108,6 +114,7 @@ object ExampleFunctions {
       case _ =>
         GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   @Documentation(description = "zips up to 3 numbers")
@@ -116,6 +123,7 @@ object ExampleFunctions {
   def zip(x: Number*): Any = ???
 
   private class ZipHelper extends TypingFunction {
+
     override def signatures: Option[NonEmptyList[MethodTypeInfo]] =
       Some(
         NonEmptyList.of(
@@ -147,5 +155,7 @@ object ExampleFunctions {
         case _                  => ArgumentTypeError.invalidNel
       }
     }
+
   }
+
 }

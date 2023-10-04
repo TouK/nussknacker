@@ -34,4 +34,5 @@ object Address extends TestSchemaWithRecord {
        |  street: "$DefaultStreet"
        |}
      """.stripMargin
+
 }

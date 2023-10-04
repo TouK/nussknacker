@@ -114,6 +114,7 @@ package object definition {
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
   object ComponentTemplate {
+
     def create(
         `type`: ComponentType,
         node: NodeData,
@@ -121,6 +122,7 @@ package object definition {
         branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
     ): ComponentTemplate =
       ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
+
   }
 
   @JsonCodec(encodeOnly = true) final case class ComponentTemplate(
@@ -158,6 +160,7 @@ package object definition {
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
+
   }
 
   @JsonCodec final case class UICustomAction(

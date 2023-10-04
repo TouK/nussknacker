@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkImplFactor
 import pl.touk.nussknacker.engine.util.{KeyedValue, ThreadUtils}
 
 object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
+
   override def createSink(
       preparedTopic: PreparedKafkaTopic,
       keyParam: LazyParameter[AnyRef],
@@ -45,4 +46,5 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
       }
     }
   }
+
 }

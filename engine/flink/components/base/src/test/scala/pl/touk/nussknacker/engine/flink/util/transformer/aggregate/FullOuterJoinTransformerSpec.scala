@@ -564,6 +564,7 @@ object FullOuterJoinTransformerSpec {
       joinedRecordsSource: BlockingQueueSource[OneRecord],
       collectingListener: ResultsCollectingListener
   ) extends EmptyProcessConfigCreator {
+
     def resetElementsAdded(): Unit = {
       elementsAddedToState.clear()
     }
@@ -572,6 +573,7 @@ object FullOuterJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(customElementName -> WithCategories(new FullOuterJoinTransformer(None) {
+
         override protected def prepareAggregatorFunction(
             aggregator: Aggregator,
             stateTimeout: FiniteDuration,
@@ -595,6 +597,7 @@ object FullOuterJoinTransformerSpec {
             }
           }
         }
+
       }))
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =

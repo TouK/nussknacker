@@ -35,6 +35,7 @@ object ProcessMarshaller {
           )
         )
     )
+
   private lazy val filterDecode: Decoder[CanonicalNode] =
     for {
       data      <- deriveConfiguredDecoder[Filter]

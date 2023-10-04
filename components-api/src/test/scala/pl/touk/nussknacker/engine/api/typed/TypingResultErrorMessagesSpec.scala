@@ -75,4 +75,5 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
     canBeSubclassOf(TypedNull, Typed.fromInstance(1)) shouldBe
       "Null cannot be subclass of type with value".invalidNel
   }
+
 }

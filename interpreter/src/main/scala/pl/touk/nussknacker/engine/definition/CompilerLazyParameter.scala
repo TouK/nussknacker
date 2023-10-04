@@ -24,6 +24,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
     expression: Expression,
     returnType: TypingResult
 ) extends EvaluableLazyParameter[T] {
+
   override def prepareEvaluator(
       compilerInterpreter: LazyParameterInterpreter
   )(implicit ec: ExecutionContext): Context => Future[T] = {
@@ -41,6 +42,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
         .successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData))
         .map(_.value.asInstanceOf[T])(ec)
   }
+
 }
 
 trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 import java.io.ByteArrayOutputStream
 
 object SchemaIdBasedAvroGenericRecordSerializer {
+
   def apply(
       schemaRegistryClientFactory: SchemaRegistryClientFactory,
       kafkaConfig: KafkaConfig
@@ -28,6 +29,7 @@ object SchemaIdBasedAvroGenericRecordSerializer {
       kafkaConfig.schemaRegistryClientKafkaConfig
     )
   }
+
 }
 
 @SerialVersionUID(42553325228495L)

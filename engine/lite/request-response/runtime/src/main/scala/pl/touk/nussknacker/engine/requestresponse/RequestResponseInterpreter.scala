@@ -105,6 +105,7 @@ object RequestResponseInterpreter {
       statelessScenarioInterpreter.close()
       context.close()
     }
+
     /*
      * TODO : move inputSchema and outputSchema to one place
      * It is better to have both schemas in one place (properties or some new/custom place)
@@ -138,6 +139,7 @@ object RequestResponseInterpreter {
         )
       }
     }
+
   }
 
   def testRunner[Effect[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =

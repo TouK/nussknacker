@@ -94,7 +94,9 @@ trait numeric extends MathUtils with HideToString {
 }
 
 object numeric extends numeric {
+
   class ToNumberTypingFunction extends TypingFunction {
+
     override def signatures: Option[NonEmptyList[MethodTypeInfo]] = Some(
       NonEmptyList.of(
         MethodTypeInfo.withoutVarargs(
@@ -110,13 +112,16 @@ object numeric extends numeric {
       if (arguments.head.canBeSubclassOf(Typed[Number])) arguments.head.withoutValue.validNel
       else Typed[Number].validNel
     }
+
   }
 
   private class SingleArgumentMathTypingFunction extends TypingFunction {
+
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
       arguments.head.withoutValue.validNel
+
   }
 
   private trait OperatorTypingFunction extends TypingFunction {
@@ -126,6 +131,7 @@ object numeric extends numeric {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
       numberTypesPromotionStrategy.promote(arguments.head, arguments(1)).withoutValue.validNel
+
   }
 
   private class MinMaxTypingFunction extends OperatorTypingFunction {
@@ -142,4 +148,5 @@ object numeric extends numeric {
     override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeNumbersOperation
   }
+
 }

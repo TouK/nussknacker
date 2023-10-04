@@ -37,4 +37,5 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
         )
       }
     }
+
 }

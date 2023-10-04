@@ -48,6 +48,7 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: String)
       extends ExecutionConfigPreparer {
+
     override def prepareExecutionConfig(
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
@@ -86,10 +87,12 @@ object ExecutionConfigPreparer extends LazyLogging {
   }
 
   object ProcessSettingsPreparer {
+
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
       val buildInfo = Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
       new ProcessSettingsPreparer(modelData.processConfig, modelData.objectNaming, buildInfo)
     }
+
   }
 
   class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer {
@@ -106,6 +109,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         logger.debug("Object reuse enabled")
       }
     }
+
   }
 
   class UnoptimizedSerializationPreparer(modelData: ModelData) extends SerializationPreparer(modelData) {

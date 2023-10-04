@@ -46,4 +46,5 @@ class TypeReferenceTyper(evaluationContext: EvaluationContext, typeDefinitionSet
     val withoutPrefix = typeReference.toStringAST.drop(2)
     withoutPrefix.take(withoutPrefix.length - 1)
   }
+
 }

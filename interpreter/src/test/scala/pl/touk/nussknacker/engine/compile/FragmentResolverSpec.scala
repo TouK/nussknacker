@@ -166,6 +166,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment("sub", Set("output1", "output2"))))
 
   }
+
   test("not disable fragment with no outputs") {
 
     val process = ScenarioBuilder
@@ -370,6 +371,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
   // FIXME: not sure if it's good way.
   private implicit class DisabledFragment[R](builder: GraphBuilder[R]) extends GraphBuilder[R] {
+
     def fragmentDisabled(
         id: String,
         fragmentId: String,

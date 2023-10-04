@@ -180,4 +180,5 @@ object FlinkStreamingPropertiesConfig {
     metadataType = StreamMetaData.typeName,
     overridingProperties = Map(StreamMetaData.parallelismName -> "1", StreamMetaData.spillStateToDiskName -> "true")
   )
+
 }

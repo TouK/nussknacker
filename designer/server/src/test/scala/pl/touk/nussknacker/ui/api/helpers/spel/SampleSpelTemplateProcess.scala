@@ -32,4 +32,5 @@ object SampleSpelTemplateProcess {
         SinkValueParamName -> spelTemplate("#output")
       )
   }
+
 }

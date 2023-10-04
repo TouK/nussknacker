@@ -222,6 +222,7 @@ object KafkaSourceFactory {
         contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
         testParametersInfo: KafkaTestParametersInfo
     ): Source
+
   }
 
 }

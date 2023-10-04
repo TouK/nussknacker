@@ -57,6 +57,7 @@ class GenericOidcTokenAuthenticationSpec
     JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, secret, JwtAlgorithm.HS256)
   private val accessTokenWithInvalidAudience =
     JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), secret, JwtAlgorithm.HS256)
+
   private val noProfileAccessToken = {
     val claim = JwtClaim()
       .about("no-profile-user")

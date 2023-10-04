@@ -140,19 +140,23 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
         case _                   => true
       }
   }
+
   private implicit val parameterE: Encoder[Parameter]               = deriveConfiguredEncoder
   private implicit val methodTypeInfoE: Encoder[MethodTypeInfo]     = deriveConfiguredEncoder
   private implicit val staticMethodInfoE: Encoder[StaticMethodInfo] = deriveConfiguredEncoder
+
   private implicit val functionalMethodInfoE: Encoder[FunctionalMethodInfo] = (a: FunctionalMethodInfo) =>
     Json.obj(
       ("signatures", a.signatures.asJson),
       ("name", a.name.asJson),
       ("description", a.description.asJson)
     )
+
   private implicit val methodInfoE: Encoder[MethodInfo] = {
     case x: StaticMethodInfo     => x.asJson
     case x: FunctionalMethodInfo => x.asJson
   }
+
   private implicit val typedClassE: Encoder[TypedClass]           = typingResultEncoder.contramap[TypedClass](identity)
   private implicit val clazzDefinitionE: Encoder[ClazzDefinition] = deriveConfiguredEncoder
 
@@ -207,4 +211,5 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
       value
     }
   }
+
 }

@@ -51,6 +51,7 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
+
   def apply(configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       backend: SttpBackend[Future, Any]
@@ -59,8 +60,11 @@ object GenericOidcService {
       OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
       configuration
     ) {
+
       override protected def toIntrospectedData(claims: OpenIdConnectUserInfo): IntrospectedAccessTokenData = {
         super.toIntrospectedData(claims).copy(roles = claims.roles)
       }
+
     }
+
 }

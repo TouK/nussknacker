@@ -21,6 +21,7 @@ object LoggingService extends EagerService {
       @ParamName("message") @SimpleEditor(`type` = SimpleEditorType.SPEL_TEMPLATE_EDITOR) message: LazyParameter[String]
   )(implicit metaData: MetaData, nodeId: NodeId): ServiceInvoker =
     new ServiceInvoker {
+
       private lazy val logger = LoggerFactory.getLogger(
         (rootLogger :: metaData.id :: nodeId.id :: Option(loggerName).toList).filterNot(_.isBlank).mkString(".")
       )
@@ -41,6 +42,7 @@ object LoggingService extends EagerService {
         }
         Future.successful(())
       }
+
     }
 
 }

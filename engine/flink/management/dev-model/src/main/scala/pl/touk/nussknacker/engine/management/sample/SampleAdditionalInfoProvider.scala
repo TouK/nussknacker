@@ -42,4 +42,5 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
       case _ => Future.successful(None)
     }
   }
+
 }

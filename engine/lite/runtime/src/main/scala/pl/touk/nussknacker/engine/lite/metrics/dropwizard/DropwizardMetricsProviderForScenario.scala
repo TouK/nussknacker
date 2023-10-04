@@ -64,4 +64,5 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   override def close(): Unit = {
     metricRegistry.removeMatching((name: MetricName, _: Metric) => name.getTags.get(scenarioIdTag) == scenarioId)
   }
+
 }

@@ -46,4 +46,5 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
     )
   }
+
 }

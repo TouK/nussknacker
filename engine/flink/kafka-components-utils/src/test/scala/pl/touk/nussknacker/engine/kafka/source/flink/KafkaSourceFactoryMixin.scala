@@ -148,6 +148,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
   }
+
 }
 
 object KafkaSourceFactoryMixin {

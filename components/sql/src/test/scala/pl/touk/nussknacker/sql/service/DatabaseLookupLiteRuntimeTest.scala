@@ -19,6 +19,7 @@ class DatabaseLookupLiteRuntimeTest
     with LiteRuntimeTest
     with BeforeAndAfterAll
     with WithHsqlDB {
+
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",

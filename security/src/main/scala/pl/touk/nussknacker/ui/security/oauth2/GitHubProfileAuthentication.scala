@@ -8,7 +8,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @JsonCodec final case class GitHubProfileResponse(id: Long, email: Option[String], login: String)
 
-class GitHubProfileAuthentication(configuration: OAuth2Configuration) extends AuthenticationStrategy[GitHubProfileResponse] {
+class GitHubProfileAuthentication(configuration: OAuth2Configuration)
+    extends AuthenticationStrategy[GitHubProfileResponse] {
+
   override def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[GitHubProfileResponse]

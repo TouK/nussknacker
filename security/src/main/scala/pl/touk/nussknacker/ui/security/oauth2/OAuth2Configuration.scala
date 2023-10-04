@@ -66,6 +66,7 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 
   val name                                        = "OAuth2"
@@ -119,6 +120,7 @@ object JwtConfiguration {
       certificateFile: Option[String],
       idTokenNonceVerificationRequired: Boolean = false
   ) extends JwtConfiguration {
+
     def authServerPublicKey: Some[PublicKey] = {
       val charset: Charset = StandardCharsets.UTF_8
 
@@ -138,5 +140,7 @@ object JwtConfiguration {
           )
       }
     }
+
   }
+
 }

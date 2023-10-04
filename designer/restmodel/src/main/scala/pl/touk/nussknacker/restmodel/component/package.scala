@@ -60,6 +60,7 @@ package object component {
   )
 
   object ComponentUsagesInScenario {
+
     def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario =
       ComponentUsagesInScenario(
         id = process.id, // Right now we assume that scenario id is name..
@@ -75,6 +76,7 @@ package object component {
         createdBy = process.createdBy,
         lastAction = process.lastAction
       )
+
   }
 
   @JsonCodec

@@ -489,6 +489,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val results = SinkForInputMeta.data.map(_.asInstanceOf[InputMeta[T]].copy(timestamp = 0L))
     results should contain(expectedInputMeta)
   }
+
 }
 
 @JsonCodec case class SimpleJsonRecord(id: String, field: String)

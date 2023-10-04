@@ -29,6 +29,7 @@ object SwaggerEnrichers {
       )
     }
   }
+
 }
 
 final case class SwaggerEnricherDefinition(

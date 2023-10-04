@@ -6,6 +6,7 @@ import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+
 class GenericRecordSchemaIdSerializationSupport(schemaIdSerializationEnabled: Boolean) {
 
   def wrapWithRecordWithSchemaIdIfNeeded(data: AnyRef, readerSchemaData: RuntimeSchemaData[AvroSchema]): AnyRef = {

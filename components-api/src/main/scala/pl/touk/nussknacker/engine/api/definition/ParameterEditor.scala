@@ -38,6 +38,7 @@ case object SpelTemplateParameterEditor extends SimpleParameterEditor
 @JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object DurationParameterEditor {
+
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {
     new Encoder[ChronoUnit] {
       override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(chronoUnit.name())
@@ -47,11 +48,13 @@ object DurationParameterEditor {
   implicit val chronoUnitDecoder: Decoder[ChronoUnit] = {
     Decoder.decodeString.emapTry(name => Try(ChronoUnit.valueOf(name)))
   }
+
 }
 
 @JsonCodec case class PeriodParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object PeriodParameterEditor {
+
   implicit val chronoUnitEncoder: Encoder[ChronoUnit] = {
     new Encoder[ChronoUnit] {
       override def apply(chronoUnit: ChronoUnit): Json = Encoder.encodeString(chronoUnit.name())
@@ -61,6 +64,7 @@ object PeriodParameterEditor {
   implicit val chronoUnitDecoder: Decoder[ChronoUnit] = {
     Decoder.decodeString.emapTry(name => Try(ChronoUnit.valueOf(name)))
   }
+
 }
 
 /* To use this editor you have to:
@@ -78,6 +82,7 @@ case object CronParameterEditor extends SimpleParameterEditor
     extends ParameterEditor
 
 object DualParameterEditor {
+
   implicit val dualEditorModeEncoder: Encoder[DualEditorMode] = {
     new Encoder[DualEditorMode] {
       override def apply(editorMode: DualEditorMode): Json = Encoder.encodeString(editorMode.name())
@@ -87,4 +92,5 @@ object DualParameterEditor {
   implicit val decodeDualEditorMode: Decoder[DualEditorMode] = {
     Decoder.decodeString.emapTry(name => Try(DualEditorMode.fromName(name)))
   }
+
 }

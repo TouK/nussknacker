@@ -62,4 +62,5 @@ class SpelSecurityExcludeListBenchmark {
   def benchmark(): AnyRef = {
     setup.test()
   }
+
 }

@@ -17,6 +17,7 @@ trait V1_041__RemoveTypeSpecificDataDefinition extends ProcessJsonMigration with
       case Right(updatedJson) => Some(updatedJson)
     }
   }
+
 }
 
 object V1_041__RemoveTypeSpecificDataDefinition {
@@ -27,4 +28,5 @@ object V1_041__RemoveTypeSpecificDataDefinition {
       case Right(updatedProcess) => Right(updatedProcess.asJson)
     }
   }
+
 }

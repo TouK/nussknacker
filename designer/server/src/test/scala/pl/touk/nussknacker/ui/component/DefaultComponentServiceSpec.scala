@@ -509,14 +509,17 @@ class DefaultComponentServiceSpec
     categories.forall(cat => user.can(cat, Permission.Read))
 
   private val admin = TestFactory.adminUser()
+
   private val marketingFullUser = TestFactory.userWithCategoriesReadPermission(
     username = "marketingFullUser",
     categories = MarketingWithoutSuperCategories
   )
+
   private val marketingTestsUser = TestFactory.userWithCategoriesReadPermission(
     username = "marketingTestsUser",
     categories = List(CategoryMarketingTests)
   )
+
   private val fraudFullUser =
     TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = FraudWithoutSupperCategories)
   private val fraudTestsUser =
@@ -533,6 +536,7 @@ class DefaultComponentServiceSpec
       ConfigFactory.empty()
     )
   }
+
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(
     processingTypeDataMap,
     DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService)

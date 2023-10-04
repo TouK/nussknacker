@@ -78,4 +78,5 @@ case class PeriodicProcessScheduleData(process: PeriodicProcess, deployments: Li
     val deploymentsForSchedules = deployments.map(_.display)
     s"processName=${process.processVersion.processName}, deploymentsForSchedules=$deploymentsForSchedules"
   }
+
 }

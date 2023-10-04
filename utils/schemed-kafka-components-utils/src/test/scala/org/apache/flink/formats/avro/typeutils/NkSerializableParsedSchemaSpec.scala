@@ -42,4 +42,5 @@ class NkSerializableParsedSchemaSpec extends AnyFunSuite with Matchers {
     val expected = input.readObject().asInstanceOf[NkSerializableParsedSchema[ParsedSchema]]
     expected.getParsedSchema shouldBe parsedSchema
   }
+
 }

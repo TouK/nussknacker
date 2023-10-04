@@ -70,6 +70,7 @@ class EmbeddedDeploymentManager(
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
+
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios =
       Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
@@ -213,4 +214,5 @@ class EmbeddedDeploymentManager(
       processVersion: ProcessVersion,
       scenarioDeployment: Try[Deployment]
   )
+
 }

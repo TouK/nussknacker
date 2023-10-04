@@ -109,4 +109,5 @@ object OidcAuthenticationConfiguration {
       config: Config
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration =
     create(config).withDiscovery
+
 }

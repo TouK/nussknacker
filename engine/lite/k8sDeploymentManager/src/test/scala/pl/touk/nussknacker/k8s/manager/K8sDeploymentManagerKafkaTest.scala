@@ -365,6 +365,7 @@ class K8sDeploymentManagerKafkaTest
       KafkaConfigProperties.property("configExecutionOverrides.modelConfig.kafka", "schema.registry.url"),
       fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081")
     )
+
   private val modelData: LocalModelData = LocalModelData(
     ConfigFactory.empty
       // e.g. when we want to run Designer locally with some proxy?
@@ -428,6 +429,7 @@ class K8sDeploymentManagerKafkaTest
       scenario: CanonicalProcess,
       version: ProcessVersion
   ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
+
     override def withRunningScenario(action: => Unit): Unit = {
       kafka.createTopic(inputTopic)
       kafka.createTopic(outputTopic)
@@ -435,6 +437,7 @@ class K8sDeploymentManagerKafkaTest
       // should not fail
       assertNoGarbageLeft()
     }
+
   }
 
 }

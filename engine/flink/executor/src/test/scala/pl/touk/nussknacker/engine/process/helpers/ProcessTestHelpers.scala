@@ -59,6 +59,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       MockService.clear()
       env.withJobRunning(process.id)(actionToInvokeWithJobRunning)
     }
+
   }
 
 }
@@ -68,6 +69,7 @@ object ProcessTestHelpers {
 }
 
 class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCreator {
+
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map(
       "logService"                       -> WithCategories(new MockService),

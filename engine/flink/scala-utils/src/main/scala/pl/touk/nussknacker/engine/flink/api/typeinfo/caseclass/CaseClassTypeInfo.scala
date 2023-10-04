@@ -253,6 +253,7 @@ abstract class CaseClassTypeInfo[T <: Product](
         types.take(maxIndex + 1).map(_.createSerializer(config))
       )
     }
+
   }
 
   override def toString: String = {
@@ -283,4 +284,5 @@ abstract class CaseClassTypeInfo[T <: Product](
   override def canEqual(obj: Any): Boolean = {
     obj.isInstanceOf[CaseClassTypeInfo[_]]
   }
+
 }

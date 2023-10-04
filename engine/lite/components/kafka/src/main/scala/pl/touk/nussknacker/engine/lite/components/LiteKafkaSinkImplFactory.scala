@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkImplFactory
 
 object LiteKafkaSinkImplFactory extends KafkaSinkImplFactory {
+
   override def prepareSink(
       topic: PreparedKafkaTopic,
       value: LazyParameter[AnyRef],
@@ -25,4 +26,5 @@ object LiteKafkaSinkImplFactory extends KafkaSinkImplFactory {
       }
     }
   }
+
 }

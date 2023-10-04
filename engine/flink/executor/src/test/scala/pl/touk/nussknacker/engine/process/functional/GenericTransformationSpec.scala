@@ -98,4 +98,5 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
       s"test|transformed:test|4+type1-2+componentUseCase:${ComponentUseCase.EngineRuntime}"
     )
   }
+
 }

@@ -346,4 +346,5 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
     override def doubleValue(): Double = 4.0
   }
+
 }

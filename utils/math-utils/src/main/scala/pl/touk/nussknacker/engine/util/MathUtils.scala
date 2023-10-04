@@ -272,6 +272,7 @@ trait MathUtils {
       throw new IllegalStateException("Bytes should be promoted to Ints before operator")
 
   }
+
 }
 
 object MathUtils extends MathUtils

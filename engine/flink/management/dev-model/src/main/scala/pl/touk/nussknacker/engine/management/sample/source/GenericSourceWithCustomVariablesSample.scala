@@ -39,6 +39,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
     override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
       new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
+
         override def apply(input: String): Context = {
           // perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
@@ -48,6 +49,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
           // initialize context with input variable and append computed values
           super.apply(input).withVariables(additionalVariables)
         }
+
       }
 
   }

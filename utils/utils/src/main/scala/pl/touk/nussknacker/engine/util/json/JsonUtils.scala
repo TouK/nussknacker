@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import scala.jdk.CollectionConverters._
 
 object JsonUtils {
+
   def jsonToAny(json: Json): Any = json.fold(
     jsonNull = null,
     jsonBoolean = identity[Boolean],
@@ -13,4 +14,5 @@ object JsonUtils {
     jsonArray = _.map(jsonToAny).asJava,
     jsonObject = _.toMap.mapValuesNow(jsonToAny).asJava
   )
+
 }

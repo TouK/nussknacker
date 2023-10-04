@@ -76,4 +76,5 @@ object LocalNussknackerWithSingleModel {
     file.deleteOnExit()
     file
   }
+
 }

@@ -56,6 +56,7 @@ class NodeResourcesSpec
     typeToConfig.mapValues(_.additionalValidators),
     new FragmentResolver(fragmentRepository)
   )
+
   private val nodeRoute = new NodesResources(
     futureFetchingProcessRepository,
     fragmentRepository,
@@ -75,6 +76,7 @@ class NodeResourcesSpec
     NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter]       = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
+
   private val processProperties = ProcessProperties.combineTypeSpecificProperties(
     StreamMetaData(),
     additionalFields =
@@ -285,4 +287,5 @@ class NodeResourcesSpec
       }
     }
   }
+
 }

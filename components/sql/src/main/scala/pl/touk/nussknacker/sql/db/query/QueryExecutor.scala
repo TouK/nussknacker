@@ -18,6 +18,7 @@ trait QueryExecutor {
     }.toMap
     TypedMap(fields)
   }
+
 }
 
 class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
@@ -31,6 +32,7 @@ class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor
     else
       null
   }
+
 }
 
 class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
@@ -45,4 +47,5 @@ class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
     }
     results
   }
+
 }

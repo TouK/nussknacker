@@ -509,10 +509,13 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.NoContent
   }
+
 }
+
 private object BaseFlowTest {
 
   implicit class SeqOfHeadersOps(val seq: Seq[Header]) extends AnyVal {
     def toRawHeaders: Seq[(CIString, String)] = seq.map(h => (CIString(h.name), h.value))
   }
+
 }

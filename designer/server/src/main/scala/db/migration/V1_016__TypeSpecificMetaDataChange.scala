@@ -10,6 +10,7 @@ trait V1_016__TypeSpecificMetaDataChange extends ProcessJsonMigration {
 }
 
 object V1_016__TypeSpecificMetaDataChange {
+
   private[migration] def updateMetaData(jsonProcess: Json): Option[Json] = {
     val meta        = jsonProcess.hcursor.downField("metaData")
     val parallelism = meta.downField("parallelism")

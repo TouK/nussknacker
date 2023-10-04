@@ -92,17 +92,22 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
     val validationResult = validator.validate(scenario)
     validationResult
   }
+
 }
 
 object TypedSourceFactory extends SourceFactory {
+
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Source =
     new LiteSource[Any] with ReturningType {
+
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
       ): Any => ValidatedNel[ErrorType, Context] = ???
+
       override def returnType: typing.TypingResult = value.returnType
     }
+
 }
 
 object DumbService extends Service {

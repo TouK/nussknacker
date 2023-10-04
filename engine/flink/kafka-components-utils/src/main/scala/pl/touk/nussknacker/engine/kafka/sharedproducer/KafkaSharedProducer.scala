@@ -51,6 +51,7 @@ final case class DefaultSharedKafkaProducer(
   override def flush(): Unit = {
     producer.flush()
   }
+
 }
 
 trait SharedKafkaProducer {

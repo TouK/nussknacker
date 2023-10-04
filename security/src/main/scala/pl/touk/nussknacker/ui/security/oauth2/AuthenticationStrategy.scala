@@ -5,13 +5,16 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthenticationStrategy[ProfileResponse] {
+
   def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[ProfileResponse]
   )(implicit ec: ExecutionContext): Future[AuthenticatedUser]
+
 }
 
 object AuthenticationStrategy {
+
   def getUserRoles(
       identity: String,
       configuration: OAuth2Configuration,

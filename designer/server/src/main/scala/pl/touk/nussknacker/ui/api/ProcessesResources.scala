@@ -398,6 +398,7 @@ class ProcessesResources(
   private def skipValidateAndResolveParameter = {
     parameters(Symbol("skipValidateAndResolve").as[Boolean].withDefault(false))
   }
+
 }
 
 object ProcessesResources {
@@ -411,6 +412,7 @@ object ProcessesResources {
       processingTypes: Option[Seq[String]],
       names: Option[Seq[String]],
   ) {
+
     def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
       isFragment = isFragment,
       isArchived = isArchived,
@@ -419,9 +421,11 @@ object ProcessesResources {
       processingTypes = processingTypes,
       names = names.map(_.map(ProcessName(_))),
     )
+
   }
 
   object ProcessesQuery {
     def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
   }
+
 }

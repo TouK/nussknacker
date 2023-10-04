@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object Product extends TestSchemaWithRecord {
+
   val stringSchema: String =
     """
       |{
@@ -28,4 +29,5 @@ object Product extends TestSchemaWithRecord {
     "name"  -> "RTM",
     "price" -> 40.00
   )
+
 }

@@ -380,4 +380,5 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
       )
       .matches(currentJson) should be(false)
   }
+
 }

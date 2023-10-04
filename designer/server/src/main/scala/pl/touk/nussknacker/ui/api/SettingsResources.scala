@@ -71,6 +71,7 @@ class SettingsResources(
 @JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
+
   def create(
       validationPattern: String,
       exampleComment: Option[String]
@@ -85,6 +86,7 @@ object DeploymentCommentSettings {
   def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
     new DeploymentCommentSettings(validationPattern, exampleComment)
   }
+
 }
 
 final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)

@@ -12,6 +12,7 @@ trait EitherValuesDetailedMessage {
   ): EitherValuable[L, R] = new EitherValuable(either, pos)
 
   class EitherValuable[L, R](either: Either[L, R], pos: source.Position) {
+
     def leftValue: L = {
       either match {
         case Right(value) =>
@@ -35,6 +36,7 @@ trait EitherValuesDetailedMessage {
           )
       }
     }
+
   }
 
 }

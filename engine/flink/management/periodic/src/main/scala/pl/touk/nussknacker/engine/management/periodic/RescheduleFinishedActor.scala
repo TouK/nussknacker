@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object RescheduleFinishedActor {
+
   def props(service: PeriodicProcessService, interval: FiniteDuration): Props = {
     props(service.handleFinished, interval)
   }

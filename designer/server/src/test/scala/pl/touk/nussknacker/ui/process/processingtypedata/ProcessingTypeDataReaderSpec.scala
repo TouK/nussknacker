@@ -58,6 +58,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   }
 
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {
+
     override protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)(
         implicit ec: ExecutionContext,
         actorSystem: ActorSystem,
@@ -84,6 +85,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         componentIdProvider = new DefaultComponentIdProvider(Map.empty),
       )
     }
+
   }
 
 }

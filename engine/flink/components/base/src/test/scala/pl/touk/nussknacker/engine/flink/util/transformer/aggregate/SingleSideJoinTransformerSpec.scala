@@ -156,6 +156,7 @@ object SingleSideJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
+
         override protected def prepareAggregatorFunction(
             aggregator: Aggregator,
             stateTimeout: FiniteDuration,
@@ -179,6 +180,7 @@ object SingleSideJoinTransformerSpec {
             }
           }
         }
+
       }))
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =

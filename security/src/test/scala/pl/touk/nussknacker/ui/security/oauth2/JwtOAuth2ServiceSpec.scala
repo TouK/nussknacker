@@ -73,4 +73,5 @@ class JwtOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers wi
 
     seconds should be <= 180L
   }
+
 }

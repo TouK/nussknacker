@@ -96,12 +96,14 @@ object FlinkSlotsChecker {
       )
 
   object NotEnoughSlotsException {
+
     def apply(clusterOverview: ClusterOverview, slotsBalance: SlotsBalance): NotEnoughSlotsException =
       NotEnoughSlotsException(
         availableSlots = clusterOverview.`slots-available`,
         totalSlots = clusterOverview.`slots-total`,
         slotsBalance = slotsBalance
       )
+
   }
 
   case class SlotsBalance(released: Int, allocated: Int) {

@@ -53,6 +53,7 @@ class BaseOAuth2Service[
       accessTokenData: IntrospectedAccessTokenData
   ): Future[UserInfoData] =
     clientApi.profileRequest(accessToken)
+
 }
 
 @ConfiguredJsonCodec final case class DefaultOAuth2AuthorizationData(
@@ -67,6 +68,7 @@ object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
 }
 
 object BaseOAuth2Service {
+
   def apply[
       UserInfoData: Decoder
   ](configuration: OAuth2Configuration)(
@@ -74,4 +76,5 @@ object BaseOAuth2Service {
       backend: SttpBackend[Future, Any]
   ): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
     new BaseOAuth2Service(OAuth2ClientApi[UserInfoData, DefaultOAuth2AuthorizationData](configuration))
+
 }

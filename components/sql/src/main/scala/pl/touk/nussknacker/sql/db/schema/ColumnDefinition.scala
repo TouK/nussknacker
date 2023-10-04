@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import java.sql.ResultSetMetaData
 
 object ColumnDefinition {
+
   def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDefinition =
     ColumnDefinition(
       no = columnNo,
@@ -18,6 +19,7 @@ object ColumnDefinition {
       name = typing._1,
       typing = typing._2
     )
+
 }
 
 final case class ColumnDefinition(no: Int, name: String, typing: TypingResult)

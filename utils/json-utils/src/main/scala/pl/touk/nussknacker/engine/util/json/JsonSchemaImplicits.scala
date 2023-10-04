@@ -53,6 +53,7 @@ object JsonSchemaImplicits {
       val requiredProperties = schema.getRequiredProperties.asScala.toSet
       schema.getPropertySchemas.asScala.toMap.filterKeysNow(requiredProperties.contains)
     }
+
   }
 
   private def isNullSchema(sch: Schema): Boolean = sch match {

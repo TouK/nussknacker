@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import scala.concurrent.Future
 
 class OptionalTypesService extends Service with Serializable {
+
   @MethodToInvoke
   def invoke(
       @ParamName("scalaOptionParam") scalaOptionParam: Option[
@@ -22,4 +23,5 @@ class OptionalTypesService extends Service with Serializable {
   ): Future[Unit] = {
     ???
   }
+
 }

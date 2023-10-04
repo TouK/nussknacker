@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
+
 import java.time.{Instant, LocalDate, LocalTime}
 
 import org.apache.avro.{AvroRuntimeException, Schema}

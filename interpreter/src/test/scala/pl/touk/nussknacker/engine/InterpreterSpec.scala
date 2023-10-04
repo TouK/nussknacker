@@ -964,13 +964,16 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     interpretProcess(process, Transaction()) shouldBe new Helper().value
   }
+
 }
 
 class ThrowingService extends Service {
+
   @MethodToInvoke
   def invoke(@ParamName("failFuture") failFuture: Boolean): Future[Void] = {
     if (failFuture) Future.failed(new CustomException("Fail?")) else throw new CustomException("Fail?")
   }
+
 }
 
 class CustomException(message: String) extends Exception(message)
@@ -1012,6 +1015,7 @@ object InterpreterSpec {
     def clear(): Unit = {
       invocations = 0
     }
+
   }
 
   object SpelNodeService extends Service {
@@ -1128,12 +1132,14 @@ object InterpreterSpec {
   }
 
   object EagerServiceWithFixedAdditional extends EagerService {
+
     @MethodToInvoke(returnType = classOf[String])
     def prepare(
         @ParamName("param")
         @AdditionalVariables(Array(new AdditionalVariable(name = "helper", clazz = classOf[Helper])))
         param: String
     ): ServiceInvoker = new ServiceInvoker {
+
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
@@ -1142,7 +1148,9 @@ object InterpreterSpec {
       ): Future[Any] = {
         Future.successful(param)
       }
+
     }
+
   }
 
   object EagerServiceWithMethod extends EagerService {

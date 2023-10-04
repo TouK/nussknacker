@@ -13,6 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 final case class NotificationConfig(duration: FiniteDuration)
 
 trait NotificationService {
+
   def notifications(
       notificationsAfter: Option[Instant]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]]
@@ -25,6 +26,7 @@ class NotificationServiceImpl(
     config: NotificationConfig,
     clock: Clock = Clock.systemUTC()
 ) extends NotificationService {
+
   override def notifications(
       notificationsAfter: Option[Instant]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
@@ -73,4 +75,5 @@ class NotificationServiceImpl(
           throw new IllegalStateException(s"Unexpected action returned by query: $a, for scenario: $processName")
       }.toList)
   }
+
 }

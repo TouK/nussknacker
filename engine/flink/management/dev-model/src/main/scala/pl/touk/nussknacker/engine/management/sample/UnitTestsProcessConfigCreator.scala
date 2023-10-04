@@ -192,6 +192,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
         Future.successful(tariff)
       }
     }
+
   }
 
   class CustomerDataService extends Service with TimeMeasuringService with Serializable {
@@ -204,6 +205,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
         Future.successful(CustomerData(msisdn, "8" + msisdn))
       }
     }
+
   }
 
   @JsonCodec case class CustomerData(msisdn: String, pesel: String) extends DisplayJsonWithEncoder[CustomerData]

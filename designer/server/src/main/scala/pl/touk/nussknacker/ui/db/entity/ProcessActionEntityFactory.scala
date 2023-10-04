@@ -71,7 +71,9 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
     ) <> (
       ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
+
   }
+
 }
 
 final case class ProcessActionEntityData(

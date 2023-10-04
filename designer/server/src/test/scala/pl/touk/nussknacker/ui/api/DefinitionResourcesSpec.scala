@@ -236,6 +236,7 @@ class DefinitionResourcesSpec
       )
     }
   }
+
   private def getServices: Option[Iterable[String]] = {
     responseAs[Json].hcursor.downField("streaming").keys
   }
@@ -268,4 +269,5 @@ class DefinitionResourcesSpec
       testPermissionRead
     )
   }
+
 }

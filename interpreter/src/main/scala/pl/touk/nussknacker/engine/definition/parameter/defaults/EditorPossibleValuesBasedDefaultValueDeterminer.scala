@@ -16,4 +16,5 @@ protected object EditorPossibleValuesBasedDefaultValueDeterminer extends Paramet
       }
       .map(Expression.spel)
   }
+
 }

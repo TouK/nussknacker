@@ -60,6 +60,7 @@ class JwtTokenAuthenticationSpec
     JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
   private val accessTokenWithInvalidAudience =
     JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+
   private val noProfileAccessToken = JwtCirce.encode(
     JwtClaim().about("no-profile-user").to(audience).expiresIn(180),
     keyPair.getPrivate,

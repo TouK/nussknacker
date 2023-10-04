@@ -46,4 +46,5 @@ class BestEffortJsonSchemaWithAvroEncoderTest extends AnyFunSuite with Matchers 
       obj("field1" -> fromString("a"), "field2" -> fromLong(11))
     )
   }
+
 }

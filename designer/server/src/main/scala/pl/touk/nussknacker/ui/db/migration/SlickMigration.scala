@@ -28,6 +28,7 @@ trait SlickMigration extends BaseJavaMigration {
     )
     Await.result(database.run(migrateActions), Duration.Inf)
   }
+
 }
 
 trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLogging {

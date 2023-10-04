@@ -28,6 +28,7 @@ object CollectTransformer extends CustomStreamTransformer {
         new CollectTransformer(outputVariable, inputExpression)
       )
   }
+
 }
 
 class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId)

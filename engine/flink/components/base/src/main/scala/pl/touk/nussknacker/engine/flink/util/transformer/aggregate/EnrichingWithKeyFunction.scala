@@ -34,6 +34,7 @@ class EnrichingWithKeyFunction(convertToEngineRuntimeContext: RuntimeContext => 
       )
     })
   }
+
 }
 
 object EnrichingWithKeyFunction {

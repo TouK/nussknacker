@@ -22,6 +22,7 @@ final case class ToolbarButtonConfig(
   } else {
     require(url.isEmpty, s"Button ${`type`} doesn't contain param: 'url'.")
   }
+
 }
 
 object ToolbarButtonConfigType extends Enumeration {

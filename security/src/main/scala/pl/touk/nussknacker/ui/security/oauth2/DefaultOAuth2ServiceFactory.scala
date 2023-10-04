@@ -7,6 +7,7 @@ import sttp.client3.SttpBackend
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging {
+
   override def create(configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       backend: SttpBackend[Future, Any]
@@ -32,9 +33,11 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging 
       configuration
     )
   }
+
 }
 
 object DefaultOAuth2ServiceFactory {
+
   def service(configuration: OAuth2Configuration)(
       implicit backend: SttpBackend[Future, Any],
       ec: ExecutionContext

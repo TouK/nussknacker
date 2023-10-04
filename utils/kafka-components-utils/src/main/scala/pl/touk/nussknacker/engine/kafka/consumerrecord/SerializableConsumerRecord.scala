@@ -51,9 +51,11 @@ case class SerializableConsumerRecord[K, V](
       Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) // avoids covert null -> 0 conversion
     )
   }
+
 }
 
 object SerializableConsumerRecord {
+
   def apply[K, V](deserializedRecord: ConsumerRecord[K, V]): SerializableConsumerRecord[K, V] = {
     SerializableConsumerRecord(
       Option(deserializedRecord.key()),
@@ -67,4 +69,5 @@ object SerializableConsumerRecord {
       Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) // avoids covert null -> 0 conversion
     )
   }
+
 }

@@ -45,9 +45,11 @@ class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaF
       ByteString(b)
     }.toList)
   }
+
 }
 
 private object TestProcessActivityRepository extends ProcessActivityRepository {
+
   override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser

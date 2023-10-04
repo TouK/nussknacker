@@ -27,6 +27,7 @@ final case class ComponentLinkConfig(
     URI.create(fillByComponentData(icon.toString, componentId, componentName, urlOption = true)),
     URI.create(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
   )
+
 }
 
 object ComponentLinkConfig {
@@ -54,6 +55,7 @@ object ComponentLinkConfig {
       .replace(ComponentIdTemplate, componentId.value)
       .replace(ComponentNameTemplate, name)
   }
+
 }
 
 object ComponentLinksConfigExtractor {

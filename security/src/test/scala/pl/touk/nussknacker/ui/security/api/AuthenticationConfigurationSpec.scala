@@ -14,6 +14,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import scala.concurrent.duration._
 
 class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest with OptionValues {
+
   it should "parse rules default config" in {
 
     val config = ConfigFactory.parseString("""
@@ -55,4 +56,5 @@ class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with Sca
     val authConfig = OAuth2Configuration.create(config)
     authConfig.users shouldBe List()
   }
+
 }

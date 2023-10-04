@@ -37,4 +37,5 @@ class DefaultNamespacedObjectNamingSpec extends AnyFunSuite with Matchers {
       defaultNaming.decodeName("dummy??", configWithNamespace, ctx) shouldBe None
     }
   }
+
 }

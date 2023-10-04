@@ -49,6 +49,7 @@ case class HttpClientConfig(
       forceShutdown = extractConfig(_.forceShutdown, false)
     )
   }
+
 }
 
 object HttpClientConfig {
@@ -76,6 +77,7 @@ object HttpClientConfig {
       configForProcess = forOption("configForProcess")(mapValueReader(vr))
     )
   })
+
 }
 
 object DefaultHttpClientConfig {

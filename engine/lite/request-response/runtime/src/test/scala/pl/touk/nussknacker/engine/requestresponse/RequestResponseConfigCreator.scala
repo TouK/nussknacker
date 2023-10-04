@@ -101,6 +101,7 @@ final case class Request3(field13: String, field23: String)
 @JsonCodec final case class Response(field1: String) extends DisplayJsonWithEncoder[Response]
 
 class EnricherService extends Service {
+
   @MethodToInvoke
   def invoke()(
       implicit ex: ExecutionContext,
@@ -109,6 +110,7 @@ class EnricherService extends Service {
   ): Future[Response] = {
     Future.successful(Response("alamakota-" + contextId.value))
   }
+
 }
 
 trait WithLifecycle extends Lifecycle {
@@ -202,6 +204,7 @@ object CollectingEagerService extends EagerService {
       @ParamName("static") static: String,
       @ParamName("dynamic") dynamic: LazyParameter[String]
   ): ServiceInvoker = new ServiceInvoker {
+
     override def invokeService(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
@@ -257,6 +260,7 @@ class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyR
       continuation(DataBatch(exprResults))
     }
   }
+
 }
 
 object CustomFilter extends CustomStreamTransformer {
@@ -277,6 +281,7 @@ class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends S
     val exprInterpreter = context.interpreter.syncInterpretationFunction(filterExpression)
     (ctx: Context) => if (exprInterpreter(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
   }
+
 }
 
 object ParameterResponseSinkFactory extends SinkFactory {
@@ -284,9 +289,11 @@ object ParameterResponseSinkFactory extends SinkFactory {
   def invoke(@ParamName("computed") computed: LazyParameter[String]): Sink = new ParameterResponseSink(computed)
 
   class ParameterResponseSink(computed: LazyParameter[String]) extends LazyParamSink[AnyRef] {
+
     override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
       computed.map(s => s + " withRandomString")
     }
+
   }
 
 }
@@ -309,6 +316,7 @@ private class FailingSinkFactory extends SinkFactory {
 final case class SinkException(message: String) extends Exception(message)
 
 private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends LazyParamSink[AnyRef] {
+
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] = {
     fail.map { doFail =>
       if (doFail) {

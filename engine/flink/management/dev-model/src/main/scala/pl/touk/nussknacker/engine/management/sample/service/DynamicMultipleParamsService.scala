@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.concurrent.{ExecutionContext, Future}
+
 object DynamicMultipleParamsService extends EagerService with SingleInputGenericNodeTransformation[ServiceInvoker] {
 
   override type State = Unit

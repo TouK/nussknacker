@@ -59,4 +59,5 @@ trait AuthorizeProcessDirectives {
     val (processId, user) = processIdAndUser
     canInProcess(processId, permission, user)
   }
+
 }

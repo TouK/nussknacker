@@ -72,6 +72,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   class CorrectService extends SourceFactory {
+
     @MethodToInvoke
     def invoke(
         @ParamName("fixed") @AdditionalVariables(
@@ -83,9 +84,11 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
         )
         lazyParam: LazyParameter[String]
     ): Source = null
+
   }
 
   class IncorrectService1 extends SourceFactory {
+
     @MethodToInvoke
     def invoke(
         @ParamName("fixed") @AdditionalVariables(
@@ -93,6 +96,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
         )
         eagerParam: String
     ): Source = null
+
   }
 
   class IncorrectService2 extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
@@ -124,10 +128,12 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   class CreatorWithComponent(component: SourceFactory) extends EmptyProcessConfigCreator {
+
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map("one" -> WithCategories(component))
+
   }
 
 }

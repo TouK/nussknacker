@@ -56,6 +56,7 @@ class UniversalKafkaDeserializer[T](
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]
   }
+
 }
 
 object MessageWithoutSchemaIdException

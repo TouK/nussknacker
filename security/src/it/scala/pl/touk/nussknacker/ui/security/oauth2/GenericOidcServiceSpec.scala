@@ -86,10 +86,13 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
       usernameClaim = Some(UsernameClaim.PreferredUsername),
     ).withDiscovery
+
 }
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {
+
   override val container: KeycloakContainer = new KeycloakContainer()
     // sample keycloak realm...
     .withRealmImportFile("/keycloak.json")
+
 }

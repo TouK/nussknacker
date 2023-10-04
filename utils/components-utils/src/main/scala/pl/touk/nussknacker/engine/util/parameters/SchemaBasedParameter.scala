@@ -23,6 +23,7 @@ sealed trait SchemaBasedParameter {
   def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Unit]
+
 }
 
 object SchemaBasedParameter {
@@ -31,6 +32,7 @@ object SchemaBasedParameter {
 }
 
 case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {
+
   override def validateParams(
       resultTypes: Map[ParameterName, BaseDefinedParameter]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
@@ -43,13 +45,16 @@ case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultV
       .leftMap(NonEmptyList.one)
       .map(_ => ())
   }
+
 }
 
 case class SchemaBasedRecordParameter(fields: ListMap[RecordFieldName, SchemaBasedParameter])
     extends SchemaBasedParameter {
+
   override def validateParams(
       actualResultTypes: Map[ParameterName, BaseDefinedParameter]
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
     flatten.map(_.validateParams(actualResultTypes)).sequence.map(_ => ())
   }
+
 }

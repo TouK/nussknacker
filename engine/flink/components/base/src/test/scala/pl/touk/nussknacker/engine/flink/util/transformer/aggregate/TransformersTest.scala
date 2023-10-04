@@ -718,6 +718,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     FragmentResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
   }
+
 }
 
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {

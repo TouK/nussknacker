@@ -27,6 +27,7 @@ class OneSource extends BasicFlinkSource[String] {
         Thread.sleep(1000)
       }
     }
+
   }
 
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])

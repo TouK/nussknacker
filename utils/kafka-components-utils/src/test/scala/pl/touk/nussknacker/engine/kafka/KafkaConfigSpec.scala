@@ -51,4 +51,5 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
     )
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
+
 }

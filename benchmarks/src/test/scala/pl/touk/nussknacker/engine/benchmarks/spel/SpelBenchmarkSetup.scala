@@ -69,4 +69,5 @@ class SampleSpelBenchmark {
   def benchmark(): AnyRef = {
     setup.test()
   }
+
 }

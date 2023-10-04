@@ -35,4 +35,5 @@ class MetaDataProviderFactory {
       case _                                                     => new JdbcMetaDataProvider(getConnection)
     }
   }
+
 }

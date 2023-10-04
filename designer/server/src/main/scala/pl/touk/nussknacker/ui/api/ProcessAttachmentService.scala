@@ -44,6 +44,7 @@ class ProcessAttachmentService(config: AttachmentsConfig, processActivityReposit
       (attachment.fileName, attachment.data)
     }
   }
+
 }
 
 object ProcessAttachmentService {
@@ -55,4 +56,5 @@ object ProcessAttachmentService {
       fileName: String,
       data: Array[Byte]
   )
+
 }

@@ -86,9 +86,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private val bigValue = BigDecimal.valueOf(4187338076L)
 
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
+
   private val ctx = Context("abc").withVariables(
     Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava)
   )
+
   private val ctxWithGlobal: Context = ctx
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
@@ -1206,18 +1208,23 @@ object SampleGlobalObject {
   def genericFunctionWithVarArg(a: Int, b: Boolean*): Int = a + b.count(identity)
 
   private case class GenericFunctionHelper() extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
       Typed[Int].validNel
+
   }
 
   private case class GenericFunctionVarArgHelper() extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
       Typed[Int].validNel
+
   }
+
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {

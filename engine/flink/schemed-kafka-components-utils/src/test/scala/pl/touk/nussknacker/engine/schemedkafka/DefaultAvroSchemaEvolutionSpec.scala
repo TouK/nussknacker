@@ -65,4 +65,5 @@ class DefaultAvroSchemaEvolutionSpec extends AnyFunSpec with Matchers {
     val record = schemaEvolutionHandler.alignRecordToSchema(FullNameNotCompatible.record, FullNameV2.schema)
     record shouldBe FullNameV2.record
   }
+
 }

@@ -74,4 +74,5 @@ object RestartStrategyFromConfiguration {
       configValue.unwrapped().toString
     else
       configValue.render()
+
 }

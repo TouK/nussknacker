@@ -43,4 +43,5 @@ object KafkaTypedSourceFactory {
     def toCustomNodeError(nodeId: NodeId): CustomNodeError =
       new CustomNodeError(nodeId.id, message, Some(TypeDefinitionParamName))
   }
+
 }

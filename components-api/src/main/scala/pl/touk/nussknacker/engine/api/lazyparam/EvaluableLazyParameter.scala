@@ -36,6 +36,7 @@ private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
       val arg2Value = arg2Interpreter(ctx)
       arg1Value.flatMap(left => arg2Value.map((left, _)))
   }
+
 }
 
 private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
@@ -66,6 +67,7 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
     val argInterpreter = arg.prepareEvaluator(lpi)
     ctx: Context => argInterpreter(ctx).map(fun)
   }
+
 }
 
 private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: TypingResult)

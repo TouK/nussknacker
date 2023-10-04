@@ -67,4 +67,5 @@ class FlinkProcessCompilerWithTestComponents(
     componentUseCase,
     componentsHolder
   )
+
 }

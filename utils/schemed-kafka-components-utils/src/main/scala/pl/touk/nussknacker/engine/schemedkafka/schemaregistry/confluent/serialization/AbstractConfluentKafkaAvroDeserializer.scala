@@ -22,6 +22,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
   protected def genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport
 
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
+
   private lazy val confluentAvroPayloadDeserializer = new AvroPayloadDeserializer(
     useSchemaReflection,
     useSpecificAvroReader,
@@ -59,4 +60,5 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
         throw new SerializationException(s"Error deserializing Avro message for id: $schemaId", exc)
     }
   }
+
 }

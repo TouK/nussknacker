@@ -34,4 +34,5 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
   override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
     authenticator.authenticate(authCredentials)
   }
+
 }

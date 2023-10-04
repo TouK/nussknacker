@@ -44,6 +44,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         @RawEditor
         param3: String
     ): Future[String] = ???
+
   }
 
   object SampleGenericNodeTransformation

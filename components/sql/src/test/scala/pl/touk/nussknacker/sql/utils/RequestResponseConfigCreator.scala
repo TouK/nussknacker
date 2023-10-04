@@ -22,6 +22,7 @@ class RequestResponseConfigCreator extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[SinkFactory]] = {
     Map("response" -> WithCategories(ResponseSinkFactory, Category))
   }
+
 }
 
 @JsonCodec final case class TestRequest(id: Int)
@@ -36,12 +37,15 @@ object ResponseSinkFactory extends SinkFactory {
       @ParamName("name") name: LazyParameter[String],
       @ParamName("count") count: LazyParameter[Option[Long]]
   ): Sink = new ResponseSink(name, count)
+
 }
 
 class ResponseSink(nameParam: LazyParameter[String], countParam: LazyParameter[Option[Long]])
     extends LazyParamSink[AnyRef] {
+
   override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[AnyRef] =
     nameParam.product(countParam).map { case (name, count) =>
       TestResponse(name, count)
     }
+
 }

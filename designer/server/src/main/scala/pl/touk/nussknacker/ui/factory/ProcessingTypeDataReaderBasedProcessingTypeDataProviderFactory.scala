@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.ui.factory
+
 import akka.actor.ActorSystem
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -24,4 +25,5 @@ object ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory extends Pr
     implicit val categoriesServiceImp: ProcessCategoryService = categoriesService
     ProcessingTypeDataReader.loadProcessingTypeData(designerConfig)
   }
+
 }

@@ -22,6 +22,7 @@ object FutureUtils {
         )
       )
     }
+
   }
 
   sealed trait LimitedByTimeoutResult[T] {

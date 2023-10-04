@@ -43,12 +43,15 @@ class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyL
 
   val latestSchemaIdCache =
     new DefaultCache[String, SchemaId](CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty))
+
   val schemaCache = new DefaultCache[String, SchemaWithMetadata](
     CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty)
   )
+
   val schemaByIdCache = new DefaultCache[SchemaId, SchemaWithMetadata](
     CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty)
   )
+
   val versionsCache =
     new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, availableSchemasExpirationTime))
   val topicsCache = new SingleValueCache[List[String]](Option.empty, availableSchemasExpirationTime)

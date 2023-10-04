@@ -46,6 +46,7 @@ class ParsedSchemaDeterminer(
     versionOption: SchemaVersionOption,
     isKey: Boolean
 ) {
+
   def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]] = {
     val version = versionOption match {
       case ExistingSchemaVersion(v) => Some(v)
@@ -60,4 +61,5 @@ class ParsedSchemaDeterminer(
         RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))
       )
   }
+
 }

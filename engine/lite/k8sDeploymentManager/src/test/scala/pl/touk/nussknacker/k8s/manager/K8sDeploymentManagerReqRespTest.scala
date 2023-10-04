@@ -332,6 +332,7 @@ class K8sDeploymentManagerReqRespTest
       version: ProcessVersion,
       extraClasses: K8sExtraClasses
   ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
+
     override def withRunningScenario(action: => Unit): Unit = {
       extraClasses.withExtraClassesSecret {
         super.withRunningScenario(action)

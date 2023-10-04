@@ -193,4 +193,5 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
       .fromTry(Try(SwaggerTyped(schema, swaggerRefSchemas)))
       .leftMap(m => NonEmptyList.one(String.valueOf(m.getMessage)))
   }
+
 }

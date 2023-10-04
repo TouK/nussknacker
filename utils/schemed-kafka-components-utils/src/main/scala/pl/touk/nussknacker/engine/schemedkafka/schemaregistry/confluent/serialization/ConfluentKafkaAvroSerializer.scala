@@ -51,6 +51,7 @@ class ConfluentKafkaAvroSerializer(
 }
 
 object ConfluentKafkaAvroSerializer {
+
   def apply(
       kafkaConfig: KafkaConfig,
       schemaRegistryClient: ConfluentSchemaRegistryClient,
@@ -65,6 +66,7 @@ object ConfluentKafkaAvroSerializer {
       isKey = isKey
     )
   }
+
 }
 
 object ConfluentAvroSerializerFactory extends SchemaRegistryBasedSerializerFactory {

@@ -24,6 +24,7 @@ import scala.jdk.CollectionConverters._
 class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
   private val justAnyObject = new JustAnyClass
+
   private val aggregators = Table(
     ("aggregate", "input", "obj", "stored", "output"),
     (HyperLogLogPlusAggregator(), Typed[String], "", Typed[HyperLogLogPlusWrapper], Typed[Long]),
