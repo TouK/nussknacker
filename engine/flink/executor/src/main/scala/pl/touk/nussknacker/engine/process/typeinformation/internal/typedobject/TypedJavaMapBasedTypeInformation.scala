@@ -6,9 +6,11 @@ import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnap
 
 case class TypedJavaMapTypeInformation(informations: Map[String, TypeInformation[_]])
     extends TypedObjectBasedTypeInformation[jutil.Map[String, AnyRef]](informations) {
+
   override def createSerializer(
       serializers: Array[(String, TypeSerializer[_])]
   ): TypeSerializer[jutil.Map[String, AnyRef]] = TypedJavaMapSerializer(serializers)
+
 }
 
 @SerialVersionUID(1L)
@@ -24,6 +26,7 @@ case class TypedJavaMapSerializer(override val serializers: Array[(String, TypeS
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
   ): TypeSerializerSnapshot[jutil.Map[String, AnyRef]] = new TypedJavaMapSerializerSnapshot(snapshots)
+
 }
 
 class TypedJavaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[jutil.Map[String, AnyRef]] {
@@ -38,4 +41,5 @@ class TypedJavaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[
   override protected def restoreSerializer(
       restored: Array[(String, TypeSerializer[_])]
   ): TypeSerializer[jutil.Map[String, AnyRef]] = TypedJavaMapSerializer(restored)
+
 }

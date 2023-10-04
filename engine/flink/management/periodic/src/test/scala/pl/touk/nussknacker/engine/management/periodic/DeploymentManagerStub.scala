@@ -95,4 +95,5 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
       deploymentData: DeploymentData,
       canonicalProcess: CanonicalProcess
   ): Future[Unit] = Future.successful(())
+
 }

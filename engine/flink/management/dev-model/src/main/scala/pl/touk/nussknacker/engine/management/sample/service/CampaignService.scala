@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import scala.concurrent.Future
 
 object CampaignService extends Service with Serializable {
+
   @MethodToInvoke
   def invoke(
       @ParamName("CampaignName")
@@ -43,4 +44,5 @@ object CampaignService extends Service with Serializable {
       )
       campaignType: String
   ): Future[Unit] = Future.successful(())
+
 }

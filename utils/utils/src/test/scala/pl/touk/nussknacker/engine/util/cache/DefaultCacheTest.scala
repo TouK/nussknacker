@@ -11,6 +11,7 @@ import scala.concurrent.duration.{DAYS, Deadline, FiniteDuration, HOURS, MINUTES
 class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
 
   private var currentTime = Deadline.now
+
   private val ticker = new Ticker {
     override def read(): Long = currentTime.time.toNanos
   }
@@ -117,4 +118,5 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
       Symbol("sub")("newValue")
     )
   }
+
 }

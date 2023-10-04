@@ -27,4 +27,5 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
   private def getFirst[T: ClassTag](scenario: CanonicalProcess): T = scenario.collectAllNodes.collectFirst {
     case t: T => t
   }.get
+
 }

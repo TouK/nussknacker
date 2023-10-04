@@ -63,6 +63,7 @@ class ProcessActivityResource(
       }
     }
   }
+
 }
 
 class AttachmentResources(
@@ -107,4 +108,5 @@ class AttachmentResources(
     val inputStream = new ByteArrayInputStream(data)
     HttpEntity.CloseDelimited(contentType, StreamConverters.fromInputStream(() => inputStream))
   }
+
 }

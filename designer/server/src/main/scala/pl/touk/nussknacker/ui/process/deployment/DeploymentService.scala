@@ -36,6 +36,7 @@ trait DeploymentService extends ProcessStateService {
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit]
+
   def invalidateInProgressActions(): Unit
 
   // TODO: This method is for backward compatibility. Remove it after switching all Flink jobs into mandatory deploymentId in StatusDetails

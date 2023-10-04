@@ -9,9 +9,11 @@ import scala.reflect.{ClassTag, classTag}
 
 class ConcreteCaseClassTypeInfo[T <: Product](cls: Class[T], fields: List[(String, TypeInformation[_])])
     extends CaseClassTypeInfo[T](cls, Array.empty, fields.map(_._2), fields.map(_._1)) {
+
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
     new ScalaCaseClassSerializer[T](cls, fields.map(_._2.createSerializer(config)).toArray)
   }
+
 }
 
 object ConcreteCaseClassTypeInfo {
@@ -21,4 +23,5 @@ object ConcreteCaseClassTypeInfo {
   def apply[T <: Product: ClassTag](fields: (String, TypeInformation[_])*): ConcreteCaseClassTypeInfo[T] = {
     apply(classTag[T].runtimeClass.asInstanceOf[Class[T]], fields: _*)
   }
+
 }

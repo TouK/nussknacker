@@ -143,6 +143,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
         onUpdate = ForeignKeyAction.Cascade,
         onDelete = ForeignKeyAction.Cascade
       )
+
   }
 
   val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =

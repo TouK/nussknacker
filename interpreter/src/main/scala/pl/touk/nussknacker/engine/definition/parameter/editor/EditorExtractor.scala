@@ -54,4 +54,5 @@ object EditorExtractor {
       case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
     }
   }
+
 }

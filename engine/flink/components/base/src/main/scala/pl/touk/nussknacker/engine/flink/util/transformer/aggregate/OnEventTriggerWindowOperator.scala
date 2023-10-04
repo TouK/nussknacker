@@ -40,6 +40,7 @@ object OnEventTriggerWindowOperator {
   implicit class OnEventOperatorKeyedStream[A](stream: KeyedStream[Input[A], String])(
       implicit fctx: FlinkCustomNodeContext
   ) {
+
     def eventTriggerWindow(
         assigner: WindowAssigner[_ >: Input[A], TimeWindow],
         types: AggregatorTypeInformations,
@@ -50,6 +51,7 @@ object OnEventTriggerWindowOperator {
       types.returnedValueTypeInfo,
       new OnEventTriggerWindowOperator(stream, fctx, assigner, types, aggregateFunction, trigger)
     )
+
   }
 
 }
@@ -113,4 +115,5 @@ private class ValueEmittingWindowFunction(
       out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
     }
   }
+
 }

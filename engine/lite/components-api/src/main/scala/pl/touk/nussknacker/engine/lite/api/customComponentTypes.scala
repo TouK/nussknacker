@@ -58,9 +58,11 @@ object customComponentTypes {
   }
 
   trait LiteSink[Res] extends Sink {
+
     def createTransformation[F[_]: Monad](
         evaluateLazyParameter: CustomComponentContext[F]
     ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
+
   }
 
 }

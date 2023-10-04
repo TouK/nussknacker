@@ -89,4 +89,5 @@ class K8sDeploymentManagerOnMocksTest
     system.terminate().futureValue
     wireMockServer.stop()
   }
+
 }

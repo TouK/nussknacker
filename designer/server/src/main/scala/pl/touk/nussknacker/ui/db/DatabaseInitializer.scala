@@ -46,4 +46,5 @@ object DatabaseInitializer {
       .schemas(schema.toArray: _*)
       .baselineOnMigrate(true)
   }
+
 }

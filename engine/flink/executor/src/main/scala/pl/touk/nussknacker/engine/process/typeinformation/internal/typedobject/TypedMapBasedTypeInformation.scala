@@ -23,6 +23,7 @@ case class TypedMapSerializer(override val serializers: Array[(String, TypeSeria
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
   ): TypeSerializerSnapshot[TypedMap] = new TypedMapSerializerSnapshot(snapshots)
+
 }
 
 class TypedMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[TypedMap] {

@@ -22,6 +22,7 @@ object capabilities {
 
   class FixedCapabilityTransformer[Target[_]](implicit targetTag: TypeTag[Target[Any]])
       extends CapabilityTransformer[Target] {
+
     override def transform[From[_]](
         implicit tag: TypeTag[From[Any]]
     ): ValidatedNel[ProcessCompilationError, From ~> Target] = {
@@ -33,6 +34,7 @@ object capabilities {
         Validated.invalidNel(new CannotCreateObjectError(s"Cannot convert capability: $tag", ""))
       }
     }
+
   }
 
 }

@@ -49,4 +49,5 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
     validatedInterpreter shouldBe Symbol("valid")
     validatedInterpreter.toEither.toOption.get
   }
+
 }

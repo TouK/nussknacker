@@ -23,4 +23,5 @@ final case class UnionParametersMigration(migratedNodeType: String = "union") ex
         )
       )
   }
+
 }

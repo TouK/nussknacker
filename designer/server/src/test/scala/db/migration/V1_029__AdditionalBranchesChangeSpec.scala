@@ -64,4 +64,5 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
 
     converted shouldBe Some(oldJson)
   }
+
 }

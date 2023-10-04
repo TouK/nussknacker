@@ -191,6 +191,7 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
     ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName = "aggregator"
+
   val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor
     .mandatory[Aggregator](
       AggregatorParamName,

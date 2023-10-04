@@ -111,6 +111,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
       }
     }
   }
+
   def withWaitForCancelFinish[T](action: => T): T = {
     val promise = Promise[Unit]()
     try {
@@ -243,6 +244,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(
 }
 
 object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
+
   override def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -250,4 +252,5 @@ object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
       deploymentService: ProcessingTypeDeploymentService
   ): DeploymentManager =
     new MockDeploymentManager
+
 }

@@ -265,6 +265,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     def bar(@ParamName("barparam1") barparam1: Long): String = {
       ""
     }
+
     @Documentation(description = ScalaSampleDocumentedClass.bazDocs)
     def baz(@ParamName("bazparam1") bazparam1: String, @ParamName("bazparam2") bazparam2: Int): Long = {
       0L
@@ -285,6 +286,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     @varargs
     def max[T <: Number](args: T*): T =
       args.maxBy(_.doubleValue())
+
   }
 
   case class TestEmbedded(
@@ -569,9 +571,11 @@ private class HeadHelper extends TypingFunction {
     case TypedClass(`listClass`, _) :: Nil        => throw new AssertionError("Lists must have one parameter")
     case _                                        => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
+
 }
 
 private class MaxHelper extends TypingFunction {
+
   override def computeResultType(
       arguments: List[TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
@@ -581,4 +585,5 @@ private class MaxHelper extends TypingFunction {
     val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }
+
 }

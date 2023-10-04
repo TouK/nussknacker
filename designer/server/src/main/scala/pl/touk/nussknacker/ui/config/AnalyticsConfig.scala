@@ -8,6 +8,7 @@ import pl.touk.nussknacker.ui.config.AnalyticsConfig.AnalyticsEngine.AnalyticsEn
 final case class AnalyticsConfig(engine: AnalyticsEngine, url: URI, siteId: String)
 
 object AnalyticsConfig {
+
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.EnumerationReader._

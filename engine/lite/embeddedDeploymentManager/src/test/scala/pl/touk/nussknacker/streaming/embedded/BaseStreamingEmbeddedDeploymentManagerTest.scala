@@ -40,10 +40,12 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       inputTopic: String,
       outputTopic: String
   ) {
+
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
       deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
+
   }
 
   protected def generateInputTopicName = s"input-${UUID.randomUUID().toString}"

@@ -27,4 +27,5 @@ case class UnionParametersMigration(migratedNodeType: String = "union") extends 
         )
       )
   }
+
 }

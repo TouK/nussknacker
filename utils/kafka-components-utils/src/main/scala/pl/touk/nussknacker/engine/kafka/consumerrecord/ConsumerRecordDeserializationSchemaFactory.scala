@@ -79,6 +79,7 @@ object ConsumerRecordDeserializationSchemaFactory {
       override protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V] = new Deserializer[V] {
         override def deserialize(topic: String, data: Array[Byte]): V = deserializeFun(data)
       }
+
     }
 
 }

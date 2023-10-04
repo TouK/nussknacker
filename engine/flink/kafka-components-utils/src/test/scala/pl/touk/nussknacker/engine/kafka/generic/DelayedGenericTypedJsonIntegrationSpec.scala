@@ -196,4 +196,5 @@ class DelayedDefaultProcessConfigCreator extends EmptyProcessConfigCreator {
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
+
 }

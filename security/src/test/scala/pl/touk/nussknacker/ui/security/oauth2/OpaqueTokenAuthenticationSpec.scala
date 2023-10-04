@@ -41,6 +41,7 @@ class OpaqueTokenAuthenticationSpec
        |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
+
   implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(
     SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(tokenUri))

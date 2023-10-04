@@ -31,4 +31,5 @@ object ProcessingTypeConfig {
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig")
     )
+
 }

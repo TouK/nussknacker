@@ -44,6 +44,7 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 }
 
 object LitePropertiesConfig {
+
   private val parallelismConfig: (String, AdditionalPropertyConfig) = LiteStreamMetaData.parallelismName ->
     AdditionalPropertyConfig(
       defaultValue = None,

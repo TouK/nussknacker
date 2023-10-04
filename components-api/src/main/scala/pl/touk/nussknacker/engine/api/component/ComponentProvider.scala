@@ -33,10 +33,13 @@ object ComponentProviderConfig {
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
     import net.ceedubs.ficus.Ficus._
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
+
     override def read(config: Config, path: String): ComponentProviderConfig = {
       normalReader.read(config, path).copy(config = config.getConfig(path))
     }
+
   }
+
 }
 
 case class ComponentProviderConfig( // if not present, we assume providerType is equal to component name

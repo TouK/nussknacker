@@ -19,4 +19,5 @@ class FragmentRefSerializationSpec extends AnyFunSuite with Matchers {
       FragmentRef("1", List(), Map("a" -> "b"))
     )
   }
+
 }

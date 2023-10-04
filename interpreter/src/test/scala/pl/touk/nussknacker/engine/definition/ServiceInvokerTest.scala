@@ -14,9 +14,11 @@ import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with OptionValues with Matchers {
+
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
   private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
   private implicit val ctxId: ContextId                   = ContextId("")
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime

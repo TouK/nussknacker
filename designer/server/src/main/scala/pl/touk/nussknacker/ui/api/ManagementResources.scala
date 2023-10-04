@@ -63,6 +63,7 @@ object ManagementResources {
           "exceptions" -> exceptions.sortBy(_.context.id).asJson
         )
     }
+
   }
 
   val testResultsVariableEncoder: Any => io.circe.Json = {
@@ -316,4 +317,5 @@ class ManagementResources(
       .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
       .recover(EspErrorToHttp.errorToHttp)
   }
+
 }

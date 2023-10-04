@@ -37,9 +37,11 @@ object splittednode {
   sealed trait Next {
     def id: String
   }
+
   case class NextNode(node: SubsequentNode[_ <: NodeData]) extends Next {
     def id = node.id
   }
+
   case class PartRef(id: String) extends Next
 
 }

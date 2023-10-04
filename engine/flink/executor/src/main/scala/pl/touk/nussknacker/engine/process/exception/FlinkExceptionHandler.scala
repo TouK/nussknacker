@@ -96,4 +96,5 @@ class FlinkExceptionHandler(
   override def close(): Unit = {
     consumer.close()
   }
+
 }

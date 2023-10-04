@@ -18,4 +18,5 @@ class FlinkCompilerLazyInterpreterCreator(runtimeContext: RuntimeContext, withDe
   override def close(): Unit = {
     withDeps.close(Nil)
   }
+
 }

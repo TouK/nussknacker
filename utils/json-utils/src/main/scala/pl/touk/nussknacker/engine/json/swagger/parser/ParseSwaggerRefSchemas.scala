@@ -17,4 +17,5 @@ object ParseSwaggerRefSchemas {
         s"#/components/schemas/$name" -> schema
       }
       .toMap
+
 }

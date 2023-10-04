@@ -133,4 +133,5 @@ object JsonToNuStruct {
       }
       .orNull
   }
+
 }

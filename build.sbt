@@ -16,12 +16,14 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
-val scala212                    = "2.12.10"
-val scala213                    = "2.13.10"
-val defaultScalaV               = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
+val scala212 = "2.12.10"
+val scala213 = "2.13.10"
+
+val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
   case "2.12" => scala212
   case "2.13" => scala213
 }
+
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
@@ -485,6 +487,7 @@ def assemblyNoScala(assemblyName: String): List[Def.SettingsDefinition] =
   assemblySettings(assemblyName, includeScala = false)
 
 lazy val componentArtifacts = taskKey[List[(File, String)]]("component artifacts")
+
 componentArtifacts := {
   List(
     (flinkBaseComponents / assembly).value           -> "components/flink/flinkBase.jar",
@@ -498,6 +501,7 @@ componentArtifacts := {
 }
 
 lazy val modelArtifacts = taskKey[List[(File, String)]]("model artifacts")
+
 modelArtifacts := {
   List(
     (defaultModel / assembly).value  -> "model/defaultModel.jar",
@@ -506,6 +510,7 @@ modelArtifacts := {
 }
 
 lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
+
 devArtifacts := {
   modelArtifacts.value ++ List(
     (flinkDevModel / assembly).value -> "model/devModel.jar",
@@ -514,6 +519,7 @@ devArtifacts := {
 }
 
 lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
+
 managerArtifacts := {
   List(
     (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
@@ -1388,6 +1394,7 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
 
 lazy val developmentTestsDeployManagerArtifacts =
   taskKey[List[(File, String)]]("development tests deployment manager artifacts")
+
 developmentTestsDeployManagerArtifacts := List(
   (developmentTestsDeploymentManager / assembly).value -> "managers/developmentTestsManager.jar"
 )
@@ -1885,7 +1892,7 @@ lazy val bom = (project in file("bom"))
   )
   .dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
-lazy val modules                                = List[ProjectReference](
+lazy val modules = List[ProjectReference](
   requestResponseRuntime,
   liteEngineRuntimeApp,
   flinkDeploymentManager,
@@ -1950,6 +1957,7 @@ lazy val modules                                = List[ProjectReference](
   flinkComponentsTestkit,
   mathUtils
 )
+
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
 lazy val root = (project in file("."))
@@ -1990,6 +1998,7 @@ lazy val root = (project in file("."))
   )
 
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
+
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  = componentArtifacts.value ++ devArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
@@ -1999,6 +2008,7 @@ prepareDev := {
 }
 
 lazy val buildClient = taskKey[Unit]("Build client")
+
 buildClient := {
   val s: TaskStreams = streams.value
   val buildResult    = ("./designer/buildClient.sh" !)

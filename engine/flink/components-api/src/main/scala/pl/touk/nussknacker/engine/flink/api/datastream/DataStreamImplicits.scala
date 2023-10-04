@@ -7,7 +7,9 @@ import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
 
 object DataStreamImplicits {
+
   implicit class DataStreamExtension[T](stream: DataStream[T]) {
+
     def mapWithState[R: TypeInformation, S: TypeInformation](fun: (T, Option[S]) => (R, Option[S])): DataStream[R] = {
       val cleanFun                          = stream.getExecutionEnvironment.clean(fun)
       val stateTypeInfo: TypeInformation[S] = implicitly[TypeInformation[S]]
@@ -33,5 +35,7 @@ object DataStreamImplicits {
           override def map2(value: T): T = value
         }
       )
+
   }
+
 }

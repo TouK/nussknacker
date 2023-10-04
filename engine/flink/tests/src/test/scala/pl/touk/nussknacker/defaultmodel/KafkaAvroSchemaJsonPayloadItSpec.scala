@@ -84,4 +84,5 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
     val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
+
 }

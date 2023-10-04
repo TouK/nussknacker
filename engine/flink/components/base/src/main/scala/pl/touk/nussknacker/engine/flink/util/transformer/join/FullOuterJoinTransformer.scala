@@ -201,6 +201,7 @@ case object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
     ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName = "aggregator"
+
   val AggregatorParam: ParameterWithExtractor[Map[String, Aggregator]] = ParameterWithExtractor
     .branchMandatory[Aggregator](
       AggregatorParamName,

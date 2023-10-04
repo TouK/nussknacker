@@ -19,4 +19,5 @@ object GroupByMigration extends NodeMigration {
         node.parameters.map(p => if (p.name == keyByParameterName) p.copy(name = "groupBy") else p)
       )
   }
+
 }

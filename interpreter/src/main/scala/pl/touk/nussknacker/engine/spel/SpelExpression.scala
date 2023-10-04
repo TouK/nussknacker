@@ -69,6 +69,7 @@ final case class ParsedSpelExpression(
     // we already parsed this expression successfully, so reparsing should NOT fail
     parsed = parser().getOrElse(throw new RuntimeException(s"Failed to reparse $original - this should not happen!"))
   }
+
 }
 
 class SpelExpressionEvaluationException(val expression: String, val ctxId: String, cause: Throwable)
@@ -125,6 +126,7 @@ class SpelExpression(
         throw new SpelExpressionEvaluationException(original, ctx.id, e)
     }
   }
+
 }
 
 class SpelExpressionParser(

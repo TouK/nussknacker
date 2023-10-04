@@ -15,9 +15,11 @@ trait AuthenticationProvider extends NamedServiceProvider {
       implicit ec: ExecutionContext,
       sttpBackend: SttpBackend[Future, Any]
   ): AuthenticationResources
+
 }
 
 object AuthenticationProvider extends LazyLogging {
+
   def apply(
       config: Config,
       classLoader: ClassLoader
@@ -29,4 +31,5 @@ object AuthenticationProvider extends LazyLogging {
     logger.info(s"Loaded authenticator method: $loaded.")
     loaded
   }
+
 }

@@ -24,4 +24,5 @@ case class ProcessSplitterMigration(migratedNodeType: String = "split") extends 
         )
       )
   }
+
 }

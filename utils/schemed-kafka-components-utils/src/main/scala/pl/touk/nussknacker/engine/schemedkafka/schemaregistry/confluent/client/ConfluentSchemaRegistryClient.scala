@@ -38,6 +38,7 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
+
 }
 
 object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
@@ -59,6 +60,7 @@ object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientF
     val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
     new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
   }
+
 }
 
 class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient)

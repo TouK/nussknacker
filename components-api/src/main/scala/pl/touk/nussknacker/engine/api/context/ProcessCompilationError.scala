@@ -90,10 +90,12 @@ object ProcessCompilationError {
       with InASingleNode
 
   object ExpressionParserCompilationError {
+
     def apply(message: String, fieldName: Option[String], originalExpr: String)(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr)
+
   }
 
   case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
@@ -153,10 +155,12 @@ object ProcessCompilationError {
       with InASingleNode
 
   object WrongParameters {
+
     def apply(requiredParameters: Set[String], passedParameters: Set[String])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
+
   }
 
   case class BlankParameter(message: String, description: String, paramName: String, nodeId: String)
@@ -209,10 +213,12 @@ object ProcessCompilationError {
       with InASingleNode
 
   object InvalidPropertyFixedValue {
+
     def apply(paramName: String, label: Option[String], value: String, values: List[String])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
+
   }
 
   case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])

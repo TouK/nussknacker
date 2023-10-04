@@ -15,15 +15,19 @@ import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessActivityRepository {
+
   def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit]
+
   def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
   def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[ProcessActivity]
+
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
+
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
 }
 
@@ -91,6 +95,7 @@ final case class DbProcessActivityRepository(dbRef: DbRef)
     val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
     run(findAttachmentAction)
   }
+
 }
 
 object DbProcessActivityRepository {
@@ -107,6 +112,7 @@ object DbProcessActivityRepository {
   )
 
   object Attachment {
+
     def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
       Attachment(
         id = attachment.id,
@@ -117,6 +123,7 @@ object DbProcessActivityRepository {
         createDate = attachment.createDateTime
       )
     }
+
   }
 
   @JsonCodec final case class Comment(
@@ -127,7 +134,9 @@ object DbProcessActivityRepository {
       user: String,
       createDate: Instant
   )
+
   object Comment {
+
     def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(
         id = comment.id,
@@ -138,5 +147,7 @@ object DbProcessActivityRepository {
         createDate = comment.createDateTime
       )
     }
+
   }
+
 }

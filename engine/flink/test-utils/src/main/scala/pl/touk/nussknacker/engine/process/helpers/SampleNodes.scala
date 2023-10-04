@@ -123,6 +123,7 @@ object SampleNodes {
         MockService.add(all)
       })
     }
+
   }
 
   class EnricherWithOpenService extends Service with TimeMeasuringService {
@@ -142,6 +143,7 @@ object SampleNodes {
         internalVar
       })
     }
+
   }
 
   trait WithLifecycle extends Lifecycle {
@@ -172,6 +174,7 @@ object SampleNodes {
     def invoke(): Future[Unit] = {
       Future.successful(())
     }
+
   }
 
   object EagerLifecycleService extends EagerService with WithLifecycle {
@@ -222,6 +225,7 @@ object SampleNodes {
         @ParamName("static") static: String,
         @ParamName("dynamic") dynamic: LazyParameter[String]
     ): ServiceInvoker = new ServiceInvoker {
+
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
@@ -238,9 +242,11 @@ object SampleNodes {
   }
 
   object ServiceAcceptingScalaOption extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[String]): Future[Option[String]] =
       Future.successful(scalaOptionParam)
+
   }
 
   object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
@@ -285,6 +291,7 @@ object SampleNodes {
           )
           .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
       })
+
   }
 
   object CustomFilterContextTransformation extends CustomStreamTransformer {
@@ -372,6 +379,7 @@ object SampleNodes {
           Valid(ValidationContext(Map(variableName -> newType), Map.empty, parent))
         }
         .implementedBy(new FlinkCustomJoinTransformation {
+
           override def transform(
               inputs: Map[String, DataStream[Context]],
               flinkContext: FlinkCustomNodeContext
@@ -380,6 +388,7 @@ object SampleNodes {
               .connect(inputs("end2"))
               .flatMap(new JoinExprBranchFunction(valueByBranchId, flinkContext.lazyParameterHelper))
           }
+
         })
 
   }
@@ -458,15 +467,18 @@ object SampleNodes {
         Future.successful(())
       }
     }
+
   }
 
   class ThrowingService(exception: Exception) extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("throw") throwing: Boolean): Future[String] = {
       if (throwing) {
         Future.failed(exception)
       } else Future.successful("")
     }
+
   }
 
   object TransformerWithTime extends CustomStreamTransformer {
@@ -761,6 +773,7 @@ object SampleNodes {
 
       override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
         new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
+
           override def apply(input: String): Context = {
             // perform some transformations and/or computations
             val additionalVariables = Map[String, Any](
@@ -770,6 +783,7 @@ object SampleNodes {
             // initialize context with input variable and append computed values
             super.apply(input).withVariables(additionalVariables)
           }
+
         }
 
     }
@@ -883,6 +897,7 @@ object SampleNodes {
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStreamSink[_] =
         dataStream.map(_.value).addSink(SinkForStrings.toSinkFunction)
+
     }
 
     override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
@@ -909,6 +924,7 @@ object SampleNodes {
   )
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
+
     override def parse(testRecord: TestRecord): SimpleRecord = {
       val parts = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
       SimpleRecord(
@@ -921,6 +937,7 @@ object SampleNodes {
         parts(6)
       )
     }
+
   }
 
   def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParam[SimpleRecord](
@@ -935,6 +952,7 @@ object SampleNodes {
   val jsonSource: SourceFactory = SourceFactory.noParam[SimpleJsonRecord](
     new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord])
       with FlinkSourceTestSupport[SimpleJsonRecord] {
+
       override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecord: TestRecord) => {
         CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
       }
@@ -994,6 +1012,7 @@ object SampleNodes {
     override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
       if (listening) nodesEntered = nodesEntered ::: nodeId :: Nil
     }
+
   }
 
 }

@@ -33,6 +33,7 @@ class ModelDataTestInfoProviderSpec
   private val modelData = LocalModelData(
     ConfigFactory.empty(),
     new EmptyProcessConfigCreator {
+
       override def sourceFactories(
           processObjectDependencies: ProcessObjectDependencies
       ): Map[String, WithCategories[SourceFactory]] = {
@@ -45,6 +46,7 @@ class ModelDataTestInfoProviderSpec
           "sourceGeneratingEmptyData"       -> WithCategories(SourceGeneratingEmptyData),
         )
       }
+
     }
   )
 
@@ -71,6 +73,7 @@ class ModelDataTestInfoProviderSpec
   }
 
   object SourceGeneratingEmptyData extends GenericParametersSource {
+
     override def implementation(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
@@ -84,6 +87,7 @@ class ModelDataTestInfoProviderSpec
         override def generateTestData(size: Int): TestData = TestData(Nil)
       }
     }
+
   }
 
   private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
@@ -341,4 +345,5 @@ class ModelDataTestInfoProviderSpec
           .emptySink("end", "dead-end"),
       )
   }
+
 }

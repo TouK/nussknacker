@@ -31,10 +31,12 @@ object TypingResultAwareTypeInformationDetection {
 
   class CompositeCustomisation(customisations: List[TypingResultAwareTypeInformationCustomisation])
       extends TypingResultAwareTypeInformationCustomisation {
+
     override def customise(
         originalDetection: TypeInformationDetection
     ): PartialFunction[TypingResult, TypeInformation[_]] =
       customisations.map(_.customise(originalDetection)).reduceOption(_.orElse(_)).getOrElse(Map.empty)
+
   }
 
 }

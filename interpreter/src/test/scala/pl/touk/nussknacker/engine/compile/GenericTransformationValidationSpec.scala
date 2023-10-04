@@ -30,6 +30,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   import spel.Implicits._
 
   object MyProcessConfigCreator extends EmptyProcessConfigCreator {
+
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -60,16 +61,20 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         "genericParametersEnricher"          -> WithCategories(GenericParametersEnricher),
         "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
       )
+
   }
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
+
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
     MyProcessConfigCreator,
     getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
   )
+
   private val fragmentDefinitionExtractor =
     FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
     fragmentDefinitionExtractor,

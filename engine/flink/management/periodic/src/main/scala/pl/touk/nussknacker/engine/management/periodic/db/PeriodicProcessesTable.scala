@@ -80,6 +80,7 @@ trait PeriodicProcessesTableFactory {
             )
         }
     )
+
   }
 
   object PeriodicProcesses extends TableQuery(new PeriodicProcessesTable(_))
@@ -87,6 +88,7 @@ trait PeriodicProcessesTableFactory {
 }
 
 object PeriodicProcessEntity {
+
   def create(
       id: PeriodicProcessId,
       processName: String,
@@ -111,6 +113,7 @@ object PeriodicProcessEntity {
       active,
       createdAt
     )
+
 }
 
 case class PeriodicProcessEntity(

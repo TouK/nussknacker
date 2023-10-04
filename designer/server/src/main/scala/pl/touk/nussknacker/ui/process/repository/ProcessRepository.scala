@@ -45,6 +45,7 @@ object ProcessRepository {
       case HttpHeader(`headerName`, value) => Some(RemoteUserName(value))
       case _                               => None
     }
+
   }
 
   def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
@@ -87,6 +88,7 @@ trait ProcessRepository[F[_]] {
   def renameProcess(processId: ProcessIdWithName, newName: ProcessName)(
       implicit loggedUser: LoggedUser
   ): F[XError[Unit]]
+
 }
 
 class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeDataProvider[Int, _])
@@ -314,4 +316,5 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
       .filter(v => v.id === versionId && v.processId === processId)
       .map(_.id)
       .update(versionIdToUpdate)
+
 }

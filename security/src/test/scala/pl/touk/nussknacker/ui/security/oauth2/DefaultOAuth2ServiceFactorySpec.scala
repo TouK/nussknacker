@@ -15,6 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Random, Success}
 
 class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
+
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
@@ -230,4 +231,5 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       }
       .futureValue
   }
+
 }

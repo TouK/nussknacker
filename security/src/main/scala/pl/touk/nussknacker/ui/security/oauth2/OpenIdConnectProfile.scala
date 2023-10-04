@@ -51,6 +51,7 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
+
   def decoderWithCustomRolesClaim(rolesClaims: List[String]): Decoder[OpenIdConnectUserInfo] =
     decoder.prepare {
       _.withFocus(_.mapObject { jsonObject =>
@@ -60,11 +61,13 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
         jsonObject.add("roles", Json.fromValues(allRoles))
       })
     }
+
   def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OpenIdConnectUserInfo] =
     rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
+
   def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
     val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
     val userRoles    = profile.roles ++ getUserRoles(userIdentity, configuration)
@@ -91,4 +94,5 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
 
     AuthenticatedUser(id = userIdentity, username = username, userRoles)
   }
+
 }

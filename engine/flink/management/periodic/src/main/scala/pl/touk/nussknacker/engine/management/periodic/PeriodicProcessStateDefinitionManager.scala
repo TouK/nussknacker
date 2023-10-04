@@ -15,6 +15,7 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
       customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
       delegate = delegate
     ) {
+
   override def statusTooltip(stateStatus: StateStatus): String = {
     stateStatus match {
       case periodic: PeriodicProcessStatus => PeriodicProcessStateDefinitionManager.statusTooltip(periodic)

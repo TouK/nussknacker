@@ -50,6 +50,7 @@ class RemoteEnvironmentResourcesSpec
   private val processName: ProcessName = ProcessName(processId)
 
   val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
+
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
     val route = withPermissions(

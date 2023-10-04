@@ -74,9 +74,11 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)(
       u.identity -> UserWithPassword(u.identity, u.username.getOrElse(u.identity), password, u.roles)
     }.toMap
   }
+
 }
 
 object BasicHttpAuthenticator {
+
   def apply(config: BasicAuthenticationConfiguration)(
       implicit executionContext: ExecutionContext
   ): BasicHttpAuthenticator = new BasicHttpAuthenticator(config)

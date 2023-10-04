@@ -70,10 +70,12 @@ class CachingProcessStateDeploymentManagerSpec
   }
 
   implicit class DeploymentManagerOps(dm: DeploymentManager) {
+
     def getProcessStatesDeploymentIdNow(freshnessPolicy: DataFreshnessPolicy): WithDataFreshnessStatus[List[String]] =
       dm.getProcessStates(ProcessName("foo"))(freshnessPolicy)
         .futureValue
         .map(_.map(_.externalDeploymentId.value.value))
+
   }
 
   private def prepareDMReturningRandomStates = {

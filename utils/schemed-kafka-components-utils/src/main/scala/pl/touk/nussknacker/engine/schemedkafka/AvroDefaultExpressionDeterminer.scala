@@ -26,6 +26,7 @@ object AvroDefaultExpressionDeterminer {
   case class TypeNotSupported(schema: Schema) extends AvroDefaultToSpELExpressionError {
     override def getMessage: String = s"Default value for ${schema.getType} is not supported."
   }
+
 }
 
 /**

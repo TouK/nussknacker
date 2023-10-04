@@ -19,6 +19,7 @@ object FlinkCustomStreamTransformation {
       rType: TypingResult
   ): FlinkCustomStreamTransformation with ReturningType =
     new FlinkCustomStreamTransformation with ReturningType {
+
       override def transform(
           start: DataStream[Context],
           context: FlinkCustomNodeContext
@@ -26,6 +27,7 @@ object FlinkCustomStreamTransformation {
 
       override def returnType: typing.TypingResult = rType
     }
+
 }
 
 trait FlinkCustomStreamTransformation {

@@ -93,4 +93,5 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
       }
     }
   }
+
 }

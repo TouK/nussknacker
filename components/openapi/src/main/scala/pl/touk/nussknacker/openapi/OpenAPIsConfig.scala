@@ -46,4 +46,5 @@ object OpenAPIsConfig {
       apiKeyValue = conf.as[String]("apiKeyValue")
     )
   })
+
 }

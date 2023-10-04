@@ -80,6 +80,7 @@ object StandardTimestampWatermarkHandler {
 
 @silent("deprecated")
 class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
+
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {
     timestampAssigner match {
       case periodic: AssignerWithPeriodicWatermarks[T @unchecked] =>

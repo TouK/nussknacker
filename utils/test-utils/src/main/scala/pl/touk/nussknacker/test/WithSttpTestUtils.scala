@@ -9,6 +9,7 @@ trait WithSttpTestUtils {
 
   implicit def toResponseOps(response: sttp.client3.Response[String]): ResponseOps = new ResponseOps(response)
 }
+
 object WithSttpTestUtils {
 
   implicit class ResponseOps(val response: sttp.client3.Response[String]) {
@@ -32,5 +33,7 @@ object WithSttpTestUtils {
         .toOption
         .getOrElse(throw new IllegalArgumentException(s"Cannot create JSON from [${response.body}]"))
     }
+
   }
+
 }

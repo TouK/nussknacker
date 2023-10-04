@@ -36,6 +36,7 @@ object HttpClientErrorHandler extends LazyLogging {
   private object HttpErrorExtractor {
     def unapply(t: Throwable): Option[HttpError[_]] = HttpError.find(t)
   }
+
 }
 
 case class HttpClientError(message: String) extends Exception(message)

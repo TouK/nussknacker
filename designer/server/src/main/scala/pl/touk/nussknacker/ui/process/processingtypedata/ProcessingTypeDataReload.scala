@@ -43,6 +43,7 @@ class BasicProcessingTypeDataReload(
     current = loadMethod()
     logger.info("Scenario type data reloading finished")
   }
+
 }
 
 object BasicProcessingTypeDataReload {

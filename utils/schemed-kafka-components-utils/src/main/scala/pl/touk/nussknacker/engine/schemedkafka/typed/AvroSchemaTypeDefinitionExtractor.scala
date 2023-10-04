@@ -89,4 +89,5 @@ object AvroSchemaTypeDefinitionExtractor {
         TypedNull
     }
   }
+
 }

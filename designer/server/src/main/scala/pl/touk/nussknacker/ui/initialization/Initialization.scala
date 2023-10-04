@@ -24,6 +24,7 @@ import scala.concurrent.{Await, ExecutionContext}
 object Initialization {
 
   implicit val nussknackerUser: LoggedUser = NussknackerInternalUser.instance
+
   def init(
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
@@ -52,6 +53,7 @@ object Initialization {
     // TODO: make it more configurable...
     Await.result(runFuture, 10 minute)
   }
+
 }
 
 trait InitialOperation extends LazyLogging {
@@ -61,6 +63,7 @@ trait InitialOperation extends LazyLogging {
 }
 
 class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOperation {
+
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     // `insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
     import dbRef.profile.api._
@@ -78,6 +81,7 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
     } yield ()
     uppsertEnvironmentAction
   }
+
 }
 
 class AutomaticMigration(
@@ -112,4 +116,5 @@ class AutomaticMigration(
       case None => DBIOAction.successful(())
     }
   }
+
 }

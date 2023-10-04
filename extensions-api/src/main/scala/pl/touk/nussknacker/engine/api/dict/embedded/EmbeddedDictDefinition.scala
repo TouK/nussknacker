@@ -54,10 +54,12 @@ object EmbeddedDictDefinition {
     new ScalaEnumTypedDictBuilder[T](scalaEnum)
 
   class ScalaEnumTypedDictBuilder[T <: Enumeration](scalaEnum: Enumeration) {
+
     def withValueClass[V <: T#Value: ClassTag]: EmbeddedDictDefinition = {
       val enumValueByName = scalaEnum.values.map(e => e.toString -> e).toMap
       EnumDictDefinition(Typed.typedClass[V], enumValueByName)
     }
+
   }
 
   /**

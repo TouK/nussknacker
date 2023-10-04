@@ -24,6 +24,7 @@ object BestEffortJsonSchemaEncoder {
     .load(classOf[ToJsonBasedOnSchemaEncoder], classLoader)
     .asScala
     .map(_.encoder(this.encodeBasedOnSchema))
+
   private val highPriority: PartialFunction[EncodeInput, EncodeOutput] = Map()
 
   final def encodeOrError(value: Any, schema: Schema): Json = {
@@ -188,6 +189,7 @@ object BestEffortJsonSchemaEncoder {
   }
 
   private object PatternPropertySchema {
+
     def unapply(objectField: ObjectField): Option[(Schema, ObjectField)] = {
       findPatternPropertySchema(objectField.name, objectField.parentSchema)
         .map((_, objectField))
@@ -198,6 +200,7 @@ object BestEffortJsonSchemaEncoder {
         case (pattern, schema) if pattern.asPredicate().test(fieldName) => schema
       }
     }
+
   }
 
   private case class ObjectField(name: String, value: Option[_], schema: Option[Schema], parentSchema: ObjectSchema)

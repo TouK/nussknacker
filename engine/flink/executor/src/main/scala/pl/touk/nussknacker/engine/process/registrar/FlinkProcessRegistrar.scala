@@ -372,6 +372,7 @@ class FlinkProcessRegistrar(
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
     fromNodeData(processPart.node.data)
   }
+
 }
 
 object FlinkProcessRegistrar {

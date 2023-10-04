@@ -25,4 +25,5 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
     delegate.checkAuthorizationAndObtainUserinfo(accessToken).map { case (userInfo, expiration) =>
       (loggedUserFunction(userInfo), expiration)
     }
+
 }

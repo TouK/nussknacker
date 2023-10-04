@@ -120,6 +120,7 @@ object typing {
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
       s"${underlying.display}($shortenedDataString)"
     }
+
   }
 
   case object TypedNull extends TypingResult {
@@ -389,9 +390,11 @@ object typing {
   }
 
   case class CastTypedValue[T: TypeTag]() {
+
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult).filter(_.canBeSubclassOf(Typed.fromDetailedType[T])).map(new TypingResultTypedValue(_))
     }
+
   }
 
   class TypingResultTypedValue[T](typingResult: TypingResult) {

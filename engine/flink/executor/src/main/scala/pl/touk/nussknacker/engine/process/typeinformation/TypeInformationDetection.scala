@@ -61,4 +61,5 @@ object GenericTypeInformationDetection extends TypeInformationDetection {
     }
     TypeInformation.of(classNeeded).asInstanceOf[TypeInformation[T]]
   }
+
 }

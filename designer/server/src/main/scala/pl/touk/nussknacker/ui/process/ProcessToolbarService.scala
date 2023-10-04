@@ -31,6 +31,7 @@ class ConfigProcessToolbarService(config: Config, categories: List[String]) exte
 
     ProcessToolbarSettings.fromConfig(toolbarConfig, process)
   }
+
 }
 
 object ProcessToolbarSettings {
@@ -53,6 +54,7 @@ object ProcessToolbarSettings {
         .filterNot(tp => verifyCondition(tp.hidden, process))
         .map(tp => ToolbarPanel.fromConfig(tp, process))
     )
+
 }
 
 @JsonCodec
@@ -89,6 +91,7 @@ object ToolbarPanel {
           .map(button => ToolbarButton.fromConfig(button, process))
       )
     )
+
 }
 
 @JsonCodec
@@ -111,6 +114,7 @@ object ToolbarButton {
     config.url.map(th => fillByProcessData(th, process, urlOption = true)),
     disabled = verifyCondition(config.disabled, process)
   )
+
 }
 
 @JsonCodec
@@ -160,4 +164,5 @@ private[process] object ToolbarHelper {
       shouldMatchAllOfConditions: Boolean
   ): Boolean =
     (shouldMatchAllOfConditions && expected.isEmpty) || expected.contains(toVerify)
+
 }

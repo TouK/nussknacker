@@ -44,4 +44,5 @@ trait DatumReaderWriterMixin {
       StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData)
     }
   }
+
 }

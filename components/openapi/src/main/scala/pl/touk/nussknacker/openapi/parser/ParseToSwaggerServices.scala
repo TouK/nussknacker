@@ -41,4 +41,5 @@ private[parser] object ParseToSwaggerServices {
     }
     ServiceName(safeId)
   }
+
 }

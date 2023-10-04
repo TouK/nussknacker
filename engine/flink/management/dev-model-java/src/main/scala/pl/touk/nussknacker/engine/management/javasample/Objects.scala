@@ -20,6 +20,7 @@ class Objects extends Serializable {
           Thread.sleep(10000)
         }
       }
+
     }
 
     override val typeInformation: TypeInformation[Model] = TypeInformation.of(classOf[Model])

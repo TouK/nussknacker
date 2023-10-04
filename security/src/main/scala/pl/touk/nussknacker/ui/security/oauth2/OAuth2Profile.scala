@@ -8,6 +8,7 @@ trait OAuth2Profile[ProfileResponse] {
 }
 
 object OAuth2Profile {
+
   def getUserRoles(
       identity: String,
       configuration: OAuth2Configuration,
@@ -24,4 +25,5 @@ object OAuth2Profile {
   private implicit class RichOAuth2Configuration(c: OAuth2Configuration) {
     private[OAuth2Profile] def findUserById(id: String) = c.users.find(_.identity == id)
   }
+
 }

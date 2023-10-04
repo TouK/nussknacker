@@ -21,6 +21,7 @@ object TableDefinition {
       columnDefs = columnDefinitions.toList
     )
   }
+
 }
 
 final case class TableDefinition(columnDefs: List[ColumnDefinition]) {

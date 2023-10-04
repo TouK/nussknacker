@@ -11,26 +11,31 @@ import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 case class VerboselyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
     extends FlinkEspExceptionConsumer
     with LazyLogging {
+
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     logger.error(
       s"${processMetaData.id}: Exception during processing job, params: $params, context: ${e.context}",
       e.throwable
     )
   }
+
 }
 
 case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Map[String, String] = Map.empty)
     extends FlinkEspExceptionConsumer
     with LazyLoggingWithTraces {
+
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
     warnWithDebugStack(
       s"${processMetaData.id}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params",
       e.throwable
     )
   }
+
 }
 
 class VerboselyLoggingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
+
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
     VerboselyLoggingExceptionConsumer(
       metaData,
@@ -41,6 +46,7 @@ class VerboselyLoggingExceptionConsumerProvider extends FlinkEspExceptionConsume
 }
 
 class BrieflyLoggingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
+
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer =
     BrieflyLoggingExceptionConsumer(
       metaData,

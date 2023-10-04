@@ -24,6 +24,7 @@ trait ScenarioTestExecutorService {
 
 class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, dispatcher: DeploymentManagerDispatcher)
     extends ScenarioTestExecutorService {
+
   override def testProcess[T](
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,

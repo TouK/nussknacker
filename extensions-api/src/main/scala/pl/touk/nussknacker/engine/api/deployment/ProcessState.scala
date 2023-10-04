@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment
+
 import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -50,6 +51,7 @@ object StateStatus {
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString
     .contramap[StateStatus](_.name)
     .mapJson(nameJson => Json.fromFields(Seq("name" -> nameJson)))
+
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoAttributesStateStatus)
 
   // Temporary methods to simplify status creation

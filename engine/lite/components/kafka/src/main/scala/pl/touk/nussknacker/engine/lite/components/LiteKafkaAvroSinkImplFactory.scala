@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
+
   override def createSink(
       preparedTopic: PreparedKafkaTopic,
       keyParam: LazyParameter[AnyRef],
@@ -31,4 +32,5 @@ object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
       schema.toParsedSchemaData,
       validationMode
     )
+
 }

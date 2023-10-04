@@ -95,6 +95,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
+
 }
 
 class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
@@ -117,6 +118,7 @@ class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[CustomStreamTransformer]] = {
     Map("delay" -> WithCategories(new DelayTransformer))
   }
+
 }
 
 case class Record(id: String, map: java.util.Map[Int, String], list: java.util.List[String], set: java.util.Set[String])

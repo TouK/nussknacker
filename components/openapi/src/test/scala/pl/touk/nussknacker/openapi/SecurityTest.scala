@@ -82,4 +82,5 @@ class SecurityTest
   ) = {
     parseToEnrichers("service-security.yml", backend, baseConfig.copy(security = Some(securities)))
   }
+
 }

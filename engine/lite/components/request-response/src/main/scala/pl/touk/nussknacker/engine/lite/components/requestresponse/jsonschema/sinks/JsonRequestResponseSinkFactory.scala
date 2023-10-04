@@ -33,12 +33,15 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   import JsonRequestResponseSink._
   override type State = EditorTransformationState
   private val jsonSchemaExtractor = new JsonSchemaExtractor()
+
   private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(
     defaultValue = Some(Expression.spel("false")),
     editor = Some(BoolParameterEditor),
     validators = List(MandatoryParameterValidator)
   )
+
   private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](SinkRawValueParamName)
+
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
     editor =
       Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))

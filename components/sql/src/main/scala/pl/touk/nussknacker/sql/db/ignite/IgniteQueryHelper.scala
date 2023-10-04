@@ -10,6 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Using
 
 class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
+
   private val tablesInSchemaQuery =
     """
       |select t.TABLE_NAME, c.COLUMN_NAME, c.TYPE, c.AFFINITY_COLUMN
@@ -53,4 +54,5 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
       arr.toList
     }
   }
+
 }

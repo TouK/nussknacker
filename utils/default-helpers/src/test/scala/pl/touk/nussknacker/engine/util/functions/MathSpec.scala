@@ -36,4 +36,5 @@ class MathSpec extends AnyFunSuite with Matchers {
     math.floor(-2.1d) shouldEqual -3.0
     math.floor(2.1d) shouldEqual 2
   }
+
 }

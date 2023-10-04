@@ -60,4 +60,5 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
     }
 
   }
+
 }

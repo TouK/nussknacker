@@ -227,6 +227,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
+
 }
 
 object UnionWithMemoTransformerSpec {
@@ -257,6 +258,7 @@ object UnionWithMemoTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
+
   }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {

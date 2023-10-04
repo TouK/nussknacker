@@ -21,11 +21,13 @@ import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenar
 import scala.reflect.ClassTag
 
 object RequestResponseTestScenarioRunner {
+
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def requestResponseBased(baseConfig: Config = ConfigFactory.load()): RequestResponseTestScenarioRunnerBuilder = {
       RequestResponseTestScenarioRunnerBuilder(Nil, baseConfig, testRuntimeMode = false)
     }
+
   }
 
   val stringFieldSchema: String = """{

@@ -19,4 +19,5 @@ trait WithDBConnectionPool {
     try f(conn)
     finally conn.close()
   }
+
 }

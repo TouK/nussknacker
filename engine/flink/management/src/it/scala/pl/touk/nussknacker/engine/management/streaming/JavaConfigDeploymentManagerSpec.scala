@@ -35,4 +35,5 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     assert(deploymentManager.cancel(ProcessName(process.id), user = userToAct).isReadyWithin(10 seconds))
   }
+
 }

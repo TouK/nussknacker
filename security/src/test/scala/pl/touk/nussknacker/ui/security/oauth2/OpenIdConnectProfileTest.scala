@@ -75,4 +75,5 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrive
     }
 
   }
+
 }

@@ -121,6 +121,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
+
 }
 
 class Creator(input: List[TestRecord], collectingListener: ResultsCollectingListener)

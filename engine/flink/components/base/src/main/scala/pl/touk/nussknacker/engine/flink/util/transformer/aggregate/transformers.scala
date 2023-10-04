@@ -225,6 +225,7 @@ object transformers {
     private val returnType = aggregator
       .computeOutputType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
+
     private val storedType = aggregator
       .computeStoredType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))

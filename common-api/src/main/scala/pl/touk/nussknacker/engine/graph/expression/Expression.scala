@@ -5,6 +5,7 @@ import io.circe.generic.JsonCodec
 @JsonCodec case class Expression(language: String, expression: String)
 
 object Expression {
+
   object Language {
     val Spel         = "spel"
     val SpelTemplate = "spelTemplate"

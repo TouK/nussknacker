@@ -22,12 +22,14 @@ import scala.concurrent.{Await, Future}
 import scala.language.higherKinds
 
 trait TestRunner {
+
   def runTest[T](
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
       process: CanonicalProcess,
       variableEncoder: Any => T
   ): TestResults[T]
+
 }
 
 //TODO: integrate with Engine somehow?

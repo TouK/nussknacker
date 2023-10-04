@@ -73,6 +73,7 @@ class JwtOAuth2Service[
     clientApi
       .accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
+
 }
 
 @ConfiguredJsonCodec(decodeOnly = true) final case class DefaultJwtAccessToken(

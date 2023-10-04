@@ -215,6 +215,7 @@ object UIProcessObjectsFactory {
     val determinedValidators = AdditionalPropertyValidatorDeterminerChain(config).determine()
     UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
+
 }
 
 object SortedComponentGroup {

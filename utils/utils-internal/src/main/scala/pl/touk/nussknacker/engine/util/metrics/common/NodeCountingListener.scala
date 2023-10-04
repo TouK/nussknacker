@@ -24,4 +24,5 @@ private[engine] class NodeCountingListener(nodeIds: Iterable[String]) extends Em
       .getOrElse(nodeId, throw new RuntimeException(s"Unexpected node: ${nodeId}, known nodes: ${counters.keySet}"))
     counter.update(1)
   }
+
 }

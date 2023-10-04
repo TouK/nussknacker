@@ -53,6 +53,7 @@ class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with
       "Generic function f has declared parameters that are incompatible with methods signature: argument at position 3 has illegal type: Double cannot be subclass of Long"
     )
   }
+
 }
 
 private trait TypingFunctionHelper extends TypingFunction {
@@ -67,9 +68,11 @@ private trait TypingFunctionHelper extends TypingFunction {
       arguments: List[TypingResult]
   ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
     Unknown.validNel
+
 }
 
 private object Valid {
+
   class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
@@ -82,9 +85,11 @@ private object Valid {
   }
 
   class Foo2 {
+
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
+
   }
 
   class Foo2TypingFunction extends TypingFunctionHelper {
@@ -94,9 +99,11 @@ private object Valid {
   }
 
   class Foo4 {
+
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
+
   }
 
   class Foo4TypingFunction extends TypingFunctionHelper {
@@ -104,9 +111,11 @@ private object Valid {
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
   }
+
 }
 
 private object Invalid {
+
   class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
@@ -119,9 +128,11 @@ private object Invalid {
   }
 
   class Foo2 {
+
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
+
   }
 
   class Foo2TypingFunction extends TypingFunctionHelper {
@@ -142,9 +153,11 @@ private object Invalid {
   }
 
   class Foo4 {
+
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
+
   }
 
   class Foo4TypingFunction extends TypingFunctionHelper {
@@ -152,4 +165,5 @@ private object Invalid {
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
   }
+
 }

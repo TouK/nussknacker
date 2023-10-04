@@ -29,6 +29,7 @@ class NewProcessPreparer(
     emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
     additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
 ) {
+
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val initialProperties = additionalFields.forTypeUnsafe(processingType).map { case (key, config) =>

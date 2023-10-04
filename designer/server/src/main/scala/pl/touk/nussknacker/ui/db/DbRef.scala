@@ -6,6 +6,7 @@ import net.ceedubs.ficus.Ficus._
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 class DbRef private (val db: JdbcBackend.Database, val profile: JdbcProfile)
+
 object DbRef {
 
   def create(config: Config): Resource[IO, DbRef] = {
@@ -29,4 +30,5 @@ object DbRef {
       case _                                  => throw new IllegalStateException("unsupported jdbc url")
     }
   }
+
 }

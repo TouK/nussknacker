@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object NotValidSchema {
+
   val stringSchema: String =
     """
       |{
@@ -17,4 +18,5 @@ object NotValidSchema {
       |  ]
       |}
     """.stripMargin
+
 }

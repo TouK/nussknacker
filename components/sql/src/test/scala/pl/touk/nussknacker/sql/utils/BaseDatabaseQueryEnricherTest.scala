@@ -38,4 +38,5 @@ trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with Befor
       case a                                        => throw new AssertionError(s"Should not happen: $a")
     }
   }
+
 }

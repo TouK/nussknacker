@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.db.entity
 
 import slick.jdbc.JdbcProfile
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
+
 //TODO: Remove it in next release
 trait EnvironmentsEntityFactory {
 
@@ -17,6 +18,7 @@ trait EnvironmentsEntityFactory {
 
     def * : ProvenShape[EnvironmentsEntityData] = name <> (EnvironmentsEntityData.apply, EnvironmentsEntityData.unapply)
   }
+
 }
 
 final case class EnvironmentsEntityData(name: String)

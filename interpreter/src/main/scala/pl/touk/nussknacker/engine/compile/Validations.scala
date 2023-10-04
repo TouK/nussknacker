@@ -63,4 +63,5 @@ object Validations {
       .sequence
       .map(_ => ())
   }
+
 }

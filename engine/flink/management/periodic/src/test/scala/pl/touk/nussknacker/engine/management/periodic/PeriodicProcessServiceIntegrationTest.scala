@@ -120,6 +120,7 @@ class PeriodicProcessServiceIntegrationTest
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
+
     def periodicProcessService(currentTime: Instant, processingType: String = processingType) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -127,10 +128,12 @@ class PeriodicProcessServiceIntegrationTest
         scheduledProcessesRepository =
           new SlickPeriodicProcessesRepository(db, dbProfile, fixedClock(currentTime), processingType),
         periodicProcessListener = new PeriodicProcessListener {
+
           override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
             case k if failListener => throw new Exception(s"$k was ordered to fail")
             case k                 => events.append(k)
           }
+
         },
         additionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
         deploymentRetryConfig = deploymentRetryConfig,
@@ -138,6 +141,7 @@ class PeriodicProcessServiceIntegrationTest
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime)
       )
+
   }
 
   it should "handle basic flow" in withFixture() { f =>
@@ -522,9 +526,11 @@ class PeriodicProcessServiceIntegrationTest
     def latestDeploymentForSingleSchedule: ScheduleDeploymentData = {
       schedulesState.schedules.find(_._1.scheduleName.value.isEmpty).value._2.latestDeployments.head
     }
+
     def latestDeploymentForSchedule(name: String): ScheduleDeploymentData = {
       schedulesState.schedules.find(_._1.scheduleName.value.contains(name)).value._2.latestDeployments.head
     }
+
   }
 
 }

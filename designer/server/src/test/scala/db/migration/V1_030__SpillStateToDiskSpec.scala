@@ -86,4 +86,5 @@ class V1_030__SpillStateToDiskSpec extends AnyFlatSpec with Matchers {
 
     converted shouldBe expectedJsonWithoutSpillStateToDisk
   }
+
 }

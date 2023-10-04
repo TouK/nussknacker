@@ -42,4 +42,5 @@ object NodeComponentInfoExtractor {
       case _ => NodeComponentInfo(nodeData.id, None)
     }
   }
+
 }

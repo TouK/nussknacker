@@ -14,9 +14,11 @@ import java.util.Optional
 class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   object EmptyRecordFormatter extends RecordFormatter {
+
     override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = TestRecord(
       Json.Null
     )
+
     override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = ???
   }
 

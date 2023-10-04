@@ -44,6 +44,7 @@ abstract class EvictableStateFunction[In, Out, StateType] extends KeyedProcessFu
     ctx.timerService().registerEventTimeTimer(time)
     lastEventTimeForKey.update(time)
   }
+
 }
 
 abstract class TimestampedEvictableStateFunction[In, Out, StateType]

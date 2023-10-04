@@ -100,6 +100,7 @@ class StubbedSourcePreparer(
     metaData: MetaData,
     scenarioTestData: ScenarioTestData
 ) {
+
   def prepareStubbedSource(
       originalSource: Source with FlinkSourceTestSupport[Object],
       returnTypeOpt: Option[typing.TypingResult],

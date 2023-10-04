@@ -78,4 +78,5 @@ class JsonSchemaUtilsTest extends AnyFunSuite with Matchers {
       }
     case (_, _) => obj shouldBe expected
   }
+
 }

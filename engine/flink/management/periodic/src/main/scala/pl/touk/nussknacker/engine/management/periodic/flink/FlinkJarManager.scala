@@ -22,6 +22,7 @@ import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.{ExecutionContext, Future}
 
 private[periodic] object FlinkJarManager {
+
   def apply(flinkConfig: FlinkConfig, periodicBatchConfig: PeriodicBatchConfig, modelData: BaseModelData)(
       implicit backend: SttpBackend[Future, Any],
       ec: ExecutionContext
@@ -33,6 +34,7 @@ private[periodic] object FlinkJarManager {
       createCurrentModelJarFile = new FlinkModelJar().buildJobJar(modelData)
     )
   }
+
 }
 
 // Used by [[PeriodicProcessService]].
@@ -104,4 +106,5 @@ private[periodic] class FlinkJarManager(
     val deleted = Files.deleteIfExists(jarPath)
     logger.info(s"Deleted: ($deleted) jar in: $jarPath")
   }
+
 }
