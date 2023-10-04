@@ -5,7 +5,9 @@ import { DynamicTab, DynamicTabData } from "./DynamicTab";
 import { Page } from "./Page";
 import { Navigate } from "react-router-dom";
 
-export function CustomTabWrapper<P extends { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type"> }>(props: P) {
+export function CustomTabWrapper<
+    P extends { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "accessTokenInQuery" | "url" | "type"> },
+>(props: P) {
     return (
         <Page>
             <DynamicTab {...props} />
