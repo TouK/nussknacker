@@ -45,6 +45,7 @@ class GenericOidcService[
       super.obtainUserInfo(accessToken)
     }
   }
+
 }
 
 @ConfiguredJsonCodec final case class DefaultOidcAuthorizationData(
@@ -60,6 +61,7 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
+
   def apply(configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       backend: SttpBackend[Future, Any]
@@ -68,4 +70,5 @@ object GenericOidcService {
       OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
       configuration
     )
+
 }

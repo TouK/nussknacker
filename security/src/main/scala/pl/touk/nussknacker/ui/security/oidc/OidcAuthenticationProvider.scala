@@ -21,6 +21,7 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
       OidcAuthenticationConfiguration.createWithDiscovery(config)
     )
   }
+
 }
 
 object OidcAuthenticationProvider extends OidcAuthenticationProvider

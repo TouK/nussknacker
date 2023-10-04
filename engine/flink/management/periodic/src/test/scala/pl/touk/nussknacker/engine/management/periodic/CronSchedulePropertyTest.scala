@@ -25,4 +25,5 @@ class CronSchedulePropertyTest extends AnyFunSuite with Matchers {
       .nextRunAt(Clock.systemDefaultZone())
       .isLeft shouldBe true
   }
+
 }

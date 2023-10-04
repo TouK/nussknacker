@@ -27,6 +27,7 @@ class ProcessModelMigratorSpec
     with Matchers
     with TestPermissions {
   import shapeless.Typeable._
+
   private def migrator(migrations: Int*) =
     new ProcessModelMigrator(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*))
@@ -108,4 +109,5 @@ class ProcessModelMigratorSpec
       parallelism <- stream.parallelism
     } yield parallelism).get
   }
+
 }

@@ -22,6 +22,7 @@ object Implicits {
   }
 
   implicit class RichMapIterable[K, V](m: Map[K, Iterable[V]]) {
+
     def sequenceMap: Map[V, Iterable[K]] = {
       m.map { case (k, values) =>
         values.map(v => v -> k)
@@ -30,6 +31,7 @@ object Implicits {
         .groupBy(_._1)
         .mapValuesNow(_.map(_._2))
     }
+
   }
 
   implicit class RichStringList(seq: List[String]) {
@@ -48,6 +50,7 @@ object Implicits {
   }
 
   implicit class RichFuture[A](future: Future[A]) {
+
     def withSideEffect(f: A => Unit)(implicit ec: ExecutionContext): Future[A] = {
       future.onComplete {
         case Success(result) => f(result)
@@ -55,15 +58,19 @@ object Implicits {
       }
       future
     }
+
   }
 
   implicit class SafeString(s: String) {
+
     def safeValue: Option[String] = {
       if (s == null || s == "") None else Some(s)
     }
+
   }
 
   implicit class RichIterableMap[T](list: Iterable[Map[String, T]]) {
+
     def reduceUnique: Map[String, T] = list.foldLeft(Map.empty[String, T]) { case (acc, element) =>
       val duplicates = acc.keySet.intersect(element.keySet)
       if (duplicates.isEmpty) {
@@ -73,6 +80,7 @@ object Implicits {
           s"Found duplicate keys: ${duplicates.mkString(", ")}, please correct configuration"
         )
     }
+
   }
 
   implicit object SourceIsReleasable extends Releasable[scala.io.Source] {
@@ -80,9 +88,12 @@ object Implicits {
   }
 
   implicit class RichIterable[T](iterable: Iterable[T]) {
+
     def exactlyOne: Option[T] = iterable match {
       case head :: Nil => Some(head)
       case _           => None
     }
+
   }
+
 }

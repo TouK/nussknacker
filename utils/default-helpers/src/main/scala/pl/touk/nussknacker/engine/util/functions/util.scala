@@ -19,4 +19,5 @@ object util extends HideToString {
   def split(@ParamName("text") text: String, @ParamName("regexp") regexp: String): java.util.List[String] = {
     text.split(regexp, -1).toList.asJava
   }
+
 }

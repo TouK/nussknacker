@@ -74,6 +74,7 @@ class AzureSchemaRegistryClientIntegrationTest
 
     schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(schema))
   }
+
   private def createRecordSchema(
       topicName: String,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]

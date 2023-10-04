@@ -73,6 +73,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   private val classResolutionStrategy          = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder            = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
   private val dict                             = new SimpleDictRegistry(Map.empty)
+
   private val typer = new Typer(
     commonSupertypeFinder,
     new KeysDictTyper(dict),
@@ -83,6 +84,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     methodExecutionForUnknownAllowed,
     dynamicPropertyAccessAllowed
   )
+
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(
@@ -102,4 +104,5 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
     typer.typeExpression(parsed, validationCtx)
   }
+
 }

@@ -57,6 +57,7 @@ object DeploymentComment {
 final case class CommentValidationError(message: String) extends Exception(message)
 
 object CommentValidationError {
+
   def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
     val suffix = deploymentCommentSettings.exampleComment match {
       case Some(exampleComment) =>
@@ -66,4 +67,5 @@ object CommentValidationError {
     }
     new CommentValidationError(s"Bad comment format '$comment'. " + suffix)
   }
+
 }

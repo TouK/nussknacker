@@ -13,6 +13,7 @@ package object openapi {
 }
 
 package openapi {
+
   @JsonCodec sealed trait SwaggerParameter {
 
     def name: String

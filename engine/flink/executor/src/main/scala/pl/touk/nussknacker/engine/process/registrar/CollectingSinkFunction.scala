@@ -22,4 +22,5 @@ private[registrar] class CollectingSinkFunction[T](
       collectingSink.collect(value.context, value.value)
     }
   }
+
 }

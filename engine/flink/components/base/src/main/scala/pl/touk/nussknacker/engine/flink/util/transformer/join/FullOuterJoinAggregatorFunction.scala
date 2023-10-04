@@ -43,4 +43,5 @@ class FullOuterJoinAggregatorFunction[MapT[_, _]](
     res.put(keyFieldName, in.value.key)
     out.collect(ValueWithContext(res, in.context.clearUserVariables))
   }
+
 }

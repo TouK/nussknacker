@@ -95,6 +95,7 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
   ) extends CustomStreamTransformer {
     @MethodToInvoke(returnType = classOf[Void]) def invoke(): Unit = {}
   }
+
 }
 
 object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfigCreator {
@@ -129,10 +130,12 @@ object ComponentMarketingTestConfigCreator extends DefaultStreamingProcessConfig
     CustomStreamName         -> marketingAndTests(EmptyCustomStreamTransformer(true, false), Some(CustomStreamName)),
     OptionalCustomStreamName -> marketingAndTests(EmptyCustomStreamTransformer(false, true)),
   )
+
 }
 
 object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
+
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
@@ -162,10 +165,12 @@ object ComponentFraudTestConfigCreator extends DefaultStreamingProcessConfigCrea
     CustomStreamName         -> fraudAndTests(EmptyCustomStreamTransformer(true, false)),
     OptionalCustomStreamName -> fraudAndTests(EmptyCustomStreamTransformer(false, true)),
   )
+
 }
 
 object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreator {
   import ComponentModelData._
+
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
@@ -177,4 +182,5 @@ object WronglyConfiguredConfigCreator extends DefaultStreamingProcessConfigCreat
       SharedEnricherName                      -> all(EmptyProcessor, Some(SharedEnricherName)),
       HiddenMarketingCustomerDataEnricherName -> all(CustomerDataEnricher),
     )
+
 }

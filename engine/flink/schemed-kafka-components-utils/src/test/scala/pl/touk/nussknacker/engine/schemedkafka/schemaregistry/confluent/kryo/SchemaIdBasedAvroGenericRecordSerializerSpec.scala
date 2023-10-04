@@ -36,6 +36,7 @@ class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matc
     val afterRoundTrip = serializer.deserialize(new DataInputDeserializer(output.getCopyOfBuffer))
     afterRoundTrip shouldBe record
   }
+
 }
 
 object SchemaIdBasedAvroGenericRecordSerializerSpec {

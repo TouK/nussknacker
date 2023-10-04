@@ -53,6 +53,7 @@ object ProcessService {
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]
   )
+
 }
 
 trait ProcessService {

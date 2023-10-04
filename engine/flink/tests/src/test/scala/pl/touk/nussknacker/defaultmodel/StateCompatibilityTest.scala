@@ -186,4 +186,5 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id, action)
   }
+
 }

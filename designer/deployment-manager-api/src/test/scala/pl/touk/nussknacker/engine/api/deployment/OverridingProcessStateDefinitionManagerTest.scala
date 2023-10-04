@@ -17,6 +17,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
   private val icon = UnknownIcon
 
   private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
+
     override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
       DefaultState.name -> StateDefinitionDetails("Default", icon, "dummy", "Default description"),
       DefaultStateToOverride.name -> StateDefinitionDetails(
@@ -26,6 +27,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
         "Default description to override"
       )
     )
+
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
   }
 
@@ -61,4 +63,5 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     manager.statusDescription(CustomState) shouldBe "Calculated description for custom, e.g. schedule date"
     manager.statusDescription(CustomStateThatOverrides) shouldBe "Custom description that overrides"
   }
+
 }

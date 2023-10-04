@@ -37,6 +37,7 @@ object CannotFetchCountsError {
         .map(_.atZone(ZoneId.systemDefault()).format(dateTimeFormatter))
         .mkString(", ")}"
   )
+
 }
 
 final case class CannotFetchCountsError(msg: String) extends Exception(msg)

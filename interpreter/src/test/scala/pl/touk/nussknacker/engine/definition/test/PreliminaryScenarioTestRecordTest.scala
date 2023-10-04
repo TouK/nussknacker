@@ -36,4 +36,5 @@ class PreliminaryScenarioTestRecordTest extends AnyFunSuite with Matchers with E
     decode[PreliminaryScenarioTestRecord.Simplified](recordJsonString).rightValue shouldBe specificRecord
     decode[PreliminaryScenarioTestRecord](recordJsonString).rightValue shouldBe specificRecord
   }
+
 }

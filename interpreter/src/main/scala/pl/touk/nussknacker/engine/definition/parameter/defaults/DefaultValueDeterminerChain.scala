@@ -15,7 +15,9 @@ object DefaultValueDeterminerChain
 
 class DefaultValueDeterminerChain(elements: Iterable[ParameterDefaultValueDeterminer])
     extends ParameterDefaultValueDeterminer {
+
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] = {
     elements.view.flatMap(_.determineParameterDefaultValue(parameters)).headOption
   }
+
 }

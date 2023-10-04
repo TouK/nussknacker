@@ -41,6 +41,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
 
   class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
       extends EmptyProcessConfigCreator {
+
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
@@ -63,6 +64,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         customConversionsProviders = spelCustomConversionsProviderOpt.toList
       )
     }
+
   }
 
   test("be able to override Nussknacker default spel conversion service") {
@@ -128,9 +130,11 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   }
 
   object ConversionUtils extends HideToString {
+
     def toAny(@ParamName("value") value: Any): Any = {
       value
     }
+
   }
 
 }

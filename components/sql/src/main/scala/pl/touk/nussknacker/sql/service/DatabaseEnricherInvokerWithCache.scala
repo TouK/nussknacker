@@ -71,4 +71,5 @@ class DatabaseEnricherInvokerWithCache(
         .map(_.value)
     }
   }
+
 }

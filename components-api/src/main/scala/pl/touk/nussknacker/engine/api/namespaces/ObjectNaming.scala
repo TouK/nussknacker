@@ -4,11 +4,13 @@ import com.typesafe.config.Config
 
 trait ObjectNaming extends Serializable {
   def prepareName(originalName: String, config: Config, namingContext: NamingContext): String
+
   def objectNamingParameters(
       originalName: String,
       config: Config,
       namingContext: NamingContext
   ): Option[ObjectNamingParameters]
+
   def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String]
 }
 

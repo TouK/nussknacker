@@ -111,6 +111,7 @@ object JsonPayloadToAvroConverter {
       val nanoAdjustment = (microsFromEpoch.longValue() % 1000000) * 1000
       Instant.ofEpochSecond(epochSeconds, nanoAdjustment)
     }
+
   }
 
   object DecimalConverter extends BytesDecimalConverter {
@@ -162,9 +163,11 @@ object JsonPayloadToAvroConverter {
     }
 
     protected implicit class DecoderResultExt[A <: AnyRef](decoderResult: Decoder.Result[A]) {
+
       def toValue(path: util.Deque[String], silently: Boolean): AnyRef = {
         decoderResult.fold(ex => handleUnexpectedFormat(path, silently, Some(ex)), identity)
       }
+
     }
 
     protected def handleUnexpectedFormat(

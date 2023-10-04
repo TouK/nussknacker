@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
+
   def createProcessState(stateStatus: StateStatus): ProcessState =
     FlinkProcessStateDefinitionManager.processState(
       StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
@@ -33,4 +34,5 @@ class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
     val state = createProcessState(SimpleStateStatus.Restarting)
     state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
+
 }

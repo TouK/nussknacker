@@ -164,4 +164,5 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       "nested.string"
     )
   }
+
 }

@@ -22,9 +22,11 @@ object ProcessMigrations {
   }
 
   def listOf(migrations: ProcessMigration*): ProcessMigrations = new ProcessMigrations {
+
     override def processMigrations: Map[Int, ProcessMigration] = migrations.zipWithIndex.map {
       case (processMigration, index) => index + 1 -> processMigration
     }.toMap
+
   }
 
 }

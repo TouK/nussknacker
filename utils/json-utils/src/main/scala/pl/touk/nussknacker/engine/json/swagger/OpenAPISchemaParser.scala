@@ -28,4 +28,5 @@ object OpenAPISchemaParser {
     // it looks like location is not important on this level
     deserializer.getSchema(jsonNode, "", parseResult)
   }
+
 }

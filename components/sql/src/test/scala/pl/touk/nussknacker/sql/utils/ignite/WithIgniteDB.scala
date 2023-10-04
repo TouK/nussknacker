@@ -65,4 +65,5 @@ trait WithIgniteDB extends BeforeAndAfterAll {
       super.afterAll()
     }
   }
+
 }

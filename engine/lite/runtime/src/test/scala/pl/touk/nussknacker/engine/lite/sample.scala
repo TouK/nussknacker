@@ -112,6 +112,7 @@ object sample {
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }
+
   }
 
   class UtilHelpers {
@@ -119,6 +120,7 @@ object sample {
   }
 
   object StateConfigCreator extends EmptyProcessConfigCreator {
+
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
@@ -150,18 +152,23 @@ object sample {
         Map("UTIL" -> anyCategory(new UtilHelpers)),
         List()
       )
+
   }
 
   object FailOnNumber1 extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("value") value: Integer): Future[Integer] =
       if (value == 1) Future.failed(new IllegalArgumentException("Should not happen :)")) else Future.successful(value)
+
   }
 
   object SumNumbers extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("value") value: java.util.List[Long]): Future[java.lang.Long] =
       Future.successful(value.asScala.sum)
+
   }
 
   object NoOpProcessor extends Service {
@@ -170,18 +177,21 @@ object sample {
   }
 
   object SumTransformerFactory extends CustomStreamTransformer {
+
     @MethodToInvoke(returnType = classOf[Double])
     def invoke(
         @ParamName("name") name: String,
         @ParamName("value") value: LazyParameter[java.lang.Double],
         @OutputVariableName outputVar: String
     ) = new SumTransformer(name, outputVar, value)
+
   }
 
   object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
     def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
+
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
@@ -191,13 +201,16 @@ object sample {
         val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
         SampleInput(fields(0), fields(1).toInt)
       }
+
     }
+
   }
 
   object FailOnNumber1SourceFactory extends SourceFactory {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): Source = new LiteSource[SampleInput] {
+
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInput => ValidatedNel[ErrorType, Context] =
@@ -214,7 +227,9 @@ object sample {
             Valid(Context(input.contextId, Map("input" -> input.value), None))
           }
         }
+
     }
+
   }
 
   object SimpleSourceWithParameterTestingFactory extends SourceFactory {
@@ -224,6 +239,7 @@ object sample {
       with TestWithParametersSupport[SampleInputWithListAndMap]
       with ReturningType {
       override def returnType: typing.TypingResult = Typed[SampleInputWithListAndMap]
+
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
       ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
@@ -234,19 +250,24 @@ object sample {
         Parameter("numbers", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))),
         Parameter("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
       )
+
       override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap =
         SampleInputWithListAndMap(
           params("contextId").asInstanceOf[String],
           params("numbers").asInstanceOf[java.util.List[Long]],
           params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
         )
+
     }
+
   }
 
   object SimpleSinkFactory extends SinkFactory {
+
     @MethodToInvoke
     def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] =
       (_: LazyParameterInterpreter) => value
+
   }
 
 }

@@ -57,4 +57,5 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
       Future.successful(())
     }
   }
+
 }

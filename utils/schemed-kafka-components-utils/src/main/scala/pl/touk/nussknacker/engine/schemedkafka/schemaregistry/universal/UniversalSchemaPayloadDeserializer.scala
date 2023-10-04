@@ -14,11 +14,13 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.Gene
 import java.nio.ByteBuffer
 
 trait UniversalSchemaPayloadDeserializer {
+
   def deserialize(
       expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
       writerSchemaData: RuntimeSchemaData[ParsedSchema],
       buffer: ByteBuffer
   ): Any
+
 }
 
 object AvroPayloadDeserializer {
@@ -54,6 +56,7 @@ class AvroPayloadDeserializer(
     val result = recordDeserializer.deserializeRecord(readerSchemaData.schema.rawSchema(), reader, buffer)
     genericRecordSchemaIdSerializationSupport.wrapWithRecordWithSchemaIdIfNeeded(result, readerSchemaData)
   }
+
 }
 
 object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
@@ -70,6 +73,7 @@ object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
     buffer.get(bytes)
     converter.convert(buffer.array(), avroSchema)
   }
+
 }
 
 object JsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {

@@ -71,4 +71,5 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
       )
     )
   }
+
 }

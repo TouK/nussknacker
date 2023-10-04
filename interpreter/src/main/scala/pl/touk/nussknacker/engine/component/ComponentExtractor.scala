@@ -24,6 +24,7 @@ object ComponentExtractor {
       sinkFactories: Map[String, WithCategories[SinkFactory]],
       customTransformers: Map[String, WithCategories[CustomStreamTransformer]]
   )
+
 }
 
 case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
@@ -153,4 +154,5 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
         throw new IllegalArgumentException(s"Multiple providers for provider name $providerName (for component $name)")
     }
   }
+
 }

@@ -65,10 +65,12 @@ object InputMetaDeserializationSpec {
   val partTwoType: TypeInformation[Long]   = TypeInformation.of(classOf[Long])
 
   val sampleKeyFieldTypes: List[TypeInformation[_]] = List(partOneType, partTwoType)
+
   val sampleKeyTypeInformation: TypeInformation[SampleKey] = ConcreteCaseClassTypeInfo[SampleKey](
     ("partOne", partOneType),
     ("partTwo", partTwoType)
   )
+
 }
 
 class SampleKeyTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
@@ -78,4 +80,5 @@ class SampleKeyTypeInformationCustomisation extends TypingResultAwareTypeInforma
   ): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
     case a: TypedClass if a.objType.klass == classOf[SampleKey] => sampleKeyTypeInformation
   }
+
 }

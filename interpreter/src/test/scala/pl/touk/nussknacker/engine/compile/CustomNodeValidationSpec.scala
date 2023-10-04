@@ -33,6 +33,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   import spel.Implicits._
 
   class MyProcessConfigCreator extends EmptyProcessConfigCreator {
+
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
@@ -62,16 +63,20 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         "stringService" -> WithCategories(SimpleStringService),
         "enricher"      -> WithCategories(Enricher)
       )
+
   }
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
+
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
     new MyProcessConfigCreator,
     getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
   )
+
   private val fragmentDefinitionExtractor =
     FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
     fragmentDefinitionExtractor,

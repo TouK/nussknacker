@@ -22,6 +22,7 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
   private val loader = getClass.getClassLoader
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
+
     setGlobalJobParameters(
       NkGlobalParameters(
         "",
@@ -31,6 +32,7 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
         Map.empty
       )
     )
+
   }
 
   private def typeInformationForVariables(
@@ -77,14 +79,17 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
     }
 
   }
+
 }
 
 class CustomTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
+
   override def customise(
       originalDetection: TypeInformationDetection
   ): PartialFunction[typing.TypingResult, TypeInformation[_]] = { case Unknown =>
     new NothingTypeInfo
   }
+
 }
 
 class CustomTypeInformationDetection extends TypeInformationDetection {
@@ -100,4 +105,5 @@ class CustomTypeInformationDetection extends TypeInformationDetection {
   override def forType[T](typingResult: typing.TypingResult): TypeInformation[T] = throw new IllegalArgumentException(
     "Checking loader :)"
   )
+
 }

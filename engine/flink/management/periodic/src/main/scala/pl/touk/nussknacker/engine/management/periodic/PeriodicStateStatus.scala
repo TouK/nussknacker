@@ -29,6 +29,7 @@ object PeriodicStateStatus {
     def isScheduledStatus(status: StateStatus): Boolean = {
       status.name == name
     }
+
   }
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")

@@ -58,4 +58,5 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
     migrateMetadata(legacyRequestResponseScenario).get shouldBe newRequestResponseScenario
     migrateMetadata(flinkScenario).get shouldBe flinkScenario
   }
+
 }

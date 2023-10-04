@@ -74,4 +74,5 @@ class DeploymentActorTest extends AnyFunSuite with TestKitBase with Matchers wit
 
     system.stop(actor)
   }
+
 }

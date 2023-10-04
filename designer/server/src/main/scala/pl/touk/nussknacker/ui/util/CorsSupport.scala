@@ -23,4 +23,5 @@ object CorsSupport {
       Directive.Empty
     }
   }
+
 }

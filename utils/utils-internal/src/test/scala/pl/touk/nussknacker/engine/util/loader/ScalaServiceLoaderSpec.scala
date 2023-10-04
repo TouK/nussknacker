@@ -61,4 +61,5 @@ class ScalaServiceLoaderSpec extends AnyFlatSpec with Matchers with TableDrivenP
       }
     }
   }
+
 }

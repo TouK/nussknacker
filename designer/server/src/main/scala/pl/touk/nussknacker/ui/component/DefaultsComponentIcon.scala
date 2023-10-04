@@ -33,4 +33,5 @@ private[component] object DefaultsComponentIcon {
     case ComponentType.FragmentInput  => FragmentInputIcon
     case ComponentType.FragmentOutput => FragmentOutputIcon
   }
+
 }

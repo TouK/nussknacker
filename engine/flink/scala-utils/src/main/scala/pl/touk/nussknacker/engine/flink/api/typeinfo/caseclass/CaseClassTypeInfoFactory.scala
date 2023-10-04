@@ -11,6 +11,7 @@ import scala.reflect._
 
 // Generic class factory for creating CaseClassTypeInfo
 abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfoFactory[T] with Serializable {
+
   override def createTypeInfo(
       t: Type,
       genericParameters: java.util.Map[String, TypeInformation[_]]
@@ -28,4 +29,5 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
       }
     }
   }
+
 }

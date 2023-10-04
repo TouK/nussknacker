@@ -37,13 +37,16 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
         )
       }
       .map((_, None))
+
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
+
   override def create(
       configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): ExampleOAuth2Service =
     ExampleOAuth2ServiceFactory.service(configuration)
+
 }
 
 object ExampleOAuth2ServiceFactory {

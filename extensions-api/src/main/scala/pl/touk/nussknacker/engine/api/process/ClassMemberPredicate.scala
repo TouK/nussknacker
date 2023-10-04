@@ -37,6 +37,7 @@ case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPred
     case f: Field  => returnClassPredicate.matches(f.getType)
     case _         => false
   }
+
 }
 
 /**

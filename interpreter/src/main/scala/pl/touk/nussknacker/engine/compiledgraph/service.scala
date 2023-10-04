@@ -37,6 +37,7 @@ object service {
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (preparedParams, invoker.invokeService(preparedParams)(ec, collector, contextId, componentUseCase))
     }
+
   }
 
   private[service] class BaseServiceInvocationCollector(
@@ -52,6 +53,7 @@ object service {
     )(implicit ec: ExecutionContext): Future[A] = {
       resultCollector.collectWithResponse(contextId, nodeId, serviceRef, request, mockValue, action, names)
     }
+
   }
 
 }

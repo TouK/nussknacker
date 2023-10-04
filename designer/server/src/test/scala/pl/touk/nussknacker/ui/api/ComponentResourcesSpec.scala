@@ -27,12 +27,14 @@ class ComponentResourcesSpec
 
   // These should be defined as lazy val's because of racing, there are some missing tables in db..
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
+
   private lazy val componentService = DefaultComponentService(
     ComponentLinksConfigExtractor.extract(testDbConfig),
     testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
     processService,
     processCategoryService
   )
+
   private lazy val componentRoute = new ComponentResource(componentService)
 
   // Here we test only response, logic is tested in DefaultComponentServiceSpec

@@ -22,6 +22,7 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
       case 1 => last = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
+
 }
 
 object FullNameV1 extends TestSchemaWithSpecificRecord {

@@ -105,4 +105,5 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
     out.write(AbstractKafkaSchemaSerDe.MAGIC_BYTE)
     out.write(ByteBuffer.allocate(AbstractKafkaSchemaSerDe.idSize).putInt(schemaId.asInt).array)
   }
+
 }

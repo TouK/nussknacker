@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.validation.JsonValidator
 
 object ValidatorsExtractor {
+
   def extract(params: ValidatorExtractorParameters): List[ParameterValidator] = {
     val fromValidatorExtractors = List(
       MandatoryValidatorExtractor,
@@ -25,4 +26,5 @@ object ValidatorsExtractor {
     // TODO: should validators from config override or append those from annotations, types etc.?
     (fromValidatorExtractors ++ params.parameterConfig.validators.toList.flatten).distinct
   }
+
 }

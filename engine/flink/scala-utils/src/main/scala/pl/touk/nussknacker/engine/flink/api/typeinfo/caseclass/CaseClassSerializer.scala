@@ -129,4 +129,5 @@ abstract class CaseClassSerializer[T <: Product](clazz: Class[T], scalaFieldSeri
       fields = new Array[AnyRef](arity)
     }
   }
+
 }

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
   def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(id, typeSpecificData)
   }
+
 }
 
 object MetaData {
@@ -75,6 +76,7 @@ object MetaData {
       additionalFields = ProcessAdditionalFields(None, typeSpecificData.toMap, typeSpecificData.metaDataType)
     )
   }
+
 }
 
 // TODO: remove metaDataType val and typeSpecificProperties def after the migration is completed

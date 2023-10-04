@@ -73,11 +73,13 @@ object TypeEncoders {
   implicit val typingResultEncoder: Encoder.AsObject[TypingResult] = Encoder.AsObject.instance(encodeTypingResult)
 
   implicit val simpleValEncoder: Encoder[AdditionalDataValue] = new Encoder[AdditionalDataValue] {
+
     override def apply(a: AdditionalDataValue): Json = a match {
       case StringValue(value)  => fromString(value)
       case LongValue(value)    => fromLong(value)
       case BooleanValue(value) => fromBoolean(value)
     }
+
   }
 
 }
@@ -182,4 +184,5 @@ object TypingType extends Enumeration {
     case typing.TypedNull           => TypedNull
     case typing.Unknown             => Unknown
   }
+
 }

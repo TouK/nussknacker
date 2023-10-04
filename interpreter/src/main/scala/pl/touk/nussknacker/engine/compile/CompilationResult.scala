@@ -65,9 +65,11 @@ object CompilationResult extends Applicative[CompilationResult] {
     CompilationResult(Semigroup.combine(fa.typing, ff.typing), fa.result.ap(ff.result))
 
   implicit class CompilationResultTraverseOps[T[_]: Traverse, B](traverse: T[CompilationResult[B]]) {
+
     def sequence: CompilationResult[T[B]] = {
       Traverse[T].sequence[CompilationResult, B](traverse)(CompilationResult.this)
     }
+
   }
 
   private def fromUncanonizationError(err: canonize.ProcessUncanonizationError): ProcessUncanonizationError = {
@@ -91,6 +93,7 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
 
   implicit def mergingTypingInfoSemigroup: Semigroup[NodeTypingInfo] = new Semigroup[NodeTypingInfo] with LazyLogging {
+
     override def combine(x: NodeTypingInfo, y: NodeTypingInfo): NodeTypingInfo = {
       logger.whenWarnEnabled {
         if (x.inputValidationContext != y.inputValidationContext) {
@@ -124,6 +127,7 @@ object CompilationResult extends Applicative[CompilationResult] {
         y.parameters.orElse(x.parameters)
       )
     }
+
   }
 
 }

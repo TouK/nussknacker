@@ -132,7 +132,9 @@ object KafkaSourceFactoryProcessConfigCreator {
       }
       kafkaSource.asInstanceOf[KafkaSourceFactory[Any, Any]]
     }
+
   }
+
 }
 
 case object SinkForInputMeta extends SinkForType[InputMeta[Any]]

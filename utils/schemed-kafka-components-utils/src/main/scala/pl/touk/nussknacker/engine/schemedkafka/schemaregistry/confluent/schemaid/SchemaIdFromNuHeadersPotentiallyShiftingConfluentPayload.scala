@@ -33,6 +33,7 @@ class SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload(
 ) extends SchemaIdFromMessageExtractor {
 
   implicit class RichHeaders(h: Headers) {
+
     def getSchemaId(headerName: String): Option[SchemaId] = Option(h.lastHeader(headerName))
       .map(header => new String(header.value(), StandardCharsets.UTF_8))
       .map { stringValue =>
@@ -43,6 +44,7 @@ class SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload(
           SchemaId.fromString(stringValue)
         }
       }
+
   }
 
   override def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {

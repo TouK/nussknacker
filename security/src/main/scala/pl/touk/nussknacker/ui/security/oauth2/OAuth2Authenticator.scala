@@ -36,13 +36,16 @@ class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])(
         logger.debug("Access token rejected:", ex)
         Option.empty // Expired or non-exists token - user not authenticated
     }
+
 }
 
 object OAuth2Authenticator extends LazyLogging {
+
   def apply(
       service: OAuth2Service[AuthenticatedUser, _]
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2Authenticator =
     new OAuth2Authenticator(service)
+
 }
 
 object OAuth2ErrorHandler {

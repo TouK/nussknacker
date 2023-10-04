@@ -71,6 +71,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
         flinkNodeContext.contextTypeInfo
       )
   }
+
 }
 
 class FlinkContextInitializingFunction[Raw](

@@ -43,4 +43,5 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
       .invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional)
       .asInstanceOf[T]
   }
+
 }

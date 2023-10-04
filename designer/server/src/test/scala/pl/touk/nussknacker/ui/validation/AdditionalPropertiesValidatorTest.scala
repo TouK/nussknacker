@@ -264,4 +264,5 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
           ) =>
     }
   }
+
 }

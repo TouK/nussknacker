@@ -103,11 +103,13 @@ object DefinitionExtractor {
   object ComponentImplementationInvoker {
 
     val nullImplementationInvoker: ComponentImplementationInvoker = new ComponentImplementationInvoker {
+
       override def invokeMethod(
           params: Map[String, Any],
           outputVariableNameOpt: Option[String],
           additional: Seq[AnyRef]
       ): Any = null
+
     }
 
   }
@@ -201,6 +203,7 @@ object DefinitionExtractor {
     ): Any = {
       methodDef.invoke(obj, params, outputVariableNameOpt, additional)
     }
+
   }
 
   // TODO: rename to ComponentStaticDefinition
@@ -234,9 +237,11 @@ object DefinitionExtractor {
     def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
       new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleComponentConfig.zero)
     }
+
   }
 
   object TypesInformation {
+
     def extract(
         objectToExtractClassesFrom: Iterable[ObjectWithMethodDef]
     )(implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
@@ -274,6 +279,7 @@ object DefinitionExtractor {
 
       obj.returnType.toList ::: typesFromParameters(obj) ::: explicitTypes(obj)
     }
+
   }
 
 }

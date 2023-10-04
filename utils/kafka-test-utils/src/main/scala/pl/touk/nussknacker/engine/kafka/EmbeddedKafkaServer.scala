@@ -98,6 +98,7 @@ object EmbeddedKafkaServer {
   private def tempDir(): File = {
     Files.createTempDirectory("embeddedKafka").toFile
   }
+
 }
 
 class EmbeddedKafkaServer(
@@ -105,6 +106,7 @@ class EmbeddedKafkaServer(
     val kafkaServer: Server,
     val kafkaAddress: String
 ) {
+
   def startup(): Unit = {
     zooKeeperServerOpt.foreach(t => t._1.startup(t._2))
     kafkaServer.startup()
@@ -114,6 +116,7 @@ class EmbeddedKafkaServer(
     kafkaServer.shutdown()
     zooKeeperServerOpt.foreach(_._1.shutdown())
   }
+
 }
 
 object KafkaTestUtils {

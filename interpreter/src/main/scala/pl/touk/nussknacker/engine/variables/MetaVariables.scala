@@ -37,4 +37,5 @@ object MetaVariables {
     )
     TypedObjectTypingResult(propertiesTyping)
   }
+
 }

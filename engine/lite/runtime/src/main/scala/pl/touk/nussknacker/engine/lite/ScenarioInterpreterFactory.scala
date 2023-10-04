@@ -400,11 +400,13 @@ object ScenarioInterpreterFactory {
     private def sourceForFragmentInputTestng(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] =
       Valid(
         new LiteSource[Input] {
+
           override def createTransformation[F[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[F]
           ): Input => ValidatedNel[ErrorType, Context] = { input =>
             Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
           }
+
         }
       )
 
@@ -433,6 +435,7 @@ object ScenarioInterpreterFactory {
         .run
         .map(k => Writer.apply(k._1, k._2))
     }
+
   }
 
   private sealed trait PartResult

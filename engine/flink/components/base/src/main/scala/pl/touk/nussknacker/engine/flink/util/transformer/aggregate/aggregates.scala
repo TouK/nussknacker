@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
@@ -141,6 +142,7 @@ object aggregates {
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
       Typed.genericTypeClass(classOf[Option[_]], List(input))
     )
+
   }
 
   object LastAggregator extends Aggregator {
@@ -266,6 +268,7 @@ object aggregates {
           Invalid("aggregateBy should be declared as fixed map")
       }
     }
+
   }
 
   /*
@@ -313,6 +316,7 @@ object aggregates {
       case _ =>
         Invalid(s"input has invalid type")
     }
+
   }
 
   abstract class ReducingAggregator extends Aggregator {

@@ -20,9 +20,11 @@ trait AuthenticationConfiguration {
         s"Missing field ${AuthenticationConfiguration.usersConfigurationPath} at ${userConfig.getConfig(AuthenticationConfiguration.usersConfigPath)} users config file."
       )
     )
+
 }
 
 object AuthenticationConfiguration {
+
   import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
@@ -53,4 +55,5 @@ object AuthenticationConfiguration {
       permissions: List[Permission] = List.empty,
       globalPermissions: List[GlobalPermission] = List.empty
   )
+
 }

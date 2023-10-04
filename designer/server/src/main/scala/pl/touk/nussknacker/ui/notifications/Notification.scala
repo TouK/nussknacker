@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 )
 
 object Notification {
+
   def actionFailedNotification(
       id: String,
       actionType: ProcessActionType,

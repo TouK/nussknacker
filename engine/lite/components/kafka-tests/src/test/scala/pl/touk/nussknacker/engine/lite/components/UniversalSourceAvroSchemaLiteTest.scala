@@ -22,6 +22,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
   private val inputTopic  = "input"
   private val outputTopic = "output"
+
   private val schema = AvroUtils.parseSchema(s"""{
        |  "type": "record",
        |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",

@@ -13,9 +13,11 @@ case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: 
     extends ScenarioTestRecord
 
 object ScenarioTestJsonRecord {
+
   def apply(sourceId: String, json: Json, timestamp: Option[Long] = None): ScenarioTestJsonRecord = {
     ScenarioTestJsonRecord(NodeId(sourceId), TestRecord(json, timestamp))
   }
+
 }
 
 /**

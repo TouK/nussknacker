@@ -88,4 +88,5 @@ object AzureAvroSerializerFactory {
     serializer.configure(adjustedConfig.asJava, false)
     serializer
   }
+
 }

@@ -69,6 +69,7 @@ object SingleScheduleProperty {
     val nextTime     = compiledCron.nextExecution(zonedDateTime)
     nextTime.asScala.map(_.toLocalDateTime)
   }
+
 }
 
 object CronScheduleProperty {

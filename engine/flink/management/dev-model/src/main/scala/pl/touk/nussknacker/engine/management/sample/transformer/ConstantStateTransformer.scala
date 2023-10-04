@@ -34,4 +34,5 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
       })
       .uid("customStateId")
   })
+
 }

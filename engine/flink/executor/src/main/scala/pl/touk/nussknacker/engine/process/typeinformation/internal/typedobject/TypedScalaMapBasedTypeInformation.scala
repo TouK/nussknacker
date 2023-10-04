@@ -6,9 +6,11 @@ import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnap
 
 case class TypedScalaMapTypeInformation(informations: Map[String, TypeInformation[_]])
     extends TypedObjectBasedTypeInformation[Map[String, _ <: AnyRef]](informations) {
+
   override def createSerializer(
       serializers: Array[(String, TypeSerializer[_])]
   ): TypeSerializer[Map[String, _ <: AnyRef]] = TypedScalaMapSerializer(serializers)
+
 }
 
 @SerialVersionUID(1L)
@@ -35,6 +37,7 @@ case class TypedScalaMapSerializer(override val serializers: Array[(String, Type
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]
   ): TypeSerializerSnapshot[Map[String, _ <: AnyRef]] = new TypedScalaMapSerializerSnapshot(snapshots)
+
 }
 
 class TypedScalaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot[Map[String, _ <: AnyRef]] {
@@ -49,4 +52,5 @@ class TypedScalaMapSerializerSnapshot extends TypedObjectBasedSerializerSnapshot
   override protected def restoreSerializer(
       restored: Array[(String, TypeSerializer[_])]
   ): TypeSerializer[Map[String, _ <: AnyRef]] = TypedScalaMapSerializer(restored)
+
 }

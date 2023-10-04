@@ -50,6 +50,7 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
     configurableExceptionHandler.handle(info)
     TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)
   }
+
 }
 
 object TestExceptionConsumerProvider {
@@ -68,4 +69,5 @@ class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     (exceptionInfo: NuExceptionInfo[NonTransientException]) => {
       TestExceptionConsumerProvider.threadLocal.set((metaData, exceptionHandlerConfig, exceptionInfo))
     }
+
 }

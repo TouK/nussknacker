@@ -46,4 +46,5 @@ class MetaDataExtractorTest extends AnyFunSuite with Matchers {
   test("extract period property") {
     MetaDataExtractor.extractPeriodProperty(metaData, "period", Period.ZERO) shouldBe Period.of(3, 2, 0)
   }
+
 }

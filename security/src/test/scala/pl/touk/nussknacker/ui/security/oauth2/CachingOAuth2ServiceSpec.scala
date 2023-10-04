@@ -24,28 +24,33 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
   private var prev = Deadline.now
 
   private val ticker = new Ticker {
+
     override def read(): Long = {
       if (currentTime != prev) {
         prev = currentTime
       }
       currentTime.time.toNanos
     }
+
   }
 
   private var checkRecordings = Map[String, Int]()
 
   private val recordingJwtOauth2Service = new OAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] {
+
     override def obtainAuthorizationAndUserInfo(
         authorizationCode: String,
         redirectUri: String
     ): Future[(DefaultOidcAuthorizationData, OpenIdConnectUserInfo)] =
       jwtOAuth2Service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+
     override def checkAuthorizationAndObtainUserinfo(
         accessToken: String
     ): Future[(OpenIdConnectUserInfo, Option[Instant])] = {
       checkRecordings = checkRecordings + (accessToken -> (checkRecordings.getOrElse(accessToken, 0) + 1))
       jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(accessToken)
     }
+
   }
 
   private val cachingOAuth2Service = new CachingOAuth2Service(recordingJwtOauth2Service, config, ticker)
@@ -66,4 +71,5 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
     cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
     checkRecordings(token) shouldBe 2
   }
+
 }

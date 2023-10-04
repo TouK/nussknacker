@@ -14,4 +14,5 @@ object ProcessId {
     case Success(id) => ProcessId(id)
     case Failure(_)  => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
   }
+
 }

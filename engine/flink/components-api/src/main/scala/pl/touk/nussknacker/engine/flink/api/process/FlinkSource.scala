@@ -51,4 +51,5 @@ trait BasicFlinkSource[Raw] extends FlinkSource with FlinkIntermediateRawSource[
   ): DataStream[Context] = {
     prepareSourceStream(env, flinkNodeContext, flinkSourceFunction)
   }
+
 }

@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 class ParameterSpec extends AnyFunSuite with Matchers {
+
   private def checkConversions(args: List[TypingResult], varArg: Option[TypingResult]) = {
     val noVarArgParameters   = args.zipWithIndex.map { case (typ, i) => Parameter(i.toString, typ) }
     val varArgParameterFull  = varArg.map(x => Parameter("v", Typed.genericTypeClass[Array[Object]](x :: Nil)))
@@ -40,4 +41,5 @@ class ParameterSpec extends AnyFunSuite with Matchers {
       MethodTypeInfo.fromList(Parameter("", Typed[Int]) :: Nil, varArgs = true, Unknown)
     }.getMessage shouldBe "VarArg must have type of array"
   }
+
 }

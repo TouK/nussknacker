@@ -16,4 +16,5 @@ class DummyAuthenticationProvider extends AuthenticationProvider {
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     new DummyAuthenticationResources(name, DummyAuthenticationConfiguration.create(config))
   }
+
 }

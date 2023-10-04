@@ -216,4 +216,5 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       ProcessToolbarsConfigProvider.create(ConfigFactory.empty(), None)
     }
   }
+
 }

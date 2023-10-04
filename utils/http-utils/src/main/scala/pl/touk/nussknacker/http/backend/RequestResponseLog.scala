@@ -12,6 +12,7 @@ case class RequestResponseLog(
     body: Option[String],
     statusCode: Option[Int]
 ) {
+
   def pretty: String = {
     Map(
       "url"        -> url,
@@ -27,6 +28,7 @@ case class RequestResponseLog(
       }
     }.mkString(", ")
   }
+
 }
 
 object RequestResponseLog {
@@ -61,4 +63,5 @@ object RequestResponseLog {
         (e._1, e._2.map(_.value).toList)
       }
   }
+
 }

@@ -5,6 +5,7 @@ import scala.util.Try
 object convert {
 
   abstract class StringToNumberConverter[T](tryToConvert: String => T) {
+
     def unapply(str: String): Option[T] =
       Try(tryToConvert(str))
         .map(Some(_))
@@ -12,6 +13,7 @@ object convert {
           None
         }
         .get
+
   }
 
   object IntValue extends StringToNumberConverter[Int](_.toInt)

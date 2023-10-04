@@ -25,4 +25,5 @@ class UiAdditionalPropertyEditorDeterminerTest extends AnyFunSuite with Matchers
 
     determined shouldBe StringParameterEditor
   }
+
 }

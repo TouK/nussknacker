@@ -26,6 +26,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
     NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
   }
+
 }
 
 object NuDesignerApiAvailableToExpose {

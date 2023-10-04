@@ -26,8 +26,11 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
 
   private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator])
       extends CustomProcessValidator {
+
     override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
       customValidators.map(_.validate(process)).sequence.map(_ => ())
     }
+
   }
+
 }

@@ -79,20 +79,24 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
   * - migrations
   */
 class KeysDictTyper(protected val dictRegistry: DictRegistry) extends BaseDictTyper {
+
   override protected def valueForDictKey(
       dict: TypedDict,
       key: String
   ): Validated[DictRegistry.DictLookupError, Option[String]] =
     dictRegistry.labelByKey(dict.dictId, key)
+
 }
 
 /**
   * This is typer that will be used just before resolving labels to keys on UI.
   */
 class LabelsDictTyper(protected val dictRegistry: DictRegistry) extends BaseDictTyper {
+
   override protected def valueForDictKey(
       dict: TypedDict,
       key: String
   ): Validated[DictRegistry.DictLookupError, Option[String]] =
     dictRegistry.keyByLabel(dict.dictId, key).map(Some(_))
+
 }

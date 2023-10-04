@@ -19,9 +19,11 @@ import pl.touk.nussknacker.engine.api.NodeId
 import scala.collection.concurrent.TrieMap
 
 trait Validator {
+
   def isValid(paramName: String, value: String, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit]
+
 }
 
 /**
@@ -49,6 +51,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
     paramName,
     nodeId
   )
+
 }
 
 case object NotBlankParameterValidator extends ParameterValidator {
@@ -73,6 +76,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
 }
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
+
   override def isValid(paramName: String, value: String, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
@@ -83,6 +87,7 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
     else
       invalid(InvalidPropertyFixedValue(paramName, label, value, possibleValues.map(_.expression)))
   }
+
 }
 
 case class LiteralRegExpParameterValidator(pattern: String, message: String, description: String)
@@ -108,6 +113,7 @@ case class LiteralRegExpParameterValidator(pattern: String, message: String, des
 }
 
 case object LiteralIntegerValidator extends ParameterValidator {
+
   // Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(
       implicit nodeId: NodeId
@@ -120,6 +126,7 @@ case object LiteralIntegerValidator extends ParameterValidator {
     paramName,
     nodeId
   )
+
 }
 
 case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
@@ -142,6 +149,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
     paramName,
     nodeId
   )
+
 }
 
 case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
@@ -164,6 +172,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
     paramName,
     nodeId
   )
+
 }
 
 // This validator is not determined by default in components based on usage of JsonParameterEditor because someone may want to use only
@@ -190,6 +199,7 @@ case object JsonValidator extends ParameterValidator {
       paramName,
       nodeId
     )
+
 }
 
 case object LiteralParameterValidator {
@@ -220,6 +230,7 @@ case class CustomParameterValidatorDelegate(name: String) extends ParameterValid
   override def isValid(paramName: String, value: String, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, label)
+
 }
 
 object CustomParameterValidatorDelegate {
@@ -239,6 +250,7 @@ object CustomParameterValidatorDelegate {
     case Nil      => throw new RuntimeException(s"Cannot load custom validator: $name")
     case _        => throw new RuntimeException(s"Multiple custom validators with name: $name")
   }
+
 }
 
 object NumberValidatorHelper {

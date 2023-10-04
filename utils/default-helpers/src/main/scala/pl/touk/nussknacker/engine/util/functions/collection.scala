@@ -200,6 +200,7 @@ object collection extends HideToString {
       case firstArgument :: _                              => firstArgument.validNel
       case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   class CollectionElementTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends TypingFunction {
@@ -212,9 +213,11 @@ object collection extends HideToString {
       case firstArgument :: _                              => firstArgument.withoutValue.validNel
       case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
+
   }
 
   class CollectionElementTypingForSum[F[_]](implicit classTag: ClassTag[F[_]]) extends CollectionElementTyping[F] {
+
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
@@ -227,6 +230,7 @@ object collection extends HideToString {
         }
       }
     }
+
   }
 
   class CollectionMergeTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends TypingFunction {
@@ -279,6 +283,7 @@ object collection extends HideToString {
         }
       case _ => Typed.genericTypeClass(fClass, List(Unknown)).validNel
     }
+
   }
 
   class MapMergeTyping extends TypingFunction {
@@ -292,6 +297,7 @@ object collection extends HideToString {
       case _ :: (typedClass: TypedClass) :: _ => typedClass.validNel
       case _                                  => unknownMapType.validNel
     }
+
   }
 
   class ListTyping extends CollectionTyping[java.util.List]

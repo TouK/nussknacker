@@ -13,6 +13,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
+
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
@@ -212,4 +213,5 @@ object PrettyValidationErrors {
     case Some(text) => s" ($text)"
     case None       => StringUtils.EMPTY
   }
+
 }

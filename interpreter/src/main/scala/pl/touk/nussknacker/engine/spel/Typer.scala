@@ -684,6 +684,7 @@ private[spel] class Typer(
 }
 
 object Typer {
+
   def default(
       classLoader: ClassLoader,
       expressionConfig: ExpressionDefinition[_],
@@ -712,6 +713,7 @@ object Typer {
   // If there is no bug in Typer, collisions shouldn't happen
   implicit def notAcceptingMergingSemigroup: Semigroup[TypingResultWithContext] = new Semigroup[TypingResultWithContext]
     with LazyLogging {
+
     override def combine(x: TypingResultWithContext, y: TypingResultWithContext): TypingResultWithContext = {
       assert(x == y, s"Types not matching during combination of types for spel nodes: $x != $y")
       // merging the same types is not bad but it is a warning that sth went wrong e.g. typer typed something more than one time
@@ -719,6 +721,7 @@ object Typer {
       logger.warn(s"Merging same types: $x for the same nodes. This shouldn't happen")
       x
     }
+
   }
 
   case class TypingResultWithContext private (typingResult: TypingResult, staticContext: Boolean) {
@@ -768,6 +771,7 @@ object Typer {
         s"Can't compile SpEL expression: `${node.toStringAST}`, message: `${cause.getMessage}`.",
         cause
       )
+
 }
 
 private[spel] case class TypedNode(nodeId: SpelNodeId, typ: TypingResultWithContext)
@@ -784,10 +788,12 @@ private[spel] case class CollectedTypingResult(
     intermediateResults: Map[SpelNodeId, TypingResultWithContext],
     finalResult: TypingResultWithContext
 ) {
+
   def typingInfo: SpelExpressionTypingInfo = SpelExpressionTypingInfo(
     intermediateResults.map(intermediateResult => (intermediateResult._1 -> intermediateResult._2.typingResult)),
     finalResult.typingResult
   )
+
 }
 
 private[spel] object CollectedTypingResult {

@@ -64,6 +64,7 @@ class NussknackerHttpServerSpec
   }
 
   private object DummyRouteProvider extends RouteProvider[Route] with Directives {
+
     override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = Resource.pure[IO, Route] {
       path("test") {
         get {
@@ -73,5 +74,7 @@ class NussknackerHttpServerSpec
         }
       }
     }
+
   }
+
 }

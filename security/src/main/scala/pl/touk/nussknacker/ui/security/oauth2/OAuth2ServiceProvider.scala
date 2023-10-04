@@ -8,6 +8,7 @@ import sttp.client3.SttpBackend
 import scala.concurrent.{ExecutionContext, Future}
 
 object OAuth2ServiceProvider extends LazyLogging {
+
   def apply(configuration: OAuth2Configuration, classLoader: ClassLoader)(
       implicit ec: ExecutionContext,
       sttpBackend: SttpBackend[Future, Any]
@@ -20,4 +21,5 @@ object OAuth2ServiceProvider extends LazyLogging {
 
     service.create(configuration)
   }
+
 }

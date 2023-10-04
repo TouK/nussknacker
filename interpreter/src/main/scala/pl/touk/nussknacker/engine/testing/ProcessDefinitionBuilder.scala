@@ -92,6 +92,7 @@ object ProcessDefinitionBuilder {
     )
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
+
     def withService(
         id: String,
         returnType: Option[TypingResult],

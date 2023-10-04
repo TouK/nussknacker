@@ -62,6 +62,7 @@ object TransformStateTransformer extends CustomStreamTransformer with ExplicitUi
           )
         }
       )
+
 }
 
 //We don't actually care about T here, but it's needed because of type/variance problems...

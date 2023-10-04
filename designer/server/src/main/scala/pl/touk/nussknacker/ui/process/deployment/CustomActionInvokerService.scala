@@ -30,6 +30,7 @@ class CustomActionInvokerServiceImpl(
     dispatcher: DeploymentManagerDispatcher,
     processStateService: ProcessStateService
 ) extends CustomActionInvokerService {
+
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])(
       implicit user: LoggedUser,
       ec: ExecutionContext

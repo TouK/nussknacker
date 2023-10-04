@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
+
   val isFragment: Boolean = this match {
     case _: ScenarioSpecificData => false
     case _: FragmentSpecificData => true
@@ -38,6 +39,7 @@ object FragmentSpecificData {
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
   }
+
 }
 
 // TODO: rename to FlinkStreamMetaData
@@ -58,6 +60,7 @@ case class StreamMetaData(
     StreamMetaData.useAsyncInterpretationName -> toStringWithEmptyDefault(useAsyncInterpretation),
     StreamMetaData.checkpointIntervalName     -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
   )
+
   override def metaDataType: String = StreamMetaData.typeName
 }
 
@@ -77,13 +80,16 @@ object StreamMetaData {
       checkpointIntervalInSeconds = properties.get(checkpointIntervalName).flatMap(convertPropertyOrNone(_, _.toLong))
     )
   }
+
 }
 
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
+
   override def toMap: Map[String, String] = Map(
     LiteStreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism)
   )
+
   override def metaDataType: String = LiteStreamMetaData.typeName
 }
 
@@ -96,6 +102,7 @@ object LiteStreamMetaData {
       parallelism = properties.get(parallelismName).flatMap(convertPropertyOrNone(_, _.toInt))
     )
   }
+
 }
 
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
@@ -110,6 +117,7 @@ object RequestResponseMetaData {
   def apply(properties: Map[String, String]): RequestResponseMetaData = {
     RequestResponseMetaData(slug = mapEmptyStringToNone(properties.get(slugName)))
   }
+
 }
 
 object TypeSpecificDataConversionUtils {
@@ -129,4 +137,5 @@ object TypeSpecificDataConversionUtils {
       .recover { case _: IllegalArgumentException => None }
       .get
   }
+
 }

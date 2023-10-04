@@ -13,6 +13,7 @@ class UserResources(processCategoryService: ProcessCategoryService)(implicit ec:
     extends Directives
     with FailFastCirceSupport
     with RouteWithUser {
+
   def securedRoute(implicit user: LoggedUser): Route =
     path("user") {
       get {
@@ -21,6 +22,7 @@ class UserResources(processCategoryService: ProcessCategoryService)(implicit ec:
         }
       }
     }
+
 }
 
 @JsonCodec final case class DisplayableUser private (
@@ -55,4 +57,5 @@ object DisplayableUser {
         globalPermissions = Nil
       )
   }
+
 }

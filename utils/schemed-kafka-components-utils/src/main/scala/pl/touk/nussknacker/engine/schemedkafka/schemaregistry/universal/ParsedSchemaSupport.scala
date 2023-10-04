@@ -32,12 +32,15 @@ import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.Parameter
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
+
   protected implicit class RichParsedSchema(p: ParsedSchema) {
     def cast(): S = p.asInstanceOf[S]
   }
+
 }
 
 class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[AvroSchema] {
+
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadDeserializer
@@ -115,6 +118,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
       )
     }
   }
+
 }
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {

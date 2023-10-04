@@ -26,6 +26,7 @@ class ConsumerRecordDeserializationSpec
   private val emptyModel = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
+
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {
     val givenObj: TestConsumerRecord = new TestConsumerRecord(
       "loremIpsum",
@@ -52,4 +53,5 @@ class ConsumerRecordDeserializationSpec
     val out = getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)
     checkResult(out, givenObj)
   }
+
 }

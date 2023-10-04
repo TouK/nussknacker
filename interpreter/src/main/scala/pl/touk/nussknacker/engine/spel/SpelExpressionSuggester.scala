@@ -243,6 +243,7 @@ class SpelExpressionSuggester(
       case _ => Unknown
     }
   }
+
 }
 
 private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
@@ -275,6 +276,7 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
         Failure(e)
       }
   }
+
 }
 
 private class NuSpelNode(
@@ -282,9 +284,11 @@ private class NuSpelNode(
     collectedTypingResult: CollectedTypingResult,
     val parent: Option[NuSpelNodeParent] = None
 ) {
+
   val children: List[NuSpelNode] = (0 until spelNode.getChildCount).map { i =>
     new NuSpelNode(spelNode.getChild(i), collectedTypingResult, Some(NuSpelNodeParent(this, i)))
   }.toList
+
   val typingResultWithContext: Option[Typer.TypingResultWithContext] =
     collectedTypingResult.intermediateResults.get(SpelNodeId(spelNode))
 

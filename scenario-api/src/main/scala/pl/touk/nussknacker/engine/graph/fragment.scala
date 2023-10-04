@@ -15,4 +15,5 @@ object fragment {
       parameters: List[Parameter],
       outputVariableNames: Map[String, String] = Map.empty
   )
+
 }

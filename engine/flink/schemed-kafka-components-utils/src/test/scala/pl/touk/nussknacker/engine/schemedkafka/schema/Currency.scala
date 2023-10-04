@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object Currency extends TestSchema {
+
   val stringSchema: String =
     """
       |{

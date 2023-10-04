@@ -38,6 +38,7 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
   }
 
   private class Meters(name: String, nodeIds: PartialFunction[NodeData, String]) {
+
     val meters: Map[String, RateMeter] = allNodes
       .collect(nodeIds)
       .map { nodeId =>
@@ -46,9 +47,11 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
         )
       }
       .toMap
+
     def mark(nodeId: String): Unit = meters
       .getOrElse(nodeId, throw new IllegalArgumentException(s"Unknown node $nodeId in $name known: ${meters.keySet}"))
       .mark()
+
   }
 
 }

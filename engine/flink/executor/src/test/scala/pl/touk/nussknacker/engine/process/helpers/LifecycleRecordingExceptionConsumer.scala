@@ -34,6 +34,7 @@ class LifecycleRecordingExceptionConsumerProvider extends FlinkEspExceptionConsu
     val id = exceptionHandlerConfig.as[String](recordingConsumerIdPath)
     new LifecycleRecordingExceptionConsumer(id)
   }
+
 }
 
 private[helpers] case class LifecycleRecord(opened: Boolean = false, closed: Boolean = false)

@@ -16,4 +16,5 @@ class DefaultModelMigrations extends ProcessMigrations {
       RequestResponseSinkValidationModeMigration
     )
     .processMigrations
+
 }

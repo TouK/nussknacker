@@ -1,6 +1,7 @@
 import sbt.{Def, Inc, Result, SettingKey, Task, TaskKey, Value}
 
 object utils {
+
   sealed abstract class Step[A] {
     def run: Def.Initialize[Task[Result[A]]]
     def map[B](f: A => B): Step[B]
@@ -12,7 +13,9 @@ object utils {
         case Value(value) => value
       }
     }
+
   }
+
   object Step {
 
     def taskUnit: Step[Unit] = task(Def.task(()))
@@ -48,7 +51,9 @@ object utils {
               case Value(a) => Def.task(f(a).run.value)
             }
           })
+
       }
 
   }
+
 }

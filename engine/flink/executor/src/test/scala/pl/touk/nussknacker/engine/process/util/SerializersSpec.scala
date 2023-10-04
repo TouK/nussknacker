@@ -66,6 +66,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
     CaseClassSerializer.write(kryo, out, caseClass)
     CaseClassSerializer.read(kryo, new Input(out.toBytes), caseClass.getClass.asInstanceOf[Class[Product]])
   }
+
 }
 
 case class WithImplicitVal(a: String)(implicit val b: Long)
@@ -93,6 +94,7 @@ trait Wrapper {
   case class InnerGenericCaseClassWithTrait[A](value: A) extends Abstract[A](value) with SomeTrait[A] {
     override def get2: A = value
   }
+
 }
 
 object WrapperObj extends Wrapper {

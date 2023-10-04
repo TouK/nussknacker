@@ -37,4 +37,5 @@ private[schemaregistry] object AvroMessageFormatter extends DatumReaderWriterMix
         throw new SerializationException(String.format("Error serializing Avro data of schema %s to json", schema), ex)
     }
   }
+
 }

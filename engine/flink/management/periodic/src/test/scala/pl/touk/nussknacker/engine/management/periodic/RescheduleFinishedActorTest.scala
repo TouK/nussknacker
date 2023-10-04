@@ -45,4 +45,5 @@ class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matc
 
     system.stop(actor)
   }
+
 }

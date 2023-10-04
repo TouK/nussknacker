@@ -138,6 +138,7 @@ class DelayedFlinkKafkaConsumer[T](
       extractTimestamp
     )
   }
+
 }
 
 object DelayedKafkaFetcher {
@@ -212,4 +213,5 @@ class DelayedKafkaFetcher[T](
 
     super.emitRecordsWithTimestamps(records, partitionState, offset, kafkaEventTimestamp)
   }
+
 }

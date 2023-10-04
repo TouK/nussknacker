@@ -21,4 +21,5 @@ class ReturningClassInstanceSource extends SourceFactory {
   }
 
 }
+
 case class ReturningTestCaseClass(someMethod: String)

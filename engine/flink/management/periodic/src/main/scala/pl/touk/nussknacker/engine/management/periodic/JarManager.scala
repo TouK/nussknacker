@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.DeploymentWithJarDat
 import scala.concurrent.Future
 
 private[periodic] trait JarManager {
+
   def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess

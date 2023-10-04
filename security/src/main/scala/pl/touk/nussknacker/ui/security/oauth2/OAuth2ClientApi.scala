@@ -80,12 +80,15 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder](co
       )
     }
   }
+
 }
 
 object OAuth2ClientApi {
+
   def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       sttpBackend: SttpBackend[Future, Any]
   ): OAuth2ClientApi[ProfileResponse, AccessTokenResponse] =
     new OAuth2ClientApi[ProfileResponse, AccessTokenResponse](configuration)
+
 }

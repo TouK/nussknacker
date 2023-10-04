@@ -43,4 +43,5 @@ object SimpleObjectEncoder {
     case `stringClass`  => obj.as[String]
     case typ            => Left(DecodingFailure(s"No decoding logic for $typ.", List()))
   }
+
 }

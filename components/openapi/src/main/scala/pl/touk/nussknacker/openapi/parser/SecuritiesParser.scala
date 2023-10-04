@@ -99,4 +99,5 @@ private[parser] object SecuritiesParser extends LazyLogging {
         (ApiKeyInCookie(name, key) :: Nil).validNel
     }
   }
+
 }

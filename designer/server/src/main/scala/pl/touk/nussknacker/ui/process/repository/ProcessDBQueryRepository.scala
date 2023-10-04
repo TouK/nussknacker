@@ -89,6 +89,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .on { case (process, version) => process.id === version.processId }
       .map(_._2)
       .sortBy(_.createDate.desc)
+
 }
 
 object ProcessDBQueryRepository {
@@ -115,4 +116,5 @@ object ProcessDBQueryRepository {
   final case class InvalidProcessJson(rawJson: String) extends BadRequestError {
     def getMessage = s"Invalid raw json string: $rawJson"
   }
+
 }

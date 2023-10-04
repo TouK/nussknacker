@@ -38,4 +38,5 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends AnyFunSuite with M
 
     determined shouldBe List(FixedValuesValidator(possibleValues))
   }
+
 }

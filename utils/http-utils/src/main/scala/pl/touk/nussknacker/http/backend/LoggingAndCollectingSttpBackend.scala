@@ -88,4 +88,5 @@ class LoggingAndCollectingSttpBackend[+P](delegate: SttpBackend[Future, P], base
     val targetResponse = response.copy(body = response.body.original)
     CollectableAction(() => responseLog, targetResponse)
   }
+
 }

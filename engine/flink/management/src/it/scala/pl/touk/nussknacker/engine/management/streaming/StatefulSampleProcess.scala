@@ -51,4 +51,5 @@ object StatefulSampleProcess {
       .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
       .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
+
 }

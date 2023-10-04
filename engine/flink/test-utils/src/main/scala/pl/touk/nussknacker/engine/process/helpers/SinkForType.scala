@@ -17,9 +17,11 @@ trait SinkForType[T <: AnyRef] extends WithDataList[T] with Serializable {
 object SinkForType {
 
   private class SinkForTypeFunction[T <: AnyRef](sft: SinkForType[T]) extends SinkFunction[T] {
+
     override def invoke(value: T, context: SinkFunction.Context): Unit = {
       sft.add(value)
     }
+
   }
 
 }

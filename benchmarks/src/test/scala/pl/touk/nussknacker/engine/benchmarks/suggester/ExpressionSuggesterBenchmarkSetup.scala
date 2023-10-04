@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import java.time.{Duration, LocalDateTime}
 import scala.concurrent.duration.{Duration => ScalaDuration}
 import scala.concurrent.{Await, ExecutionContext}
+
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class ExpressionSuggesterBenchmarkSetup() {
 
@@ -25,6 +26,7 @@ class ExpressionSuggesterBenchmarkSetup() {
       "dictBar" -> EmbeddedDictDefinition(Map("sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots")),
     )
   )
+
   private val dictServices = UiDictServices(dictRegistry, new SimpleDictQueryService(dictRegistry, 10))
 
   private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(

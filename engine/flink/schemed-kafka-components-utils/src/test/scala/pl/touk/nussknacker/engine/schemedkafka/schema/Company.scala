@@ -34,4 +34,5 @@ object Company extends TestSchemaWithRecord {
       |   address: ${Address.jsonMap}
       |}
      """.stripMargin
+
 }

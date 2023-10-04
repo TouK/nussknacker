@@ -57,4 +57,5 @@ class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyV
     override def deserialize(topic: String, data: Array[Byte]): Json =
       CirceUtil.decodeJsonUnsafe[Json](data)
   }
+
 }

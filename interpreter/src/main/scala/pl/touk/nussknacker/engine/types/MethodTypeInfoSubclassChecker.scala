@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object MethodTypeInfoSubclassChecker {
+
   def check(subclassInfo: MethodTypeInfo, superclassInfo: MethodTypeInfo): ValidatedNel[ParameterListError, Unit] = {
     val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult)       = subclassInfo
     val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassInfo
@@ -52,6 +53,7 @@ object MethodTypeInfoSubclassChecker {
 
     validatedVarArgs combine validatedLength combine validatedNoVarArgs combine validatedResult
   }
+
 }
 
 trait ParameterListError {

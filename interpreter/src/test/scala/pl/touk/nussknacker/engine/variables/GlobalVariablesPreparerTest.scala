@@ -32,4 +32,5 @@ class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 
     override def initialReturnType: TypingResult = Typed(classOf[java.util.List[_]])
   }
+
 }

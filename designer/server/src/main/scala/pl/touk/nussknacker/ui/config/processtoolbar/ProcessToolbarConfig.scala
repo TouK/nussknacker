@@ -7,16 +7,20 @@ import net.ceedubs.ficus.readers.ValueReader
 import java.util.UUID
 
 object ProcessToolbarsConfig {
+
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   // It provides empty list when toolbar panel is not set
   implicit val panelListReader: ValueReader[List[ToolbarPanelConfig]] = new ValueReader[List[ToolbarPanelConfig]] {
+
     override def read(config: Config, path: String): List[ToolbarPanelConfig] = {
       config.getOrElse[List[Config]](path, List.empty).map(_.as[ToolbarPanelConfig])
     }
+
   }
+
 }
 
 final case class ProcessToolbarsConfig(
@@ -30,6 +34,7 @@ final case class ProcessToolbarsConfig(
 }
 
 object ProcessToolbarsConfigProvider extends LazyLogging {
+
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import ProcessToolbarsConfig._
@@ -64,4 +69,5 @@ object ProcessToolbarsConfigProvider extends LazyLogging {
       None
     }
   }
+
 }

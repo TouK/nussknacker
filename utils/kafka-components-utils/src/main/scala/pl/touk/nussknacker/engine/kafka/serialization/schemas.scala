@@ -25,18 +25,23 @@ object schemas {
   }
 
   object ToStringSerializer {
+
     def apply[T](fun: T => String): ToStringSerializer[T] = new ToStringSerializer[T] {
       override def serialize(value: T): String = fun(value)
     }
+
   }
 
   trait ToHeadersSerializer[T] extends Serializable {
     def serialize(value: T): Headers
   }
+
   object ToHeaderMapSerializer {
+
     def apply[T](fun: T => Headers): ToHeadersSerializer[T] = new ToHeadersSerializer[T] {
       override def serialize(value: T): Headers = fun(value)
     }
+
   }
 
   class BaseSimpleSerializationSchema[T](
@@ -66,6 +71,7 @@ object schemas {
       val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(KafkaRecordUtils.emptyHeaders)
       KafkaProducerHelper.createRecord(topic, safeBytes(key), safeBytes(value), timestamp, headers)
     }
+
   }
 
   class SimpleSerializationSchema[T](

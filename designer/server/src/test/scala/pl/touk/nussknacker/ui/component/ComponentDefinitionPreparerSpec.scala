@@ -285,4 +285,5 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     )
     groups
   }
+
 }

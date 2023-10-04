@@ -240,6 +240,7 @@ private class InterpreterInternal[F[_]](
   ): ValueWithContext[R] = {
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
+
 }
 
 class Interpreter(
@@ -269,10 +270,12 @@ object Interpreter {
   }
 
   object InterpreterShape {
+
     def transform[T](f: Future[T])(implicit ec: ExecutionContext): Future[Either[T, Throwable]] = f.transformWith {
       case Failure(exception) => Future.successful(Right(exception))
       case Success(value)     => Future.successful(Left(value))
     }
+
   }
 
   // Interpreter can be invoked with various effects, we require MonadError capabilities and ability to convert service invocation results
@@ -296,6 +299,7 @@ object Interpreter {
       implicit val ctx = SynchronousExecutionContext.ctx
       f => IO.fromFuture(IO(transform(f)))(IO.contextShift(ctx))
     }
+
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
@@ -305,6 +309,7 @@ object Interpreter {
     override def fromFuture[T]: Future[T] => Future[Either[T, Throwable]] = {
       transform(_)(SynchronousExecutionContext.ctx)
     }
+
   }
 
 }

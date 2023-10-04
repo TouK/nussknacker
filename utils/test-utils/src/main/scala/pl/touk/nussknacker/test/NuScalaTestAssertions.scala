@@ -6,6 +6,7 @@ import org.scalatest.{Assertion, Assertions}
 import scala.reflect.ClassTag
 
 trait NuScalaTestAssertions extends Assertions {
+
   def assertThrowsWithParent[T <: AnyRef](
       f: => Any
   )(implicit classTag: ClassTag[T], pos: source.Position): Assertion = {
@@ -18,4 +19,5 @@ trait NuScalaTestAssertions extends Assertions {
       }
     }
   }
+
 }

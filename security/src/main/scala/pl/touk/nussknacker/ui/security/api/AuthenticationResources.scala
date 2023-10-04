@@ -74,9 +74,11 @@ trait AnonymousAccess extends Directives {
       .getOrElse(authenticateReally())
 
   }
+
 }
 
 object AuthenticationResources {
+
   def apply(config: Config, classLoader: ClassLoader, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext
   ): AuthenticationResources = {
@@ -84,4 +86,5 @@ object AuthenticationResources {
     AuthenticationProvider(config, classLoader)
       .createAuthenticationResources(config, classLoader)
   }
+
 }

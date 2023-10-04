@@ -31,6 +31,7 @@ case class FullNameNotCompatible(
       case 3 => sex = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
+
 }
 
 object FullNameNotCompatible extends TestSchemaWithSpecificRecord {

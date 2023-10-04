@@ -37,6 +37,7 @@ class KafkaSinkFactory(
       @ParamName(`SinkValueParamName`) value: LazyParameter[AnyRef]
   ): Sink =
     createSink(topic, value, processMetaData)
+
 }
 
 abstract class BaseKafkaSinkFactory(

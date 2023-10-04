@@ -17,6 +17,7 @@ class BasicAuthenticationProvider extends AuthenticationProvider {
     val configuration = BasicAuthenticationConfiguration.create(config)
     new BasicAuthenticationResources(realm, configuration)
   }
+
 }
 
 object BasicAuthenticationProvider {
