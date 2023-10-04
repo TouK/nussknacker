@@ -36,7 +36,7 @@ class BaseOAuth2Service[
   or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
   or do both.
    */
-  def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
   }
 
@@ -46,9 +46,12 @@ class BaseOAuth2Service[
   The following two methods shall call such a resource.
    */
   protected def obtainUserInfo(authorizationData: AuthorizationData): Future[UserInfoData] =
-    obtainUserInfo(authorizationData.accessToken, IntrospectedAccessTokenData.empty)
+    authenticateUser(authorizationData.accessToken, IntrospectedAccessTokenData.empty)
 
-  def obtainUserInfo(accessToken: String, accessTokenData: IntrospectedAccessTokenData): Future[UserInfoData] =
+  override private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[UserInfoData] =
     clientApi.profileRequest(accessToken)
 }
 

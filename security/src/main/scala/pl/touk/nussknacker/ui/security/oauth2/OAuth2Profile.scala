@@ -5,7 +5,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait OAuth2Profile[ProfileResponse] {
-  def getAuthenticatedUser(
+  def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[ProfileResponse],
       configuration: OAuth2Configuration

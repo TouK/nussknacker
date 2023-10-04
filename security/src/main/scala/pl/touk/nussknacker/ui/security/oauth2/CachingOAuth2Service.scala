@@ -60,15 +60,14 @@ class CachingOAuth2Service[
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
 
-  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
-    throw new IllegalAccessError(
-      "CachingOAuth2Service.introspectAccessToken shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead"
-    )
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+    delegate.introspectAccessToken(accessToken)
 
-  override def obtainUserInfo(accessToken: String, accessTokenData: IntrospectedAccessTokenData): Future[UserInfoData] =
-    throw new IllegalAccessError(
-      "CachingOAuth2Service.obtainUserInfo shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead"
-    )
+  override private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[UserInfoData] =
+    delegate.authenticateUser(accessToken, accessTokenData)
 
   private lazy val defaultExpirationDuration = configuration.defaultTokenExpirationDuration
 }

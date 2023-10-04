@@ -66,7 +66,7 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
-  override def getAuthenticatedUser(
+  override def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[OpenIdConnectUserInfo],
       configuration: OAuth2Configuration
@@ -100,7 +100,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
         .getOrElse(throw new IllegalStateException("Missing user identity"))
       val userRoles = profile.roles ++ getUserRoles(userIdentity, configuration)
 
-      val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
+      lazy val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
         case Some(UsernameClaim.PreferredUsername) =>
           profile.preferredUsername
         case Some(UsernameClaim.GivenName) =>

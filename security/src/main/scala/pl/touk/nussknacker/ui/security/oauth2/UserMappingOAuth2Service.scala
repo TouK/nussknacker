@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData: Decoder](
     delegate: OAuth2Service[UserInfoData, AuthorizationData],
-    loggedUserFunction: LoggedUserFunctionParameters[UserInfoData] => Future[AuthenticatedUser]
+    authenticatedUserFrom: AuthenticatedUserParameters[UserInfoData] => Future[AuthenticatedUser]
 )(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
     extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
@@ -18,27 +18,27 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
   ): Future[(AuthorizationData, AuthenticatedUser)] = {
     for {
       (authorization, userInfo) <- delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
-      loggedUser <- loggedUserFunction(
-        LoggedUserFunctionParameters(IntrospectedAccessTokenData.empty, () => Future.successful(userInfo))
+      authenticatedUser <- authenticatedUserFrom(
+        new AuthenticatedUserParameters(IntrospectedAccessTokenData.empty, () => Future.successful(userInfo))
       )
-    } yield (authorization, loggedUser)
+    } yield (authorization, authenticatedUser)
   }
 
-  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
     delegate.introspectAccessToken(accessToken)
 
-  override def obtainUserInfo(
+  override private[oauth2] def authenticateUser(
       accessToken: String,
       accessTokenData: IntrospectedAccessTokenData
   ): Future[AuthenticatedUser] = {
-    loggedUserFunction(
-      LoggedUserFunctionParameters(accessTokenData, () => delegate.obtainUserInfo(accessToken, accessTokenData))
+    authenticatedUserFrom(
+      new AuthenticatedUserParameters(accessTokenData, () => delegate.authenticateUser(accessToken, accessTokenData))
     )
   }
 
 }
 
-final case class LoggedUserFunctionParameters[UserInfoData](
-    accessTokenData: IntrospectedAccessTokenData,
-    getUserInfo: () => Future[UserInfoData]
+final class AuthenticatedUserParameters[UserInfoData](
+    val accessTokenData: IntrospectedAccessTokenData,
+    val getUserInfo: () => Future[UserInfoData]
 )

@@ -31,8 +31,7 @@ class JwtOAuth2Service[
 ) extends BaseOAuth2Service[UserInfoData, AuthorizationData](clientApi)
     with LazyLogging {
 
-  protected val accessTokenIsJwt: Boolean                   = configuration.jwt.exists(_.accessTokenIsJwt)
-  protected val requiredAccessTokenAudience: Option[String] = configuration.jwt.flatMap(_.audience)
+  protected val accessTokenIsJwt: Boolean = configuration.jwt.exists(_.accessTokenIsJwt)
 
   protected lazy val jwtValidator: JwtValidator = new JwtValidator(_ =>
     configuration.jwt
@@ -46,22 +45,31 @@ class JwtOAuth2Service[
       case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
     }
 
-  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
     if (accessTokenIsJwt) {
       introspectJwtToken[AccessTokenClaims](accessToken).map { claims =>
-        if (verifyAccessTokenAudience(claims)) {
-          toIntrospectedData(claims)
-        } else {
-          throw OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim")))
-        }
+        verifyAccessTokenAudience(claims)
       }
     } else {
       super.introspectAccessToken(accessToken)
     }
   }
 
-  protected def verifyAccessTokenAudience(claims: JwtStandardClaims): Boolean = {
-    requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)
+  private def verifyAccessTokenAudience(claims: AccessTokenClaims) = {
+    configuration.jwt.flatMap(_.audience) match {
+      case None =>
+        toIntrospectedData(claims)
+      case Some(requiredAudience) if claims.audienceAsList.contains(requiredAudience) =>
+        toIntrospectedData(claims)
+      case Some(requiredAudience) =>
+        throw OAuth2CompoundException(
+          one(
+            OAuth2AccessTokenRejection(
+              s"Invalid audience claim: ${claims.audienceAsList.mkString(",")} - it should contains $requiredAudience"
+            )
+          )
+        )
+    }
   }
 
   protected def toIntrospectedData(claims: AccessTokenClaims): IntrospectedAccessTokenData = {

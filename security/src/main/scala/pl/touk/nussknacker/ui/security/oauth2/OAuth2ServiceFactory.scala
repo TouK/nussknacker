@@ -26,14 +26,21 @@ abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2Authoriz
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, UserInfoData)]
+
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     for {
       accessTokenData <- introspectAccessToken(accessToken)
-      userInfo        <- obtainUserInfo(accessToken, accessTokenData)
+      userInfo        <- authenticateUser(accessToken, accessTokenData)
     } yield (userInfo, accessTokenData.expirationTime)
   }
-  def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData]
-  def obtainUserInfo(accessToken: String, accessTokenData: IntrospectedAccessTokenData): Future[UserInfoData]
+
+  private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData]
+
+  private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[UserInfoData]
+
 }
 
 final case class IntrospectedAccessTokenData(

@@ -25,18 +25,18 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
       authenticatedUser   <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
-  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
     Future.successful(IntrospectedAccessTokenData.empty)
 
-  override def obtainUserInfo(
+  override private[oauth2] def authenticateUser(
       accessToken: String,
       accessTokenData: IntrospectedAccessTokenData
   ): Future[AuthenticatedUser] =
     clientApi.profileRequest(accessToken).map { prf: TestProfileResponse =>
       AuthenticatedUser(
-        prf.uid,
+        id = prf.uid,
         username = prf.email,
-        prf.clearance.roles
+        roles = prf.clearance.roles
       )
     }
 

@@ -23,7 +23,7 @@
 * [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
 * [#4744](https://github.com/TouK/nussknacker/pull/4744) Fix for OIDC: support for simultaneously Machine-2-Machine and Basic flow handling: 
   * Skip user profile call based on the fact that access token is JWT with subject and user has username configured. 
-  * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that accessToken is a JWT as it was before this change
+  * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
 
 1.11.3 (11 Sep 2023)
 -------------------------

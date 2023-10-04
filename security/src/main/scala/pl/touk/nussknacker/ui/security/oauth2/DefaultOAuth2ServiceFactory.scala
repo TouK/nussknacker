@@ -21,13 +21,12 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging 
           )
           new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
             GenericOidcService(configuration),
-            params =>
-              OpenIdConnectProfile.getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration)
+            params => OpenIdConnectProfile.authenticateUser(params.accessTokenData, params.getUserInfo(), configuration)
           )
         case ProfileFormat.GITHUB =>
           new UserMappingOAuth2Service[GitHubProfileResponse, DefaultOAuth2AuthorizationData](
             BaseOAuth2Service[GitHubProfileResponse](configuration),
-            params => GitHubProfile.getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration)
+            params => GitHubProfile.authenticateUser(params.accessTokenData, params.getUserInfo(), configuration)
           )
       },
       configuration

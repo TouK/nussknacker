@@ -16,7 +16,7 @@ class OidcAuthenticationResources(name: String, realm: String, configuration: Oi
           new OidcService(configuration),
           params =>
             OpenIdConnectProfile
-              .getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration.oAuth2Configuration)
+              .authenticateUser(params.accessTokenData, params.getUserInfo(), configuration.oAuth2Configuration)
         ),
         configuration.oAuth2Configuration
       ),
