@@ -22,6 +22,10 @@
 * [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
 * [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
 * [#4762](https://github.com/TouK/nussknacker/pull/4762) Fix: RegExpParameterValidator, trimming SPeL comprehension
+* [#4744](https://github.com/TouK/nussknacker/pull/4744) Fix for OIDC: support for simultaneously Machine-2-Machine and Basic flow handling: 
+  * Skip user profile call based on the fact that access token is JWT with subject and user has username configured. 
+  * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
+* [#4797](https://github.com/TouK/nussknacker/pull/4797) Ability to define the name of query parameter with access token that will be passed into tabs url
 
 1.11.3 (11 Sep 2023)
 -------------------------

@@ -674,14 +674,15 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
 
 By default, only `Scenarios` tab is configured.
 
-| Parameter name             | Type                    | Description                                                                                             |
-|----------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
-| id                         | string                  | Unique identifier                                                                                       |
-| title                      | string                  | Title appearing in UI                                                                                   |
-| type                       | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                                                                 |
-| url                        | string                  | URL of the tab                                                                                          |
-| requiredPermission         | string                  | Optional parameter, name of [Global Permission](#security)                                              |
-| addAccessTokenInQueryParam | boolean                 | Optional parameter, when true add accessToken (if OAuth2 authentication is used) to iframe query params |
+| Parameter name                   | Type                    | Default value | Description                                                                                                              |
+|----------------------------------|-------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| id                               | string                  |               | Unique identifier                                                                                                        |
+| title                            | string                  |               | Title appearing in UI                                                                                                    |
+| type                             | IFrame/Local/Remote/Url |               | Type of tab (see below for explanation)                                                                                  |
+| url                              | string                  |               | URL of the tab                                                                                                           |
+| requiredPermission               | string                  |               | Optional parameter, name of [Global Permission](#security)                                                               |
+| accessTokenInQuery.enabled       | boolean                 | false         | When true the parameter holding access token (if OAuth2 authentication is used) will be added to iframe query parameters |
+| accessTokenInQuery.parameterName | string                  | auth_token    | Optional name of query parameter that holds the access token                                                             |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
