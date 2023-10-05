@@ -22,4 +22,4 @@ object ColumnDefinition {
 
 }
 
-case class ColumnDefinition(no: Int, name: String, typing: TypingResult)
+final case class ColumnDefinition(no: Int, name: String, typing: TypingResult)

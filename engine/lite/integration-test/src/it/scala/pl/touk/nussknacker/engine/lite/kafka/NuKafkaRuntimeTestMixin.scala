@@ -30,7 +30,7 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
 }
 
-case class NuKafkaRuntimeTestTestCaseFixture(
+final case class NuKafkaRuntimeTestTestCaseFixture(
     inputTopic: String,
     outputTopic: String,
     errorTopic: String,

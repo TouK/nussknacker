@@ -2,9 +2,7 @@ package pl.touk.nussknacker.engine.requestresponse
 
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
@@ -12,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
@@ -85,23 +82,23 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
   override def buildInfo(): Map[String, String] = Map.empty
 }
 
-@JsonCodec case class Request1(field1: String, field2: String) {
+@JsonCodec final case class Request1(field1: String, field2: String) {
 
   import scala.jdk.CollectionConverters._
 
   def toList: java.util.List[String] = List(field1, field2).asJava
 }
 
-case class Request2(field12: String, field22: String)
+final case class Request2(field12: String, field22: String)
 
-case class Request3(field13: String, field23: String)
+final case class Request3(field13: String, field23: String)
 
-@JsonCodec case class RequestNumber(number: Int) {
+@JsonCodec final case class RequestNumber(number: Int) {
   import scala.jdk.CollectionConverters._
   def toList: java.util.List[Int] = (0 to number).asJava
 }
 
-@JsonCodec case class Response(field1: String) extends DisplayJsonWithEncoder[Response]
+@JsonCodec final case class Response(field1: String) extends DisplayJsonWithEncoder[Response]
 
 class EnricherService extends Service {
 
@@ -316,7 +313,7 @@ private class FailingSinkFactory extends SinkFactory {
   def invoke(@ParamName("fail") fail: LazyParameter[java.lang.Boolean]): Sink = new FailingSink(fail)
 }
 
-case class SinkException(message: String) extends Exception(message)
+final case class SinkException(message: String) extends Exception(message)
 
 private class FailingSink(val fail: LazyParameter[java.lang.Boolean]) extends LazyParamSink[AnyRef] {
 

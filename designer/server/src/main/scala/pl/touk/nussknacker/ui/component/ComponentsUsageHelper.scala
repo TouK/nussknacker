@@ -77,7 +77,7 @@ object ComponentsUsageHelper {
       )
   }
 
-  private case class ScenarioComponentsUsage[NodeUsageDataShape](
+  private final case class ScenarioComponentsUsage[NodeUsageDataShape](
       componentId: ComponentId,
       componentType: ComponentType,
       componentName: Option[String],

@@ -118,12 +118,12 @@ class RemoteEnvironmentResources(
 
 }
 
-@JsonCodec case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
+@JsonCodec final case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
 
 //we make additional class here to be able to e.g. compare model versions...
-@JsonCodec case class EnvironmentComparisonResult(processDifferences: List[ProcessDifference])
+@JsonCodec final case class EnvironmentComparisonResult(processDifferences: List[ProcessDifference])
 
-@JsonCodec case class ProcessDifference(
+@JsonCodec final case class ProcessDifference(
     id: String,
     presentOnOther: Boolean,
     differences: Map[String, ProcessComparator.Difference]

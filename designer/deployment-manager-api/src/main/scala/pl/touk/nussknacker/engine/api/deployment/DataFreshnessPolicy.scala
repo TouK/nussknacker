@@ -7,6 +7,6 @@ object DataFreshnessPolicy {
   case object CanBeCached extends DataFreshnessPolicy
 }
 
-case class WithDataFreshnessStatus[T](value: T, cached: Boolean) {
+final case class WithDataFreshnessStatus[T](value: T, cached: Boolean) {
   def map[R](f: T => R): WithDataFreshnessStatus[R] = WithDataFreshnessStatus(f(value), cached)
 }

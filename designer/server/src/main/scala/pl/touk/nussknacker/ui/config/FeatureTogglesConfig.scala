@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
 import scala.concurrent.duration.FiniteDuration
 
-case class FeatureTogglesConfig(
+final case class FeatureTogglesConfig(
     development: Boolean,
     metrics: Option[MetricsSettings],
     remoteEnvironment: Option[HttpRemoteEnvironmentConfig],

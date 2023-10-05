@@ -287,14 +287,18 @@ class AppApiSpec
             s"""{
              |  "name": "nussknacker-common-api",
              |  "gitCommit": "^\\\\w{40}$$",
-             |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$",
+             |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$",
              |  "version": "1.12.0-SNAPSHOT",
              |  "processingType": {
              |    "streaming": {
              |      "process-version": "0.1",
              |      "engine-version": "0.1",
-             |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$"
+             |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$"
              |    }
+             |  },
+             |  "globalBuildInfo": {
+             |    "build-config-1": "1",
+             |    "build-config-2": "2"
              |  },
              |  "build-config-1": "1",
              |  "build-config-2": "2"

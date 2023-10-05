@@ -58,6 +58,7 @@ private[registrar] class AsyncInterpretationFunction(
         logger.warn("Unexpected error", ex)
         handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
+
   }
 
   private def invokeInterpreter(

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
-class NuApiSwaggerSpec
+class NuDesignerApiSwaggerUISpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager

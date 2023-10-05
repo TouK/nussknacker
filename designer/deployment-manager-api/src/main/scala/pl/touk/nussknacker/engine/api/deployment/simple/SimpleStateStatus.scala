@@ -12,7 +12,7 @@ import java.net.URI
 object SimpleStateStatus {
 
   // Represents general problem.
-  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions)
+  final case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions)
       extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
   }

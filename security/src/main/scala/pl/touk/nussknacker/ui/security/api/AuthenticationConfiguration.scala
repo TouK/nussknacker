@@ -40,7 +40,7 @@ object AuthenticationConfiguration {
     ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
-  case class ConfigUser(
+  final case class ConfigUser(
       identity: String,
       username: Option[String],
       password: Option[String],
@@ -48,7 +48,7 @@ object AuthenticationConfiguration {
       roles: Set[String]
   )
 
-  case class ConfigRule(
+  final case class ConfigRule(
       role: String,
       isAdmin: Boolean = false,
       categories: List[String] = List.empty,

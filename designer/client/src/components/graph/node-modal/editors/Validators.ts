@@ -27,7 +27,7 @@ export enum BackendValidator {
     MandatoryParameterValidator = "MandatoryParameterValidator",
     NotBlankParameterValidator = "NotBlankParameterValidator",
     FixedValuesValidator = "FixedValuesValidator",
-    RegExpParameterValidator = "RegExpParameterValidator",
+    LiteralRegExpParameterValidator = "LiteralRegExpParameterValidator",
     LiteralIntegerValidator = "LiteralIntegerValidator",
     MinimalNumberValidator = "MinimalNumberValidator",
     MaximalNumberValidator = "MaximalNumberValidator",
@@ -201,7 +201,8 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
     [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
     [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
     [BackendValidator.FixedValuesValidator]: ({ possibleValues }) => fixedValueValidator(possibleValues),
-    [BackendValidator.RegExpParameterValidator]: ({ pattern, message, description }) => regExpValueValidator(pattern, message, description),
+    [BackendValidator.LiteralRegExpParameterValidator]: ({ pattern, message, description }) =>
+        regExpValueValidator(pattern, message, description),
     [BackendValidator.MinimalNumberValidator]: ({ minimalNumber }) => minimalNumberValidator(minimalNumber),
     [BackendValidator.MaximalNumberValidator]: ({ maximalNumber }) => maximalNumberValidator(maximalNumber),
     [BackendValidator.JsonValidator]: () => jsonValidator,

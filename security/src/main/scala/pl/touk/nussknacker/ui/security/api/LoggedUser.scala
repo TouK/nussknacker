@@ -51,7 +51,7 @@ object LoggedUser {
 
 }
 
-case class CommonUser(
+final case class CommonUser(
     id: String,
     username: String,
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
@@ -69,7 +69,7 @@ case class CommonUser(
   override val isAdmin: Boolean = false
 }
 
-case class AdminUser(id: String, username: String) extends LoggedUser {
+final case class AdminUser(id: String, username: String) extends LoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
   override val isAdmin: Boolean                                       = true
 }

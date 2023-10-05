@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Sink, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
-import pl.touk.nussknacker.ui.component.ComponentFraudTestConfigCreator.fraudAll
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -90,8 +89,10 @@ abstract class DefaultStreamingProcessConfigCreator extends EmptyProcessConfigCr
     @MethodToInvoke def invoke(): Future[Unit] = Future.unit
   }
 
-  case class EmptyCustomStreamTransformer(override val canHaveManyInputs: Boolean, override val canBeEnding: Boolean)
-      extends CustomStreamTransformer {
+  sealed case class EmptyCustomStreamTransformer(
+      override val canHaveManyInputs: Boolean,
+      override val canBeEnding: Boolean
+  ) extends CustomStreamTransformer {
     @MethodToInvoke(returnType = classOf[Void]) def invoke(): Unit = {}
   }
 

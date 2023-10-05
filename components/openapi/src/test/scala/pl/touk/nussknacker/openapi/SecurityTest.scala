@@ -22,7 +22,7 @@ class SecurityTest
     with PatientScalaFutures
     with BaseOpenAPITest {
 
-  case class Config(
+  sealed case class Config(
       path: String,
       securityName: String,
       serviceName: String,

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.config
 
-case class UsageStatisticsReportsConfig(
+final case class UsageStatisticsReportsConfig(
     enabled: Boolean,
     // unique identifier for Designer installation
     fingerprint: Option[String],

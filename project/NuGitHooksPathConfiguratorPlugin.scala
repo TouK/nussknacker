@@ -41,4 +41,5 @@ object NuGitHooksPathConfiguratorPlugin extends sbt.AutoPlugin {
       }
     }
   }
+
 }

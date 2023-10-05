@@ -402,9 +402,9 @@ class ProcessesResources(
 }
 
 object ProcessesResources {
-  case class UnmarshallError(message: String) extends Exception(message) with FatalError
+  final case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
-  case class ProcessesQuery(
+  final case class ProcessesQuery(
       isFragment: Option[Boolean],
       isArchived: Option[Boolean],
       isDeployed: Option[Boolean],

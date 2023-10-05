@@ -41,14 +41,14 @@ import scala.language.higherKinds
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(
+  @JsonCodec final case class CreateProcessCommand(
       processName: ProcessName,
       category: String,
       isFragment: Boolean,
       forwardedUserName: Option[RemoteUserName]
   )
 
-  @JsonCodec case class UpdateProcessCommand(
+  @JsonCodec final case class UpdateProcessCommand(
       process: DisplayableProcess,
       comment: UpdateProcessComment,
       forwardedUserName: Option[RemoteUserName]

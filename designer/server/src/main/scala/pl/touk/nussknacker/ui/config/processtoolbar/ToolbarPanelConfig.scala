@@ -46,7 +46,7 @@ object ToolbarPanelTypeConfig extends Enumeration {
     toolbarsWithIdentity.contains(`type`)
 }
 
-case class ToolbarPanelConfig(
+final case class ToolbarPanelConfig(
     `type`: ToolbarPanelType,
     id: Option[String],
     title: Option[String],

@@ -87,7 +87,7 @@ object BasicHttpAuthenticator {
     def value: String
   }
 
-  private case class PlainPassword(value: String)     extends Password
-  private case class EncryptedPassword(value: String) extends Password
-  private case class UserWithPassword(identity: String, username: String, password: Password, roles: Set[String])
+  private final case class PlainPassword(value: String)     extends Password
+  private final case class EncryptedPassword(value: String) extends Password
+  private final case class UserWithPassword(identity: String, username: String, password: Password, roles: Set[String])
 }

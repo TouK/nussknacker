@@ -3,7 +3,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import sttp.client3.UriContext
 
-case class InfluxConfig(
+final case class InfluxConfig(
     influxUrl: String,
     user: Option[String],
     password: Option[String],
@@ -16,7 +16,7 @@ case class InfluxConfig(
   val uri = uri"$influxUrl"
 }
 
-case class MetricsConfig(
+final case class MetricsConfig(
     sourceCountMetric: String = "source_count",
     nodeCountMetric: String = "nodeCount",
     nodeIdTag: String = nodeIdTag,

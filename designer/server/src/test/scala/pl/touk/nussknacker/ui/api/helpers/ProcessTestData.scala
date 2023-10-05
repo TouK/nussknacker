@@ -379,7 +379,7 @@ object ProcessTestData {
     )
   }
 
-  case class ProcessUsingFragment(process: CanonicalProcess, fragment: CanonicalProcess)
+  final case class ProcessUsingFragment(process: CanonicalProcess, fragment: CanonicalProcess)
 
   val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(
     StreamMetaData.typeName,

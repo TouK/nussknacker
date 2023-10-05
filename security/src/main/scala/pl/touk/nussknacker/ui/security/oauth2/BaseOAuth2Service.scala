@@ -58,7 +58,7 @@ class BaseOAuth2Service[
     clientApi.profileRequest(accessToken)
 }
 
-@ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData(
+@ConfiguredJsonCodec final case class DefaultOAuth2AuthorizationData(
     @JsonKey("access_token") accessToken: String,
     @JsonKey("token_type") tokenType: String,
     @JsonKey("refresh_token") refreshToken: Option[String] = None,

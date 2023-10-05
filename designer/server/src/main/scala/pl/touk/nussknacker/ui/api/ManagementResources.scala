@@ -108,7 +108,7 @@ class ManagementResources(
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
-  case class ValidationError(message: String) extends Exception(message) with BadRequestError
+  sealed case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap { comment =>

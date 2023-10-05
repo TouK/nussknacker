@@ -81,7 +81,7 @@ object ExampleOAuth2ServiceFactory {
   val testRules: List[AuthenticationConfiguration.ConfigRule] =
     AuthenticationConfiguration.getRules(testConfig.usersFile)
 
-  @ConfiguredJsonCodec case class TestAccessTokenResponse(
+  @ConfiguredJsonCodec final case class TestAccessTokenResponse(
       @JsonKey("access_token") accessToken: String,
       @JsonKey("token_type") tokenType: String,
       @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration],
@@ -93,7 +93,7 @@ object ExampleOAuth2ServiceFactory {
     implicit val config: Configuration = Configuration.default
   }
 
-  @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
-  @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
-  @JsonCodec case class TestProfileClearanceResponse(roles: Set[String])
+  @JsonCodec final case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
+  @JsonCodec final case class TestTokenIntrospectionResponse(exp: Option[Long])
+  @JsonCodec final case class TestProfileClearanceResponse(roles: Set[String])
 }

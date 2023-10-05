@@ -10,11 +10,11 @@ object OApiDocumentation {
   implicit val oApiInfoEncoder: Encoder[OApiInfo]                   = dropNulls(deriveEncoder)
 }
 
-case class OApiDocumentation(openapi: String, info: OApiInfo, servers: Option[List[OApiServer]], paths: Json)
+final case class OApiDocumentation(openapi: String, info: OApiInfo, servers: Option[List[OApiServer]], paths: Json)
 @JsonCodec(encodeOnly = true)
-case class OApiServer(url: String, description: Option[String])
+final case class OApiServer(url: String, description: Option[String])
 
-case class OApiInfo(
+final case class OApiInfo(
     title: String,
     description: Option[String] = None,
     contact: Option[OApiContact] = None,
@@ -22,4 +22,4 @@ case class OApiInfo(
 )
 
 @JsonCodec(encodeOnly = true)
-case class OApiContact(name: String, url: String, email: String)
+final case class OApiContact(name: String, url: String, email: String)

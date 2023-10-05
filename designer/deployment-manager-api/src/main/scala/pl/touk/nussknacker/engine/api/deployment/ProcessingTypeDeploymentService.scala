@@ -23,7 +23,7 @@ trait ProcessingTypeDeploymentService {
 
 }
 
-case class DeployedScenarioData(
+final case class DeployedScenarioData(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     resolvedScenario: CanonicalProcess

@@ -42,7 +42,7 @@ object CirceUtil {
     case Right(data) => data
   }
 
-  case class DecodingError(message: String, ex: Throwable) extends IllegalArgumentException(message, ex)
+  final case class DecodingError(message: String, ex: Throwable) extends IllegalArgumentException(message, ex)
 
   object codecs {
 

@@ -30,7 +30,7 @@ trait FragmentRepository {
 
 }
 
-case class FragmentDetails(canonical: CanonicalProcess, category: String)
+final case class FragmentDetails(canonical: CanonicalProcess, category: String)
 
 class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepository {
 

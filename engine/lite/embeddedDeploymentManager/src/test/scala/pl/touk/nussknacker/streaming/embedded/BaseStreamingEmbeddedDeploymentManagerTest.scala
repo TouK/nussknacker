@@ -34,7 +34,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
   override protected def schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.schemaRegistryMockClient
 
-  case class FixtureParam(
+  sealed case class FixtureParam(
       deploymentManager: DeploymentManager,
       modelData: ModelData,
       inputTopic: String,

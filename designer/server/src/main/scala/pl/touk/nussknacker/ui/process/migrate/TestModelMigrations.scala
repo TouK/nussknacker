@@ -104,7 +104,7 @@ class TestModelMigrations(
 
 }
 
-@JsonCodec case class TestMigrationResult(
+@JsonCodec final case class TestMigrationResult(
     converted: ValidatedDisplayableProcess,
     newErrors: ValidationResult,
     shouldFailOnNewErrors: Boolean
@@ -116,7 +116,7 @@ class TestModelMigrations(
 
 }
 
-private case class MigratedProcessDetails(
+private final case class MigratedProcessDetails(
     newProcess: DisplayableProcess,
     oldProcessErrors: ValidationResult,
     shouldFail: Boolean,

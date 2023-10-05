@@ -145,7 +145,7 @@ object UIProcessObjectsFactory {
     }).toMap
   }
 
-  case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
+  final case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
   def createUIObjectDefinition(
       objectDefinition: ObjectDefinition,

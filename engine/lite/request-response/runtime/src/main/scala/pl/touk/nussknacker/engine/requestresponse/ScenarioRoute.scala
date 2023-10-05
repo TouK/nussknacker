@@ -123,6 +123,6 @@ private[requestresponse] class ScenarioRoute(
 
   private def jsonStringToEntity(j: String): ResponseEntity = HttpEntity(contentType = `application/json`, string = j)
 
-  @JsonCodec case class NuError(nodeId: Option[String], message: Option[String])
+  @JsonCodec sealed case class NuError(nodeId: Option[String], message: Option[String])
 
 }

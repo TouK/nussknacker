@@ -25,6 +25,7 @@
 * [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
 * [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
+* [#4762](https://github.com/TouK/nussknacker/pull/4762) Fix: RegExpParameterValidator, trimming SPeL comprehension
 
 1.11.3 (11 Sep 2023)
 -------------------------

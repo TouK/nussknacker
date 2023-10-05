@@ -50,5 +50,11 @@ class ProcessAttachmentService(config: AttachmentsConfig, processActivityReposit
 object ProcessAttachmentService {
   type AttachmentDataWithName = (String, Array[Byte])
 
-  case class AttachmentToAdd(processId: ProcessId, processVersionId: VersionId, fileName: String, data: Array[Byte])
+  final case class AttachmentToAdd(
+      processId: ProcessId,
+      processVersionId: VersionId,
+      fileName: String,
+      data: Array[Byte]
+  )
+
 }

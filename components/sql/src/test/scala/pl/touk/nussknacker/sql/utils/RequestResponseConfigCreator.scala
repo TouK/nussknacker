@@ -25,9 +25,9 @@ class RequestResponseConfigCreator extends EmptyProcessConfigCreator {
 
 }
 
-@JsonCodec case class TestRequest(id: Int)
+@JsonCodec final case class TestRequest(id: Int)
 
-@JsonCodec case class TestResponse(name: String, count: Option[Long] = None)
+@JsonCodec final case class TestResponse(name: String, count: Option[Long] = None)
     extends DisplayJsonWithEncoder[TestResponse]
 
 object ResponseSinkFactory extends SinkFactory {

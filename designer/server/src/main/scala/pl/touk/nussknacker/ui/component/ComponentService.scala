@@ -201,6 +201,6 @@ class DefaultComponentService private (
 
 }
 
-private case class ComponentNotFoundError(componentId: ComponentId)
+private final case class ComponentNotFoundError(componentId: ComponentId)
     extends Exception(s"Component $componentId not exist.")
     with NotFoundError

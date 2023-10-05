@@ -29,8 +29,8 @@ object FutureUtils {
     def value: T
   }
 
-  case class CompletedNormally[T](value: T) extends LimitedByTimeoutResult[T]
+  final case class CompletedNormally[T](value: T) extends LimitedByTimeoutResult[T]
 
-  case class CompletedByTimeout[T](value: T) extends LimitedByTimeoutResult[T]
+  final case class CompletedByTimeout[T](value: T) extends LimitedByTimeoutResult[T]
 
 }

@@ -33,7 +33,7 @@ object BasicAuthenticationConfiguration {
     config.as[BasicAuthenticationConfiguration](authenticationConfigPath)
 }
 
-case class CachingHashesConfig(
+final case class CachingHashesConfig(
     enabled: Option[Boolean],
     maximumSize: Option[Long],
     expireAfterAccess: Option[FiniteDuration],

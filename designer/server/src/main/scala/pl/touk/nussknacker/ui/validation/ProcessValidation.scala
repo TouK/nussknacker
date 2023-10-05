@@ -253,5 +253,5 @@ class ProcessValidation(
     )
   }
 
-  private case class ValidatorKey(modelData: ModelData, category: Category)
+  private sealed case class ValidatorKey(modelData: ModelData, category: Category)
 }

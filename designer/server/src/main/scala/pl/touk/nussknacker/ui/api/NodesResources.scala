@@ -312,37 +312,37 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 }
 
-@JsonCodec(encodeOnly = true) case class TestSourceParameters(
+@JsonCodec(encodeOnly = true) final case class TestSourceParameters(
     sourceId: String,
     parameterExpressions: Map[String, Expression]
 )
 
-@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(
+@JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
     sourceParameters: TestSourceParameters,
     displayableProcess: DisplayableProcess
 )
 
-@JsonCodec(encodeOnly = true) case class ParametersValidationResult(
+@JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
     validationErrors: List[NodeValidationError],
     validationPerformed: Boolean
 )
 
 // TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
-@JsonCodec(encodeOnly = true) case class ParametersValidationRequest(
+@JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
     scenarioName: String,
     parameters: List[UIValueParameter],
     processProperties: ProcessProperties,
     variableTypes: Map[String, TypingResult]
 )
 
-@JsonCodec(encodeOnly = true) case class NodeValidationResult(
+@JsonCodec(encodeOnly = true) final case class NodeValidationResult(
     parameters: Option[List[UIParameter]],
     expressionType: Option[TypingResult],
     validationErrors: List[NodeValidationError],
     validationPerformed: Boolean
 )
 
-@JsonCodec(encodeOnly = true) case class NodeValidationRequest(
+@JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
     nodeData: NodeData,
     processProperties: ProcessProperties,
     variableTypes: Map[String, TypingResult],
@@ -351,10 +351,10 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     outgoingEdges: Option[List[Edge]]
 )
 
-@JsonCodec(encodeOnly = true) case class PropertiesValidationRequest(processProperties: ProcessProperties)
+@JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(processProperties: ProcessProperties)
 
 // TODO like in 'validate' create globalVariables based on processingType on backend side. Do not pass them from FE.
-case class ExpressionSuggestionRequest(
+final case class ExpressionSuggestionRequest(
     expression: Expression,
     caretPosition2d: CaretPosition2d,
     variables: Map[String, TypingResult]

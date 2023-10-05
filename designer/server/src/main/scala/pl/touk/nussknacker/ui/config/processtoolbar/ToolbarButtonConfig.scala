@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.config.processtoolbar
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.ToolbarButtonType
 
-case class ToolbarButtonConfig(
+final case class ToolbarButtonConfig(
     `type`: ToolbarButtonType,
     name: Option[String],
     title: Option[String],

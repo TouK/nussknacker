@@ -10,7 +10,7 @@ import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
-case class NotificationConfig(duration: FiniteDuration)
+final case class NotificationConfig(duration: FiniteDuration)
 
 trait NotificationService {
 

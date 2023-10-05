@@ -52,7 +52,7 @@ object DatabaseQueryEnricher {
     )
   }
 
-  case class TransformationState(
+  final case class TransformationState(
       query: String,
       argsCount: Int,
       tableDef: TableDefinition,

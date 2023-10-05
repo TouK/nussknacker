@@ -48,7 +48,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 }
 
-case class DefaultAsyncExecutionConfigPreparer(
+final case class DefaultAsyncExecutionConfigPreparer(
     bufferSize: Int,
     workers: Int,
     defaultUseAsyncInterpretation: Option[Boolean]

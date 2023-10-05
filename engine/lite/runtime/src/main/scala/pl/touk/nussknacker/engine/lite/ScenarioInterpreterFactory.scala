@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.definition.{
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSource, _}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
   EndResult,
   ScenarioInputBatch,
@@ -340,12 +340,12 @@ object ScenarioInterpreterFactory {
         partInvokers: Map[String, PartInterpreterType]
     )(pr: PartReference, irs: List[InterpretationResult]): InterpreterOutputType = {
       val results: InterpreterOutputType = pr match {
+        case _: DeadEndReference =>
+          Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
         case NextPartReference(id) =>
           partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(DataBatch(irs.map(_.finalContext)))
         case r: JoinReference =>
           Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
-        case _: DeadEndReference =>
-          Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
         case er: EndingReference => // FIXME: do we need it at all
           Monad[F].pure[ResultType[PartResult]](
             Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res])))

@@ -34,7 +34,7 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  @JsonCodec case class RemoteUserName(name: String) extends AnyVal {
+  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal {
     def display: String = s"Remote[$name]"
   }
 
@@ -51,7 +51,7 @@ object ProcessRepository {
   def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbRef, modelData.mapValues(_.migrations.version))
 
-  case class CreateProcessAction(
+  final case class CreateProcessAction(
       processName: ProcessName,
       category: String,
       canonicalProcess: CanonicalProcess,
@@ -60,7 +60,7 @@ object ProcessRepository {
       forwardedUserName: Option[RemoteUserName]
   )
 
-  case class UpdateProcessAction(
+  final case class UpdateProcessAction(
       id: ProcessId,
       canonicalProcess: CanonicalProcess,
       comment: Option[Comment],
@@ -68,9 +68,9 @@ object ProcessRepository {
       forwardedUserName: Option[RemoteUserName]
   )
 
-  case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
+  final case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
-  case class ProcessCreated(processId: ProcessId, processVersionId: VersionId)
+  final case class ProcessCreated(processId: ProcessId, processVersionId: VersionId)
 }
 
 trait ProcessRepository[F[_]] {

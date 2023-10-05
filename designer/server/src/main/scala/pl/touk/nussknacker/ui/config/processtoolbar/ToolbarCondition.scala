@@ -13,7 +13,7 @@ object ToolbarConditionType extends Enumeration {
     `type`.equals(AllOf)
 }
 
-case class ToolbarCondition(
+final case class ToolbarCondition(
     fragment: Option[Boolean],
     archived: Option[Boolean],
     `type`: Option[ToolbarConditionType]

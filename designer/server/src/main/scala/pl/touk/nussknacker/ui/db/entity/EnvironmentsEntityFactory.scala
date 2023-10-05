@@ -21,4 +21,4 @@ trait EnvironmentsEntityFactory {
 
 }
 
-case class EnvironmentsEntityData(name: String)
+final case class EnvironmentsEntityData(name: String)

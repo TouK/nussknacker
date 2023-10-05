@@ -16,7 +16,7 @@ object ValidationResults {
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
   // TODO: consider extracting additional DTO class
-  @JsonCodec case class ValidationResult(
+  @JsonCodec final case class ValidationResult(
       errors: ValidationErrors,
       warnings: ValidationWarnings,
       nodeResults: Map[String, NodeTypingData]
@@ -62,7 +62,7 @@ object ValidationResults {
       Decoder.const(Map.empty) // Decoder.failedWithMessage("typingInfo shouldn't be decoded")
   }
 
-  @JsonCodec case class NodeTypingData(
+  @JsonCodec final case class NodeTypingData(
       variableTypes: Map[String, TypingResult],
       parameters: Option[List[UIParameter]],
       // currently we not showing typing info in gui but maybe in near future will
@@ -70,7 +70,7 @@ object ValidationResults {
       typingInfo: Map[String, ExpressionTypingInfo]
   )
 
-  @JsonCodec case class ValidationErrors(
+  @JsonCodec final case class ValidationErrors(
       invalidNodes: Map[String, List[NodeValidationError]],
       processPropertiesErrors: List[NodeValidationError],
       globalErrors: List[NodeValidationError]
@@ -78,9 +78,9 @@ object ValidationResults {
     def isEmpty: Boolean = invalidNodes.isEmpty && processPropertiesErrors.isEmpty && globalErrors.isEmpty
   }
 
-  @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
+  @JsonCodec final case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
-  @JsonCodec case class NodeValidationError(
+  @JsonCodec final case class NodeValidationError(
       typ: String,
       message: String,
       description: String,

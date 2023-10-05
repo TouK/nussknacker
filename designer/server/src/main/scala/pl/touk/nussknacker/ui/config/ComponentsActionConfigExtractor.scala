@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.component.ComponentLink
 
 import java.net.URI
 
-case class ComponentLinkConfig(
+final case class ComponentLinkConfig(
     id: String,
     title: String,
     icon: URI,

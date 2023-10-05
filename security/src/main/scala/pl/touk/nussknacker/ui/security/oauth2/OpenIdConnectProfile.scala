@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usern
 
 import java.time.{Instant, LocalDate}
 
-@ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo(
+@ConfiguredJsonCodec(decodeOnly = true) final case class OpenIdConnectUserInfo(
     // Although the `sub` field is optional claim for a JWT, it becomes mandatory in OIDC context,
     // hence Some[] overrides here Option[] from JwtStandardClaims.
     @JsonKey("sub") subject: Some[String],

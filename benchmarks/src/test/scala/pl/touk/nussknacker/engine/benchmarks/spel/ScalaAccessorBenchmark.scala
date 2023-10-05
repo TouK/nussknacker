@@ -19,4 +19,4 @@ class ScalaAccessorBenchmark {
 
 }
 
-case class SampleCaseClass(value: Int)
+final case class SampleCaseClass(value: Int)

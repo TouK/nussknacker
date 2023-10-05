@@ -174,7 +174,10 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
       processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef]
     val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(
-      List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match..."))
+      List(
+        MandatoryParameterValidator,
+        LiteralRegExpParameterValidator(".*", "has to match...", "really has to match...")
+      )
     )
   }
 

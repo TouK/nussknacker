@@ -94,7 +94,7 @@ object ProcessStateDefinitionService {
 
 }
 
-@JsonCodec case class UIStateDefinition(
+@JsonCodec final case class UIStateDefinition(
     name: StatusName,
     displayableName: String,
     icon: URI,

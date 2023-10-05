@@ -11,7 +11,7 @@ object FrontendStrategySettings {
 
   case object Browser extends FrontendStrategySettings
 
-  case class OAuth2(
+  final case class OAuth2(
       authorizeUrl: Option[String],
       jwtAuthServerPublicKey: Option[String],
       jwtIdTokenNonceVerificationRequired: Boolean,
@@ -19,5 +19,5 @@ object FrontendStrategySettings {
       anonymousAccessAllowed: Boolean
   ) extends FrontendStrategySettings
 
-  case class Remote(moduleUrl: String) extends FrontendStrategySettings
+  final case class Remote(moduleUrl: String) extends FrontendStrategySettings
 }

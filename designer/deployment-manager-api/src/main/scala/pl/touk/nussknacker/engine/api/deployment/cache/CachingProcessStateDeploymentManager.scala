@@ -144,4 +144,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
 
 }
 
-case class ScenarioStateCachingConfig(enabled: Boolean = true, cacheTTL: Option[FiniteDuration] = Some(10 seconds))
+final case class ScenarioStateCachingConfig(
+    enabled: Boolean = true,
+    cacheTTL: Option[FiniteDuration] = Some(10 seconds)
+)

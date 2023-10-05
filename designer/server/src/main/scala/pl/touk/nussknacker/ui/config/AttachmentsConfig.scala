@@ -14,4 +14,4 @@ object AttachmentsConfig {
 
 }
 
-case class AttachmentsConfig(maxSizeInBytes: Long)
+final case class AttachmentsConfig(maxSizeInBytes: Long)

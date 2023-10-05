@@ -23,7 +23,7 @@ object ProcessToolbarsConfig {
 
 }
 
-case class ProcessToolbarsConfig(
+final case class ProcessToolbarsConfig(
     uuid: Option[UUID],
     topLeft: List[ToolbarPanelConfig],
     bottomLeft: List[ToolbarPanelConfig],

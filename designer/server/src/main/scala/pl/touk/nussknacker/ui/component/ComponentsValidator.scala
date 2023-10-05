@@ -113,7 +113,7 @@ private object WrongConfigurationAttribute extends Enumeration {
   val ComponentGroupNameAttribute = Value("componentGroupName")
 }
 
-private case class ComponentConfigurationException(
+private final case class ComponentConfigurationException(
     message: String,
     wrongConfigurations: NonEmptyList[ComponentWrongConfiguration[_]]
 ) extends RuntimeException(s"$message Wrong configurations: ${wrongConfigurations.groupBy(_.id.value)}.")

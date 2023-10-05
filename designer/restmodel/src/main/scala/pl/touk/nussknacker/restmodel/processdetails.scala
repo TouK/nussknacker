@@ -43,7 +43,7 @@ object processdetails {
 
   }
 
-  @JsonCodec case class BasicProcess(
+  @JsonCodec final case class BasicProcess(
       id: String,
       name: ProcessName,
       processId: ApiProcessId,
@@ -72,7 +72,7 @@ object processdetails {
     implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder
   }
 
-  case class BaseProcessDetails[ProcessShape](
+  final case class BaseProcessDetails[ProcessShape](
       id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
       name: String,
       processId: ApiProcessId, // TODO: Remove it when we will support Long / ProcessId
@@ -137,7 +137,7 @@ object processdetails {
 
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
-  @JsonCodec case class ProcessVersion(
+  @JsonCodec final case class ProcessVersion(
       processVersionId: VersionId,
       createDate: Instant,
       user: String,

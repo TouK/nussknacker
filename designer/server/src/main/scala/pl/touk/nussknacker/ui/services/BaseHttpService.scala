@@ -6,7 +6,6 @@ import pl.touk.nussknacker.ui.api.SecurityError.{AuthenticationError, Authorizat
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
-import sttp.tapir.AnyEndpoint
 import sttp.tapir.server.ServerEndpoint
 
 import java.util.concurrent.atomic.AtomicReference
@@ -35,8 +34,6 @@ abstract class BaseHttpService(
     if (when) expose(serverEndpoint)
   }
 
-  def allEndpointDefinitions: List[AnyEndpoint] = serverEndpoints.map(_.endpoint)
-
   def serverEndpoints: List[NoRequirementServerEndpoint] = allServerEndpoints.get()
 
   protected def authorizeAdminUser[BUSINESS_ERROR](
@@ -57,7 +54,7 @@ abstract class BaseHttpService(
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
-          Right(
+          success(
             LoggedUser(
               authenticatedUser = user,
               rules = AuthenticationConfiguration.getRules(config),

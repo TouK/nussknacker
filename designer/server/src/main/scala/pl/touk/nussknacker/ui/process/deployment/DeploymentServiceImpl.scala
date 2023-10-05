@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, 
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
@@ -55,7 +55,7 @@ class DeploymentServiceImpl(
   )(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
     for {
       deployedProcesses <- {
-        implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser
+        implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
           processRepository.fetchProcessesDetails[CanonicalProcess](
             FetchProcessesDetailsQuery(
@@ -446,8 +446,8 @@ class DeploymentServiceImpl(
   def markProcessFinishedIfLastActionDeploy(expectedProcessingType: ProcessingType, processName: ProcessName)(
       implicit ec: ExecutionContext
   ): Future[Option[ProcessAction]] = {
-    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
-    implicit val listenerUser: ListenerUser         = ListenerApiUser(user)
+    implicit val user: AdminUser            = NussknackerInternalUser.instance
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     logger.debug(s"About to mark process ${processName.value} as finished if last action was DEPLOY")
     dbioRunner.run(for {
       processIdOpt      <- processRepository.fetchProcessId(processName)
@@ -514,7 +514,7 @@ class DeploymentServiceImpl(
   private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processId: ProcessId)(
       implicit ec: ExecutionContext
   ): DB[Unit] = {
-    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
+    implicit val user: AdminUser = NussknackerInternalUser.instance
     processRepository.fetchProcessingType(processId).map { processingType =>
       validateExpectedProcessingType(expectedProcessingType, processingType)
     }

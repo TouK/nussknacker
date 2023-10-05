@@ -5,7 +5,7 @@ import java.net.URI
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.config.AnalyticsConfig.AnalyticsEngine.AnalyticsEngine
 
-case class AnalyticsConfig(engine: AnalyticsEngine, url: URI, siteId: String)
+final case class AnalyticsConfig(engine: AnalyticsEngine, url: URI, siteId: String)
 
 object AnalyticsConfig {
 
