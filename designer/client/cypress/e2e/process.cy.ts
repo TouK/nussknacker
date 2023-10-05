@@ -151,9 +151,13 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
-        it("should have counts button and modal", () => {
+        it("should have equal snapshot", () => {
             cy.viewport("macbook-15");
             cy.deployScenario(undefined, true);
+        });
+
+        it("should have counts button and modal", () => {
+            cy.viewport("macbook-15");
 
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
