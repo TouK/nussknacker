@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   FixedExpressionValue,
   FixedValuesValidator,
+  LiteralRegExpParameterValidator,
   MandatoryParameterValidator,
-  Parameter,
-  RegExpParameterValidator
+  Parameter
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
