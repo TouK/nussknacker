@@ -3,6 +3,7 @@ import { variables } from "../../../../stylesheets/variables";
 
 export const NodeLabelStyled = styled("div")`
     color: ${variables.modalLabelTextColor};
+    font-family: "Open Sans";
     flex-basis: 20%;
     max-width: 20em;
     display: inline-block;

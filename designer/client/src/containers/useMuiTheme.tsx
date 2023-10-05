@@ -55,13 +55,6 @@ export function useMuiTheme(): MuiTheme & Theme {
                             },
                         },
                         components: {
-                            MuiSwitch: {
-                                styleOverrides: {
-                                    input: {
-                                        margin: 0,
-                                    },
-                                },
-                            },
                             MuiAlert: {
                                 styleOverrides: {
                                     root: {

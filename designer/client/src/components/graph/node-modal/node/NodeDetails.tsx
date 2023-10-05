@@ -22,6 +22,9 @@ import { applyIdFromFakeName } from "../IdField";
 import { mapValues } from "lodash";
 import { ensureArray } from "../../../../common/arrayUtils";
 import { useNavigate } from "react-router-dom";
+import { ThemeProvider } from "@mui/material/styles";
+import { useMuiTheme } from "../../../../containers/useMuiTheme";
+import CssBaseline from "@mui/material/CssBaseline";
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
@@ -64,6 +67,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
 
     const { t } = useTranslation();
     const { theme } = useNkTheme();
+    const muiTheme = useMuiTheme();
 
     const applyButtonData: WindowButtonProps | null = useMemo(
         () =>
@@ -134,7 +138,10 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             }}
         >
             <ErrorBoundary>
-                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                <ThemeProvider theme={muiTheme}>
+                    <CssBaseline />
+                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
+                </ThemeProvider>
             </ErrorBoundary>
         </WindowContent>
     );

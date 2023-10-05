@@ -16,15 +16,6 @@ interface RowSelectProps {
     value: Option;
 }
 
-//to prevent dragging on specified elements, see https://stackoverflow.com/a/51911875
-const preventDragProps = {
-    draggable: true,
-    onDragStart: (event: React.DragEvent) => {
-        event.preventDefault();
-        event.stopPropagation();
-    },
-};
-
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
 
