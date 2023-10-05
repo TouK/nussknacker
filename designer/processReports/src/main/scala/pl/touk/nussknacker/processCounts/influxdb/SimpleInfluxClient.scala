@@ -22,13 +22,17 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBackend[F, Any]) {
   implicit val monadError: MonadError[F] = backend.responseMonad
 
-  def query(query: String): F[List[InfluxSeries]] = {
-    def addAuth[T, S](req: Request[T, S]): RequestT[Identity, T, S] = (for {
+  private implicit class RequestExtensions[U[_], T, -R](val request: RequestT[U, T, R]) {
+    def withAuthentication(): RequestT[U, T, R] = (for {
       user <- config.user
       password <- config.password
-    } yield req.auth.basic(user, password)).getOrElse(req)
+    } yield request.auth.basic(user, password)).getOrElse(request)
+  }
 
-    addAuth(basicRequest.get(config.uri.addParams("db" -> config.database, "q" -> query)))
+  def query(query: String): F[List[InfluxSeries]] = {
+    basicRequest.get(config.uri.addParams("db" -> config.database, "q" -> query))
+      .withAuthentication()
+      .headers(config.additionalHeaders)
       .response(asJson[InfluxResponse])
       .send(backend)
       .flatMap(SttpJson.failureToError[F, InfluxResponse])
@@ -39,8 +43,6 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
       //we assume only one query
       .map(_.results.head.series)
   }
-
-  def close(): F[Unit] = backend.close()
 
 }
 

@@ -2,7 +2,8 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
-import { ErrorTemplate } from "./ErrorTemplate";
+import { SyledBlueButton } from "./StyledBlueButton";
+import { RootErrorPage } from "../../components/common/RootErrorBoundary";
 
 interface ErrorProps {
     message: string;
@@ -21,7 +22,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
                         "auth.StrategyInitializer.errors.401.description",
                         "It seems you are not authenticated... Why not try to authenticate again?",
                     ),
-                    button: t("auth.StrategyInitializer.errors.401.buttonLabel", "Try authenticate again"),
+                    button: t("auth.StrategyInitializer.errors.401.buttonLabel", "Authenticate again"),
                 };
             case AuthErrorCodes.HTTP_TIMEOUT_CODE:
                 return {
@@ -30,7 +31,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
                         "auth.StrategyInitializer.errors.504.description",
                         "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
                     ),
-                    button: t("InitializeError.buttonLabel", "Try to refresh page"),
+                    button: t("InitializeError.buttonLabel", "Refresh the page"),
                 };
             case AuthErrorCodes.HTTP_APPLICATION_CODE:
                 return {
@@ -53,14 +54,9 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
     }, [error, t]);
 
     const { description, button, message } = errorProps;
-
     return (
-        <ErrorTemplate message={message} description={description}>
-            {button && (
-                <button className="big-blue-button" style={{ border: "none" }} onClick={() => retry()}>
-                    {button}
-                </button>
-            )}
-        </ErrorTemplate>
+        <RootErrorPage message={message} description={description}>
+            {button && <SyledBlueButton onClick={() => retry()}>{button}</SyledBlueButton>}
+        </RootErrorPage>
     );
 }

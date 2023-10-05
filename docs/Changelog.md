@@ -1,5 +1,9 @@
 # Changelog
 
+1.13.0 (Not released yet)
+-------------------------
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.1
+
 1.12.0 (Not released yet)
 -------------------------
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
@@ -20,7 +24,7 @@
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
 * [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.1
+* [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
 
 1.11.3 (11 Sep 2023)
 -------------------------

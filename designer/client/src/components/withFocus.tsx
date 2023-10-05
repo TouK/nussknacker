@@ -9,8 +9,11 @@ import React, {
     TextareaHTMLAttributes,
 } from "react";
 import { useNkTheme } from "../containers/theme";
+import { styled } from "@mui/material";
+import { NodeInputCss } from "./NodeInput";
 
 export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+
 export const InputWithFocus = forwardRef(function InputWithFocus(
     { className, ...props }: InputWithFocusProps,
     ref: React.Ref<HTMLInputElement>,
@@ -18,6 +21,10 @@ export const InputWithFocus = forwardRef(function InputWithFocus(
     const { withFocus } = useNkTheme();
     return <input ref={ref} {...props} className={cx(withFocus, className)} />;
 });
+
+export const NodeInput = styled(InputWithFocus)`
+    ${NodeInputCss}
+`;
 
 export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 
@@ -50,6 +57,10 @@ export function SelectWithFocus({
     const { withFocus } = useNkTheme();
     return <select {...props} className={cx(withFocus, className)} />;
 }
+
+export const SelectNodeWithFocus = styled(SelectWithFocus)`
+    ${NodeInputCss}
+`;
 
 export const FocusOutline = forwardRef(function FocusOutline(
     { className, ...props }: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>,

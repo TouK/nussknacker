@@ -5,7 +5,7 @@ import { addAttachment } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessId, getProcessVersionId } from "../../reducers/selectors/graph";
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
-import { InputWithFocus } from "../withFocus";
+import { NodeInput } from "../withFocus";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentButtonText, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
 
 export function AddAttachment() {
@@ -32,7 +32,7 @@ export function AddAttachment() {
                                 <span>{t("attachments.buttonText", "drop or choose a file")}</span>
                             </AttachmentButtonText>
                         </AttachmentDropZone>
-                        <InputWithFocus {...getInputProps()} />
+                        <NodeInput {...getInputProps()} />
                     </AttachmentsContainer>
                 )}
             </Dropzone>

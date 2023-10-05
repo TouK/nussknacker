@@ -7,13 +7,13 @@ import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
 import { EditableEditor } from "./editors/EditableEditor";
 import { css, cx } from "@emotion/css";
 import { FieldsRow } from "./fragment-input-definition/FieldsRow";
-import { SelectWithFocus } from "../../withFocus";
 import NodeUtils from "../NodeUtils";
 import { uniq } from "lodash";
 import { ExpressionLang } from "./editors/expression/types";
 import { Validator } from "./editors/Validators";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
+import { SelectNodeWithFocus } from "../../../components/withFocus";
 
 interface Props {
     index: number;
@@ -130,13 +130,12 @@ export function EdgeFields(props: Props): JSX.Element {
                 </NodeValue>
             ) : null}
             <NodeValue className={css({ gridArea: !showType && "field" })}>
-                <SelectWithFocus
+                <SelectNodeWithFocus
                     title={
                         freeInputs.length
                             ? t("node.fields.edge.target", "Edge target node")
                             : t("node.fields.edge.target.empty", "No free target nodes")
                     }
-                    className="node-input"
                     value={edge.to}
                     onChange={(event) => setEdge((edge) => ({ ...edge, to: event.target.value }))}
                     disabled={readOnly || !freeInputs.length}
@@ -153,7 +152,7 @@ export function EdgeFields(props: Props): JSX.Element {
                             ))}
                         </>
                     )}
-                </SelectWithFocus>
+                </SelectNodeWithFocus>
             </NodeValue>
             {getValueEditor()}
         </FieldsRow>
