@@ -37,24 +37,13 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             currentOption: undefined,
         })),
     );
-
-    useEffect(() => {
-        setUpdatedFields(
-            fields.map((field, index) => ({
-                ...field,
-                settingsOpen: updatedFields[index]?.settingsOpen ?? false,
-                currentOption: updatedFields[index]?.currentOption ?? undefined,
-            })),
-        );
-    }, [fields]);
-
     const updatedCurrentField = (
         currentIndex: number,
         settingsOpen: boolean,
         selectedSettingOption: string,
         settingsOptionsForCurrentType: any,
     ) => {
-        const currentUpdateFields = updatedFields.map((field, index) => {
+        const currentUpdateFields = fields.map((field, index) => {
             if (index === currentIndex) {
                 return {
                     ...field,
@@ -65,7 +54,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             }
             return field;
         });
-        setUpdatedFields(currentUpdateFields);
+        // setUpdatedFields(currentUpdateFields);
     };
 
     const ItemEl = useCallback(
@@ -91,7 +80,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
 
     const items = useMemo(
         () =>
-            updatedFields.map((item, index, list) => {
+            fields.map((item, index, list) => {
                 const validators = [
                     mandatoryValueValidator,
                     uniqueListValueValidator(
@@ -102,7 +91,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
 
                 return { item, el: <ItemEl key={index} index={index} item={item} validators={validators} /> };
             }),
-        [Item, updatedFields],
+        [Item, fields],
     );
 
     return (
