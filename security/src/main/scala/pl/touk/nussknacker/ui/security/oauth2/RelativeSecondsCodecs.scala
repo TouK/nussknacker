@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.security.oauth2
 import io.circe._
 
 import java.time.Instant
-import scala.concurrent.duration.{Deadline, FiniteDuration, SECONDS}
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
-protected[oauth2] trait RelativeSecondsCodecs {
+protected[security] trait RelativeSecondsCodecs {
   import cats.syntax.either._
 
   implicit val decodeFiniteDuration: Decoder[FiniteDuration] = new Decoder[FiniteDuration] {
@@ -26,7 +26,7 @@ protected[oauth2] trait RelativeSecondsCodecs {
 
 }
 
-protected[oauth2] trait EpochSecondsCodecs {
+protected[security] trait EpochSecondsCodecs {
   implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
   implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
 }

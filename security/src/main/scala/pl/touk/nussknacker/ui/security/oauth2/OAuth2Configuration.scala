@@ -44,6 +44,13 @@ final case class OAuth2Configuration(
 
   override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
 
+  def getUserRoles(identity: String): Set[String] =
+    findUserById(identity)
+      .map(_.roles)
+      .getOrElse(Set.empty)
+
+  def findUserById(id: String): Option[ConfigUser] = users.find(_.identity == id)
+
   def authorizeUrl: Option[URI] = Option(
     Uri(authorizeUri)
       .addParam("client_id", clientId)

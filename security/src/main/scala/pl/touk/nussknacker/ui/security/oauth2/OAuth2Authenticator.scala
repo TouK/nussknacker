@@ -31,7 +31,7 @@ class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])(
   }
 
   private[oauth2] def authenticate(token: String): Future[Option[AuthenticatedUser]] =
-    service.checkAuthorizationAndObtainUserinfo(token).map(prf => Option(prf._1)).recover {
+    service.checkAuthorizationAndAuthenticateUser(token).map(prf => Option(prf._1)).recover {
       case OAuth2ErrorHandler(ex) =>
         logger.debug("Access token rejected:", ex)
         Option.empty // Expired or non-exists token - user not authenticated

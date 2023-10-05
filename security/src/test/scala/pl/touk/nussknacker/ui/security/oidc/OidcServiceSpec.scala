@@ -12,7 +12,6 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{
   OAuth2JwtDecodeRawError,
   OAuth2JwtKeyDetermineError
 }
-import pl.touk.nussknacker.ui.security.oauth2.OpenIdConnectUserInfo
 
 import java.net.URI
 
@@ -27,17 +26,15 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
         clientSecret = None,
       )
     )
-    validator.introspect[OpenIdConnectUserInfo]("") should matchPattern { case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
+    validator.introspect[OidcUserInfo]("") should matchPattern { case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
     }
-    validator.introspect[OpenIdConnectUserInfo]("..") should matchPattern {
-      case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
+    validator.introspect[OidcUserInfo]("..") should matchPattern { case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
     }
-    inside(validator.introspect[OpenIdConnectUserInfo]("foo.barbar.bazbaz")) {
-      case Invalid(err: OAuth2JwtDecodeRawError) =>
-        err.msg should not include "barbar"
-        err.msg should include("ba**ar")
-        err.msg should not include "bazbaz"
-        err.msg should include("ba**az")
+    inside(validator.introspect[OidcUserInfo]("foo.barbar.bazbaz")) { case Invalid(err: OAuth2JwtDecodeRawError) =>
+      err.msg should not include "barbar"
+      err.msg should include("ba**ar")
+      err.msg should not include "bazbaz"
+      err.msg should include("ba**az")
     }
   }
 
@@ -53,7 +50,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
     val claim = JwtClaim().about("Foo Bar") + ("email", "foo@bar.com")
     val tokenWithoutKey =
       JwtBase64.encodeString(JwtHeader().toJson) + "." + JwtBase64.encodeString(claim.toJson) + ".baz"
-    inside(validatorWithoutKey.introspect[OpenIdConnectUserInfo](tokenWithoutKey)) {
+    inside(validatorWithoutKey.introspect[OidcUserInfo](tokenWithoutKey)) {
       case Invalid(err: OAuth2JwtKeyDetermineError) =>
         err.msg should not include "Foo Bar"
         err.msg should not include "foo@bar.com"
@@ -62,7 +59,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
     val tokenWithKey = JwtBase64.encodeString(JwtHeader().withKeyId("foo").toJson) + "." + JwtBase64.encodeString(
       JwtClaim().toJson
     ) + ".baz"
-    validatorWithoutKey.introspect[OpenIdConnectUserInfo](tokenWithKey) should matchPattern {
+    validatorWithoutKey.introspect[OidcUserInfo](tokenWithKey) should matchPattern {
       case Invalid(OAuth2JwtKeyDetermineError(_, _)) =>
     }
 
@@ -75,7 +72,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
         jwksUri = Some(URI.create("/foo"))
       )
     )
-    validatorWithInvalidJwk.introspect[OpenIdConnectUserInfo](tokenWithKey) should matchPattern {
+    validatorWithInvalidJwk.introspect[OidcUserInfo](tokenWithKey) should matchPattern {
       case Invalid(OAuth2JwtKeyDetermineError(_, _)) =>
     }
   }
@@ -94,7 +91,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
     )
 
     val validToken = JwtCirce.encode(JwtClaim().about(name).to(audience), secretKey, JwtAlgorithm.HS256)
-    val result     = validator.introspect[OpenIdConnectUserInfo](validToken).toEither.rightValue
+    val result     = validator.introspect[OidcUserInfo](validToken).toEither.rightValue
     result.subject.value shouldEqual name
     result.audience.value.rightValue shouldEqual audience
 
@@ -103,7 +100,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
     }
 
     val invalidToken = JwtCirce.encode(JwtClaim().about(name).to(audience), "invalid", JwtAlgorithm.HS256)
-    inside(validator.introspect[OpenIdConnectUserInfo](invalidToken)) { case Invalid(err: OAuth2JwtDecodeClaimsError) =>
+    inside(validator.introspect[OidcUserInfo](invalidToken)) { case Invalid(err: OAuth2JwtDecodeClaimsError) =>
       err.msg should not include "Foo Bar"
     }
   }

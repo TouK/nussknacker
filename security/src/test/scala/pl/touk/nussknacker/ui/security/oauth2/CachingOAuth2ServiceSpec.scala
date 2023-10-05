@@ -6,6 +6,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
+import pl.touk.nussknacker.ui.security.oidc.{DefaultOidcAuthorizationData, OidcUserInfo}
 
 import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,20 +37,28 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
 
   private var checkRecordings = Map[String, Int]()
 
-  private val recordingJwtOauth2Service = new OAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] {
+  private val recordingJwtOauth2Service = new OAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData] {
 
-    override def obtainAuthorizationAndUserInfo(
+    override def obtainAuthorizationAndAuthenticateUser(
         authorizationCode: String,
         redirectUri: String
-    ): Future[(DefaultOidcAuthorizationData, OpenIdConnectUserInfo)] =
-      jwtOAuth2Service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+    ): Future[(DefaultOidcAuthorizationData, OidcUserInfo)] =
+      jwtOAuth2Service.obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri)
 
-    override def checkAuthorizationAndObtainUserinfo(
+    override def checkAuthorizationAndAuthenticateUser(
         accessToken: String
-    ): Future[(OpenIdConnectUserInfo, Option[Instant])] = {
+    ): Future[(OidcUserInfo, Option[Instant])] = {
       checkRecordings = checkRecordings + (accessToken -> (checkRecordings.getOrElse(accessToken, 0) + 1))
-      jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(accessToken)
+      jwtOAuth2Service.checkAuthorizationAndAuthenticateUser(accessToken)
     }
+
+    override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = ???
+
+    override private[oauth2] def authenticateUser(
+        accessToken: String,
+        accessTokenData: IntrospectedAccessTokenData
+    ): Future[OidcUserInfo] =
+      ???
 
   }
 
@@ -60,15 +69,15 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
       JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
     checkRecordings.get(token) shouldBe None
 
-    cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
+    cachingOAuth2Service.checkAuthorizationAndAuthenticateUser(token).futureValue
     checkRecordings(token) shouldBe 1
 
     currentTime += 179.seconds
-    cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
+    cachingOAuth2Service.checkAuthorizationAndAuthenticateUser(token).futureValue
     checkRecordings(token) shouldBe 1
 
     currentTime += 2.seconds
-    cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
+    cachingOAuth2Service.checkAuthorizationAndAuthenticateUser(token).futureValue
     checkRecordings(token) shouldBe 2
   }
 

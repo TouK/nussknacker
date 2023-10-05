@@ -29,25 +29,26 @@ class CachingOAuth2Service[
     ticker = ticker
   )
 
-  def obtainAuthorizationAndUserInfo(
+  def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, UserInfoData)] = {
-    delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
-      authorizationsCache.put(authorization.accessToken) {
-        val expirationDuration = authorization.expirationPeriod.getOrElse(defaultExpirationDuration)
-        (userInfo, Instant.now() plusNanos expirationDuration.toNanos)
-      }
-      (authorization, userInfo)
+    delegate.obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri).map {
+      case (authorization, userInfo) =>
+        authorizationsCache.put(authorization.accessToken) {
+          val expirationDuration = authorization.expirationPeriod.getOrElse(defaultExpirationDuration)
+          (userInfo, Instant.now() plusNanos expirationDuration.toNanos)
+        }
+        (authorization, userInfo)
     }
   }
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
+  override def checkAuthorizationAndAuthenticateUser(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     val userInfo = authorizationsCache.get(accessToken) match {
       case Some(value) =>
         Future.successful(value)
       case None =>
-        delegate.checkAuthorizationAndObtainUserinfo(accessToken).map { case (userInfo, expirationInstant) =>
+        delegate.checkAuthorizationAndAuthenticateUser(accessToken).map { case (userInfo, expirationInstant) =>
           val expiration = expirationInstant.getOrElse(Instant.now() plusNanos defaultExpirationDuration.toNanos)
           val value      = (userInfo, expiration)
           Try(authorizationsCache.put(accessToken)(value)) match {
@@ -59,6 +60,15 @@ class CachingOAuth2Service[
     }
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
+
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+    delegate.introspectAccessToken(accessToken)
+
+  override private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[UserInfoData] =
+    delegate.authenticateUser(accessToken, accessTokenData)
 
   private lazy val defaultExpirationDuration = configuration.defaultTokenExpirationDuration
 }
