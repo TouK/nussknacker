@@ -9,7 +9,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+  CustomTransformerAdditionalData,
+  ModelDefinitionWithTypes
+}
 import pl.touk.nussknacker.engine.definition.ProcessObjectDefinitionExtractor
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
@@ -37,6 +40,20 @@ class FlinkProcessCompilerWithTestComponents(
       ProcessObjectDefinitionExtractor.service,
       componentsUiConfig
     )
+    val testCustomStreamTransformerDefs = ObjectWithMethodDef
+      .forMap(
+        testComponentsWithCategories[CustomStreamTransformer],
+        ProcessObjectDefinitionExtractor.customStreamTransformer,
+        componentsUiConfig
+      )
+      .map { case (name, el) =>
+        val customStreamTransformer = el.obj.asInstanceOf[CustomStreamTransformer]
+        val additionalData = CustomTransformerAdditionalData(
+          customStreamTransformer.canHaveManyInputs,
+          customStreamTransformer.canBeEnding
+        )
+        name -> (el, additionalData)
+      }
     val testSourceDefs = ObjectWithMethodDef.forMap(
       testComponentsWithCategories[SourceFactory],
       ProcessObjectDefinitionExtractor.source,
@@ -47,12 +64,18 @@ class FlinkProcessCompilerWithTestComponents(
       ProcessObjectDefinitionExtractor.sink,
       componentsUiConfig
     )
-    val servicesWithTests = definitions.services ++ testServicesDefs
-    val sourcesWithTests  = definitions.sourceFactories ++ testSourceDefs
-    val sinksWithTests    = definitions.sinkFactories ++ testSinkDefs
-    // TODO: Implement Test CustomStreamTransformers
-    val definitionsWithTestComponents =
-      definitions.copy(services = servicesWithTests, sinkFactories = sinksWithTests, sourceFactories = sourcesWithTests)
+    val servicesWithTests                = definitions.services ++ testServicesDefs
+    val sourcesWithTests                 = definitions.sourceFactories ++ testSourceDefs
+    val sinksWithTests                   = definitions.sinkFactories ++ testSinkDefs
+    val customStreamTransformerWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
+
+    val definitionsWithTestComponents = definitions.copy(
+      services = servicesWithTests,
+      sinkFactories = sinksWithTests,
+      sourceFactories = sourcesWithTests,
+      customStreamTransformers = customStreamTransformerWithTests
+    )
+
     (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)
   }
 
