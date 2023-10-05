@@ -7,7 +7,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
+import pl.touk.nussknacker.ui.security.oidc.{
+  DefaultOidcAuthorizationData,
+  OidcAuthenticationConfiguration,
+  OidcProfileAuthentication,
+  OidcService,
+  OidcUserInfo
+}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.{SttpBackend, _}
 
@@ -30,9 +36,9 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
-    val oidcService = new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
+    val oidcService = new UserMappingOAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData](
       new OidcService(config),
-      new OpenIdConnectProfileAuthentication(config.oAuth2Configuration)
+      new OidcProfileAuthentication(config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)

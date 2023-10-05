@@ -1,15 +1,15 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.oidc
 
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.ui.security.oauth2.AuthenticationStrategy.{getUserRoles, usernameBasedOnUsersConfiguration}
+import pl.touk.nussknacker.ui.security.oauth2._
 
 import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
-@ConfiguredJsonCodec(decodeOnly = true) final case class OpenIdConnectUserInfo(
+@ConfiguredJsonCodec(decodeOnly = true) final case class OidcUserInfo(
     // Although the `sub` field is optional claim for a JWT, it becomes mandatory in OIDC context,
     // hence Some[] overrides here Option[] from JwtStandardClaims.
     @JsonKey("sub") subject: Some[String],
@@ -48,12 +48,12 @@ import scala.concurrent.{ExecutionContext, Future}
   val notBefore: Option[Instant] = None
 }
 
-object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
+object OidcUserInfo extends EitherCodecs with EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
-  lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
+  lazy val decoder: Decoder[OidcUserInfo] = deriveConfiguredDecoder[OidcUserInfo]
 
-  def decoderWithCustomRolesClaim(rolesClaims: List[String]): Decoder[OpenIdConnectUserInfo] =
+  def decoderWithCustomRolesClaim(rolesClaims: List[String]): Decoder[OidcUserInfo] =
     decoder.prepare {
       _.withFocus(_.mapObject { jsonObject =>
         val allRoles = rolesClaims.flatMap { roleClaim =>
@@ -63,16 +63,16 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
       })
     }
 
-  def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OpenIdConnectUserInfo] =
+  def decoderWithCustomRolesClaim(rolesClaims: Option[List[String]]): Decoder[OidcUserInfo] =
     rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
-class OpenIdConnectProfileAuthentication(configuration: OAuth2Configuration)
-    extends AuthenticationStrategy[OpenIdConnectUserInfo] {
+class OidcProfileAuthentication(configuration: OAuth2Configuration)
+    extends AuthenticationStrategy[OidcUserInfo] {
 
   override def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
-      getProfile: => Future[OpenIdConnectUserInfo]
+      getProfile: => Future[OidcUserInfo]
   )(implicit ec: ExecutionContext): Future[AuthenticatedUser] = {
     authenticateUserBasedOnAccessTokenDataAndUsersConfigurationOnly(accessTokenData, configuration).getOrElse(
       authenticateUserBasedOnProfile(accessTokenData, getProfile, configuration)
@@ -93,15 +93,17 @@ class OpenIdConnectProfileAuthentication(configuration: OAuth2Configuration)
   }
 
   private def authenticateUserBasedOnProfile(
-      accessTokenData: IntrospectedAccessTokenData,
-      getProfile: => Future[OpenIdConnectUserInfo],
-      configuration: OAuth2Configuration
+                                              accessTokenData: IntrospectedAccessTokenData,
+                                              getProfile: => Future[OidcUserInfo],
+                                              configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext) = {
     getProfile.map { profile =>
       val userIdentity = profile.subject
         .orElse(accessTokenData.subject)
         .getOrElse(throw new IllegalStateException("Missing user identity"))
-      val userRoles = profile.roles ++ getUserRoles(userIdentity, configuration)
+      val userRoles = profile.roles ++ configuration.getUserRoles(userIdentity)
+
+      val usernameBasedOnUsersConfiguration = configuration.findUserById(userIdentity).flatMap(_.username)
 
       lazy val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
         case Some(UsernameClaim.PreferredUsername) =>
@@ -116,12 +118,11 @@ class OpenIdConnectProfileAuthentication(configuration: OAuth2Configuration)
           None
       }
 
-      val username =
-        usernameBasedOnUsersConfiguration(userIdentity, configuration)
-          .orElse(usernameBasedOnConfigurationClaim)
-          .orElse(profile.preferredUsername) // backward compatibility
-          .orElse(profile.nickname)          // backward compatibility
-          .getOrElse(userIdentity)
+      val username = usernameBasedOnUsersConfiguration
+        .orElse(usernameBasedOnConfigurationClaim)
+        .orElse(profile.preferredUsername) // backward compatibility
+        .orElse(profile.nickname)          // backward compatibility
+        .getOrElse(userIdentity)
 
       AuthenticatedUser(id = userIdentity, username = username, userRoles)
     }

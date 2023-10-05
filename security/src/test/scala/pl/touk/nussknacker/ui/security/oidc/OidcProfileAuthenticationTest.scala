@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -6,12 +6,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.ui.security.oauth2.{IntrospectedAccessTokenData, OAuth2Configuration, UsernameClaim}
 
 import java.util.UUID
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 
-class OpenIdConnectProfileTest
+class OidcProfileAuthenticationTest
     extends AnyFunSuite
     with Matchers
     with TableDrivenPropertyChecks
@@ -29,7 +30,7 @@ class OpenIdConnectProfileTest
     val nickname          = UUID.randomUUID().toString
     val name              = UUID.randomUUID().toString
 
-    val profile = OpenIdConnectUserInfo(
+    val profile = OidcUserInfo(
       subject = Some(identifier),
       name = Some(name),
       givenName = Some(givenName),
@@ -78,7 +79,7 @@ class OpenIdConnectProfileTest
 
     forAll(data) { (config, profile, expected) =>
       val result =
-        new OpenIdConnectProfileAuthentication(config)
+        new OidcProfileAuthentication(config)
           .authenticateUser(IntrospectedAccessTokenData.empty, Future.successful(profile))
           .futureValue
       result shouldBe expected

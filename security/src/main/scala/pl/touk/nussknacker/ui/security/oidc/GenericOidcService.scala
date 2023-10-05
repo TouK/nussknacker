@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client3.SttpBackend
 
 import scala.concurrent.duration.FiniteDuration
@@ -55,13 +56,13 @@ object GenericOidcService {
   def apply(configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       backend: SttpBackend[Future, Any]
-  ): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] =
+  ): GenericOidcService[OidcUserInfo, DefaultOidcAuthorizationData] =
     new GenericOidcService(
-      OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
+      OAuth2ClientApi[OidcUserInfo, DefaultOidcAuthorizationData](configuration),
       configuration
     ) {
 
-      override protected def toIntrospectedData(claims: OpenIdConnectUserInfo): IntrospectedAccessTokenData = {
+      override protected def toIntrospectedData(claims: OidcUserInfo): IntrospectedAccessTokenData = {
         super.toIntrospectedData(claims).copy(roles = claims.roles)
       }
 

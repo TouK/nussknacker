@@ -4,13 +4,7 @@ import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import io.circe.Decoder
 import pdi.jwt.JwtAlgorithm
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
-import pl.touk.nussknacker.ui.security.oauth2.{
-  DefaultOidcAuthorizationData,
-  GenericOidcService,
-  IntrospectedAccessTokenData,
-  OAuth2ClientApi,
-  OpenIdConnectUserInfo
-}
+import pl.touk.nussknacker.ui.security.oauth2.{IntrospectedAccessTokenData, OAuth2ClientApi}
 import pl.touk.nussknacker.ui.security.oidc.OidcService.createJwtValidator
 import sttp.client3.SttpBackend
 
@@ -21,17 +15,17 @@ import scala.concurrent.{ExecutionContext, Future}
 class OidcService(configuration: OidcAuthenticationConfiguration)(
     implicit ec: ExecutionContext,
     sttpBackend: SttpBackend[Future, Any]
-) extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
-      OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(
-        OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims),
+) extends GenericOidcService[OidcUserInfo, DefaultOidcAuthorizationData](
+      OAuth2ClientApi[OidcUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(
+        OidcUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims),
         implicitly[Decoder[DefaultOidcAuthorizationData]],
         ec,
         sttpBackend
       ),
       configuration.oAuth2Configuration
-    )(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), ec) {
+    )(OidcUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), ec) {
 
-  override protected def toIntrospectedData(claims: OpenIdConnectUserInfo): IntrospectedAccessTokenData = {
+  override protected def toIntrospectedData(claims: OidcUserInfo): IntrospectedAccessTokenData = {
     super.toIntrospectedData(claims).copy(roles = claims.roles)
   }
 
