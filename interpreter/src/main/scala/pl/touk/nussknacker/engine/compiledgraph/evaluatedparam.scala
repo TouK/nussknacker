@@ -9,14 +9,27 @@ object evaluatedparam {
   case class TypedParameter(name: String, typedValue: TypedValue)
 
   object Parameter {
+
     def apply(typedExpression: TypedExpression, parameterDefinition: definition.Parameter): Parameter = {
-      Parameter(parameterDefinition.name, typedExpression.expression, typedExpression.returnType,
-        parameterDefinition.scalaOptionParameter, parameterDefinition.javaOptionalParameter, typedExpression.typingInfo)
+      Parameter(
+        parameterDefinition.name,
+        typedExpression.expression,
+        typedExpression.returnType,
+        parameterDefinition.scalaOptionParameter,
+        parameterDefinition.javaOptionalParameter,
+        typedExpression.typingInfo
+      )
     }
+
   }
 
-  case class Parameter(name: String, expression: Expression, returnType: TypingResult,
-                       shouldBeWrappedWithScalaOption: Boolean, shouldBeWrappedWithJavaOptional: Boolean,
-                       typingInfo: ExpressionTypingInfo)
+  case class Parameter(
+      name: String,
+      expression: Expression,
+      returnType: TypingResult,
+      shouldBeWrappedWithScalaOption: Boolean,
+      shouldBeWrappedWithJavaOptional: Boolean,
+      typingInfo: ExpressionTypingInfo
+  )
 
 }

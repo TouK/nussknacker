@@ -14,8 +14,8 @@ import scala.collection.mutable
 
 object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring {
 
-  //TODO: this should be somewhere in utils??
-  private val primitiveTypes : List[Class[_]] = List(
+  // TODO: this should be somewhere in utils??
+  private val primitiveTypes: List[Class[_]] = List(
     java.lang.Boolean.TYPE,
     java.lang.Integer.TYPE,
     java.lang.Long.TYPE,
@@ -27,8 +27,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
   )
 
   // We have some types that can't be discovered based on model but can by provided using e.g. literals
-  //TODO: what else should be here?
-  //TODO: Here, this static list of mandatory classes, should be replaced by mechanizm that allows
+  // TODO: what else should be here?
+  // TODO: Here, this static list of mandatory classes, should be replaced by mechanizm that allows
   // to plug in mandatory classes from other modules, e.g. BaseKafkaInputMetaVariables from kafka-util
   private val mandatoryClasses = (Set(
     classOf[java.util.List[_]],
@@ -42,8 +42,9 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     // Literals for primitive types are wrapped to boxed representations
     primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))
 
-  def clazzAndItsChildrenDefinition(clazzes: Iterable[TypingResult])
-                                   (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+  def clazzAndItsChildrenDefinition(
+      clazzes: Iterable[TypingResult]
+  )(implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     // It's a deep first traversal - to avoid SOF we use mutable collection. It won't be easy to implement it using immutable collections
     val collectedSoFar = mutable.HashSet.empty[TypingResult]
     (clazzes.flatMap(typesFromTypingResult) ++ mandatoryClasses).flatMap { cl =>
@@ -68,12 +69,14 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
       Set.empty
   }
 
-  private def typesFromTypedClass(typedClass: TypedClass): Set[TypingResult]
-    = typedClass.params.flatMap(typesFromTypingResult).toSet + Typed(typedClass.klass)
+  private def typesFromTypedClass(typedClass: TypedClass): Set[TypingResult] =
+    typedClass.params.flatMap(typesFromTypingResult).toSet + Typed(typedClass.klass)
 
-  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(typingResult: TypingResult)
-                                                              (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                                              (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+  private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(
+      typingResult: TypingResult
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
+      implicit settings: ClassExtractionSettings
+  ): Set[ClazzDefinition] = {
     if (collectedSoFar.contains(typingResult)) {
       Set.empty
     } else {
@@ -82,11 +85,13 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     }
   }
 
-  private def clazzAndItsChildrenDefinition(typingResult: TypingResult)
-                                           (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                           (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+  private def clazzAndItsChildrenDefinition(
+      typingResult: TypingResult
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
+      implicit settings: ClassExtractionSettings
+  ): Set[ClazzDefinition] = {
     typingResult match {
-      case e:TypedClass =>
+      case e: TypedClass =>
         val definitionsForClass = if (settings.isHidden(e.klass)) {
           Set.empty
         } else {
@@ -95,35 +100,43 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
         }
         definitionsForClass ++ definitionsFromGenericParameters(e)(collectedSoFar, path)
       case Unknown => Set(clazzDefinitionWithLogging(classOf[Any])(path))
-      case _ => Set.empty[ClazzDefinition]
+      case _       => Set.empty[ClazzDefinition]
     }
   }
 
-  private def definitionsFromGenericParameters(typedClass: TypedClass)
-                                              (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                              (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+  private def definitionsFromGenericParameters(
+      typedClass: TypedClass
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
+      implicit settings: ClassExtractionSettings
+  ): Set[ClazzDefinition] = {
     typedClass.params.zipWithIndex.flatMap {
-      case (k:TypedClass, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
+      case (k: TypedClass, idx) =>
+        clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
       case _ => Set.empty[ClazzDefinition]
     }.toSet
   }
 
-  private def definitionsFromMethods(classDefinition: ClazzDefinition)
-                                    (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
+  private def definitionsFromMethods(
+      classDefinition: ClazzDefinition
+  )(collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)(
+      implicit settings: ClassExtractionSettings
+  ): Set[ClazzDefinition] = {
     def extractFromMethods(methods: Map[String, List[MethodInfo]]) =
-      methods.values.flatten.flatMap(_.signatures.toList.map(_.result)).flatMap { kl =>
-        clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
-        // TODO verify if parameters are need and if they are not, remove this
-        //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
-      }.toSet
+      methods.values.flatten
+        .flatMap(_.signatures.toList.map(_.result))
+        .flatMap { kl =>
+          clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+          // TODO verify if parameters are need and if they are not, remove this
+          //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
+        }
+        .toSet
 
     extractFromMethods(classDefinition.methods) ++ extractFromMethods(classDefinition.staticMethods)
   }
 
-  private def clazzDefinitionWithLogging(clazz: Class[_])
-                                        (path: DiscoveryPath)
-                                        (implicit settings: ClassExtractionSettings) = {
+  private def clazzDefinitionWithLogging(
+      clazz: Class[_]
+  )(path: DiscoveryPath)(implicit settings: ClassExtractionSettings) = {
     def message = if (logger.underlying.isTraceEnabled) path.print else clazz.getName
     measure(message) {
       clazzDefinition(clazz)
@@ -132,18 +145,22 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   private case class DiscoveryPath(path: List[DiscoverySegment]) {
     def pushSegment(seg: DiscoverySegment): DiscoveryPath = DiscoveryPath(seg :: path)
+
     def print: String = {
       path.reverse.map(_.print).mkString(" > ")
     }
+
   }
 
   private sealed trait DiscoverySegment {
     def print: String
+
     protected def classNameWithStrippedPackages(cl: TypingResult): String = cl match {
       case TypedClass(klass, _) => klass.getCanonicalName.replaceAll("(.).*?\\.", "$1.")
-      //In fact, should not happen except Unknown...
+      // In fact, should not happen except Unknown...
       case other => other.display
     }
+
   }
 
   private case class Clazz(cl: TypingResult) extends DiscoverySegment {

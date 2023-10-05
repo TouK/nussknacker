@@ -32,7 +32,6 @@ object SingleScheduleProperty {
 
 @JsonCodec case class MultipleScheduleProperty(schedules: Map[String, SingleScheduleProperty]) extends ScheduleProperty
 
-
 @JsonCodec case class CronScheduleProperty(labelOrCronExpr: String) extends SingleScheduleProperty {
   import cats.implicits._
   import pl.touk.nussknacker.engine.management.periodic.CronScheduleProperty._
@@ -59,7 +58,7 @@ object SingleScheduleProperty {
           .map(expr => determineNextDate(expr, now))
           .minBy {
             case Some(x) => x.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli
-            case None => Long.MaxValue
+            case None    => Long.MaxValue
           }
       }
   }
@@ -67,12 +66,13 @@ object SingleScheduleProperty {
   private def determineNextDate(cron: Cron, zonedDateTime: ZonedDateTime): Option[LocalDateTime] = {
     import scala.compat.java8.OptionConverters._
     val compiledCron = ExecutionTime.forCron(cron)
-    val nextTime = compiledCron.nextExecution(zonedDateTime)
+    val nextTime     = compiledCron.nextExecution(zonedDateTime)
     nextTime.asScala.map(_.toLocalDateTime)
   }
+
 }
 
 object CronScheduleProperty {
-  private lazy val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
+  private lazy val parser                 = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
   final val CronExpressionSeparator: Char = '|'
 }

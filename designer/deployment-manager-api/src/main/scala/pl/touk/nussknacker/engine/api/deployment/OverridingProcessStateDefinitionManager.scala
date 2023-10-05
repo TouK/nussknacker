@@ -19,13 +19,14 @@ import java.net.URI
   *
   * @param customStateDefinitions Set of definitions that extends or overwrites delegate definitions
   */
-class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager,
-                                              statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
-                                              statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
-                                              statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
-                                              statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
-                                              customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty)
-  extends ProcessStateDefinitionManager {
+class OverridingProcessStateDefinitionManager(
+    delegate: ProcessStateDefinitionManager,
+    statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
+    statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
+    statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
+    statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
+    customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
+) extends ProcessStateDefinitionManager {
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
@@ -43,7 +44,8 @@ class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionMa
     delegate.stateDefinitions ++ customStateDefinitions
 
   private def stateDefinitionsPF[T](map: StateDefinitionDetails => T): PartialFunction[StateStatus, T] = {
-    case stateStatus if customStateDefinitions.contains(stateStatus.name) => map(customStateDefinitions(stateStatus.name))
+    case stateStatus if customStateDefinitions.contains(stateStatus.name) =>
+      map(customStateDefinitions(stateStatus.name))
   }
 
 }

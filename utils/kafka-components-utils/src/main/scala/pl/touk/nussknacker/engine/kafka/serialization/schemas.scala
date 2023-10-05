@@ -18,49 +18,67 @@ object schemas {
 
   private def safeBytes(value: String): Array[Byte] = Option(value).map(_.getBytes(StandardCharsets.UTF_8)).orNull
 
-  //trait mostly for making java version more usable (lambda <-> function serializability problems,
+  // trait mostly for making java version more usable (lambda <-> function serializability problems,
   // the fact we cross compile to 2.11 only makes it worse...)
   trait ToStringSerializer[T] extends Serializable {
     def serialize(value: T): String
   }
 
   object ToStringSerializer {
+
     def apply[T](fun: T => String): ToStringSerializer[T] = new ToStringSerializer[T] {
       override def serialize(value: T): String = fun(value)
     }
+
   }
 
   trait ToHeadersSerializer[T] extends Serializable {
     def serialize(value: T): Headers
   }
+
   object ToHeaderMapSerializer {
+
     def apply[T](fun: T => Headers): ToHeadersSerializer[T] = new ToHeadersSerializer[T] {
       override def serialize(value: T): Headers = fun(value)
     }
+
   }
 
-  class BaseSimpleSerializationSchema[T](topic: String,
-                                         valueSerializer: ToStringSerializer[T],
-                                         keySerializer: ToStringSerializer[T],
-                                         headersSerializer: ToHeadersSerializer[T])
-    extends KafkaSerializationSchema[T] {
+  class BaseSimpleSerializationSchema[T](
+      topic: String,
+      valueSerializer: ToStringSerializer[T],
+      keySerializer: ToStringSerializer[T],
+      headersSerializer: ToHeadersSerializer[T]
+  ) extends KafkaSerializationSchema[T] {
 
-    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null, headersSerializer: T => Headers = (_: T) => KafkaRecordUtils.emptyHeaders) = {
-      this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headersSerializer))
+    def this(
+        topic: String,
+        valueSerializer: T => String,
+        keySerializer: T => String = (_: T) => null,
+        headersSerializer: T => Headers = (_: T) => KafkaRecordUtils.emptyHeaders
+    ) = {
+      this(
+        topic,
+        ToStringSerializer(valueSerializer),
+        ToStringSerializer(keySerializer),
+        ToHeaderMapSerializer(headersSerializer)
+      )
     }
 
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-      val value = valueSerializer.serialize(element)
-      val key = Option(keySerializer).map(_.serialize(element)).orNull
+      val value   = valueSerializer.serialize(element)
+      val key     = Option(keySerializer).map(_.serialize(element)).orNull
       val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(KafkaRecordUtils.emptyHeaders)
       KafkaProducerHelper.createRecord(topic, safeBytes(key), safeBytes(value), timestamp, headers)
     }
+
   }
 
-  class SimpleSerializationSchema[T](topic: String,
-                                     valueSerializer: ToStringSerializer[T],
-                                     keySerializer: ToStringSerializer[T])
-    extends BaseSimpleSerializationSchema[T](topic, valueSerializer, keySerializer, null) {
+  class SimpleSerializationSchema[T](
+      topic: String,
+      valueSerializer: ToStringSerializer[T],
+      keySerializer: ToStringSerializer[T]
+  ) extends BaseSimpleSerializationSchema[T](topic, valueSerializer, keySerializer, null) {
 
     def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null) = {
       this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer))
@@ -69,28 +87,32 @@ object schemas {
   }
 
   class JsonSerializationSchema[T: Encoder](topic: String, keySerializer: T => String = (_: T) => null)
-    extends SimpleSerializationSchema[T](topic, ToStringSerializer[T](v => implicitly[Encoder[T]].apply(v).noSpaces), ToStringSerializer[T](keySerializer))
+      extends SimpleSerializationSchema[T](
+        topic,
+        ToStringSerializer[T](v => implicitly[Encoder[T]].apply(v).noSpaces),
+        ToStringSerializer[T](keySerializer)
+      )
 
   // deserialization
 
   import scala.jdk.CollectionConverters._
 
-  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
+  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] =
+    BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
 
   private implicit val mapDecoder: Decoder[java.util.Map[_, _]] = Decoder[Json].map(deserializeToMap)
 
   def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[String, java.util.Map[_, _]]()
 
-  //It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
+  // It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
   def deserializeToTypedMap(message: Array[Byte]): TypedMap = TypedMap(deserializeToMap(message).asScala.toMap)
 
   def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] = deserializeToMap(toJson(message))
 
-  //FIXME: handle numeric conversion and validation here??
-  //how should we treat json that is non-object?
+  // FIXME: handle numeric conversion and validation here??
+  // how should we treat json that is non-object?
   private def deserializeToMap(json: Json): java.util.Map[String, _] =
     json.asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
-
 
   def toJson(jsonBytes: Array[Byte]): Json = {
     val value = new String(jsonBytes, StandardCharsets.UTF_8)
@@ -100,7 +122,7 @@ object schemas {
   private def jsonToMap(jo: Json): Any = jo.fold(
     jsonNull = null,
     jsonBoolean = identity,
-    //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
+    // TODO: how to handle fractions here? using BigDecimal is not always good way to go...
     jsonNumber = number => {
       val d = number.toDouble
       if (d.isWhole) d.toLong else d

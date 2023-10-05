@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 
 case class TestComponentsHolder(runId: TestRunId) extends Serializable {
 
-  def components[T <: Component : ClassTag]: List[ComponentDefinition] = TestComponentsHolder.componentsForId[T](runId)
+  def components[T <: Component: ClassTag]: List[ComponentDefinition] = TestComponentsHolder.componentsForId[T](runId)
 
   def clean(): Unit = TestComponentsHolder.clean(runId)
 }
@@ -20,7 +20,7 @@ object TestComponentsHolder {
 
   private var components = Map[TestRunId, List[ComponentDefinition]]()
 
-  def componentsForId[T <: Component : ClassTag](id: TestRunId): List[ComponentDefinition] = components(id).collect {
+  def componentsForId[T <: Component: ClassTag](id: TestRunId): List[ComponentDefinition] = components(id).collect {
     case ComponentDefinition(name, component: T, _, _) => ComponentDefinition(name, component)
   }
 

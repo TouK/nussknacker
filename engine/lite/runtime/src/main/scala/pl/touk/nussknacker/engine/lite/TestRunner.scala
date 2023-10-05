@@ -22,41 +22,57 @@ import scala.concurrent.{Await, Future}
 import scala.language.higherKinds
 
 trait TestRunner {
-  def runTest[T](modelData: ModelData,
-                 scenarioTestData: ScenarioTestData,
-                 process: CanonicalProcess,
-                 variableEncoder: Any => T): TestResults[T]
+
+  def runTest[T](
+      modelData: ModelData,
+      scenarioTestData: ScenarioTestData,
+      process: CanonicalProcess,
+      variableEncoder: Any => T
+  ): TestResults[T]
+
 }
 
 //TODO: integrate with Engine somehow?
-class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] extends TestRunner {
+class InterpreterTestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
+    extends TestRunner {
 
-  def runTest[T](modelData: ModelData,
-                 scenarioTestData: ScenarioTestData,
-                 process: CanonicalProcess,
-                 variableEncoder: Any => T): TestResults[T] = {
+  def runTest[T](
+      modelData: ModelData,
+      scenarioTestData: ScenarioTestData,
+      process: CanonicalProcess,
+      variableEncoder: Any => T
+  ): TestResults[T] = {
 
-    //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
+    // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-    //in tests we don't send metrics anywhere
-    val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
+    // in tests we don't send metrics anywhere
+    val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
 
-    //FIXME: validation??
-    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
-      additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), componentUseCase
+    // FIXME: validation??
+    val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
+      process,
+      modelData,
+      additionalListeners = List(collectingListener),
+      new TestServiceInvocationCollector(collectingListener.runId),
+      componentUseCase
     )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
-      case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
+      case Invalid(errors) =>
+        throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
 
-    def getSourceById(sourceId: SourceId): Source = scenarioInterpreter.sources.getOrElse(sourceId,
-      throw new IllegalArgumentException(s"Found source '${sourceId.value}' in a test record but is not present in the scenario"))
+    def getSourceById(sourceId: SourceId): Source = scenarioInterpreter.sources.getOrElse(
+      sourceId,
+      throw new IllegalArgumentException(
+        s"Found source '${sourceId.value}' in a test record but is not present in the scenario"
+      )
+    )
 
     val testDataPreparer = TestDataPreparer(modelData, process)
     val inputs = ScenarioInputBatch(scenarioTestData.testRecords.map { scenarioTestRecord =>
       val sourceId = SourceId(scenarioTestRecord.sourceId.id)
-      val source = getSourceById(sourceId)
+      val source   = getSourceById(sourceId)
       sourceId -> testDataPreparer.prepareRecordForTest[Input](source, scenarioTestRecord)
     })
 
@@ -96,7 +112,7 @@ object TestRunner {
 
   private val scenarioTimeout = 10 seconds
 
-  //TODO: should we consider configurable timeout?
+  // TODO: should we consider configurable timeout?
   implicit val unwrapper: EffectUnwrapper[Future] = new EffectUnwrapper[Future] {
     override def apply[Y](eff: Future[Y]): Y = Await.result(eff, scenarioTimeout)
   }

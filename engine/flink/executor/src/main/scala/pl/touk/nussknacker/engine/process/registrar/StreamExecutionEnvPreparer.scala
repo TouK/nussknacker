@@ -20,24 +20,44 @@ import pl.touk.nussknacker.engine.util.MetaDataExtractor
  */
 trait StreamExecutionEnvPreparer {
 
-  def preRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit
+  def preRegistration(
+      env: StreamExecutionEnvironment,
+      compiledProcessWithDeps: FlinkProcessCompilerData,
+      deploymentData: DeploymentData
+  ): Unit
 
-  def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit
+  def postRegistration(
+      env: StreamExecutionEnvironment,
+      compiledProcessWithDeps: FlinkProcessCompilerData,
+      deploymentData: DeploymentData
+  ): Unit
 
   def flinkClassLoaderSimulation: ClassLoader
 
-  def sideOutputGetter[T](singleOutputStreamOperator: SingleOutputStreamOperator[_], outputTag: OutputTag[T]): DataStream[T]
+  def sideOutputGetter[T](
+      singleOutputStreamOperator: SingleOutputStreamOperator[_],
+      outputTag: OutputTag[T]
+  ): DataStream[T]
+
 }
 
-class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfig],
-                                        rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
-                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
+class DefaultStreamExecutionEnvPreparer(
+    checkpointConfig: Option[CheckpointConfig],
+    rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
+    executionConfigPreparer: ExecutionConfigPreparer
+) extends StreamExecutionEnvPreparer
+    with LazyLogging {
 
-  override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit = {
+  override def preRegistration(
+      env: StreamExecutionEnvironment,
+      processWithDeps: FlinkProcessCompilerData,
+      deploymentData: DeploymentData
+  ): Unit = {
 
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
 
-    val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](processWithDeps.metaData, StreamMetaData())
+    val streamMetaData =
+      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](processWithDeps.metaData, StreamMetaData())
     env.setRestartStrategy(processWithDeps.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
@@ -48,7 +68,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
         logger.info("Using RocksDB state backend")
         configureRocksDBBackend(env, config)
       case (None, Some(true)) =>
-        //TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
+        // TODO: handle non-configured rocksDB more transparently e.g. hide checkbox on FE?
         logger.warn("RocksDB not configured, cannot use spillStateToDisk")
       case _ =>
         logger.info("Using default state backend configured by cluster")
@@ -59,36 +79,57 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     env.setStateBackend(StateConfiguration.prepareRocksDBStateBackend(config).asInstanceOf[StateBackend])
   }
 
-  override def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit = {
-  }
+  override def postRegistration(
+      env: StreamExecutionEnvironment,
+      compiledProcessWithDeps: FlinkProcessCompilerData,
+      deploymentData: DeploymentData
+  ): Unit = {}
 
   protected def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
     val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
-    val checkpointIntervalToSet = processSpecificCheckpointIntervalDuration.orElse(checkpointConfig.map(_.checkpointInterval)).map(_.toMillis)
+    val checkpointIntervalToSet =
+      processSpecificCheckpointIntervalDuration.orElse(checkpointConfig.map(_.checkpointInterval)).map(_.toMillis)
     checkpointIntervalToSet.foreach { checkpointIntervalToSetInMillis =>
       env.enableCheckpointing(checkpointIntervalToSetInMillis)
-      env.getCheckpointConfig.setMinPauseBetweenCheckpoints(checkpointConfig.flatMap(_.minPauseBetweenCheckpoints).map(_.toMillis).getOrElse(checkpointIntervalToSetInMillis / 2))
-      env.getCheckpointConfig.setMaxConcurrentCheckpoints(checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1))
-      checkpointConfig.flatMap(_.tolerableCheckpointFailureNumber).foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
+      env.getCheckpointConfig.setMinPauseBetweenCheckpoints(
+        checkpointConfig
+          .flatMap(_.minPauseBetweenCheckpoints)
+          .map(_.toMillis)
+          .getOrElse(checkpointIntervalToSetInMillis / 2)
+      )
+      env.getCheckpointConfig.setMaxConcurrentCheckpoints(
+        checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1)
+      )
+      checkpointConfig
+        .flatMap(_.tolerableCheckpointFailureNumber)
+        .foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
     }
   }
 
   override def flinkClassLoaderSimulation: ClassLoader = {
-    wrapInLambda(() => FlinkUserCodeClassLoaders.childFirst(Array.empty,
-      Thread.currentThread().getContextClassLoader, Array.empty, (t: Throwable) => throw t, true
-    ))
+    wrapInLambda(() =>
+      FlinkUserCodeClassLoaders.childFirst(
+        Array.empty,
+        Thread.currentThread().getContextClassLoader,
+        Array.empty,
+        (t: Throwable) => throw t,
+        true
+      )
+    )
   }
 
-  override def sideOutputGetter[T](singleOutputStreamOperator: SingleOutputStreamOperator[_], outputTag: OutputTag[T]): DataStream[T] = {
+  override def sideOutputGetter[T](
+      singleOutputStreamOperator: SingleOutputStreamOperator[_],
+      outputTag: OutputTag[T]
+  ): DataStream[T] = {
     wrapInLambda(() => singleOutputStreamOperator.getSideOutput(outputTag))
   }
 
   /*
-  * This is a bit hacky way to make compatibility overrides easier.
-  * We wrap incompatible API invocation with a lambda (i.e. new class in bytecode) to defer initialization,
-  * and make DefaultStreamExecutionEnvPreparer usable with older Flink versions.
-  * Otherwise, during class initialization, ClassNotFound/MethodNotFound exception are thrown
-  * */
+   * This is a bit hacky way to make compatibility overrides easier.
+   * We wrap incompatible API invocation with a lambda (i.e. new class in bytecode) to defer initialization,
+   * and make DefaultStreamExecutionEnvPreparer usable with older Flink versions.
+   * Otherwise, during class initialization, ClassNotFound/MethodNotFound exception are thrown
+   * */
   private def wrapInLambda[T](obj: () => T): T = obj()
 }
-

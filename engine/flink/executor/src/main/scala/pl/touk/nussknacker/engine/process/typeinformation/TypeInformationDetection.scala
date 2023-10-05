@@ -26,8 +26,11 @@ object TypeInformationDetectionUtils extends LazyLogging {
   }
 
   private def prepareDefaultTypeInformationDetection(executionConfig: ExecutionConfig, classLoader: ClassLoader) = {
-    val useTypingResultTypeInformation = NkGlobalParameters.readFromContext(executionConfig)
-      .flatMap(_.configParameters).flatMap(_.useTypingResultTypeInformation).getOrElse(true)
+    val useTypingResultTypeInformation = NkGlobalParameters
+      .readFromContext(executionConfig)
+      .flatMap(_.configParameters)
+      .flatMap(_.useTypingResultTypeInformation)
+      .getOrElse(true)
     if (useTypingResultTypeInformation) {
       TypingResultAwareTypeInformationDetection(classLoader)
     } else {
@@ -40,17 +43,23 @@ object TypeInformationDetectionUtils extends LazyLogging {
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
-    ContextTypeHelpers.infoFromVariablesAndParentOption(TypeInformation.of(new TypeHint[Map[String, Any]] {}),
-      validationContext.parent.map(forContext))
+    ContextTypeHelpers.infoFromVariablesAndParentOption(
+      TypeInformation.of(new TypeHint[Map[String, Any]] {}),
+      validationContext.parent.map(forContext)
+    )
 
-  override def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]]
-    = ValueWithContextTypeHelpers.infoFromValueAndContext(value, forContext(validationContext))
+  override def forValueWithContext[T](
+      validationContext: ValidationContext,
+      value: TypeInformation[T]
+  ): TypeInformation[ValueWithContext[T]] =
+    ValueWithContextTypeHelpers.infoFromValueAndContext(value, forContext(validationContext))
 
   override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     val classNeeded = typingResult match {
       case e: SingleTypingResult => e.objType.klass
-      case _ => classOf[AnyRef]
+      case _                     => classOf[AnyRef]
     }
     TypeInformation.of(classNeeded).asInstanceOf[TypeInformation[T]]
   }
+
 }

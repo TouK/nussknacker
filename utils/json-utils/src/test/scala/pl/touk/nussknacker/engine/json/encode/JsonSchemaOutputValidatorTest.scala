@@ -12,26 +12,37 @@ import scala.collection.immutable.ListMap
 
 class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
   val strictValidator = new JsonSchemaOutputValidator(ValidationMode.strict)
-  val laxValidator = new JsonSchemaOutputValidator(ValidationMode.lax)
+  val laxValidator    = new JsonSchemaOutputValidator(ValidationMode.lax)
 
   test("should validate against 'map string to Any' schema") {
-    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |}""".stripMargin)
 
     val testData = Table(
       ("typing", "is valid"),
       (typedClass[String], false),
-      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[Integer], Unknown)), false),  //not tested in functional tests
+      (
+        genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[Integer], Unknown)),
+        false
+      ), // not tested in functional tests
       (genericTypeClass(classOf[Map[_, _]], List(typedClass[String], Unknown)), false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), true),
-      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])))), true),
+      (
+        genericTypeClass(
+          classOf[java.util.Map[_, _]],
+          List(
+            typedClass[String],
+            TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String]))
+          )
+        ),
+        true
+      ),
       (genericTypeClass(classOf[java.util.List[_]], List(typedClass[String])), false),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true), //not tested in functional tests
+      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true), // not tested in functional tests
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
@@ -40,8 +51,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to string' schema") {
-    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {
         |    "type": "string"
@@ -54,8 +64,17 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false),
-      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))), false),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), false),
+      (
+        genericTypeClass(
+          classOf[java.util.Map[_, _]],
+          List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
+        ),
+        false
+      ),
+      (
+        TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])),
+        false
+      ),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
       (TypedObjectTypingResult(ListMap("foo" -> Unknown)), false),
     )
@@ -66,8 +85,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to union' schema") {
-    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {
         |    "type": ["string", "integer"]
@@ -79,9 +97,24 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (typedClass[String], false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), true),
-      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))), false),
+      (
+        genericTypeClass(
+          classOf[java.util.Map[_, _]],
+          List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])))
+        ),
+        false
+      ),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String])))), false),
+      (
+        TypedObjectTypingResult(
+          ListMap(
+            "foo" -> Typed[String],
+            "bar" -> Typed[Integer],
+            "baz" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[String]))
+          )
+        ),
+        false
+      ),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "baz" -> Typed[String])), true),
     )
 
@@ -91,8 +124,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("validate against 'additionalProperties with patternProperties' schema") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {
         |    "type": ["string", "null"]
@@ -127,8 +159,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("validate against 'patternProperties without additionalProperties' schema") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "patternProperties": {
         |    "_int$": {
@@ -160,8 +191,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("validate against 'explicit properties with patternProperties and additionalProperties' schema") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "booleanProperty": {
@@ -183,7 +213,13 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     val testData = Table(
       ("typing", "is valid for strict", "is valid for lax"),
-      (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer], "booleanProperty" -> Typed[Boolean])), true, true),
+      (
+        TypedObjectTypingResult(
+          ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer], "booleanProperty" -> Typed[Boolean])
+        ),
+        true,
+        true
+      ),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "foo_int" -> Typed[Integer])), false, true),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[Integer])), false, false),
       (TypedObjectTypingResult(ListMap("foo_int" -> Typed[String])), false, false),
@@ -202,8 +238,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("validate against 'additionalProperties=false' schema") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "explicitProperty": {
@@ -217,7 +252,11 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       ("typing", "is valid for strict", "is valid for lax"),
       (TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String])), true, true),
       (TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[Integer])), false, false),
-      (TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String], "additionalProperty" -> Typed[String])), false, false),
+      (
+        TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String], "additionalProperty" -> Typed[String])),
+        false,
+        false
+      ),
       (TypedObjectTypingResult(ListMap[String, TypingResult]()), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, false),
@@ -231,8 +270,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("validate against schema with required props") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "explicitRequiredProperty": {
@@ -248,7 +286,13 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       ("typing", "is valid for strict", "is valid for lax"),
       (TypedObjectTypingResult(ListMap("explicitRequiredProperty" -> Typed[String])), true, true),
       (TypedObjectTypingResult(ListMap("explicitRequiredProperty" -> Typed[Integer])), false, false),
-      (TypedObjectTypingResult(ListMap("explicitRequiredProperty" -> Typed[String], "additionalProperty" -> Typed[String])), true, true),
+      (
+        TypedObjectTypingResult(
+          ListMap("explicitRequiredProperty" -> Typed[String], "additionalProperty" -> Typed[String])
+        ),
+        true,
+        true
+      ),
       (TypedObjectTypingResult(ListMap[String, TypingResult]()), false, false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[Integer])), false, false),
@@ -262,8 +306,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("works for empty maps") {
-    val emptyMapSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val emptyMapSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {}
         |}""".stripMargin)
@@ -273,7 +316,9 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
 
     validate(TypedObjectTypingResult(ListMap[String, TypingResult]())) shouldBe Symbol("valid")
     validate(TypedObjectTypingResult(ListMap("stringProp" -> Typed[String]))) shouldBe Symbol("valid")
-    validate(TypedObjectTypingResult(ListMap("someMap" -> TypedObjectTypingResult(ListMap("any" -> Typed[String]))))) shouldBe Symbol("valid")
+    validate(
+      TypedObjectTypingResult(ListMap("someMap" -> TypedObjectTypingResult(ListMap("any" -> Typed[String]))))
+    ) shouldBe Symbol("valid")
 
   }
 

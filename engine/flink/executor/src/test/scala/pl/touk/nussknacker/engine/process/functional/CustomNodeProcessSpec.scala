@@ -4,7 +4,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.helpers.{LifecycleRecordingExceptionConsumer, LifecycleRecordingExceptionConsumerProvider, ProcessTestHelpers}
+import pl.touk.nussknacker.engine.process.helpers.{
+  LifecycleRecordingExceptionConsumer,
+  LifecycleRecordingExceptionConsumerProvider,
+  ProcessTestHelpers
+}
 import pl.touk.nussknacker.engine.spel
 
 import java.util.Date
@@ -14,7 +18,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   import spel.Implicits._
 
   test("be able to use maps and lists after custom nodes") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -25,13 +30,14 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
 
   }
 
   test("be able to use maps, lists and output var after optional ending custom nodes") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -44,13 +50,14 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
   }
 
   test("fire alert when aggregate threshold exceeded") {
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
@@ -63,7 +70,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       SimpleRecord("1", 12, "d", new Date(4000)),
       SimpleRecord("1", 14, "d", new Date(10000)),
       SimpleRecord("1", 20, "d", new Date(10000))
-
     )
 
     processInvoker.invokeWithSampleData(process, data)
@@ -76,10 +82,12 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
   test("fire alert when aggregate threshold exceeded #2") {
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder
           .filter("delta", "#outRec.record.value1 > #outRec.previous + 5")
           .processor("proc2", "logService", "all" -> "#outRec")
@@ -88,14 +96,12 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
           .emptySink("out2", "monitor")
       )
 
-
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0)),
       SimpleRecord("1", 5, "b", new Date(1000)),
       SimpleRecord("1", 12, "d", new Date(4000)),
       SimpleRecord("1", 14, "d", new Date(10000)),
       SimpleRecord("1", 20, "d", new Date(10000))
-
     )
 
     processInvoker.invokeWithSampleData(process, data)
@@ -107,7 +113,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("let use current context within custom node even when it clears its context afterwards") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNodeNoOutput("id1", "customContextClear", "value" -> "#input.id")
       .processor("proc2", "logService", "all" -> "'42'")
@@ -121,18 +128,23 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("be able to split after custom node") {
-    val additionalFilterBranch = GraphBuilder.filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
+    val additionalFilterBranch = GraphBuilder
+      .filter("falseFilter", "#outRec.record.value1 > #outRec.previous + 1")
       .customNode("custom2", "outRec2", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .emptySink("outFalse", "monitor")
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'allRec-' + #outRec.record.value1"),
-        //additionalFilterBranch added, to make this case more complicated
-        GraphBuilder.filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
-          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added").emptySink("out", "monitor")
+        // additionalFilterBranch added, to make this case more complicated
+        GraphBuilder
+          .filter("delta", "#outRec.record.value1 > #outRec.previous + 5", additionalFilterBranch)
+          .processor("proc2", "logService", "all" -> "#outRec.record.value1 + '-' + #outRec.added")
+          .emptySink("out", "monitor")
       )
 
     val data = List(
@@ -141,7 +153,6 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
       SimpleRecord("1", 12, "d", new Date(4000)),
       SimpleRecord("1", 14, "d", new Date(10000)),
       SimpleRecord("1", 20, "d", new Date(10000))
-
     )
 
     processInvoker.invokeWithSampleData(process, data)
@@ -154,12 +165,11 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
   test("be able to filter before split") {
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .filter("dummy", "false")
-      .split("split",
-        GraphBuilder.processorEnd("proc2", "logService", "all" -> "#input")
-      )
+      .split("split", GraphBuilder.processorEnd("proc2", "logService", "all" -> "#input"))
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0))
@@ -172,10 +182,12 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("retain context after split") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("a", "tv", "'alamakota'")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.processorEnd("proc3", "logService", "all" -> "'f1-' + #tv"),
         GraphBuilder.processorEnd("proc4", "logService", "all" -> "'f2-' + #tv")
       )
@@ -189,11 +201,11 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
     val all = MockService.data.toSet
     all shouldBe Set("f1-alamakota", "f2-alamakota")
 
-
   }
 
   test("be able to pass former context") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
@@ -207,7 +219,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("process custom node without return properly") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
@@ -222,10 +235,16 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("should be able to use ContextTransformation API") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
-      .customNodeNoOutput("custom", "customFilterContextTransformation", "input" -> "#input.id", "stringVal" -> "'terefere'")
+      .customNodeNoOutput(
+        "custom",
+        "customFilterContextTransformation",
+        "input"     -> "#input.id",
+        "stringVal" -> "'terefere'"
+      )
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List(SimpleRecord("terefere", 3, "a", new Date(0)), SimpleRecord("kuku", 3, "b", new Date(0)))
@@ -236,34 +255,38 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("not allow input after custom node clearing context") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNodeNoOutput("id1", "customContextClear", "value" -> "'ala'")
       .processorEnd("proc2", "logService", "all" -> "#input.id")
 
     val data = List()
 
-    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
+    val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
 
-    thrown.getMessage should startWith ("Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id)")
+    thrown.getMessage should startWith(
+      "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id)"
+    )
   }
 
   test("should validate types in custom node output variable") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNode("custom", "outRec", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'terefere'")
       .filter("delta", "#outRec.record.value999 > #outRec.previous + 5")
       .processor("proc2", "logService", "all" -> "#outRec")
       .emptySink("out", "monitor")
 
-    val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
+    val thrown = the[IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
 
     thrown.getMessage shouldBe s"Compilation errors: ExpressionParserCompilationError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
-
   test("should evaluate blank expression used in lazy parameter as a null") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .customNode("id1", "output", "transformWithNullable", "param" -> "")
       .processor("proc2", "logService", "all" -> "#output")
@@ -277,7 +300,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
   }
 
   test("be able to end process with optional ending custom node") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
@@ -285,17 +309,19 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
 
-    //without certain hack (see SpelHack & SpelMapHack) this throws exception.
+    // without certain hack (see SpelHack & SpelMapHack) this throws exception.
     processInvoker.invokeWithSampleData(process, data)
     MockService.data shouldBe List("1")
   }
 
   test("listeners should count only incoming events to nodes") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("testVar", "beforeNode", "'testBeforeNode'")
       .customNodeNoOutput("custom", "customFilter", "input" -> "#input.id", "stringVal" -> "'terefere'")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.emptySink("out", "monitor"),
         GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
       )
@@ -308,16 +334,18 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
   // TODO: for ending custom nodes and sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
   ignore("should not prepare interpretation function after ending custom node or sink") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .buildSimpleVariable("map", "map", "{:}")
       .buildSimpleVariable("list", "list", "{}")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.emptySink("out", "monitor"),
         GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
       )
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
-    val cfg = LifecycleRecordingExceptionConsumerProvider.configWithProvider(config, runId)
+    val cfg  = LifecycleRecordingExceptionConsumerProvider.configWithProvider(config, runId)
     processInvoker.invokeWithSampleData(process, data, cfg)
 
     val exceptionConsumerLifecycleHistory = LifecycleRecordingExceptionConsumer.dataFor(runId)

@@ -11,14 +11,16 @@ object ComponentsGroupMappingConfigExtractor {
 
   private val MappingNamespace = "componentsGroupMapping"
 
-  implicit val componentsGroupMappingReader: ValueReader[Option[ComponentsGroupMappingConfig]] = (config: Config, path: String) => OptionReader
-    .optionValueReader[Map[String, Option[String]]]
-    .read(config, path)
-    .map(
-      mapping => mapping.map {
-        case (key, value) => ComponentGroupName(key) -> value.map(ComponentGroupName(_))
-      }
-    )
+  implicit val componentsGroupMappingReader: ValueReader[Option[ComponentsGroupMappingConfig]] =
+    (config: Config, path: String) =>
+      OptionReader
+        .optionValueReader[Map[String, Option[String]]]
+        .read(config, path)
+        .map(mapping =>
+          mapping.map { case (key, value) =>
+            ComponentGroupName(key) -> value.map(ComponentGroupName(_))
+          }
+        )
 
   def extract(config: Config): ComponentsGroupMappingConfig =
     config.as[Option[ComponentsGroupMappingConfig]](MappingNamespace).getOrElse(Map.empty)

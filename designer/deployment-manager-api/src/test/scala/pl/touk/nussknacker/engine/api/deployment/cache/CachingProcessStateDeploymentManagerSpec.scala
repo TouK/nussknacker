@@ -8,7 +8,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentManager, StatusDetails, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  DeploymentManager,
+  StatusDetails,
+  WithDataFreshnessStatus
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -17,16 +22,21 @@ import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoSugar with PatientScalaFutures
-  with Matchers with OptionValues {
+class CachingProcessStateDeploymentManagerSpec
+    extends AnyFunSuite
+    with MockitoSugar
+    with PatientScalaFutures
+    with Matchers
+    with OptionValues {
 
   test("should ask delegate for a fresh state each time") {
-    val delegate = prepareDMReturningRandomStates
+    val delegate       = prepareDMReturningRandomStates
     val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
 
     val results = List(
       cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh),
-      cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh))
+      cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh)
+    )
     results.map(_.cached) should contain only false
     results.map(_.value).distinct should have size 2
 
@@ -34,7 +44,7 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
   }
 
   test("should cache state for DataFreshnessPolicy.CanBeCached") {
-    val delegate = prepareDMReturningRandomStates
+    val delegate       = prepareDMReturningRandomStates
     val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
 
     val firstInvocation = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.CanBeCached)
@@ -47,7 +57,7 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
   }
 
   test("should reuse state updated by DataFreshnessPolicy.Fresh during reading with DataFreshnessPolicy.CanBeCached") {
-    val delegate = prepareDMReturningRandomStates
+    val delegate       = prepareDMReturningRandomStates
     val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
 
     val resultForFresh = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh)
@@ -60,8 +70,12 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
   }
 
   implicit class DeploymentManagerOps(dm: DeploymentManager) {
+
     def getProcessStatesDeploymentIdNow(freshnessPolicy: DataFreshnessPolicy): WithDataFreshnessStatus[List[String]] =
-      dm.getProcessStates(ProcessName("foo"))(freshnessPolicy).futureValue.map(_.map(_.externalDeploymentId.value.value))
+      dm.getProcessStates(ProcessName("foo"))(freshnessPolicy)
+        .futureValue
+        .map(_.map(_.externalDeploymentId.value.value))
+
   }
 
   private def prepareDMReturningRandomStates = {
@@ -70,7 +84,8 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
       val randomState = StatusDetails(
         SimpleStateStatus.Running,
         deploymentId = None,
-        externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString)))
+        externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString))
+      )
       Future.successful(WithDataFreshnessStatus(List(randomState), cached = false))
     }
     delegate

@@ -6,10 +6,10 @@ import java.util.concurrent.atomic.LongAdder
 //this is poor implementation, but should be ok for our needs
 class InstantRateMeter extends RateMeter with Gauge[Double] {
 
-  val counter = new LongAdder
+  val counter                 = new LongAdder
   private val NANOS_IN_SECOND = TimeUnit.SECONDS.toNanos(1)
-  private val TICK_INTERVAL = TimeUnit.SECONDS.toNanos(1)
-  var lastTick: Long = System.nanoTime()
+  private val TICK_INTERVAL   = TimeUnit.SECONDS.toNanos(1)
+  var lastTick: Long          = System.nanoTime()
 
   var lastValue = 0d
 
@@ -19,7 +19,7 @@ class InstantRateMeter extends RateMeter with Gauge[Double] {
 
   override def getValue: Double = synchronized {
     val previousTick = lastTick
-    val currentTime = System.nanoTime()
+    val currentTime  = System.nanoTime()
     val timeFromLast = currentTime - previousTick
     if (timeFromLast > TICK_INTERVAL) {
       lastTick = currentTime

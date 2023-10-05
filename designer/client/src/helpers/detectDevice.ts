@@ -1,4 +1,5 @@
 import { dia } from "jointjs";
+import { eventFrom } from "event-from";
 
 export function isTouchDevice() {
     return (
@@ -10,12 +11,8 @@ export function isTouchDevice() {
     );
 }
 
-function getOriginalEvent<E extends Event | dia.Event>(event: E) {
-    return ("originalEvent" in event && event?.originalEvent) || event;
-}
-
 export function isTouchEvent<E extends Event | dia.Event>(event: E) {
-    return "ontouchstart" in window && getOriginalEvent(event) instanceof TouchEvent;
+    return eventFrom(event) === "touch";
 }
 
 export const LONG_PRESS_TIME = 500;

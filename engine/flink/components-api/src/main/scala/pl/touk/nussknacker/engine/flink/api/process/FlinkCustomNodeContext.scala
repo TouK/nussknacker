@@ -13,17 +13,19 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetec
 
 import scala.concurrent.duration.FiniteDuration
 
-case class FlinkCustomNodeContext(jobData: JobData,
-                                  // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
-                                  nodeId: String,
-                                  timeout: FiniteDuration,
-                                  convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
-                                  lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                                  exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
-                                  globalParameters: Option[NkGlobalParameters],
-                                  validationContext: Either[ValidationContext, Map[String, ValidationContext]],
-                                  typeInformationDetection: TypeInformationDetection,
-                                  componentUseCase: ComponentUseCase) {
+case class FlinkCustomNodeContext(
+    jobData: JobData,
+    // TODO: it can be used in state recovery - make sure that it won't change during renaming of nodes on gui
+    nodeId: String,
+    timeout: FiniteDuration,
+    convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+    lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+    exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+    globalParameters: Option[NkGlobalParameters],
+    validationContext: Either[ValidationContext, Map[String, ValidationContext]],
+    typeInformationDetection: TypeInformationDetection,
+    componentUseCase: ComponentUseCase
+) {
   def metaData: MetaData = jobData.metaData
 
   lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(asOneOutputContext)
@@ -53,8 +55,10 @@ case class FlinkCustomNodeContext(jobData: JobData,
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
   }
 
-  private def asOneOutputContext: ValidationContext = validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
+  private def asOneOutputContext: ValidationContext =
+    validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
 
-  private def asJoinContext: Map[String, ValidationContext] = validationContext.getOrElse(throw new IllegalArgumentException())
+  private def asJoinContext: Map[String, ValidationContext] =
+    validationContext.getOrElse(throw new IllegalArgumentException())
 
 }

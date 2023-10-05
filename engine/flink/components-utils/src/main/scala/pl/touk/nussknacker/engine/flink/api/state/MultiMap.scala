@@ -4,31 +4,31 @@ import scala.collection.immutable.TreeMap
 import scala.collection.compat._
 
 object MultiMap {
-  def apply[K:Ordering, V] : MultiMap[K, V] = MultiMap(TreeMap())
+  def apply[K: Ordering, V]: MultiMap[K, V] = MultiMap(TreeMap())
 }
 
 case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
 
-  def add(key: K, value: V) : MultiMap[K, V] = {
+  def add(key: K, value: V): MultiMap[K, V] = {
     val newElement = map.get(key) match {
-      case Some(list) => value::list
-      case None => List(value)
+      case Some(list) => value :: list
+      case None       => List(value)
     }
     MultiMap(map + (key -> newElement))
   }
 
-  def add(key: K, values: List[V]) : MultiMap[K, V] = {
+  def add(key: K, values: List[V]): MultiMap[K, V] = {
     val newElement = map.get(key) match {
-      case Some(list) => values:::list
-      case None => values
+      case Some(list) => values ::: list
+      case None       => values
     }
     MultiMap(map + (key -> newElement))
   }
 
-  def remove(key: K, value: V) : MultiMap[K, V] = {
+  def remove(key: K, value: V): MultiMap[K, V] = {
     map.get(key) match {
       case Some(list) =>
-        //TODO: this is only ineffective operation, but in our case lists should be rather short
+        // TODO: this is only ineffective operation, but in our case lists should be rather short
         val withRemovedEl = list.filterNot(_ == value)
         MultiMap(map + (key -> withRemovedEl))
       case None =>
@@ -40,6 +40,5 @@ case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
   def from(minimalKey: K) = MultiMap(map.rangeFrom(minimalKey))
 
   def until(minimalKey: K) = MultiMap(map.rangeUntil(minimalKey))
-
 
 }

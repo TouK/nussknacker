@@ -15,11 +15,13 @@ class RuntimeInjectedJobDataTest extends AnyFunSuite with Matchers {
       living.jobData
     }
   }
+
   test("gets jobData from initialized instance") {
     val living = new Living
     living.open(TestEngineRuntimeContext(jobData))
     living.jobData shouldEqual jobData
   }
+
 }
 
 object RuntimeInjectedJobDataTest {

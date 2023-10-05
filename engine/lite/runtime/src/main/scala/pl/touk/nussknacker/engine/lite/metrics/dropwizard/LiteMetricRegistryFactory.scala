@@ -28,7 +28,7 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
   }
 
   private def registerReporters(metricRegistry: MetricRegistry, metricsConfig: Config): Unit = {
-    val prefix = preparePrefix(metricsConfig.rootAs[CommonMetricConfig])
+    val prefix          = preparePrefix(metricsConfig.rootAs[CommonMetricConfig])
     val metricReporters = loadMetricsReporters()
     if (metricReporters.nonEmpty) {
       metricReporters.foreach { reporter =>
@@ -41,7 +41,9 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
   }
 
   private def preparePrefix(conf: CommonMetricConfig): MetricName = {
-    conf.prefix.map(MetricName.build(_)).getOrElse(MetricName.empty())
+    conf.prefix
+      .map(MetricName.build(_))
+      .getOrElse(MetricName.empty())
       .tagged("instanceId", conf.instanceId.getOrElse(defaultInstanceId))
       .tagged("env", conf.environment)
       .tagged(conf.additionalTags.asJava)
@@ -59,10 +61,13 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
     }
   }
 
-  case class CommonMetricConfig(prefix: Option[String],
-                                instanceId: Option[String],
-                                environment: String,
-                                additionalTags: Map[String, String] = Map.empty)
+  case class CommonMetricConfig(
+      prefix: Option[String],
+      instanceId: Option[String],
+      environment: String,
+      additionalTags: Map[String, String] = Map.empty
+  )
+
 }
 
 object LiteMetricRegistryFactory extends LazyLogging {

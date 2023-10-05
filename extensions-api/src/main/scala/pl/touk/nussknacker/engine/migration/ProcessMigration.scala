@@ -22,9 +22,11 @@ object ProcessMigrations {
   }
 
   def listOf(migrations: ProcessMigration*): ProcessMigrations = new ProcessMigrations {
+
     override def processMigrations: Map[Int, ProcessMigration] = migrations.zipWithIndex.map {
       case (processMigration, index) => index + 1 -> processMigration
     }.toMap
+
   }
 
 }
@@ -33,7 +35,7 @@ trait ProcessMigrations extends Serializable {
 
   def processMigrations: Map[Int, ProcessMigration]
 
-  //we assume 0 is minimal version
+  // we assume 0 is minimal version
   def version: Int = (processMigrations.keys.toSet + 0).max
 
 }
@@ -47,7 +49,7 @@ trait NodeMigration extends ProcessMigration {
 
   override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess = {
     val rewriter = new ProcessNodesRewriter {
-      override protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
+      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         migrateNode(metaData).lift(data).map(_.asInstanceOf[T])
     }
     rewriter.rewriteProcess(canonicalProcess)

@@ -4,7 +4,8 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 
-case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence) extends SpecificRecordBase {
+case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence)
+    extends SpecificRecordBase {
   def this() = this(null, null, null)
 
   override def getSchema: Schema = FullNameV2.schema
@@ -24,6 +25,7 @@ case class FullNameV2(var first: CharSequence, var middle: CharSequence, var las
       case 2 => last = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
+
 }
 
 object FullNameV2 extends TestSchemaWithSpecificRecord {
@@ -54,5 +56,9 @@ object FullNameV2 extends TestSchemaWithSpecificRecord {
     createSpecificRecord(FullNameV1.BaseFirst, BaseMiddle, FullNameV1.BaseLast)
 
   def migratedGenericRecordFromV1: GenericData.Record =
-    avroEncoder.encodeRecordOrError(Map("first" -> FullNameV1.BaseFirst, "last" -> FullNameV1.BaseLast, "middle" -> null), schema)
+    avroEncoder.encodeRecordOrError(
+      Map("first" -> FullNameV1.BaseFirst, "last" -> FullNameV1.BaseLast, "middle" -> null),
+      schema
+    )
+
 }

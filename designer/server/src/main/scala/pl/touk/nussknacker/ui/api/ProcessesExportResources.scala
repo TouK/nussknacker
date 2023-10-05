@@ -19,14 +19,19 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessesExportResources(val processRepository: FetchingProcessRepository[Future],
-                               processActivityRepository: ProcessActivityRepository,
-                               processResolving: UIProcessResolving)
-                              (implicit val ec: ExecutionContext, mat: Materializer)
-  extends Directives with FailFastCirceSupport with RouteWithUser with ProcessDirectives with EspPathMatchers {
+class ProcessesExportResources(
+    val processRepository: FetchingProcessRepository[Future],
+    processActivityRepository: ProcessActivityRepository,
+    processResolving: UIProcessResolving
+)(implicit val ec: ExecutionContext, mat: Materializer)
+    extends Directives
+    with FailFastCirceSupport
+    with RouteWithUser
+    with ProcessDirectives
+    with EspPathMatchers {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("processesExport" / Segment) { processName =>
@@ -79,17 +84,21 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
 
   private def exportResolvedProcess(processWithDictLabels: DisplayableProcess): HttpResponse = {
     val validationResult = processResolving.validateBeforeUiResolving(processWithDictLabels)
-    val resolvedProcess = processResolving.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
+    val resolvedProcess  = processResolving.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
     fileResponse(resolvedProcess)
   }
 
   private def fileResponse(canonicalProcess: CanonicalProcess) = {
     val canonicalJson = canonicalProcess.asJson.spaces2
-    val entity = HttpEntity(ContentTypes.`application/json`, canonicalJson)
+    val entity        = HttpEntity(ContentTypes.`application/json`, canonicalJson)
     AkkaHttpResponse.asFile(entity, s"${canonicalProcess.metaData.id}.json")
   }
 
-  private def exportProcessToPdf(svg: String, processDetails: Option[ProcessDetails], processActivity: ProcessActivity) = processDetails match {
+  private def exportProcessToPdf(
+      svg: String,
+      processDetails: Option[ProcessDetails],
+      processActivity: ProcessActivity
+  ) = processDetails match {
     case Some(process) =>
       val pdf = PdfExporter.exportToPdf(svg, process, processActivity)
       HttpResponse(status = StatusCodes.OK, entity = HttpEntity(pdf))

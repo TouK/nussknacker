@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.management.periodic.service
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
-import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
+import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{
+  DeployData,
+  EnrichedProcessConfig,
+  InitialScheduleData
+}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import sttp.client3.SttpBackend
 
@@ -33,25 +37,36 @@ object ProcessConfigEnricher {
     def inputConfigDuringExecution: Config = {
       ConfigFactory.parseString(inputConfigDuringExecutionJson)
     }
+
   }
 
-  case class InitialScheduleData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String) extends ProcessConfigEnricherInputData
+  case class InitialScheduleData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String)
+      extends ProcessConfigEnricherInputData
 
-  case class DeployData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String, deployment: PeriodicProcessDeployment) extends ProcessConfigEnricherInputData
+  case class DeployData(
+      canonicalProcess: CanonicalProcess,
+      inputConfigDuringExecutionJson: String,
+      deployment: PeriodicProcessDeployment
+  ) extends ProcessConfigEnricherInputData
 
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 
   object EnrichedProcessConfig {
+
     def apply(config: Config): EnrichedProcessConfig = {
       EnrichedProcessConfig(InputConfigDuringExecution.serialize(config))
     }
+
   }
 
   def identity: ProcessConfigEnricher = new ProcessConfigEnricher {
-    override def onInitialSchedule(initialScheduleData: InitialScheduleData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecutionJson))
+    override def onInitialSchedule(initialScheduleData: InitialScheduleData): Future[EnrichedProcessConfig] =
+      Future.successful(EnrichedProcessConfig(initialScheduleData.inputConfigDuringExecutionJson))
 
-    override def onDeploy(deployData: DeployData): Future[EnrichedProcessConfig] = Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecutionJson))
+    override def onDeploy(deployData: DeployData): Future[EnrichedProcessConfig] =
+      Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecutionJson))
   }
+
 }
 
 trait ProcessConfigEnricherFactory {
@@ -59,9 +74,15 @@ trait ProcessConfigEnricherFactory {
 }
 
 object ProcessConfigEnricherFactory {
+
   def noOp: ProcessConfigEnricherFactory = new ProcessConfigEnricherFactory {
-    override def apply(config: Config)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ProcessConfigEnricher = {
+
+    override def apply(
+        config: Config
+    )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ProcessConfigEnricher = {
       ProcessConfigEnricher.identity
     }
+
   }
+
 }

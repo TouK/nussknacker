@@ -22,10 +22,18 @@ trait FlinkStubbedRunner {
   protected def configuration: Configuration
 
   protected def createEnv: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(
-      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData()).parallelism.getOrElse(1), configuration)
+    MetaDataExtractor
+      .extractTypeSpecificDataOrDefault[StreamMetaData](process.metaData, StreamMetaData())
+      .parallelism
+      .getOrElse(1),
+    configuration
+  )
 
-  //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
-  protected def execute[T](env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : Unit = {
+  // we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
+  protected def execute[T](
+      env: StreamExecutionEnvironment,
+      savepointRestoreSettings: SavepointRestoreSettings
+  ): Unit = {
     // Checkpoints are disabled to prevent waiting for checkpoint to happen
     // before finishing execution.
     env.getCheckpointConfig.disableCheckpointing()
@@ -42,20 +50,24 @@ trait FlinkStubbedRunner {
     configuration.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, env.getParallelism)
     configuration.setInteger(RestOptions.PORT, 0)
 
-    //FIXME: reversing flink default order
+    // FIXME: reversing flink default order
     configuration.setString(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
     // it is required for proper working of HadoopFileSystem
     FileSystem.initialize(configuration, null)
 
     Using.resource(
-      new MiniCluster(new MiniClusterConfiguration.Builder()
-        .setNumSlotsPerTaskManager(env.getParallelism)
-        .setConfiguration(configuration).build())) { exec =>
-
+      new MiniCluster(
+        new MiniClusterConfiguration.Builder()
+          .setNumSlotsPerTaskManager(env.getParallelism)
+          .setConfiguration(configuration)
+          .build()
+      )
+    ) { exec =>
       exec.start()
       val id = exec.submitJob(jobGraph).get().getJobID
       exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
     }
   }
+
 }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -26,47 +26,70 @@ import scala.reflect.ClassTag
 
 class InterpreterSetup[T: ClassTag] {
 
-  def sourceInterpretation[F[_] : InterpreterShape](process: CanonicalProcess,
-                                                    services: Map[String, Service],
-                                                    listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  def sourceInterpretation[F[_]: InterpreterShape](
+      process: CanonicalProcess,
+      services: Map[String, Service],
+      listeners: Seq[ProcessListener]
+  ): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
-    val interpreter = compiledProcess.interpreter
-    val parts = failOnErrors(compiledProcess.compile())
+    val interpreter     = compiledProcess.interpreter
+    val parts           = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
 
     val compiled = compileNode(parts.sources.head)
-    val shape = implicitly[InterpreterShape[F]]
+    val shape    = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
       interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec)
   }
 
-  def compile(servicesToUse: Map[String, Service], process: CanonicalProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
+  def compile(
+      servicesToUse: Map[String, Service],
+      process: CanonicalProcess,
+      listeners: Seq[ProcessListener]
+  ): ProcessCompilerData = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 
-      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
+      override def services(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
 
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+      override def sourceFactories(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[SourceFactory]] =
         Map("source" -> WithCategories(new Source))
 
-      override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]]
-      = Map("sink" -> WithCategories(SinkFactory.noParam(new Sink {})))
+      override def sinkFactories(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[SinkFactory]] = Map("sink" -> WithCategories(SinkFactory.noParam(new Sink {})))
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, getClass.getClassLoader,
-      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(
+      configCreator,
+      getClass.getClassLoader,
+      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader))
+    )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
 
-    ProcessCompilerData.prepare(process, definitionsWithTypes, new SimpleDictRegistry(Map.empty).toEngineRegistry,
-      fragmentDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    ProcessCompilerData.prepare(
+      process,
+      definitionsWithTypes,
+      new SimpleDictRegistry(Map.empty).toEngineRegistry,
+      fragmentDefinitionExtractor,
+      listeners,
+      getClass.getClassLoader,
+      ProductionServiceInvocationCollector,
+      ComponentUseCase.EngineRuntime,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator
+    )
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {
-    case Valid(c) => c
+    case Valid(c)     => c
     case Invalid(err) => throw new IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 

@@ -21,8 +21,13 @@ object part {
     def nextParts: List[SubsequentPart]
   }
 
-  case class SourcePart(obj: api.process.Source, node: splittednode.SourceNode[SourceNodeData], validationContext: ValidationContext,
-                        nextParts: List[SubsequentPart], ends: List[TypedEnd]) extends PotentiallyStartPart {
+  case class SourcePart(
+      obj: api.process.Source,
+      node: splittednode.SourceNode[SourceNodeData],
+      validationContext: ValidationContext,
+      nextParts: List[SubsequentPart],
+      ends: List[TypedEnd]
+  ) extends PotentiallyStartPart {
     override type T = SourceNodeData
   }
 
@@ -30,21 +35,28 @@ object part {
     def contextBefore: ValidationContext
   }
 
-  case class CustomNodePart(transformer: AnyRef,
-                            node: splittednode.SplittedNode[CustomNodeData],
-                            contextBefore: ValidationContext,
-                            validationContext: ValidationContext,
-                            nextParts: List[SubsequentPart], ends: List[TypedEnd]) extends PotentiallyStartPart with SubsequentPart {
+  case class CustomNodePart(
+      transformer: AnyRef,
+      node: splittednode.SplittedNode[CustomNodeData],
+      contextBefore: ValidationContext,
+      validationContext: ValidationContext,
+      nextParts: List[SubsequentPart],
+      ends: List[TypedEnd]
+  ) extends PotentiallyStartPart
+      with SubsequentPart {
     override type T = CustomNodeData
 
   }
 
-  case class SinkPart(obj: api.process.Sink, node: splittednode.EndingNode[Sink],
-                      contextBefore: ValidationContext,
-                      validationContext: ValidationContext) extends SubsequentPart {
+  case class SinkPart(
+      obj: api.process.Sink,
+      node: splittednode.EndingNode[Sink],
+      contextBefore: ValidationContext,
+      validationContext: ValidationContext
+  ) extends SubsequentPart {
     override type T = Sink
 
-    //TODO: expression?
+    // TODO: expression?
     val ends = List(TypedEnd(NormalEnd(node.id), validationContext))
   }
 

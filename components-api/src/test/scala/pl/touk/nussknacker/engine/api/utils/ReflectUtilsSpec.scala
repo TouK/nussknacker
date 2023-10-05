@@ -4,7 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 
-
 class ReflectUtilsSpec extends AnyFunSuite with Matchers {
 
   test("simpleNameWithoutSuffix on class") {

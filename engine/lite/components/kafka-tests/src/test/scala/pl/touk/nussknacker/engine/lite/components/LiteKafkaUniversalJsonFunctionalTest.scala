@@ -12,7 +12,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CustomNodeError,
+  ExpressionParserCompilationError
+}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -26,8 +29,14 @@ import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
-class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
-  with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage with FunctionalTestMixin {
+class LiteKafkaUniversalJsonFunctionalTest
+    extends AnyFunSuite
+    with Matchers
+    with ScalaCheckDrivenPropertyChecks
+    with Inside
+    with TableDrivenPropertyChecks
+    with ValidatedValuesDetailedMessage
+    with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
@@ -36,24 +45,25 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
-  private val lax = List(ValidationMode.lax)
-  private val strict = List(ValidationMode.strict)
+  private val lax          = List(ValidationMode.lax)
+  private val strict       = List(ValidationMode.strict)
   private val strictAndLax = ValidationMode.values
 
-  test("should test end to end kafka json data at sink and source / handling nulls and empty json" ) {
+  test("should test end to end kafka json data at sink and source / handling nulls and empty json") {
     val testData = Table(
       ("config", "result"),
       (config(obj(), schemaObjNull, schemaObjNull), valid(obj())),
       (config(obj(), schemaObjNull, schemaObjNull, objOutputAsInputField), valid(sampleObjNull)),
       (config(sampleObjNull, schemaObjNull, schemaObjNull), valid(sampleObjNull)),
       (config(sampleObjNull, schemaObjNull, schemaObjNull, objOutputAsInputField), valid(sampleObjNull)),
-
       (config(obj(), schemaObjStr, schemaObjStr), valid(obj())),
-
       (config(obj(), schemaObjUnionNullStr, schemaObjUnionNullStr, objOutputAsInputField), valid(sampleObjNull)),
       (config(obj(), schemaObjUnionNullStr, schemaObjUnionNullStr), valid(obj())),
       (config(sampleObjNull, schemaObjUnionNullStr, schemaObjUnionNullStr), valid(sampleObjNull)),
-      (config(sampleObjNull, schemaObjUnionNullStr, schemaObjUnionNullStr, objOutputAsInputField), valid(sampleObjNull)),
+      (
+        config(sampleObjNull, schemaObjUnionNullStr, schemaObjUnionNullStr, objOutputAsInputField),
+        valid(sampleObjNull)
+      ),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -66,23 +76,33 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should test end to end kafka json data at sink and source / handling primitives..") {
     val testData = Table(
       ("config", "result"),
-      //Primitive integer validations
+      // Primitive integer validations
       (config(sampleJLong, schemaLong, schemaInt), invalidTypes("actual: 'Long' expected: 'Integer'")),
-      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaInt), invalidTypes("actual: 'BigDecimal' expected: 'Integer'")),
-      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaLong), invalidTypes("actual: 'BigDecimal' expected: 'Long'")),
-      (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
-      (config(sampleJInt, schemaLong, schemaIntRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
+      (
+        config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaInt),
+        invalidTypes("actual: 'BigDecimal' expected: 'Integer'")
+      ),
+      (
+        config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaLong),
+        invalidTypes("actual: 'BigDecimal' expected: 'Long'")
+      ),
+      (
+        config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(200)),
+        invalidRanges("actual value: '200' should be between 0 and 100")
+      ),
+      (
+        config(sampleJInt, schemaLong, schemaIntRangeTo100, fromInt(200)),
+        invalidRanges("actual value: '200' should be less than or equal to 100")
+      ),
       (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(100)), valid(fromInt(100))),
       (config(sampleJInt, schemaInt, schemaLong), valid(sampleJInt)),
       (config(fromLong(Integer.MAX_VALUE), schemaInt, schemaInt), valid(fromInt(Integer.MAX_VALUE))),
 
-      //Number conversion
+      // Number conversion
       (config(sampleJInt, schemaInt, schemaLong), valid(sampleJLongFromInt)),
       (config(sampleJStr, schemaString, schemaLong, sampleInt), valid(sampleJLongFromInt)),
-
       (config(sampleJInt, schemaInt, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
       (config(sampleJStr, schemaString, schemaBigDecimal, sampleInt), valid(sampleJBigDecimalFromInt)),
-
       (config(sampleJInt, schemaLong, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
       (config(sampleJStr, schemaString, schemaBigDecimal, sampleLong), valid(sampleJBigDecimalFromLong)),
     )
@@ -100,26 +120,34 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(sampleObjStr, schemaObjStr, schemaObjStr), valid(sampleObjStr)),
       (conf(schemaObjStr, sampleObjStrOutput), valid(sampleObjStr)),
 
-      //Additional fields turn on
+      // Additional fields turn on
       (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapAny), valid(sampleObjMapAny)),
       (conf(schemaObjMapAny, sampleObjMapAnyOutput), valid(sampleObjMapAny)),
       (config(sampleObjMapPerson, schemaObjMapObjPerson, schemaObjMapAny), valid(sampleObjMapPerson)),
       (conf(schemaObjMapAny, sampleObjMapPersonOutput), valid(sampleObjMapPerson)),
       (config(sampleObjMapInt, schemaObjMapLong, schemaObjMapAny), valid(sampleObjMapInt)),
-
       (config(sampleObjMapInt, schemaObjMapLong, schemaObjMapLong), valid(sampleObjMapInt)),
       (conf(schemaObjMapLong, sampleObjMapIntOutput), valid(sampleObjMapInt)),
-
-      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("last", "first", "age"), Nil)),
+      (
+        config(samplePerson, schemaPerson, schemaObjStr),
+        invalid(Nil, List("field"), List("last", "first", "age"), Nil)
+      ),
       (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"), Nil)),
-
-      (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapLong), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
-
+      (
+        config(sampleObjMapAny, schemaObjMapAny, schemaObjMapLong),
+        invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")
+      ),
       (config(samplePerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaLong)), valid(samplePerson)),
-      (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
-      (config(samplePerson, schemaPersonWithLimits, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
+      (
+        config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)),
+        invalidTypes("path 'age' actual: 'Long' expected: 'String'")
+      ),
+      (
+        config(samplePerson, schemaPersonWithLimits, nameAndLastNameSchema(schemaString)),
+        invalidTypes("path 'age' actual: 'Integer' expected: 'String'")
+      ),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -164,9 +192,15 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     //@formatter:on
 
     forAll(testData) {
-      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+      (
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult[_]]
+      ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -185,9 +219,15 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     //@formatter:on
 
     forAll(testData) {
-      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+      (
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult[_]]
+      ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -195,7 +235,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("sink with enum schema") {
-    val A = Json.fromString("A")
+    val A   = Json.fromString("A")
     val one = Json.fromInt(1)
     val two = Json.fromInt(2)
     val obj = Json.obj(("x", A), ("y", Json.arr(one, two)))
@@ -221,9 +261,15 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     //@formatter:on
 
     forAll(testData) {
-      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+      (
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult[_]]
+      ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -231,7 +277,8 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("sink with enum list schema") {
-    val cfg = config(Json.obj(), schemaObjStr, schemaEnumStrOrList, output = SpecialSpELElement("{1,2}"), lax.headOption)
+    val cfg =
+      config(Json.obj(), schemaObjStr, schemaEnumStrOrList, output = SpecialSpELElement("{1,2}"), lax.headOption)
     val results = runWithValueResults(cfg)
 
     results.isValid shouldBe true // it should be invalid, but it's so edge case that we decided to live with it
@@ -241,14 +288,20 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("patternProperties handling") {
-    val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong))
-    val objWithPatternPropsAndStringAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong), Some(schemaString))
-    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong), Some(schemaString), Map("definedProp" -> schemaString))
+    val objWithIntPatternPropsAndOpenAdditionalSchema =
+      createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong))
+    val objWithPatternPropsAndStringAdditionalSchema =
+      createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong), Some(schemaString))
+    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(
+      Map("foo_int" -> schemaLong),
+      Some(schemaString),
+      Map("definedProp" -> schemaString)
+    )
 
-    val inputObjectIntPropValue = fromInt(1)
+    val inputObjectIntPropValue     = fromInt(1)
     val inputObjectDefinedPropValue = fromString("someString")
-    val inputObject = obj("foo_int" -> inputObjectIntPropValue)
-    val inputObjectWithDefinedProp = obj("definedProp" -> inputObjectDefinedPropValue)
+    val inputObject                 = obj("foo_int" -> inputObjectIntPropValue)
+    val inputObjectWithDefinedProp  = obj("definedProp" -> inputObjectDefinedPropValue)
 
     //@formatter:off
     val testData = Table(
@@ -270,9 +323,16 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     //@formatter:on
 
     forAll(testData) {
-      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, sinkExpression: SpecialSpELElement, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+      (
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          sinkExpression: SpecialSpELElement,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult[_]]
+      ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -282,16 +342,18 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("pattern properties validations should work in editor mode") {
     def scenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
       val sinkParams = (Map(
-        TopicParamName -> s"'${config.sinkTopic}'",
+        TopicParamName         -> s"'${config.sinkTopic}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName -> "",
+        SinkKeyParamName       -> "",
         SinkRawEditorParamName -> "false",
       ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
       ScenarioBuilder
         .streamingLite("check json validation")
-        .source(sourceName, KafkaUniversalName,
-          TopicParamName -> s"'${config.sourceTopic}'",
+        .source(
+          sourceName,
+          KafkaUniversalName,
+          TopicParamName         -> s"'${config.sourceTopic}'",
           SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
         )
         .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
@@ -302,9 +364,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
 
-    val objWithNestedPatternPropertiesMapSchema = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaLong)))
-    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val objWithNestedPatternPropertiesMapSchema =
+      createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaLong)))
+    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "field": {
@@ -323,22 +385,40 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
     val testData = Table(
       ("sinkSchema", "sinkFields", "result"),
-      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
-      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")),
-      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
-      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")),
+      (
+        objWithNestedPatternPropertiesMapSchema,
+        Map("field" -> "{'foo_int': 1}"),
+        valid(obj("field" -> obj("foo_int" -> fromInt(1))))
+      ),
+      (
+        objWithNestedPatternPropertiesMapSchema,
+        Map("field" -> "{'foo_int': '1'}"),
+        invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")
+      ),
+      (
+        objectWithNettedPatternPropertiesMapAsRefSchema,
+        Map("field" -> "{'foo_int': 1}"),
+        valid(obj("field" -> obj("foo_int" -> fromInt(1))))
+      ),
+      (
+        objectWithNettedPatternPropertiesMapAsRefSchema,
+        Map("field" -> "{'foo_int': '1'}"),
+        invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")
+      ),
     )
 
     forAll(testData) {
       (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
-        val dummyInputObject = obj()
-        val cfg = config(dummyInputObject, schemaMapAny, sinkSchema)
+        val dummyInputObject               = obj()
+        val cfg                            = config(dummyInputObject, schemaMapAny, sinkSchema)
         val jsonScenario: CanonicalProcess = scenario(cfg, sinkFields)
         runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
         runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
 
         val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
-        val results = runner.runWithStringData(jsonScenario, List(input)).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
+        val results = runner
+          .runWithStringData(jsonScenario, List(input))
+          .map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
         results shouldBe expected
     }
   }
@@ -348,16 +428,32 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       ("input", "sourceSchema", "expected"),
       (sampleObjStr, schemaObjLong, s"#/$ObjectFieldName: expected type: Integer, found: String"),
       (JsonObj(Null), schemaObjLong, s"#/$ObjectFieldName: expected type: Integer, found: Null"),
-      (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapLong, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
-      (obj("first" -> sampleJStr), createObjSchema(true, true, schemaLong), s"#: required key [$ObjectFieldName] not found"),
-      (obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")), schemaObjStr, "#: extraneous key [t1] is not permitted"),
+      (
+        JsonObj(obj("t1" -> fromString("1"))),
+        schemaObjMapLong,
+        s"#/$ObjectFieldName/t1: expected type: Integer, found: String"
+      ),
+      (
+        obj("first" -> sampleJStr),
+        createObjSchema(true, true, schemaLong),
+        s"#: required key [$ObjectFieldName] not found"
+      ),
+      (
+        obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")),
+        schemaObjStr,
+        "#: extraneous key [t1] is not permitted"
+      ),
       (Json.fromString("X"), schemaEnumAB, "#: X is not a valid enum value"),
-      (obj("foo_int" -> fromString("foo")), createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)), "#/foo_int: expected type: Integer, found: String")
+      (
+        obj("foo_int" -> fromString("foo")),
+        createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)),
+        "#/foo_int: expected type: Integer, found: String"
+      )
     )
 
     forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
       // here we're testing only source runtime validation so to prevent typing issues we pass literal as sink expression
-      val cfg = config(input, sourceSchema, schemaString, output = "someString")
+      val cfg     = config(input, sourceSchema, schemaString, output = "someString")
       val results = runWithValueResults(cfg)
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
@@ -368,18 +464,19 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should catch runtime errors at encoding - sink") {
     val testData = Table(
       ("config", "expected"),
-      (config(
-        obj(),
-        schemaObjStr,
-        schemaObjStr,
-        objOutputAsInputField),
-        s"Not expected type: Null for field: 'field' with schema: $schemaString."),
-      (config(
-        obj("foo_int" -> fromString("foo")),
-        schemaMapAny,
-        createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)),
-        validationMode = Some(ValidationMode.lax)
-      ), s"Not expected type: String for field: 'foo_int' with schema: $schemaLong."),
+      (
+        config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField),
+        s"Not expected type: Null for field: 'field' with schema: $schemaString."
+      ),
+      (
+        config(
+          obj("foo_int" -> fromString("foo")),
+          schemaMapAny,
+          createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)),
+          validationMode = Some(ValidationMode.lax)
+        ),
+        s"Not expected type: String for field: 'foo_int' with schema: $schemaLong."
+      ),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>
@@ -414,7 +511,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
     runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
 
-    val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
+    val input  = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
     val result = runner.runWithStringData(jsonScenario, List(input))
     result
   }
@@ -422,29 +519,50 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   private def createScenario(config: ScenarioConfig): CanonicalProcess =
     ScenarioBuilder
       .streamingLite("check json validation")
-      .source(sourceName, KafkaUniversalName,
-        TopicParamName -> s"'${config.sourceTopic}'",
+      .source(
+        sourceName,
+        KafkaUniversalName,
+        TopicParamName         -> s"'${config.sourceTopic}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
-      .emptySink(sinkName, KafkaUniversalName,
-        TopicParamName -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName -> "",
-        SinkValueParamName -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName -> "true",
+      .emptySink(
+        sinkName,
+        KafkaUniversalName,
+        TopicParamName                  -> s"'${config.sinkTopic}'",
+        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName                -> "",
+        SinkValueParamName              -> s"${config.sinkDefinition}",
+        SinkRawEditorParamName          -> "true",
         SinkValidationModeParameterName -> s"'${config.validationModeName}'"
       )
 
-  case class ScenarioConfig(topic: String, inputData: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, sinkDefinition: String, validationMode: Option[ValidationMode]) {
+  case class ScenarioConfig(
+      topic: String,
+      inputData: Json,
+      sourceSchema: EveritSchema,
+      sinkSchema: EveritSchema,
+      sinkDefinition: String,
+      validationMode: Option[ValidationMode]
+  ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic = s"$topic-input"
-    lazy val sinkTopic = s"$topic-output"
+    lazy val sourceTopic                = s"$topic-input"
+    lazy val sinkTopic                  = s"$topic-output"
   }
 
-  private def conf(outputSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+  private def conf(
+      outputSchema: EveritSchema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig =
     config(Null, schemaNull, outputSchema, output, validationMode)
 
-  private def config(inputData: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+  private def config(
+      inputData: Json,
+      sourceSchema: EveritSchema,
+      sinkSchema: EveritSchema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig =
     ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
 
 }

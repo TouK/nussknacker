@@ -14,8 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait CustomActionInvokerService {
 
-  def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]]
+  def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Either[CustomActionError, CustomActionResult]]
 
 }
 
@@ -23,11 +25,16 @@ trait CustomActionInvokerService {
 //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
 //       - see those actions in the actions table
 //       - send notifications about finished/failed custom actions
-class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepository[Future],
-                                     dispatcher: DeploymentManagerDispatcher,
-                                     processStateService: ProcessStateService) extends CustomActionInvokerService {
-  override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
+class CustomActionInvokerServiceImpl(
+    processRepository: FetchingProcessRepository[Future],
+    dispatcher: DeploymentManagerDispatcher,
+    processStateService: ProcessStateService
+) extends CustomActionInvokerService {
+
+  override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Either[CustomActionError, CustomActionResult]] = {
 
     def createCustomAction(process: BaseProcessDetails[_]) =
       engine.api.deployment.CustomActionRequest(
@@ -40,12 +47,16 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
       case Some(process) if process.isFragment =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
+        actionError(
+          CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden.")
+        )
       case Some(process) if process.isArchived =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))
+        actionError(
+          CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden.")
+        )
       case Some(process) =>
         val actionReq = createCustomAction(process)
-        val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
+        val manager   = dispatcher.deploymentManagerUnsafe(process.processingType)
         manager.customActions.find(_.name == actionName) match {
           case Some(customAction) =>
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -63,7 +74,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     }
   }
 
-  //FIXME: change returning successful to failed..
+  // FIXME: change returning successful to failed..
   private def actionError(error: CustomActionError) = Future.successful(Left(error))
 
 }

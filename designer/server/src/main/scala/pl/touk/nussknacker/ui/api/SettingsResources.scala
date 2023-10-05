@@ -12,11 +12,15 @@ import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 import java.net.URL
 import scala.concurrent.ExecutionContext
 
-class SettingsResources(config: FeatureTogglesConfig,
-                        authenticationMethod: String,
-                        analyticsConfig: Option[AnalyticsConfig],
-                        usageStatisticsReportsSettings: => UsageStatisticsReportsSettings)(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with RouteWithoutUser {
+class SettingsResources(
+    config: FeatureTogglesConfig,
+    authenticationMethod: String,
+    analyticsConfig: Option[AnalyticsConfig],
+    usageStatisticsReportsSettings: => UsageStatisticsReportsSettings
+)(implicit ec: ExecutionContext)
+    extends Directives
+    with FailFastCirceSupport
+    with RouteWithoutUser {
 
   def publicRoute(): Route =
     pathPrefix("settings") {
@@ -41,7 +45,8 @@ class SettingsResources(config: FeatureTogglesConfig,
             authenticationMethod
           )
 
-          val analyticsSettings = analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
+          val analyticsSettings =
+            analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
           UISettings(toggleOptions, authenticationSettings, analyticsSettings)
         }
       }
@@ -49,35 +54,46 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 }
 
-@JsonCodec case class MetricsSettings(url: String, defaultDashboard: String, scenarioTypeToDashboard: Option[Map[String, String]])
+@JsonCodec final case class MetricsSettings(
+    url: String,
+    defaultDashboard: String,
+    scenarioTypeToDashboard: Option[Map[String, String]]
+)
 
-@JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
+@JsonCodec final case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 
-@JsonCodec case class EnvironmentAlert(content: String, color: String)
+@JsonCodec final case class EnvironmentAlert(content: String, color: String)
 
-@JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
+@JsonCodec final case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-@JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+@JsonCodec final case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
-@JsonCodec case class SurveySettings(key: String, text: String, link: URL)
+@JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
-  def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
-    Validated.cond(validationPattern.nonEmpty,
+
+  def create(
+      validationPattern: String,
+      exampleComment: Option[String]
+  ): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
+    Validated.cond(
+      validationPattern.nonEmpty,
       new DeploymentCommentSettings(validationPattern, exampleComment),
-      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty."))
+      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty.")
+    )
   }
 
   def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
     new DeploymentCommentSettings(validationPattern, exampleComment)
   }
+
 }
 
-case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
+final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
 
-@JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
+@JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
+@JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
 
 object TopTabType extends Enumeration {
 
@@ -87,34 +103,41 @@ object TopTabType extends Enumeration {
   val Local, Remote, IFrame, Url = Value
 }
 
-@JsonCodec case class TopTab(id: String,
-                             title: Option[String],
-                             `type`: TopTabType.Value,
-                             url: String,
-                             requiredPermission: Option[String],
-                             addAccessTokenInQueryParam: Option[Boolean])
+@JsonCodec final case class TopTab(
+    id: String,
+    title: Option[String],
+    `type`: TopTabType.Value,
+    url: String,
+    requiredPermission: Option[String],
+    addAccessTokenInQueryParam: Option[Boolean]
+)
 
-@JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
-                                            metrics: Option[MetricsSettings],
-                                            remoteEnvironment: Option[RemoteEnvironmentConfig],
-                                            environmentAlert: Option[EnvironmentAlert],
-                                            commentSettings: Option[CommentSettings],
-                                            deploymentCommentSettings: Option[DeploymentCommentSettings],
-                                            surveySettings: Option[SurveySettings],
-                                            tabs: Option[List[TopTab]],
-                                            intervalTimeSettings: IntervalTimeSettings,
-                                            testDataSettings: TestDataSettings,
-                                            redirectAfterArchive: Boolean,
-                                            usageStatisticsReports: UsageStatisticsReportsSettings,
-                                           )
+@JsonCodec final case class ToggleFeaturesOptions(
+    counts: Boolean,
+    metrics: Option[MetricsSettings],
+    remoteEnvironment: Option[RemoteEnvironmentConfig],
+    environmentAlert: Option[EnvironmentAlert],
+    commentSettings: Option[CommentSettings],
+    deploymentCommentSettings: Option[DeploymentCommentSettings],
+    surveySettings: Option[SurveySettings],
+    tabs: Option[List[TopTab]],
+    intervalTimeSettings: IntervalTimeSettings,
+    testDataSettings: TestDataSettings,
+    redirectAfterArchive: Boolean,
+    usageStatisticsReports: UsageStatisticsReportsSettings,
+)
 
-@JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
+@JsonCodec final case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
-@JsonCodec case class AuthenticationSettings(provider: String)
+@JsonCodec final case class AuthenticationSettings(provider: String)
 
-@JsonCodec case class ProcessStateSettings(icons: Map[String, Map[String, String]], tooltips: Map[String, Map[String, String]])
+@JsonCodec final case class ProcessStateSettings(
+    icons: Map[String, Map[String, String]],
+    tooltips: Map[String, Map[String, String]]
+)
 
-@JsonCodec case class UISettings(features: ToggleFeaturesOptions,
-                                 authentication: AuthenticationSettings,
-                                 analytics: Option[AnalyticsSettings])
-
+@JsonCodec final case class UISettings(
+    features: ToggleFeaturesOptions,
+    authentication: AuthenticationSettings,
+    analytics: Option[AnalyticsSettings]
+)

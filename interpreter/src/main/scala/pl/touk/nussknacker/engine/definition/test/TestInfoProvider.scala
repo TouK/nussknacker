@@ -12,6 +12,9 @@ trait TestInfoProvider {
 
   def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
 
-  def prepareTestData(preliminaryTestData: PreliminaryScenarioTestData, scenario: CanonicalProcess): Either[String, ScenarioTestData]
+  def prepareTestData(
+      preliminaryTestData: PreliminaryScenarioTestData,
+      scenario: CanonicalProcess
+  ): Either[String, ScenarioTestData]
 
 }

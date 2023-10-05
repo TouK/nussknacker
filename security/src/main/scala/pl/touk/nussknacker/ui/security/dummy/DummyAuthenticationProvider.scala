@@ -10,10 +10,11 @@ class DummyAuthenticationProvider extends AuthenticationProvider {
 
   override val name: String = "Dummy"
 
-  override def createAuthenticationResources(config: Config,
-                                             classLoader: ClassLoader)
-                                            (implicit ec: ExecutionContext,
-                                             sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
+  override def createAuthenticationResources(
+      config: Config,
+      classLoader: ClassLoader
+  )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     new DummyAuthenticationResources(name, DummyAuthenticationConfiguration.create(config))
   }
+
 }

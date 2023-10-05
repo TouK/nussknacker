@@ -13,11 +13,17 @@ trait TypeInformationDetection extends Serializable {
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context]
 
-  def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = forValueWithContext(validationContext, forType(value).asInstanceOf[TypeInformation[T]])
+  def forValueWithContext[T](
+      validationContext: ValidationContext,
+      value: TypingResult
+  ): TypeInformation[ValueWithContext[T]] =
+    forValueWithContext(validationContext, forType(value).asInstanceOf[TypeInformation[T]])
 
-  def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]]
+  def forValueWithContext[T](
+      validationContext: ValidationContext,
+      value: TypeInformation[T]
+  ): TypeInformation[ValueWithContext[T]]
 
-  def forType[T<:AnyRef](typingResult: TypingResult): TypeInformation[T]
+  def forType[T <: AnyRef](typingResult: TypingResult): TypeInformation[T]
 
 }

@@ -7,34 +7,33 @@ import org.scalatest.matchers.should.Matchers
 class KafkaConfigSpec extends AnyFunSuite with Matchers {
 
   test("parse config") {
-    val typesafeConfig = ConfigFactory.parseString(
-      """kafka {
+    val typesafeConfig = ConfigFactory.parseString("""kafka {
         |  lowLevelComponentsEnabled: false
         |  kafkaProperties {
         |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None)
+    val expectedConfig =
+      KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None)
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
   test("parse legacy config") {
-    val typesafeConfig = ConfigFactory.parseString(
-      """kafka {
+    val typesafeConfig = ConfigFactory.parseString("""kafka {
         |  lowLevelComponentsEnabled: false
         |  kafkaAddress: "localhost:9092"
         |  kafkaProperties {
         |    "auto.offset.reset": latest
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(Some(Map("auto.offset.reset" -> "latest")), None, None, kafkaAddress = Some("localhost:9092"))
+    val expectedConfig =
+      KafkaConfig(Some(Map("auto.offset.reset" -> "latest")), None, None, kafkaAddress = Some("localhost:9092"))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
   test("parse config with topicExistenceValidation") {
-    val typesafeConfig = ConfigFactory.parseString(
-      """kafka {
+    val typesafeConfig = ConfigFactory.parseString("""kafka {
         |  kafkaProperties {
         |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest
@@ -43,7 +42,14 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |     enabled: true
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None, None, TopicsExistenceValidationConfig(enabled = true))
+    val expectedConfig = KafkaConfig(
+      Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")),
+      None,
+      None,
+      None,
+      TopicsExistenceValidationConfig(enabled = true)
+    )
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
+
 }

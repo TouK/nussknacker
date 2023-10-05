@@ -36,4 +36,5 @@ class Waiting30SecsCheck(system: ActorSystem) extends (() => Future[Boolean]) wi
       }
     }
   }
+
 }

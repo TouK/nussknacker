@@ -18,42 +18,66 @@ case class ParameterWithExtractor[V](parameter: Parameter) {
 
 object ParameterWithExtractor {
 
-  def mandatory[T: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[T] = {
+  def mandatory[T: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[T] = {
     val param = modify(Parameter[T](name))
     new ParameterWithExtractor[T](param)
   }
 
-  def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[LazyParameter[T]] = {
+  def lazyMandatory[T <: AnyRef: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[LazyParameter[T]] = {
     val param = modify(Parameter[T](name).copy(isLazyParameter = true))
     new ParameterWithExtractor[LazyParameter[T]](param)
   }
 
-  def branchMandatory[T: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[Map[String, T]] = {
+  def branchMandatory[T: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[Map[String, T]] = {
     val param = modify(Parameter[T](name).copy(branchParam = true))
     new ParameterWithExtractor[Map[String, T]](param)
   }
 
-  def branchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
+  def branchLazyMandatory[T <: AnyRef: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
     val param = modify(Parameter[T](name).copy(branchParam = true, isLazyParameter = true))
     new ParameterWithExtractor[Map[String, LazyParameter[T]]](param)
   }
 
-  def optional[T: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[T] = {
+  def optional[T: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[T] = {
     val param = modify(Parameter.optional[T](name))
     new ParameterWithExtractor(param)
   }
 
-  def lazyOptional[T <: AnyRef: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[LazyParameter[T]] = {
+  def lazyOptional[T <: AnyRef: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[LazyParameter[T]] = {
     val param = modify(Parameter.optional[T](name).copy(isLazyParameter = true))
     new ParameterWithExtractor[LazyParameter[T]](param)
   }
 
-  def branchOptional[T: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[T] = {
+  def branchOptional[T: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[T] = {
     val param = modify(Parameter.optional[T](name).copy(branchParam = true))
     new ParameterWithExtractor[T](param)
   }
 
-  def branchLazyOptional[T <: AnyRef: TypeTag: NotNothing](name: String, modify: Parameter => Parameter = identity): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
+  def branchLazyOptional[T <: AnyRef: TypeTag: NotNothing](
+      name: String,
+      modify: Parameter => Parameter = identity
+  ): ParameterWithExtractor[Map[String, LazyParameter[T]]] = {
     val param = modify(Parameter.optional[T](name).copy(branchParam = true, isLazyParameter = true))
     new ParameterWithExtractor[Map[String, LazyParameter[T]]](param)
   }

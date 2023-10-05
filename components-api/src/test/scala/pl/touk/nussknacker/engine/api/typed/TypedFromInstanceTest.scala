@@ -6,7 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
   import scala.jdk.CollectionConverters._
@@ -46,7 +45,10 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     )
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
-      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
+      (
+        Map("a" -> 1, "b" -> "string"),
+        TypedObjectTypingResult(fieldTypes, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+      ),
       (Map("a" -> 1, "b" -> "string").asJava, TypedObjectTypingResult(fieldTypes)),
       (TypedMap(Map("a" -> 1, "b" -> "string")), TypedObjectTypingResult(fieldTypes))
     )
@@ -78,17 +80,29 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
     checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
-    val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
+    val listOfTypedMaps      = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = TypedObjectTypingResult(Map("a" -> Typed(classOf[Integer])))
     checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
     checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("c" -> Typed(classOf[Integer]))))
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("b" -> Typed(classOf[Integer]))))
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("a" -> Typed(classOf[String]))))
+    checkNotASubclassOfOtherParamTypingResult(
+      listOfTypedMaps,
+      TypedObjectTypingResult(Map("c" -> Typed(classOf[Integer])))
+    )
+    checkNotASubclassOfOtherParamTypingResult(
+      listOfTypedMaps,
+      TypedObjectTypingResult(Map("b" -> Typed(classOf[Integer])))
+    )
+    checkNotASubclassOfOtherParamTypingResult(
+      listOfTypedMaps,
+      TypedObjectTypingResult(Map("a" -> Typed(classOf[String])))
+    )
   }
 
   test("should find element type for lists of different elements") {
-    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Typed.typedClass[Number]))
+    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(
+      classOf[List[_]],
+      List(Typed.typedClass[Number])
+    )
     Typed.fromInstance(List(3, "t")) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Unknown))
   }
 

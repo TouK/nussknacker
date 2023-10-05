@@ -37,30 +37,34 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
 
   override val avroAsJsonSerialization: Boolean = true
 
-  private def avroSchemedJsonPayloadProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+  private def avroSchemedJsonPayloadProcess(
+      topicConfig: TopicConfig,
+      versionOption: SchemaVersionOption,
+      validationMode: ValidationMode = ValidationMode.strict
+  ) =
     ScenarioBuilder
       .streaming("json-schemed-test")
       .parallelism(1)
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
+    val timeAgo     = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterAvroTopicConfig("read-filter-save-json", RecordSchemas)
 
     val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
@@ -80,4 +84,5 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
     val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
+
 }

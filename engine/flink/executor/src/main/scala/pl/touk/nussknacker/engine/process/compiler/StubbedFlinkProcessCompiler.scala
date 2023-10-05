@@ -14,30 +14,38 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDef
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import shapeless.syntax.typeable._
 
-abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
-                                           creator: ProcessConfigCreator,
-                                           processConfig: Config,
-                                           diskStateBackendSupport: Boolean,
-                                           objectNaming: ObjectNaming,
-                                           componentUseCase: ComponentUseCase)
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
+abstract class StubbedFlinkProcessCompiler(
+    process: CanonicalProcess,
+    creator: ProcessConfigCreator,
+    processConfig: Config,
+    diskStateBackendSupport: Boolean,
+    objectNaming: ObjectNaming,
+    componentUseCase: ComponentUseCase
+) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def definitions(processObjectDependencies: ProcessObjectDependencies,
-                                     userCodeClassLoader: ClassLoader): (ModelDefinitionWithTypes, EngineDictRegistry) = {
-    val (originalDefinitionWithTypes, originalDictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
+  override protected def definitions(
+      processObjectDependencies: ProcessObjectDependencies,
+      userCodeClassLoader: ClassLoader
+  ): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+    val (originalDefinitionWithTypes, originalDictRegistry) =
+      super.definitions(processObjectDependencies, userCodeClassLoader)
     val originalDefinition = originalDefinitionWithTypes.modelDefinition
 
-    val collectedSources = process.allStartNodes.map(_.head.data).collect {
-      case source: Source => source
+    val collectedSources = process.allStartNodes.map(_.head.data).collect { case source: Source =>
+      source
     }
 
-    lazy val context = ComponentDefinitionContext(userCodeClassLoader, originalDefinitionWithTypes, originalDictRegistry)
+    lazy val context =
+      ComponentDefinitionContext(userCodeClassLoader, originalDefinitionWithTypes, originalDictRegistry)
     val usedSourceTypes = collectedSources.map(_.ref.typ)
     val stubbedSources =
       usedSourceTypes.map { sourceType =>
-        val sourceDefinition = originalDefinition.sourceFactories.getOrElse(sourceType, throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
+        val sourceDefinition = originalDefinition.sourceFactories.getOrElse(
+          sourceType,
+          throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition")
+        )
         val stubbedDefinition = prepareSourceFactory(sourceDefinition, context)
         sourceType -> stubbedDefinition
       }
@@ -52,34 +60,52 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
     val stubbedServices = originalDefinition.services.mapValuesNow(prepareService(_, context))
 
-    (ModelDefinitionWithTypes(
-      originalDefinition
-        .copy(
-          sourceFactories = originalDefinition.sourceFactories ++ stubbedSources ++ stubbedSourceForFragment,
-          services = stubbedServices)), originalDictRegistry)
+    (
+      ModelDefinitionWithTypes(
+        originalDefinition
+          .copy(
+            sourceFactories = originalDefinition.sourceFactories ++ stubbedSources ++ stubbedSourceForFragment,
+            services = stubbedServices
+          )
+      ),
+      originalDictRegistry
+    )
   }
 
   protected def prepareService(service: ObjectWithMethodDef, context: ComponentDefinitionContext): ObjectWithMethodDef
 
-  protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef, context: ComponentDefinitionContext): ObjectWithMethodDef
+  protected def prepareSourceFactory(
+      sourceFactory: ObjectWithMethodDef,
+      context: ComponentDefinitionContext
+  ): ObjectWithMethodDef
 
 }
 
-case class ComponentDefinitionContext(userCodeClassLoader: ClassLoader,
-                                      originalDefinitionWithTypes: ModelDefinitionWithTypes,
-                                      originalDictRegistry: EngineDictRegistry)
+case class ComponentDefinitionContext(
+    userCodeClassLoader: ClassLoader,
+    originalDefinitionWithTypes: ModelDefinitionWithTypes,
+    originalDictRegistry: EngineDictRegistry
+)
 
-abstract class StubbedComponentImplementationInvoker(original: ComponentImplementationInvoker,
-                                                     originalReturnType: Option[TypingResult]) extends ComponentImplementationInvoker {
+abstract class StubbedComponentImplementationInvoker(
+    original: ComponentImplementationInvoker,
+    originalReturnType: Option[TypingResult]
+) extends ComponentImplementationInvoker {
   def this(componentDefinitionWithImpl: ObjectWithMethodDef) =
     this(componentDefinitionWithImpl.implementationInvoker, componentDefinitionWithImpl.returnType)
 
-  override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+  override def invokeMethod(
+      params: Map[String, Any],
+      outputVariableNameOpt: Option[String],
+      additional: Seq[AnyRef]
+  ): Any = {
     def transform(impl: Any): Any = {
       val typingResult = impl.cast[ReturningType].map(rt => Some(rt.returnType)).getOrElse(originalReturnType)
-      val nodeId = additional.collectFirst {
-        case nodeId: NodeId => nodeId
-      }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
+      val nodeId = additional
+        .collectFirst { case nodeId: NodeId =>
+          nodeId
+        }
+        .getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
 
       handleInvoke(impl, typingResult, nodeId)
     }

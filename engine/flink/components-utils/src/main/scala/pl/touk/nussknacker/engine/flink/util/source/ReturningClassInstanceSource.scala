@@ -6,17 +6,20 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 
-class ReturningClassInstanceSource extends SourceFactory  {
+class ReturningClassInstanceSource extends SourceFactory {
 
   @MethodToInvoke
-  def source(@ParamName("Additional class")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-               defaultMode = DualEditorMode.SIMPLE
-             )  additionalClass: String) = {
+  def source(
+      @ParamName("Additional class")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+        defaultMode = DualEditorMode.SIMPLE
+      ) additionalClass: String
+  ) = {
     val resultClass = Class.forName(additionalClass)
     CollectionSource(List.empty, None, Typed.typedClass(resultClass))(TypeInformation.of(resultClass))
   }
 
 }
+
 case class ReturningTestCaseClass(someMethod: String)

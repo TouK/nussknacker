@@ -6,16 +6,16 @@ import pl.touk.nussknacker.ui.api.SecurityError.{AuthenticationError, Authorizat
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
-import sttp.tapir.AnyEndpoint
 import sttp.tapir.server.ServerEndpoint
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class BaseHttpService(config: Config,
-                               processCategoryService: ProcessCategoryService,
-                               authenticator: AuthenticationResources)
-                              (implicit executionContext: ExecutionContext) {
+abstract class BaseHttpService(
+    config: Config,
+    processCategoryService: ProcessCategoryService,
+    authenticator: AuthenticationResources
+)(implicit executionContext: ExecutionContext) {
 
   // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
   type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
@@ -34,29 +34,33 @@ abstract class BaseHttpService(config: Config,
     if (when) expose(serverEndpoint)
   }
 
-  def allEndpointDefinitions: List[AnyEndpoint] = serverEndpoints.map(_.endpoint)
-
   def serverEndpoints: List[NoRequirementServerEndpoint] = allServerEndpoints.get()
 
-  protected def authorizeAdminUser[BUSINESS_ERROR](credentials: AuthCredentials): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
+  protected def authorizeAdminUser[BUSINESS_ERROR](
+      credentials: AuthCredentials
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
     authorizeKnownUser[BUSINESS_ERROR](credentials)
       .map {
-        case right@Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser) => securityError(AuthorizationError)
-        case error@Left(_) => error
+        case right @ Right(AdminUser(_, _)) => right
+        case Right(_: CommonUser)           => securityError(AuthorizationError)
+        case error @ Left(_)                => error
       }
   }
 
-  protected def authorizeKnownUser[BUSINESS_ERROR](credentials: AuthCredentials): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
+  protected def authorizeKnownUser[BUSINESS_ERROR](
+      credentials: AuthCredentials
+  ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
     authenticator
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
-          Right(LoggedUser(
-            authenticatedUser = user,
-            rules = AuthenticationConfiguration.getRules(config),
-            processCategories = processCategoryService.getAllCategories
-          ))
+          success(
+            LoggedUser(
+              authenticatedUser = user,
+              rules = AuthenticationConfiguration.getRules(config),
+              processCategories = processCategoryService.getAllCategories
+            )
+          )
         case Some(_) =>
           securityError(AuthorizationError)
         case None =>
@@ -70,6 +74,7 @@ abstract class BaseHttpService(config: Config,
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
 }
+
 object BaseHttpService {
 
   // we assume that our endpoints have no special requirements (in the Tapir sense)

@@ -14,7 +14,7 @@ object UniversalSchemaValidator extends SchemaValidator {
     schema match {
       case s: AvroSchema => AvroSchemaValidator.validateSchema(schema)
       case s: JsonSchema => Valid(())
-      case schema => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
+      case schema        => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
     }
   }
 

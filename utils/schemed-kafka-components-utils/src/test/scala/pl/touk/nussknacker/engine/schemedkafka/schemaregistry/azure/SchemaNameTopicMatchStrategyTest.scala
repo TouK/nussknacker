@@ -8,10 +8,14 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTo
 class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("schema name extraction") {
-    FullSchemaNameDecomposed.unapply("some.namespace.FooBarKey").value shouldEqual ("foo-bar", Some("some.namespace"), true)
-    FullSchemaNameDecomposed.unapply("some.namespace.FooBarValue").value shouldEqual ("foo-bar", Some("some.namespace"), false)
-    FullSchemaNameDecomposed.unapply("some.namespace.FooBar") should be (empty)
-    FullSchemaNameDecomposed.unapply("FooBarKey").value shouldEqual("foo-bar", None, true)
+    FullSchemaNameDecomposed.unapply("some.namespace.FooBarKey").value shouldEqual ("foo-bar", Some(
+      "some.namespace"
+    ), true)
+    FullSchemaNameDecomposed.unapply("some.namespace.FooBarValue").value shouldEqual ("foo-bar", Some(
+      "some.namespace"
+    ), false)
+    FullSchemaNameDecomposed.unapply("some.namespace.FooBar") should be(empty)
+    FullSchemaNameDecomposed.unapply("FooBarKey").value shouldEqual ("foo-bar", None, true)
 
     SchemaNameTopicMatchStrategy.topicNameFromKeySchemaName("some.namespace.FooBarKey").value shouldEqual "foo-bar"
     SchemaNameTopicMatchStrategy.topicNameFromValueSchemaName("some.namespace.FooBarKey") should be(empty)

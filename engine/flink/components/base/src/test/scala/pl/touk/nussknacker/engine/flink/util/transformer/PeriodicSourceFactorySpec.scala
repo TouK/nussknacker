@@ -19,21 +19,26 @@ import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 
 class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-
   test("should produce results for each element in list") {
     val sinkId = "sinkId"
-    val input = "some value"
+    val input  = "some value"
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
-    val model = LocalModelData(ConfigFactory.empty(), WithListener(collectingListener))
+    val model              = LocalModelData(ConfigFactory.empty(), WithListener(collectingListener))
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("periodic", "periodic",
-        "period" -> "T(java.time.Duration).ofSeconds(1)", "count" -> "1", "value" -> s"'$input'")
+      .source(
+        "periodic",
+        "periodic",
+        "period" -> "T(java.time.Duration).ofSeconds(1)",
+        "count"  -> "1",
+        "value"  -> s"'$input'"
+      )
       .emptySink(sinkId, "dead-end")
 
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+    val registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, scenario, ProcessVersion.empty, DeploymentData.empty)
 
     val id = stoppableEnv.executeAndWaitForStart(scenario.id)

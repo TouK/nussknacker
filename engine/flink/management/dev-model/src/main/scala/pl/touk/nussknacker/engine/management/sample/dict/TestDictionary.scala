@@ -9,11 +9,13 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 object TestDictionary {
   val id: String = "dict"
 
-  val definition: EmbeddedDictDefinition = EmbeddedDictDefinition(Map(
-    "foo" -> "Foo",
-    "bar" -> "Bar",
-    "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"
-  ))
+  val definition: EmbeddedDictDefinition = EmbeddedDictDefinition(
+    Map(
+      "foo"                           -> "Foo",
+      "bar"                           -> "Bar",
+      "sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots"
+    )
+  )
 
   val instance: DictInstance = DictInstance(id, definition)
 }

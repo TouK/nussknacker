@@ -9,26 +9,30 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
-  def createProcessState(stateStatus: StateStatus): ProcessState =
-    FlinkProcessStateDefinitionManager.processState(StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty)))
 
-  it ("scenario state should be during deploy") {
+  def createProcessState(stateStatus: StateStatus): ProcessState =
+    FlinkProcessStateDefinitionManager.processState(
+      StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    )
+
+  it("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)
     state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
-  it ("scenario state should be running") {
+  it("scenario state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
     state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
   }
 
-  it ("scenario state should be finished") {
+  it("scenario state should be finished") {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
   }
 
-  it ("scenario state should be restarting") {
+  it("scenario state should be restarting") {
     val state = createProcessState(SimpleStateStatus.Restarting)
     state.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
+
 }

@@ -34,15 +34,20 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads body params") {
 
-    val openApi = parseServicesFromResourceUnsafe("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi =
+      parseServicesFromResourceUnsafe("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
     openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
-      SingleBodyParameter(SwaggerObject(Map(
-        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong))),
-        "otherField" -> SwaggerString
-      )))
+      SingleBodyParameter(
+        SwaggerObject(
+          Map(
+            "offers"     -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong))),
+            "otherField" -> SwaggerString
+          )
+        )
+      )
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
@@ -50,7 +55,10 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads primitive body") {
 
-    val openApi = parseServicesFromResourceUnsafe("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResourceUnsafe(
+      "enricher-primitive-body-param.yml",
+      baseConfig.copy(allowedMethods = List("POST"))
+    ).head
 
     openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
@@ -63,21 +71,26 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads only configured methods and patterns") {
 
-    forAll(Table(
-      ("allowedMethods", "namePattern", "expectedNames"),
-      (List("GET", "POST"), ".*", List("getService", "postService")),
-      (List("GET"), ".*", List("getService")),
-      (List("GET", "POST"), "post.*", List("postService")),
-      (List("GET"), "post.*", List())
-    )) { (allowedMethods, namePattern, expectedNames) =>
-      parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
-        namePattern = namePattern.r)).map(_.name.value) shouldBe expectedNames
+    forAll(
+      Table(
+        ("allowedMethods", "namePattern", "expectedNames"),
+        (List("GET", "POST"), ".*", List("getService", "postService")),
+        (List("GET"), ".*", List("getService")),
+        (List("GET", "POST"), "post.*", List("postService")),
+        (List("GET"), "post.*", List())
+      )
+    ) { (allowedMethods, namePattern, expectedNames) =>
+      parseServicesFromResourceUnsafe(
+        "multiple-operations.yml",
+        baseConfig.copy(allowedMethods = allowedMethods, namePattern = namePattern.r)
+      ).map(_.name.value) shouldBe expectedNames
     }
 
   }
 
   test("detects documentation") {
-    val openApi = parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = List("GET", "POST")))
+    val openApi =
+      parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = List("GET", "POST")))
 
     openApi.find(_.name.value == "getService").flatMap(_.documentation) shouldBe Some("https://nussknacker.io")
     openApi.find(_.name.value == "postService").flatMap(_.documentation) shouldBe Some("https://touk.pl")
@@ -90,10 +103,12 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     openApi.find(_.exists(_.name == ServiceName("GET-valid"))) shouldBe Symbol("defined")
 
     def errorsFor(name: String) =
-      openApi.flatMap(_.swap.toOption).filter(_.name == ServiceName("GET-"+name)).flatMap(_.errors.toList)
+      openApi.flatMap(_.swap.toOption).filter(_.name == ServiceName("GET-" + name)).flatMap(_.errors.toList)
 
     errorsFor("noResponseType") shouldBe List("No response with application/json or */* media types found")
-    errorsFor("unhandledSecurity") shouldBe List("No security requirement can be met because: there is no security config for scheme name \"headerConfig\"")
+    errorsFor("unhandledSecurity") shouldBe List(
+      "No security requirement can be met because: there is no security config for scheme name \"headerConfig\""
+    )
     errorsFor("unhandledFormat") shouldBe List("Type 'number' in format 'decimal' is not supported")
 
   }
@@ -102,33 +117,43 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     val openApi = parseServicesFromResourceUnsafe("recursive.yml")
 
     val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
-    val recursiveListType = SwaggerObject(Map(
-      "value" -> SwaggerString,
-      "next" -> SwaggerAny,
-      "union" -> SwaggerUnion(List(SwaggerString, SwaggerAny)),
-      "list" -> SwaggerArray(SwaggerAny)
-    ))
-    responseType shouldBe Some(SwaggerObject(Map(
-      "left" -> recursiveListType,
-      "right" -> recursiveListType
-    )))
-    recursiveListType.typingResult shouldBe TypedObjectTypingResult(ListMap(
-      "value" -> Typed[String],
-      "next" -> Unknown,
-      //union String + Unknown
-      "union" -> Unknown,
-      "list" -> Typed.genericTypeClass[java.util.List[_]](List(Unknown))
-    ))
+    val recursiveListType = SwaggerObject(
+      Map(
+        "value" -> SwaggerString,
+        "next"  -> SwaggerAny,
+        "union" -> SwaggerUnion(List(SwaggerString, SwaggerAny)),
+        "list"  -> SwaggerArray(SwaggerAny)
+      )
+    )
+    responseType shouldBe Some(
+      SwaggerObject(
+        Map(
+          "left"  -> recursiveListType,
+          "right" -> recursiveListType
+        )
+      )
+    )
+    recursiveListType.typingResult shouldBe TypedObjectTypingResult(
+      ListMap(
+        "value" -> Typed[String],
+        "next"  -> Unknown,
+        // union String + Unknown
+        "union" -> Unknown,
+        "list"  -> Typed.genericTypeClass[java.util.List[_]](List(Unknown))
+      )
+    )
 
   }
 
   test("should handle array return type with 3.1") {
     val openApi = parseServicesFromResource("swagger-3.1-array.yml")
-    inside(openApi) {
-      case Valid(service) :: Nil => service.responseSwaggerType shouldBe Some(
-        SwaggerObject(Map(
-          "itemsWithType" -> SwaggerArray(SwaggerString),
-        ))
+    inside(openApi) { case Valid(service) :: Nil =>
+      service.responseSwaggerType shouldBe Some(
+        SwaggerObject(
+          Map(
+            "itemsWithType" -> SwaggerArray(SwaggerString),
+          )
+        )
       )
     }
   }
@@ -137,15 +162,18 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     val openApi = parseServicesFromResource("swagger-2.0-refs.yml")
     val openApiService = openApi.headOption match {
       case Some(Valid(openApiService)) => openApiService
-      case _ => fail("Failed to parse Swagger service")
+      case _                           => fail("Failed to parse Swagger service")
     }
     openApiService.responseSwaggerType shouldBe Some(
-      SwaggerObject(Map(
-        "message" -> SwaggerString,
-      ))
+      SwaggerObject(
+        Map(
+          "message" -> SwaggerString,
+        )
+      )
     )
     openApiService.parameters shouldBe List(
       QueryParameter("queryParam", SwaggerString)
     )
   }
+
 }

@@ -16,17 +16,22 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
-                                           cacheTTL: FiniteDuration) extends DeploymentManager {
+class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL: FiniteDuration)
+    extends DeploymentManager {
 
-  private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine.newBuilder()
+  private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
+    .newBuilder()
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
     .buildAsync[ProcessName, List[StatusDetails]]
 
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]] =
     delegate.getProcessState(idWithName, lastStateAction)
 
-  override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>
         val resultFuture = delegate.getProcessStates(name)
@@ -36,17 +41,27 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
         Option(cache.getIfPresent(name))
           .map(_.toScala.map(WithDataFreshnessStatus(_, cached = true)))
           .getOrElse {
-            cache.get(name, (_, _) =>
-              delegate.getProcessStates(name).map(_.value).toJava.toCompletableFuture
-            ).toScala.map(WithDataFreshnessStatus(_, cached = false))
+            cache
+              .get(name, (_, _) => delegate.getProcessStates(name).map(_.value).toJava.toCompletableFuture)
+              .toScala
+              .map(WithDataFreshnessStatus(_, cached = false))
           }
     }
   }
 
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] =
+  override def validate(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess
+  ): Future[Unit] =
     delegate.validate(processVersion, deploymentData, canonicalProcess)
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
+  override def deploy(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess,
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]] =
     delegate.deploy(processVersion, deploymentData, canonicalProcess, savepointPath)
 
   override def cancel(name: ProcessName, user: User): Future[Unit] =
@@ -55,14 +70,22 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
     delegate.cancel(name, deploymentId, user)
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
+  override def test[T](
+      name: ProcessName,
+      canonicalProcess: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 
   override def customActions: List[CustomAction] = delegate.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(
+      actionRequest: CustomActionRequest,
+      canonicalProcess: CanonicalProcess
+  ): Future[Either[CustomActionError, CustomActionResult]] =
     delegate.invokeCustomAction(actionRequest, canonicalProcess)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
@@ -71,7 +94,12 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
     delegate.stop(name, savepointDir, user)
 
-  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+  override def stop(
+      name: ProcessName,
+      deploymentId: DeploymentId,
+      savepointDir: Option[String],
+      user: User
+  ): Future[SavepointResult] =
     delegate.stop(name, deploymentId, savepointDir, user)
 
   override def close(): Unit = delegate.close()
@@ -86,15 +114,23 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
   val scenarioStateCachingConfigKey = "scenarioStateCaching"
 
   def wrapWithCachingIfNeeded(delegate: DeploymentManager, config: Config): DeploymentManager = {
-    val cachingConfig = config.getAs[ScenarioStateCachingConfig](scenarioStateCachingConfigKey).getOrElse(ScenarioStateCachingConfig())
+    val cachingConfig =
+      config.getAs[ScenarioStateCachingConfig](scenarioStateCachingConfigKey).getOrElse(ScenarioStateCachingConfig())
     if (cachingConfig.enabled) {
       val cacheTTL = cachingConfig.cacheTTL
-        .getOrElse(throw new IllegalArgumentException(s"Invalid config: $this. If you want to enable processStateCaching, you have to define cacheTTL"))
+        .getOrElse(
+          throw new IllegalArgumentException(
+            s"Invalid config: $this. If you want to enable processStateCaching, you have to define cacheTTL"
+          )
+        )
       logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
       delegate match {
         case postprocessing: PostprocessingProcessStatus =>
           new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
-            override def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] =
+            override def postprocess(
+                idWithName: ProcessIdWithName,
+                statusDetailsList: List[StatusDetails]
+            ): Future[Option[ProcessAction]] =
               postprocessing.postprocess(idWithName, statusDetailsList)
           }
         case _ =>
@@ -108,4 +144,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
 
 }
 
-case class ScenarioStateCachingConfig(enabled: Boolean = true, cacheTTL: Option[FiniteDuration] = Some(10 seconds))
+final case class ScenarioStateCachingConfig(
+    enabled: Boolean = true,
+    cacheTTL: Option[FiniteDuration] = Some(10 seconds)
+)

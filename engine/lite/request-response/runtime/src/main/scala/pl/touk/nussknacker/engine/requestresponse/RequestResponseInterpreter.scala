@@ -23,7 +23,11 @@ import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpret
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
-import pl.touk.nussknacker.engine.requestresponse.openapi.{OApiInfo, PathOpenApiDefinitionGenerator, RequestResponseOpenApiGenerator}
+import pl.touk.nussknacker.engine.requestresponse.openapi.{
+  OApiInfo,
+  PathOpenApiDefinitionGenerator,
+  RequestResponseOpenApiGenerator
+}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.ExecutionContext
@@ -40,19 +44,37 @@ object RequestResponseInterpreter {
 
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
-  def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: CanonicalProcess, processVersion: ProcessVersion, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
-            additionalListeners: List[ProcessListener], resultCollector: ResultCollector, componentUseCase: ComponentUseCase)
-           (implicit ec: ExecutionContext):
-  Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
-    ScenarioInterpreterFactory.createInterpreter[Effect, Any, AnyRef](process, modelData, additionalListeners, resultCollector, componentUseCase)
+  def apply[Effect[_]: Monad: InterpreterShape: CapabilityTransformer](
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      context: LiteEngineRuntimeContextPreparer,
+      modelData: ModelData,
+      additionalListeners: List[ProcessListener],
+      resultCollector: ResultCollector,
+      componentUseCase: ComponentUseCase
+  )(
+      implicit ec: ExecutionContext
+  ): Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {
+    ScenarioInterpreterFactory
+      .createInterpreter[Effect, Any, AnyRef](
+        process,
+        modelData,
+        additionalListeners,
+        resultCollector,
+        componentUseCase
+      )
       .map(new RequestResponseScenarioInterpreter(context.prepare(JobData(process.metaData, processVersion)), _))
   }
 
   // TODO: Some smarter type in Input than Context?
-  class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
-                                                            statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]) extends PathOpenApiDefinitionGenerator with AutoCloseable {
+  class RequestResponseScenarioInterpreter[Effect[_]: Monad](
+      val context: LiteEngineRuntimeContext,
+      statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]
+  ) extends PathOpenApiDefinitionGenerator
+      with AutoCloseable {
 
-    private lazy val outputSchemaString: Option[String] = context.jobData.metaData.additionalFields.properties.get(OutputSchemaProperty)
+    private lazy val outputSchemaString: Option[String] =
+      context.jobData.metaData.additionalFields.properties.get(OutputSchemaProperty)
 
     val id: String = context.jobData.metaData.id
 
@@ -61,7 +83,7 @@ object RequestResponseInterpreter {
     private val invocationMetrics = new InvocationMetrics(context)
 
     val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
-      case Nil => throw new IllegalArgumentException("No source found")
+      case Nil                       => throw new IllegalArgumentException("No source found")
       case (sourceId, source) :: Nil => (sourceId, source.asInstanceOf[RequestResponseSource[Any]])
       case more => throw new IllegalArgumentException(s"More than one source for request-response: ${more.map(_._1)}")
     }
@@ -83,13 +105,14 @@ object RequestResponseInterpreter {
       statelessScenarioInterpreter.close()
       context.close()
     }
+
     /*
-    * TODO : move inputSchema and outputSchema to one place
-    * It is better to have both schemas in one place (properties or some new/custom place)
-    *  */
+     * TODO : move inputSchema and outputSchema to one place
+     * It is better to have both schemas in one place (properties or some new/custom place)
+     *  */
     def getSchemaOutputProperty: Json = {
       outputSchemaString match {
-        case None => Map("type" -> "object".asJson, "properties" -> Json.Null).asJson
+        case None                  => Map("type" -> "object".asJson, "properties" -> Json.Null).asJson
         case Some(outputSchemaStr) => CirceUtil.decodeJsonUnsafe[Json](outputSchemaStr, "Provided json is not valid")
       }
     }
@@ -99,7 +122,6 @@ object RequestResponseInterpreter {
       version = context.jobData.processVersion.versionId.value.toString,
       description = context.jobData.metaData.additionalFields.description
     )
-
 
     override def generatePathOpenApiDefinitionPart(): Option[Json] = {
       for {
@@ -117,9 +139,10 @@ object RequestResponseInterpreter {
         )
       }
     }
+
   }
 
-  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner = new InterpreterTestRunner[Effect, Context, AnyRef]
+  def testRunner[Effect[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
+    new InterpreterTestRunner[Effect, Context, AnyRef]
 
 }
-

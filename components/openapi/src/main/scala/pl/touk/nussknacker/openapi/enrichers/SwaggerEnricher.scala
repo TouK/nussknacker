@@ -9,7 +9,12 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, TimeMeasuringService}
-import pl.touk.nussknacker.http.backend.{FixedAsyncHttpClientBackendProvider, HttpBackendProvider, HttpClientConfig, LoggingAndCollectingSttpBackend}
+import pl.touk.nussknacker.http.backend.{
+  FixedAsyncHttpClientBackendProvider,
+  HttpBackendProvider,
+  HttpClientConfig,
+  LoggingAndCollectingSttpBackend
+}
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherCreator.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
@@ -22,11 +27,14 @@ import java.net.{MalformedURLException, URL}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
-                      fixedParams: Map[String, () => AnyRef],
-                      httpBackendProvider: HttpBackendProvider,
-                      codesToInterpretAsEmpty: List[StatusCode]
-                     ) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
+class SwaggerEnricher(
+    baseUrl: URL,
+    swaggerService: SwaggerService,
+    fixedParams: Map[String, () => AnyRef],
+    httpBackendProvider: HttpBackendProvider,
+    codesToInterpretAsEmpty: List[StatusCode]
+) extends EagerServiceWithStaticParametersAndReturnType
+    with TimeMeasuringService {
 
   override protected def serviceName: String = swaggerService.name.value
 
@@ -34,7 +42,10 @@ class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
 
   private val parameterExtractor = new ParametersExtractor(swaggerService, fixedParams)
 
-  implicit protected def httpBackendForEc(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): SttpBackend[Future, Any] = {
+  implicit protected def httpBackendForEc(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector
+  ): SttpBackend[Future, Any] = {
     val originalBackend: SttpBackend[Future, Any] = httpBackendProvider.httpBackendForEc
     new LoggingAndCollectingSttpBackend(originalBackend, s"${getClass.getPackage.getName}.$serviceName")
   }
@@ -43,10 +54,16 @@ class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
 
   override def hasOutput: Boolean = true
 
-  override def returnType: typing.TypingResult = swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
+  override def returnType: typing.TypingResult =
+    swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
-  override def invoke(params: Map[String, Any])
-                     (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[AnyRef] =
+  override def invoke(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector,
+      contextId: ContextId,
+      metaData: MetaData,
+      componentUseCase: ComponentUseCase
+  ): Future[AnyRef] =
     measuring {
       swaggerHttpService.invoke(parameterExtractor.prepareParams(params))
     }
@@ -60,15 +77,18 @@ class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
     super.close()
     httpBackendProvider.close()
   }
+
 }
 
 class SwaggerEnricherCreator(httpBackendProvider: HttpBackendProvider) {
 
-  def create(definitionUrl: URL,
-             rootUrl: Option[URL],
-             swaggerService: SwaggerService,
-             fixedParams: Map[String, () => AnyRef],
-             codesToInterpretAsEmpty: List[StatusCode]): SwaggerEnricher = {
+  def create(
+      definitionUrl: URL,
+      rootUrl: Option[URL],
+      swaggerService: SwaggerService,
+      fixedParams: Map[String, () => AnyRef],
+      codesToInterpretAsEmpty: List[StatusCode]
+  ): SwaggerEnricher = {
     val baseUrl = determineInvocationBaseUrl(definitionUrl, rootUrl, swaggerService.servers)
     new SwaggerEnricher(baseUrl, swaggerService, fixedParams, httpBackendProvider, codesToInterpretAsEmpty)
   }
@@ -83,22 +103,26 @@ class SwaggerEnricherCreator(httpBackendProvider: HttpBackendProvider) {
 object SwaggerEnricherCreator {
 
   def apply(httpClientConfig: HttpClientConfig): SwaggerEnricherCreator = {
-    val isFlinkBased = Try(getClass.getClassLoader
-      .loadClass("org.apache.flink.streaming.api.environment.StreamExecutionEnvironment")).isSuccess
+    val isFlinkBased = Try(
+      getClass.getClassLoader
+        .loadClass("org.apache.flink.streaming.api.environment.StreamExecutionEnvironment")
+    ).isSuccess
     val backendProvider = if (isFlinkBased) {
       new SharedHttpClientBackendProvider(httpClientConfig)
     } else {
-      //TODO: figure out how to create client only once and enable its closing. Also: do we want to pass processId here?
-      //Should client be one per engine deployment, or per scenario?
+      // TODO: figure out how to create client only once and enable its closing. Also: do we want to pass processId here?
+      // Should client be one per engine deployment, or per scenario?
       val httpClient = new DefaultAsyncHttpClient(httpClientConfig.toAsyncHttpClientConfig(None).build())
       new FixedAsyncHttpClientBackendProvider(httpClient)
     }
     new SwaggerEnricherCreator(backendProvider)
   }
 
-  private[enrichers] def determineInvocationBaseUrl(definitionUrl: URL,
-                                                    rootUrl: Option[URL],
-                                                    serversFromDefinition: List[String]): URL = {
+  private[enrichers] def determineInvocationBaseUrl(
+      definitionUrl: URL,
+      rootUrl: Option[URL],
+      serversFromDefinition: List[String]
+  ): URL = {
     def relativeToDefinitionUrl(serversUrlPart: String): URL = {
       try {
         new URL(definitionUrl, serversUrlPart)

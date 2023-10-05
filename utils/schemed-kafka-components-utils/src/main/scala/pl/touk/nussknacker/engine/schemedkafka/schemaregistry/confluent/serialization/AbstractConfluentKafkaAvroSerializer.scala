@@ -23,36 +23,51 @@ import scala.util.Using
   * because data could not support field from schema. When this situation has place wy try to convert data to provided schema by
   * using AvroSchemaEvolution.alignRecordToSchema implementation.
   */
-class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolution) extends AbstractKafkaAvroSerializer with DatumReaderWriterMixin {
+class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolution)
+    extends AbstractKafkaAvroSerializer
+    with DatumReaderWriterMixin {
 
   protected val encoderFactory: EncoderFactory = EncoderFactory.get
 
-  def serialize(avroSchemaOpt: Option[AvroSchema], topic: String, data: Any, isKey: Boolean, headers: Headers): Array[Byte] = {
+  def serialize(
+      avroSchemaOpt: Option[AvroSchema],
+      topic: String,
+      data: Any,
+      isKey: Boolean,
+      headers: Headers
+  ): Array[Byte] = {
     if (data == null) {
       null
     } else {
 
       val (avroSchema, record) = (avroSchemaOpt, data) match {
-        case (Some(schema), record: GenericContainer) => (schema, avroSchemaEvolution.alignRecordToSchema(record, schema.rawSchema()))
+        case (Some(schema), record: GenericContainer) =>
+          (schema, avroSchemaEvolution.alignRecordToSchema(record, schema.rawSchema()))
         case (Some(schema), other) => (schema, other)
-        case (None, other) => (new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection, false, false)), other)
+        case (None, other) =>
+          (new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection, false, false)), other)
       }
       val extracted = record match {
         case nonRecord: NonRecordContainer => nonRecord.getValue
-        case other => other
+        case other                         => other
       }
 
       try {
         val schemaId: SchemaId = autoRegisterSchemaIfNeeded(topic, data, isKey, avroSchema)
         writeData(extracted, avroSchema.rawSchema(), schemaId, headers)
       } catch {
-        case exc@(_: RuntimeException | _: IOException) =>
+        case exc @ (_: RuntimeException | _: IOException) =>
           throw new SerializationException("Error serializing Avro message", exc)
       }
     }
   }
 
-  protected def autoRegisterSchemaIfNeeded(topic: String, data: Any, isKey: Boolean, avroSchema: AvroSchema): SchemaId = {
+  protected def autoRegisterSchemaIfNeeded(
+      topic: String,
+      data: Any,
+      isKey: Boolean,
+      avroSchema: AvroSchema
+  ): SchemaId = {
     try {
       val subject = getSubjectName(topic, isKey, data, avroSchema)
       if (this.autoRegisterSchema) {
@@ -68,7 +83,6 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
 
   protected def writeData(data: Any, avroSchema: Schema, schemaId: SchemaId, headers: Headers): Array[Byte] =
     Using.resource(new ByteArrayOutputStream) { out =>
-
       writeHeader(schemaId, out, headers)
 
       data match {
@@ -76,7 +90,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
         case array: Array[Byte] => out.write(array)
         case _ =>
           val encoder = encoderToUse(avroSchema, out)
-          val writer = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
+          val writer  = createDatumWriter(data, avroSchema, useSchemaReflection = useSchemaReflection)
           writer.write(data, encoder)
           encoder.flush()
       }
@@ -84,10 +98,12 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
       out.toByteArray
     }
 
-  protected def encoderToUse(schema: Schema, out: OutputStream): Encoder = this.encoderFactory.directBinaryEncoder(out, null)
+  protected def encoderToUse(schema: Schema, out: OutputStream): Encoder =
+    this.encoderFactory.directBinaryEncoder(out, null)
 
   protected def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = {
     out.write(AbstractKafkaSchemaSerDe.MAGIC_BYTE)
     out.write(ByteBuffer.allocate(AbstractKafkaSchemaSerDe.idSize).putInt(schemaId.asInt).array)
   }
+
 }

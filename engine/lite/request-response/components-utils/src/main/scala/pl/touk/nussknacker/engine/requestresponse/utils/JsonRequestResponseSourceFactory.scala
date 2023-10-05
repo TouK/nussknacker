@@ -12,24 +12,25 @@ import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource
 
 import scala.reflect.ClassTag
 
-class JsonRequestResponseSourceFactory[T: Decoder : ClassTag] extends RequestResponseSourceFactory with WithExplicitTypesToExtract {
+class JsonRequestResponseSourceFactory[T: Decoder: ClassTag]
+    extends RequestResponseSourceFactory
+    with WithExplicitTypesToExtract {
 
   @MethodToInvoke
   def create(implicit nodeIdPassed: NodeId): ContextTransformation = ContextTransformation
     .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, Typed[T], None))
-    .implementedBy(
-      new RequestResponsePostSource[T] with SourceTestSupport[T] {
+    .implementedBy(new RequestResponsePostSource[T] with SourceTestSupport[T] {
 
-        override val nodeId: NodeId = nodeIdPassed
+      override val nodeId: NodeId = nodeIdPassed
 
-        override def parse(parameters: Array[Byte]): T = {
-          CirceUtil.decodeJsonUnsafe(parameters, "invalid request in request-response source")
-        }
+      override def parse(parameters: Array[Byte]): T = {
+        CirceUtil.decodeJsonUnsafe(parameters, "invalid request in request-response source")
+      }
 
-        override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe(testRecord.json, "invalid request in request-response source")
+      override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) =>
+        CirceUtil.decodeJsonUnsafe(testRecord.json, "invalid request in request-response source")
 
-      })
+    })
 
   override def typesToExtract: List[typing.TypedClass] = Typed.typedClassOpt[T].toList
 

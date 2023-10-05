@@ -6,5 +6,4 @@ trait EspExceptionConsumer extends Lifecycle {
 
   def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit
 
-
 }

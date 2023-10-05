@@ -14,15 +14,18 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import java.io.ByteArrayOutputStream
 import java.util.Optional
 
-class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with FunctionalTestMixin {
+class UniversalSourceJsonSchemaLiteTest
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._
   import io.circe.parser._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val schema = JsonSchemaBuilder.parseSchema(
-    """{
+  private val schema = JsonSchemaBuilder.parseSchema("""{
       |  "type": "object",
       |  "properties": {
       |    "first": {
@@ -40,8 +43,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       |  }
       |}""".stripMargin)
 
-  private val schemaWithLimits = JsonSchemaBuilder.parseSchema(
-    """{
+  private val schemaWithLimits = JsonSchemaBuilder.parseSchema("""{
       |  "type": "object",
       |  "properties": {
       |    "first": {
@@ -61,26 +63,55 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       |  }
       |}""".stripMargin)
 
-  private val inputTopic = "input"
+  private val inputTopic  = "input"
   private val outputTopic = "output"
 
-  private val scenario = ScenarioBuilder.streamingLite("check json serialization")
-    .source(sourceName, KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink(sinkName, KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
-      "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age", "sex" -> "#input.sex")
+  private val scenario = ScenarioBuilder
+    .streamingLite("check json serialization")
+    .source(
+      sourceName,
+      KafkaUniversalName,
+      TopicParamName         -> s"'$inputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+    )
+    .emptySink(
+      sinkName,
+      KafkaUniversalName,
+      TopicParamName         -> s"'$outputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+      SinkKeyParamName       -> "",
+      SinkRawEditorParamName -> "false",
+      "first"                -> s"#input.first",
+      "last"                 -> "#input.last",
+      "age"                  -> "#input.age",
+      "sex"                  -> "#input.sex"
+    )
 
-  private val scenarioWithRawEditor = ScenarioBuilder.streamingLite("check json serialization")
-    .source(sourceName, KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink(sinkName, KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "true",
-      SinkValueParamName -> s"#input")
+  private val scenarioWithRawEditor = ScenarioBuilder
+    .streamingLite("check json serialization")
+    .source(
+      sourceName,
+      KafkaUniversalName,
+      TopicParamName         -> s"'$inputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+    )
+    .emptySink(
+      sinkName,
+      KafkaUniversalName,
+      TopicParamName         -> s"'$outputTopic'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+      SinkKeyParamName       -> "",
+      SinkRawEditorParamName -> "true",
+      SinkValueParamName     -> s"#input"
+    )
 
   test("should read data on json schema based universal source when schemaId in header") {
-    //Given
+    // Given
 
     val schemaId = runner.registerJsonSchema(inputTopic, schema)
     runner.registerJsonSchema(outputTopic, schema)
 
-    //When
+    // When
     val record =
       """{
         |  "first": "John",
@@ -90,21 +121,33 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
         |}""".stripMargin.getBytes()
 
     val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
-    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], record, headers, Optional.empty[Integer]())
+    val input = new ConsumerRecord(
+      inputTopic,
+      1,
+      1,
+      ConsumerRecord.NO_TIMESTAMP,
+      TimestampType.NO_TIMESTAMP_TYPE,
+      ConsumerRecord.NULL_SIZE,
+      ConsumerRecord.NULL_SIZE,
+      null.asInstanceOf[Array[Byte]],
+      record,
+      headers,
+      Optional.empty[Integer]()
+    )
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runner.runWithRawData(scenario, list).validValue
+    val result                                               = runner.runWithRawData(scenario, list).validValue
 
-    //Then
+    // Then
     parse(new String(input.value())) shouldBe parse(new String(result.successes.head.value()))
   }
 
   test("should read data on json schema based universal source when schemaId in wire-format") {
-    //Given
+    // Given
     val schemaId = runner.registerJsonSchema(inputTopic, schema)
     runner.registerJsonSchema(outputTopic, schema)
 
-    //When
+    // When
     val stringRecord =
       """{
         |  "first": "John",
@@ -118,21 +161,22 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
     recordWithWireFormatSchemaId.write(record)
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
+    val input =
+      new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runner.runWithRawData(scenario, list).validValue
+    val result                                               = runner.runWithRawData(scenario, list).validValue
 
-    //Then
+    // Then
     parse(stringRecord) shouldBe parse(new String(result.successes.head.value()))
   }
 
   test("should raise compilation error in the case when written type is widen than a type in the sink") {
-    //Given
+    // Given
     val schemaId = runner.registerJsonSchema(inputTopic, schema)
     runner.registerJsonSchema(outputTopic, schemaWithLimits)
 
-    //When
+    // When
     val stringRecord =
       """{
         |  "first": "John",
@@ -146,21 +190,22 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
     recordWithWireFormatSchemaId.write(record)
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
+    val input =
+      new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runner.runWithRawData(scenarioWithRawEditor, list)
+    val result                                               = runner.runWithRawData(scenarioWithRawEditor, list)
 
-    //Then
+    // Then
     result shouldBe invalidTypes("path 'age' actual: 'Long' expected: 'Integer'")
   }
 
   test("should read/write data on json schema based universal source") {
-    //Given
+    // Given
     val schemaId = runner.registerJsonSchema(inputTopic, schemaWithLimits)
     runner.registerJsonSchema(outputTopic, schemaWithLimits)
 
-    //When
+    // When
     val stringRecord =
       """{
         |  "first": "John",
@@ -174,21 +219,22 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
     recordWithWireFormatSchemaId.write(record)
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
+    val input =
+      new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
     val result = runner.runWithRawData(scenarioWithRawEditor, list).validValue
 
-    //Then
+    // Then
     parse(stringRecord) shouldBe parse(new String(result.successes.head.value()))
   }
 
   test("should read/write data on json schema when type in sink is wider than in source") {
-    //Given
+    // Given
     val schemaId = runner.registerJsonSchema(inputTopic, schemaWithLimits)
     runner.registerJsonSchema(outputTopic, schema)
 
-    //When
+    // When
     val stringRecord =
       """{
         |  "first": "John",
@@ -202,12 +248,13 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
     recordWithWireFormatSchemaId.write(record)
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
+    val input =
+      new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
     val result = runner.runWithRawData(scenarioWithRawEditor, list).validValue
 
-    //Then
+    // Then
     parse(stringRecord) shouldBe parse(new String(result.successes.head.value()))
   }
 

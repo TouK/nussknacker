@@ -10,17 +10,30 @@ import pl.touk.nussknacker.engine.graph.node.asProcessor
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{
+  ProcessTestData,
+  TestFactory,
+  TestPermissions,
+  TestProcessUtil,
+  TestProcessingTypes
+}
 import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import shapeless.syntax.typeable.typeableOps
 
-class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
+class ProcessModelMigratorSpec
+    extends AnyFlatSpec
+    with BeforeAndAfterEach
+    with PatientScalaFutures
+    with Matchers
+    with TestPermissions {
   import shapeless.Typeable._
+
   private def migrator(migrations: Int*) =
-    new ProcessModelMigrator(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))
+    new ProcessModelMigrator(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*))
+    )
 
   val processId = "fooProcess"
-
 
   private implicit val user = TestFactory.adminUser("test1")
 
@@ -28,7 +41,11 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
     val migrationResult: MigrationResult = migrateByVersions(None, 1, 2, 3, 4, 6, 7, 8, 9)
 
-    migrationResult.migrationsApplied.map(_.description) should contain theSameElementsAs List("testMigration1", "testMigration2", "testMigration8")
+    migrationResult.migrationsApplied.map(_.description) should contain theSameElementsAs List(
+      "testMigration1",
+      "testMigration2",
+      "testMigration8"
+    )
   }
 
   it should "migrate processes to new versions when not migrated" in {
@@ -37,7 +54,9 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
     extractParallelism(migrationResult) shouldBe 11
 
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(MigrationComment(migrationResult.migrationsApplied))
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(
+      MigrationComment(migrationResult.migrationsApplied)
+    )
 
     val processor = extractProcessor(migrationResult)
     processor shouldBe ServiceRef(ProcessTestData.otherExistingServiceId, List())
@@ -58,23 +77,27 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
     extractParallelism(migrationResult) shouldBe 11
 
     val processor = extractProcessor(migrationResult)
-    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(MigrationComment(migrationResult.migrationsApplied))
+    migrationResult.toUpdateAction(ProcessId(1L)).comment shouldBe Some(
+      MigrationComment(migrationResult.migrationsApplied)
+    )
     processor shouldBe ServiceRef(ProcessTestData.existingServiceId, List())
   }
 
-  private def migrateByVersions(startFrom: Option[Int], migrations: Int*) : MigrationResult =
+  private def migrateByVersions(startFrom: Option[Int], migrations: Int*): MigrationResult =
     migrateByVersionsOpt(startFrom, migrations: _*).get
 
-  private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*) : Option[MigrationResult] =
+  private def migrateByVersionsOpt(startFrom: Option[Int], migrations: Int*): Option[MigrationResult] =
     migrator(migrations: _*).migrateProcess(
-      TestProcessUtil.displayableToProcess(ProcessTestData.validDisplayableProcess.toDisplayable).copy(modelVersion = startFrom),
+      TestProcessUtil
+        .displayableToProcess(ProcessTestData.validDisplayableProcess.toDisplayable)
+        .copy(modelVersion = startFrom),
       skipEmptyMigrations = true
     )
 
   private def extractProcessor(migrationResult: MigrationResult) = {
     val service = for {
-      node <- migrationResult.process.nodes.find(_.id == "processor")
-      flatNode <- node.cast[FlatNode]
+      node      <- migrationResult.process.nodes.find(_.id == "processor")
+      flatNode  <- node.cast[FlatNode]
       processor <- asProcessor(flatNode.data)
     } yield processor.service
     service.get
@@ -82,8 +105,9 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
   private def extractParallelism(migrationResult: MigrationResult) = {
     (for {
-      stream <- migrationResult.process.metaData.typeSpecificData.cast[StreamMetaData]
+      stream      <- migrationResult.process.metaData.typeSpecificData.cast[StreamMetaData]
       parallelism <- stream.parallelism
     } yield parallelism).get
   }
+
 }
