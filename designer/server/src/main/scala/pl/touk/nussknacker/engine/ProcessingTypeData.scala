@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,12 +30,15 @@ final case class ProcessingTypeData private(deploymentManager: DeploymentManager
 
 object ProcessingTypeData {
 
-  def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, processTypeConfig: ProcessingTypeConfig)
+  def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider,
+                               processTypeConfig: ProcessingTypeConfig,
+                               processingType: ProcessingType
+                              )
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                sttpBackend: SttpBackend[Future, Any],
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val managerConfig = processTypeConfig.deploymentConfig
-    createProcessingTypeData(deploymentManagerProvider, ModelData(processTypeConfig), managerConfig)
+    createProcessingTypeData(deploymentManagerProvider, ModelData(processTypeConfig, processingType), managerConfig)
   }
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData, managerConfig: Config)

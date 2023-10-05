@@ -85,7 +85,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   def compileSource(nodeData: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
     case a@pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
-      definitions.sourceFactories.get(ref.typ) match {
+      definitions.sourceFactoriesByName.get(ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
             contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
@@ -99,7 +99,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag@FragmentInputDefinition(id, params, _) =>
-      definitions.sourceFactories.get(id) match {
+      definitions.sourceFactoriesByName.get(id) match {
         case Some(definition) =>
           val parameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
@@ -119,7 +119,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val defaultCtx = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
-    definitions.customStreamTransformers.get(data.nodeType) match {
+    definitions.customStreamTransformersByName.get(data.nodeType) match {
       case Some((_, additionalData)) if ending && !additionalData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
@@ -138,7 +138,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                   metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
-    definitions.sinkFactories.get(ref.typ) match {
+    definitions.sinkFactoriesByName.get(ref.typ) match {
       case Some(definition) =>
         compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition, (_: Any) => Valid(ctx)).map(_._1)
       case None =>
@@ -267,7 +267,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                      outputVar: Option[OutputVar])
                     (implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
-    definitions.services.get(n.id) match {
+    definitions.servicesByName.get(n.id) match {
       case Some(objectWithMethodDef) if objectWithMethodDef.obj.isInstanceOf[EagerService] =>
         compileEagerService(n, objectWithMethodDef, validationContext, outputVar)
       case Some(static: StandardObjectWithMethodDef) =>

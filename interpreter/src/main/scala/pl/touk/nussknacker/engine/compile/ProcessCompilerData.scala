@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
@@ -36,7 +36,6 @@ object ProcessCompilerData {
               componentUseCase: ComponentUseCase,
               customProcessValidator: CustomProcessValidator): ProcessCompilerData = {
     import definitionWithTypes.modelDefinition
-    val servicesDefs = modelDefinition.services
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, modelDefinition.expressionConfig, definitionWithTypes.typeDefinitions)
     //for testing environment it's important to take classloader from user jar
@@ -57,7 +56,7 @@ object ProcessCompilerData {
       interpreter,
       process,
       listeners,
-      servicesDefs.mapValuesNow(_.obj.asInstanceOf[Lifecycle])
+      modelDefinition.servicesByName.mapValuesNow(_.obj.asInstanceOf[Lifecycle])
     )
 
   }

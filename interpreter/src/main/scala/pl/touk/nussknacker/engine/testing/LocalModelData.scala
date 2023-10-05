@@ -17,8 +17,9 @@ object LocalModelData {
             modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
             modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
             objectNaming: ObjectNaming = DefaultNamespacedObjectNaming,
+            processingType: String = "TODO" // TODO
            ): LocalModelData =
-    new LocalModelData(InputConfigDuringExecution(inputConfig), modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming)
+    new LocalModelData(InputConfigDuringExecution(inputConfig), modelConfigLoader, configCreator, migrations, modelClassLoader, objectNaming, processingType)
 
 }
 
@@ -27,5 +28,6 @@ case class LocalModelData(inputConfigDuringExecution: InputConfigDuringExecution
                           configCreator: ProcessConfigCreator,
                           migrations: ProcessMigrations,
                           modelClassLoader: ModelClassLoader,
-                          objectNaming: ObjectNaming
+                          objectNaming: ObjectNaming,
+                          processingType: String
                          ) extends ModelData

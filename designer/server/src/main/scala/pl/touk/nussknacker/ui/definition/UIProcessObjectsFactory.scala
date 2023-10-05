@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider, DefaultComponentIdProvider}
+import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -37,35 +36,6 @@ object UIProcessObjectsFactory {
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne")
     }
-  }
-
-  private def getComponentIdToNameMap(componentIdProvider: ComponentIdProvider,
-                                      uiProcessDefinition: UIProcessDefinition,
-                                      isFragment: Boolean,
-                                      processingType: ProcessingType
-                                     ): Map[ComponentId, String] = {
-    val createMapping = (name: String, componentType: ComponentType) => componentIdProvider.createComponentId(processingType, Some(name), componentType) -> name
-
-    uiProcessDefinition.services.map { case (name, obj) =>
-      createMapping(
-        name,
-        if (obj.hasNoReturn) ComponentType.Processor else ComponentType.Enricher
-      )
-    } ++
-      uiProcessDefinition.customStreamTransformers.keySet.map(
-        createMapping(_, ComponentType.CustomNode)
-      ) ++
-      uiProcessDefinition.sinkFactories.keySet.map(
-        createMapping(_, ComponentType.Sink)
-      ) ++
-      (if (!isFragment) {
-        uiProcessDefinition.sourceFactories.keySet.map(
-          createMapping(_, ComponentType.Source)
-        ) ++
-          uiProcessDefinition.fragmentInputs.keySet.map(
-            createMapping(_, ComponentType.Fragments)
-          )
-      } else Map.empty)
   }
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
@@ -87,8 +57,6 @@ object UIProcessObjectsFactory {
     val uiProcessDefinition = createUIProcessDefinition(staticObjectsDefinition, fragmentInputs,
       uiClazzDefinitions, processCategoryService)
 
-    val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
-
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
     val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
 
@@ -96,11 +64,8 @@ object UIProcessObjectsFactory {
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val combinedComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
 
-    val componentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
-    val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, uiProcessDefinition, isFragment, processingType)
-
     val additionalComponentsUIConfig = additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).flatMap {
-      case (componentId, config) => componentIdToName.get(componentId).map(_ -> config.toSingleComponentConfig)
+      case (componentId, config) => staticObjectsDefinition.componentIdToName.get(componentId).map(_ -> config.toSingleComponentConfig)
     }
 
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(additionalComponentsUIConfig, combinedComponentsConfig)
@@ -117,12 +82,13 @@ object UIProcessObjectsFactory {
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
-        processDefinition = uiProcessDefinition,
+        processDefinition = staticObjectsDefinition,
+        fragmentInputs = fragmentInputs,
         isFragment = isFragment,
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = customTransformerAdditionalData,
+        customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformersByName.mapValuesNow(_._2),
         processingType
       ),
       processDefinition = uiProcessDefinition,
@@ -203,11 +169,11 @@ object UIProcessObjectsFactory {
 
     val transformed = processDefinition.transform(createUIObjectDef)
     UIProcessDefinition(
-      services = transformed.services,
-      sourceFactories = transformed.sourceFactories,
-      sinkFactories = transformed.sinkFactories,
+      services = transformed.servicesByName,
+      sourceFactories = transformed.sourceFactoriesByName,
+      sinkFactories = transformed.sinkFactoriesByName,
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
-      customStreamTransformers = transformed.customStreamTransformers.mapValuesNow(_._1),
+      customStreamTransformers = transformed.customStreamTransformersByName.mapValuesNow(_._1),
       globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )

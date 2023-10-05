@@ -192,7 +192,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = uiProcessDefinition,
+      processDefinition = processDefinition,
+      fragmentInputs = fragmentInputs,
       isFragment = false,
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
@@ -207,7 +208,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
+      processDefinition = processDefinition,
+      fragmentInputs = Map.empty,
       isFragment = false,
       componentsConfig = Map(),
       componentsGroupMapping = Map(),

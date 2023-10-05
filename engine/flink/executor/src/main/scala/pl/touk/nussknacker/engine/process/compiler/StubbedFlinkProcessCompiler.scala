@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ComponentIdWithName, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import shapeless.syntax.typeable._
 
@@ -37,17 +38,19 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
     val usedSourceTypes = collectedSources.map(_.ref.typ)
     val stubbedSources =
       usedSourceTypes.map { sourceType =>
-        val sourceDefinition = originalDefinition.sourceFactories.getOrElse(sourceType, throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
+        val sourceDefinition = originalDefinition.sourceFactoriesByName.getOrElse(sourceType, throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition"))
         val stubbedDefinition = prepareSourceFactory(sourceDefinition, context)
-        sourceType -> stubbedDefinition
+
+        val sourceId = originalDefinition.sourceFactories.keySet.find(idWithName => idWithName.name == sourceType).get.id
+        ComponentIdWithName(sourceId, sourceType) -> stubbedDefinition
       }
 
     def sourceDefForFragment(frag: FragmentInputDefinition): ObjectWithMethodDef = {
       new StubbedFragmentInputDefinitionSource(processConfig, userCodeClassLoader).createSourceDefinition(frag)
     }
 
-    val stubbedSourceForFragment: Seq[(String, ObjectWithMethodDef)] = process.allStartNodes.map(_.head.data).collect {
-      case frag: FragmentInputDefinition => frag.id -> prepareSourceFactory(sourceDefForFragment(frag), context)
+    val stubbedSourceForFragment: Seq[(ComponentIdWithName, ObjectWithMethodDef)] = process.allStartNodes.map(_.head.data).collect {
+      case frag: FragmentInputDefinition => ComponentIdWithName(ComponentId.forBaseComponent(ComponentType.FragmentInput), frag.id) -> prepareSourceFactory(sourceDefForFragment(frag), context)
     }
 
     val stubbedServices = originalDefinition.services.mapValuesNow(prepareService(_, context))

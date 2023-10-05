@@ -172,7 +172,10 @@ object DefinitionExtractor {
   case class ObjectDefinition(parameters: List[Parameter],
                               returnType: Option[TypingResult],
                               categories: Option[List[String]],
-                              componentConfig: SingleComponentConfig)
+                              componentConfig: SingleComponentConfig) {
+
+    val hasNoReturn: Boolean = returnType.isEmpty
+  }
 
   object ObjectWithMethodDef {
 

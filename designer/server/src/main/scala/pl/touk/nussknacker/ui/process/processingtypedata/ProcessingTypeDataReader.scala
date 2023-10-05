@@ -43,7 +43,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
     logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
     val managerProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(name, deploymentService)
-    ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
+    ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig, name)
   }
 
   protected def createCombinedData(valueMap: Map[ProcessingType, ProcessingTypeData], categoryService: ProcessCategoryService): CombinedProcessingTypeData = {
