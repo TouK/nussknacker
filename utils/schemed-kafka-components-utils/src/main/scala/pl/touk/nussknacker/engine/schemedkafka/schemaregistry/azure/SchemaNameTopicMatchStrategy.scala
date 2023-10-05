@@ -7,11 +7,13 @@ import com.google.common.base.CaseFormat
 //       Also in case of ambiguity (>1 schemas with only different namespaces), we could pick the correct one schema.
 object SchemaNameTopicMatchStrategy {
 
-  val KeySuffix = "Key"
+  val KeySuffix   = "Key"
   val ValueSuffix = "Value"
-  def topicNameFromKeySchemaName(schemaName: String): Option[String] = FullSchemaNameDecomposed.unapply(schemaName).filter(_._3).map(_._1)
+  def topicNameFromKeySchemaName(schemaName: String): Option[String] =
+    FullSchemaNameDecomposed.unapply(schemaName).filter(_._3).map(_._1)
 
-  def topicNameFromValueSchemaName(schemaName: String): Option[String] = FullSchemaNameDecomposed.unapply(schemaName).filterNot(_._3).map(_._1)
+  def topicNameFromValueSchemaName(schemaName: String): Option[String] =
+    FullSchemaNameDecomposed.unapply(schemaName).filterNot(_._3).map(_._1)
 
   def keySchemaNameFromTopicName(topicName: String): String = schemaNameFromTopicName(topicName, isKey = true)
 

@@ -13,9 +13,13 @@ import scala.language.implicitConversions
 trait AuthorizeProcessDirectives {
   val processAuthorizer: AuthorizeProcess
 
-  protected implicit def attachImplicitUserToProcessId(id: ProcessId)(implicit loggedUser: LoggedUser): (ProcessId, LoggedUser) = (id, loggedUser)
+  protected implicit def attachImplicitUserToProcessId(id: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): (ProcessId, LoggedUser) = (id, loggedUser)
 
-  protected implicit def attachImplicitUserToProcessIdWithName(id: ProcessIdWithName)(implicit loggedUser: LoggedUser): (ProcessId, LoggedUser) = (id.id, loggedUser)
+  protected implicit def attachImplicitUserToProcessIdWithName(id: ProcessIdWithName)(
+      implicit loggedUser: LoggedUser
+  ): (ProcessId, LoggedUser) = (id.id, loggedUser)
 
   def canDeploy(processIdAndUser: (ProcessId, LoggedUser)): Directive0 = {
     hasUserPermissionInProcess(processIdAndUser, Permission.Deploy)
@@ -25,15 +29,22 @@ trait AuthorizeProcessDirectives {
     hasUserPermissionInProcess(processIdAndUser, Permission.Write)
   }
 
-  def canOverrideUsername(category: String, remoteUserName: Option[RemoteUserName])(implicit loggedUser: LoggedUser): Directive0 = {
+  def canOverrideUsername(category: String, remoteUserName: Option[RemoteUserName])(
+      implicit loggedUser: LoggedUser
+  ): Directive0 = {
     Directives.authorize(remoteUserName.isEmpty || loggedUser.can(category, Permission.OverrideUsername))
   }
 
-  def canOverrideUsername(processId: ProcessId, remoteUserName: Option[RemoteUserName])(implicit executionContext: ExecutionContext, loggedUser: LoggedUser): Directive0 = {
-    Directives.authorizeAsync(processAuthorizer.check(processId, Permission.OverrideUsername, loggedUser).map(_ || remoteUserName.isEmpty))
+  def canOverrideUsername(
+      processId: ProcessId,
+      remoteUserName: Option[RemoteUserName]
+  )(implicit executionContext: ExecutionContext, loggedUser: LoggedUser): Directive0 = {
+    Directives.authorizeAsync(
+      processAuthorizer.check(processId, Permission.OverrideUsername, loggedUser).map(_ || remoteUserName.isEmpty)
+    )
   }
 
-  private def canInProcess(processId: ProcessId, permission: Permission, user:LoggedUser): Directive0 = {
+  private def canInProcess(processId: ProcessId, permission: Permission, user: LoggedUser): Directive0 = {
     Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission, user))
   }
 
@@ -41,8 +52,12 @@ trait AuthorizeProcessDirectives {
     Directives.authorize(loggedUser.isAdmin)
   }
 
-  private def hasUserPermissionInProcess(processIdAndUser: (ProcessId, LoggedUser), permission: Permission.Value): Directive0 = {
+  private def hasUserPermissionInProcess(
+      processIdAndUser: (ProcessId, LoggedUser),
+      permission: Permission.Value
+  ): Directive0 = {
     val (processId, user) = processIdAndUser
     canInProcess(processId, permission, user)
   }
+
 }

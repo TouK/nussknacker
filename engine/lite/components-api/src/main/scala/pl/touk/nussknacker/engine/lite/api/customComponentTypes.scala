@@ -13,26 +13,34 @@ import scala.reflect.runtime.universe._
 
 object customComponentTypes {
 
-  //Some components work with any monad (e.g. Union, Split etc.) Some require specific monad (e.g. State, probably transactional Kafka)
-  //This trait allows to convert effects if it's possible. See sample.SumTransformer for usage
-  //More complex implementations would allow e.g. to transform State[StateType, _] => Future[State[StateType, _]] and so on
+  // Some components work with any monad (e.g. Union, Split etc.) Some require specific monad (e.g. State, probably transactional Kafka)
+  // This trait allows to convert effects if it's possible. See sample.SumTransformer for usage
+  // More complex implementations would allow e.g. to transform State[StateType, _] => Future[State[StateType, _]] and so on
   trait CapabilityTransformer[Target[_]] {
     def transform[From[_]](implicit tag: TypeTag[From[Any]]): ValidatedNel[ProcessCompilationError, From ~> Target]
   }
 
-  case class CustomComponentContext[F[_]](nodeId: String, interpreter: LazyParameterInterpreter, capabilityTransformer: CapabilityTransformer[F])
+  case class CustomComponentContext[F[_]](
+      nodeId: String,
+      interpreter: LazyParameterInterpreter,
+      capabilityTransformer: CapabilityTransformer[F]
+  )
 
   trait LiteSource[Input] extends Source {
 
-    def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context]
+    def createTransformation[F[_]: Monad](
+        evaluateLazyParameter: CustomComponentContext[F]
+    ): Input => ValidatedNel[ErrorType, Context]
 
   }
 
   trait LiteCustomComponent {
 
-    //Result is generic parameter, as Component should not change it/interfer with it
-    def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]],
-                                                   context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]]
+    // Result is generic parameter, as Component should not change it/interfer with it
+    def createTransformation[F[_]: Monad, Result](
+        continuation: DataBatch => F[ResultType[Result]],
+        context: CustomComponentContext[F]
+    ): DataBatch => F[ResultType[Result]]
 
   }
 
@@ -40,17 +48,21 @@ object customComponentTypes {
 
   case class JoinDataBatch(value: List[(BranchId, Context)])
 
-
   trait LiteJoinCustomComponent {
 
-    def createTransformation[F[_] : Monad, Result](continuation: DataBatch => F[ResultType[Result]],
-                                                   context: CustomComponentContext[F]): JoinDataBatch => F[ResultType[Result]]
+    def createTransformation[F[_]: Monad, Result](
+        continuation: DataBatch => F[ResultType[Result]],
+        context: CustomComponentContext[F]
+    ): JoinDataBatch => F[ResultType[Result]]
 
   }
 
   trait LiteSink[Res] extends Sink {
-    def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]):
-      (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
+
+    def createTransformation[F[_]: Monad](
+        evaluateLazyParameter: CustomComponentContext[F]
+    ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
+
   }
 
 }

@@ -11,12 +11,19 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 object sinks {
 
   object FlinkKafkaSinkImplFactory extends KafkaSinkImplFactory {
-    override def prepareSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig,
-                             serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink =
+
+    override def prepareSink(
+        topic: PreparedKafkaTopic,
+        value: LazyParameter[AnyRef],
+        kafkaConfig: KafkaConfig,
+        serializationSchema: KafkaSerializationSchema[AnyRef],
+        clientId: String
+    ): Sink =
       new FlinkKafkaSink(topic, value, kafkaConfig, serializationSchema, clientId)
+
   }
 
   class GenericKafkaJsonSinkFactory(processObjectDependencies: ProcessObjectDependencies)
-    extends KafkaSinkFactory(GenericJsonSerialization(_), processObjectDependencies, FlinkKafkaSinkImplFactory)
+      extends KafkaSinkFactory(GenericJsonSerialization(_), processObjectDependencies, FlinkKafkaSinkImplFactory)
 
 }

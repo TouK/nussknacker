@@ -6,7 +6,9 @@ import pl.touk.nussknacker.engine.util.functions.numeric.ToNumberTypingFunction
 
 object conversion extends HideToString {
 
-  @Documentation(description = "Wrap param in 'Unknown' type to make it usable in places where type checking is too much restrictive")
+  @Documentation(description =
+    "Wrap param in 'Unknown' type to make it usable in places where type checking is too much restrictive"
+  )
   def toAny(@ParamName("value") value: Any): Any = {
     value
   }

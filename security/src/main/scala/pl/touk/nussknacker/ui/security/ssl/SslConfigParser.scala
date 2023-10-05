@@ -6,11 +6,11 @@ import com.typesafe.config.Config
 
 object SslConfigParser {
 
-  private val SslPath = "ssl"
-  private val EnabledKey = "enabled"
+  private val SslPath      = "ssl"
+  private val EnabledKey   = "enabled"
   private val KeyStorePath = "keyStore"
-  private val LocationKey = "location"
-  private val PasswordKey = "password"
+  private val LocationKey  = "location"
+  private val PasswordKey  = "password"
 
   def sslEnabled(config: Config): Option[KeyStoreConfig] = {
     for {
@@ -28,7 +28,8 @@ object SslConfigParser {
         throw new IllegalArgumentException("You need to specify key store password to enable SSL")
       KeyStoreConfig(
         new File(keyStoreConfig.getString(LocationKey)).toURI,
-        keyStoreConfig.getString(PasswordKey).toCharArray)
+        keyStoreConfig.getString(PasswordKey).toCharArray
+      )
     }
   }
 

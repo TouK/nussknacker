@@ -17,10 +17,11 @@ object SinkValueData {
       case SinkSingleValue(value) =>
         value
       case SinkRecordValue(fields) =>
-        LazyParameterUtils.typedMap(ListMap(fields.toList.map {
-          case (key, value) => key -> toLazyParameter(value)
+        LazyParameterUtils.typedMap(ListMap(fields.toList.map { case (key, value) =>
+          key -> toLazyParameter(value)
         }: _*))
     }
+
   }
 
   case class SinkSingleValue(value: LazyParameter[AnyRef]) extends SinkValue

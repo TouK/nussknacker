@@ -26,21 +26,51 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
-class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class ValidationResourcesSpec
+    extends AnyFlatSpec
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
-      "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-    ))
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> Map(
+        "requiredStringProperty" -> AdditionalPropertyConfig(
+          None,
+          Some(StringParameterEditor),
+          Some(List(MandatoryParameterValidator)),
+          Some("label")
+        ),
+        "numberOfThreads" -> AdditionalPropertyConfig(
+          None,
+          Some(FixedValuesParameterEditor(possibleValues)),
+          Some(List(FixedValuesValidator(possibleValues))),
+          None
+        ),
+        "maxEvents" -> AdditionalPropertyConfig(
+          None,
+          None,
+          Some(List(LiteralParameterValidator.integerValidator)),
+          Some("label")
+        )
+      )
+    )
   )
 
-  private val route: Route = withPermissions(new ValidationResources(futureFetchingProcessRepository,
-    new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
+  private val route: Route = withPermissions(
+    new ValidationResources(
+      futureFetchingProcessRepository,
+      new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+    ),
+    testPermissionRead
   )
 
   it should "find errors in a bad scenario" in {
@@ -87,8 +117,12 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   }
 
   it should "return fatal error for bad ids" in {
-    val invalidCharacters = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)),
+    val invalidCharacters = newDisplayableProcess(
+      "p1",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+      ),
       List(Edge("s1", "f1\"'", None))
     )
 
@@ -98,8 +132,12 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       entity should include("Node f1\"' contains invalid characters")
     }
 
-    val duplicateIds = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)),
+    val duplicateIds = newDisplayableProcess(
+      "p1",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+      ),
       List(Edge("s1", "s1", None))
     )
 
@@ -111,8 +149,12 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   }
 
   it should "find errors in scenario of bad shape" in {
-    val invalidShapeProcess = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression.spel("false"))),
+    val invalidShapeProcess = newDisplayableProcess(
+      "p1",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Filter("f1", Expression.spel("false"))
+      ),
       List(Edge("s1", "f1", None))
     )
 
@@ -185,4 +227,5 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       testCode
     }
   }
+
 }

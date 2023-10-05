@@ -18,21 +18,37 @@ import java.util.concurrent.TimeUnit
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
-  private val expressionDefinition = ExpressionDefinition(globalVariables = Map(), globalImports = Nil, additionalClasses = List(),
-    languages = LanguageConfiguration.default, optimizeCompilation = true, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
-    strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
-    spelExpressionExcludeList = SpelExpressionExcludeList.default, customConversionsProviders = List.empty)
+  private val expressionDefinition = ExpressionDefinition(
+    globalVariables = Map(),
+    globalImports = Nil,
+    additionalClasses = List(),
+    languages = LanguageConfiguration.default,
+    optimizeCompilation = true,
+    strictTypeChecking = true,
+    dictionaries = Map.empty,
+    hideMetaVariable = false,
+    strictMethodsChecking = true,
+    staticMethodInvocationsChecking = true,
+    methodExecutionForUnknownAllowed = false,
+    dynamicPropertyAccessAllowed = false,
+    spelExpressionExcludeList = SpelExpressionExcludeList.default,
+    customConversionsProviders = List.empty
+  )
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
-    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, typeDefinitionSet = TypeDefinitionSet.forDefaultAdditionalClasses)
+    getClass.getClassLoader,
+    new SimpleDictRegistry(Map.empty),
+    expressionDefinition,
+    typeDefinitionSet = TypeDefinitionSet.forDefaultAdditionalClasses
+  )
 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)
 
-  private val compiledExpression = expressionCompiler.compile(Expression.spel(expression),
-    None, validationContext, Unknown)(NodeId("")) match {
-    case Valid(a) => a.expression
-    case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
-  }
+  private val compiledExpression =
+    expressionCompiler.compile(Expression.spel(expression), None, validationContext, Unknown)(NodeId("")) match {
+      case Valid(a)   => a.expression
+      case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
+    }
 
   private val ctx = Context("id", vars, None)
 
@@ -41,7 +57,6 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
   }
 
 }
-
 
 @State(Scope.Thread)
 class SampleSpelBenchmark {
@@ -54,5 +69,5 @@ class SampleSpelBenchmark {
   def benchmark(): AnyRef = {
     setup.test()
   }
-}
 
+}

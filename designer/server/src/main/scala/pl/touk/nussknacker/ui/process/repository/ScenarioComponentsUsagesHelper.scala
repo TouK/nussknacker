@@ -8,7 +8,7 @@ object ScenarioComponentsUsagesHelper {
 
   def compute(scenario: CanonicalProcess): ScenarioComponentsUsages = {
     val usagesList = for {
-      node <- scenario.collectAllNodes
+      node          <- scenario.collectAllNodes
       componentType <- ComponentUtil.extractComponentType(node)
       componentName = ComponentUtil.extractComponentName(node)
     } yield {

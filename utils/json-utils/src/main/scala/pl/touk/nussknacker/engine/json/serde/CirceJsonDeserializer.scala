@@ -22,9 +22,9 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
   }
 
   def deserialize(string: String): AnyRef = {
-    //we do parsing for:
-    //1. for schema validation
-    //2. for typing purposes which is based on Circe
+    // we do parsing for:
+    // 1. for schema validation
+    // 2. for typing purposes which is based on Circe
     val inputJson = new JSONTokener(string).nextValue()
 
     val validatedJson = jsonSchema
@@ -32,7 +32,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
       .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
 
     val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
-    val struct = JsonToNuStruct(circeJson, swaggerTyped)
+    val struct    = JsonToNuStruct(circeJson, swaggerTyped)
     struct
   }
 

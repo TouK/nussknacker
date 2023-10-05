@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object RescheduleFinishedActor {
+
   def props(service: PeriodicProcessService, interval: FiniteDuration): Props = {
     props(service.handleFinished, interval)
   }
@@ -22,9 +23,10 @@ object RescheduleFinishedActor {
   private case object CheckStatesCompleted
 }
 
-class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteDuration) extends Actor
-  with Timers
-  with LazyLogging {
+class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteDuration)
+    extends Actor
+    with Timers
+    with LazyLogging {
 
   import context.dispatcher
 

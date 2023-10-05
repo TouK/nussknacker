@@ -12,16 +12,17 @@ import pl.touk.nussknacker.engine.api.NodeId
  */
 object EnricherContextTransformation {
 
-  def apply(outputVariableName: String,
-               returnType: TypingResult, implementation: ServiceInvoker)
-              (implicit nodeId: NodeId): ContextTransformation = {
+  def apply(outputVariableName: String, returnType: TypingResult, implementation: ServiceInvoker)(
+      implicit nodeId: NodeId
+  ): ContextTransformation = {
     apply(outputVariableName, Valid(returnType), implementation)
   }
 
-
-  def apply(outputVariableName: String,
-               returnType: Validated[NonEmptyList[ProcessCompilationError], TypingResult], implementation: ServiceInvoker)
-              (implicit nodeId: NodeId): ContextTransformation = {
+  def apply(
+      outputVariableName: String,
+      returnType: Validated[NonEmptyList[ProcessCompilationError], TypingResult],
+      implementation: ServiceInvoker
+  )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(vc => returnType.andThen(rt => vc.withVariable(OutputVar.enricher(outputVariableName), rt)))
       .implementedBy(implementation)

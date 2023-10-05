@@ -16,23 +16,33 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 
 object FlinkTestMain extends FlinkRunner {
 
-  def run[T](modelData: ModelData, process: CanonicalProcess, scenarioTestData: ScenarioTestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
-    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest(variableEncoder)
+  def run[T](
+      modelData: ModelData,
+      process: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      configuration: Configuration,
+      variableEncoder: Any => T
+  ): TestResults[T] = {
+    val processVersion = ProcessVersion.empty.copy(processName =
+      ProcessName("snapshot version")
+    ) // testing process may be unreleased, so it has no version
+    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration)
+      .runTest(variableEncoder)
   }
 
 }
 
-class FlinkTestMain(val modelData: ModelData,
-                    val process: CanonicalProcess,
-                    scenarioTestData: ScenarioTestData,
-                    processVersion: ProcessVersion,
-                    deploymentData: DeploymentData,
-                    val configuration: Configuration)
-  extends FlinkStubbedRunner {
+class FlinkTestMain(
+    val modelData: ModelData,
+    val process: CanonicalProcess,
+    scenarioTestData: ScenarioTestData,
+    processVersion: ProcessVersion,
+    deploymentData: DeploymentData,
+    val configuration: Configuration
+) extends FlinkStubbedRunner {
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
-    val env = createEnv
+    val env                = createEnv
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
       val registrar: FlinkProcessRegistrar = prepareRegistrar(collectingListener, scenarioTestData)
@@ -44,15 +54,21 @@ class FlinkTestMain(val modelData: ModelData,
     }
   }
 
-  protected def prepareRegistrar[T](collectingListener: ResultsCollectingListener, scenarioTestData: ScenarioTestData): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(new TestFlinkProcessCompiler(
-      modelData.configCreator,
-      modelData.processConfig,
-      collectingListener,
-      process,
-      modelData.objectNaming,
-      scenarioTestData),
-      ExecutionConfigPreparer.defaultChain(modelData))
+  protected def prepareRegistrar[T](
+      collectingListener: ResultsCollectingListener,
+      scenarioTestData: ScenarioTestData
+  ): FlinkProcessRegistrar = {
+    FlinkProcessRegistrar(
+      new TestFlinkProcessCompiler(
+        modelData.configCreator,
+        modelData.processConfig,
+        collectingListener,
+        process,
+        modelData.objectNaming,
+        scenarioTestData
+      ),
+      ExecutionConfigPreparer.defaultChain(modelData)
+    )
   }
-}
 
+}

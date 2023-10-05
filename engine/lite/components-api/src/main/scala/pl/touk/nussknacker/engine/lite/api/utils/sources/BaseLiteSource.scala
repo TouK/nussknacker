@@ -17,7 +17,7 @@ import scala.util.Try
 
 trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
-  protected var context: EngineRuntimeContext = _
+  protected var context: EngineRuntimeContext          = _
   protected var contextIdGenerator: ContextIdGenerator = _
 
   def nodeId: NodeId
@@ -27,9 +27,20 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
     this.contextIdGenerator = context.contextIdGenerator(nodeId.id)
   }
 
-  override def createTransformation[F[_] : Monad](componentContext: customComponentTypes.CustomComponentContext[F]): T => ValidatedNel[ErrorType, Context] =
-    record => Validated.fromEither(Try(transform(record)).toEither)
-      .leftMap(ex => NuExceptionInfo(Some(NodeComponentInfo(componentContext.nodeId, "unknown", ComponentType.Source)), ex, Context(contextIdGenerator.nextContextId()))).toValidatedNel
+  override def createTransformation[F[_]: Monad](
+      componentContext: customComponentTypes.CustomComponentContext[F]
+  ): T => ValidatedNel[ErrorType, Context] =
+    record =>
+      Validated
+        .fromEither(Try(transform(record)).toEither)
+        .leftMap(ex =>
+          NuExceptionInfo(
+            Some(NodeComponentInfo(componentContext.nodeId, "unknown", ComponentType.Source)),
+            ex,
+            Context(contextIdGenerator.nextContextId())
+          )
+        )
+        .toValidatedNel
 
   def transform(record: T): Context
 

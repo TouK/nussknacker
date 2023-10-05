@@ -9,14 +9,15 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRul
 
 class LoggedUserTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.security.Permission._
+
   test("Admin permission grants other permissions") {
     def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, Nil, true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),
-      (admin(Map("c1"->Set(Read))), Read, "c1"),
+      (admin(Map("c1" -> Set(Read))), Read, "c1"),
       (admin(Map.empty), Read, "c1"),
-      (admin(Map("c2"->Set(Write))), Write, "c2"),
+      (admin(Map("c2" -> Set(Write))), Write, "c2"),
       (admin(Map.empty), Write, "c2")
     )
 
@@ -31,12 +32,12 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
 
     val perms: TableFor4[LoggedUser, Permission, String, Boolean] = Table(
       ("categoryPermissions", "permission", "category", "result"),
-      (u(Map("c1"->Set(Read))), Read, "c1", true),
-      (u(Map("c2"->Set(Read))), Read, "c1", false),
-      (u(Map("c1"->Set(Write))), Read, "c1", false)
+      (u(Map("c1" -> Set(Read))), Read, "c1", true),
+      (u(Map("c2" -> Set(Read))), Read, "c1", false),
+      (u(Map("c1" -> Set(Write))), Read, "c1", false)
     )
-    forAll(perms) { (u: LoggedUser, p: Permission, c: String, r:Boolean) =>
-      u.can(c,p) shouldEqual r
+    forAll(perms) { (u: LoggedUser, p: Permission, c: String, r: Boolean) =>
+      u.can(c, p) shouldEqual r
       u.username shouldBe "user"
     }
   }
@@ -50,7 +51,11 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       ConfigRule("SecondEditor", categories = List("Second"), permissions = List(Read, Write))
     )
 
-    val authorizedUser = LoggedUser.apply(AuthenticatedUser("userId", "userName", Set("FirstDeployer", "SecondEditor")), rules, processCategories)
+    val authorizedUser = LoggedUser.apply(
+      AuthenticatedUser("userId", "userName", Set("FirstDeployer", "SecondEditor")),
+      rules,
+      processCategories
+    )
 
     authorizedUser.can("First", Read) shouldBe true
     authorizedUser.can("First", Deploy) shouldBe true
@@ -59,4 +64,5 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     authorizedUser.can("Second", Deploy) shouldBe false
     authorizedUser.can("Second", Write) shouldBe true
   }
+
 }

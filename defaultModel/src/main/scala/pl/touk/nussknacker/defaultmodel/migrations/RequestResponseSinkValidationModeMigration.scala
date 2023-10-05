@@ -14,11 +14,12 @@ object RequestResponseSinkValidationModeMigration extends NodeMigration {
   private val validationModeParam = Parameter("Value validation mode", "'lax'")
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-    case sink@Sink(_, ref@SinkRef(typ, parameters), _, _, _) if typ == "response" =>
+    case sink @ Sink(_, ref @ SinkRef(typ, parameters), _, _, _) if typ == "response" =>
       sink.copy(ref = ref.copy(parameters = parameters ++ List(validationModeParam)))
   }
 
-  override def description: String = "Add value validation mode param to rr response sink: https://github.com/TouK/nussknacker/pull/3727"
+  override def description: String =
+    "Add value validation mode param to rr response sink: https://github.com/TouK/nussknacker/pull/3727"
 
   override def failOnNewValidationError: Boolean = true
 }

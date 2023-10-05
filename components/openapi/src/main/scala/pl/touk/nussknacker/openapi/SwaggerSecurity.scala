@@ -16,14 +16,15 @@ sealed trait SecurityInHeader extends SwaggerSecurity {
   def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.header(name, value)
 }
 
-case class ApiKeyInHeader(name: String, key: String) extends SecurityInHeader {
+final case class ApiKeyInHeader(name: String, key: String) extends SecurityInHeader {
   def value: String = key
 }
 
-case class ApiKeyInQuery(name: String, key: String) extends SwaggerSecurity {
-  def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.method(request.method, request.uri.addParam(name, key))
+final case class ApiKeyInQuery(name: String, key: String) extends SwaggerSecurity {
+  def addSecurity(request: SwaggerRequestType): SwaggerRequestType =
+    request.method(request.method, request.uri.addParam(name, key))
 }
 
-case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecurity {
+final case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecurity {
   def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.cookie(name, key)
 }

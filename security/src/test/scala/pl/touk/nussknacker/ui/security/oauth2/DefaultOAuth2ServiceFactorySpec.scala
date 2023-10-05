@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import org.scalatest.{Suite}
+import org.scalatest.Suite
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.security.Permission
@@ -14,13 +14,14 @@ import sttp.model.{StatusCode, Uri}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Random, Success}
 
-class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite  {
+class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
+
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
 
   val config = ExampleOAuth2ServiceFactory.testConfig
-  val rules = ExampleOAuth2ServiceFactory.testRules
+  val rules  = ExampleOAuth2ServiceFactory.testRules
 
   val validAuthorizationData: DefaultOAuth2AuthorizationData =
     DefaultOAuth2AuthorizationData(accessToken = Random.nextString(10), tokenType = "Bearer")
@@ -34,14 +35,13 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     GitHubProfileResponse(id = 3, email = Some("userWithAdminTab@email.com"), login = "userWithAdminTab")
 
   it should ("properly parse data from authentication") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validUserInfo.asJson.toString())
-    val service = DefaultOAuth2ServiceFactory.service(config)
-    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").futureValue
+    val service   = DefaultOAuth2ServiceFactory.service(config)
+    val (data, _) = service.obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe validAuthorizationData.accessToken
@@ -50,45 +50,49 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("handling BadRequest response from authenticate request") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(Response(None, StatusCode.BadRequest))
     val service = DefaultOAuth2ServiceFactory.service(config)
-    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+    service
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .transform {
         case Failure(OAuth2CompoundException(_)) => Success(succeed)
-        case _ => Failure(fail())
+        case _                                   => Failure(fail())
       }
       .futureValue
   }
 
   it should ("should InternalServerError response from authenticate request") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(Response(None, StatusCode.InternalServerError))
     val service = DefaultOAuth2ServiceFactory.service(config)
-    service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+    service
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .transform {
-        case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) => Success(succeed)
+        case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) =>
+          Success(succeed)
         case _ => Failure(fail())
       }
       .futureValue
   }
 
   it should ("properly parse data from profile for profile type User") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validUserInfo.asJson.toString())
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    val user = service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
+    val user = service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -101,17 +105,20 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile type UserWithAdminTab") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validUserWithAdminTabInfo.asJson.toString())
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    val user = service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
+    val user = service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -128,17 +135,20 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile type Admin") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validAdminUserInfo.asJson.toString())
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    val user = service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
+    val user = service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe true
@@ -156,17 +166,20 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile without email") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validUserInfoWithoutEmail.asJson.toString())
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    val user = service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
-      .map { case (user, _) => LoggedUser(user, rules, List.empty) }.futureValue
+    val user = service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
+      .map { case (user, _) => LoggedUser(user, rules, List.empty) }
+      .futureValue
 
     user shouldBe a[LoggedUser]
     user.isAdmin shouldBe false
@@ -179,38 +192,44 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("handling BadRequest response from profile request") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(Response(None, StatusCode.BadRequest))
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
+    service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
       .transform {
         case Failure(OAuth2CompoundException(_)) => Success(succeed)
-        case _ => Failure(fail())
+        case _                                   => Failure(fail())
       }
       .futureValue
   }
 
   it should ("should InternalServerError response from profile request") in {
-    implicit val testingBackend = SttpBackendStub
-      .asynchronousFuture
+    implicit val testingBackend = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(Response(None, StatusCode.InternalServerError))
     val service = DefaultOAuth2ServiceFactory.service(config)
 
-    service.obtainAuthorizationAndUserInfo("code", "http://ignored")
-      .flatMap { case (authorizationData, _) => service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken) }
+    service
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
+      .flatMap { case (authorizationData, _) =>
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
+      }
       .transform {
-        case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) => Success(succeed)
+        case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) =>
+          Success(succeed)
         case _ => Failure(fail())
       }
       .futureValue
   }
+
 }

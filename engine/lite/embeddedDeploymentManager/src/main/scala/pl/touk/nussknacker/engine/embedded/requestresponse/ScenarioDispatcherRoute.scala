@@ -11,7 +11,8 @@ import scala.concurrent.ExecutionContext
 
 class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Route]) extends Directives with LazyLogging {
 
-  protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
+  protected def logDirective(scenarioName: String): Directive0 =
+    DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
     pathPrefix("scenario" / Segment) { scenarioSlug =>
@@ -19,9 +20,10 @@ class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Route
     }
 
   private def handle(scenarioSlug: String): Route = scenarioRoutes.get(scenarioSlug) match {
-    case None => complete {
-      HttpResponse(status = StatusCodes.NotFound)
-    }
+    case None =>
+      complete {
+        HttpResponse(status = StatusCodes.NotFound)
+      }
     case Some(r) => r
   }
 

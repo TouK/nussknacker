@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 object EvaluatedParameterPreparer {
+
   def prepareEvaluatedParameter(parameters: List[UIParameter]): List[Parameter] = {
     parameters
       .filterNot(_.branchParam)

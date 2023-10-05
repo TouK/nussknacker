@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
  * <pre>typeFunctionClass.getDeclaredConstructor().newInstance()</pre>
  */
 abstract class TypingFunction {
+
   /**
    * List of possible combinations of parameters and result types that
    * this function can accept. Must be at least as specific as types that

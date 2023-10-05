@@ -11,4 +11,3 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 trait KafkaDeserializationSchemaFactory[T] extends Serializable {
   def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T]
 }
-

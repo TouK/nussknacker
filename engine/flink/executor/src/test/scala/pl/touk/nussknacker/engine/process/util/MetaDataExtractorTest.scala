@@ -3,11 +3,7 @@ package pl.touk.nussknacker.engine.process.util
 import java.time._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{
-  MetaData,
-  ProcessAdditionalFields,
-  StreamMetaData
-}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 class MetaDataExtractorTest extends AnyFunSuite with Matchers {
@@ -19,10 +15,10 @@ class MetaDataExtractorTest extends AnyFunSuite with Matchers {
       None,
       Map(
         "dateTime" -> "2020-02-25T00:00",
-        "date" -> "2020-02-25",
-        "time" -> "00:01:00",
+        "date"     -> "2020-02-25",
+        "time"     -> "00:01:00",
         "duration" -> "P3DT2H",
-        "period" -> "P3Y2M"
+        "period"   -> "P3Y2M"
       ),
       StreamMetaData.typeName
     )
@@ -50,4 +46,5 @@ class MetaDataExtractorTest extends AnyFunSuite with Matchers {
   test("extract period property") {
     MetaDataExtractor.extractPeriodProperty(metaData, "period", Period.ZERO) shouldBe Period.of(3, 2, 0)
   }
+
 }

@@ -23,30 +23,42 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
   )
 
   test("reads config") {
-    testStrategy(Map(
-      "restartStrategy.default.strategy" -> "fixed-delay",
-      "restartStrategy.default.attempts" -> 10
-    ), RestartStrategies.fixedDelayRestart(10, Time.seconds(1)))
+    testStrategy(
+      Map(
+        "restartStrategy.default.strategy" -> "fixed-delay",
+        "restartStrategy.default.attempts" -> 10
+      ),
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+    )
 
-    testStrategy(Map(
-      "restartStrategy.scenarioProperty" -> "other",
-      "restartStrategy.default.strategy" -> "fixed-delay",
-      "restartStrategy.default.attempts" -> 10
-    ), RestartStrategies.fixedDelayRestart(10, Time.seconds(1)))
+    testStrategy(
+      Map(
+        "restartStrategy.scenarioProperty" -> "other",
+        "restartStrategy.default.strategy" -> "fixed-delay",
+        "restartStrategy.default.attempts" -> 10
+      ),
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+    )
 
-    testStrategy(Map(
-      "restartStrategy.scenarioProperty" -> "myStrategy",
-      "restartStrategy.default.strategy" -> "fixed-delay",
-      "restartStrategy.default.attempts" -> 10,
-      "restartStrategy.oneStrategy.strategy" -> "disable"
-    ), RestartStrategies.noRestart())
+    testStrategy(
+      Map(
+        "restartStrategy.scenarioProperty"     -> "myStrategy",
+        "restartStrategy.default.strategy"     -> "fixed-delay",
+        "restartStrategy.default.attempts"     -> 10,
+        "restartStrategy.oneStrategy.strategy" -> "disable"
+      ),
+      RestartStrategies.noRestart()
+    )
 
-    testStrategy(Map(
-      "restartStrategy.scenarioProperty" -> "myOtherStrategy",
-      "restartStrategy.default.strategy" -> "fixed-delay",
-      "restartStrategy.default.attempts" -> 10,
-      "restartStrategy.oneStrategy.strategy" -> "disable"
-    ), RestartStrategies.fixedDelayRestart(10, Time.seconds(1)))
+    testStrategy(
+      Map(
+        "restartStrategy.scenarioProperty"     -> "myOtherStrategy",
+        "restartStrategy.default.strategy"     -> "fixed-delay",
+        "restartStrategy.default.attempts"     -> 10,
+        "restartStrategy.oneStrategy.strategy" -> "disable"
+      ),
+      RestartStrategies.fixedDelayRestart(10, Time.seconds(1))
+    )
   }
 
   private def testStrategy(configMap: Map[String, Any], expected: RestartStrategyConfiguration) = {

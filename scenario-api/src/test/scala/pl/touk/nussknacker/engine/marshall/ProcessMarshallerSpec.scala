@@ -20,7 +20,12 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
-class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
+class ProcessMarshallerSpec
+    extends AnyFlatSpec
+    with Matchers
+    with OptionValues
+    with Inside
+    with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -50,9 +55,9 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
   it should "marshall and unmarshall to same scenario with ending processor" in {
     val process = ScenarioBuilder
-            .streaming("process1")
-            .source("a", "")
-            .processorEnd("d", "dService", "p1" -> "expr3")
+      .streaming("process1")
+      .source("a", "")
+      .processorEnd("d", "dService", "p1" -> "expr3")
 
     val result = marshallAndUnmarshall(process)
 
@@ -73,10 +78,26 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
   it should "marshall and unmarshall to same scenario with additional fields" in {
     val processAdditionalFields = Table(
       "processAditionalFields",
-      ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName),
-      ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName),
-      ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName),
-      ProcessAdditionalFields(description = Some("process description"), properties = Map.empty, StreamMetaData.typeName),
+      ProcessAdditionalFields(
+        description = Some("process description"),
+        properties = Map("customProperty" -> "customPropertyValue"),
+        StreamMetaData.typeName
+      ),
+      ProcessAdditionalFields(
+        description = None,
+        properties = Map("customProperty" -> "customPropertyValue"),
+        StreamMetaData.typeName
+      ),
+      ProcessAdditionalFields(
+        description = Some("process description"),
+        properties = Map("customProperty" -> "customPropertyValue"),
+        StreamMetaData.typeName
+      ),
+      ProcessAdditionalFields(
+        description = Some("process description"),
+        properties = Map.empty,
+        StreamMetaData.typeName
+      ),
       ProcessAdditionalFields(description = None, properties = Map.empty, StreamMetaData.typeName)
     )
 
@@ -96,16 +117,46 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
   it should "unmarshall with known process additional fields" in {
     val marshalledAndUnmarshalledFields = Table(
       ("marshalled", "unmarshalled"),
-      ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName)),
-      ("""{ "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = None, properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName)),
-      ("""{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map("customProperty" -> "customPropertyValue"), StreamMetaData.typeName)),
-      ("""{ "description" : "process description" }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map.empty, StreamMetaData.typeName)),
-      ("""{ "description" : "process description", "properties": {} }""",
-        ProcessAdditionalFields(description = Some("process description"), properties = Map.empty, StreamMetaData.typeName))
+      (
+        """{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(
+          description = Some("process description"),
+          properties = Map("customProperty" -> "customPropertyValue"),
+          StreamMetaData.typeName
+        )
+      ),
+      (
+        """{ "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(
+          description = None,
+          properties = Map("customProperty" -> "customPropertyValue"),
+          StreamMetaData.typeName
+        )
+      ),
+      (
+        """{ "description" : "process description", "properties" : { "customProperty" : "customPropertyValue" } }""",
+        ProcessAdditionalFields(
+          description = Some("process description"),
+          properties = Map("customProperty" -> "customPropertyValue"),
+          StreamMetaData.typeName
+        )
+      ),
+      (
+        """{ "description" : "process description" }""",
+        ProcessAdditionalFields(
+          description = Some("process description"),
+          properties = Map.empty,
+          StreamMetaData.typeName
+        )
+      ),
+      (
+        """{ "description" : "process description", "properties": {} }""",
+        ProcessAdditionalFields(
+          description = Some("process description"),
+          properties = Map.empty,
+          StreamMetaData.typeName
+        )
+      )
     )
 
     forAll(marshalledAndUnmarshalledFields) { (marshalled: String, unmarshaled: ProcessAdditionalFields) =>
@@ -120,14 +171,17 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
     }
   }
 
-
   it should "unmarshall with known node additional fields" in {
-    val canonicalProcess = buildProcessJsonWithAdditionalFields(nodeAdditionalFields = Some("""{ "description": "single node description"}"""))
+    val canonicalProcess = buildProcessJsonWithAdditionalFields(nodeAdditionalFields =
+      Some("""{ "description": "single node description"}""")
+    )
 
     inside(canonicalProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
       process.nodes should have size 1
-      process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = Some("single node description"), None))
+      process.nodes.head.data.additionalFields shouldBe Some(
+        UserDefinedAdditionalNodeFields(description = Some("single node description"), None)
+      )
     }
   }
 
@@ -136,7 +190,11 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
     inside(canonicalProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
-      process.metaData.additionalFields shouldBe ProcessAdditionalFields(None, testStreamMetaData.toMap, StreamMetaData.typeName)
+      process.metaData.additionalFields shouldBe ProcessAdditionalFields(
+        None,
+        testStreamMetaData.toMap,
+        StreamMetaData.typeName
+      )
       process.nodes.head.data.additionalFields shouldBe None
     }
   }
@@ -151,7 +209,11 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
     inside(canonicalProcess) { case Valid(process) =>
       process.metaData.id shouldBe "custom"
-      process.metaData.additionalFields shouldBe ProcessAdditionalFields(None, testStreamMetaData.toMap, StreamMetaData.typeName)
+      process.metaData.additionalFields shouldBe ProcessAdditionalFields(
+        None,
+        testStreamMetaData.toMap,
+        StreamMetaData.typeName
+      )
       process.nodes should have size 1
       process.nodes.head.data.additionalFields shouldBe Some(UserDefinedAdditionalNodeFields(description = None, None))
     }
@@ -175,9 +237,9 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
     val nodeDataCodec: Codec[NodeData] = deriveConfiguredCodec
 
     val oldFormat = Json.obj(
-      "id" -> Json.fromString("t1"),
-      "type" -> Json.fromString("Sink"),
-      "ref" -> Json.obj("typ" -> Json.fromString("t2") , "parameters" -> Json.arr()),
+      "id"        -> Json.fromString("t1"),
+      "type"      -> Json.fromString("Sink"),
+      "ref"       -> Json.obj("typ" -> Json.fromString("t2"), "parameters" -> Json.arr()),
       "endResult" -> Json.obj("language" -> Json.fromString("spel"), "expression" -> Json.fromString("#someInput"))
     )
     val nodeData = nodeDataCodec.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
@@ -192,9 +254,11 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
     unmarshalled.value
   }
 
-  private def buildProcessJsonWithAdditionalFields(processAdditionalFields: Option[String] = None, nodeAdditionalFields: Option[String] = None) =
-    ProcessMarshaller.fromJson(
-    s"""
+  private def buildProcessJsonWithAdditionalFields(
+      processAdditionalFields: Option[String] = None,
+      nodeAdditionalFields: Option[String] = None
+  ) =
+    ProcessMarshaller.fromJson(s"""
       |{
       |    "metaData" : {
       |        "id": "custom",

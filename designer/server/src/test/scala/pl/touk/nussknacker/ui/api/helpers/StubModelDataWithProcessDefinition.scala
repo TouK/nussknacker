@@ -12,7 +12,10 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
-class StubModelDataWithProcessDefinition(definition: ProcessDefinition[DefinitionExtractor.ObjectDefinition], configDuringExecution: Config = ConfigFactory.empty() ) extends ModelData {
+class StubModelDataWithProcessDefinition(
+    definition: ProcessDefinition[DefinitionExtractor.ObjectDefinition],
+    configDuringExecution: Config = ConfigFactory.empty()
+) extends ModelData {
 
   override def migrations: ProcessMigrations = ProcessMigrations.empty
 
@@ -24,8 +27,12 @@ class StubModelDataWithProcessDefinition(definition: ProcessDefinition[Definitio
 
   override def objectNaming: ObjectNaming = DefaultNamespacedObjectNaming
 
-  override def inputConfigDuringExecution: InputConfigDuringExecution = InputConfigDuringExecution(configDuringExecution)
+  override def inputConfigDuringExecution: InputConfigDuringExecution = InputConfigDuringExecution(
+    configDuringExecution
+  )
 
-  override lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(definition))
+  override lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = ModelDefinitionWithTypes(
+    ProcessDefinitionBuilder.withEmptyObjects(definition)
+  )
 
 }

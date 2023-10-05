@@ -21,9 +21,15 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
 import scala.util.{Failure, Success, Try}
 
-class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers with Inside with LazyLogging {
+class SpelExpressionGenSpec
+    extends AnyFunSuite
+    with ScalaCheckDrivenPropertyChecks
+    with Matchers
+    with Inside
+    with LazyLogging {
 
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
+    PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
 
   private val NumberGen: Gen[Number] = Gen.oneOf(
     Arbitrary.arbitrary[Byte].map(n => n: java.lang.Byte),
@@ -33,7 +39,8 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
     Arbitrary.arbitrary[BigInt].map(_.bigInteger),
     Arbitrary.arbitrary[Float].map(n => n: java.lang.Float),
     Arbitrary.arbitrary[Double].map(n => n: java.lang.Double),
-    Arbitrary.arbitrary[BigDecimal].map(_.bigDecimal))
+    Arbitrary.arbitrary[BigDecimal].map(_.bigDecimal)
+  )
 
   private val NonZeroNumberGen = NumberGen.filterNot(_.doubleValue() == 0)
 
@@ -52,8 +59,9 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
   test("all combinations of operands for power operator") {
     forAll(NumberGen, NumberGen) { (a, b) =>
       (a, b) match {
-        case (_: java.math.BigInteger | _: java.math.BigDecimal, bNum: Number) if bNum.doubleValue <= 0 || bNum.doubleValue > 1000 =>
-          // BigInteger and BigDecimal not accept non positive exponent and has complexity dependent on exponent value
+        case (_: java.math.BigInteger | _: java.math.BigDecimal, bNum: Number)
+            if bNum.doubleValue <= 0 || bNum.doubleValue > 1000 =>
+        // BigInteger and BigDecimal not accept non positive exponent and has complexity dependent on exponent value
         case _ =>
           checkIfEvaluatedClassMatchesExpected("^", a, b)
       }
@@ -73,13 +81,15 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
   }
 
   private def checkIfEvaluatedClassMatchesExpected(op: String, a: Any, b: Any) = {
-    val expr = s"#a $op #b"
+    val expr         = s"#a $op #b"
     val debugMessage = s"expression: $expr; operands: $a, $b; operand types: ${a.getClass}, ${b.getClass}"
     logger.debug(debugMessage)
 
     withClue(debugMessage) {
       Try(evaluate(expr, a, b)) match {
-        case Failure(a: ArithmeticException) => // in case of overflow or similar exception, typed Type doesn't need to match
+        case Failure(
+              a: ArithmeticException
+            ) => // in case of overflow or similar exception, typed Type doesn't need to match
           logger.debug(s"Ignored arithmetic exception: ${a.getMessage}")
         case Failure(other) =>
           fail(other) // shouldn't happen
@@ -98,7 +108,7 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
   }
 
   private def evaluate(expr: String, a: Any, b: Any): Class[_] = {
-    val spelParser = new org.springframework.expression.spel.standard.SpelExpressionParser()
+    val spelParser        = new org.springframework.expression.spel.standard.SpelExpressionParser()
     val evaluationContext = new StandardEvaluationContext()
     evaluationContext.setVariable("a", a)
     evaluationContext.setVariable("b", b)
@@ -106,11 +116,22 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
   }
 
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val parser = SpelExpressionParser.default(getClass.getClassLoader, ProcessDefinitionBuilder.empty.expressionConfig, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, SpelExpressionParser.Standard, TypeDefinitionSet.forDefaultAdditionalClasses)
+    val parser = SpelExpressionParser.default(
+      getClass.getClassLoader,
+      ProcessDefinitionBuilder.empty.expressionConfig,
+      new SimpleDictRegistry(Map.empty),
+      enableSpelForceCompile = false,
+      SpelExpressionParser.Standard,
+      TypeDefinitionSet.forDefaultAdditionalClasses
+    )
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
-      .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get
-      .withVariable("b", Typed.fromInstance(b), paramName = None).toOption.get
+      .withVariable("a", Typed.fromInstance(a), paramName = None)
+      .toOption
+      .get
+      .withVariable("b", Typed.fromInstance(b), paramName = None)
+      .toOption
+      .get
     parser.parse(expr, validationContext, Unknown)
   }
 

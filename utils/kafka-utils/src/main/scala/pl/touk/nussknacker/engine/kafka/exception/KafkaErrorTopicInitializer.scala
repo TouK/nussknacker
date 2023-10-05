@@ -10,14 +10,18 @@ import java.{lang, util}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
-class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfig: KafkaExceptionConsumerConfig) extends LazyLogging {
+class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfig: KafkaExceptionConsumerConfig)
+    extends LazyLogging {
 
   private val timeoutSeconds = 5
 
   def init(): Unit = {
     val errorTopic = exceptionHandlerConfig.topic
     KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
-      val topicNames = admin.listTopics(new ListTopicsOptions().timeoutMs(timeoutSeconds * 1000)).names().get(timeoutSeconds, TimeUnit.SECONDS)
+      val topicNames = admin
+        .listTopics(new ListTopicsOptions().timeoutMs(timeoutSeconds * 1000))
+        .names()
+        .get(timeoutSeconds, TimeUnit.SECONDS)
       val topicExists = topicNames.asScala.contains(errorTopic)
       if (topicExists) {
         logger.debug("Topic exists, skipping")
@@ -27,7 +31,11 @@ class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfi
         try {
           admin.createTopics(util.Arrays.asList(errorTopicConfig)).all().get(timeoutSeconds, TimeUnit.SECONDS)
         } catch {
-          case NonFatal(e) => throw new IllegalStateException(s"Failed to create $errorTopic (${e.getMessage}), cannot run scenario properly", e)
+          case NonFatal(e) =>
+            throw new IllegalStateException(
+              s"Failed to create $errorTopic (${e.getMessage}), cannot run scenario properly",
+              e
+            )
         }
       }
     }

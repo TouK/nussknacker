@@ -4,7 +4,12 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, Schema}
 
-case class FullNameNotCompatible(var first: CharSequence, var middle: CharSequence, var last: CharSequence, var sex: CharSequence) extends SpecificRecordBase {
+case class FullNameNotCompatible(
+    var first: CharSequence,
+    var middle: CharSequence,
+    var last: CharSequence,
+    var sex: CharSequence
+) extends SpecificRecordBase {
   def this() = this(null, null, null, null)
 
   override def getSchema: Schema = FullNameNotCompatible.schema
@@ -26,6 +31,7 @@ case class FullNameNotCompatible(var first: CharSequence, var middle: CharSequen
       case 3 => sex = value.asInstanceOf[CharSequence]
       case _ => throw new AvroRuntimeException("Bad index")
     }
+
 }
 
 object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
@@ -56,4 +62,3 @@ object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
   lazy val specificRecord: SpecificRecordBase =
     createSpecificRecord(FullNameV1.BaseFirst, FullNameV2.BaseMiddle, FullNameV1.BaseLast, BaseSex)
 }
-

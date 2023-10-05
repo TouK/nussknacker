@@ -18,51 +18,76 @@ import scala.reflect.classTag
 
 object FlinkSerializationSchemaConversions extends LazyLogging {
 
-  def wrapToFlinkDeserializationSchema[T](deserializationSchema: serialization.KafkaDeserializationSchema[T]): FlinkDeserializationSchemaWrapper[T] =
+  def wrapToFlinkDeserializationSchema[T](
+      deserializationSchema: serialization.KafkaDeserializationSchema[T]
+  ): FlinkDeserializationSchemaWrapper[T] =
     new FlinkDeserializationSchemaWrapper[T](deserializationSchema)
 
-  class FlinkDeserializationSchemaWrapper[T](deserializationSchema: serialization.KafkaDeserializationSchema[T]) extends kafka.KafkaDeserializationSchema[T] {
+  class FlinkDeserializationSchemaWrapper[T](deserializationSchema: serialization.KafkaDeserializationSchema[T])
+      extends kafka.KafkaDeserializationSchema[T] {
 
     protected var exceptionHandlingData: (ExceptionHandler, ContextIdGenerator, NodeId) = _
 
     // We pass exception handler from SourceFunction instead of init it in open because KafkaDeserializationSchema has no close() method
-    private[kafka] def setExceptionHandlingData(exceptionHandler: ExceptionHandler, contextIdGenerator: ContextIdGenerator, nodeId: NodeId): Unit = {
+    private[kafka] def setExceptionHandlingData(
+        exceptionHandler: ExceptionHandler,
+        contextIdGenerator: ContextIdGenerator,
+        nodeId: NodeId
+    ): Unit = {
       this.exceptionHandlingData = (exceptionHandler, contextIdGenerator, nodeId)
     }
 
     override def getProducedType: TypeInformation[T] = {
-      Option(deserializationSchema).collect {
-        case withProducedType: ResultTypeQueryable[T@unchecked] => withProducedType.getProducedType
-      }.getOrElse {
-        logger.debug("Used KafkaDeserializationSchema not implementing ResultTypeQueryable - will be used class tag based produced type")
-        val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
-        TypeInformation.of(clazz)
-      }
+      Option(deserializationSchema)
+        .collect { case withProducedType: ResultTypeQueryable[T @unchecked] =>
+          withProducedType.getProducedType
+        }
+        .getOrElse {
+          logger.debug(
+            "Used KafkaDeserializationSchema not implementing ResultTypeQueryable - will be used class tag based produced type"
+          )
+          val clazz = classTag.runtimeClass.asInstanceOf[Class[T]]
+          TypeInformation.of(clazz)
+        }
     }
 
     override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
     override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
-      require(exceptionHandlingData != null, "exceptionHandlingData is null - FlinkDeserializationSchemaWrapper not opened correctly")
+      require(
+        exceptionHandlingData != null,
+        "exceptionHandlingData is null - FlinkDeserializationSchemaWrapper not opened correctly"
+      )
       val (exceptionHandler, contextIdGenerator, nodeId) = exceptionHandlingData
-      exceptionHandler.handling(Some(NodeComponentInfo(nodeId.id, "unknown", ComponentType.Source)), Context(contextIdGenerator.nextContextId())) {
-        deserializationSchema.deserialize(record)
-      }.getOrElse(null.asInstanceOf[T]) // null is not passed to collector in KafkaDeserializationSchema.deserialize // TODO: add ensurance that Null<:<T and use orNull instead
+      exceptionHandler
+        .handling(
+          Some(NodeComponentInfo(nodeId.id, "unknown", ComponentType.Source)),
+          Context(contextIdGenerator.nextContextId())
+        ) {
+          deserializationSchema.deserialize(record)
+        }
+        .getOrElse(
+          null.asInstanceOf[T]
+        ) // null is not passed to collector in KafkaDeserializationSchema.deserialize // TODO: add ensurance that Null<:<T and use orNull instead
     }
 
   }
 
-  def wrapToFlinkSerializationSchema[T](serializationSchema: serialization.KafkaSerializationSchema[T]): kafka.KafkaSerializationSchema[T] = new kafka.KafkaSerializationSchema[T] {
-    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = serializationSchema.
-      serialize(element, timestamp)
+  def wrapToFlinkSerializationSchema[T](
+      serializationSchema: serialization.KafkaSerializationSchema[T]
+  ): kafka.KafkaSerializationSchema[T] = new kafka.KafkaSerializationSchema[T] {
+    override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] =
+      serializationSchema.serialize(element, timestamp)
   }
 
-  def wrapToNuDeserializationSchema[T](deserializationSchema: DeserializationSchema[T]): KafkaDeserializationSchema[T] = new KafkaDeserializationSchema[T] with ResultTypeQueryable[T] {
-    override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
+  def wrapToNuDeserializationSchema[T](deserializationSchema: DeserializationSchema[T]): KafkaDeserializationSchema[T] =
+    new KafkaDeserializationSchema[T] with ResultTypeQueryable[T] {
+      override def isEndOfStream(nextElement: T): Boolean = deserializationSchema.isEndOfStream(nextElement)
 
-    override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = deserializationSchema.deserialize(record.value())
+      override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): T =
+        deserializationSchema.deserialize(record.value())
 
-    override def getProducedType: TypeInformation[T] = deserializationSchema.getProducedType
-  }
+      override def getProducedType: TypeInformation[T] = deserializationSchema.getProducedType
+    }
 
 }

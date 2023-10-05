@@ -15,10 +15,13 @@ import scala.reflect.ClassTag
 //Approximate unique count (using https://en.wikipedia.org/wiki/HyperLogLog). Result is number
 //The parameters should be adjusted for use case, see HyperLogLogPlusAggregatorSpec for some experiments
 case class HyperLogLogPlusAggregator(p: Int = 10, sp: Int = 15)
-  extends CardinalityAggregator(() => new HyperLogLogPlus(p, sp), ic => new HyperLogLogPlusWrapper(ic))
+    extends CardinalityAggregator(() => new HyperLogLogPlus(p, sp), ic => new HyperLogLogPlusWrapper(ic))
 
-class CardinalityAggregator[Wrapper<:CardinalityWrapper:ClassTag](zeroCardinality: () => ICardinality,
-                                                                  wrapper: ICardinality => Wrapper) extends Aggregator with Serializable {
+class CardinalityAggregator[Wrapper <: CardinalityWrapper: ClassTag](
+    zeroCardinality: () => ICardinality,
+    wrapper: ICardinality => Wrapper
+) extends Aggregator
+    with Serializable {
 
   override type Aggregate = CardinalityWrapper
 
@@ -26,7 +29,7 @@ class CardinalityAggregator[Wrapper<:CardinalityWrapper:ClassTag](zeroCardinalit
 
   override def zero: CardinalityWrapper = wrapper(zeroCardinality())
 
-  override def addElement(el: AnyRef, hll: Aggregate):Aggregate  = {
+  override def addElement(el: AnyRef, hll: Aggregate): Aggregate = {
     val newOne = zeroCardinality()
     newOne.offer(el)
     wrapper(newOne.merge(hll.wrapped))
@@ -80,7 +83,7 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
   }
 
   override def read(in: DataInputView): Unit = {
-    val size = in.readInt()
+    val size  = in.readInt()
     val bytes = new Array[Byte](size)
     in.read(bytes)
     wrapped = readFromBytes(bytes)
@@ -91,7 +94,7 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
   override def equals(other: Any): Boolean = other match {
     case that: CardinalityWrapper =>
       (that canEqual this) &&
-        wrapped == that.wrapped
+      wrapped == that.wrapped
     case _ => false
   }
 
@@ -100,4 +103,3 @@ private[aggregate] abstract class CardinalityWrapper extends Value with KryoSeri
   }
 
 }
-

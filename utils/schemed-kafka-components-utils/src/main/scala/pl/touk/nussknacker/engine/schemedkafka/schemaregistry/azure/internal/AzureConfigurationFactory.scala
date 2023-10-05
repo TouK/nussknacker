@@ -12,14 +12,14 @@ object AzureConfigurationFactory {
   def adjustConfig(kafkaProperties: Map[String, String]): Map[String, Any] = {
     val configMapWithCredentials = enrichWithCredential(kafkaProperties)
     configMapWithCredentials.map {
-      case (key@"auto.register.schemas", stringValue: String) => key -> java.lang.Boolean.parseBoolean(stringValue)
-      case (key, value) => key -> value
+      case (key @ "auto.register.schemas", stringValue: String) => key -> java.lang.Boolean.parseBoolean(stringValue)
+      case (key, value)                                         => key -> value
     }
   }
 
   private def enrichWithCredential(configMap: Map[String, String]) = {
     val configuration = createFromKafkaProperties(configMap)
-    val credential = AzureTokenCredentialFactory.createCredential(configuration)
+    val credential    = AzureTokenCredentialFactory.createCredential(configuration)
     configMap + ("schema.registry.credential" -> credential)
   }
 

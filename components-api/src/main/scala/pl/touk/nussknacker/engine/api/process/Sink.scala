@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.process
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.Component
 
-
 trait Sink
 
 /**

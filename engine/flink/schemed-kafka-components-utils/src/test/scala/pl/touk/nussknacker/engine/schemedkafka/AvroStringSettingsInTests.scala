@@ -18,8 +18,11 @@ object AvroStringSettingsInTests {
 
   private def setValue(value: Boolean): Unit = {
     AvroStringSettings.forceUsingStringForStringSchema // initialize lazy value
-    val field = Class.forName("pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings$").getDeclaredField("forceUsingStringForStringSchema")
+    val field = Class
+      .forName("pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings$")
+      .getDeclaredField("forceUsingStringForStringSchema")
     field.setAccessible(true)
     field.setBoolean(AvroStringSettings, value)
   }
+
 }

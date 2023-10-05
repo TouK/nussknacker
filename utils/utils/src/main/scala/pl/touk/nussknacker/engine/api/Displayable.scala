@@ -14,7 +14,7 @@ trait DisplayJson {
 
 }
 
-abstract class DisplayJsonWithEncoder[T:Encoder] extends DisplayJson { self : T =>
+abstract class DisplayJsonWithEncoder[T: Encoder] extends DisplayJson { self: T =>
 
   private val encoder: Encoder[T] = implicitly[Encoder[T]]
 

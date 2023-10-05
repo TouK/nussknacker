@@ -8,19 +8,26 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
-  val DefaultState: StateStatus = StateStatus("DEFAULT_STATE")
+  val DefaultState: StateStatus           = StateStatus("DEFAULT_STATE")
   val DefaultStateToOverride: StateStatus = StateStatus("OVERRIDE_THIS_STATE")
 
-  val CustomState: StateStatus = StateStatus("CUSTOM_STATE")
+  val CustomState: StateStatus              = StateStatus("CUSTOM_STATE")
   val CustomStateThatOverrides: StateStatus = StateStatus("OVERRIDE_THIS_STATE")
 
   private val icon = UnknownIcon
 
   private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
+
     override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
       DefaultState.name -> StateDefinitionDetails("Default", icon, "dummy", "Default description"),
-      DefaultStateToOverride.name -> StateDefinitionDetails("Default to override", icon, "dummy", "Default description to override")
+      DefaultStateToOverride.name -> StateDefinitionDetails(
+        "Default to override",
+        icon,
+        "dummy",
+        "Default description to override"
+      )
     )
+
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
   }
 
@@ -29,18 +36,23 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     val manager = new OverridingProcessStateDefinitionManager(
       statusDescriptionsPF = {
         case DefaultState => "Calculated description for default, e.g. schedule date"
-        case CustomState => "Calculated description for custom, e.g. schedule date"
+        case CustomState  => "Calculated description for custom, e.g. schedule date"
       },
       customStateDefinitions = Map(
         CustomState.name -> StateDefinitionDetails("Custom", icon, "dummy", "Custom description"),
-        CustomStateThatOverrides.name -> StateDefinitionDetails("Custom that overrides", icon, "dummy", "Custom description that overrides")
+        CustomStateThatOverrides.name -> StateDefinitionDetails(
+          "Custom that overrides",
+          icon,
+          "dummy",
+          "Custom description that overrides"
+        )
       ),
       delegate = defaultStateDefinitionManager
     )
 
     // eventually expect to have 3 states: CustomState, CustomStateToOverride and DelegateState
     val definitionsMap = manager.stateDefinitions
-    definitionsMap  should have size 3
+    definitionsMap should have size 3
     // Raw definitions that are displayed as filter options
     definitionsMap(DefaultState.name).description shouldBe "Default description"
     definitionsMap(CustomState.name).description shouldBe "Custom description"
@@ -51,4 +63,5 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
     manager.statusDescription(CustomState) shouldBe "Calculated description for custom, e.g. schedule date"
     manager.statusDescription(CustomStateThatOverrides) shouldBe "Custom description that overrides"
   }
+
 }

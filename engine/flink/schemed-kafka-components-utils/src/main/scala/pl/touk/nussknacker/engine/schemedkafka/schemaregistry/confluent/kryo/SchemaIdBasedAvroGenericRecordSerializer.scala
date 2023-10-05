@@ -8,19 +8,36 @@ import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifie
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, IntSchemaId, SchemaId, SchemaRegistryClientFactory, StringSchemaId}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
+  GenericRecordWithSchemaId,
+  IntSchemaId,
+  SchemaId,
+  SchemaRegistryClientFactory,
+  StringSchemaId
+}
 
 import java.io.ByteArrayOutputStream
 
 object SchemaIdBasedAvroGenericRecordSerializer {
-  def apply(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig): SchemaIdBasedAvroGenericRecordSerializer = {
-    new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig.schemaRegistryClientKafkaConfig)
+
+  def apply(
+      schemaRegistryClientFactory: SchemaRegistryClientFactory,
+      kafkaConfig: KafkaConfig
+  ): SchemaIdBasedAvroGenericRecordSerializer = {
+    new SchemaIdBasedAvroGenericRecordSerializer(
+      schemaRegistryClientFactory,
+      kafkaConfig.schemaRegistryClientKafkaConfig
+    )
   }
+
 }
 
 @SerialVersionUID(42553325228495L)
-class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: SchemaRegistryClientFactory, schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig)
-  extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
+class SchemaIdBasedAvroGenericRecordSerializer(
+    schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig
+) extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false)
+    with DatumReaderWriterMixin {
 
   @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
 
@@ -50,23 +67,25 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Sche
   }
 
   private def writeDataBytes(record: GenericRecordWithSchemaId, bos: ByteArrayOutputStream): Unit = {
-    val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = false)
+    val writer  = createDatumWriter(record, record.getSchema, useSchemaReflection = false)
     val encoder = this.encoderFactory.directBinaryEncoder(bos, null)
     writer.write(record, encoder)
   }
 
   override def read(kryo: Kryo, input: Input, clazz: Class[GenericRecordWithSchemaId]): GenericRecordWithSchemaId = {
     val lengthOfData = input.readVarInt(true)
-    val schemaIdInt = input.readVarInt(true)
+    val schemaIdInt  = input.readVarInt(true)
     val schemaId = if (schemaIdInt >= 0) {
       SchemaId.fromInt(schemaIdInt)
     } else if (schemaIdInt == stringSchemaMarker) {
       val schemaIdString = input.readString()
       SchemaId.fromString(schemaIdString)
     } else {
-      throw new IllegalArgumentException(s"Unsupported schemaId format: $schemaIdInt. Should be non-negative integer or -1 for string schemas")
+      throw new IllegalArgumentException(
+        s"Unsupported schemaId format: $schemaIdInt. Should be non-negative integer or -1 for string schemas"
+      )
     }
-    val dataBuffer = input.readBytes(lengthOfData)
+    val dataBuffer            = input.readBytes(lengthOfData)
     val recordWithoutSchemaId = readRecord(lengthOfData, schemaId, dataBuffer)
     new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaId, false)
   }
@@ -74,7 +93,8 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Sche
   private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
     val parsedSchema = schemaRegistry.getSchemaById(schemaId).schema
     val writerSchema = AvroUtils.extractSchema(parsedSchema)
-    val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
+    val reader =
+      createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
   }

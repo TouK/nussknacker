@@ -18,14 +18,16 @@ class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
   override def flinkSourceFunction: SourceFunction[CsvRecord] = new SourceFunction[CsvRecord] {
-    override def cancel(): Unit = {}
+    override def cancel(): Unit                           = {}
     override def run(ctx: SourceContext[CsvRecord]): Unit = {}
   }
 
-  override def generateTestData(size: Int): TestData = TestData(List(
-    TestRecord(Json.fromString("record1|field2")),
-    TestRecord(Json.fromString("record2|field3")),
-  ))
+  override def generateTestData(size: Int): TestData = TestData(
+    List(
+      TestRecord(Json.fromString("record1|field2")),
+      TestRecord(Json.fromString("record2|field3")),
+    )
+  )
 
   override def testRecordParser: TestRecordParser[CsvRecord] =
     (testRecord: TestRecord) => CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)

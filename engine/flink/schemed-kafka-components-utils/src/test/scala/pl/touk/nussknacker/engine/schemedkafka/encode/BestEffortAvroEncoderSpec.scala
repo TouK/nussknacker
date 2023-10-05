@@ -23,8 +23,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   it("should create simple record") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
@@ -33,8 +32,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create nested record") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "nested",
         |    "type": {
@@ -64,8 +62,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
                           |  "type": "enum",
                           |  "symbols": ["A", "B", "C"]
                           |}""".stripMargin
-    val schema = wrapWithRecordSchema(
-      s"""[
+    val schema = wrapWithRecordSchema(s"""[
          |  {
          |    "name": "enum",
          |    "type": $enumSchemaStr
@@ -83,8 +80,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create record with array field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "array",
         |    "type": {
@@ -104,8 +100,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create record with map field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "map",
         |    "type": {
@@ -124,8 +119,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create record with fixed field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "fixed",
         |    "type": {
@@ -142,11 +136,19 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
     }
 
     assertThrows[AvroRuntimeException] {
-      avroEncoder.encodeRecordOrError(Map("fixed" -> new Fixed(schema, badAla.getBytes(StandardCharsets.UTF_8))).asJava, schema)
+      avroEncoder.encodeRecordOrError(
+        Map("fixed" -> new Fixed(schema, badAla.getBytes(StandardCharsets.UTF_8))).asJava,
+        schema
+      )
     }
 
     val goodAla = "ala"
-    roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> new Fixed(schema, goodAla.getBytes(StandardCharsets.UTF_8))).asJava, schema))
+    roundTripVerifyWriteRead(
+      avroEncoder.encodeRecord(
+        Map("fixed" -> new Fixed(schema, goodAla.getBytes(StandardCharsets.UTF_8))).asJava,
+        schema
+      )
+    )
     roundTripVerifyWriteRead(avroEncoder.encodeRecord(Map("fixed" -> goodAla).asJava, schema))
   }
 
@@ -165,8 +167,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create record with union field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "foo",
         |    "type": ["null", "int"]
@@ -188,26 +189,47 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should accept redundant parameters if validation modes allows this") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("invalid")
-    BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("valid")
+    BestEffortAvroEncoder(ValidationMode.strict)
+      .encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("invalid")
+    BestEffortAvroEncoder(ValidationMode.lax)
+      .encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("valid")
   }
 
   it("should create record with logical type for timestamp-millis") {
     checkLogicalType("long", "timestamp-millis", Instant.ofEpochMilli(123L), Instant.ofEpochMilli(123L))
-    checkLogicalType("long", "timestamp-millis", Instant.ofEpochMilli(123L).atOffset(ZoneOffset.ofHours(2)), Instant.ofEpochMilli(123L))
-    checkLogicalType("long", "timestamp-millis", Instant.ofEpochMilli(123L).atZone(ZoneId.of("Europe/Warsaw")), Instant.ofEpochMilli(123L))
+    checkLogicalType(
+      "long",
+      "timestamp-millis",
+      Instant.ofEpochMilli(123L).atOffset(ZoneOffset.ofHours(2)),
+      Instant.ofEpochMilli(123L)
+    )
+    checkLogicalType(
+      "long",
+      "timestamp-millis",
+      Instant.ofEpochMilli(123L).atZone(ZoneId.of("Europe/Warsaw")),
+      Instant.ofEpochMilli(123L)
+    )
     checkLogicalType("long", "timestamp-millis", Instant.ofEpochSecond(0, 1123000L), Instant.ofEpochSecond(0, 1000000L))
   }
 
   it("should create record with logical type for timestamp-micros") {
     checkLogicalType("long", "timestamp-micros", Instant.ofEpochSecond(0, 123000L), Instant.ofEpochSecond(0, 123000L))
-    checkLogicalType("long", "timestamp-micros", Instant.ofEpochSecond(0, 123000L).atOffset(ZoneOffset.ofHours(2)), Instant.ofEpochSecond(0, 123000L))
-    checkLogicalType("long", "timestamp-micros", Instant.ofEpochSecond(0, 123000L).atZone(ZoneId.of("Europe/Warsaw")), Instant.ofEpochSecond(0, 123000L))
+    checkLogicalType(
+      "long",
+      "timestamp-micros",
+      Instant.ofEpochSecond(0, 123000L).atOffset(ZoneOffset.ofHours(2)),
+      Instant.ofEpochSecond(0, 123000L)
+    )
+    checkLogicalType(
+      "long",
+      "timestamp-micros",
+      Instant.ofEpochSecond(0, 123000L).atZone(ZoneId.of("Europe/Warsaw")),
+      Instant.ofEpochSecond(0, 123000L)
+    )
   }
 
   it("should create record with logical type for time-millis") {
@@ -224,8 +246,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should create record with logical type for decimal") {
-    val schema = wrapWithRecordSchema(
-      s"""[
+    val schema = wrapWithRecordSchema(s"""[
          |  { "name": "foo", "type": {
          |    "type": "bytes",
          |    "logicalType": "decimal",
@@ -236,7 +257,11 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
     encodeRecordWithSingleFieldAndVerify(schema, 123L, new java.math.BigDecimal("123.00"))
     encodeRecordWithSingleFieldAndVerify(schema, 123.45, new java.math.BigDecimal("123.45"))
     encodeRecordWithSingleFieldAndVerify(schema, new java.math.BigDecimal("123.45"), new java.math.BigDecimal("123.45"))
-    encodeRecordWithSingleFieldAndVerify(schema, new java.math.BigDecimal("123.456"), new java.math.BigDecimal("123.45"))
+    encodeRecordWithSingleFieldAndVerify(
+      schema,
+      new java.math.BigDecimal("123.456"),
+      new java.math.BigDecimal("123.45")
+    )
   }
 
   it("should create record with logical type for uuid") {
@@ -244,8 +269,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
     checkLogicalType("string", "uuid", uuid, uuid)
     checkLogicalType("string", "uuid", uuid.toString, uuid)
 
-    val uuidSchema = wrapWithRecordSchema(
-      s"""[
+    val uuidSchema = wrapWithRecordSchema(s"""[
          |  { "name": "foo", "type": {
          |    "type": "string",
          |    "logicalType": "uuid"
@@ -253,7 +277,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
          |]""".stripMargin)
 
     val notUuid = "not-uuid"
-    val thrown = the [AvroRuntimeException] thrownBy {
+    val thrown = the[AvroRuntimeException] thrownBy {
       avroEncoder.encodeRecordOrError(Map("foo" -> notUuid).asJava, uuidSchema)
     }
 
@@ -261,22 +285,20 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   it("should return logical type default value") {
-    val schema = wrapWithRecordSchema(
-      s"""[
+    val schema = wrapWithRecordSchema(s"""[
          |  { "name": "foo", "type": {
          |    "type": "long",
          |    "logicalType": "timestamp-millis"
          |  }, "default": 0 }
          |]""".stripMargin)
 
-    val encoded = avroEncoder.encodeRecord(Map.empty[String, Any], schema)
+    val encoded       = avroEncoder.encodeRecord(Map.empty[String, Any], schema)
     val encodedRecord = encoded.toEither.rightValue
     encodedRecord.get("foo") shouldEqual Instant.ofEpochMilli(0)
   }
 
   private def checkLogicalType(underlyingType: String, logicalType: String, givenValue: Any, expectedValue: Any) = {
-    val schema = wrapWithRecordSchema(
-      s"""[
+    val schema = wrapWithRecordSchema(s"""[
          |  { "name": "foo", "type": {
          |    "type": "$underlyingType",
          |    "logicalType": "$logicalType"
@@ -286,9 +308,9 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
   }
 
   private def encodeRecordWithSingleFieldAndVerify(schema: Schema, givenValue: Any, expectedValue: Any) = {
-    val encoded = avroEncoder.encodeRecord(Map("foo" -> givenValue).asJava, schema)
+    val encoded       = avroEncoder.encodeRecord(Map("foo" -> givenValue).asJava, schema)
     val encodedRecord = encoded.toEither.rightValue
-    val readRecord = roundTripWriteRead(encodedRecord)
+    val readRecord    = roundTripWriteRead(encodedRecord)
     readRecord.get("foo") shouldEqual expectedValue
   }
 
@@ -301,7 +323,7 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
 
   private def roundTripVerifyWriteRead(givenRecordVal: ValidatedNel[String, GenericData.Record]) = {
     val givenRecord = givenRecordVal.toEither.rightValue
-    val readRecord = roundTripWriteRead(givenRecord)
+    val readRecord  = roundTripWriteRead(givenRecord)
     readRecord shouldEqual givenRecord
     readRecord
   }

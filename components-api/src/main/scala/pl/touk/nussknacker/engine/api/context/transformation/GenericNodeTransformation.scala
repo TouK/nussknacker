@@ -22,26 +22,32 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 // TODO: rename to DynamicComponent
 sealed trait GenericNodeTransformation[T] {
 
-  //ValidationContext for single input, Map[String, ValidationContext] for joins
+  // ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext
 
   type DefinedParameter <: BaseDefinedParameter
 
-  //State is arbitrary data that can be passed between steps of NodeTransformationDefinition
+  // State is arbitrary data that can be passed between steps of NodeTransformationDefinition
   type State
 
-  //TODO: what if we cannot determine parameters/context? With some "fatal validation error"?
+  // TODO: what if we cannot determine parameters/context? With some "fatal validation error"?
   type NodeTransformationDefinition = PartialFunction[TransformationStep, TransformationStepResult]
 
-  def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition
+  def contextTransformation(context: InputContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition
 
   def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): T
 
-  //Here we assume that this list is fixed - cannot be changed depending on parameter values
+  // Here we assume that this list is fixed - cannot be changed depending on parameter values
   def nodeDependencies: List[NodeDependency]
 
   // FinalResult which will be used if some TransformationStep won't be handled inside contextTransformation.
-  def handleUnmatchedTransformationStep(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+  def handleUnmatchedTransformationStep(
+      step: TransformationStep,
+      inputContext: InputContext,
+      outputVariable: Option[String]
+  )(implicit nodeId: NodeId): FinalResults = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
     // if some parameters are failed to define, then probably it just missing implementantion of this corner case and we can just use fallback
     if (step.parameters.map(_._2).contains(FailedToDefineParameter)) {
@@ -53,42 +59,63 @@ sealed trait GenericNodeTransformation[T] {
   }
 
   // FinalResult which will be used when some exception will be thrown during handling of TransformationStep
-  def handleExceptionDuringTransformation(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String], ex: Throwable)
-                                         (implicit nodeId: NodeId): FinalResults = {
+  def handleExceptionDuringTransformation(
+      step: TransformationStep,
+      inputContext: InputContext,
+      outputVariable: Option[String],
+      ex: Throwable
+  )(implicit nodeId: NodeId): FinalResults = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
     fallback.copy(errors = fallback.errors :+ CannotCreateObjectError(ex.getMessage, nodeId.id))
   }
 
-  protected def fallbackFinalResult(step: TransformationStep, inputContext: InputContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
+  protected def fallbackFinalResult(
+      step: TransformationStep,
+      inputContext: InputContext,
+      outputVariable: Option[String]
+  )(implicit nodeId: NodeId): FinalResults = {
     prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, Unknown)), step.state)
   }
 
-  protected final def prepareFinalResultWithOptionalVariable(inputContext: InputContext, outputVariable: Option[(String, TypingResult)], state: Option[State])(implicit nodeId: NodeId): FinalResults = {
+  protected final def prepareFinalResultWithOptionalVariable(
+      inputContext: InputContext,
+      outputVariable: Option[(String, TypingResult)],
+      state: Option[State]
+  )(implicit nodeId: NodeId): FinalResults = {
     val context = inputContext match {
       case single: ValidationContext => single
-      case _ => ValidationContext.empty
+      case _                         => ValidationContext.empty
     }
-    outputVariable.map {
-      case (name, typ) =>
+    outputVariable
+      .map { case (name, typ) =>
         FinalResults.forValidation(context, state = state)(_.withVariable(name, typ, paramName = None))
-    }.getOrElse(FinalResults(context, state = state))
+      }
+      .getOrElse(FinalResults(context, state = state))
   }
 
   sealed trait TransformationStepResult {
     def errors: List[ProcessCompilationError]
   }
 
-  case class NextParameters(parameters: List[Parameter],
-                            errors: List[ProcessCompilationError] = Nil, state: Option[State] = None) extends TransformationStepResult
+  case class NextParameters(
+      parameters: List[Parameter],
+      errors: List[ProcessCompilationError] = Nil,
+      state: Option[State] = None
+  ) extends TransformationStepResult
 
-  case class FinalResults(finalContext: ValidationContext,
-                          errors: List[ProcessCompilationError] = Nil, state: Option[State] = None) extends TransformationStepResult
-
+  case class FinalResults(
+      finalContext: ValidationContext,
+      errors: List[ProcessCompilationError] = Nil,
+      state: Option[State] = None
+  ) extends TransformationStepResult
 
   object FinalResults {
 
-    def forValidation(context: ValidationContext, errors: List[ProcessCompilationError] = Nil, state: Option[State] = None)
-                     (validation: ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext]): FinalResults = {
+    def forValidation(
+        context: ValidationContext,
+        errors: List[ProcessCompilationError] = Nil,
+        state: Option[State] = None
+    )(validation: ValidationContext => ValidatedNel[ProcessCompilationError, ValidationContext]): FinalResults = {
       val validatedFinalContext = validation(context)
       FinalResults(
         validatedFinalContext.getOrElse(context),
@@ -103,9 +130,8 @@ sealed trait GenericNodeTransformation[T] {
 
 }
 
-
 trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[T] {
-  type InputContext = ValidationContext
+  type InputContext     = ValidationContext
   type DefinedParameter = DefinedSingleParameter
 }
 
@@ -114,6 +140,6 @@ trait SingleInputGenericNodeTransformation[T] extends GenericNodeTransformation[
   branch parameters that are changed based on other parameter values
  */
 trait JoinGenericNodeTransformation[T] extends GenericNodeTransformation[T] with LazyLogging {
-  type InputContext = Map[String, ValidationContext]
+  type InputContext     = Map[String, ValidationContext]
   type DefinedParameter = BaseDefinedParameter
 }

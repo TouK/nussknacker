@@ -4,7 +4,7 @@ import pl.touk.nussknacker.ui.db.entity._
 import slick.jdbc.JdbcProfile
 
 trait EspTables
-  extends ProcessEntityFactory
+    extends ProcessEntityFactory
     with CommentEntityFactory
     with ProcessVersionEntityFactory
     with EnvironmentsEntityFactory

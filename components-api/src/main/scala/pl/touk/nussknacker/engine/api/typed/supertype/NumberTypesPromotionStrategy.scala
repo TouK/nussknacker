@@ -12,8 +12,8 @@ trait NumberTypesPromotionStrategy extends Serializable {
 
   private val cachedPromotionResults: Map[(Class[_], Class[_]), ReturnedType] =
     (for {
-      a <- AllNumbers
-      b <- AllNumbers
+      a              <- AllNumbers
+      b              <- AllNumbers
       existingResult <- Try(promoteClassesInternal(a, b)).toOption
     } yield (a, b) -> existingResult).toMap
 
@@ -34,16 +34,16 @@ trait NumberTypesPromotionStrategy extends Serializable {
     }
   }
 
-  private def toSingleTypesSet(typ: TypingResult) : Either[Unknown.type, Set[SingleTypingResult]] =
+  private def toSingleTypesSet(typ: TypingResult): Either[Unknown.type, Set[SingleTypingResult]] =
     typ match {
       case s: SingleTypingResult => Right(Set(s))
-      case u: TypedUnion => Right(u.possibleTypes)
-      case TypedNull => Left(Unknown)
-      case Unknown => Left(Unknown)
+      case u: TypedUnion         => Right(u.possibleTypes)
+      case TypedNull             => Left(Unknown)
+      case Unknown               => Left(Unknown)
     }
 
   final def promoteClasses(left: Class[_], right: Class[_]): ReturnedType = {
-    val boxedLeft = ClassUtils.primitiveToWrapper(left)
+    val boxedLeft  = ClassUtils.primitiveToWrapper(left)
     val boxedRight = ClassUtils.primitiveToWrapper(right)
     if (!classOf[Number].isAssignableFrom(boxedLeft) || !classOf[Number].isAssignableFrom(boxedRight))
       throw new IllegalArgumentException(s"One of promoted classes is not a number: $boxedLeft, $boxedRight")
@@ -110,7 +110,9 @@ object NumberTypesPromotionStrategy {
     }
 
     override protected def handleDecimalType(firstDecimal: Class[_]): TypedClass = {
-      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short] || firstDecimal == classOf[lang.Integer]) {
+      if (firstDecimal == classOf[lang.Byte] || firstDecimal == classOf[lang.Short] || firstDecimal == classOf[
+          lang.Integer
+        ]) {
         Typed.typedClass(classOf[lang.Long])
       } else {
         Typed.typedClass(firstDecimal)
@@ -175,7 +177,7 @@ object NumberTypesPromotionStrategy {
       } else if (left == classOf[java.lang.Long] || right == classOf[java.lang.Long]) {
         Typed[java.lang.Long]
       } else {
-        Typed(Typed[java.lang.Integer], Typed[java.lang.Long])  // it depends if there was overflow or not
+        Typed(Typed[java.lang.Integer], Typed[java.lang.Long]) // it depends if there was overflow or not
       }
     }
 

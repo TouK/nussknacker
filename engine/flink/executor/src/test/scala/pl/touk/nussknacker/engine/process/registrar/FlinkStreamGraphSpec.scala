@@ -18,13 +18,17 @@ import scala.collection.compat.immutable.LazyList
 
 import scala.jdk.CollectionConverters._
 
-trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
+trait FlinkStreamGraphSpec
+    extends AnyFunSuite
+    with ProcessTestHelpers
+    with Matchers
+    with OptionValues
+    with PatientScalaFutures {
 
-  protected def streamGraph(process: CanonicalProcess,
-                            config: Config = ConfigFactory.load()): StreamGraph = {
+  protected def streamGraph(process: CanonicalProcess, config: Config = ConfigFactory.load()): StreamGraph = {
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
 
-    val env = flinkMiniCluster.createExecutionEnvironment()
+    val env       = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
     FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(env, process, ProcessVersion.empty, DeploymentData.empty)
@@ -41,4 +45,5 @@ trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matc
       node #:: node.getOutEdgeIndices.asScala.to(LazyList).map(graph.getStreamNode).flatMap(traverse)
 
   }
+
 }

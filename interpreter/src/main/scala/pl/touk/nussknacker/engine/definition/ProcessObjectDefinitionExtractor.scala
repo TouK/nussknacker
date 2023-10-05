@@ -9,7 +9,8 @@ import scala.reflect.ClassTag
 class ProcessObjectDefinitionExtractor[F, T: ClassTag] extends AbstractMethodDefinitionExtractor[F] {
 
   override protected def expectedReturnType: Option[Class[_]] = Some(implicitly[ClassTag[T]].runtimeClass)
-  override protected def additionalDependencies: Set[Class[_]] = Set[Class[_]](classOf[MetaData], classOf[NodeId], classOf[ComponentUseCase])
+  override protected def additionalDependencies: Set[Class[_]] =
+    Set[Class[_]](classOf[MetaData], classOf[NodeId], classOf[ComponentUseCase])
 
 }
 
@@ -18,8 +19,8 @@ object SourceProcessObjectDefinitionExtractor extends ProcessObjectDefinitionExt
 object ProcessObjectDefinitionExtractor {
 
   val source = SourceProcessObjectDefinitionExtractor
-  val sink = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
+  val sink   = new ProcessObjectDefinitionExtractor[SinkFactory, Sink]
   val customStreamTransformer: CustomStreamTransformerExtractor.type = CustomStreamTransformerExtractor
-  val service: MethodDefinitionExtractor[Service] = DefaultServiceInvoker.Extractor
+  val service: MethodDefinitionExtractor[Service]                    = DefaultServiceInvoker.Extractor
 
 }

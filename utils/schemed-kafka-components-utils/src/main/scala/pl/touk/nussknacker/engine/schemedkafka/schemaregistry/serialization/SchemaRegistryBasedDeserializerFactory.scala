@@ -11,10 +11,12 @@ import scala.reflect.ClassTag
 
 trait SchemaRegistryBasedDeserializerFactory extends Serializable {
 
-  def createDeserializer[T: ClassTag](schemaRegistryClient: SchemaRegistryClient,
-                                      kafkaConfig: KafkaConfig,
-                                      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                      isKey: Boolean): Deserializer[T]
+  def createDeserializer[T: ClassTag](
+      schemaRegistryClient: SchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      isKey: Boolean
+  ): Deserializer[T]
 
 }
 
@@ -24,23 +26,33 @@ trait AbstractSchemaRegistryBasedDeserializerFactory {
 
   protected val deserializerFactory: SchemaRegistryBasedDeserializerFactory
 
-  protected final def createDeserializer[T: ClassTag](kafkaConfig: KafkaConfig,
-                                                      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                                      isKey: Boolean): Deserializer[T] = {
+  protected final def createDeserializer[T: ClassTag](
+      kafkaConfig: KafkaConfig,
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      isKey: Boolean
+  ): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     deserializerFactory.createDeserializer[T](schemaRegistryClient, kafkaConfig, schemaDataOpt, isKey)
   }
 
 }
 
-class KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(protected val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                                   protected val deserializerFactory: SchemaRegistryBasedDeserializerFactory)
-  extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory with AbstractSchemaRegistryBasedDeserializerFactory {
+class KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(
+    protected val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    protected val deserializerFactory: SchemaRegistryBasedDeserializerFactory
+) extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory
+    with AbstractSchemaRegistryBasedDeserializerFactory {
 
-  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[K] =
+  override protected def createKeyDeserializer[K: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[K] =
     createDeserializer[K](kafkaConfig, schemaDataOpt, isKey = true)
 
-  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
+  override protected def createValueDeserializer[V: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[V] =
     createDeserializer[V](kafkaConfig, schemaDataOpt, isKey = false)
 
 }

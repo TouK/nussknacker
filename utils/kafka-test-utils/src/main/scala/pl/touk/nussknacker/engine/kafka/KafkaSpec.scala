@@ -8,13 +8,14 @@ import pl.touk.nussknacker.test.{AvailablePortFinder, KafkaConfigProperties, Wit
 trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
 
   var kafkaServer: EmbeddedKafkaServer = _
-  var kafkaClient: KafkaClient = _
-  val kafkaBrokerConfig = Map.empty[String, String]
+  var kafkaClient: KafkaClient         = _
+  val kafkaBrokerConfig                = Map.empty[String, String]
 
   override protected def resolveConfig(config: Config): Config =
-    super.resolveConfig(config)
+    super
+      .resolveConfig(config)
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
-      //For tests we want to read from the beginning...
+      // For tests we want to read from the beginning...
       .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
 
   override protected def beforeAll(): Unit = {

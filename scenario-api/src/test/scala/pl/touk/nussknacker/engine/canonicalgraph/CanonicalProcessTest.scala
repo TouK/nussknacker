@@ -3,7 +3,15 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Fragment, SwitchNode}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{
+  CanonicalNode,
+  Case,
+  FilterNode,
+  FlatNode,
+  Fragment,
+  SplitNode,
+  SwitchNode
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -21,15 +29,13 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
   val disabledFilter1 = FilterNode(data = Filter("filter1", "''", isDisabled = Some(true)), List(sink1))
 
   test("#withoutDisabledNodes when all nodes are enabled") {
-    val withNodesEnabled = process(
-      List(source1, fragment(List(sink1), isDisabled = false)))
+    val withNodesEnabled = process(List(source1, fragment(List(sink1), isDisabled = false)))
 
     withNodesEnabled.withoutDisabledNodes shouldBe withNodesEnabled
   }
 
   test("#withoutDisabledNodes with disabled fragment") {
-    val withDisabledFragment = process(
-      List(source1, fragment(List(sink1), isDisabled = true)))
+    val withDisabledFragment = process(List(source1, fragment(List(sink1), isDisabled = true)))
 
     withDisabledFragment.withoutDisabledNodes shouldBe process(List(source1, sink1))
   }
@@ -104,7 +110,8 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
             Case("''", List(disabledFilter1)),
             Case("''", List(sink1))
           ),
-          defaultNext = List(disabledFilter1))
+          defaultNext = List(disabledFilter1)
+        )
       )
     ).withoutDisabledNodes shouldBe process(
       List(
@@ -174,10 +181,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
     )
 
   private def process(nodes: List[CanonicalNode]) =
-    CanonicalProcess(
-      MetaData("process1", StreamMetaData()),
-      nodes = nodes,
-      additionalBranches = List.empty)
+    CanonicalProcess(MetaData("process1", StreamMetaData()), nodes = nodes, additionalBranches = List.empty)
 
   private implicit def asSampleExpression(expression: String): Expression =
     Expression(

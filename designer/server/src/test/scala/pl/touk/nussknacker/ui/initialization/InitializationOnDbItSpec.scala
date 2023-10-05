@@ -18,7 +18,7 @@ class InitializationOnHsqlItSpec extends InitializationOnDbItSpec with WithHsqlD
 class InitializationOnPostgresItSpec extends InitializationOnDbItSpec with WithPostgresDbTesting
 
 abstract class InitializationOnDbItSpec
-  extends AnyFlatSpec
+    extends AnyFlatSpec
     with Matchers
     with PatientScalaFutures
     with BeforeAndAfterEach
@@ -45,9 +45,12 @@ abstract class InitializationOnDbItSpec
 
     Initialization.init(migrations, testDbRef, repository, "env1")
 
-    dbioRunner.runInTransaction(
-      repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
-    ).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    dbioRunner
+      .runInTransaction(
+        repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
+      )
+      .futureValue
+      .map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when fragments present" in {
@@ -61,22 +64,35 @@ abstract class InitializationOnDbItSpec
 
     Initialization.init(migrations, testDbRef, repository, "env1")
 
-    dbioRunner.runInTransaction(
-      repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
-    ).futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
+    dbioRunner
+      .runInTransaction(
+        repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
+      )
+      .futureValue
+      .map(d => (d.name, d.modelVersion))
+      .toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
   }
 
   it should "run initialization transactionally" in {
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), testDbRef, repository, "env1"))
+      Initialization.init(
+        mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)),
+        testDbRef,
+        repository,
+        "env1"
+      )
+    )
 
     exception.getMessage shouldBe "made to fail.."
 
-    dbioRunner.runInTransaction(
-      repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
-    ).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    dbioRunner
+      .runInTransaction(
+        repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
+      )
+      .futureValue
+      .map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
   private def saveSampleProcess(processName: String = processId, fragment: Boolean = false): Unit = {
@@ -86,7 +102,8 @@ abstract class InitializationOnDbItSpec
       sampleCanonicalProcess(processId),
       TestProcessingTypes.Streaming,
       fragment,
-      forwardedUserName = None)
+      forwardedUserName = None
+    )
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))
