@@ -28,12 +28,22 @@ describe("Process mouse drag", () => {
 
     it("should allow pan view", () => {
         cy.get("@canvas")
-            .trigger("pointerdown", { force: true, button: 0 })
-            .trigger("pointermove", 10, 10, { force: true }) // hammerjs' panstart
-            .trigger("pointermove", 200, 100, { force: true }) // hammerjs' panmove
-            .trigger("pointerup", { force: true, button: 0 })
-            .wait(200);
-        cy.get("@graph").matchImage(snapshotParams);
+            // jointjs' pointerdown
+            .trigger("mousedown", { force: true })
+            // hammerjs' panstart
+            .trigger("pointerdown", {
+                force: true,
+                button: 0,
+            })
+            .trigger("pointermove", 10, 10, { force: true })
+            // hammerjs' panmove
+            .trigger("pointermove", 200, 100, { force: true })
+            // hammerjs' panend
+            .trigger("pointerup", {
+                force: true,
+                button: 0,
+            });
+        cy.get("@graph").wait(200).matchImage(snapshotParams);
     });
 
     it("should select only fully covered (to right)", () => {
