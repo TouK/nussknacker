@@ -9,6 +9,7 @@ import sttp.client3.StringBody
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
 import org.scalatest.flatspec.AnyFlatSpec
+import pl.touk.nussknacker.ui.security.oidc.DefaultOidcAuthorizationData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

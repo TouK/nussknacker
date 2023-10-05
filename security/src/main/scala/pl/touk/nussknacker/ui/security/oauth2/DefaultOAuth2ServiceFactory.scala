@@ -1,7 +1,13 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.ui.security.oidc.{
+  DefaultOidcAuthorizationData,
+  GenericOidcService,
+  OidcProfileAuthentication,
+  OidcUserInfo
+}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,15 +26,14 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging 
           logger.warn(
             "Switch to the OIDC authentication provider instead of the OIDC format in the generic OAuth2 provider"
           )
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData](
             GenericOidcService(configuration),
-            (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, configuration)
+            new OidcProfileAuthentication(configuration)
           )
         case ProfileFormat.GITHUB =>
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[GitHubProfileResponse, DefaultOAuth2AuthorizationData](
             BaseOAuth2Service[GitHubProfileResponse](configuration),
-            (profileResponse: GitHubProfileResponse) =>
-              GitHubProfile.getAuthenticatedUser(profileResponse, configuration)
+            new GitHubProfileAuthentication(configuration)
           )
       },
       configuration
