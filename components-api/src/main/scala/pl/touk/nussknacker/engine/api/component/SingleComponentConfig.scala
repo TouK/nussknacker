@@ -14,12 +14,12 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
-@JsonCodec case class SingleComponentUIConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], disabled: Boolean = false) {
-  def toSingleComponentConfig: SingleComponentConfig = SingleComponentConfig(params = params, icon = icon, docsUrl = docsUrl, disabled = disabled, componentGroup = None, componentId = None)
+@JsonCodec case class SingleComponentUIConfig(params: Option[Map[String, ParameterConfig]], icon: Option[String], docsUrl: Option[String], componentGroup: Option[ComponentGroupName], disabled: Boolean = false) {
+  def toSingleComponentConfig: SingleComponentConfig = SingleComponentConfig(params = params, icon = icon, docsUrl = docsUrl, disabled = disabled, componentGroup = componentGroup, componentId = None)
 }
 
 object SingleComponentUIConfig {
-  val zero: SingleComponentUIConfig = SingleComponentUIConfig(None, None, None)
+  val zero: SingleComponentUIConfig = SingleComponentUIConfig(None, None, None, None)
 }
 
 object SingleComponentConfig {
