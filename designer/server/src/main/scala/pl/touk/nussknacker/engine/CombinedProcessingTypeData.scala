@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine
 
+import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider}
+import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
 
