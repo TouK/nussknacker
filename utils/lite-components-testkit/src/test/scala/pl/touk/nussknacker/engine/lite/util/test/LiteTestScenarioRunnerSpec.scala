@@ -28,7 +28,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .enricher("custom", "o2", "custom", "param" -> "#input")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "{#o1, #o2}")
 
-    val runner = new LiteTestScenarioRunner(List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
+    val runner = new LiteTestScenarioRunner(List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))), Map.empty,
       ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")), EngineRuntime)
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
@@ -42,7 +42,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .buildVariable("v", "v", "varField" -> "#input.field")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
 
-    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty(), EngineRuntime)
+    val runner = new LiteTestScenarioRunner(Nil, Map.empty, ConfigFactory.empty(), EngineRuntime)
 
     val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
     result.validValue shouldBe RunResult.success("abc")

@@ -4,10 +4,10 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
 import scala.reflect.ClassTag
 
@@ -49,6 +49,8 @@ trait TestScenarioRunner
 trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunnerBuilder[R, _]] {
 
   def withExtraComponents(components: List[ComponentDefinition]): B
+
+  def withGlobalProcessVariables(globalProcessVariables: Map[String, WithCategories[AnyRef]]): B
 
   def inTestRuntimeMode: B
 

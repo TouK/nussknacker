@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ModelDefinitionWithTypes}
-import pl.touk.nussknacker.engine.definition.ProcessObjectDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{GlobalVariableDefinitionExtractor, ProcessDefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
 
@@ -52,11 +52,17 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
     val sinksWithTests = definitions.sinkFactories ++ testSinkDefs
     val customStreamTransformerWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
 
+    val expressionConfigWithTests = definitions.expressionConfig.copy(
+      definitions.expressionConfig.globalVariables ++
+      GlobalVariableDefinitionExtractor.extractDefinitions(testComponentsHolder.globalProcessVariables)
+    )
+
     val definitionsWithTestComponents = definitions.copy(
       services = servicesWithTests,
       sinkFactories = sinksWithTests,
       sourceFactories = sourcesWithTests,
-      customStreamTransformers = customStreamTransformerWithTests
+      customStreamTransformers = customStreamTransformerWithTests,
+      expressionConfig = expressionConfigWithTests
     )
 
     (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)

@@ -10,12 +10,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
-import org.apache.kafka.common.header.internals.RecordHeaders
-import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
@@ -46,14 +44,15 @@ object LiteKafkaTestScenarioRunner {
         .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true)))
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
-        List.empty, config, MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient), testRuntimeMode = false)
+        List.empty, Map.empty, config, MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient), testRuntimeMode = false)
     }
 
   }
 
 }
 
-case class LiteKafkaTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition],
+case class LiteKafkaTestScenarioRunnerBuilder(components: List[ComponentDefinition],
+                                              globalProcessVariables: Map[String, WithCategories[AnyRef]],
                                               config: Config,
                                               schemaRegistryClientFactor: SchemaRegistryClientFactoryWithRegistration,
                                               testRuntimeMode: Boolean)
@@ -62,7 +61,11 @@ case class LiteKafkaTestScenarioRunnerBuilder(extraComponents: List[ComponentDef
   import TestScenarioRunner._
 
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
-    copy(extraComponents = extraComponents)
+    copy(components = extraComponents)
+
+
+  override def withGlobalProcessVariables(globalProcessVariables: Map[String, WithCategories[AnyRef]]): LiteKafkaTestScenarioRunnerBuilder =
+    copy(globalProcessVariables = globalProcessVariables)
 
   override def inTestRuntimeMode: LiteKafkaTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
@@ -82,13 +85,15 @@ case class LiteKafkaTestScenarioRunnerBuilder(extraComponents: List[ComponentDef
         throw new IllegalArgumentException(s"Not supported schema registry client: ${schemaRegistryClient.getClass}. " +
           s"Kafka tests mechanism is currently supported only for Confluent schema registry implementation")
     }
-    new LiteKafkaTestScenarioRunner(mockedKafkaComponents ++ extraComponents, config, schemaRegistryClient, componentUseCase(testRuntimeMode), serde)
+    new LiteKafkaTestScenarioRunner(mockedKafkaComponents ++ components, globalProcessVariables, config, schemaRegistryClient, componentUseCase(testRuntimeMode), serde)
   }
 
 
 }
 
-class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config: Config,
+class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition],
+                                  globalProcessVariables: Map[String, WithCategories[AnyRef]],
+                                  config: Config,
                                   schemaRegistryClient: SchemaRegistryClientWithRegistration,
                                   componentUseCase: ComponentUseCase,
                                   serde: KafkaAvroElementSerde) extends TestScenarioRunner {
@@ -99,7 +104,7 @@ class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config:
   type StringInput = ConsumerRecord[String, String]
   type AvroInput = ConsumerRecord[Any, KafkaAvroElement]
 
-  private val delegate: LiteTestScenarioRunner = new LiteTestScenarioRunner(components, config, componentUseCase)
+  private val delegate: LiteTestScenarioRunner = new LiteTestScenarioRunner(components, globalProcessVariables, config, componentUseCase)
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer = new StringDeserializer
 

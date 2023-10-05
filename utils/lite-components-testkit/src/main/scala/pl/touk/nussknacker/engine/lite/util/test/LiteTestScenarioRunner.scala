@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SinkFactory, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SinkFactory, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -23,25 +23,28 @@ object LiteTestScenarioRunner {
     implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def liteBased(config: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
-      LiteTestScenarioRunnerBuilder(List.empty, config, testRuntimeMode = false)
+      LiteTestScenarioRunnerBuilder(List.empty, Map.empty, config, testRuntimeMode = false)
     }
 
   }
 
 }
 
-case class LiteTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config, testRuntimeMode: Boolean)
+case class LiteTestScenarioRunnerBuilder(components: List[ComponentDefinition], globalProcessVariables: Map[String, WithCategories[AnyRef]], config: Config, testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[LiteTestScenarioRunner, LiteTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
 
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
-    copy(extraComponents = extraComponents)
+    copy(components = extraComponents)
+
+  override def withGlobalProcessVariables(globalProcessVariables: Map[String, WithCategories[AnyRef]]): LiteTestScenarioRunnerBuilder =
+    copy(globalProcessVariables = globalProcessVariables)
 
   override def inTestRuntimeMode: LiteTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
-  override def build(): LiteTestScenarioRunner = new LiteTestScenarioRunner(extraComponents, config, componentUseCase(testRuntimeMode))
+  override def build(): LiteTestScenarioRunner = new LiteTestScenarioRunner(components, globalProcessVariables, config, componentUseCase(testRuntimeMode))
 
 }
 
@@ -51,7 +54,7 @@ case class LiteTestScenarioRunnerBuilder(extraComponents: List[ComponentDefiniti
   This is simplistic Lite engine runner. It can be used to test enrichers, lite custom components.
   For testing specific source/sink implementations (e.g. request-response, kafka etc.) other runners should be used
  */
-class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Config, componentUseCase: ComponentUseCase) extends ClassBasedTestScenarioRunner {
+class LiteTestScenarioRunner(components: List[ComponentDefinition], globalProcessVariables: Map[String, WithCategories[AnyRef]], config: Config, componentUseCase: ComponentUseCase) extends ClassBasedTestScenarioRunner {
 
   /**
     *  Additional source TestScenarioRunner.testDataSource and sink TestScenarioRunner.testResultSink are provided,
@@ -72,7 +75,7 @@ class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Conf
     val inputId = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
 
-    ModelWithTestComponents.withTestComponents(config, testSource :: testSink :: components) { modelData =>
+    ModelWithTestComponents.withTestComponents(config, testSource :: testSink :: components, globalProcessVariables) { modelData =>
       SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
     }
   }

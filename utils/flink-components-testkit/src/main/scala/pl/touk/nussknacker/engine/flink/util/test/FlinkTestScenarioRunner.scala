@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,6 +39,7 @@ private object testComponents {
 }
 
 class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
+                              val globalProcessVariables: Map[String, WithCategories[AnyRef]],
                               val config: Config,
                               flinkMiniCluster: FlinkMiniClusterHolder,
                               componentUseCase: ComponentUseCase
@@ -47,7 +48,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalProcessVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -58,7 +59,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     val testComponents = noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalProcessVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -70,7 +71,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalProcessVariables)
     run(scenario, testComponentHolder)
   }
 
@@ -106,24 +107,26 @@ object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
     def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-      FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster, testRuntimeMode = false)
+      FlinkTestScenarioRunnerBuilder(List.empty, Map.empty, config, flinkMiniCluster, testRuntimeMode = false)
     }
   }
 
 }
 
-case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder, testRuntimeMode: Boolean)
+case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], globalProcessVariables: Map[String, WithCategories[AnyRef]], config: Config, flinkMiniCluster: FlinkMiniClusterHolder, testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
+  override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder =
     copy(components = components)
-  }
+
+  override def withGlobalProcessVariables(globalProcessVariables: Map[String, WithCategories[AnyRef]]): FlinkTestScenarioRunnerBuilder =
+    copy(globalProcessVariables = globalProcessVariables)
 
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
-  override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
+  override def build() = new FlinkTestScenarioRunner(components, globalProcessVariables, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
 
 }
