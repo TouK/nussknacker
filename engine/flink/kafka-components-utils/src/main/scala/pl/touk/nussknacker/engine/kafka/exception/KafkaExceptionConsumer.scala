@@ -16,10 +16,10 @@ import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
-    val kafkaConfig = KafkaConfig.parseConfig(exceptionHandlerConfig)
-    val consumerConfig = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
-    val producerCreator = kafkaProducerCreator(kafkaConfig)
-    val serializationSchema = createSerializationSchema(metaData, consumerConfig)
+    val kafkaConfig           = KafkaConfig.parseConfig(exceptionHandlerConfig)
+    val consumerConfig        = exceptionHandlerConfig.rootAs[KafkaExceptionConsumerConfig]
+    val producerCreator       = kafkaProducerCreator(kafkaConfig)
+    val serializationSchema   = createSerializationSchema(metaData, consumerConfig)
     val errorTopicInitializer = new KafkaErrorTopicInitializer(kafkaConfig, consumerConfig)
     if (consumerConfig.useSharedProducer) {
       SharedProducerKafkaExceptionConsumer(metaData, serializationSchema, producerCreator, errorTopicInitializer)
@@ -28,19 +28,25 @@ class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     }
   }
 
-  protected def createSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig): KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] =
+  protected def createSerializationSchema(
+      metaData: MetaData,
+      consumerConfig: KafkaExceptionConsumerConfig
+  ): KafkaSerializationSchema[NuExceptionInfo[NonTransientException]] =
     new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
-  //visible for testing
-  private[exception] def kafkaProducerCreator(kafkaConfig: KafkaConfig): KafkaProducerCreator.Binary = DefaultProducerCreator(kafkaConfig)
+  // visible for testing
+  private[exception] def kafkaProducerCreator(kafkaConfig: KafkaConfig): KafkaProducerCreator.Binary =
+    DefaultProducerCreator(kafkaConfig)
 
   override def name: String = "Kafka"
 
 }
 
-case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
-                                              kafkaProducerCreator: KafkaProducerCreator.Binary,
-                                              kafkaErrorTopicInitializer: KafkaErrorTopicInitializer) extends FlinkEspExceptionConsumer {
+case class TempProducerKafkaExceptionConsumer(
+    serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
+    kafkaProducerCreator: KafkaProducerCreator.Binary,
+    kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
+) extends FlinkEspExceptionConsumer {
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
@@ -48,16 +54,20 @@ case class TempProducerKafkaExceptionConsumer(serializationSchema: KafkaSerializ
   }
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
-    KafkaUtils.sendToKafkaWithTempProducer(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(kafkaProducerCreator)
+    KafkaUtils.sendToKafkaWithTempProducer(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(
+      kafkaProducerCreator
+    )
   }
 
 }
 
-case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
-                                                serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
-                                                kafkaProducerCreator: KafkaProducerCreator.Binary,
-                                                kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
-                                               ) extends FlinkEspExceptionConsumer with WithSharedKafkaProducer {
+case class SharedProducerKafkaExceptionConsumer(
+    metaData: MetaData,
+    serializationSchema: KafkaSerializationSchema[NuExceptionInfo[NonTransientException]],
+    kafkaProducerCreator: KafkaProducerCreator.Binary,
+    kafkaErrorTopicInitializer: KafkaErrorTopicInitializer
+) extends FlinkEspExceptionConsumer
+    with WithSharedKafkaProducer {
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
@@ -65,7 +75,9 @@ case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
   }
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
-    sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(SynchronousExecutionContextAndIORuntime.ctx)
+    sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(
+      SynchronousExecutionContextAndIORuntime.ctx
+    )
   }
-  
+
 }

@@ -21,7 +21,6 @@ object FatalValidationError {
     }
   }
 
-
 }
 
 case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {
@@ -31,4 +30,5 @@ case class FatalValidationError(errors: List[NodeValidationError]) extends EspEr
   private def formatError(e: NodeValidationError): String = {
     s"${e.message}:${e.description}"
   }
+
 }

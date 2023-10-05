@@ -9,11 +9,16 @@ import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
-class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (String => MetricsProviderForScenario with AutoCloseable) {
-  override def apply(scenarioId: String): MetricsProviderForScenario with AutoCloseable = new DropwizardMetricsProviderForScenario(scenarioId, metricRegistry)
+class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry)
+    extends (String => MetricsProviderForScenario with AutoCloseable) {
+  override def apply(scenarioId: String): MetricsProviderForScenario with AutoCloseable =
+    new DropwizardMetricsProviderForScenario(scenarioId, metricRegistry)
 }
 
-class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry) extends BaseMetricsProviderForScenario with AutoCloseable with LazyLogging {
+class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: MetricRegistry)
+    extends BaseMetricsProviderForScenario
+    with AutoCloseable
+    with LazyLogging {
 
   override def counter(metricIdentifier: MetricIdentifier): Counter = {
     val counter = register(metricIdentifier, new metrics5.Counter, reuseIfExisting = true)
@@ -26,21 +31,22 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
     histogram.update _
   }
 
-  //For most cases it's possible to reuse existing metric when there is concurrent addition of metrics
-  //(MetricRegistry is backed by ConcurrentMap), so we return existing one for counters, histograms etc.
+  // For most cases it's possible to reuse existing metric when there is concurrent addition of metrics
+  // (MetricRegistry is backed by ConcurrentMap), so we return existing one for counters, histograms etc.
   private def register[T <: Metric](id: MetricIdentifier, metric: T, reuseIfExisting: Boolean): T = {
     val metricName = prepareMetricName(id)
     try {
       metricRegistry.register(metricName, metric)
     } catch {
-      case e: IllegalArgumentException if reuseIfExisting && e.getMessage == "A metric named " + metricName + " already exists" =>
+      case e: IllegalArgumentException
+          if reuseIfExisting && e.getMessage == "A metric named " + metricName + " already exists" =>
         logger.info(s"""Reusing existing metric for $metricName""")
         metricRegistry.getMetrics.get(metricName).asInstanceOf[T]
     }
   }
 
   override def registerGauge[T](metricIdentifier: MetricIdentifier, gauge: Gauge[T]): Unit = {
-    //We cannot just accept conflicting gauges...
+    // We cannot just accept conflicting gauges...
     register[metrics5.Gauge[T]](metricIdentifier, () => gauge.getValue, reuseIfExisting = false)
   }
 
@@ -49,7 +55,8 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   }
 
   private def prepareMetricName(id: MetricIdentifier) = {
-    MetricRegistry.name(id.name.head, id.name.tail: _*)
+    MetricRegistry
+      .name(id.name.head, id.name.tail: _*)
       .tagged(id.tags.asJava)
       .tagged(scenarioIdTag, scenarioId)
   }
@@ -57,4 +64,5 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
   override def close(): Unit = {
     metricRegistry.removeMatching((name: MetricName, _: Metric) => name.getTags.get(scenarioIdTag) == scenarioId)
   }
+
 }

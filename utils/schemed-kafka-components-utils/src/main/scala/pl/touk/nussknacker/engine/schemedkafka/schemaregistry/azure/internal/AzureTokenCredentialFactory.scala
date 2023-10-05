@@ -33,4 +33,5 @@ object AzureTokenCredentialFactory extends LazyLogging {
       clientSecretCredentialOpt.toList :+ new DefaultAzureCredentialBuilder().configuration(configuration).build()
     new ChainedTokenCredentialBuilder().addAll(chain.asJava).build
   }
+
 }

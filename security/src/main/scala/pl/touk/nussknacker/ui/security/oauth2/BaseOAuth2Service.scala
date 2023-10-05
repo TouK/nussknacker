@@ -12,22 +12,26 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaseOAuth2Service[
-  UserInfoData,
-  AuthorizationData <: OAuth2AuthorizationData
-](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])
- (implicit ec: ExecutionContext) extends OAuth2Service[UserInfoData, AuthorizationData] with LazyLogging {
+    UserInfoData,
+    AuthorizationData <: OAuth2AuthorizationData
+](protected val clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData])(implicit ec: ExecutionContext)
+    extends OAuth2Service[UserInfoData, AuthorizationData]
+    with LazyLogging {
 
-  final def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)] = {
+  final def obtainAuthorizationAndUserInfo(
+      authorizationCode: String,
+      redirectUri: String
+  ): Future[(AuthorizationData, UserInfoData)] = {
     for {
       authorizationData <- obtainAuthorization(authorizationCode, redirectUri)
-      userInfo <- obtainUserInfo(authorizationData)
+      userInfo          <- obtainUserInfo(authorizationData)
     } yield (authorizationData, userInfo)
   }
 
   final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] =
     for {
       expirationInstant <- introspectAccessToken(accessToken)
-      userInfo <- obtainUserInfo(accessToken)
+      userInfo          <- obtainUserInfo(accessToken)
     } yield (userInfo, expirationInstant)
 
   protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
@@ -37,7 +41,7 @@ class BaseOAuth2Service[
   Override this method in a subclass making use of signed tokens or an introspection endpoint
   or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
   or do both.
-  */
+   */
   protected def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
   }
@@ -54,12 +58,11 @@ class BaseOAuth2Service[
     clientApi.profileRequest(accessToken)
 }
 
-@ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData
-(
-  @JsonKey("access_token") accessToken: String,
-  @JsonKey("token_type") tokenType: String,
-  @JsonKey("refresh_token") refreshToken: Option[String] = None,
-  @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
+@ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData(
+    @JsonKey("access_token") accessToken: String,
+    @JsonKey("token_type") tokenType: String,
+    @JsonKey("refresh_token") refreshToken: Option[String] = None,
+    @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
 ) extends OAuth2AuthorizationData
 
 object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
@@ -67,8 +70,13 @@ object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
 }
 
 object BaseOAuth2Service {
+
   def apply[
-    UserInfoData: Decoder
-  ](configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
+      UserInfoData: Decoder
+  ](configuration: OAuth2Configuration)(
+      implicit ec: ExecutionContext,
+      backend: SttpBackend[Future, Any]
+  ): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
     new BaseOAuth2Service(OAuth2ClientApi[UserInfoData, DefaultOAuth2AuthorizationData](configuration))
+
 }

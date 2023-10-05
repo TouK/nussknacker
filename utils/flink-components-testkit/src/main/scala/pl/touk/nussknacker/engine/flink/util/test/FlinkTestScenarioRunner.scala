@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.flink.util.test.testComponents.{noopSourceComponent, testDataSourceComponent, testResultServiceComponent}
+import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
+  noopSourceComponent,
+  testDataSourceComponent,
+  testResultServiceComponent
+}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -23,13 +27,19 @@ import scala.reflect.ClassTag
 
 private object testComponents {
 
-  def testDataSourceComponent[T: ClassTag : TypeInformation](data: List[T]): ComponentDefinition = {
-    ComponentDefinition(TestScenarioRunner.testDataSource, SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])))
+  def testDataSourceComponent[T: ClassTag: TypeInformation](data: List[T]): ComponentDefinition = {
+    ComponentDefinition(
+      TestScenarioRunner.testDataSource,
+      SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T]))
+    )
   }
 
   def noopSourceComponent: ComponentDefinition = {
     implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
-    ComponentDefinition(TestScenarioRunner.noopSource, SourceFactory.noParamFromClassTag[Any](new CollectionSource[Any](List.empty, None, typing.Unknown)))
+    ComponentDefinition(
+      TestScenarioRunner.noopSource,
+      SourceFactory.noParamFromClassTag[Any](new CollectionSource[Any](List.empty, None, typing.Unknown))
+    )
   }
 
   def testResultServiceComponent: ComponentDefinition = {
@@ -38,15 +48,17 @@ private object testComponents {
 
 }
 
-class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
-                              val config: Config,
-                              flinkMiniCluster: FlinkMiniClusterHolder,
-                              componentUseCase: ComponentUseCase
-                             ) extends ClassBasedTestScenarioRunner {
+class FlinkTestScenarioRunner(
+    val components: List[ComponentDefinition],
+    val config: Config,
+    flinkMiniCluster: FlinkMiniClusterHolder,
+    componentUseCase: ComponentUseCase
+) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
+    implicit val typeInf: TypeInformation[I] =
+      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
@@ -57,7 +69,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    val testComponents = noopSourceComponent :: testResultServiceComponent :: Nil
+    val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
@@ -68,23 +80,28 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
    * Can be used to test Flink based sinks.
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
-    implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: Nil
+    implicit val typeInf: TypeInformation[I] =
+      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: Nil
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
     run(scenario, testComponentHolder)
   }
 
-  private def run(scenario: CanonicalProcess,
-                  testComponentHolder: TestComponentsHolder): RunnerResult[Unit] = {
+  private def run(scenario: CanonicalProcess, testComponentHolder: TestComponentsHolder): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
     // TODO: get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()
 
-    //It's copied from registrar.register only for handling compilation errors..
-    //TODO: figure how to get compilation result on highest level - registrar.register?
+    // It's copied from registrar.register only for handling compilation errors..
+    // TODO: figure how to get compilation result on highest level - registrar.register?
     val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData, componentUseCase)
-    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
+    val compileProcessData = compiler.compileProcess(
+      scenario,
+      ProcessVersion.empty,
+      ProductionServiceInvocationCollector,
+      getClass.getClassLoader
+    )
 
     compileProcessData.compileProcess().map { _ =>
       val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
@@ -96,7 +113,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
 
   private def collectResults[R](testComponentHolder: TestComponentsHolder): RunListResult[R] = {
     val results = TestResultService.extractFromTestComponentsHolder(testComponentHolder)
-    //TODO: add runtime errors handling
+    // TODO: add runtime errors handling
     RunResult.successes(results)
   }
 
@@ -105,15 +122,21 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
 object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+
     def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
       FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster, testRuntimeMode = false)
     }
+
   }
 
 }
 
-case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder, testRuntimeMode: Boolean)
-  extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
+case class FlinkTestScenarioRunnerBuilder(
+    components: List[ComponentDefinition],
+    config: Config,
+    flinkMiniCluster: FlinkMiniClusterHolder,
+    testRuntimeMode: Boolean
+) extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
 
@@ -124,6 +147,7 @@ case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition],
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
-  override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
+  override def build() =
+    new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
 
 }

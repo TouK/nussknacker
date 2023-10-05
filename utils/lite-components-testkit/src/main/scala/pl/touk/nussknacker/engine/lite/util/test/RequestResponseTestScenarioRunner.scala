@@ -21,11 +21,13 @@ import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenar
 import scala.reflect.ClassTag
 
 object RequestResponseTestScenarioRunner {
+
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def requestResponseBased(baseConfig: Config = ConfigFactory.load()): RequestResponseTestScenarioRunnerBuilder = {
       RequestResponseTestScenarioRunnerBuilder(Nil, baseConfig, testRuntimeMode = false)
     }
+
   }
 
   val stringFieldSchema: String = """{
@@ -40,11 +42,14 @@ object RequestResponseTestScenarioRunner {
 
 }
 
-class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], config: Config, componentUseCase: ComponentUseCase)
-    extends TestScenarioRunner {
+class RequestResponseTestScenarioRunner(
+    components: List[ComponentDefinition],
+    config: Config,
+    componentUseCase: ComponentUseCase
+) extends TestScenarioRunner {
 
   def runWithRequests[T](
-    scenario: CanonicalProcess
+      scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     ModelWithTestComponents.withTestComponents(config, components) { modelData =>
       RequestResponseInterpreter[Id](
@@ -72,12 +77,17 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], c
 
 }
 
-case class RequestResponseTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config, testRuntimeMode: Boolean)
-    extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
+case class RequestResponseTestScenarioRunnerBuilder(
+    extraComponents: List[ComponentDefinition],
+    config: Config,
+    testRuntimeMode: Boolean
+) extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(extraComponents: List[ComponentDefinition]): RequestResponseTestScenarioRunnerBuilder =
+  override def withExtraComponents(
+      extraComponents: List[ComponentDefinition]
+  ): RequestResponseTestScenarioRunnerBuilder =
     copy(extraComponents = extraComponents)
 
   override def inTestRuntimeMode: RequestResponseTestScenarioRunnerBuilder =

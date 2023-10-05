@@ -14,13 +14,18 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
   * @tparam K - type of key of deserialized ConsumerRecord
   * @tparam V - type of value of deserialized ConsumerRecord
   */
-abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]] with Serializable {
+abstract class ConsumerRecordDeserializationSchemaFactory[K, V]
+    extends KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]]
+    with Serializable {
 
   protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]
 
   protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V]
 
-  override def create(topics: List[String], kafkaConfig: KafkaConfig): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
+  override def create(
+      topics: List[String],
+      kafkaConfig: KafkaConfig
+  ): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
     new serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] {
 
@@ -29,9 +34,9 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
       @transient
       private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
 
-      @silent("deprecated") //using deprecated constructor for Flink 1.14/15 compatibility
+      @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key = keyDeserializer.deserialize(record.topic(), record.key())
+        val key   = keyDeserializer.deserialize(record.topic(), record.key())
         val value = valueDeserializer.deserialize(record.topic(), record.value())
         new ConsumerRecord[K, V](
           record.topic(),
@@ -64,13 +69,17 @@ object ConsumerRecordDeserializationSchemaFactory {
     * @param deserializeFun - function deserializing bytes to value
     * @tparam V - type of value of deserialized ConsumerRecord
     */
-  def fixedValueDeserialization[V](deserializeFun: Array[Byte] => V): ConsumerRecordDeserializationSchemaFactory[String, V] =
+  def fixedValueDeserialization[V](
+      deserializeFun: Array[Byte] => V
+  ): ConsumerRecordDeserializationSchemaFactory[String, V] =
     new ConsumerRecordDeserializationSchemaFactory[String, V] {
-      override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[String] = new StringDeserializer
+      override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[String] =
+        new StringDeserializer
 
       override protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V] = new Deserializer[V] {
         override def deserialize(topic: String, data: Array[Byte]): V = deserializeFun(data)
       }
+
     }
 
 }

@@ -19,14 +19,14 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
 class RequestResponseHttpHandler[Effect[_]: Monad](
-  val requestResponseInterpreter: RequestResponseInterpreter.RequestResponseScenarioInterpreter[Effect]
+    val requestResponseInterpreter: RequestResponseInterpreter.RequestResponseScenarioInterpreter[Effect]
 ) {
 
   // TODO: refactor responseEncoder/source API
   def invoke(request: HttpRequest, entity: Array[Byte]): Effect[Either[NonEmptyList[ErrorType], Json]] = {
     for {
-      input <- tryInvoke(tryToParse(request, entity))
-      rawResult <- EitherT(invokeInterpreter(input))
+      input         <- tryInvoke(tryToParse(request, entity))
+      rawResult     <- EitherT(invokeInterpreter(input))
       encoderResult <- tryInvoke(encoder.toJsonResponse(input, rawResult))
     } yield encoderResult
   }.value
@@ -43,11 +43,10 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
     }
   }
 
-  private val source = requestResponseInterpreter.source
+  private val source  = requestResponseInterpreter.source
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
 
-  private def invokeInterpreter(input: Any)
-    = requestResponseInterpreter.invokeToOutput(input).map(_.toEither)
+  private def invokeInterpreter(input: Any) = requestResponseInterpreter.invokeToOutput(input).map(_.toEither)
 
   private def tryInvoke[T](value: => T): EitherT[Effect, NonEmptyList[ErrorType], T] =
     EitherT.fromEither[Effect](

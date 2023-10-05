@@ -9,15 +9,19 @@ import pl.touk.nussknacker.engine.util.ResourceLoader
 object ScenarioParser {
 
   def parseUnsafe(jsonString: String): CanonicalProcess = {
-    parse(jsonString).valueOr(err => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", "")))
+    parse(jsonString).valueOr(err =>
+      throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", ""))
+    )
   }
 
   def parse(jsonString: String): ValidatedNel[String, CanonicalProcess] =
-    Validated.fromEither(CirceUtil.decodeJson[Json](jsonString)).leftMap(_.getMessage).toValidatedNel[String, Json]
+    Validated
+      .fromEither(CirceUtil.decodeJson[Json](jsonString))
+      .leftMap(_.getMessage)
+      .toValidatedNel[String, Json]
       .andThen(ProcessMarshaller.fromJson(_).toValidatedNel)
 
   def loadFromResource(path: String): CanonicalProcess =
     parseUnsafe(ResourceLoader.load(path))
 
 }
-

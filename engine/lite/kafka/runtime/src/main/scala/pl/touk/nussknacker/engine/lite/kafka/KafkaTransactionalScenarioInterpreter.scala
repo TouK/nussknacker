@@ -16,7 +16,12 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeCont
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, RunnableScenarioInterpreter, ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.lite.{
+  InterpreterTestRunner,
+  RunnableScenarioInterpreter,
+  ScenarioInterpreterFactory,
+  TestRunner
+}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,38 +52,52 @@ object KafkaTransactionalScenarioInterpreter {
     interpreterTimeout and publishTimeouts should be adjusted to fetch.max.bytes/max.poll.records
     shutdownTimeout should be longer then pollDuration
    */
-  case class KafkaInterpreterConfig(pollDuration: FiniteDuration = 100 millis,
-                                    shutdownTimeout: Duration = 10 seconds,
-                                    interpreterTimeout: Duration = 10 seconds,
-                                    publishTimeout: Duration = 5 seconds,
-                                    waitAfterFailureDelay: FiniteDuration = 10 seconds,
-                                    kafka: KafkaConfig,
-                                    exceptionHandlingConfig: KafkaExceptionConsumerConfig,
-                                    kafkaTransactionsEnabled: Option[Boolean] = None)
+  case class KafkaInterpreterConfig(
+      pollDuration: FiniteDuration = 100 millis,
+      shutdownTimeout: Duration = 10 seconds,
+      interpreterTimeout: Duration = 10 seconds,
+      publishTimeout: Duration = 5 seconds,
+      waitAfterFailureDelay: FiniteDuration = 10 seconds,
+      kafka: KafkaConfig,
+      exceptionHandlingConfig: KafkaExceptionConsumerConfig,
+      kafkaTransactionsEnabled: Option[Boolean] = None
+  )
 
   private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
   def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
-  def apply(scenario: CanonicalProcess,
-            jobData: JobData,
-            liteKafkaJobData: LiteKafkaJobData,
-            modelData: ModelData,
-            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
-    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
+  def apply(
+      scenario: CanonicalProcess,
+      jobData: JobData,
+      liteKafkaJobData: LiteKafkaJobData,
+      modelData: ModelData,
+      engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
+  )(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
+    val interpreter = ScenarioInterpreterFactory
+      .createInterpreter[Future, Input, Output](scenario, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelData, engineRuntimeContextPreparer)
+    new KafkaTransactionalScenarioInterpreter(
+      interpreter,
+      scenario,
+      jobData,
+      liteKafkaJobData,
+      modelData,
+      engineRuntimeContextPreparer
+    )
   }
+
 }
 
-class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
-                                                           scenario: CanonicalProcess,
-                                                           jobData: JobData,
-                                                           liteKafkaJobData: LiteKafkaJobData,
-                                                           modelData: ModelData,
-                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)
-                                                          (implicit ec: ExecutionContext)
-  extends RunnableScenarioInterpreter {
+class KafkaTransactionalScenarioInterpreter private[kafka] (
+    interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
+    scenario: CanonicalProcess,
+    jobData: JobData,
+    liteKafkaJobData: LiteKafkaJobData,
+    modelData: ModelData,
+    engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer
+)(implicit ec: ExecutionContext)
+    extends RunnableScenarioInterpreter {
 
   override def status(): TaskStatus = taskRunner.status()
 
@@ -93,12 +112,14 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   private val interpreterConfig = modelData.processConfig.as[KafkaInterpreterConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id,
+  private val taskRunner: TaskRunner = new TaskRunner(
+    scenario.id,
     liteKafkaJobData.tasksCount,
-    createScenarioTaskRun ,
+    createScenarioTaskRun,
     interpreterConfig.shutdownTimeout,
     interpreterConfig.waitAfterFailureDelay,
-    context.metricsProvider)
+    context.metricsProvider
+  )
 
   override def run(): Future[Unit] = {
     sourceMetrics.registerOwnMetrics(context.metricsProvider)
@@ -110,11 +131,10 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
     Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
   }
 
-  //to override in tests...
+  // to override in tests...
   private[kafka] def createScenarioTaskRun(taskId: String): Task = {
     new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, interpreterConfig, interpreter, sourceMetrics)
   }
 
   override def routes: Option[Route] = None
 }
-

@@ -34,8 +34,8 @@ object SharedHttpClientBackendProvider extends SharedServiceHolder[HttpClientCon
 
 }
 
-
-class SharedHttpClient(val httpClient: AsyncHttpClient, config: HttpClientConfig) extends SharedService[HttpClientConfig] {
+class SharedHttpClient(val httpClient: AsyncHttpClient, config: HttpClientConfig)
+    extends SharedService[HttpClientConfig] {
 
   override def creationData: HttpClientConfig = config
 

@@ -6,7 +6,7 @@ import io.circe.{ACursor, Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId => ApiProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
@@ -20,6 +20,7 @@ object processdetails {
   val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
   object BasicProcess {
+
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
       id = baseProcessDetails.id,
       name = ProcessName(baseProcessDetails.name),
@@ -39,62 +40,69 @@ object processdetails {
       lastDeployedAction = baseProcessDetails.lastDeployedAction,
       state = baseProcessDetails.state
     )
+
   }
 
-  @JsonCodec case class BasicProcess(id: String,
-                                     name: ProcessName,
-                                     processId: ApiProcessId,
-                                     processVersionId: VersionId,
-                                     isArchived: Boolean,
-                                     isFragment: Boolean,
-                                     processCategory: String,
-                                     processingType: ProcessingType,
-                                     modificationDate: Instant,
-                                     modifiedAt: Instant,
-                                     modifiedBy: String,
-                                     createdAt: Instant,
-                                     createdBy: String,
-                                     lastAction: Option[ProcessAction],
-                                     lastStateAction: Option[ProcessAction],
-                                     lastDeployedAction: Option[ProcessAction],
-                                     // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
-                                     // After that it remains always defined.
-                                     state: Option[ProcessState] = Option.empty
-                                    )
+  @JsonCodec case class BasicProcess(
+      id: String,
+      name: ProcessName,
+      processId: ApiProcessId,
+      processVersionId: VersionId,
+      isArchived: Boolean,
+      isFragment: Boolean,
+      processCategory: String,
+      processingType: ProcessingType,
+      modificationDate: Instant,
+      modifiedAt: Instant,
+      modifiedBy: String,
+      createdAt: Instant,
+      createdBy: String,
+      lastAction: Option[ProcessAction],
+      lastStateAction: Option[ProcessAction],
+      lastDeployedAction: Option[ProcessAction],
+      // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
+      // After that it remains always defined.
+      state: Option[ProcessState] = Option.empty
+  )
 
   object BaseProcessDetails {
-    //It's necessary to encode / decode ProcessState
+    // It's necessary to encode / decode ProcessState
     implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder
 
     implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder
   }
 
-  case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
-                                              name: String,
-                                              processId: ApiProcessId, //TODO: Remove it when we will support Long / ProcessId
-                                              processVersionId: VersionId,
-                                              isLatestVersion: Boolean,
-                                              description: Option[String],
-                                              isArchived: Boolean,
-                                              isFragment: Boolean,
-                                              processingType: ProcessingType,
-                                              processCategory: String,
-                                              modificationDate: Instant, //TODO: Deprecated, please use modifiedAt
-                                              modifiedAt: Instant,
-                                              modifiedBy: String,
-                                              createdAt: Instant,
-                                              createdBy: String,
-                                              tags: List[String],
-                                              lastDeployedAction: Option[ProcessAction],
-                                              lastStateAction: Option[ProcessAction], //State action is an action that can have an influence on the presented state of the scenario. We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
-                                              lastAction: Option[ProcessAction], //TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
-                                              json: ProcessShape,
-                                              history: List[ProcessVersion],
-                                              modelVersion: Option[Int],
-                                              // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
-                                              // After that it remains always defined.
-                                              state: Option[ProcessState] = Option.empty
-                                             ) {
+  case class BaseProcessDetails[ProcessShape](
+      id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
+      name: String,
+      processId: ApiProcessId, // TODO: Remove it when we will support Long / ProcessId
+      processVersionId: VersionId,
+      isLatestVersion: Boolean,
+      description: Option[String],
+      isArchived: Boolean,
+      isFragment: Boolean,
+      processingType: ProcessingType,
+      processCategory: String,
+      modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
+      modifiedAt: Instant,
+      modifiedBy: String,
+      createdAt: Instant,
+      createdBy: String,
+      tags: List[String],
+      lastDeployedAction: Option[ProcessAction],
+      lastStateAction: Option[
+        ProcessAction
+      ], // State action is an action that can have an influence on the presented state of the scenario. We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
+      lastAction: Option[
+        ProcessAction
+      ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
+      json: ProcessShape,
+      history: List[ProcessVersion],
+      modelVersion: Option[Int],
+      // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
+      // After that it remains always defined.
+      state: Option[ProcessState] = Option.empty
+  ) {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
     def mapProcess[NewShape](action: ProcessShape => NewShape): BaseProcessDetails[NewShape] = copy(json = action(json))
@@ -106,6 +114,7 @@ object processdetails {
       user = modifiedBy,
       modelVersion = modelVersion
     )
+
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.
@@ -128,10 +137,12 @@ object processdetails {
 
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
-  @JsonCodec case class ProcessVersion(processVersionId: VersionId,
-                                       createDate: Instant,
-                                       user: String,
-                                       modelVersion: Option[Int],
-                                       actions: List[ProcessAction])
+  @JsonCodec case class ProcessVersion(
+      processVersionId: VersionId,
+      createDate: Instant,
+      user: String,
+      modelVersion: Option[Int],
+      actions: List[ProcessAction]
+  )
 
 }

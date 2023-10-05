@@ -7,9 +7,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class StatusResources(stateDefinitionService: ProcessStateDefinitionService)
-                     (implicit val ec: ExecutionContext)
-  extends Directives
+class StatusResources(stateDefinitionService: ProcessStateDefinitionService)(implicit val ec: ExecutionContext)
+    extends Directives
     with FailFastCirceSupport
     with RouteWithUser {
 

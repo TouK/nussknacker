@@ -6,7 +6,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeployedScenarioData,
+  DeploymentManager,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -22,15 +26,26 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters._
 
-trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with SchemaRegistryMixin with Matchers with VeryPatientScalaFutures{
+trait BaseStreamingEmbeddedDeploymentManagerTest
+    extends AnyFunSuite
+    with SchemaRegistryMixin
+    with Matchers
+    with VeryPatientScalaFutures {
 
   override protected def schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.schemaRegistryMockClient
 
-  case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
+  case class FixtureParam(
+      deploymentManager: DeploymentManager,
+      modelData: ModelData,
+      inputTopic: String,
+      outputTopic: String
+  ) {
+
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
       deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
+
   }
 
   protected def generateInputTopicName = s"input-${UUID.randomUUID().toString}"
@@ -57,9 +72,12 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
 
   protected def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 
-  protected def prepareFixture(inputTopic: String = generateInputTopicName, outputTopic: String = generateOutputTopicName,
-                               initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty, jsonSchema: String = defaultJsonSchema): FixtureParam = {
-
+  protected def prepareFixture(
+      inputTopic: String = generateInputTopicName,
+      outputTopic: String = generateOutputTopicName,
+      initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty,
+      jsonSchema: String = defaultJsonSchema
+  ): FixtureParam = {
 
     registerJsonSchema(inputTopic, jsonSchema, isKey = false)
     registerJsonSchema(outputTopic, jsonSchema, isKey = false)
@@ -74,20 +92,26 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
       .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true))
       .withValue("components.mockKafkaLite.disabled", fromAnyRef(false))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
-      .withValue("components.mockKafkaFlink.kafkaProperties", fromMap(Map[String, Any](
-        //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
-        //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
-        "max.block.ms" -> 2000,
-        "request.timeout.ms" -> 2000,
-        "default.api.timeout.ms" -> 2000,
-        "auto.offset.reset" -> "earliest"
-      ).asJava))
+      .withValue(
+        "components.mockKafkaFlink.kafkaProperties",
+        fromMap(
+          Map[String, Any](
+            //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
+            //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
+            "max.block.ms"           -> 2000,
+            "request.timeout.ms"     -> 2000,
+            "default.api.timeout.ms" -> 2000,
+            "auto.offset.reset"      -> "earliest"
+          ).asJava
+        )
+      )
 
-    val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
+    val modelData         = LocalModelData(configToUse, new EmptyProcessConfigCreator)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {
-        override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit = throw new AssertionError("Should not happen...")
+        override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =
+          throw new AssertionError("Should not happen...")
       }
       strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp)
       val manager = new EmbeddedDeploymentManager(modelData, deploymentService, strategy)

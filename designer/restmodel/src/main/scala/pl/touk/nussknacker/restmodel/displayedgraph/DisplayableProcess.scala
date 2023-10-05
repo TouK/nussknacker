@@ -15,12 +15,14 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client
 // TODO: id type should be ProcessName
-@JsonCodec case class DisplayableProcess(id: String,
-                                         properties: ProcessProperties,
-                                         nodes: List[NodeData],
-                                         edges: List[Edge],
-                                         processingType: ProcessingType,
-                                         category: String) {
+@JsonCodec case class DisplayableProcess(
+    id: String,
+    properties: ProcessProperties,
+    nodes: List[NodeData],
+    edges: List[Edge],
+    processingType: ProcessingType,
+    category: String
+) {
 
   val metaData: MetaData = properties.toMetaData(id)
 
@@ -28,13 +30,15 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 
 }
 
-@JsonCodec case class ValidatedDisplayableProcess(id: String,
-                                                  properties: ProcessProperties,
-                                                  nodes: List[NodeData],
-                                                  edges: List[Edge],
-                                                  processingType: ProcessingType,
-                                                  category: String,
-                                                  validationResult: ValidationResult) {
+@JsonCodec case class ValidatedDisplayableProcess(
+    id: String,
+    properties: ProcessProperties,
+    nodes: List[NodeData],
+    edges: List[Edge],
+    processingType: ProcessingType,
+    category: String,
+    validationResult: ValidationResult
+) {
 
   def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
     this(
@@ -67,8 +71,10 @@ case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
 object ProcessProperties {
 
-  def combineTypeSpecificProperties(typeSpecificProperties: TypeSpecificData,
-                                    additionalFields: ProcessAdditionalFields): ProcessProperties = {
+  def combineTypeSpecificProperties(
+      typeSpecificProperties: TypeSpecificData,
+      additionalFields: ProcessAdditionalFields
+  ): ProcessProperties = {
     ProcessProperties(additionalFields.combineTypeSpecificProperties(typeSpecificProperties))
   }
 
@@ -90,22 +96,25 @@ object ProcessProperties {
 
     val legacyDecoder: Decoder[ProcessProperties] = {
       def legacyProcessAdditionalFieldsDecoder(metaDataType: String): Decoder[ProcessAdditionalFields] =
-        (c: HCursor) => for {
-          description <- c.downField("description").as[Option[String]]
-          properties <- c.downField("properties").as[Option[Map[String, String]]]
-        } yield {
-          ProcessAdditionalFields(description, properties.getOrElse(Map.empty), metaDataType)
-        }
+        (c: HCursor) =>
+          for {
+            description <- c.downField("description").as[Option[String]]
+            properties  <- c.downField("properties").as[Option[Map[String, String]]]
+          } yield {
+            ProcessAdditionalFields(description, properties.getOrElse(Map.empty), metaDataType)
+          }
 
       (c: HCursor) =>
         for {
           typeSpecificData <- c.downField("typeSpecificProperties").as[TypeSpecificData]
-          additionalFields <- c.downField("additionalFields")
+          additionalFields <- c
+            .downField("additionalFields")
             .as[Option[ProcessAdditionalFields]](
               io.circe.Decoder.decodeOption(
                 legacyProcessAdditionalFieldsDecoder(typeSpecificData.metaDataType)
               )
-            ).map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
+            )
+            .map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
         } yield {
           ProcessProperties.combineTypeSpecificProperties(typeSpecificData, additionalFields)
         }

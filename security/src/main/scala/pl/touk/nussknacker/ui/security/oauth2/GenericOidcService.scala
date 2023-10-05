@@ -17,14 +17,12 @@ trait OidcAuthorizationData extends OAuth2AuthorizationData {
   * provider for OIDC compliant authorization servers.
   */
 class GenericOidcService[
-  UserData <: JwtStandardClaims: Decoder,
-  AuthorizationData <: OidcAuthorizationData,
-  AccessTokenClaims <: JwtStandardClaims : Decoder
-](clientApi: OAuth2ClientApi[UserData, AuthorizationData],
-  configuration: OAuth2Configuration)
- (implicit ec: ExecutionContext)
-  extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](
-    clientApi, configuration)
+    UserData <: JwtStandardClaims: Decoder,
+    AuthorizationData <: OidcAuthorizationData,
+    AccessTokenClaims <: JwtStandardClaims: Decoder
+](clientApi: OAuth2ClientApi[UserData, AuthorizationData], configuration: OAuth2Configuration)(
+    implicit ec: ExecutionContext
+) extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](clientApi, configuration)
     with LazyLogging {
 
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
@@ -47,15 +45,15 @@ class GenericOidcService[
       super.obtainUserInfo(accessToken)
     }
   }
+
 }
 
-@ConfiguredJsonCodec case class DefaultOidcAuthorizationData
-(
-  @JsonKey("access_token") accessToken: String,
-  @JsonKey("token_type") tokenType: String,
-  @JsonKey("refresh_token") refreshToken: Option[String] = None,
-  @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None,
-  @JsonKey("id_token") idToken: Option[String] = None
+@ConfiguredJsonCodec case class DefaultOidcAuthorizationData(
+    @JsonKey("access_token") accessToken: String,
+    @JsonKey("token_type") tokenType: String,
+    @JsonKey("refresh_token") refreshToken: Option[String] = None,
+    @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None,
+    @JsonKey("id_token") idToken: Option[String] = None
 ) extends OidcAuthorizationData
 
 object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
@@ -63,6 +61,14 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
-  def apply(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
-    new GenericOidcService(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration), configuration)
+
+  def apply(configuration: OAuth2Configuration)(
+      implicit ec: ExecutionContext,
+      backend: SttpBackend[Future, Any]
+  ): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
+    new GenericOidcService(
+      OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
+      configuration
+    )
+
 }

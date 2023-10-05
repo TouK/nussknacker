@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 sealed trait DataFreshnessPolicy
 
 object DataFreshnessPolicy {
-  case object Fresh extends DataFreshnessPolicy
+  case object Fresh       extends DataFreshnessPolicy
   case object CanBeCached extends DataFreshnessPolicy
 }
 

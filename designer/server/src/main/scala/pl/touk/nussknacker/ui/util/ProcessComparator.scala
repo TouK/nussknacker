@@ -6,7 +6,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 
 object ProcessComparator {
-  def compare(currentProcess: DisplayableProcess, otherProcess: DisplayableProcess) : Map[String, Difference] = {
+
+  def compare(currentProcess: DisplayableProcess, otherProcess: DisplayableProcess): Map[String, Difference] = {
     val nodes = getDifferences(
       currentProcess.nodes.map(node => node.id -> node).toMap,
       otherProcess.nodes.map(node => node.id -> node).toMap
@@ -34,16 +35,16 @@ object ProcessComparator {
     nodes ++ edges ++ properties.map(property => property.id -> property).toMap
   }
 
-  private def getDifferences[K, V](currents: Map[K, V], others: Map[K, V])
-                                  (notPresentInOther: V => Difference,
-                                   notPresentInCurrent: V => Difference,
-                                   different: (V, V) => Difference): Map[String, Difference] = {
-    (currents.keys ++ others.keys)
-      .toSet
+  private def getDifferences[K, V](currents: Map[K, V], others: Map[K, V])(
+      notPresentInOther: V => Difference,
+      notPresentInCurrent: V => Difference,
+      different: (V, V) => Difference
+  ): Map[String, Difference] = {
+    (currents.keys ++ others.keys).toSet
       .map((id: K) => (currents.get(id), others.get(id)))
       .collect {
-        case (Some(current), None) => notPresentInOther(current)
-        case (None, Some(other)) => notPresentInCurrent(other)
+        case (Some(current), None)                            => notPresentInOther(current)
+        case (None, Some(other))                              => notPresentInCurrent(other)
         case (Some(current), Some(other)) if current != other => different(current, other)
       }
       .map(difference => difference.id -> difference)
@@ -82,7 +83,9 @@ object ProcessComparator {
 
   case class EdgeNotPresentInCurrent(fromId: String, toId: String, otherEdge: Edge) extends EdgeDifference
 
-  case class PropertiesDifferent(currentProperties: ProcessProperties, otherProperties: ProcessProperties) extends Difference {
+  case class PropertiesDifferent(currentProperties: ProcessProperties, otherProperties: ProcessProperties)
+      extends Difference {
     override def id: String = "Properties"
   }
+
 }

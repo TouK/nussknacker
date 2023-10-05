@@ -19,19 +19,22 @@ trait ProcessDirectives {
     handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
       onSuccess(processRepository.fetchProcessId(ProcessName(processName))).flatMap {
         case Some(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
-        case None => failWith(ProcessNotFoundError(processName))
+        case None            => failWith(ProcessNotFoundError(processName))
       }
     }
   }
 
-  def processDetailsForName[PS: ProcessShapeFetchStrategy](processName: String)(implicit loggedUser: LoggedUser): Directive1[BaseProcessDetails[PS]] = {
+  def processDetailsForName[PS: ProcessShapeFetchStrategy](
+      processName: String
+  )(implicit loggedUser: LoggedUser): Directive1[BaseProcessDetails[PS]] = {
     processId(processName).tflatMap { processId =>
       handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
         onSuccess(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId._1.id)).flatMap {
           case Some(process) => provide(process)
-          case None => failWith(ProcessNotFoundError(processName))
+          case None          => failWith(ProcessNotFoundError(processName))
         }
       }
     }
   }
+
 }

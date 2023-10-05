@@ -6,7 +6,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pdi.jwt._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2JwtDecodeClaimsError, OAuth2JwtDecodeClaimsJsonError, OAuth2JwtDecodeRawError, OAuth2JwtKeyDetermineError}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{
+  OAuth2JwtDecodeClaimsError,
+  OAuth2JwtDecodeClaimsJsonError,
+  OAuth2JwtDecodeRawError,
+  OAuth2JwtKeyDetermineError
+}
 import pl.touk.nussknacker.ui.security.oauth2.OpenIdConnectUserInfo
 
 import java.net.URI
@@ -22,8 +27,7 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
         clientSecret = None,
       )
     )
-    validator.introspect[OpenIdConnectUserInfo]("") should matchPattern {
-      case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
+    validator.introspect[OpenIdConnectUserInfo]("") should matchPattern { case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
     }
     validator.introspect[OpenIdConnectUserInfo]("..") should matchPattern {
       case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
@@ -38,21 +42,39 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
   }
 
   test("determine key") {
-    val validatorWithoutKey = OidcService.createJwtValidator(OidcAuthenticationConfiguration(URI.create("http://foo"), issuer = URI.create("http://foo"), clientId = "foo", clientSecret = None))
+    val validatorWithoutKey = OidcService.createJwtValidator(
+      OidcAuthenticationConfiguration(
+        URI.create("http://foo"),
+        issuer = URI.create("http://foo"),
+        clientId = "foo",
+        clientSecret = None
+      )
+    )
     val claim = JwtClaim().about("Foo Bar") + ("email", "foo@bar.com")
-    val tokenWithoutKey = JwtBase64.encodeString(JwtHeader().toJson) + "." + JwtBase64.encodeString(claim.toJson) + ".baz"
+    val tokenWithoutKey =
+      JwtBase64.encodeString(JwtHeader().toJson) + "." + JwtBase64.encodeString(claim.toJson) + ".baz"
     inside(validatorWithoutKey.introspect[OpenIdConnectUserInfo](tokenWithoutKey)) {
       case Invalid(err: OAuth2JwtKeyDetermineError) =>
         err.msg should not include "Foo Bar"
         err.msg should not include "foo@bar.com"
     }
 
-    val tokenWithKey = JwtBase64.encodeString(JwtHeader().withKeyId("foo").toJson) + "." + JwtBase64.encodeString(JwtClaim().toJson) + ".baz"
+    val tokenWithKey = JwtBase64.encodeString(JwtHeader().withKeyId("foo").toJson) + "." + JwtBase64.encodeString(
+      JwtClaim().toJson
+    ) + ".baz"
     validatorWithoutKey.introspect[OpenIdConnectUserInfo](tokenWithKey) should matchPattern {
       case Invalid(OAuth2JwtKeyDetermineError(_, _)) =>
     }
 
-    val validatorWithInvalidJwk = OidcService.createJwtValidator(OidcAuthenticationConfiguration(URI.create("http://foo"), issuer = URI.create("http://foo"), clientId = "foo", clientSecret = None, jwksUri = Some(URI.create("/foo"))))
+    val validatorWithInvalidJwk = OidcService.createJwtValidator(
+      OidcAuthenticationConfiguration(
+        URI.create("http://foo"),
+        issuer = URI.create("http://foo"),
+        clientId = "foo",
+        clientSecret = None,
+        jwksUri = Some(URI.create("/foo"))
+      )
+    )
     validatorWithInvalidJwk.introspect[OpenIdConnectUserInfo](tokenWithKey) should matchPattern {
       case Invalid(OAuth2JwtKeyDetermineError(_, _)) =>
     }
@@ -60,24 +82,29 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
 
   test("symmetrically encoded tokens") {
     val secretKey = "secret"
-    val name = "Foo Bar"
-    val audience = "http://foo"
-    val validator = OidcService.createJwtValidator(OidcAuthenticationConfiguration(URI.create("http://foo"), issuer = URI.create("http://foo"), clientId = "foo", clientSecret = Some(secretKey)))
+    val name      = "Foo Bar"
+    val audience  = "http://foo"
+    val validator = OidcService.createJwtValidator(
+      OidcAuthenticationConfiguration(
+        URI.create("http://foo"),
+        issuer = URI.create("http://foo"),
+        clientId = "foo",
+        clientSecret = Some(secretKey)
+      )
+    )
 
     val validToken = JwtCirce.encode(JwtClaim().about(name).to(audience), secretKey, JwtAlgorithm.HS256)
-    val result = validator.introspect[OpenIdConnectUserInfo](validToken).toEither.rightValue
+    val result     = validator.introspect[OpenIdConnectUserInfo](validToken).toEither.rightValue
     result.subject.value shouldEqual name
     result.audience.value.rightValue shouldEqual audience
 
-    inside(validator.introspect[String](validToken)) {
-      case Invalid(err: OAuth2JwtDecodeClaimsJsonError) =>
-        err.msg should not include "Foo Bar"
+    inside(validator.introspect[String](validToken)) { case Invalid(err: OAuth2JwtDecodeClaimsJsonError) =>
+      err.msg should not include "Foo Bar"
     }
 
     val invalidToken = JwtCirce.encode(JwtClaim().about(name).to(audience), "invalid", JwtAlgorithm.HS256)
-    inside(validator.introspect[OpenIdConnectUserInfo](invalidToken)) {
-      case Invalid(err: OAuth2JwtDecodeClaimsError) =>
-        err.msg should not include "Foo Bar"
+    inside(validator.introspect[OpenIdConnectUserInfo](invalidToken)) { case Invalid(err: OAuth2JwtDecodeClaimsError) =>
+      err.msg should not include "Foo Bar"
     }
   }
 

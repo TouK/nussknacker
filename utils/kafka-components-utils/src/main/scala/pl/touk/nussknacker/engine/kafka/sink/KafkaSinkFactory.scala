@@ -4,44 +4,54 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
-import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchema, KafkaSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.serialization.{
+  FixedKafkaSerializationSchemaFactory,
+  KafkaSerializationSchema,
+  KafkaSerializationSchemaFactory
+}
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, serialization}
 
 import javax.validation.constraints.NotBlank
 
+class KafkaSinkFactory(
+    serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
+    processObjectDependencies: ProcessObjectDependencies,
+    implProvider: KafkaSinkImplFactory
+) extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies, implProvider) {
 
-class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-                       processObjectDependencies: ProcessObjectDependencies,
-                       implProvider: KafkaSinkImplFactory)
-  extends BaseKafkaSinkFactory(serializationSchemaFactory, processObjectDependencies, implProvider) {
-
-  def this(serializationSchema: String => serialization.KafkaSerializationSchema[AnyRef],
-           processObjectDependencies: ProcessObjectDependencies,
-           implProvider: KafkaSinkImplFactory) =
+  def this(
+      serializationSchema: String => serialization.KafkaSerializationSchema[AnyRef],
+      processObjectDependencies: ProcessObjectDependencies,
+      implProvider: KafkaSinkImplFactory
+  ) =
     this(FixedKafkaSerializationSchemaFactory(serializationSchema), processObjectDependencies, implProvider)
 
   @MethodToInvoke
-  def create(processMetaData: MetaData,
-             @DualEditor(
-               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
-               defaultMode = DualEditorMode.RAW
-             )
-             @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName(`SinkValueParamName`) value: LazyParameter[AnyRef]): Sink =
+  def create(
+      processMetaData: MetaData,
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
+        defaultMode = DualEditorMode.RAW
+      )
+      @ParamName(`TopicParamName`) @NotBlank topic: String,
+      @ParamName(`SinkValueParamName`) value: LazyParameter[AnyRef]
+  ): Sink =
     createSink(topic, value, processMetaData)
+
 }
 
-abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
-                                    processObjectDependencies: ProcessObjectDependencies,
-                                    implProvider: KafkaSinkImplFactory)
-  extends SinkFactory {
+abstract class BaseKafkaSinkFactory(
+    serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
+    processObjectDependencies: ProcessObjectDependencies,
+    implProvider: KafkaSinkImplFactory
+) extends SinkFactory {
 
   protected def createSink(topic: String, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
-    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
+    val kafkaConfig   = KafkaConfig.parseConfig(processObjectDependencies.config)
     val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
     KafkaComponentsUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
     val serializationSchema = serializationSchemaFactory.create(preparedTopic.prepared, kafkaConfig)
-    val clientId = s"${processMetaData.id}-${preparedTopic.prepared}"
+    val clientId            = s"${processMetaData.id}-${preparedTopic.prepared}"
     implProvider.prepareSink(preparedTopic, value, kafkaConfig, serializationSchema, clientId)
   }
 
@@ -50,6 +60,12 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
 trait KafkaSinkImplFactory {
 
   // TODO: handle key passed by user - not only extracted by serialization schema from value
-  def prepareSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink
+  def prepareSink(
+      topic: PreparedKafkaTopic,
+      value: LazyParameter[AnyRef],
+      kafkaConfig: KafkaConfig,
+      serializationSchema: KafkaSerializationSchema[AnyRef],
+      clientId: String
+  ): Sink
 
 }

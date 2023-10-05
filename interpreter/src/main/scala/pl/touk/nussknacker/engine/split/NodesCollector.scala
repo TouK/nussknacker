@@ -8,16 +8,16 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode._
 
 object NodesCollector {
 
-  def collectNodesInAllParts(parts: NonEmptyList[ProcessPart]): List[SplittedNode[_<:NodeData]]
-    = parts.toList.flatMap(collectNodesInAllParts)
+  def collectNodesInAllParts(parts: NonEmptyList[ProcessPart]): List[SplittedNode[_ <: NodeData]] =
+    parts.toList.flatMap(collectNodesInAllParts)
 
-  def collectNodesInAllParts(part: ProcessPart): List[SplittedNode[_<:NodeData]] =
+  def collectNodesInAllParts(part: ProcessPart): List[SplittedNode[_ <: NodeData]] =
     part match {
       case source: SourcePart =>
         collectNodes(source.node) ::: source.nextParts.flatMap(collectNodesInAllParts)
       case sink: SinkPart =>
         collectNodes(sink.node)
-      case custom:CustomNodePart =>
+      case custom: CustomNodePart =>
         collectNodes(custom.node) ::: custom.nextParts.flatMap(collectNodesInAllParts)
     }
 

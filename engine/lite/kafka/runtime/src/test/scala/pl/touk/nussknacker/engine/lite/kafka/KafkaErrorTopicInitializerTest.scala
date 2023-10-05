@@ -38,7 +38,6 @@ class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Mat
     initializer(name).init()
     kafkaClient.topic(name).map(_.partitions().size()) shouldBe Some(10)
 
-
   }
 
 }

@@ -12,10 +12,9 @@ object end {
 
   case class DeadEnd(nodeId: String) extends End
 
-  //nodeId -> artifical
+  // nodeId -> artifical
   case class BranchEnd(definition: BranchEndDefinition) extends End {
     override val nodeId: String = definition.artificialNodeId
   }
-
 
 }

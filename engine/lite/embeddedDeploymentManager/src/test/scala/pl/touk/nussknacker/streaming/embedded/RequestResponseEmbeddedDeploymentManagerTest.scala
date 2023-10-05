@@ -8,7 +8,12 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  DeployedScenarioData,
+  DeploymentManager,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,34 +36,45 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
   protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
 
-    val modelData = LocalModelData(ConfigFactory.empty()
-      .withValue("components.kafka.disabled", fromAnyRef(true))
-      .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
-      .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
-    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
-    implicit val as: ActorSystem = ActorSystem(getClass.getSimpleName)
+    val modelData = LocalModelData(
+      ConfigFactory
+        .empty()
+        .withValue("components.kafka.disabled", fromAnyRef(true))
+        .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
+        .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true)),
+      new EmptyProcessConfigCreator
+    )
+    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
+      initiallyDeployedScenarios
+    )
+    implicit val as: ActorSystem                        = ActorSystem(getClass.getSimpleName)
     implicit val dummyBackend: SttpBackend[Future, Any] = null
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val manager = new EmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
-      ConfigFactory.empty()
+    val manager = new EmbeddedDeploymentManagerProvider().createDeploymentManager(
+      modelData,
+      ConfigFactory
+        .empty()
         .withValue("mode", fromAnyRef("request-response"))
         .withValue("http.port", fromAnyRef(port))
-        .withValue("http.interface", fromAnyRef("localhost")))
+        .withValue("http.interface", fromAnyRef("localhost"))
+    )
     FixtureParam(manager, modelData, port)
   }
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, port: Int) {
+
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
       deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
+
   }
 
   test("Deploys scenario and cancels") {
-    val fixture@FixtureParam(manager, _, port) = prepareFixture()
+    val fixture @ FixtureParam(manager, _, port) = prepareFixture()
 
-    val name = ProcessName("testName")
+    val name    = ProcessName("testName")
     val request = basicRequest.post(uri"http://localhost".port(port).withPath("scenario", name.value))
 
     val inputSchema = """{
@@ -78,15 +94,17 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
     val scenario = ScenarioBuilder
       .requestResponse(name.value, name.value)
-      .additionalFields(properties = Map(
-        "inputSchema" -> inputSchema,
-        "outputSchema" -> outputSchema
-      ))
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> inputSchema,
+          "outputSchema" -> outputSchema
+        )
+      )
       .source("source", "request")
       .emptySink("sink", "response", SinkRawEditorParamName -> "false", "transformed" -> "#input.productId")
 
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
-    
+
     fixture.deployScenario(scenario)
 
     eventually {
@@ -94,18 +112,24 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
-    request.body("""Not a correct json""").send(backend).body shouldBe Left("""[{"message":"#: expected type: JSONObject, found: String","nodeId":"source"}]""")
-    request.body("""{ productId: "11"}""").send(backend).body shouldBe Left("""[{"message":"#/productId: expected type: Integer, found: String","nodeId":"source"}]""")
+    request.body("""Not a correct json""").send(backend).body shouldBe Left(
+      """[{"message":"#: expected type: JSONObject, found: String","nodeId":"source"}]"""
+    )
+    request.body("""{ productId: "11"}""").send(backend).body shouldBe Left(
+      """[{"message":"#/productId: expected type: Integer, found: String","nodeId":"source"}]"""
+    )
 
-    basicRequest.get(uri"http://localhost".port(port).withPath("scenario", name.value, "definition")).send(backend).body.toOption.get should include ("\"openapi\"")
+    basicRequest
+      .get(uri"http://localhost".port(port).withPath("scenario", name.value, "definition"))
+      .send(backend)
+      .body
+      .toOption
+      .get should include("\"openapi\"")
 
     manager.cancel(name, User("a", "b")).futureValue
 
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
-
-
-
 
 }

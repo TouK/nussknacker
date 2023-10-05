@@ -28,45 +28,58 @@ object UsageStatisticsReportsSettingsDeterminer {
   // We aggregate custom deployment managers and processing modes as a "custom" to avoid leaking of internal, confidential data
   private val aggregateForCustomValues = "custom"
 
-  def apply(config: UsageStatisticsReportsConfig,
-            processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics, _]): UsageStatisticsReportsSettingsDeterminer = {
+  def apply(
+      config: UsageStatisticsReportsConfig,
+      processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics, _]
+  ): UsageStatisticsReportsSettingsDeterminer = {
     UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics.all)
   }
 
-  def apply(config: UsageStatisticsReportsConfig,
-            processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics]): UsageStatisticsReportsSettingsDeterminer = {
-    val fingerprintFile = new File(Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"), nuFingerprintFileName)
+  def apply(
+      config: UsageStatisticsReportsConfig,
+      processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics]
+  ): UsageStatisticsReportsSettingsDeterminer = {
+    val fingerprintFile = new File(
+      Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"),
+      nuFingerprintFileName
+    )
     new UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics, fingerprintFile)
   }
 
   private[statistics] def prepareUrl(queryParams: ListMap[String, String]) = {
-    queryParams.toList.map {
-      case (k, v) => s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
-    }.mkString("https://stats.nussknacker.io/?", "&", "")
+    queryParams.toList
+      .map { case (k, v) =>
+        s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
+      }
+      .mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
 }
 
-class UsageStatisticsReportsSettingsDeterminer(config: UsageStatisticsReportsConfig,
-                                               processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics],
-                                               fingerprintFile: File) {
+class UsageStatisticsReportsSettingsDeterminer(
+    config: UsageStatisticsReportsConfig,
+    processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics],
+    fingerprintFile: File
+) {
 
   def determineSettings(): UsageStatisticsReportsSettings = {
     val queryParams = determineQueryParams()
-    val url = prepareUrl(queryParams)
+    val url         = prepareUrl(queryParams)
     UsageStatisticsReportsSettings(config.enabled, url)
   }
 
   private[statistics] def determineQueryParams(): ListMap[String, String] = {
     val deploymentManagerTypes = processingTypeStatistics.values.map(_.deploymentManagerType).map {
       case Some(dm) if knownDeploymentManagerTypes.contains(dm) => dm
-      case _ => aggregateForCustomValues
+      case _                                                    => aggregateForCustomValues
     }
     val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
 
     val processingModes = processingTypeStatistics.values.map {
       case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
-      case ProcessingTypeUsageStatistics(Some(deploymentManagerType), None) if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) => streamingProcessingMode
+      case ProcessingTypeUsageStatistics(Some(deploymentManagerType), None)
+          if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) =>
+        streamingProcessingMode
       case _ => aggregateForCustomValues
     }
     val mParams = prepareValuesParams(processingModes, "m")
@@ -76,20 +89,24 @@ class UsageStatisticsReportsSettingsDeterminer(config: UsageStatisticsReportsCon
       // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
       "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(fingerprint),
       // If it is not set, we assume that it is some custom build from source code
-      "source" -> config.source.filterNot(_.isBlank).getOrElse("sources"),
+      "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       "version" -> BuildInfo.version
     ) ++ dmParams ++ mParams
   }
 
   private def prepareValuesParams(values: Iterable[ProcessingType], metricCategoryKeyPart: String) = {
-    val countsParams = values.groupBy(identity).mapValuesNow(_.size).map {
-      case (value, count) =>
+    val countsParams = values
+      .groupBy(identity)
+      .mapValuesNow(_.size)
+      .map { case (value, count) =>
         s"${metricCategoryKeyPart}_$value" -> count.toString
-    }.toList.sortBy(_._1)
+      }
+      .toList
+      .sortBy(_._1)
     val singleParamValue = values.toSet.toList match {
-      case Nil => "zero"
+      case Nil           => "zero"
       case single :: Nil => single
-      case _ => "multiple"
+      case _             => "multiple"
     }
     ListMap(countsParams: _*) + (s"single_$metricCategoryKeyPart" -> singleParamValue)
   }

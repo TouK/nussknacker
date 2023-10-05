@@ -22,8 +22,17 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.nio.charset.StandardCharsets
 
-class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, inputSchema: Schema, outputSchema: Schema, val nodeId: NodeId)
-  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestWithParametersSupport[Any] {
+class JsonSchemaRequestResponseSource(
+    val definition: String,
+    metaData: MetaData,
+    inputSchema: Schema,
+    outputSchema: Schema,
+    val nodeId: NodeId
+) extends RequestResponsePostSource[Any]
+    with LazyLogging
+    with ReturningType
+    with SourceTestSupport[Any]
+    with TestWithParametersSupport[Any] {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
 
@@ -54,8 +63,11 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))
 
   override def testParametersDefinition: List[Parameter] = {
-    JsonSchemaBasedParameter(inputSchema, SinkRawValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
-      .valueOr(errors => throw new IllegalArgumentException(s"Cannot provide test parameters definition: ${errors.toList.mkString(" ")}"))
+    JsonSchemaBasedParameter(inputSchema, SinkRawValueParamName, ValidationMode.lax)(nodeId)
+      .map(_.toParameters)
+      .valueOr(errors =>
+        throw new IllegalArgumentException(s"Cannot provide test parameters definition: ${errors.toList.mkString(" ")}")
+      )
   }
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
@@ -64,6 +76,6 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     JsonToNuStruct(json, swaggerTyped)
   }
 
-  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
+  private def decodeJsonWithError(str: String): Json =
+    CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 }
-

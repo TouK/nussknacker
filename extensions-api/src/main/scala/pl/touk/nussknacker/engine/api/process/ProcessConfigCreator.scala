@@ -8,9 +8,11 @@ import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener,
   */
 trait ProcessConfigCreator extends Serializable {
 
-  def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]
+  def customStreamTransformers(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[CustomStreamTransformer]]
 
-  def services(processObjectDependencies: ProcessObjectDependencies) : Map[String, WithCategories[Service]]
+  def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]]
 
   def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]]
 
@@ -22,8 +24,11 @@ trait ProcessConfigCreator extends Serializable {
 
   def buildInfo(): Map[String, String]
 
-  def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = None
+  def asyncExecutionContextPreparer(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Option[AsyncExecutionContextPreparer] = None
 
-  def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings = ClassExtractionSettings.Default
+  def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings =
+    ClassExtractionSettings.Default
 
 }

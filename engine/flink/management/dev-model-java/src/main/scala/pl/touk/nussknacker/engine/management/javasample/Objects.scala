@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class Objects extends Serializable {
 
-  def source : WithCategories[SourceFactory] = WithCategories(SourceFactory.noParam[Model](new BasicFlinkSource[Model] {
+  def source: WithCategories[SourceFactory] = WithCategories(SourceFactory.noParam[Model](new BasicFlinkSource[Model] {
 
     override def flinkSourceFunction: SourceFunction[Model] = new SourceFunction[Model] {
 
@@ -20,6 +20,7 @@ class Objects extends Serializable {
           Thread.sleep(10000)
         }
       }
+
     }
 
     override val typeInformation: TypeInformation[Model] = TypeInformation.of(classOf[Model])

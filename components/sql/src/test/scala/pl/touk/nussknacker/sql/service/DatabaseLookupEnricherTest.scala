@@ -26,14 +26,15 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
   private val unknownDbUrl = s"jdbc:hsqldb:mem:dummy"
 
-  private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) => new MetaDataProviderFactory().create(conf)
+  private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) =>
+    new MetaDataProviderFactory().create(conf)
 
   override val service = new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig))
 
   test("DatabaseLookupEnricher#implementation without cache") {
     val query = "select * from persons where id = ?"
-    val st = conn.prepareStatement(query)
-    val meta = st.getMetaData
+    val st    = conn.prepareStatement(query)
+    val meta  = st.getMetaData
     st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
@@ -44,14 +45,14 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     val invoker = service.implementation(Map(), dependencies = Nil, Some(state))
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
-    val result2 = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
     )
@@ -62,31 +63,40 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
     val definition = service.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val result: service.TransformationStepResult = definition(service.TransformationStep(List(), None))
     result match {
-      case service.NextParameters(parameters, _, _) => parameters.head.editor.get shouldBe FixedValuesParameterEditor(List(FixedExpressionValue("'PERSONS'", "PERSONS")))
+      case service.NextParameters(parameters, _, _) =>
+        parameters.head.editor.get shouldBe FixedValuesParameterEditor(
+          List(FixedExpressionValue("'PERSONS'", "PERSONS"))
+        )
       case _ =>
     }
   }
 
   test("should return empty list for not existing database") {
-    val newConfig = hsqlDbPoolConfig.copy(url = notExistingDbUrl)
+    val newConfig                      = hsqlDbPoolConfig.copy(url = notExistingDbUrl)
     val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId = NodeId("dummy")
-    val definition = serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
-    val result: serviceWithNotExistingDatabase.TransformationStepResult = definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
+    implicit val nodeId: NodeId        = NodeId("dummy")
+    val definition =
+      serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
+    val result: serviceWithNotExistingDatabase.TransformationStepResult =
+      definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
-      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) => parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
+      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
+        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }
 
   test("should return empty list for unknown database") {
-    val newConfig = hsqlDbPoolConfig.copy(url = unknownDbUrl)
+    val newConfig                      = hsqlDbPoolConfig.copy(url = unknownDbUrl)
     val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId = NodeId("dummy")
-    val definition = serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
-    val result: serviceWithNotExistingDatabase.TransformationStepResult = definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
+    implicit val nodeId: NodeId        = NodeId("dummy")
+    val definition =
+      serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
+    val result: serviceWithNotExistingDatabase.TransformationStepResult =
+      definition(serviceWithNotExistingDatabase.TransformationStep(List(), None))
     result match {
-      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) => parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
+      case serviceWithNotExistingDatabase.NextParameters(parameters, _, _) =>
+        parameters.head.editor.get shouldBe FixedValuesParameterEditor(List())
       case _ =>
     }
   }

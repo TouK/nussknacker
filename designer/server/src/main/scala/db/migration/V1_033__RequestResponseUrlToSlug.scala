@@ -12,18 +12,25 @@ trait V1_033__RequestResponseUrlToSlug extends ProcessJsonMigration {
 object V1_033__RequestResponseUrlToSlug {
 
   private val legacyProperty = "path"
-  private val newProperty = "slug"
+  private val newProperty    = "slug"
 
   private[migration] def migrateMetadata(jsonProcess: Json): Option[Json] = {
-    jsonProcess.hcursor.downField("metaData").downField("typeSpecificData")
+    jsonProcess.hcursor
+      .downField("metaData")
+      .downField("typeSpecificData")
       .withFocus { typeSpecificDataType =>
-        typeSpecificDataType.asObject.map {
-          case obj if obj("type").contains(Json.fromString("RequestResponseMetaData")) && obj.contains(legacyProperty) =>
-            Json.fromJsonObject(obj
-              .add(newProperty, obj(legacyProperty).get)
-              .filterKeys(_ != legacyProperty))
-          case _ => typeSpecificDataType
-        }.getOrElse(typeSpecificDataType)
+        typeSpecificDataType.asObject
+          .map {
+            case obj
+                if obj("type").contains(Json.fromString("RequestResponseMetaData")) && obj.contains(legacyProperty) =>
+              Json.fromJsonObject(
+                obj
+                  .add(newProperty, obj(legacyProperty).get)
+                  .filterKeys(_ != legacyProperty)
+              )
+            case _ => typeSpecificDataType
+          }
+          .getOrElse(typeSpecificDataType)
       }
   }.top
 

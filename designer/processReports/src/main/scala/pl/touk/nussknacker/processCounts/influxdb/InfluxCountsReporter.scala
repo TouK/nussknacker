@@ -14,7 +14,9 @@ import scala.language.higherKinds
 /*
   Base reporter for counts
  */
-class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit backend: SttpBackend[F, Any]) extends CountsReporter[F] with LazyLogging {
+class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit backend: SttpBackend[F, Any])
+    extends CountsReporter[F]
+    with LazyLogging {
 
   private val influxGenerator = new InfluxGenerator(config, env)
 
@@ -22,10 +24,12 @@ class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit bac
 
   private val metricsConfig = config.metricsConfig.getOrElse(MetricsConfig())
 
-  override def prepareRawCounts(processId: String, countsRequest: CountsRequest): F[String => Option[Long]] = (countsRequest match {
-    case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
-    case ExecutionCount(pointInTime) => influxGenerator.queryBySingleDifference(processId, None, pointInTime, metricsConfig)
-  }).map(_.get)
+  override def prepareRawCounts(processId: String, countsRequest: CountsRequest): F[String => Option[Long]] =
+    (countsRequest match {
+      case RangeCount(fromDate, toDate) => prepareRangeCounts(processId, fromDate, toDate)
+      case ExecutionCount(pointInTime) =>
+        influxGenerator.queryBySingleDifference(processId, None, pointInTime, metricsConfig)
+    }).map(_.get)
 
   override def close(): Unit = {}
 
@@ -44,8 +48,10 @@ class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig)(implicit bac
           influxGenerator.queryBySingleDifference(processId, Some(fromDate), toDate, metricsConfig)
         case (dates, QueryMode.OnlySingleDifference) =>
           monadError.error(CannotFetchCountsError.restartsDetected(dates))
-        //should not happen, unfortunately scalac cannot detect that all enum values were handled...
-        case _ => monadError.error(new IllegalArgumentException(s"Unknown QueryMode ${config.queryMode} for ${restarts.size} restarts"))
+        // should not happen, unfortunately scalac cannot detect that all enum values were handled...
+        case _ =>
+          monadError
+            .error(new IllegalArgumentException(s"Unknown QueryMode ${config.queryMode} for ${restarts.size} restarts"))
       }
     }
   }
@@ -58,9 +64,10 @@ class InfluxCountsReporterCreator extends CountsReporterCreator {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  override def createReporter(env: String, config: Config)
-                             (implicit backend: SttpBackend[Future, Any]): CountsReporter[Future] = {
-    //TODO: logger
+  override def createReporter(env: String, config: Config)(
+      implicit backend: SttpBackend[Future, Any]
+  ): CountsReporter[Future] = {
+    // TODO: logger
     new InfluxCountsReporter(env, config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath))
   }
 

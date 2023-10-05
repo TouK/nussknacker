@@ -38,38 +38,53 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScalaFutures with MockitoSugar with WithHsqlDbTesting with EitherValuesDetailedMessage with OptionValues with DBIOActionValues {
+class NotificationServiceTest
+    extends AnyFunSuite
+    with Matchers
+    with PatientScalaFutures
+    with MockitoSugar
+    with WithHsqlDbTesting
+    with EitherValuesDetailedMessage
+    with OptionValues
+    with DBIOActionValues {
 
-  private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private implicit val system: ActorSystem            = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(testDbRef)
 
   private var currentInstant: Instant = Instant.ofEpochMilli(0)
-  private val clock: Clock = clockForInstant(() => currentInstant)
-  private val processRepository = TestFactory.newFetchingProcessRepository(testDbRef)
-  private val writeProcessRepository = TestFactory.newWriteProcessRepository(testDbRef)
-  private val actionRepository = DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+  private val clock: Clock            = clockForInstant(() => currentInstant)
+  private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
+  private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
+  private val actionRepository =
+    DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
-  private val expectedRefreshAfterFail = List(DataToRefresh.state)
+  private val expectedRefreshAfterFail    = List(DataToRefresh.state)
 
   test("Should return only events for user in given time") {
-    val processName = ProcessName("fooProcess")
-    val id = saveSampleProcess(processName)
+    val processName       = ProcessName("fooProcess")
+    val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager = mock[DeploymentManager]
+    val deploymentManager                        = mock[DeploymentManager]
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
-    def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
+    def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] =
+      notificationService.notifications(after)(user, ctx).futureValue
 
-    def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
-      when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenReturn(Future.fromTry(givenDeployResult))
+    def deployProcess(
+        givenDeployResult: Try[Option[ExternalDeploymentId]],
+        user: LoggedUser
+    ): Option[ExternalDeploymentId] = {
+      when(
+        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+      ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
     }
 
     val userForSuccess = TestFactory.adminUser("successUser", "successUser")
-    val userForFail = TestFactory.adminUser("failUser", "failUser")
+    val userForFail    = TestFactory.adminUser("failUser", "failUser")
 
     deployProcess(Success(None), userForSuccess)
     notificationsFor(userForSuccess).map(_.toRefresh) shouldBe List(expectedRefreshAfterSuccess)
@@ -80,7 +95,9 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
     notificationsFor(userForFail).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
 
-    notificationsFor(userForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
+    notificationsFor(userForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe List(
+      expectedRefreshAfterFail
+    )
     notificationsFor(userForFail, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe Symbol("empty")
 
     currentInstant = currentInstant.plus(1, ChronoUnit.HOURS)
@@ -88,16 +105,21 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should refresh after action execution finished") {
-    val processName = ProcessName("process-execution-finished")
-    val id = saveSampleProcess(processName)
+    val processName       = ProcessName("process-execution-finished")
+    val id                = saveSampleProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    val deploymentManager = mock[DeploymentManager]
+    val deploymentManager                        = mock[DeploymentManager]
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
     var passedDeploymentId = Option.empty[DeploymentId]
-    def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
-      when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenAnswer { invocation =>
+    def deployProcess(
+        givenDeployResult: Try[Option[ExternalDeploymentId]],
+        user: LoggedUser
+    ): Option[ExternalDeploymentId] = {
+      when(
+        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+      ).thenAnswer { invocation =>
         passedDeploymentId = Some(invocation.getArgument[DeploymentData](1).deploymentId)
         Future.fromTry(givenDeployResult)
       }
@@ -118,19 +140,41 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId
   }
 
-  private val notDeployed = SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
+  private val notDeployed =
+    SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
 
   private def createServices(deploymentManager: DeploymentManager) = {
-    when(deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
+    when(
+      deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy])
+    )
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)
-    val config = NotificationConfig(20 minutes)
+    val config              = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
-    val deploymentService = new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, dbioRunner, mock[ProcessValidation], mock[ScenarioResolver], mock[ProcessChangeListener], None, clock) {
-      override protected def validateBeforeDeploy(processDetails: processdetails.BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
-        Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId)), processDetails.json))
+    val deploymentService = new DeploymentServiceImpl(
+      managerDispatcher,
+      processRepository,
+      actionRepository,
+      dbioRunner,
+      mock[ProcessValidation],
+      mock[ScenarioResolver],
+      mock[ProcessChangeListener],
+      None,
+      clock
+    ) {
+      override protected def validateBeforeDeploy(
+          processDetails: processdetails.BaseProcessDetails[CanonicalProcess],
+          actionId: ProcessActionId
+      )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
+        Future.successful(
+          DeployedScenarioData(
+            processDetails.toEngineProcessVersion,
+            prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId)),
+            processDetails.json
+          )
+        )
       }
     }
     (deploymentService, notificationService)
@@ -141,8 +185,12 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
       .streaming(processName.value)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isFragment = false, forwardedUserName = None)
-    writeProcessRepository.saveNewProcess(action)(TestFactory.adminUser()).map(_.rightValue.value.processId).dbioActionValues
+    val action =
+      CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isFragment = false, forwardedUserName = None)
+    writeProcessRepository
+      .saveNewProcess(action)(TestFactory.adminUser())
+      .map(_.rightValue.value.processId)
+      .dbioActionValues
   }
 
   private def clockForInstant(currentInstant: () => Instant): Clock = {

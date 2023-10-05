@@ -16,15 +16,15 @@ private[schemaregistry] object AvroMessageFormatter extends DatumReaderWriterMix
 
   def asJson(obj: Any): Json = {
     val schema = AvroUtils.getSchema(obj)
-    val bos = new ByteArrayOutputStream()
+    val bos    = new ByteArrayOutputStream()
     val output = new PrintStream(bos, true, StandardCharsets.UTF_8)
 
     try {
-      //pretty = false is important, as we rely on the fact that there are no new lines in message parsing
+      // pretty = false is important, as we rely on the fact that there are no new lines in message parsing
       val encoder = encoderFactory.jsonEncoder(schema, output, false)
       val record = obj match {
         case bytes: Array[Byte] => ByteBuffer.wrap(bytes)
-        case other => other
+        case other              => other
       }
       val writer = createDatumWriter(record, schema, useSchemaReflection = false)
       writer.write(record, encoder)
@@ -37,4 +37,5 @@ private[schemaregistry] object AvroMessageFormatter extends DatumReaderWriterMix
         throw new SerializationException(String.format("Error serializing Avro data of schema %s to json", schema), ex)
     }
   }
+
 }

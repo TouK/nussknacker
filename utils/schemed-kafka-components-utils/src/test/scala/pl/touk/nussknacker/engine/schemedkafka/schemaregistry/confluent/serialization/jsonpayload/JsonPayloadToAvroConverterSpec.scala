@@ -19,7 +19,8 @@ import scala.util.{Failure, Try}
 class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private val jsonToAvroConverter = new JsonPayloadToAvroConverter(None)
-  val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
+  val avroToJsonEncoder: PartialFunction[Any, Json] =
+    new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
 
   test("date logical type") {
     val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""", defaultOpt = Some("124"))
@@ -38,9 +39,8 @@ class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with Opti
 
   test("invalid format of date logical type") {
     val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""")
-    inside(Try(convert("\"invalid\"", schema))) {
-      case Failure(ex) =>
-        ex.getCause should have message "Field field should be a valid date."
+    inside(Try(convert("\"invalid\"", schema))) { case Failure(ex) =>
+      ex.getCause should have message "Field field should be a valid date."
     }
   }
 
@@ -103,10 +103,12 @@ class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with Opti
   test("uuid logical type") {
     val schema = prepareSchema("""{ "type": "string", "logicalType": "uuid" }""")
 
-    val uuid = UUID.fromString("f8a69d18-018a-4a38-93b6-9a2479836b72")
+    val uuid                     = UUID.fromString("f8a69d18-018a-4a38-93b6-9a2479836b72")
     val recordWithFormattedValue = convert("\"f8a69d18-018a-4a38-93b6-9a2479836b72\"", schema)
     recordWithFormattedValue.fieldValue shouldEqual uuid
-    avroToJsonEncoder(recordWithFormattedValue).fieldValue shouldEqual fromString("f8a69d18-018a-4a38-93b6-9a2479836b72")
+    avroToJsonEncoder(recordWithFormattedValue).fieldValue shouldEqual fromString(
+      "f8a69d18-018a-4a38-93b6-9a2479836b72"
+    )
   }
 
   test("decimal logical type") {
@@ -116,15 +118,13 @@ class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with Opti
     recordWithNumberType.fieldValue shouldEqual new java.math.BigDecimal("123.45")
     avroToJsonEncoder(recordWithNumberType).fieldValue shouldEqual fromDoubleOrNull(123.45)
 
-
     val recordWithStringType = convert("123.45", schema)
     recordWithStringType.fieldValue shouldEqual new java.math.BigDecimal("123.45")
     avroToJsonEncoder(recordWithStringType).fieldValue shouldEqual fromDoubleOrNull(123.45)
   }
 
   private def prepareSchema(fieldType: String, defaultOpt: Option[String] = None) = {
-    new Schema.Parser().parse(
-      s"""{
+    new Schema.Parser().parse(s"""{
          |  "name": "sample",
          |  "type": "record",
          |  "fields": [

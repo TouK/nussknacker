@@ -7,15 +7,16 @@ import sttp.client3.SttpBackend
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
-class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData : Decoder]
-(
-  delegate: OAuth2Service[UserInfoData, AuthorizationData],
-  loggedUserFunction: UserInfoData => AuthenticatedUser
-)
-(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
-  extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
+class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData: Decoder](
+    delegate: OAuth2Service[UserInfoData, AuthorizationData],
+    loggedUserFunction: UserInfoData => AuthenticatedUser
+)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
+    extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, AuthenticatedUser)] =
+  def obtainAuthorizationAndUserInfo(
+      authorizationCode: String,
+      redirectUri: String
+  ): Future[(AuthorizationData, AuthenticatedUser)] =
     delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
       (authorization, loggedUserFunction(userInfo))
     }
@@ -24,4 +25,5 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
     delegate.checkAuthorizationAndObtainUserinfo(accessToken).map { case (userInfo, expiration) =>
       (loggedUserFunction(userInfo), expiration)
     }
+
 }

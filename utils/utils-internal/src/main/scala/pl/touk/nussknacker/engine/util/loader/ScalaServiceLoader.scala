@@ -21,26 +21,34 @@ object ScalaServiceLoader {
     classTag.runtimeClass.asInstanceOf[Class[T]]
   }
 
-  def loadClass[T](classLoader: ClassLoader)(createDefault: => T)(implicit classTag: ClassTag[T]): T
-    = chooseClass[T](createDefault, load[T](classLoader))
+  def loadClass[T](classLoader: ClassLoader)(createDefault: => T)(implicit classTag: ClassTag[T]): T =
+    chooseClass[T](createDefault, load[T](classLoader))
 
   def chooseClass[T](createDefault: => T, loaded: List[T]): T = {
     Multiplicity(loaded) match {
       case One(only) => only
-      case Empty() => createDefault
+      case Empty()   => createDefault
       case _ => throw new IllegalArgumentException(s"Error at loading class - default: $createDefault, loaded: $loaded")
     }
   }
 
-  def loadNamed[T<:NamedServiceProvider:ClassTag](name: String, classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): T = {
+  def loadNamed[T <: NamedServiceProvider: ClassTag](
+      name: String,
+      classLoader: ClassLoader = Thread.currentThread().getContextClassLoader
+  ): T = {
     val available = load[T](classLoader)
     val className = implicitly[ClassTag[T]].runtimeClass.getName
     Multiplicity(available.filter(_.name == name)) match {
       case Empty() =>
-        throw new IllegalArgumentException(s"Failed to find $className with name '$name', available names: ${available.map(_.name).distinct.mkString(", ")}")
+        throw new IllegalArgumentException(
+          s"Failed to find $className with name '$name', available names: ${available.map(_.name).distinct.mkString(", ")}"
+        )
       case One(instance) => instance
       case Many(more) =>
-        throw new IllegalArgumentException(s"More than one $className with name '$name' found: ${more.map(_.getClass).mkString(", ")}")
+        throw new IllegalArgumentException(
+          s"More than one $className with name '$name' found: ${more.map(_.getClass).mkString(", ")}"
+        )
     }
   }
+
 }

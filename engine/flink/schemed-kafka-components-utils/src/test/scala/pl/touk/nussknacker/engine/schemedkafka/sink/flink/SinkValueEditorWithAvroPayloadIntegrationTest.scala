@@ -25,7 +25,8 @@ private object SinkValueEditorWithAvroPayloadIntegrationTest {
   val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   def encode(a: Any, schema: Schema): AnyRef =
-    avroEncoder.encode(a, schema)
+    avroEncoder
+      .encode(a, schema)
       .valueOr(es => throw new AvroRuntimeException(es.toList.mkString(",")))
 
   object MyRecord extends TestSchemaWithRecord {
@@ -63,27 +64,29 @@ private object SinkValueEditorWithAvroPayloadIntegrationTest {
     """.stripMargin
 
     val toSampleParams: List[(String, expression.Expression)] = List(
-      "id" -> "'record1'",
-      "amount" -> "20.0",
-      "arr" -> "{1L}",
+      "id"        -> "'record1'",
+      "amount"    -> "20.0",
+      "arr"       -> "{1L}",
       "nested.id" -> "'nested_record1'"
     )
 
     override def exampleData: Map[String, Any] = Map(
-      "id" -> "record1",
+      "id"     -> "record1",
       "amount" -> 20.0,
-      "arr" -> List(1L),
+      "arr"    -> List(1L),
       "nested" -> Map(
         "id" -> "nested_record1"
       )
     )
+
   }
 
   val topicSchemas = Map(
     "record" -> MyRecord.schema,
-    "long" -> AvroUtils.parseSchema("""{"type": "long"}"""),
-    "array" -> AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
+    "long"   -> AvroUtils.parseSchema("""{"type": "long"}"""),
+    "array"  -> AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
   )
+
 }
 
 class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
@@ -92,12 +95,14 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    override protected def schemaRegistryClientFactory =
+      MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
+    MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -111,8 +116,13 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
   test("record") {
     val topicConfig = topicConfigs("record")
     val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = UniversalSinkParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueParams = MyRecord.toSampleParams, key = "", validationMode = None)
+    val sinkParam = UniversalSinkParam(
+      topic = topicConfig.output,
+      versionOption = ExistingSchemaVersion(1),
+      valueParams = MyRecord.toSampleParams,
+      key = "",
+      validationMode = None
+    )
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
@@ -121,18 +131,19 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
   test("primitive at top level") {
     val topicConfig = topicConfigs("long")
     val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "42L", validationMode = None)
-    val process = createAvroProcess(sourceParam, sinkParam)
-    val encoded = encode(42L, topicSchemas("long"))
+    val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "42L", validationMode = None)
+    val process     = createAvroProcess(sourceParam, sinkParam)
+    val encoded     = encode(42L, topicSchemas("long"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
   }
 
   test("array at top level") {
     val topicConfig = topicConfigs("array")
     val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "{42L}")
-    val process = createAvroProcess(sourceParam, sinkParam)
-    val encoded = encode(new NonRecordContainer(topicSchemas("array"), List(42L).asJava), topicSchemas("array"))
+    val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "{42L}")
+    val process     = createAvroProcess(sourceParam, sinkParam)
+    val encoded     = encode(new NonRecordContainer(topicSchemas("array"), List(42L).asJava), topicSchemas("array"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = List(42L).asJava)
   }
+
 }

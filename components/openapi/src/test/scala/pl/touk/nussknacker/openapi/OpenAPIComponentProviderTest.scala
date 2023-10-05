@@ -15,14 +15,16 @@ class OpenAPIComponentProviderTest extends AnyFunSuite with Matchers {
 
   test("should parse and filter services") {
 
-    val config = ConfigFactory.empty()
+    val config = ConfigFactory
+      .empty()
       .withValue("allowedMethods", fromAnyRef(util.Arrays.asList("GET", "POST")))
       .withValue("rootUrl", fromAnyRef("http://myhost.pl"))
       .withValue("url", fromAnyRef(getClass.getResource("/swagger/multiple-operations.yml").toURI.toString))
       .withValue("namePattern", fromAnyRef("p.*Service"))
 
     val resolved = provider.resolveConfigForExecution(config)
-    val services = provider.create(resolved, ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
+    val services =
+      provider.create(resolved, ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
 
     services.map(_.name).toSet shouldBe Set("postService")
   }

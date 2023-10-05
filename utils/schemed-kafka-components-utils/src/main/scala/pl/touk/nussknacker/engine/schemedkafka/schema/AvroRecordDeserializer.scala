@@ -14,12 +14,12 @@ class AvroRecordDeserializer(decoderFactory: DecoderFactory) {
       buffer.get(bytes)
       bytes
     } else {
-      val start = buffer.position() + buffer.arrayOffset
+      val start         = buffer.position() + buffer.arrayOffset
       val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, buffer.remaining(), null)
-      val result = reader.read(null, binaryDecoder)
+      val result        = reader.read(null, binaryDecoder)
       result match {
         case _ if readerSchema.getType == Type.STRING => result.toString
-        case _ => result
+        case _                                        => result
       }
     }
   }

@@ -17,7 +17,11 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext, LiteSource}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{
+  CapabilityTransformer,
+  CustomComponentContext,
+  LiteSource
+}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
@@ -42,7 +46,11 @@ object sample {
 
   case class SampleInput(contextId: String, value: Int)
 
-  case class SampleInputWithListAndMap(contextId: String, numbers: java.util.List[Long], additionalParams: java.util.Map[String, Any])
+  case class SampleInputWithListAndMap(
+      contextId: String,
+      numbers: java.util.List[Long],
+      additionalParams: java.util.Map[String, Any]
+  )
 
   implicit val shape: InterpreterShape[StateType] = new InterpreterShape[StateType] {
 
@@ -59,12 +67,23 @@ object sample {
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
-  def run(scenario: CanonicalProcess, data: ScenarioInputBatch[SampleInput], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+  def run(
+      scenario: CanonicalProcess,
+      data: ScenarioInputBatch[SampleInput],
+      initialState: Map[String, Double],
+      runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
+  ): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
-      .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
+      .createInterpreter[StateType, SampleInput, AnyRef](
+        scenario,
+        modelData,
+        Nil,
+        ProductionServiceInvocationCollector,
+        ComponentUseCase.EngineRuntime
+      )
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)
     interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
-    val interpreterResult = interpreter.invoke(data)
+    val interpreterResult      = interpreter.invoke(data)
     val resultWithInitialState = interpreterResult.runA(initialState).value
     resultWithInitialState
   }
@@ -77,17 +96,21 @@ object sample {
     testRunner.runTest(modelData, scenarioTestData, scenario, identity)
   }
 
-  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingComponent {
+  class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])
+      extends ContextMappingComponent {
 
-    override def createStateTransformation[F[_]:Monad](context: CustomComponentContext[F]): Context => F[Context] = {
+    override def createStateTransformation[F[_]: Monad](context: CustomComponentContext[F]): Context => F[Context] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
-      val convert = context.capabilityTransformer.transform[StateType].getOrElse(throw new IllegalArgumentException("No capability!"))
+      val convert = context.capabilityTransformer
+        .transform[StateType]
+        .getOrElse(throw new IllegalArgumentException("No capability!"))
       (ctx: Context) =>
         convert(State((current: Map[String, Double]) => {
-          val newValue = current.getOrElse(name, 0D) + interpreter(ctx)
+          val newValue = current.getOrElse(name, 0d) + interpreter(ctx)
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }
+
   }
 
   class UtilHelpers {
@@ -95,13 +118,18 @@ object sample {
   }
 
   object StateConfigCreator extends EmptyProcessConfigCreator {
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
+
+    override def customStreamTransformers(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map("sum" -> WithCategories(SumTransformerFactory))
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+    override def sourceFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start" -> WithCategories(SimpleSourceFactory),
-        "parametersSupport" -> WithCategories(SimpleSourceWithParameterTestingFactory),
+        "start"               -> WithCategories(SimpleSourceFactory),
+        "parametersSupport"   -> WithCategories(SimpleSourceWithParameterTestingFactory),
         "failOnNumber1Source" -> WithCategories(FailOnNumber1SourceFactory)
       )
 
@@ -109,10 +137,12 @@ object sample {
       Map(
         "failOnNumber1" -> WithCategories(FailOnNumber1),
         "noOpProcessor" -> WithCategories(NoOpProcessor),
-        "sumNumbers" -> WithCategories(SumNumbers),
+        "sumNumbers"    -> WithCategories(SumNumbers),
       )
 
-    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
+    override def sinkFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SimpleSinkFactory))
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
@@ -120,18 +150,23 @@ object sample {
         Map("UTIL" -> anyCategory(new UtilHelpers)),
         List()
       )
+
   }
 
   object FailOnNumber1 extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("value") value: Integer): Future[Integer] =
       if (value == 1) Future.failed(new IllegalArgumentException("Should not happen :)")) else Future.successful(value)
+
   }
 
   object SumNumbers extends Service {
+
     @MethodToInvoke
     def invoke(@ParamName("value") value: java.util.List[Long]): Future[java.lang.Long] =
       Future.successful(value.asScala.sum)
+
   }
 
   object NoOpProcessor extends Service {
@@ -140,47 +175,72 @@ object sample {
   }
 
   object SumTransformerFactory extends CustomStreamTransformer {
+
     @MethodToInvoke(returnType = classOf[Double])
-    def invoke(@ParamName("name") name: String,
-               @ParamName("value") value: LazyParameter[java.lang.Double],
-               @OutputVariableName outputVar: String) = new SumTransformer(name, outputVar, value)
+    def invoke(
+        @ParamName("name") name: String,
+        @ParamName("value") value: LazyParameter[java.lang.Double],
+        @OutputVariableName outputVar: String
+    ) = new SumTransformer(name, outputVar, value)
+
   }
 
   object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
     def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
-      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
+
+      override def createTransformation[F[_]: Monad](
+          evaluateLazyParameter: CustomComponentContext[F]
+      ): SampleInput => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.value), None))
 
       override def testRecordParser: TestRecordParser[SampleInput] = (testRecord: TestRecord) => {
         val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
         SampleInput(fields(0), fields(1).toInt)
       }
+
     }
+
   }
 
   object FailOnNumber1SourceFactory extends SourceFactory {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): Source = new LiteSource[SampleInput] {
-      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
+
+      override def createTransformation[F[_]: Monad](
+          evaluateLazyParameter: CustomComponentContext[F]
+      ): SampleInput => ValidatedNel[ErrorType, Context] =
         input => {
           if (input.value == 1) {
-            Invalid(NuExceptionInfo(Some(NodeComponentInfo(nodeId.id, "failOnNumber1SourceFactory", ComponentType.Source)), SourceFailure, Context(input.contextId))).toValidatedNel
+            Invalid(
+              NuExceptionInfo(
+                Some(NodeComponentInfo(nodeId.id, "failOnNumber1SourceFactory", ComponentType.Source)),
+                SourceFailure,
+                Context(input.contextId)
+              )
+            ).toValidatedNel
           } else {
             Valid(Context(input.contextId, Map("input" -> input.value), None))
           }
         }
+
     }
+
   }
 
   object SimpleSourceWithParameterTestingFactory extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[SampleInputWithListAndMap])
-    def create(): Source = new LiteSource[SampleInputWithListAndMap] with TestWithParametersSupport[SampleInputWithListAndMap] with ReturningType {
+    def create(): Source = new LiteSource[SampleInputWithListAndMap]
+      with TestWithParametersSupport[SampleInputWithListAndMap]
+      with ReturningType {
       override def returnType: typing.TypingResult = Typed[SampleInputWithListAndMap]
-      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
+
+      override def createTransformation[F[_]: Monad](
+          evaluateLazyParameter: CustomComponentContext[F]
+      ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
 
       override def testParametersDefinition: List[Parameter] = List(
@@ -188,17 +248,24 @@ object sample {
         Parameter("numbers", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))),
         Parameter("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
       )
-      override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap = SampleInputWithListAndMap(
-        params("contextId").asInstanceOf[String],
-        params("numbers").asInstanceOf[java.util.List[Long]],
-        params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
-      )
+
+      override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap =
+        SampleInputWithListAndMap(
+          params("contextId").asInstanceOf[String],
+          params("numbers").asInstanceOf[java.util.List[Long]],
+          params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
+        )
+
     }
+
   }
 
   object SimpleSinkFactory extends SinkFactory {
+
     @MethodToInvoke
-    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = (_: LazyParameterInterpreter) => value
+    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] =
+      (_: LazyParameterInterpreter) => value
+
   }
 
 }

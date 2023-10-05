@@ -11,10 +11,13 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaClient, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{
+  AbstractConfluentKafkaAvroDeserializer,
+  AbstractConfluentKafkaAvroSerializer
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -24,61 +27,103 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
+  override implicit def patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 
-  def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders): RecordMetadata = {
+  def pushMessage(
+      obj: Any,
+      topicToSerialize: String,
+      topicToSend: Option[String] = None,
+      timestamp: java.lang.Long = null,
+      headers: Headers = KafkaRecordUtils.emptyHeaders
+  ): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
-    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp, headers).futureValue
+    kafkaClient
+      .sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp, headers)
+      .futureValue
   }
 
-  def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, useStringForKey: Boolean = false): RecordMetadata = {
+  def pushMessageWithKey(
+      key: Any,
+      value: Any,
+      topicToSerialize: String,
+      topicToSend: Option[String] = None,
+      timestamp: java.lang.Long = null,
+      useStringForKey: Boolean = false
+  ): RecordMetadata = {
     val serializedKey = if (useStringForKey) {
       key match {
         case str: String => str.getBytes(StandardCharsets.UTF_8)
-        case null => null
-        case _ => throw new IllegalArgumentException("Expected string or null")
+        case null        => null
+        case _           => throw new IllegalArgumentException("Expected string or null")
       }
     } else {
       keySerializer.serialize(topicToSerialize, key)
     }
     val serializedValue = valueSerializer.serialize(topicToSerialize, value)
-    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), serializedKey, serializedValue, None, timestamp).futureValue
+    kafkaClient
+      .sendRawMessage(topicToSend.getOrElse(topicToSerialize), serializedKey, serializedValue, None, timestamp)
+      .futureValue
   }
 
   protected def keySerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = true)
 
   protected def valueSerializer: Serializer[Any] = new SimpleKafkaAvroSerializer(schemaRegistryClient, isKey = false)
 
-  def consumeAndVerifyMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, expected: List[Any]): Assertion = {
-    val result = consumeMessages(kafkaDeserializer, topic, expected.length).map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
+  def consumeAndVerifyMessages(
+      kafkaDeserializer: serialization.KafkaDeserializationSchema[_],
+      topic: String,
+      expected: List[Any]
+  ): Assertion = {
+    val result =
+      consumeMessages(kafkaDeserializer, topic, expected.length).map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
     result shouldBe expected
   }
 
-  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] =
-    kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(count).map{ record =>
-      kafkaDeserializer.deserialize(record)
-    }.toList
+  protected def consumeMessages(
+      kafkaDeserializer: serialization.KafkaDeserializationSchema[_],
+      topic: String,
+      count: Int
+  ): List[Any] =
+    kafkaClient
+      .createConsumer()
+      .consumeWithConsumerRecord(topic)
+      .take(count)
+      .map { record =>
+        kafkaDeserializer.deserialize(record)
+      }
+      .toList
 
   def consumeAndVerifyMessage(topic: String, expected: Any, useSpecificAvroReader: Boolean = false): Assertion =
     consumeAndVerifyMessages(topic, List(expected), useSpecificAvroReader)
 
-  protected def consumeAndVerifyMessages(topic: String, expected: List[Any], useSpecificAvroReader: Boolean = false): Assertion = {
+  protected def consumeAndVerifyMessages(
+      topic: String,
+      expected: List[Any],
+      useSpecificAvroReader: Boolean = false
+  ): Assertion = {
     val result = consumeMessages(topic, expected.length, useSpecificAvroReader)
     result shouldBe expected
   }
 
   private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] =
-    kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(count).map{ record =>
-      deserialize(useSpecificAvroReader)(topic, record.value())
-    }.toList
+    kafkaClient
+      .createConsumer()
+      .consumeWithConsumerRecord(topic)
+      .take(count)
+      .map { record =>
+        deserialize(useSpecificAvroReader)(topic, record.value())
+      }
+      .toList
 
-  protected def deserialize(useSpecificAvroReader: Boolean)
-                           (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
+  protected def deserialize(useSpecificAvroReader: Boolean)(objectTopic: String, obj: Array[Byte]): Any =
+    prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
 
   /**
    * Default Confluent Avro serialization components
    */
-  protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
+  protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] =
+    new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
 
   protected def schemaRegistryClient: CSchemaRegistryClient
 
@@ -105,13 +150,13 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
   }
 
   protected def registerSchema(name: String, schema: Schema, isKey: Boolean): Int = {
-    val subject = ConfluentUtils.topicSubject(name, isKey)
+    val subject      = ConfluentUtils.topicSubject(name, isKey)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryClient.register(subject, parsedSchema)
   }
 
   protected def registerJsonSchema(name: String, schema: String, isKey: Boolean): Int = {
-    val subject = ConfluentUtils.topicSubject(name, isKey)
+    val subject      = ConfluentUtils.topicSubject(name, isKey)
     val parsedSchema = new JsonSchema(schema)
     schemaRegistryClient.register(subject, parsedSchema)
   }
@@ -119,43 +164,48 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
   case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
 
   object TopicConfig {
-    private final val inputPrefix = "test.avro.input"
+    private final val inputPrefix  = "test.avro.input"
     private final val outputPrefix = "test.avro.output"
 
     def apply(input: String, output: String, schema: Schema, isKey: Boolean): TopicConfig =
       new TopicConfig(input, output, List(schema), isKey = isKey)
 
     def apply(testName: String, schemas: List[Schema]): TopicConfig = {
-      val inputTopic = s"$inputPrefix.$kafkaTopicNamespace.$testName"
+      val inputTopic  = s"$inputPrefix.$kafkaTopicNamespace.$testName"
       val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
       new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
     }
+
   }
 
 }
 
-
-class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean) extends AbstractConfluentKafkaAvroDeserializer with Deserializer[Any] {
+class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean)
+    extends AbstractConfluentKafkaAvroDeserializer
+    with Deserializer[Any] {
 
   this.schemaRegistry = schemaRegistryClient
   this.useSpecificAvroReader = _useSpecificAvroReader
-
 
   def deserialize(topic: String, record: Array[Byte]): Any = {
     deserialize(topic, isKey = false, record, None)
   }
 
-  override protected def genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport = new GenericRecordSchemaIdSerializationSupport(true)
+  override protected def genericRecordSchemaIdSerializationSupport: GenericRecordSchemaIdSerializationSupport =
+    new GenericRecordSchemaIdSerializationSupport(true)
 
 }
 
-class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey: Boolean) extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution) with Serializer[Any] {
+class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey: Boolean)
+    extends AbstractConfluentKafkaAvroSerializer(new DefaultAvroSchemaEvolution)
+    with Serializer[Any] {
 
   this.schemaRegistry = schemaRegistryVal
 
   override def serialize(topic: String, data: Any): Array[Byte] = serialize(topic, null, data)
 
-  override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] = serialize(None, topic, data, isKey, headers)
+  override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] =
+    serialize(None, topic, data, isKey, headers)
 }
 
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
@@ -163,9 +213,11 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
   override def deserialize(topic: String, data: Array[Byte]): Any = {
     io.circe.parser.parse(new String(data, StandardCharsets.UTF_8)).toOption.get
   }
+
 }
 
 object SimpleKafkaJsonSerializer extends Serializer[Any] {
 
-  override def serialize(topic: String, data: Any): Array[Byte] = BestEffortJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
+  override def serialize(topic: String, data: Any): Array[Byte] =
+    BestEffortJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
 }

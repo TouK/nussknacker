@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.additionalInfo.{MarkdownAdditionalInfo, AdditionalInfo, AdditionalInfoProvider}
+import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.Enricher
@@ -14,10 +14,10 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
 
   override def nodeAdditionalInfo(config: Config)(nodeData: node.NodeData): Future[Option[AdditionalInfo]] = {
     nodeData match {
-      case Enricher(_, ServiceRef("paramService", idParam :: Nil), _, _) => Future.successful(Some {
-        val id = idParam.expression.expression.replace("'", "")
-        MarkdownAdditionalInfo(
-          s"""
+      case Enricher(_, ServiceRef("paramService", idParam :: Nil), _, _) =>
+        Future.successful(Some {
+          val id = idParam.expression.expression.replace("'", "")
+          MarkdownAdditionalInfo(s"""
             |Samples:
             |
             || id  | value |
@@ -27,7 +27,7 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
             |
             |Results for $id can be found [here](http://touk.pl?id=$id)
             |""".stripMargin)
-      })
+        })
       case _ => Future.successful(None)
     }
   }
@@ -35,10 +35,12 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
   override def propertiesAdditionalInfo(config: Config)(metaData: MetaData): Future[Option[AdditionalInfo]] = {
     val properties = metaData.additionalFields.properties
     (properties.get("environment"), properties.get("numberOfThreads")) match {
-      case (Some(environment), Some(numberOfThreads)) => Future.successful(Some {
-        MarkdownAdditionalInfo(s"$numberOfThreads threads will be used on environment '$environment'")
-      })
+      case (Some(environment), Some(numberOfThreads)) =>
+        Future.successful(Some {
+          MarkdownAdditionalInfo(s"$numberOfThreads threads will be used on environment '$environment'")
+        })
       case _ => Future.successful(None)
     }
   }
+
 }

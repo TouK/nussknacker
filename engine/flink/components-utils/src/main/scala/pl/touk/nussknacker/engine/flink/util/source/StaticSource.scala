@@ -4,7 +4,6 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import org.apache.flink.streaming.api.watermark
 
-
 object StaticSource extends SourceFunction[String] {
 
   @volatile var buffer = List[Timer]()

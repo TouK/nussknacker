@@ -19,13 +19,16 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Any],
-                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any],
+      deploymentService: ProcessingTypeDeploymentService
+  ): DeploymentManager = {
     CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
       new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config), config),
-      config)
+      config
+    )
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String = {

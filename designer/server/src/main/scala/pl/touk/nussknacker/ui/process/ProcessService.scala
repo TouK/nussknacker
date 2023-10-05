@@ -22,7 +22,12 @@ import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessVa
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, RemoteUserName, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
+  CreateProcessAction,
+  ProcessCreated,
+  RemoteUserName,
+  UpdateProcessAction
+}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -33,18 +38,29 @@ import slick.dbio.DBIOAction
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isFragment: Boolean, forwardedUserName: Option[RemoteUserName])
+  @JsonCodec case class CreateProcessCommand(
+      processName: ProcessName,
+      category: String,
+      isFragment: Boolean,
+      forwardedUserName: Option[RemoteUserName]
+  )
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, forwardedUserName: Option[RemoteUserName])
+  @JsonCodec case class UpdateProcessCommand(
+      process: DisplayableProcess,
+      comment: UpdateProcessComment,
+      forwardedUserName: Option[RemoteUserName]
+  )
+
 }
 
 trait ProcessService {
 
-  def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]]
+  def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(
+      implicit user: LoggedUser
+  ): Future[XError[BaseProcessDetails[PS]]]
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
@@ -52,23 +68,37 @@ trait ProcessService {
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
+  def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessNameResponse]]
 
-  def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]]
+  def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessCategoryResponse]]
 
   def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]]
 
-  def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]]
+  def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessResponse]]
 
   def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
-  def getProcessesAndFragments[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getProcessesAndFragments[PS: ProcessShapeFetchStrategy](
+      implicit user: LoggedUser
+  ): Future[List[BaseProcessDetails[PS]]]
 
-  def getArchivedProcessesAndFragments[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getArchivedProcessesAndFragments[PS: ProcessShapeFetchStrategy](
+      implicit user: LoggedUser
+  ): Future[List[BaseProcessDetails[PS]]]
 
-  def getFragmentsDetails(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[FragmentDetails]]
+  def getFragmentsDetails(processingTypes: Option[List[ProcessingType]])(
+      implicit user: LoggedUser
+  ): Future[Set[FragmentDetails]]
 
-  def importProcess(processId: ProcessIdWithName, processData: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]]
+  def importProcess(processId: ProcessIdWithName, processData: String)(
+      implicit user: LoggedUser
+  ): Future[XError[ValidatedDisplayableProcess]]
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
 }
@@ -77,15 +107,19 @@ trait ProcessService {
  * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
  * Each action includes verification based on actual process state and checking process is fragment / archived.
  */
-class DBProcessService(deploymentService: DeploymentService,
-                       newProcessPreparer: NewProcessPreparer,
-                       processCategoryService: ProcessCategoryService,
-                       processResolving: UIProcessResolving,
-                       dbioRunner: DBIOActionRunner,
-                       fetchingProcessRepository: FetchingProcessRepository[Future],
-                       processActionRepository: ProcessActionRepository[DB],
-                       processRepository: ProcessRepository[DB],
-                       processValidation: ProcessValidation)(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
+class DBProcessService(
+    deploymentService: DeploymentService,
+    newProcessPreparer: NewProcessPreparer,
+    processCategoryService: ProcessCategoryService,
+    processResolving: UIProcessResolving,
+    dbioRunner: DBIOActionRunner,
+    fetchingProcessRepository: FetchingProcessRepository[Future],
+    processActionRepository: ProcessActionRepository[DB],
+    processRepository: ProcessRepository[DB],
+    processValidation: ProcessValidation
+)(implicit ec: ExecutionContext)
+    extends ProcessService
+    with LazyLogging {
 
   import cats.instances.future._
   import cats.syntax.either._
@@ -101,7 +135,9 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
+  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
       if (process.isFragment) {
         doRename(processIdWithName, name)
@@ -110,13 +146,20 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-  override def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
+  override def unArchiveProcess(
+      processIdWithName: ProcessIdWithName
+  )(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
-        dbioRunner.runInTransaction(DBIOAction.seq(
-          processRepository.archive(processId = process.idWithName.id, isArchived = false),
-          processActionRepository.markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
-        )).map(_ => ().asRight)
+        dbioRunner
+          .runInTransaction(
+            DBIOAction.seq(
+              processRepository.archive(processId = process.idWithName.id, isArchived = false),
+              processActionRepository
+                .markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
+            )
+          )
+          .map(_ => ().asRight)
       } else {
         Future(Left(ProcessIllegalAction("Can't unarchive not archived scenario.")))
       }
@@ -124,19 +167,23 @@ class DBProcessService(deploymentService: DeploymentService,
 
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") { process =>
-      dbioRunner.runInTransaction(
-        processRepository.deleteProcess(processIdWithName.id)
-      ).map(_ => ().asRight)
+      dbioRunner
+        .runInTransaction(
+          processRepository.deleteProcess(processIdWithName.id)
+        )
+        .map(_ => ().asRight)
     }
 
-  override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]] =
+  override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessCategoryResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update category archived scenario.") { process =>
       withProcessingType(category) { _ =>
         dbioRunner.runInTransaction(
           processRepository
             .updateCategory(processIdWithName.id, category)
             .map {
-              case Right(_) => Right(UpdateProcessCategoryResponse(process.processCategory, category))
+              case Right(_)    => Right(UpdateProcessCategoryResponse(process.processCategory, category))
               case Left(value) => Left(value)
             }
         )
@@ -144,16 +191,20 @@ class DBProcessService(deploymentService: DeploymentService,
     }
 
   // FIXME: Create process should create two inserts (process, processVersion) in transactional way, but right we do all in process repository..
-  override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
+  override def createProcess(
+      command: CreateProcessCommand
+  )(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
-      val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isFragment)
+      val emptyCanonicalProcess =
+        newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isFragment)
       val action = CreateProcessAction(
         command.processName,
         command.category,
         emptyCanonicalProcess,
         processingType,
         command.isFragment,
-        command.forwardedUserName)
+        command.forwardedUserName
+      )
 
       val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
 
@@ -174,12 +225,16 @@ class DBProcessService(deploymentService: DeploymentService,
     }
 
   // FIXME: Update process should update process and create process version in transactional way, but right we do all in process repository..
-  override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]] =
+  override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
+      implicit user: LoggedUser
+  ): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
       val result = for {
-        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(
-          processResolving.validateBeforeUiResolving(action.process)
-        ))
+        validation <- EitherT.fromEither[Future](
+          FatalValidationError.saveNotAllowedAsError(
+            processResolving.validateBeforeUiResolving(action.process)
+          )
+        )
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
@@ -188,11 +243,11 @@ class DBProcessService(deploymentService: DeploymentService,
           substituted,
           Option(action.comment),
           increaseVersionWhenJsonNotChanged = false,
-          forwardedUserName = action.forwardedUserName)
+          forwardedUserName = action.forwardedUserName
+        )
         processUpdated <- EitherT(dbioRunner.runInTransaction(processRepository.updateProcess(updateProcessAction)))
       } yield UpdateProcessResponse(
-        processUpdated
-          .newVersion
+        processUpdated.newVersion
           .map(ProcessCreated(processIdWithName.id, _))
           .map(toProcessResponse(processIdWithName.name, _)),
         validation
@@ -201,7 +256,9 @@ class DBProcessService(deploymentService: DeploymentService,
       result.value
     }
 
-  override def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]] =
+  override def getProcess[PS: ProcessShapeFetchStrategy](
+      processIdWithName: ProcessIdWithName
+  )(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]] =
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id).flatMap {
       case Some(process) =>
         Future(Right(process))
@@ -209,31 +266,54 @@ class DBProcessService(deploymentService: DeploymentService,
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
 
-  override def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+  override def getProcesses[PS: ProcessShapeFetchStrategy](
+      implicit user: LoggedUser
+  ): Future[List[BaseProcessDetails[PS]]] =
     getProcesses(user, isFragment = Some(false), isArchived = Some(false))
 
-  override def getProcessesAndFragments[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+  override def getProcessesAndFragments[PS: ProcessShapeFetchStrategy](
+      implicit user: LoggedUser
+  ): Future[List[BaseProcessDetails[PS]]] =
     getProcesses(user, isFragment = None, isArchived = Some(false))
 
-  override def getArchivedProcessesAndFragments[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+  override def getArchivedProcessesAndFragments[PS: ProcessShapeFetchStrategy](
+      implicit user: LoggedUser
+  ): Future[List[BaseProcessDetails[PS]]] =
     getProcesses(user, isFragment = None, isArchived = Some(true))
 
-  //TODO: It's temporary solution to return Set[FragmentDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
-  override def getFragmentsDetails(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[FragmentDetails]] = {
+  // TODO: It's temporary solution to return Set[FragmentDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
+  override def getFragmentsDetails(
+      processingTypes: Option[List[ProcessingType]]
+  )(implicit user: LoggedUser): Future[Set[FragmentDetails]] = {
     fetchingProcessRepository
-      .fetchProcessesDetails[CanonicalProcess](FetchProcessesDetailsQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = processingTypes))
-      .map(processes => processes.map(sub => {
-        FragmentDetails(sub.json, sub.processCategory)
-      }).toSet)
+      .fetchProcessesDetails[CanonicalProcess](
+        FetchProcessesDetailsQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = processingTypes)
+      )
+      .map(processes =>
+        processes
+          .map(sub => {
+            FragmentDetails(sub.json, sub.processCategory)
+          })
+          .toSet
+      )
   }
 
-  def importProcess(processId: ProcessIdWithName, jsonString: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]] = {
+  def importProcess(processId: ProcessIdWithName, jsonString: String)(
+      implicit user: LoggedUser
+  ): Future[XError[ValidatedDisplayableProcess]] = {
     withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
-      val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
+      val result = ProcessMarshaller
+        .fromJson(jsonString)
+        .leftMap(UnmarshallError)
+        .toEither
         .map { jsonCanonicalProcess =>
-          val canonical = jsonCanonicalProcess.withProcessId(processId.name)
+          val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
           val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
-          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
+          val validationResult = processResolving.validateBeforeUiReverseResolving(
+            canonical,
+            displayable.processingType,
+            process.processCategory
+          )
           new ValidatedDisplayableProcess(displayable, validationResult)
         }
 
@@ -241,36 +321,48 @@ class DBProcessService(deploymentService: DeploymentService,
     }
   }
 
-  private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType: ProcessingType, category: String) = {
-    val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
+  private def validateInitialScenarioProperties(
+      canonicalProcess: CanonicalProcess,
+      processingType: ProcessingType,
+      category: String
+  ) = {
+    val validationResult =
+      processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors
 
   }
 
-  private def doOnProcessStateVerification[T](process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: => Future[XError[T]])
-                                             (implicit user: LoggedUser): Future[XError[T]] = {
+  private def doOnProcessStateVerification[T](process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(
+      callback: => Future[XError[T]]
+  )(implicit user: LoggedUser): Future[XError[T]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    deploymentService.getProcessState(process).flatMap(state => {
-      if (state.allowedActions.contains(actionToCheck)) {
-        callback
-      } else {
-        Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
-      }
-    })
+    deploymentService
+      .getProcessState(process)
+      .flatMap(state => {
+        if (state.allowedActions.contains(actionToCheck)) {
+          callback
+        } else {
+          Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
+        }
+      })
   }
 
   private def doArchive(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
-    dbioRunner.runInTransaction(DBIOAction.seq(
-      processRepository.archive(processId = process.idWithName.id, isArchived = true),
-      processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
-    )).map(_ => ().asRight)
+    dbioRunner
+      .runInTransaction(
+        DBIOAction.seq(
+          processRepository.archive(processId = process.idWithName.id, isArchived = true),
+          processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
+        )
+      )
+      .map(_ => ().asRight)
 
   private def doRename(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser) = {
     dbioRunner.runInTransaction(
       processRepository
         .renameProcess(processIdWithName, name)
         .map {
-          case Right(_) => Right(UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
+          case Right(_)    => Right(UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
           case Left(value) => Left(value)
         }
     )
@@ -283,14 +375,18 @@ class DBProcessService(deploymentService: DeploymentService,
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =
     ProcessResponse(created.processId, created.processVersionId, processName)
 
-  private def withProcess[T](processIdWithName: ProcessIdWithName)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
+  private def withProcess[T](
+      processIdWithName: ProcessIdWithName
+  )(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
     getProcess[Unit](processIdWithName).flatMap {
       case Left(err) => Future(Left(err))
-      case Right(t) => callback(t)
+      case Right(t)  => callback(t)
     }
   }
 
-  private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser): Future[XError[T]] = {
+  private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
+      callback: BaseProcessDetails[_] => Future[XError[T]]
+  )(implicit user: LoggedUser): Future[XError[T]] = {
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
         callback(process)
@@ -300,7 +396,9 @@ class DBProcessService(deploymentService: DeploymentService,
     }
   }
 
-  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser): Future[XError[T]] = {
+  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
+      callback: BaseProcessDetails[_] => Future[XError[T]]
+  )(implicit user: LoggedUser): Future[XError[T]] = {
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
         Future(Left(ProcessIllegalAction(errorMessage)))
@@ -310,7 +408,9 @@ class DBProcessService(deploymentService: DeploymentService,
     }
   }
 
-  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser): Future[XError[T]] =
+  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
+      callback: BaseProcessDetails[_] => Future[XError[T]]
+  )(implicit user: LoggedUser): Future[XError[T]] =
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
         Future(Left(ProcessIllegalAction.archived(action, process.idWithName)))
@@ -319,7 +419,9 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-  private def withProcessingType[T](category: String)(callback: ProcessingType => Future[Either[EspError, T]]): Future[Either[EspError, T]] =
+  private def withProcessingType[T](
+      category: String
+  )(callback: ProcessingType => Future[Either[EspError, T]]): Future[Either[EspError, T]] =
     processCategoryService.getTypeForCategory(category) match {
       case Some(processingType) =>
         callback(processingType)
@@ -327,10 +429,16 @@ class DBProcessService(deploymentService: DeploymentService,
         Future(Left(ProcessValidationError("Scenario category not found.")))
     }
 
-  private def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser, isFragment: Option[Boolean], isArchived: Option[Boolean]): Future[List[BaseProcessDetails[PS]]] = {
+  private def getProcesses[PS: ProcessShapeFetchStrategy](
+      user: LoggedUser,
+      isFragment: Option[Boolean],
+      isArchived: Option[Boolean]
+  ): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
-    val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
-    fetchingProcessRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(isFragment = isFragment, isArchived = isArchived, categories = Some(userCategories)))(shapeStrategy, user, ec)
+    val shapeStrategy  = implicitly[ProcessShapeFetchStrategy[PS]]
+    fetchingProcessRepository.fetchProcessesDetails(
+      FetchProcessesDetailsQuery(isFragment = isFragment, isArchived = isArchived, categories = Some(userCategories))
+    )(shapeStrategy, user, ec)
   }
 
 }

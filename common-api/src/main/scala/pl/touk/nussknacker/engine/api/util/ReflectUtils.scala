@@ -5,4 +5,5 @@ object ReflectUtils {
   def simpleNameWithoutSuffix(clazz: Class[_]): String = {
     clazz.getSimpleName.stripSuffix("$")
   }
+
 }

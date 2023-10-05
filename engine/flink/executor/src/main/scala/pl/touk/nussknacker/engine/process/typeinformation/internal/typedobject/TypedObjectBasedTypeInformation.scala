@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.{CompositeTypeSerializerUtil, TypeSerializer, TypeSerializerSchemaCompatibility, TypeSerializerSnapshot}
+import org.apache.flink.api.common.typeutils.{
+  CompositeTypeSerializerUtil,
+  TypeSerializer,
+  TypeSerializerSchemaCompatibility,
+  TypeSerializerSnapshot
+}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 import org.apache.flink.util.InstantiationUtil
 
@@ -21,7 +26,8 @@ import scala.reflect.ClassTag
    - incompatible schema (suitable e.g. for Row)
    - compatible after migration (we ignore removed fields and new fields will have null value)
  */
-abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: Array[(String, TypeInformation[_])]) extends TypeInformation[T] {
+abstract class TypedObjectBasedTypeInformation[T: ClassTag](informations: Array[(String, TypeInformation[_])])
+    extends TypeInformation[T] {
 
   def this(fields: Map[String, TypeInformation[_]]) = {
     this(fields.toArray.sortBy(_._1))
@@ -40,8 +46,8 @@ abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: Array[(
   override def isKeyType: Boolean = false
 
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
-    createSerializer(serializers = informations.map {
-      case (k, v) => (k, v.createSerializer(config))
+    createSerializer(serializers = informations.map { case (k, v) =>
+      (k, v.createSerializer(config))
     })
 
   override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
@@ -50,22 +56,23 @@ abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: Array[(
 }
 
 //We use Array instead of List here, as we need access by index, which is faster for array
-abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String, TypeSerializer[_])]) extends TypeSerializer[T] with LazyLogging {
+abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String, TypeSerializer[_])])
+    extends TypeSerializer[T]
+    with LazyLogging {
 
   protected def name(idx: Int): String = serializers(idx)._1
 
   protected def serializer(idx: Int): TypeSerializer[_] = serializers(idx)._2
-  
+
   override def isImmutableType: Boolean = serializers.forall(_._2.isImmutableType)
 
-  override def duplicate(): TypeSerializer[T] = duplicate(
-    serializers.map {
-      case (k, s) => (k, s.duplicate())
-    })
-  
+  override def duplicate(): TypeSerializer[T] = duplicate(serializers.map { case (k, s) =>
+    (k, s.duplicate())
+  })
+
   override def copy(from: T): T = from
 
-  //???
+  // ???
   override def copy(from: T, reuse: T): T = copy(from)
 
   override def getLength: Int = -1
@@ -73,7 +80,7 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   override def serialize(record: T, target: DataOutputView): Unit = {
     serializers.foreach { case (key, serializer) =>
       val valueToSerialize = get(record, key)
-      //We need marker to allow null values - see e.g. MapSerializer in Flink
+      // We need marker to allow null values - see e.g. MapSerializer in Flink
       if (valueToSerialize == null) {
         target.writeBoolean(true)
       } else {
@@ -84,9 +91,9 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
   }
 
   override def deserialize(source: DataInputView): T = {
-    //TODO: remove array allocation.
+    // TODO: remove array allocation.
     val array: Array[AnyRef] = new Array[AnyRef](serializers.length)
-    //We use foreach and not map because: 1. it's faster, 2. it's imperative - we use source.read***
+    // We use foreach and not map because: 1. it's faster, 2. it's imperative - we use source.read***
     serializers.indices.foreach { idx =>
       array(idx) = if (!source.readBoolean()) {
         serializer(idx).asInstanceOf[TypeSerializer[AnyRef]].deserialize(source)
@@ -103,7 +110,8 @@ abstract class TypedObjectBasedTypeSerializer[T](val serializers: Array[(String,
 
   override def deserialize(reuse: T, source: DataInputView): T = deserialize(source)
 
-  override def copy(source: DataInputView, target: DataOutputView): Unit = serializers.map(_._2).foreach(_.copy(source, target))
+  override def copy(source: DataInputView, target: DataOutputView): Unit =
+    serializers.map(_._2).foreach(_.copy(source, target))
 
   def snapshotConfiguration(snapshots: Array[(String, TypeSerializerSnapshot[_])]): TypeSerializerSnapshot[T]
 
@@ -129,17 +137,16 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
 
   override def writeSnapshot(out: DataOutputView): Unit = {
     out.writeInt(serializersSnapshots.length)
-    serializersSnapshots.foreach {
-      case (k, v) =>
-        out.writeUTF(k)
-        TypeSerializerSnapshot.writeVersionedSnapshot(out, v)
+    serializersSnapshots.foreach { case (k, v) =>
+      out.writeUTF(k)
+      TypeSerializerSnapshot.writeVersionedSnapshot(out, v)
     }
   }
 
   override def readSnapshot(readVersion: Int, in: DataInputView, userCodeClassLoader: ClassLoader): Unit = {
     val size = in.readInt()
     serializersSnapshots = (0 until size).map { _ =>
-      val key = in.readUTF()
+      val key      = in.readUTF()
       val snapshot = TypeSerializerSnapshot.readVersionedSnapshot(in, userCodeClassLoader)
       (key, snapshot)
     }.toArray
@@ -158,21 +165,28 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
       TypeSerializerSchemaCompatibility.incompatible()
     } else {
       val newSerializerAsTyped = newSerializer.asInstanceOf[TypedObjectBasedTypeSerializer[T]]
-      val newSerializers = newSerializerAsTyped.serializers
-      val currentKeys = serializersSnapshots.map(_._1)
-      val newKeys = newSerializers.map(_._1)
-      val commons = currentKeys.intersect(newKeys)
+      val newSerializers       = newSerializerAsTyped.serializers
+      val currentKeys          = serializersSnapshots.map(_._1)
+      val newKeys              = newSerializers.map(_._1)
+      val commons              = currentKeys.intersect(newKeys)
 
       val newSerializersToUse = newSerializers.filter(k => commons.contains(k._1))
-      val snapshotsToUse = serializersSnapshots.filter(k => commons.contains(k._1))
+      val snapshotsToUse      = serializersSnapshots.filter(k => commons.contains(k._1))
 
-      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(newSerializersToUse.map(_._2), snapshotsToUse.map(_._2))
+      val fieldsCompatibility = CompositeTypeSerializerUtil.constructIntermediateCompatibilityResult(
+        newSerializersToUse.map(_._2),
+        snapshotsToUse.map(_._2)
+      )
 
-      //We construct detailed message to show when there are compatibility issues
-      def fieldsCompatibilityMessage: String = newSerializersToUse.zip(snapshotsToUse).map {
-        case ((name, serializer), (_, snapshot)) => s"$name compatibility is ${snapshot.asInstanceOf[TypeSerializerSnapshot[AnyRef]]
-          .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
-      }.mkString(", ")
+      // We construct detailed message to show when there are compatibility issues
+      def fieldsCompatibilityMessage: String = newSerializersToUse
+        .zip(snapshotsToUse)
+        .map { case ((name, serializer), (_, snapshot)) =>
+          s"$name compatibility is ${snapshot
+              .asInstanceOf[TypeSerializerSnapshot[AnyRef]]
+              .resolveSchemaCompatibility(serializer.asInstanceOf[TypeSerializer[AnyRef]])}"
+        }
+        .mkString(", ")
 
       if (currentKeys sameElements newKeys) {
         if (fieldsCompatibility.isCompatibleAsIs) {
@@ -183,20 +197,30 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
           val newSerializer = restoreSerializer(newKeys.zip(fieldsCompatibility.getNestedSerializers))
           TypeSerializerSchemaCompatibility.compatibleWithReconfiguredSerializer(newSerializer)
         } else if (fieldsCompatibility.isCompatibleAfterMigration) {
-          logger.info(s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
+          logger.info(
+            s"Schema migration needed, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
+          )
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         } else {
-          logger.info(s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible")
+          logger.info(
+            s"Schema is incompatible, as fields are equal (${currentKeys.mkString(", ")}), but fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
+          )
           TypeSerializerSchemaCompatibility.incompatible()
         }
       } else {
         if (compatibilityRequiresSameKeys || fieldsCompatibility.isIncompatible) {
-          logger.info(s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible")
+          logger.info(
+            s"Schema is incompatible, as fields are not equal (old keys: ${currentKeys
+                .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+              s" and fields compatibility is [$fieldsCompatibilityMessage] - returning incompatible"
+          )
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
-          logger.info(s"Schema migration needed, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
+          logger.info(
+            s"Schema migration needed, as fields are not equal (old keys: ${currentKeys
+                .mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
+              s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration"
+          )
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         }
       }

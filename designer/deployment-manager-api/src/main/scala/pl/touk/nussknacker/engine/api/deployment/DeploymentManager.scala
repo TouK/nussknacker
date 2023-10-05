@@ -13,7 +13,10 @@ import scala.concurrent.Future
 
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
-  final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+
+  final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]] =
     getProcessStates(idWithName.name).map(_.map(statusDetails => {
       val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
       processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
@@ -21,7 +24,10 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
 
   // This method is protected to make possible to override it with own logic handling different edge cases like
   // other state on engine than based on lastStateAction
-  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetails: List[StatusDetails]): StatusDetails = {
+  protected def flattenStatus(
+      lastStateAction: Option[ProcessAction],
+      statusDetails: List[StatusDetails]
+  ): StatusDetails = {
     InconsistentStateDetector.resolve(statusDetails, lastStateAction)
   }
 
@@ -32,40 +38,66 @@ trait DeploymentManager extends AutoCloseable {
   /**
     * This method is invoked separately before deploy, to be able to give user quick feedback, as deploy (e.g. on Flink) may take long time
     */
-  def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit]
+  def validate(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess
+  ): Future[Unit]
 
-  //TODO: savepointPath is very flink specific, we should handle this mode via custom action
+  // TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
     * We assume that validate was already called and was successful
     */
-  def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
+  def deploy(
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      canonicalProcess: CanonicalProcess,
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
-  
+
   def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit]
 
-  def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
+  def test[T](
+      name: ProcessName,
+      canonicalProcess: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestResults[T]]
 
-  def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]]
+  def getProcessStates(name: ProcessName)(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]]
+  def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[ProcessState]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
   def customActions: List[CustomAction]
 
-  def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]]
+  def invokeCustomAction(
+      actionRequest: CustomActionRequest,
+      canonicalProcess: CanonicalProcess
+  ): Future[Either[CustomActionError, CustomActionResult]]
 
-  //TODO: this is very flink specific, we should handle it via custom action
+  // TODO: this is very flink specific, we should handle it via custom action
   def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult]
 
-  //TODO: savepointPath is very flink specific, we should handle it via custom action
+  // TODO: savepointPath is very flink specific, we should handle it via custom action
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
 
-  def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult]
+  def stop(
+      name: ProcessName,
+      deploymentId: DeploymentId,
+      savepointDir: Option[String],
+      user: User
+  ): Future[SavepointResult]
 
 }
 
@@ -79,7 +111,9 @@ trait PostprocessingProcessStatus { self: DeploymentManager =>
 
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
-  final override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+  final override def getProcessStates(name: ProcessName)(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
     getFreshProcessStates(name).map(WithDataFreshnessStatus(_, cached = false))
 
   protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]]

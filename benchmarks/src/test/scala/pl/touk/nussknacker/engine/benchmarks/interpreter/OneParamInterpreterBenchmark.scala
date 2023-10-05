@@ -1,4 +1,4 @@
-  package pl.touk.nussknacker.engine.benchmarks.interpreter
+package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
@@ -26,9 +26,9 @@ class OneParamInterpreterBenchmark {
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
     .enricher("e1", "out", "service", "p1" -> "''")
-    //Uncomment to assess impact of costly variables
-    //.buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
-    //.buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
+    // Uncomment to assess impact of costly variables
+    // .buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
+    // .buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
     .emptySink("sink", "sink")
 
   private val instantlyCompletedFuture = false
@@ -55,7 +55,6 @@ class OneParamInterpreterBenchmark {
     Await.result(interpreterFutureSync(Context(""), SynchronousExecutionContextAndIORuntime.ctx), 1 second)
   }
 
-
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
@@ -70,7 +69,6 @@ class OneParamInterpreterBenchmark {
     interpreterIO(Context(""), SynchronousExecutionContextAndIORuntime.ctx).unsafeRunSync()
   }
 
-
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
@@ -78,9 +76,8 @@ class OneParamInterpreterBenchmark {
     interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()
   }
 
-
-
 }
+
 class OneParamService(instantlyCompletedFuture: Boolean) extends Service {
 
   @MethodToInvoke

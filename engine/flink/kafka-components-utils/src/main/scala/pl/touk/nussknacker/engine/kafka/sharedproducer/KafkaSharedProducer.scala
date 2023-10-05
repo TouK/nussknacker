@@ -15,23 +15,34 @@ import scala.concurrent.{ExecutionContext, Future}
   Flink Kafka connector. In the future probably also exception handling would be refactored to use Flink connectors (and e.g.
   benefit from exactly-once guarantees etc.)
  */
-object DefaultSharedKafkaProducerHolder extends SharedServiceHolder[KafkaProducerCreator[Array[Byte], Array[Byte]], DefaultSharedKafkaProducer] {
+object DefaultSharedKafkaProducerHolder
+    extends SharedServiceHolder[KafkaProducerCreator[Array[Byte], Array[Byte]], DefaultSharedKafkaProducer] {
 
-  override protected def createService(creator: KafkaProducerCreator[Array[Byte], Array[Byte]], metaData: MetaData): DefaultSharedKafkaProducer = {
+  override protected def createService(
+      creator: KafkaProducerCreator[Array[Byte], Array[Byte]],
+      metaData: MetaData
+  ): DefaultSharedKafkaProducer = {
     val clientId = s"$name-${metaData.id}-${creator.hashCode()}"
     DefaultSharedKafkaProducer(creator, creator.createProducer(clientId))
   }
 
 }
 
-final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.Binary,
-                                            producer: Producer[Array[Byte], Array[Byte]]) extends SharedService[KafkaProducerCreator.Binary] with SharedKafkaProducer with LazyLogging {
+final case class DefaultSharedKafkaProducer(
+    creationData: KafkaProducerCreator.Binary,
+    producer: Producer[Array[Byte], Array[Byte]]
+) extends SharedService[KafkaProducerCreator.Binary]
+    with SharedKafkaProducer
+    with LazyLogging {
 
-  override def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit] = {
+  override def sendToKafka(
+      producerRecord: ProducerRecord[Array[Byte], Array[Byte]]
+  )(implicit ec: ExecutionContext): Future[Unit] = {
     KafkaUtils.sendToKafka(producerRecord)(producer).map(_ => ())
   }
 
-  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = DefaultSharedKafkaProducerHolder
+  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] =
+    DefaultSharedKafkaProducerHolder
 
   override def internalClose(): Unit = {
     producer.close()
@@ -40,6 +51,7 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
   override def flush(): Unit = {
     producer.flush()
   }
+
 }
 
 trait SharedKafkaProducer {
@@ -54,11 +66,13 @@ trait SharedKafkaProducer {
 
 trait WithSharedKafkaProducer extends BaseSharedKafkaProducer[DefaultSharedKafkaProducer] {
 
-  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, DefaultSharedKafkaProducer] = DefaultSharedKafkaProducerHolder
+  override protected def sharedServiceHolder
+      : SharedServiceHolder[KafkaProducerCreator.Binary, DefaultSharedKafkaProducer] = DefaultSharedKafkaProducerHolder
 
 }
 
-trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaProducerCreator.Binary]] extends Lifecycle {
+trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaProducerCreator.Binary]]
+    extends Lifecycle {
 
   def kafkaProducerCreator: KafkaProducerCreator.Binary
 
@@ -66,7 +80,9 @@ trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaP
 
   private var sharedProducer: P = _
 
-  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit] = {
+  def sendToKafka(
+      producerRecord: ProducerRecord[Array[Byte], Array[Byte]]
+  )(implicit ec: ExecutionContext): Future[Unit] = {
     sharedProducer.sendToKafka(producerRecord)
   }
 
@@ -87,4 +103,3 @@ trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaP
   }
 
 }
-

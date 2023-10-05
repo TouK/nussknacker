@@ -16,35 +16,56 @@ import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
 
 import scala.reflect.ClassTag
 
-class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
-                                             processConfig: Config,
-                                             diskStateBackendSupport: Boolean,
-                                             objectNaming: ObjectNaming,
-                                             componentUseCase: ComponentUseCase,
-                                             testComponentsHolder: TestComponentsHolder)
-  extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
+class FlinkProcessCompilerWithTestComponents(
+    creator: ProcessConfigCreator,
+    processConfig: Config,
+    diskStateBackendSupport: Boolean,
+    objectNaming: ObjectNaming,
+    componentUseCase: ComponentUseCase,
+    testComponentsHolder: TestComponentsHolder
+) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
-
-  override protected def definitions(processObjectDependencies: ProcessObjectDependencies,
-                                     userCodeClassLoader: ClassLoader): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+  override protected def definitions(
+      processObjectDependencies: ProcessObjectDependencies,
+      userCodeClassLoader: ClassLoader
+  ): (ModelDefinitionWithTypes, EngineDictRegistry) = {
     val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
-    val definitions = definitionWithTypes.modelDefinition
-    val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
-    val testServicesDefs = ObjectWithMethodDef.forMap(testComponentsWithCategories[Service], ProcessObjectDefinitionExtractor.service, componentsUiConfig)
-    val testSourceDefs = ObjectWithMethodDef.forMap(testComponentsWithCategories[SourceFactory], ProcessObjectDefinitionExtractor.source, componentsUiConfig)
-    val testSinkDefs = ObjectWithMethodDef.forMap(testComponentsWithCategories[SinkFactory], ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
+    val definitions                         = definitionWithTypes.modelDefinition
+    val componentsUiConfig                  = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
+    val testServicesDefs = ObjectWithMethodDef.forMap(
+      testComponentsWithCategories[Service],
+      ProcessObjectDefinitionExtractor.service,
+      componentsUiConfig
+    )
+    val testSourceDefs = ObjectWithMethodDef.forMap(
+      testComponentsWithCategories[SourceFactory],
+      ProcessObjectDefinitionExtractor.source,
+      componentsUiConfig
+    )
+    val testSinkDefs = ObjectWithMethodDef.forMap(
+      testComponentsWithCategories[SinkFactory],
+      ProcessObjectDefinitionExtractor.sink,
+      componentsUiConfig
+    )
     val servicesWithTests = definitions.services ++ testServicesDefs
-    val sourcesWithTests = definitions.sourceFactories ++ testSourceDefs
-    val sinksWithTests = definitions.sinkFactories ++ testSinkDefs
+    val sourcesWithTests  = definitions.sourceFactories ++ testSourceDefs
+    val sinksWithTests    = definitions.sinkFactories ++ testSinkDefs
     // TODO: Implement Test CustomStreamTransformers
-    val definitionsWithTestComponents = definitions.copy(
-      services = servicesWithTests,
-      sinkFactories = sinksWithTests,
-      sourceFactories = sourcesWithTests)
+    val definitionsWithTestComponents =
+      definitions.copy(services = servicesWithTests, sinkFactories = sinksWithTests, sourceFactories = sourcesWithTests)
     (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)
   }
 
-  private def testComponentsWithCategories[T <: Component : ClassTag] = testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
+  private def testComponentsWithCategories[T <: Component: ClassTag] =
+    testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestComponentsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(modelData.configCreator, modelData.processConfig, false, modelData.objectNaming, componentUseCase, componentsHolder)
+  def this(componentsHolder: TestComponentsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
+    modelData.configCreator,
+    modelData.processConfig,
+    false,
+    modelData.objectNaming,
+    componentUseCase,
+    componentsHolder
+  )
+
 }

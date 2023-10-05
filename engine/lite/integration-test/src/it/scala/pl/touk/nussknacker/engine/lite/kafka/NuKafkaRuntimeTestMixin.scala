@@ -11,11 +11,14 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
   protected def kafkaBoostrapServer: String
 
-  protected def prepareTestCaseFixture(scenarioId: String, prepareScenario: (String, String) => CanonicalProcess): NuKafkaRuntimeTestTestCaseFixture = {
-    val testCaseId = NuRuntimeTestUtils.testCaseId(self.suiteName, scenarioId)
-    val inputTopic = testCaseId + "-input"
+  protected def prepareTestCaseFixture(
+      scenarioId: String,
+      prepareScenario: (String, String) => CanonicalProcess
+  ): NuKafkaRuntimeTestTestCaseFixture = {
+    val testCaseId  = NuRuntimeTestUtils.testCaseId(self.suiteName, scenarioId)
+    val inputTopic  = testCaseId + "-input"
     val outputTopic = testCaseId + "-output"
-    val errorTopic = testCaseId + "-error"
+    val errorTopic  = testCaseId + "-error"
     kafkaClient.createTopic(inputTopic)
     kafkaClient.createTopic(outputTopic, 1)
     kafkaClient.createTopic(errorTopic, 1)
@@ -27,4 +30,9 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
 }
 
-case class NuKafkaRuntimeTestTestCaseFixture(inputTopic: String, outputTopic: String, errorTopic: String, scenarioFile: File)
+case class NuKafkaRuntimeTestTestCaseFixture(
+    inputTopic: String,
+    outputTopic: String,
+    errorTopic: String,
+    scenarioFile: File
+)

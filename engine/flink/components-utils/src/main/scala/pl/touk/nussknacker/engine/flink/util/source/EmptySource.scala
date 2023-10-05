@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-case class EmptySource[T:TypeInformation](returnType: TypingResult) extends BasicFlinkSource[T] with ReturningType {
+case class EmptySource[T: TypeInformation](returnType: TypingResult) extends BasicFlinkSource[T] with ReturningType {
 
   override def flinkSourceFunction: SourceFunction[T] = new EmptySourceFunction[T]
 

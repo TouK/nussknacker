@@ -15,8 +15,9 @@ class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService, codesToIn
 
   def invoke[F[_]](parameters: Map[String, Any])(implicit backend: SttpBackend[F, Any]): F[AnyRef] = {
     implicit val monad: MonadError[F] = backend.responseMonad
-    val request = ServiceRequest(baseUrl, swaggerService, parameters)
-    val sendResult = request.send(backend).flatMap(SttpUtils.handleOptionalResponse[F, Json](_, codesToInterpretAsEmpty))
+    val request                       = ServiceRequest(baseUrl, swaggerService, parameters)
+    val sendResult =
+      request.send(backend).flatMap(SttpUtils.handleOptionalResponse[F, Json](_, codesToInterpretAsEmpty))
     swaggerService.responseSwaggerType match {
       case Some(responseType) =>
         sendResult.map(json => HandleResponse(json, responseType))

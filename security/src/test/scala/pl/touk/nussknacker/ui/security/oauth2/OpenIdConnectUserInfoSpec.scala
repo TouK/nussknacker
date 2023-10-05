@@ -12,7 +12,9 @@ class OpenIdConnectUserInfoSpec extends AnyFunSuite with Matchers {
     implicit val decoder: Decoder[OpenIdConnectUserInfo] =
       OpenIdConnectUserInfo.decoderWithCustomRolesClaim(Some(List("http://uri1.com", "http://uri2.com")))
 
-    val userInfo = CirceUtil.decodeJsonUnsafe[OpenIdConnectUserInfo](getClass.getResourceAsStream("/oidc-sample1.json").readAllBytes())
+    val userInfo = CirceUtil.decodeJsonUnsafe[OpenIdConnectUserInfo](
+      getClass.getResourceAsStream("/oidc-sample1.json").readAllBytes()
+    )
 
     userInfo.roles shouldBe Set("role1", "role2", "role3")
   }

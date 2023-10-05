@@ -36,11 +36,18 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   private def prepareInterpreter(process: CanonicalProcess): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
-    val validatedInterpreter = RequestResponseInterpreter[Future](process,
-      ProcessVersion.empty, 
-      contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
+    val validatedInterpreter = RequestResponseInterpreter[Future](
+      process,
+      ProcessVersion.empty,
+      contextPreparer,
+      modelData,
+      Nil,
+      ProductionServiceInvocationCollector,
+      componentUseCase
+    )
 
     validatedInterpreter shouldBe Symbol("valid")
     validatedInterpreter.toEither.toOption.get
   }
+
 }

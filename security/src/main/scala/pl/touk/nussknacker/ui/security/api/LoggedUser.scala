@@ -12,16 +12,23 @@ sealed trait LoggedUser {
 }
 
 object LoggedUser {
-  def apply(authenticatedUser: AuthenticatedUser, rules: List[ConfigRule], processCategories: List[String]): LoggedUser = {
+
+  def apply(
+      authenticatedUser: AuthenticatedUser,
+      rules: List[ConfigRule],
+      processCategories: List[String]
+  ): LoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules, processCategories)
     apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
   }
 
-  def apply(id: String,
-            username: String,
-            categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-            globalPermissions: List[GlobalPermission] = Nil,
-            isAdmin: Boolean = false): LoggedUser = {
+  def apply(
+      id: String,
+      username: String,
+      categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+      globalPermissions: List[GlobalPermission] = Nil,
+      isAdmin: Boolean = false
+  ): LoggedUser = {
     if (isAdmin) {
       AdminUser(id, username)
     } else {
@@ -41,12 +48,16 @@ object LoggedUser {
       )
     }
   }
+
 }
 
-case class CommonUser(id: String,
-                      username: String,
-                      categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-                      globalPermissions: List[GlobalPermission] = Nil) extends LoggedUser {
+case class CommonUser(
+    id: String,
+    username: String,
+    categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+    globalPermissions: List[GlobalPermission] = Nil
+) extends LoggedUser {
+
   def categories(permission: Permission): Set[String] = categoryPermissions.collect {
     case (category, permissions) if permissions contains permission => category
   }.toSet
@@ -60,5 +71,5 @@ case class CommonUser(id: String,
 
 case class AdminUser(id: String, username: String) extends LoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
-  override val isAdmin: Boolean = true
+  override val isAdmin: Boolean                                       = true
 }

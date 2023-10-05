@@ -11,6 +11,7 @@ object AttachmentsConfig {
   def create(config: Config): AttachmentsConfig = {
     parseOptionalConfig[AttachmentsConfig](config, "attachments").getOrElse(default)
   }
+
 }
 
 case class AttachmentsConfig(maxSizeInBytes: Long)

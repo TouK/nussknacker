@@ -16,8 +16,7 @@ import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
-class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
-  extends LazyLogging {
+class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory) extends LazyLogging {
 
   def this() = {
     this(
@@ -25,15 +24,17 @@ class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDat
     )
   }
 
-  def createApp(baseUnresolvedConfig: Config = ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader)): Resource[IO, Unit] = {
+  def createApp(
+      baseUnresolvedConfig: Config = ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader)
+  ): Resource[IO, Unit] = {
     for {
       config <- designerConfigFrom(baseUnresolvedConfig)
       system <- createActorSystem(config)
       materializer = Materializer(system)
-      _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
-      _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
+      _               <- Resource.eval(IO(JavaClassVersionChecker.check()))
+      _               <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
-      db <- DbRef.create(config.resolved)
+      db              <- DbRef.create(config.resolved)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataProviderFactory)(system, materializer),
         system,

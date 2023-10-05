@@ -9,7 +9,10 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, ProcessVersion, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfo
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.{
+  TypeInformationDetection,
+  TypingResultAwareTypeInformationCustomisation
+}
 import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalParameters}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -19,12 +22,23 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
   private val loader = getClass.getClassLoader
 
   private def executionConfig(useTypingResultAware: Option[Boolean] = None) = new ExecutionConfig {
-    setGlobalJobParameters(NkGlobalParameters("",
-      ProcessVersion.empty, Some(ConfigGlobalParameters(None, useTypingResultAware, None, None)), None, Map.empty))
+
+    setGlobalJobParameters(
+      NkGlobalParameters(
+        "",
+        ProcessVersion.empty,
+        Some(ConfigGlobalParameters(None, useTypingResultAware, None, None)),
+        None,
+        Map.empty
+      )
+    )
+
   }
 
-  private def typeInformationForVariables(detection: TypeInformationDetection,
-                                          ctx: ValidationContext): TypeInformation[ValidationContext] = {
+  private def typeInformationForVariables(
+      detection: TypeInformationDetection,
+      ctx: ValidationContext
+  ): TypeInformation[ValidationContext] = {
     val tr = detection.forContext(ctx)
     tr.asInstanceOf[CaseClassTypeInfo[Context]].getTypeAt("variables")
   }
@@ -33,23 +47,29 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
 
     val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(), loader)
     typeInformationForVariables(detection, ValidationContext(Map("test1" -> Typed[String])))
-      .asInstanceOf[TypedScalaMapTypeInformation].informations("test1") shouldBe TypeInformation.of(classOf[String])
+      .asInstanceOf[TypedScalaMapTypeInformation]
+      .informations("test1") shouldBe TypeInformation.of(classOf[String])
   }
 
   test("Recognizes TypingResultAware customisation") {
     val ec = executionConfig(Some(true))
 
-    ClassLoaderWithServices.withCustomServices(List(
-      (classOf[TypingResultAwareTypeInformationCustomisation], classOf[CustomTypeInformationCustomisation])), loader) { withServices =>
+    ClassLoaderWithServices.withCustomServices(
+      List((classOf[TypingResultAwareTypeInformationCustomisation], classOf[CustomTypeInformationCustomisation])),
+      loader
+    ) { withServices =>
       val detection = TypeInformationDetectionUtils.forExecutionConfig(ec, withServices)
       typeInformationForVariables(detection, ValidationContext(Map("test1" -> Unknown)))
-        .asInstanceOf[TypedScalaMapTypeInformation].informations("test1") shouldBe new NothingTypeInfo
+        .asInstanceOf[TypedScalaMapTypeInformation]
+        .informations("test1") shouldBe new NothingTypeInfo
     }
   }
 
   test("Uses custom TypeInformationDetection if detected") {
-    ClassLoaderWithServices.withCustomServices(List(
-      (classOf[TypeInformationDetection], classOf[CustomTypeInformationDetection])), loader) { withServices =>
+    ClassLoaderWithServices.withCustomServices(
+      List((classOf[TypeInformationDetection], classOf[CustomTypeInformationDetection])),
+      loader
+    ) { withServices =>
       val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(Some(true)), withServices)
 
       intercept[IllegalArgumentException] {
@@ -59,21 +79,31 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
     }
 
   }
+
 }
 
-
 class CustomTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
-  override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
-    case Unknown => new NothingTypeInfo
+
+  override def customise(
+      originalDetection: TypeInformationDetection
+  ): PartialFunction[typing.TypingResult, TypeInformation[_]] = { case Unknown =>
+    new NothingTypeInfo
   }
+
 }
 
 class CustomTypeInformationDetection extends TypeInformationDetection {
 
-  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = throw new IllegalArgumentException("Checking loader :)")
+  override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
+    throw new IllegalArgumentException("Checking loader :)")
 
-  override def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] = throw new IllegalArgumentException("Checking loader :)")
+  override def forValueWithContext[T](
+      validationContext: ValidationContext,
+      value: TypeInformation[T]
+  ): TypeInformation[ValueWithContext[T]] = throw new IllegalArgumentException("Checking loader :)")
 
-  override def forType[T](typingResult: typing.TypingResult): TypeInformation[T] = throw new IllegalArgumentException("Checking loader :)")
+  override def forType[T](typingResult: typing.TypingResult): TypeInformation[T] = throw new IllegalArgumentException(
+    "Checking loader :)"
+  )
+
 }
-

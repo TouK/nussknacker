@@ -10,22 +10,28 @@ trait V1_031__FragmentSpecificData extends ProcessJsonMigration {
     V1_031__FragmentSpecificData.migrateMetadata(jsonProcess)
 }
 
-
-
 object V1_031__FragmentSpecificData {
 
   import io.circe.syntax._
 
   private[migration] def migrateMetadata(jsonProcess: Json): Option[Json] = {
-    jsonProcess.hcursor.downField("metaData")
-      .withFocus { metadata => metadata.hcursor.downField("isSubprocess").focus.flatMap(_.asBoolean) match {
-          case Some(true) => metadata.hcursor.withFocus { mj => mj.mapObject(_.+:("typeSpecificData",
-            FragmentSpecificData().asInstanceOf[TypeSpecificData].asJson))}.downField("isSubprocess").delete.focus.get
+    jsonProcess.hcursor
+      .downField("metaData")
+      .withFocus { metadata =>
+        metadata.hcursor.downField("isSubprocess").focus.flatMap(_.asBoolean) match {
+          case Some(true) =>
+            metadata.hcursor
+              .withFocus { mj =>
+                mj.mapObject(_.+:("typeSpecificData", FragmentSpecificData().asInstanceOf[TypeSpecificData].asJson))
+              }
+              .downField("isSubprocess")
+              .delete
+              .focus
+              .get
           case Some(false) => metadata.hcursor.downField("isSubprocess").delete.focus.get
-          case _ => metadata
+          case _           => metadata
         }
       }
   }.top
-
 
 }

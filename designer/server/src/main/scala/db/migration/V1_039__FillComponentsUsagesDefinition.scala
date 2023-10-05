@@ -23,11 +23,16 @@ trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTabl
     } yield updated
   }
 
-  private def updateOne(id: VersionId, processId: ProcessId,
-                        scenarioNo: Int, scenariosCount: Int): DBIOAction[Int, NoStream, Effect.Read with Effect.Write] = {
+  private def updateOne(
+      id: VersionId,
+      processId: ProcessId,
+      scenarioNo: Int,
+      scenariosCount: Int
+  ): DBIOAction[Int, NoStream, Effect.Read with Effect.Write] = {
     for {
       scenarioJson <- processVersionsTable.filter(v => v.id === id && v.processId === processId).map(_.json).result.head
-      updatedComponentsUsages <- processVersionsTable.filter(v => v.id === id && v.processId === processId)
+      updatedComponentsUsages <- processVersionsTable
+        .filter(v => v.id === id && v.processId === processId)
         .map(_.componentsUsages)
         .update {
           logger.trace("Migrate scenario ({}/{}), id: {}, version id: {}", scenarioNo, scenariosCount, processId, id)
@@ -40,7 +45,7 @@ trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTabl
     import io.circe.syntax._
     import pl.touk.nussknacker.ui.db.entity.ScenarioComponentsUsagesJsonCodec._
 
-    val scenario = ProcessMarshaller.fromJsonUnsafe(scenarioJson)
+    val scenario         = ProcessMarshaller.fromJsonUnsafe(scenarioJson)
     val componentsUsages = ScenarioComponentsUsagesHelper.compute(scenario)
     componentsUsages.asJson.noSpaces
   }

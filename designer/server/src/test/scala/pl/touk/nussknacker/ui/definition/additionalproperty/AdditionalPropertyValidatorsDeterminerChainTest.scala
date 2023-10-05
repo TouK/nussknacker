@@ -2,7 +2,12 @@ package pl.touk.nussknacker.ui.definition.additionalproperty
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, MandatoryParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  FixedValuesValidator,
+  MandatoryParameterValidator
+}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 
 class AdditionalPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
@@ -33,4 +38,5 @@ class AdditionalPropertyValidatorsDeterminerChainTest extends AnyFunSuite with M
 
     determined shouldBe List(FixedValuesValidator(possibleValues))
   }
+
 }

@@ -22,14 +22,16 @@ class DictsSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def checkProcess(filterExpression: String) = {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "input")
       .filter("filter", filterExpression)
       .processorEnd("proc2", "logService", "all" -> "#input")
 
     val data = List(
       SimpleRecord("1", 3, "fooId", new Date(0), enumValue = SimpleJavaEnum.ONE),
-      SimpleRecord("1", 5, "invalidId", new Date(1000), enumValue = SimpleJavaEnum.TWO))
+      SimpleRecord("1", 5, "invalidId", new Date(1000), enumValue = SimpleJavaEnum.TWO)
+    )
 
     processInvoker.invokeWithSampleData(process, data)
 

@@ -21,9 +21,11 @@ abstract class RichLifecycleFunction extends AbstractRichFunction {
 
 }
 
-class RichLifecycleMapFunction[T, R](protected override val lifecycle: (T => R) with Lifecycle,
-                                     protected override val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-  extends RichLifecycleFunction with MapFunction[T, R] {
+class RichLifecycleMapFunction[T, R](
+    protected override val lifecycle: (T => R) with Lifecycle,
+    protected override val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+) extends RichLifecycleFunction
+    with MapFunction[T, R] {
 
   override def map(value: T): R = lifecycle(value)
 

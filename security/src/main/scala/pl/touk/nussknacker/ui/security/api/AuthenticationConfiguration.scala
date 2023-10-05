@@ -13,35 +13,47 @@ trait AuthenticationConfiguration {
 
   val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
-  lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(
-    throw new IllegalArgumentException(s"Missing field ${AuthenticationConfiguration.usersConfigurationPath} at ${userConfig.getConfig(AuthenticationConfiguration.usersConfigPath)} users config file.")
-  )
+  lazy val users: List[ConfigUser] = AuthenticationConfiguration
+    .getUsers(userConfig)
+    .getOrElse(
+      throw new IllegalArgumentException(
+        s"Missing field ${AuthenticationConfiguration.usersConfigurationPath} at ${userConfig.getConfig(AuthenticationConfiguration.usersConfigPath)} users config file."
+      )
+    )
+
 }
 
 object AuthenticationConfiguration {
+
   import net.ceedubs.ficus.readers.EnumerationReader._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   val authenticationConfigPath = "authentication"
-  val methodConfigPath = s"$authenticationConfigPath.method"
-  val usersConfigPath = s"$authenticationConfigPath.usersFile"
-  val usersConfigurationPath = "users"
-  val rulesConfigurationPath = "rules"
+  val methodConfigPath         = s"$authenticationConfigPath.method"
+  val usersConfigPath          = s"$authenticationConfigPath.usersFile"
+  val usersConfigurationPath   = "users"
+  val rulesConfigurationPath   = "rules"
 
   def getUsers(config: Config): Option[List[ConfigUser]] = config.as[Option[List[ConfigUser]]](usersConfigurationPath)
-  def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
+  def getRules(usersFile: URI): List[ConfigRule] =
+    ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
-  case class ConfigUser(identity: String,
-                        username: Option[String],
-                        password: Option[String],
-                        encryptedPassword: Option[String],
-                        roles: Set[String])
+  case class ConfigUser(
+      identity: String,
+      username: Option[String],
+      password: Option[String],
+      encryptedPassword: Option[String],
+      roles: Set[String]
+  )
 
-  case class ConfigRule(role: String,
-                        isAdmin: Boolean = false,
-                        categories: List[String] = List.empty,
-                        permissions: List[Permission] = List.empty,
-                        globalPermissions: List[GlobalPermission] = List.empty)
+  case class ConfigRule(
+      role: String,
+      isAdmin: Boolean = false,
+      categories: List[String] = List.empty,
+      permissions: List[Permission] = List.empty,
+      globalPermissions: List[GlobalPermission] = List.empty
+  )
+
 }

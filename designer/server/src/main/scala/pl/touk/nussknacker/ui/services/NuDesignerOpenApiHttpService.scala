@@ -15,4 +15,5 @@ class NuDesignerOpenApiHttpService(appApiHttpService: AppApiHttpService) {
         "Nussknacker Designer API",
         ""
       )
+
 }

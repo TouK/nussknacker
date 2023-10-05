@@ -10,7 +10,5 @@ case class ProcessingTypeUsageStatistics(deploymentManagerType: Option[String], 
 object ProcessingTypeUsageStatistics {
   // TODO: handle only enabled managers by category configuration
   def apply(managerConfig: Config): ProcessingTypeUsageStatistics =
-    ProcessingTypeUsageStatistics(
-      managerConfig.getAs[String]("type"),
-      managerConfig.getAs[String]("mode"))
+    ProcessingTypeUsageStatistics(managerConfig.getAs[String]("type"), managerConfig.getAs[String]("mode"))
 }

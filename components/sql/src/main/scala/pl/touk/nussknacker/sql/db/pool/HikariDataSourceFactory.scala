@@ -18,4 +18,5 @@ object HikariDataSourceFactory {
     }
     new HikariDataSource(hikariConf)
   }
+
 }

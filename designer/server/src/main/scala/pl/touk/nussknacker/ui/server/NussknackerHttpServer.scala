@@ -18,35 +18,40 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(routeProvider: RouteProvider[Route],
-                            system: ActorSystem,
-                            materializer: Materializer)
-                           (implicit ioRuntime: IORuntime)
-  extends LazyLogging {
+class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem, materializer: Materializer)(
+    implicit ioRuntime: IORuntime
+) extends LazyLogging {
 
-  private implicit val systemImplicit: ActorSystem = system
-  private implicit val materializerImplicit: Materializer = materializer
+  private implicit val systemImplicit: ActorSystem                = system
+  private implicit val materializerImplicit: Materializer         = materializer
   private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
 
-  def start(config: ConfigWithUnresolvedVersion,
-            metricRegistry: MetricRegistry): Resource[IO, Unit] = {
+  def start(config: ConfigWithUnresolvedVersion, metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
       route <- routeProvider.createRoute(config)
-      _ <- createAkkaHttpBinding(config, route, metricRegistry)
+      _     <- createAkkaHttpBinding(config, route, metricRegistry)
     } yield ()
   }
 
-  private def createAkkaHttpBinding(config: ConfigWithUnresolvedVersion,
-                                    route: Route,
-                                    metricsRegistry: MetricRegistry) = {
+  private def createAkkaHttpBinding(
+      config: ConfigWithUnresolvedVersion,
+      route: Route,
+      metricsRegistry: MetricRegistry
+  ) = {
     def createServer() = IO.fromFuture {
       IO {
         val interface: String = config.resolved.getString("http.interface")
-        val port: Int = config.resolved.getInt("http.port")
+        val port: Int         = config.resolved.getInt("http.port")
 
         val bindingResultF = SslConfigParser.sslEnabled(config.resolved) match {
           case Some(keyStoreConfig) =>
-            bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route, metricsRegistry)
+            bindHttps(
+              interface,
+              port,
+              HttpsConnectionContextFactory.createServerContext(keyStoreConfig),
+              route,
+              metricsRegistry
+            )
           case None =>
             bindHttp(interface, port, route, metricsRegistry)
         }
@@ -66,10 +71,12 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route],
     Resource.make(acquire = createServer())(release = shutdownServer)
   }
 
-  private def bindHttp(interface: String,
-                       port: Int,
-                       route: Route,
-                       metricsRegistry: MetricRegistry): Future[Http.ServerBinding] = {
+  private def bindHttp(
+      interface: String,
+      port: Int,
+      route: Route,
+      metricsRegistry: MetricRegistry
+  ): Future[Http.ServerBinding] = {
     Http()
       .newMeteredServerAt(
         interface = interface,
@@ -79,11 +86,13 @@ class NussknackerHttpServer(routeProvider: RouteProvider[Route],
       .bind(route)
   }
 
-  private def bindHttps(interface: String,
-                        port: Int,
-                        httpsContext: HttpsConnectionContext,
-                        route: Route,
-                        metricsRegistry: MetricRegistry): Future[Http.ServerBinding] = {
+  private def bindHttps(
+      interface: String,
+      port: Int,
+      httpsContext: HttpsConnectionContext,
+      route: Route,
+      metricsRegistry: MetricRegistry
+  ): Future[Http.ServerBinding] = {
     Http()
       .newMeteredServerAt(
         interface = interface,

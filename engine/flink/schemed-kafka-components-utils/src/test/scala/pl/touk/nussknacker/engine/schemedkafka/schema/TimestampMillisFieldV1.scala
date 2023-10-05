@@ -6,7 +6,8 @@ object TimestampMillisFieldV1 extends TestSchemaWithRecord {
 
   override def exampleData: Map[String, Any] = exampleData(10000)
 
-  override def stringSchema: String = """{ "type": "record", "name": "field", "fields": [{"name":"field", "type":{"type": "long","logicalType": "timestamp-millis"}}] }"""
+  override def stringSchema: String =
+    """{ "type": "record", "name": "field", "fields": [{"name":"field", "type":{"type": "long","logicalType": "timestamp-millis"}}] }"""
 
   def exampleData(timestamp: Long) = Map("field" -> timestamp)
 

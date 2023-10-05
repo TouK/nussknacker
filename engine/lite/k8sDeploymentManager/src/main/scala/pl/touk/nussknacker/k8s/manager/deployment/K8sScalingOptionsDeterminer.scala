@@ -19,8 +19,10 @@ object K8sScalingOptionsDeterminer {
   def create(config: Option[K8sScalingConfig]): Option[K8sScalingOptionsDeterminer] = {
     config match {
       case None | Some(NotDefinedConfig) => None
-      case Some(fixedReplicas: FixedReplicasCountConfig) => Some(new FixedReplicasCountK8sScalingOptionsDeterminer(fixedReplicas.fixedReplicasCount))
-      case Some(dividingParallelism: DividingParallelismConfig) => Some(new DividingParallelismK8sScalingOptionsDeterminer(dividingParallelism))
+      case Some(fixedReplicas: FixedReplicasCountConfig) =>
+        Some(new FixedReplicasCountK8sScalingOptionsDeterminer(fixedReplicas.fixedReplicasCount))
+      case Some(dividingParallelism: DividingParallelismConfig) =>
+        Some(new DividingParallelismK8sScalingOptionsDeterminer(dividingParallelism))
     }
   }
 
@@ -35,10 +37,11 @@ class FixedReplicasCountK8sScalingOptionsDeterminer(val replicasCount: Int) exte
 
 }
 
-class DividingParallelismK8sScalingOptionsDeterminer(config: DividingParallelismConfig) extends K8sScalingOptionsDeterminer {
+class DividingParallelismK8sScalingOptionsDeterminer(config: DividingParallelismConfig)
+    extends K8sScalingOptionsDeterminer {
 
   override def determine(parallelism: Int): K8sScalingOptions = {
-    val replicasCount = Math.ceil(parallelism.toDouble / config.tasksPerReplica).toInt
+    val replicasCount      = Math.ceil(parallelism.toDouble / config.tasksPerReplica).toInt
     val noOfTasksInReplica = Math.ceil(parallelism.toDouble / replicasCount).toInt
     K8sScalingOptions(replicasCount, noOfTasksInReplica)
   }
@@ -62,9 +65,12 @@ object K8sScalingConfig {
   implicit def valueReader: ValueReader[K8sScalingConfig] = Ficus.configValueReader.map { config =>
     (config.hasPath(fixedReplicasCountPath), config.hasPath(tasksPerReplicaPath)) match {
       case (false, false) => NotDefinedConfig
-      case (true, false) => config.as[FixedReplicasCountConfig]
-      case (false, true) => config.as[DividingParallelismConfig]
-      case (true, true) => throw new IllegalArgumentException(s"You can specify only one scaling config option: either $fixedReplicasCountPath or $tasksPerReplicaPath")
+      case (true, false)  => config.as[FixedReplicasCountConfig]
+      case (false, true)  => config.as[DividingParallelismConfig]
+      case (true, true) =>
+        throw new IllegalArgumentException(
+          s"You can specify only one scaling config option: either $fixedReplicasCountPath or $tasksPerReplicaPath"
+        )
     }
   }
 

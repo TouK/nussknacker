@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 object SynchronousExecutionContextAndIORuntime extends LazyLogging {
 
   implicit val ctx: ExecutionContext = create()
-  implicit val ioRuntime: IORuntime = ioRuntimeFrom(ctx)
+  implicit val ioRuntime: IORuntime  = ioRuntimeFrom(ctx)
 
   def create(): ExecutionContext = ExecutionContext.fromExecutor(new Executor {
     def execute(task: Runnable): Unit = task.run()
@@ -26,4 +26,5 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
       config = IORuntimeConfig()
     )
   }
+
 }

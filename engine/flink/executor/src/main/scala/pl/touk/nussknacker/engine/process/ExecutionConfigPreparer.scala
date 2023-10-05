@@ -17,8 +17,7 @@ import pl.touk.nussknacker.engine.process.util.Serializers
  */
 trait ExecutionConfigPreparer {
 
-  def prepareExecutionConfig(config: ExecutionConfig)
-                            (jobData: JobData, deploymentData: DeploymentData): Unit
+  def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData, deploymentData: DeploymentData): Unit
 
 }
 
@@ -39,34 +38,48 @@ object ExecutionConfigPreparer extends LazyLogging {
 
   def chain(configPreparers: ExecutionConfigPreparer*): ExecutionConfigPreparer = {
     new ExecutionConfigPreparer {
-      override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData, deploymentData: DeploymentData): Unit = {
+      override def prepareExecutionConfig(
+          config: ExecutionConfig
+      )(jobData: JobData, deploymentData: DeploymentData): Unit = {
         configPreparers.foreach(_.prepareExecutionConfig(config)(jobData, deploymentData))
       }
     }
   }
 
-  class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: String) extends ExecutionConfigPreparer {
-    override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (jobData: JobData, deploymentData: DeploymentData): Unit = {
-      val namingParameters = objectNaming.objectNamingParameters(jobData.metaData.id, processConfig, new NamingContext(FlinkUsageKey))
+  class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: String)
+      extends ExecutionConfigPreparer {
+
+    override def prepareExecutionConfig(
+        config: ExecutionConfig
+    )(jobData: JobData, deploymentData: DeploymentData): Unit = {
+      val namingParameters = objectNaming
+        .objectNamingParameters(jobData.metaData.id, processConfig, new NamingContext(FlinkUsageKey))
         .map(p => NamingParameters(p.toTags))
 
-      NkGlobalParameters.setInContext(config, NkGlobalParameters.create(buildInfo, jobData.processVersion, processConfig, namingParameters,
-        prepareMap(jobData.processVersion, deploymentData)))
+      NkGlobalParameters.setInContext(
+        config,
+        NkGlobalParameters.create(
+          buildInfo,
+          jobData.processVersion,
+          processConfig,
+          namingParameters,
+          prepareMap(jobData.processVersion, deploymentData)
+        )
+      )
     }
 
     private def prepareMap(processVersion: ProcessVersion, deploymentData: DeploymentData) = {
 
       val baseProperties = Map[String, String](
-        "buildInfo" -> buildInfo,
-        "versionId" -> processVersion.versionId.value.toString,
-        "processId" -> processVersion.processId.value.toString,
+        "buildInfo"    -> buildInfo,
+        "versionId"    -> processVersion.versionId.value.toString,
+        "processId"    -> processVersion.processId.value.toString,
         "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-        "user" -> processVersion.user,
+        "user"         -> processVersion.user,
         "deploymentId" -> deploymentData.deploymentId.value
       )
-      val additionalProperties = deploymentData.additionalDeploymentData.map {
-        case (k, v) => s"deployment.properties.$k" -> v
+      val additionalProperties = deploymentData.additionalDeploymentData.map { case (k, v) =>
+        s"deployment.properties.$k" -> v
       }
       baseProperties ++ additionalProperties
     }
@@ -74,25 +87,29 @@ object ExecutionConfigPreparer extends LazyLogging {
   }
 
   object ProcessSettingsPreparer {
+
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
       val buildInfo = Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
       new ProcessSettingsPreparer(modelData.processConfig, modelData.objectNaming, buildInfo)
     }
+
   }
 
-  class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer  {
+  class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer {
 
     protected def enableObjectReuse: Boolean =
       modelData.processConfig.getOrElse[Boolean]("enableObjectReuse", true)
 
-    override def prepareExecutionConfig(config: ExecutionConfig)
-                                       (jobData: JobData, deploymentData: DeploymentData): Unit = {
+    override def prepareExecutionConfig(
+        config: ExecutionConfig
+    )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       Serializers.registerSerializers(modelData, config)
       if (enableObjectReuse) {
         config.enableObjectReuse()
         logger.debug("Object reuse enabled")
       }
     }
+
   }
 
   class UnoptimizedSerializationPreparer(modelData: ModelData) extends SerializationPreparer(modelData) {
