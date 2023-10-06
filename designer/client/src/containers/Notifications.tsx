@@ -15,7 +15,6 @@ import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
-import { variables } from "../stylesheets/variables";
 import { ThunkAction } from "../actions/reduxTypes";
 
 const prepareNotification =

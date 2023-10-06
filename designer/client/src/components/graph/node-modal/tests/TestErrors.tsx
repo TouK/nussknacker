@@ -3,7 +3,6 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { variables } from "../../../../stylesheets/variables";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export default function TestErrors(): JSX.Element {

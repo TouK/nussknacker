@@ -63,11 +63,13 @@ export const DownloadAttachment = styled("div")`
     font-size: 25px;
 `;
 
-export const DownloadButton = styled(NkButton)`
+export const DownloadButton = styled(NkButton)(
+    ({ theme }) => `
     width: 27px !important;
     height: 27px !important;
-    border: 1px solid ${variables.buttonBorderColor};
-`;
+    border: 1px solid ${theme.custom.colors.tundora};
+`,
+);
 
 export const AttachHeader = styled("div")(
     ({ theme }) => `

@@ -5,7 +5,6 @@ import NodeUtils from "../graph/NodeUtils";
 import { groupBy } from "lodash";
 import { LinkStyled } from "./Styled";
 import { NodeType, Process } from "../../types";
-import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 
 interface Warning {

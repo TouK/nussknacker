@@ -3,11 +3,11 @@ import { css, Theme } from "@mui/material";
 
 export const buttonBaseStyle = (theme: Theme) =>
     css({
-        border: `1px solid ${variables.buttonBorderColor}`,
+        border: `1px solid ${theme.custom.colors.tundora}`,
         borderRadius: 0,
-        backgroundColor: `${variables.buttonBkgColor}`,
+        backgroundColor: `${theme.custom.colors.primaryBackground}`,
         color: `${theme.custom.colors.secondaryColor}`,
-        transition: `${variables.buttonBkgColor} 0.2s`,
+        transition: `${theme.custom.colors.primaryBackground} 0.2s`,
         userSelect: "none",
         "&:disabled,&.disabled": {
             opacity: 0.3,

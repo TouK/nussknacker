@@ -35,7 +35,7 @@ export const TipPanelStyled = styled("div")<{
     isHighlighted: boolean;
 }>(({ isHighlighted, theme }) => ({
     height: "75px",
-    backgroundColor: isHighlighted ? alpha(theme.custom.colors.error, 0.1) : variables.panelBackground,
+    backgroundColor: isHighlighted ? alpha(theme.custom.colors.error, 0.1) : theme.custom.colors.primaryBackground,
     padding: "8px 10px 8px 10px",
     fontWeight: "lighter",
     fontSize: "14px",

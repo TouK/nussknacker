@@ -18,9 +18,9 @@ const ButtonText = styled("span")(({ theme }) => ({
     marginLeft: "8px",
 }));
 
-const ProcessLinkButton = styled(ProcessLink)(() => ({
-    backgroundColor: variables.buttonBorderColor,
-    border: `1px solid ${variables.menuButtonBorderColor}`,
+const ProcessLinkButton = styled(ProcessLink)(({ theme }) => ({
+    backgroundColor: theme.custom.colors.tundora,
+    border: `1px solid ${theme.custom.colors.tundora}`,
     borderRadius: "3px",
     height: "25px",
     display: "flex",

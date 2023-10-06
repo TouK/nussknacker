@@ -31,7 +31,7 @@ export const FormRow = styled("div")(
     margin: 7px 30px 8px 30px;
     > :first-child {
         width: 20%;
-        color: ${variables.modalLabelTextColor};
+        color: ${theme.custom.colors.canvasBackground};
         display: inline-block;
         vertical-align: top;
         padding-top: 10px;

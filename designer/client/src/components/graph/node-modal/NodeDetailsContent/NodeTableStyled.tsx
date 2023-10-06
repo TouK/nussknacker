@@ -16,7 +16,7 @@ export const NodeTableStyled = styled("div")(
         row-gap: 5px;
     }
     .node-label {
-        color: ${variables.modalLabelTextColor};
+        color: ${theme.custom.colors.canvasBackground};
         flex-basis: 20%;
         max-width: 20em;
         display: inline-block;
@@ -160,7 +160,7 @@ export const NodeTableStyled = styled("div")(
         padding-left: 15px;
         font-size: 14px;
         a {
-            color: ${variables.modalLabelTextColor};
+            color: ${theme.custom.colors.canvasBackground};
             text-decoration: none;
 
             &:hover {

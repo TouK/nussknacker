@@ -3,7 +3,6 @@ import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { NodeResultsForContext } from "../../../../common/TestResultUtils";
-import { variables } from "../../../../stylesheets/variables";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 interface ExpressionTestResultsProps {
