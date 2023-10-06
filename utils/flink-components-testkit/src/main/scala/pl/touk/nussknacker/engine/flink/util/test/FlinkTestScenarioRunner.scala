@@ -4,12 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{
-  ComponentUseCase,
-  EmptyProcessConfigCreator,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
