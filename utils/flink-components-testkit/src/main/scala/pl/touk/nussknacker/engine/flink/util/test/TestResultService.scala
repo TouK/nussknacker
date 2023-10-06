@@ -23,8 +23,8 @@ class TestResultService extends Service {
 
 object TestResultService {
 
-  def extractFromTestComponentsHolder[R](testComponentHolder: TestExtensionsHolder): List[R] = {
-    testComponentHolder
+  def extractFromTestComponentsHolder[R](testExtensionsHolder: TestExtensionsHolder): List[R] = {
+    testExtensionsHolder
       .components[Service]
       .find(_.name == TestScenarioRunner.testResultService)
       .map(_.component)

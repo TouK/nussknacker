@@ -77,10 +77,13 @@ val testScenarioRunner = TestScenarioRunner
 ```
 
 ### Injecting custom global variables
-You can inject map of your own UDFs (user defined functions) or variables using `.withGlobalVariables` on specified above `TestScenarioRunner` to be passed to engine model data. Example:
+You can inject map of your own or mocked UDFs (user defined functions) or other variables using `.withGlobalVariables` on specified above `TestScenarioRunner` to be passed to engine model data. Example:
 
 ```scala
 import pl.touk.nussknacker.engine.util.functions._
+val now = Instant.now()
+val mockedClock = Clock.fixed(now, ZoneId.systemDefault())
+val mockedDate = new DateUtils(mockedClock)
 val globalVariables = Map("DATE" -> date)
 
 val testScenarioRunner = TestScenarioRunner

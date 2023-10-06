@@ -93,7 +93,7 @@ class FlinkTestScenarioRunner(
     run(scenario, testComponentHolder)
   }
 
-  private def run(scenario: CanonicalProcess, testComponentHolder: TestExtensionsHolder): RunnerResult[Unit] = {
+  private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
     // TODO: get flink mini cluster through composition
@@ -101,7 +101,7 @@ class FlinkTestScenarioRunner(
 
     // It's copied from registrar.register only for handling compilation errors..
     // TODO: figure how to get compilation result on highest level - registrar.register?
-    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData, componentUseCase)
+    val compiler = new FlinkProcessCompilerWithTestComponents(testExtensionsHolder, modelData, componentUseCase)
     val compileProcessData = compiler.compileProcess(
       scenario,
       ProcessVersion.empty,
@@ -117,8 +117,8 @@ class FlinkTestScenarioRunner(
     }
   }
 
-  private def collectResults[R](testComponentHolder: TestExtensionsHolder): RunListResult[R] = {
-    val results = TestResultService.extractFromTestComponentsHolder(testComponentHolder)
+  private def collectResults[R](testExtensionsHolder: TestExtensionsHolder): RunListResult[R] = {
+    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
     // TODO: add runtime errors handling
     RunResult.successes(results)
   }

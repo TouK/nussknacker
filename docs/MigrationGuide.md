@@ -22,7 +22,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   used in the NU APIs which are still Akka HTTP-based. When we get rid of Akka HTTP, it will be removed.
 * [#4762](https://github.com/TouK/nussknacker/pull/4762) Rename `RegExpParameterValidator` to `LiteralRegExpParameterValidator`
 * [#4804](https://github.com/TouK/nussknacker/pull/4804) Improvement: Allow passing globalVariables on TestRunner:
-  * Rename `TestComponentsProvider` to `TestExtensionsProvider`
   * Rename `TestComponentsHolder` to `TestExtensionsHolder`
 
 ### REST API changes
