@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => EvaluatedPa
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object EvaluatedParameterPreparer {
+
   def prepareEvaluatedParameter(parameters: List[Parameter]): List[EvaluatedParameter] = {
     parameters
       .filterNot(_.branchParam)

@@ -8,13 +8,17 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 object ComponentIdProviderFactory extends LazyLogging {
 
-  def createUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData],
-                   categoryService: ProcessCategoryService): ComponentIdProvider = {
+  def createUnsafe(
+      processingTypeDataMap: Map[ProcessingType, ProcessingTypeData],
+      categoryService: ProcessCategoryService
+  ): ComponentIdProvider = {
     logger.debug("Creating component id provider")
 
     val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
-    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform { case (_, componentsObjects) => componentsObjects.config })
+    val componentObjectsMap     = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
+      case (_, componentsObjects) => componentsObjects.config
+    })
 
     ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
 
