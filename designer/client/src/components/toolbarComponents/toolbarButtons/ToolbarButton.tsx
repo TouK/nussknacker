@@ -7,7 +7,7 @@ import { variables } from "../../../stylesheets/variables";
 import { Icon, Label } from "./ToolbarButtonStyled";
 import { useTheme } from "@mui/material";
 
-const { buttonSize, rightPanelButtonFontSize, buttonBkgColor, buttonBkgHover, focusColor, buttonSmallSize } = variables;
+const { buttonSize, rightPanelButtonFontSize, buttonBkgColor, buttonBkgHover, buttonSmallSize } = variables;
 
 export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
     { onDrop, title, className, disabled, name, icon, hasError, isActive, ...props },
@@ -39,10 +39,10 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
         borderColor: hasError ? colors.error : "transparent",
         ":focus": {
-            borderColor: focusColor,
+            borderColor: colors.accent,
         },
 
-        color: hasError ? colors.error : isActive ? colors.ok : colors.silver,
+        color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
 
         backgroundColor: buttonBkgColor,
         ":hover": {

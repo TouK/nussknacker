@@ -6,7 +6,7 @@ export const buttonBaseStyle = (theme: Theme) =>
         border: `1px solid ${variables.buttonBorderColor}`,
         borderRadius: 0,
         backgroundColor: `${variables.buttonBkgColor}`,
-        color: `${theme.custom.colors.silver}`,
+        color: `${theme.custom.colors.secondaryColor}`,
         transition: `${variables.buttonBkgColor} 0.2s`,
         userSelect: "none",
         "&:disabled,&.disabled": {

@@ -5,7 +5,7 @@ import { ButtonWithFocus } from "../../withFocus";
 
 export const PredefinedRangeButton = styled(ButtonWithFocus)(
     ({ theme }) => `
-    ${buttonBaseStyle(theme)};
+    ${buttonBaseStyle(theme).styles};
     min-width: 80px;
     font-size: 12px;
     padding: 5px;
@@ -16,7 +16,7 @@ export const PredefinedRangeButton = styled(ButtonWithFocus)(
 
 export const PredefinedDropdownButton = styled(DropdownButton)(
     ({ theme }) => `
-    ${buttonBaseStyle(theme)};
+    ${buttonBaseStyle(theme).styles};
     width: 100%;
     font-size: 12px;
     padding: 5px;

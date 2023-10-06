@@ -113,7 +113,7 @@ export const NodeTableStyled = styled("div")(
         padding: 0 10px;
         border: none;
         background-color: ${variables.commentBkgColor};
-        color: ${variables.defaultTextColor};
+        color: ${theme.custom.colors.secondaryColor};
         font-weight: 400;
         font-size: 14px;
         outline: 1px solid rgba(255, 255, 255, 0.075);

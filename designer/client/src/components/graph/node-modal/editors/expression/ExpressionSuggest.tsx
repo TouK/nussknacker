@@ -142,7 +142,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const dataResolved = !isEmpty(definitionData);
     const { processingType } = useSelector(getProcessToDisplay);
 
-    const { value, onValueChange, language, style } = inputProps;
+    const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {

@@ -5,11 +5,6 @@ export const VersionHeader = styled("div")`
     margin: 15px 30px;
 `;
 
-export const NotPresentStyled = styled("div")`
-    margin: 50px 30px;
-    color: ${variables.modalLabelTextColor};
-`;
-
 export const CompareModal = styled("div")`
     max-width: 1000px;
     font-size: 15px;
@@ -31,7 +26,8 @@ export const CompareContainer = styled("div")`
     }
 `;
 
-export const FormRow = styled("div")`
+export const FormRow = styled("div")(
+    ({ theme }) => `
     margin: 7px 30px 8px 30px;
     > :first-child {
         width: 20%;
@@ -48,10 +44,11 @@ export const FormRow = styled("div")`
         height: 40px;
         padding: 0 20px;
         display: inline-block;
-        color: ${variables.defaultTextColor};
+        color: ${theme.custom.colors.secondaryColor};
         background-color: ${variables.commentBkgColor};
         border: none;
         font-size: 14px;
         font-weight: 400;
     }
-`;
+`,
+);

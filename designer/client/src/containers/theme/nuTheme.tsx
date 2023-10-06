@@ -39,7 +39,6 @@ const colors = {
     evenBackground: d3,
     accent: "#668547",
     mineShaft: "#3e3e3e",
-    silver: "#cccccc",
 };
 
 const selectColors = {
@@ -133,7 +132,7 @@ export const nuTheme = createTheme({
                     backgroundColor: custom.colors.warning,
                 },
                 standardInfo: {
-                    backgroundColor: custom.colors.silver,
+                    backgroundColor: custom.colors.secondaryColor,
                     color: custom.colors.secondaryBackground,
                 },
             },

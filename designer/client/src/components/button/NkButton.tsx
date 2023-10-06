@@ -5,7 +5,7 @@ import { buttonBaseStyle } from "./ButtonBaseStyle";
 
 const NkButtonStyled = styled(ButtonWithFocus)(
     ({ theme }) => `
-    ${buttonBaseStyle(theme)};
+    ${buttonBaseStyle(theme).styles};
     width: 180px;
     height: 44px;
     font-weight: 600;

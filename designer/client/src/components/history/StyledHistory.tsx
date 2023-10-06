@@ -4,7 +4,8 @@ import { VersionType } from "./HistoryItem";
 import Badge from "../deployed.svg";
 import color from "color";
 
-export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
+export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
+    ({ theme }) => `
     cursor: pointer;
     overflow: hidden;
     position: relative;
@@ -24,7 +25,7 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         top: 0;
         width: 20px;
         height: 999px;
-        border: 2px solid ${variables.defaultTextColor};
+        border: 2px solid ${theme.custom.colors.secondaryColor};
         border-width: 0px 0 0 2px;
         padding-left: 10px;
     }
@@ -45,35 +46,35 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         width: 16px;
         height: 16px;
         background: ${variables.panelBkgColor};
-        border: 2px solid ${variables.defaultTextColor};
+        border: 2px solid ${theme.custom.colors.secondaryColor};
         border-radius: 50%;
         padding-left: 10px;
     }
 
-    color: ${variables.defaultTextColor};
+    color: ${theme.custom.colors.secondaryColor};
 
     ${(props) =>
         props.type === VersionType.current &&
         `
-    color: ${variables.defaultTextColor};
+    color: ${theme.custom.colors.secondaryColor};
     &:hover::after {
-        background-color: ${variables.defaultTextColor} !important;
+        background-color: ${theme.custom.colors.secondaryColor} !important;
     }
     &::after {
-        background-color: ${variables.defaultTextColor};
+        background-color: ${theme.custom.colors.secondaryColor};
     }
   `}
 
     ${(props) =>
         props.type === VersionType.past &&
         `
-    color: rgba(${color.rgb(variables.defaultTextColor).array()}, 0.8);
+    color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.8);
   `}
 
   ${(props) =>
-        props.type === VersionType.future &&
-        `
-    color: rgba(${color.rgb(variables.defaultTextColor).array()}, 0.3);
+      props.type === VersionType.future &&
+      `
+    color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.3);
   `}
 
   &:hover {
@@ -84,7 +85,8 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
             background-color: ${variables.historyItemBackground};
         }
     }
-`;
+`,
+);
 
 export const TrackVertical = styled("div")`
     width: 8px !important;

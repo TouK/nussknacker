@@ -14,7 +14,7 @@ const BackIcon = styled(ProcessBackIcon)(() => ({
 const ButtonText = styled("span")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: 600,
-    color: theme.custom.colors.silver,
+    color: theme.custom.colors.secondaryColor,
     marginLeft: "8px",
 }));
 

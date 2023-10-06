@@ -36,7 +36,7 @@ export const AddCommentPanel = styled("div")(
         padding: 4px 6px;
         resize: none;
         &:focus {
-            outline-color: ${variables.defaultTextColor};
+            outline-color: ${theme.custom.colors.secondaryColor};
         }
     }
 `,
