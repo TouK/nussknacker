@@ -76,6 +76,22 @@ val testScenarioRunner = TestScenarioRunner
       .build()
 ```
 
+### Injecting custom global variables
+You can inject map of your own or mocked UDFs (user defined functions) or other variables using `.withExtraGlobalVariables` on specified above `TestScenarioRunner` to be passed to engine model data. Example:
+
+```scala
+import pl.touk.nussknacker.engine.util.functions._
+val now = Instant.now()
+val mockedClock = Clock.fixed(now, ZoneId.systemDefault())
+val mockedDate = new DateUtils(mockedClock)
+val globalVariables = Map("DATE" -> date)
+
+val testScenarioRunner = TestScenarioRunner
+      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .withExtraGlobalVariables(globalVariables)
+      .build()
+```
+
 ### Running scenario with data
 
 Scenario can be run with data via `.runWithData` method. This call synchronously executes scenario inside runner with data being passed to input source.

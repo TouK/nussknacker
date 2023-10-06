@@ -64,7 +64,7 @@ class ProcessPosting {
     UpdateProcessCommand(process, UpdateProcessComment(""), None).asJson
   }
 
-  def toRequest[T : Encoder](value: T): RequestEntity = {
+  def toRequest[T: Encoder](value: T): RequestEntity = {
     toRequest(value.asJson)
   }
 

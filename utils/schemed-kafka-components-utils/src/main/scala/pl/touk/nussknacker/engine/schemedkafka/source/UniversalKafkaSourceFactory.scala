@@ -33,33 +33,44 @@ import scala.reflect.ClassTag
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
-class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                                                    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-                                                                                    val processObjectDependencies: ProcessObjectDependencies,
-                                                                                    protected val implProvider: KafkaSourceImplFactory[K, V])
-  extends SourceFactory
+class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](
+    val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val processObjectDependencies: ProcessObjectDependencies,
+    protected val implProvider: KafkaSourceImplFactory[K, V]
+) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]
     with WithExplicitTypesToExtract {
 
   override type State = UniversalKafkaSourceFactoryState[K, V]
 
-  override def typesToExtract: List[TypedClass] = Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
+  override def typesToExtract: List[TypedClass] =
+    Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: NodeId): NodeTransformationDefinition =
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition =
     topicParamStep orElse
       schemaParamStep orElse
       nextSteps(context, dependencies)
 
-  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil, _) =>
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
+          _
+        ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val valueValidationResult = determineSchemaAndType(prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
+      val valueValidationResult = determineSchemaAndType(
+        prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
+        Some(SchemaVersionParamName)
+      )
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
+    case step @ TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
@@ -67,21 +78,29 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
-  Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
-    schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      val schema = schemaData.schema
-      (Some(schemaData), schemaSupportDispatcher.forSchemaType(schema.schemaType()).typeDefinition(schema))
-    }.leftMap(error => CustomNodeError(error.getMessage, paramName))
+  protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
+    schemaDeterminer.determineSchemaUsedInTyping
+      .map { schemaData =>
+        val schema = schemaData.schema
+        (Some(schemaData), schemaSupportDispatcher.forSchemaType(schema.schemaType()).typeDefinition(schema))
+      }
+      .leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
   // Source specific FinalResults
-  protected def prepareSourceFinalResults(preparedTopic: PreparedKafkaTopic,
-                                          valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)],
-                                          context: ValidationContext,
-                                          dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)],
-                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
+  protected def prepareSourceFinalResults(
+      preparedTopic: PreparedKafkaTopic,
+      valueValidationResult: Validated[
+        ProcessCompilationError,
+        (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
+      ],
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      errors: List[ProcessCompilationError]
+  )(implicit nodeId: NodeId): FinalResults = {
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
@@ -91,76 +110,128 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState = UniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        val finalState       = UniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
-        prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
+        prepareSourceFinalErrors(
+          context,
+          dependencies,
+          parameters,
+          keyValidationResult.swap.toList ++ valueValidationResult.swap.toList
+        )
     }
   }
 
   // Source specific FinalResults with errors
-  protected def prepareSourceFinalErrors(context: ValidationContext,
-                                         dependencies: List[NodeDependencyValue],
-                                         parameters: List[(String, DefinedParameter)],
-                                         errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
+  protected def prepareSourceFinalErrors(
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      errors: List[ProcessCompilationError]
+  )(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
     FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.
-  protected def prepareContextInitializer(dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)],
-                                          keyTypingResult: TypingResult,
-                                          valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
-    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
+  protected def prepareContextInitializer(
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      keyTypingResult: TypingResult,
+      valueTypingResult: TypingResult
+  ): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](
+      OutputVariableNameDependency.extract(dependencies),
+      keyTypingResult,
+      valueTypingResult
+    )
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
+  override def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): Source = {
     implicit val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
 
     val preparedTopic = extractPreparedTopic(params)
-    val UniversalKafkaSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
+    val UniversalKafkaSourceFactoryState(
+      keySchemaDataUsedInRuntime,
+      valueSchemaUsedInRuntime,
+      kafkaContextInitializer
+    ) = finalState.get
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
-    val deserializationSchema = schemaBasedMessagesSerdeProvider
-      .deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+    val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
+      .create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
 
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
-    val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
-    val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema,
-      recordFormatter, kafkaContextInitializer, prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original))
-  }
-
-  private def prepareKafkaTestParametersInfo(runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]], topic: String)
-                                            (implicit nodeId: NodeId): KafkaTestParametersInfo = {
-    Validated.fromOption(runtimeSchemaOpt, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
-      .andThen { runtimeSchema =>
-        val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
-        universalSchemaSupport
-          .extractParameters(runtimeSchema.schema)
-          .map { params => KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic)) }
-      }.valueOr(e => throw new RuntimeException(e.toList.mkString("")))
-  }
-
-  private def prepareTestRecord(runtimeSchema: RuntimeSchemaData[ParsedSchema], universalSchemaSupport: UniversalSchemaSupport, topic: String): Any => TestRecord = any => {
-    val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
-    val serializedConsumerRecord = SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
-    TestRecord(
-      SchemaBasedSerializableConsumerRecord[Json, Json](None, runtimeSchema.schemaIdOpt, serializedConsumerRecord).asJson
+    val formatterSchema =
+      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
+    val recordFormatter =
+      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
+    implProvider.createSource(
+      params,
+      dependencies,
+      finalState.get,
+      List(preparedTopic),
+      kafkaConfig,
+      deserializationSchema,
+      recordFormatter,
+      kafkaContextInitializer,
+      prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original)
     )
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
-    TypedNodeDependency[NodeId], OutputVariableNameDependency)
+  private def prepareKafkaTestParametersInfo(runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]], topic: String)(
+      implicit nodeId: NodeId
+  ): KafkaTestParametersInfo = {
+    Validated
+      .fromOption(
+        runtimeSchemaOpt,
+        NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None))
+      )
+      .andThen { runtimeSchema =>
+        val universalSchemaSupport: UniversalSchemaSupport =
+          schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        universalSchemaSupport
+          .extractParameters(runtimeSchema.schema)
+          .map { params =>
+            KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic))
+          }
+      }
+      .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
+  }
+
+  private def prepareTestRecord(
+      runtimeSchema: RuntimeSchemaData[ParsedSchema],
+      universalSchemaSupport: UniversalSchemaSupport,
+      topic: String
+  ): Any => TestRecord = any => {
+    val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
+    val serializedConsumerRecord =
+      SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
+    TestRecord(
+      SchemaBasedSerializableConsumerRecord[Json, Json](
+        None,
+        runtimeSchema.schemaIdOpt,
+        serializedConsumerRecord
+      ).asJson
+    )
+  }
+
+  override def nodeDependencies: List[NodeDependency] =
+    List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
 }
 
 object UniversalKafkaSourceFactory {
 
-  case class UniversalKafkaSourceFactoryState[K, V](keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                                    valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                                    contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
+  case class UniversalKafkaSourceFactoryState[K, V](
+      keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]
+  )
 
 }

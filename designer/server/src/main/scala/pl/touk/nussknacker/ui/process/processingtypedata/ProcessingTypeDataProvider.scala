@@ -22,7 +22,7 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
   def forType(typ: ProcessingType): Option[T]
 
-  //TODO: replace with proper forType handling
+  // TODO: replace with proper forType handling
   def forTypeUnsafe(typ: ProcessingType): T = forType(typ)
     .getOrElse(throw new IllegalArgumentException(s"Unknown typ: $typ, known types are: ${all.keys.mkString(", ")}"))
 
@@ -58,7 +58,8 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
 }
 
-class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getCombined: => C) extends ProcessingTypeDataProvider[T, C] {
+class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getCombined: => C)
+    extends ProcessingTypeDataProvider[T, C] {
 
   override def forType(typ: ProcessingType): Option[T] = map.get(typ)
 
@@ -71,8 +72,10 @@ class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getC
 object MapBasedProcessingTypeDataProvider {
 
   def withEmptyCombinedData[T](map: Map[ProcessingType, T]): ProcessingTypeDataProvider[T, Nothing] = {
-    new MapBasedProcessingTypeDataProvider[T, Nothing](map, throw new IllegalStateException("Processing type data provider does not have combined data!"))
+    new MapBasedProcessingTypeDataProvider[T, Nothing](
+      map,
+      throw new IllegalStateException("Processing type data provider does not have combined data!")
+    )
   }
 
 }
-

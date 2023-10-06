@@ -15,13 +15,15 @@ import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 
-  private val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] = KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
+  private val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] =
+    KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
 
   private val producer: KafkaProducer[String, String] = KafkaTestUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
+  private lazy val adminClient =
+    KafkaUtils.createKafkaAdminClient(KafkaConfig(Some(Map("bootstrap.servers" -> kafkaAddress)), None))
 
   def createTopic(name: String, partitions: Int = 5): Unit =
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
@@ -35,9 +37,16 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   def sendRawMessage(topic: String, content: Array[Byte]): Future[RecordMetadata] =
     sendRawMessage(topic, null, content)
 
-  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders): Future[RecordMetadata] = {
+  def sendRawMessage(
+      topic: String,
+      key: Array[Byte],
+      content: Array[Byte],
+      partition: Option[Int] = None,
+      timestamp: java.lang.Long = null,
+      headers: Headers = KafkaRecordUtils.emptyHeaders
+  ): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
-    val record = createRecord(topic, key, content, partition, timestamp, headers)
+    val record  = createRecord(topic, key, content, partition, timestamp, headers)
     rawProducer.send(record, producerCallback(promise))
     promise.future
   }
@@ -45,45 +54,62 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   def sendMessage[T: Encoder](topic: String, content: T): Future[RecordMetadata] =
     sendMessage(topic, null, content)
 
-  def sendMessage[T: Encoder](topic: String, key: String, content: T, partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders): Future[RecordMetadata] = {
+  def sendMessage[T: Encoder](
+      topic: String,
+      key: String,
+      content: T,
+      partition: Option[Int] = None,
+      timestamp: java.lang.Long = null,
+      headers: Headers = KafkaRecordUtils.emptyHeaders
+  ): Future[RecordMetadata] = {
     val strContent = content match {
       case str: String => str
-      case _ => implicitly[Encoder[T]].apply(content).noSpaces
+      case _           => implicitly[Encoder[T]].apply(content).noSpaces
     }
 
     val promise = Promise[RecordMetadata]()
-    val record = createRecord(topic, key, strContent, partition, timestamp, headers)
+    val record  = createRecord(topic, key, strContent, partition, timestamp, headers)
     producer.send(record, producerCallback(promise))
     promise.future
   }
 
   def createConsumer(groupIdOpt: Option[String] = None): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
     // each consumer by default is in other consumer group to make sure that messages won't be stolen by other consumer consuming the same topic
-    val groupId = groupIdOpt.getOrElse(s"$id-${UUID.randomUUID()}")
-    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
+    val groupId  = groupIdOpt.getOrElse(s"$id-${UUID.randomUUID()}")
+    val props    = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer
   }
 
-  private def createRecord[K, V](topic: String, key: K, content: V, partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders) =
-    partition.map(new ProducerRecord[K, V](topic, _, timestamp, key, content, headers)).getOrElse(
-      new ProducerRecord[K, V](topic, null, timestamp, key, content, headers)
-    )
+  private def createRecord[K, V](
+      topic: String,
+      key: K,
+      content: V,
+      partition: Option[Int] = None,
+      timestamp: java.lang.Long = null,
+      headers: Headers = KafkaRecordUtils.emptyHeaders
+  ) =
+    partition
+      .map(new ProducerRecord[K, V](topic, _, timestamp, key, content, headers))
+      .getOrElse(
+        new ProducerRecord[K, V](topic, null, timestamp, key, content, headers)
+      )
 
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))
 
-  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = (metadata: RecordMetadata, exception: Exception) => {
-    val result =
-      if (exception == null) {
-        Success(metadata)
-      } else {
-        logger.error("Error while sending kafka message", exception)
-        Failure(exception)
-      }
-    callback(result)
-  }
+  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback =
+    (metadata: RecordMetadata, exception: Exception) => {
+      val result =
+        if (exception == null) {
+          Success(metadata)
+        } else {
+          logger.error("Error while sending kafka message", exception)
+          Failure(exception)
+        }
+      callback(result)
+    }
 
   def flush(): Unit = {
     producer.flush()

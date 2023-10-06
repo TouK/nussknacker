@@ -16,9 +16,9 @@ object interpreterTypes {
 
   case class EndResult[Result](nodeId: NodeId, context: Context, result: Result)
 
-  //F represents effects (Future, State etc.), Input represents input data type,
+  // F represents effects (Future, State etc.), Input represents input data type,
   // Result represents specific output from Sink (e.g. in request-response engine)
-  //TODO: can Result be represented as Writer[Result, Unit]??
+  // TODO: can Result be represented as Writer[Result, Unit]??
   trait ScenarioInterpreter[F[_], Input, Result] {
 
     def invoke(inputBatch: ScenarioInputBatch[Input]): F[ResultType[EndResult[Result]]]

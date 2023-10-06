@@ -18,7 +18,7 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
   override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableCollection")
 
   override def write(kryo: Kryo, out: Output, obj: java.util.List[_]): Unit = {
-    //Write the size:
+    // Write the size:
     out.writeInt(obj.size(), true)
     val it = obj.iterator()
     while (it.hasNext) {
@@ -30,7 +30,7 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
   override def read(kryo: Kryo, in: Input, obj: Class[java.util.List[_]]): java.util.List[_] = {
     val size = in.readInt(true)
     // Go ahead and be faster, and not as functional cool, and be mutable in here
-    var idx = 0
+    var idx  = 0
     val list = new java.util.ArrayList[AnyRef](size)
     while (idx < size) {
       val item = kryo.readClassAndObject(in)
@@ -49,7 +49,7 @@ object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](fal
   override def clazz: Class[_] = getClass.getClassLoader.loadClass("java.util.Collections$UnmodifiableMap")
 
   override def write(kryo: Kryo, out: Output, obj: java.util.Map[_, _]): Unit = {
-    //Write the size:
+    // Write the size:
     out.writeInt(obj.size(), true)
     val it = obj.entrySet().iterator()
     while (it.hasNext) {
@@ -63,16 +63,16 @@ object SpelMapHack extends SerializerWithSpecifiedClass[java.util.Map[_, _]](fal
     val size = in.readInt(true)
     // Go ahead and be faster, and not as functional cool, and be mutable in here
     var idx = 0
-     val map = new util.HashMap[AnyRef, AnyRef](size)
+    val map = new util.HashMap[AnyRef, AnyRef](size)
 
-     while (idx < size) {
-       val key = kryo.readClassAndObject(in)
-       val value = kryo.readClassAndObject(in)
+    while (idx < size) {
+      val key   = kryo.readClassAndObject(in)
+      val value = kryo.readClassAndObject(in)
 
-       map.put(key, value)
-       idx += 1
-     }
-     map
+      map.put(key, value)
+      idx += 1
+    }
+    map
   }
 
 }

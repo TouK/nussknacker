@@ -51,32 +51,40 @@ trait AnonymousAccess extends Directives {
   def authenticateReally(): AuthenticationDirective[AuthenticatedUser]
 
   def authenticateOrPermitAnonymously(anonymousUser: AuthenticatedUser): AuthenticationDirective[AuthenticatedUser] = {
-    def handleAuthorizationFailedRejection = handleRejections(RejectionHandler.newBuilder()
-      // If the authorization rejection was caused by anonymous access,
-      // we issue the Unauthorized status code with a challenge instead of the Forbidden
-      .handle { case AuthorizationFailedRejection => authenticateReally() { _ => reject } }
-      .result())
+    def handleAuthorizationFailedRejection = handleRejections(
+      RejectionHandler
+        .newBuilder()
+        // If the authorization rejection was caused by anonymous access,
+        // we issue the Unauthorized status code with a challenge instead of the Forbidden
+        .handle { case AuthorizationFailedRejection => authenticateReally() { _ => reject } }
+        .result()
+    )
 
-    authenticateReally().optional.flatMap(_.map(provide).getOrElse(
-      handleAuthorizationFailedRejection.tmap(_ => anonymousUser)
-    ))
+    authenticateReally().optional.flatMap(
+      _.map(provide).getOrElse(
+        handleAuthorizationFailedRejection.tmap(_ => anonymousUser)
+      )
+    )
   }
 
   def authenticate(): Directive1[AuthenticatedUser] = {
-    anonymousUserRole.map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
+    anonymousUserRole
+      .map(role => AuthenticatedUser("anonymous", "anonymous", Set(role)))
       .map(authenticateOrPermitAnonymously)
       .getOrElse(authenticateReally())
 
   }
+
 }
 
 object AuthenticationResources {
-  def apply(config: Config,
-            classLoader: ClassLoader,
-            sttpBackend: SttpBackend[Future, Any])
-           (implicit ec: ExecutionContext): AuthenticationResources = {
+
+  def apply(config: Config, classLoader: ClassLoader, sttpBackend: SttpBackend[Future, Any])(
+      implicit ec: ExecutionContext
+  ): AuthenticationResources = {
     implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
     AuthenticationProvider(config, classLoader)
       .createAuthenticationResources(config, classLoader)
   }
+
 }

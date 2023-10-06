@@ -11,29 +11,49 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.test.{
+  PreliminaryScenarioTestData,
+  PreliminaryScenarioTestRecord,
+  TestInfoProvider,
+  TestingCapabilities
+}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
-class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
-  with NuResourcesTest with PatientScalaFutures with EitherValuesDetailedMessage {
+class TestInfoResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with FailFastCirceSupport
+    with NuResourcesTest
+    with PatientScalaFutures
+    with EitherValuesDetailedMessage {
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
-    override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
-    = TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
+    override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities =
+      TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
 
     override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
 
-    override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
-    = Some(PreliminaryScenarioTestData(PreliminaryScenarioTestRecord.Standard("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
+    override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData] = Some(
+      PreliminaryScenarioTestData(
+        PreliminaryScenarioTestRecord.Standard(
+          "sourceId",
+          Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")
+        ) :: Nil
+      )
+    )
 
-    override def prepareTestData(preliminaryTestData: PreliminaryScenarioTestData, scenario: CanonicalProcess): Either[String, ScenarioTestData] = {
+    override def prepareTestData(
+        preliminaryTestData: PreliminaryScenarioTestData,
+        scenario: CanonicalProcess
+    ): Either[String, ScenarioTestData] = {
       ???
     }
 
@@ -42,8 +62,11 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  private def route(additionalDataSize: Int = 0) = new TestInfoResources(processAuthorizer, futureFetchingProcessRepository,
-    createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize))))
+  private def route(additionalDataSize: Int = 0) = new TestInfoResources(
+    processAuthorizer,
+    futureFetchingProcessRepository,
+    createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize)))
+  )
 
   test("generates data") {
     saveProcess(process) {
@@ -58,10 +81,16 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("refuses to generate too much data") {
     saveProcess(process) {
-      Post("/testInfo/generate/100", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
+      Post("/testInfo/generate/100", posting.toEntity(process)) ~> withPermissions(
+        route(),
+        testPermissionAll
+      ) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
-      Post("/testInfo/generate/1", posting.toEntity(process)) ~> withPermissions(route(additionalDataSize = 20000), testPermissionAll) ~> check {
+      Post("/testInfo/generate/1", posting.toEntity(process)) ~> withPermissions(
+        route(additionalDataSize = 20000),
+        testPermissionAll
+      ) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
@@ -69,7 +98,10 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("get full capabilities when user has deploy role") {
     saveProcess(process) {
-      Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
+      Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(
+        route(),
+        testPermissionAll
+      ) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
         entity.hcursor.downField("canBeTested").as[Boolean].rightValue shouldBe true
@@ -80,7 +112,10 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("get empty capabilities when user hasn't got deploy role") {
     saveProcess(process) {
-      Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionEmpty) ~> check {
+      Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(
+        route(),
+        testPermissionEmpty
+      ) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
         entity.hcursor.downField("canBeTested").as[Boolean].rightValue shouldBe false

@@ -11,13 +11,15 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 
 trait KafkaAvroSinkImplFactory {
 
-  def createSink(preparedTopic: PreparedKafkaTopic,
-                 key: LazyParameter[AnyRef],
-                 value: LazyParameter[AnyRef],
-                 kafkaConfig: KafkaConfig,
-                 serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
-                 clientId: String,
-                 schema: RuntimeSchemaData[AvroSchema],
-                 validationMode: ValidationMode): Sink
+  def createSink(
+      preparedTopic: PreparedKafkaTopic,
+      key: LazyParameter[AnyRef],
+      value: LazyParameter[AnyRef],
+      kafkaConfig: KafkaConfig,
+      serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
+      clientId: String,
+      schema: RuntimeSchemaData[AvroSchema],
+      validationMode: ValidationMode
+  ): Sink
 
 }

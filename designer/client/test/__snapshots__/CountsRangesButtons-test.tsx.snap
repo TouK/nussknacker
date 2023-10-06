@@ -1,9 +1,67 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CountsRangesButtons tests should render buttons 1`] = `
+.emotion-0 {
+  border: 1px solid #666666;
+  border-radius: 0;
+  background-color: #4d4d4d;
+  color: #cccccc;
+  -webkit-transition: #4d4d4d 0.2s;
+  transition: #4d4d4d 0.2s;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  min-width: 80px;
+  font-size: 12px;
+  padding: 5px;
+  font-weight: 400;
+  margin: 10px;
+}
+
+.emotion-0:disabled,
+.emotion-0.disabled {
+  opacity: 0.3;
+  cursor: not-allowed!important;
+}
+
+.emotion-0:not(:disabled):hover,
+.emotion-0:not(.disabled):hover {
+  background-color: #444444;
+}
+
+.emotion-2 {
+  border: 1px solid #666666;
+  border-radius: 0;
+  background-color: #4d4d4d;
+  color: #cccccc;
+  -webkit-transition: #4d4d4d 0.2s;
+  transition: #4d4d4d 0.2s;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  width: 100%;
+  font-size: 12px;
+  padding: 5px;
+  font-weight: 400;
+  margin: 10px;
+}
+
+.emotion-2:disabled,
+.emotion-2.disabled {
+  opacity: 0.3;
+  cursor: not-allowed!important;
+}
+
+.emotion-2:not(:disabled):hover,
+.emotion-2:not(.disabled):hover {
+  background-color: #444444;
+}
+
 <div>
   <button
-    class="withFocus predefinedRangeButton"
+    class="withFocus emotion-0"
     style="flex: 1;"
     title="range1"
     type="button"
@@ -11,7 +69,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
     range1
   </button>
   <button
-    class="withFocus predefinedRangeButton"
+    class="withFocus emotion-0"
     style="flex: 1;"
     title="range2"
     type="button"
@@ -25,7 +83,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
       style="position: relative; width: 100%; height: 100%; display: flex;"
     >
       <button
-        class="withFocus predefinedRangeButton"
+        class="withFocus emotion-2"
         style="flex: 1;"
         type="button"
       >

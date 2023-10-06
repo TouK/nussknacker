@@ -8,11 +8,27 @@ import cats.effect.IO
 import cats.implicits.catsSyntaxSemigroup
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
-import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
+  AddPropertyNextToGetter,
+  DoNothing,
+  ReplaceGetterWithProperty
+}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedNull, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  SingleTypingResult,
+  Typed,
+  TypedNull,
+  TypedUnion,
+  TypingResult,
+  Unknown
+}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{
+  ClazzDefinition,
+  FunctionalMethodInfo,
+  MethodInfo,
+  StaticMethodInfo
+}
 
 import java.lang.annotation.Annotation
 
@@ -20,29 +36,32 @@ object EspTypeUtils {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def clazzDefinition(clazz: Class[_])
-                     (implicit settings: ClassExtractionSettings): ClazzDefinition =
+  def clazzDefinition(clazz: Class[_])(implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(
       Typed(clazz),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )
 
-  private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)
-                                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)(
+      implicit settings: ClassExtractionSettings
+  ): Map[String, List[MethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
-    val methods = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
-    val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
+    val methods          = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
+    val fields           = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
     filterHiddenParameterAndReturnType(methods ++ fields)
   }
 
-  private def extractPublicMethods(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
-                                  (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def extractPublicMethods(
+      clazz: Class[_],
+      membersPredicate: VisibleMembersPredicate,
+      staticMethodsAndFields: Boolean
+  )(implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     /* From getMethods javadoc: If this {@code Class} object represents an interface then the returned array
            does not contain any implicitly declared methods from {@code Object}.
            The same for primitives - we assume that languages like SpEL will be able to do boxing
            It could be significant only for toString, as we filter out other Object methods, but to be consistent...
-         */
+     */
     val additionalMethods = if (clazz.isInterface) {
       classOf[Object].getMethods.toList
     } else if (clazz.isPrimitive) {
@@ -53,7 +72,8 @@ object EspTypeUtils {
     val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
     val methods =
-      if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
+      if (staticMethodsAndFields)
+        publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
       else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
 
     // "varargs" annotation generates two methods - one with scala style varArgs
@@ -64,8 +84,9 @@ object EspTypeUtils {
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(_))
 
-    val staticMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[StaticMethodInfo]).asInstanceOf[List[(String, StaticMethodInfo)]]
-    val functionalMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
+    val staticMethodInfos =
+      methodNameAndInfoList.filter(_._2.isInstanceOf[StaticMethodInfo]).asInstanceOf[List[(String, StaticMethodInfo)]]
+    val functionalMethodInfos        = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
     val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValuesNow(_.map(_._2)).toMap
 
     deduplicateMethodsWithGenericReturnType(staticMethodInfos)
@@ -73,20 +94,21 @@ object EspTypeUtils {
       .combine(groupedFunctionalMethodInfos)
   }
 
-  //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
-  private def filterHiddenParameterAndReturnType(infos: Map[String, List[MethodInfo]])
-                                                (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  // We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
+  private def filterHiddenParameterAndReturnType(
+      infos: Map[String, List[MethodInfo]]
+  )(implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(t: TypingResult): Boolean = t match {
       case str: SingleTypingResult =>
         !settings.isHidden(str.objType.klass) && str.objType.params.forall(typeResultVisible)
       case TypedUnion(ts) => ts.forall(typeResultVisible)
-      case TypedNull => true
-      case Unknown => true
+      case TypedNull      => true
+      case Unknown        => true
     }
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
       val noVarArgTypes = methodInfo.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
-      val varArgTypes = methodInfo.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
-      val resultTypes = methodInfo.signatures.toList.map(_.result)
+      val varArgTypes   = methodInfo.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
+      val resultTypes   = methodInfo.signatures.toList.map(_.result)
       (noVarArgTypes ::: varArgTypes ::: resultTypes).forall(typeResultVisible)
     }
     infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
@@ -103,43 +125,45 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.signature.noVarArgs, mi._2.signature.varArg))
-    groupedByNameAndParameters.toList.map {
-      case (_, methodsForParams) =>
+    val groupedByNameAndParameters =
+      methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.signature.noVarArgs, mi._2.signature.varArg))
+    groupedByNameAndParameters.toList
+      .map { case (_, methodsForParams) =>
         /*
           we want to find "most specific" class, however surprisingly it's not always possible, because we treat e.g. isLeft and left methods
           as equal (for javabean-like access) and e.g. in scala Either this is perfectly possible. In case we cannot find most specific
           class we pick arbitrary one (we sort to avoid randomness)
          */
 
-        methodsForParams.find { case (_, methodInfo) =>
-          methodsForParams.forall(mi => methodInfo.signature.result.canBeSubclassOf(mi._2.signature.result))
-        }.getOrElse(methodsForParams.minBy(_._2.signature.result.display))
-    }.toGroupedMap
-      //we sort only to avoid randomness
+        methodsForParams
+          .find { case (_, methodInfo) =>
+            methodsForParams.forall(mi => methodInfo.signature.result.canBeSubclassOf(mi._2.signature.result))
+          }
+          .getOrElse(methodsForParams.minBy(_._2.signature.result.display))
+      }
+      .toGroupedMap
+      // we sort only to avoid randomness
       .mapValuesNow(_.sortBy(_.toString))
   }
 
   // SpEL is able to access getters using property name so you can write `obj.foo` instead of `obj.getFoo`
-  private def collectMethodNames(method: Method)
-                                (implicit settings: ClassExtractionSettings): List[String] = {
+  private def collectMethodNames(method: Method)(implicit settings: ClassExtractionSettings): List[String] = {
     val isGetter = method.getName.matches("^(get|is).+") && method.getParameterCount == 0
     if (isGetter) {
       val propertyMethod = StringUtils.uncapitalize(method.getName.replaceAll("^get|^is", ""))
       settings.propertyExtractionStrategy match {
-        case AddPropertyNextToGetter    => List(method.getName, propertyMethod)
-        case ReplaceGetterWithProperty  => List(propertyMethod)
-        case DoNothing                  => List(method.getName)
+        case AddPropertyNextToGetter   => List(method.getName, propertyMethod)
+        case ReplaceGetterWithProperty => List(propertyMethod)
+        case DoNothing                 => List(method.getName)
       }
     } else {
       List(method.getName)
     }
   }
 
-  private def extractMethod(method: Method)
-                           (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] =
+  private def extractMethod(method: Method)(implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] =
     extractAnnotation(method, classOf[GenericType]) match {
-      case None => extractRegularMethod(method)
+      case None             => extractRegularMethod(method)
       case Some(annotation) => extractGenericMethod(method, annotation)
     }
 
@@ -154,39 +178,51 @@ object EspTypeUtils {
       case e: InvocationTargetException =>
         throw new IllegalArgumentException(s"TypingFunction's constructor for ${method.getName} failed.", e)
       case e: NoSuchMethodException =>
-        throw new IllegalArgumentException(s"Could not find parameterless constructor for method ${method.getName} or its TypingFunction was declared inside non-static class.", e)
+        throw new IllegalArgumentException(
+          s"Could not find parameterless constructor for method ${method.getName} or its TypingFunction was declared inside non-static class.",
+          e
+        )
       case e: Exception =>
         throw new IllegalArgumentException(s"Could not extract information about generic method ${method.getName}.", e)
     }
   }
 
-  private def extractGenericMethod(method: Method, genericType: GenericType)
-                                  (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
+  private def extractGenericMethod(method: Method, genericType: GenericType)(
+      implicit settings: ClassExtractionSettings
+  ): List[(String, MethodInfo)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
 
     val methodTypeInfo = extractGenericParameters(typeFunctionInstance, method)
 
-    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
-      x => typeFunctionInstance.computeResultType(x),
-      methodTypeInfo,
-      methodName,
-      extractNussknackerDocs(method)
-    ))
+    collectMethodNames(method).map(methodName =>
+      methodName -> FunctionalMethodInfo(
+        x => typeFunctionInstance.computeResultType(x),
+        methodTypeInfo,
+        methodName,
+        extractNussknackerDocs(method)
+      )
+    )
   }
 
-  private def extractRegularMethod(method: Method)
-                                  (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
-    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
-      extractMethodTypeInfo(method),
-      methodName,
-      extractNussknackerDocs(method)
-    ))
+  private def extractRegularMethod(
+      method: Method
+  )(implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
+    collectMethodNames(method).map(methodName =>
+      methodName -> StaticMethodInfo(
+        extractMethodTypeInfo(method),
+        methodName,
+        extractNussknackerDocs(method)
+      )
+    )
 
-  private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
-                                 (implicit settings: ClassExtractionSettings): Map[String, StaticMethodInfo] = {
+  private def extractPublicFields(
+      clazz: Class[_],
+      membersPredicate: VisibleMembersPredicate,
+      staticMethodsAndFields: Boolean
+  )(implicit settings: ClassExtractionSettings): Map[String, StaticMethodInfo] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     val fields =
-      if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
+      if (staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
       field.getName -> StaticMethodInfo(
@@ -207,22 +243,28 @@ object EspTypeUtils {
 
     definedParametersOption
       .map(MethodTypeInfoSubclassChecker.check(_, autoExtractedParameters))
-      .collect{ case Invalid(e) => e }
+      .collect { case Invalid(e) => e }
       .foreach { x =>
         val errorString = x.map(_.message).toList.mkString("; ")
-        throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature: $errorString")
+        throw new IllegalArgumentException(
+          s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature: $errorString"
+        )
       }
 
     NonEmptyList.fromList(definedParametersOption).getOrElse(NonEmptyList.one(autoExtractedParameters))
   }
 
   private def extractMethodTypeInfo(method: Method): MethodTypeInfo = {
-    MethodTypeInfo.fromList(for {
-      param <- method.getParameters.toList
-      annotationOption = extractAnnotation(param, classOf[ParamName])
-      name = annotationOption.map(_.value).getOrElse(param.getName)
-      paramType = extractParameterType(param)
-    } yield Parameter(name, paramType), method.isVarArgs, extractMethodReturnType(method))
+    MethodTypeInfo.fromList(
+      for {
+        param <- method.getParameters.toList
+        annotationOption = extractAnnotation(param, classOf[ParamName])
+        name             = annotationOption.map(_.value).getOrElse(param.getName)
+        paramType        = extractParameterType(param)
+      } yield Parameter(name, paramType),
+      method.isVarArgs,
+      extractMethodReturnType(method)
+    )
   }
 
   def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
@@ -230,16 +272,21 @@ object EspTypeUtils {
   }
 
   private def extractFieldReturnType(field: Field): TypingResult = {
-    extractGenericReturnType(field.getGenericType).orElse(extractClass(field.getGenericType)).getOrElse(Typed(field.getType))
+    extractGenericReturnType(field.getGenericType)
+      .orElse(extractClass(field.getGenericType))
+      .getOrElse(Typed(field.getType))
   }
 
   def extractMethodReturnType(method: Method): TypingResult = {
-    extractGenericReturnType(method.getGenericReturnType).orElse(extractClass(method.getGenericReturnType)).getOrElse(Typed(method.getReturnType))
+    extractGenericReturnType(method.getGenericReturnType)
+      .orElse(extractClass(method.getGenericReturnType))
+      .getOrElse(Typed(method.getReturnType))
   }
 
   private def extractGenericReturnType(typ: Type): Option[TypingResult] = {
     typ match {
-      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => extractGenericMonadReturnType(t, t.getRawType.asInstanceOf[Class[_]])
+      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] =>
+        extractGenericMonadReturnType(t, t.getRawType.asInstanceOf[Class[_]])
       case _ => None
     }
   }
@@ -249,10 +296,15 @@ object EspTypeUtils {
   // Arguments of generic types that are Scala's primitive types are always erased by Scala compiler to java.lang.Object:
   // * issue: https://github.com/scala/bug/issues/4214 (and discussion at https://groups.google.com/g/scala-internals/c/K2dELqajQbg/m/gV0tbjRHJ4UJ)
   // * commit: https://github.com/scala/scala/commit/e42733e9fe1f3af591976fbb48b66035253d85b9
-  private def extractGenericMonadReturnType(genericReturnType: ParameterizedType, genericReturnRawType: Class[_]): Option[TypingResult] = {
+  private def extractGenericMonadReturnType(
+      genericReturnType: ParameterizedType,
+      genericReturnRawType: Class[_]
+  ): Option[TypingResult] = {
     // see ScalaLazyPropertyAccessor
     if (classOf[StateT[IO, _, _]].isAssignableFrom(genericReturnRawType)) {
-      val returnType = genericReturnType.getActualTypeArguments.apply(3) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
+      val returnType = genericReturnType.getActualTypeArguments.apply(
+        3
+      ) // it's IndexedStateT[IO, ContextWithLazyValuesProvider, ContextWithLazyValuesProvider, A]
       extractClass(returnType)
     }
     // see ScalaOptionOrNullPropertyAccessor
@@ -264,26 +316,29 @@ object EspTypeUtils {
     else if (classOf[Optional[_]].isAssignableFrom(genericReturnRawType)) {
       val optionalGenericType = genericReturnType.getActualTypeArguments.apply(0)
       extractClass(optionalGenericType)
-    }
-    else None
+    } else None
   }
 
-  //TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
-  //http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
+  // TODO this is not correct for primitives and complicated hierarchies, but should work in most cases
+  // http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/ParameterizedType.html#getActualTypeArguments--
   private def extractClass(typ: Type): Option[TypingResult] = {
     typ match {
       case t: Class[_] => Some(Typed(t))
-      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] => Some(extractGenericParams(t, t.getRawType.asInstanceOf[Class[_]]))
+      case t: ParameterizedType if t.getRawType.isInstanceOf[Class[_]] =>
+        Some(extractGenericParams(t, t.getRawType.asInstanceOf[Class[_]]))
       case _ => None
     }
   }
 
   private def extractGenericParams(paramsType: ParameterizedType, paramsRawType: Class[_]): TypingResult = {
-    Typed.genericTypeClass(paramsRawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
+    Typed.genericTypeClass(
+      paramsRawType,
+      paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown))
+    )
   }
 
   private def extractScalaVersionOfVarArgMethod(method: Method): Option[Method] = {
-    val obj = method.getDeclaringClass
+    val obj  = method.getDeclaringClass
     val name = method.getName
     val args = method.getParameterTypes.toList
     args match {
@@ -298,11 +353,13 @@ object EspTypeUtils {
   }
 
   private def extractJavaVersionOfVarArgMethod(method: Method): Option[Method] = {
-    method.getDeclaringClass.getMethods.find(m => m.isVarArgs && (m.getParameterTypes.toList match {
-      case noVarArgs :+ varArgArr if varArgArr.isArray =>
-        method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
-      case _ => false
-    }))
+    method.getDeclaringClass.getMethods.find(m =>
+      m.isVarArgs && (m.getParameterTypes.toList match {
+        case noVarArgs :+ varArgArr if varArgArr.isArray =>
+          method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
+        case _ => false
+      })
+    )
   }
 
   // "varargs" annotation creates new function that has java style varArgs

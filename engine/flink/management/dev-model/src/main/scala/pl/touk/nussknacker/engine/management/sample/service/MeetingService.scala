@@ -16,47 +16,46 @@ object MeetingService extends Service with Serializable with TimeMeasuringServic
   override protected def serviceName: String = "meetingService"
 
   @MethodToInvoke
-  def invoke(@ParamName("Date") date: LocalDateTime,
-             @ParamName("EndTime") endTime: LocalTime,
-             @ParamName("Duration")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(
-                 `type` = SimpleEditorType.DURATION_EDITOR,
-                 timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
-               ),
-               defaultMode = DualEditorMode.SIMPLE
-             )
-             duration: Duration,
-
-             @ParamName("Period")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(
-                 `type` = SimpleEditorType.PERIOD_EDITOR,
-                 timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
-               ),
-               defaultMode = DualEditorMode.SIMPLE
-             )
-             period: Period,
-
-             @ParamName("NextMeeting")
-             @Nullable
-             nextMeeting: LocalDate,
-
-             @ParamName("Scheduler")
-             @DualEditor(
-               simpleEditor = new SimpleEditor (
-                  `type` = SimpleEditorType.CRON_EDITOR
-               ),
-               defaultMode = DualEditorMode.SIMPLE
-             )
-             @Nullable
-             cronScheduler: Cron
-            )(implicit ec: ExecutionContext): Future[Unit] = measuring {
-              Thread.sleep((math.random() * 10).toLong)
-              if (math.random() < 0.25) {
-                Future.failed(new IllegalArgumentException("Bad luck, your meeting failed..."))
-              } else {
-                Future.successful(())
-              }
+  def invoke(
+      @ParamName("Date") date: LocalDateTime,
+      @ParamName("EndTime") endTime: LocalTime,
+      @ParamName("Duration")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(
+          `type` = SimpleEditorType.DURATION_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.DAYS, ChronoUnit.HOURS)
+        ),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      duration: Duration,
+      @ParamName("Period")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(
+          `type` = SimpleEditorType.PERIOD_EDITOR,
+          timeRangeComponents = Array(ChronoUnit.YEARS, ChronoUnit.MONTHS)
+        ),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      period: Period,
+      @ParamName("NextMeeting")
+      @Nullable
+      nextMeeting: LocalDate,
+      @ParamName("Scheduler")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(
+          `type` = SimpleEditorType.CRON_EDITOR
+        ),
+        defaultMode = DualEditorMode.SIMPLE
+      )
+      @Nullable
+      cronScheduler: Cron
+  )(implicit ec: ExecutionContext): Future[Unit] = measuring {
+    Thread.sleep((math.random() * 10).toLong)
+    if (math.random() < 0.25) {
+      Future.failed(new IllegalArgumentException("Bad luck, your meeting failed..."))
+    } else {
+      Future.successful(())
+    }
   }
+
 }

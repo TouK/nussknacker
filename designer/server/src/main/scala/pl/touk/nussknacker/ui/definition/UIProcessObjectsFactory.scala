@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ComponentIdWithName, ProcessDefinition, ProcessDefinitionWithComponentIds, mapByName}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+  ComponentIdWithName,
+  ProcessDefinition,
+  ProcessDefinitionWithComponentIds,
+  mapByName
+}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -23,7 +28,10 @@ import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
-import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
+import pl.touk.nussknacker.ui.definition.additionalproperty.{
+  AdditionalPropertyValidatorDeterminerChain,
+  UiAdditionalPropertyEditorDeterminer
+}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -34,10 +42,12 @@ object UIProcessObjectsFactory {
 
   private lazy val additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = {
     Multiplicity(ScalaServiceLoader.load[AdditionalComponentsUIConfigProvider](getClass.getClassLoader)) match {
-      case Empty() => AdditionalComponentsUIConfigProvider.empty
+      case Empty()       => AdditionalComponentsUIConfigProvider.empty
       case One(provider) => provider
       case Many(moreThanOne) =>
-        throw new IllegalArgumentException(s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne")
+        throw new IllegalArgumentException(
+          s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne"
+        )
     }
   }
 
@@ -60,12 +70,17 @@ object UIProcessObjectsFactory {
     val combinedComponentsConfig =
       getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentInputs, processDefinition)
 
-    val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig)) // combinedComponentsConfig potentially changes componentIds
+    val componentIdProvider =
+      new DefaultComponentIdProvider(
+        Map(processingType -> combinedComponentsConfig)
+      ) // combinedComponentsConfig potentially changes componentIds
 
     val finalProcessDefinition = finalizeProcessDefinition(
       processDefinition.withComponentIds(componentIdProvider, processingType),
       combinedComponentsConfig,
-      additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).mapValuesNow(_.toSingleComponentConfig)
+      additionalComponentsUIConfigProvider
+        .getAllForProcessingType(processingType)
+        .mapValuesNow(_.toSingleComponentConfig)
     )
 
     UIProcessObjects(
@@ -77,7 +92,9 @@ object UIProcessObjectsFactory {
         componentsConfig = combinedComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.processConfig),
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.map { case (idWithName, (_, additionalData)) => (idWithName, additionalData) }.toMap,
+        customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.map {
+          case (idWithName, (_, additionalData)) => (idWithName, additionalData)
+        }.toMap,
         processingType
       ),
       processDefinition = createUIProcessDefinition(
@@ -86,7 +103,9 @@ object UIProcessObjectsFactory {
         modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
-      componentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig, // combinedComponentsConfig also contains config for components not part of processDefinition (fragments, base components)
+      componentsConfig = toComponentsUiConfig(
+        finalProcessDefinition
+      ) |+| combinedComponentsConfig, // combinedComponentsConfig also contains config for components not part of processDefinition (fragments, base components)
       // TODO remove `componentsConfig` field? merge it with processDefinition? it would require FE changes
       additionalPropertiesConfig = additionalPropertiesConfig
         .filter(_ =>
@@ -103,14 +122,19 @@ object UIProcessObjectsFactory {
     )
   }
 
-  private def toComponentsUiConfig(processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition]): ComponentsUiConfig =
-    processDefinition.allDefinitions.map{ case (idWithName, value) => idWithName.name -> value.componentConfig}.toMap
+  private def toComponentsUiConfig(
+      processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition]
+  ): ComponentsUiConfig =
+    processDefinition.allDefinitions.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
 
-  private def finalizeProcessDefinition(processDefinitionWithIds: ProcessDefinitionWithComponentIds[ObjectDefinition],
-                             combinedComponentsConfig: Map[String, SingleComponentConfig],
-                             additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]) = {
+  private def finalizeProcessDefinition(
+      processDefinitionWithIds: ProcessDefinitionWithComponentIds[ObjectDefinition],
+      combinedComponentsConfig: Map[String, SingleComponentConfig],
+      additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]
+  ) = {
 
-    val finalizeComponentConfig: ((ComponentIdWithName, ObjectDefinition)) => (ComponentIdWithName, ObjectDefinition) = {
+    val finalizeComponentConfig
+        : ((ComponentIdWithName, ObjectDefinition)) => (ComponentIdWithName, ObjectDefinition) = {
       case (idWithName, value) =>
         val finalConfig = additionalComponentsUiConfig.getOrElse(idWithName.id, SingleComponentConfig.zero) |+|
           combinedComponentsConfig.getOrElse(idWithName.name, SingleComponentConfig.zero) |+|
@@ -123,10 +147,11 @@ object UIProcessObjectsFactory {
       services = processDefinitionWithIds.services.map(finalizeComponentConfig),
       sourceFactories = processDefinitionWithIds.sourceFactories.map(finalizeComponentConfig),
       sinkFactories = processDefinitionWithIds.sinkFactories.map(finalizeComponentConfig),
-      customStreamTransformers = processDefinitionWithIds.customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
-        val (_, finalValue) = finalizeComponentConfig(idWithName, value)
-        idWithName -> (finalValue, additionalData)
-      },
+      customStreamTransformers =
+        processDefinitionWithIds.customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
+          val (_, finalValue) = finalizeComponentConfig(idWithName, value)
+          idWithName -> (finalValue, additionalData)
+        },
     )
   }
 
@@ -135,7 +160,7 @@ object UIProcessObjectsFactory {
       fragmentInputs: Map[String, FragmentObjectDefinition],
       processDefinition: ProcessDefinition[ObjectDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
+    val fragmentsComponentsConfig         = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
     val processDefinitionComponentsConfig = processDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in processDefinitionComponentsConfig...
@@ -158,7 +183,7 @@ object UIProcessObjectsFactory {
 
     // TODO: present all overloaded methods on FE
     def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
-      val m = methods.maxBy(_.signatures.map(_.parametersToList.length).toList.max)
+      val m   = methods.maxBy(_.signatures.map(_.parametersToList.length).toList.max)
       val sig = m.signatures.toList.maxBy(_.parametersToList.length)
       // We send varArg as Type instead of Array[Type] so it is easier to
       // format it on FE.
@@ -170,25 +195,32 @@ object UIProcessObjectsFactory {
       )
     }
 
-    val methodsWithHighestArity = definition.methods.mapValuesNow(toUIMethod)
+    val methodsWithHighestArity       = definition.methods.mapValuesNow(toUIMethod)
     val staticMethodsWithHighestArity = definition.staticMethods.mapValuesNow(toUIMethod)
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
-  private def extractFragmentInputs(fragmentsDetails: Set[FragmentDetails],
-                                    classLoader: ClassLoader,
-                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
+  private def extractFragmentInputs(
+      fragmentsDetails: Set[FragmentDetails],
+      classLoader: ClassLoader,
+      fixedComponentsConfig: Map[String, SingleComponentConfig]
+  ): Map[String, FragmentObjectDefinition] = {
     val definitionExtractor = new FragmentComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     (for {
-      details <- fragmentsDetails
+      details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
     } yield {
-      val objectDefinition = ObjectDefinition(definition.parameters, Some(Typed[java.util.Map[String, Any]]), Some(List(details.category)), definition.config)
+      val objectDefinition = ObjectDefinition(
+        definition.parameters,
+        Some(Typed[java.util.Map[String, Any]]),
+        Some(List(details.category)),
+        definition.config
+      )
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
     }).toMap
   }
 
-  case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
+  final case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
   private def createUIObjectDefinition(
       objectDefinition: ObjectDefinition,
@@ -210,18 +242,22 @@ object UIProcessObjectsFactory {
       parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
       outputParameters = fragmentObjectDefinition.outputsDefinition,
       returnType = fragmentObjectDefinition.objectDefinition.returnType,
-      categories = fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
+      categories =
+        fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       componentConfig = fragmentObjectDefinition.objectDefinition.componentConfig
     )
   }
 
-  def createUIProcessDefinition(processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
-                                fragmentInputs: Map[String, FragmentObjectDefinition],
-                                types: Set[UIClazzDefinition],
-                                processCategoryService: ProcessCategoryService): UIProcessDefinition = {
+  def createUIProcessDefinition(
+      processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
+      fragmentInputs: Map[String, FragmentObjectDefinition],
+      types: Set[UIClazzDefinition],
+      processCategoryService: ProcessCategoryService
+  ): UIProcessDefinition = {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
 
-    def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) = createUIFragmentObjectDefinition(objDef, processCategoryService)
+    def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) =
+      createUIFragmentObjectDefinition(objDef, processCategoryService)
 
     val transformed = processDefinition.transform(createUIObjectDef)
     UIProcessDefinition(
@@ -229,7 +265,9 @@ object UIProcessObjectsFactory {
       sourceFactories = mapByName(transformed.sourceFactories),
       sinkFactories = mapByName(transformed.sinkFactories),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
-      customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) => (name, value) },
+      customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) =>
+        (name, value)
+      },
       globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )
@@ -237,15 +275,24 @@ object UIProcessObjectsFactory {
 
   def createUIParameter(parameter: Parameter): UIParameter = {
     val defaultValue = parameter.defaultValue.getOrElse(Expression.spel(""))
-    UIParameter(name = parameter.name, typ = parameter.typ, editor = parameter.editor.getOrElse(RawParameterEditor), validators = parameter.validators, defaultValue = defaultValue,
-      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult), variablesToHide = parameter.variablesToHide, branchParam = parameter.branchParam)
+    UIParameter(
+      name = parameter.name,
+      typ = parameter.typ,
+      editor = parameter.editor.getOrElse(RawParameterEditor),
+      validators = parameter.validators,
+      defaultValue = defaultValue,
+      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
+      variablesToHide = parameter.variablesToHide,
+      branchParam = parameter.branchParam
+    )
   }
 
   def createUIAdditionalPropertyConfig(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
-    val editor = UiAdditionalPropertyEditorDeterminer.determine(config)
+    val editor               = UiAdditionalPropertyEditorDeterminer.determine(config)
     val determinedValidators = AdditionalPropertyValidatorDeterminerChain(config).determine()
     UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
+
 }
 
 object SortedComponentGroup {

@@ -8,22 +8,28 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
+  StandardTimestampWatermarkHandler,
+  TimestampWatermarkHandler
+}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] {
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(StandardTimestampWatermarkHandler
-    .boundedOutOfOrderness[String]((_: String) => System.currentTimeMillis(), Duration.ofMinutes(10)))
+  override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
+    StandardTimestampWatermarkHandler
+      .boundedOutOfOrderness[String]((_: String) => System.currentTimeMillis(), Duration.ofMinutes(10))
+  )
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 
-  override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+  override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
+    CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
   override def flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
-    var running = true
-    var counter = new AtomicLong()
+    var running       = true
+    var counter       = new AtomicLong()
     val afterFirstRun = new AtomicBoolean(false)
 
     override def cancel(): Unit = {
@@ -41,5 +47,7 @@ class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSuppor
         Thread.sleep(2000)
       }
     }
+
   }
+
 }

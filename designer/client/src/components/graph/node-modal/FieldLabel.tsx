@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
+import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
     return definitions?.find((param) => param.name === paramName);
@@ -38,8 +39,8 @@ export function FieldLabel({
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);
 
     return (
-        <div className="node-label" title={paramName}>
+        <NodeLabelStyled title={paramName}>
             {label}:{parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
-        </div>
+        </NodeLabelStyled>
     );
 }

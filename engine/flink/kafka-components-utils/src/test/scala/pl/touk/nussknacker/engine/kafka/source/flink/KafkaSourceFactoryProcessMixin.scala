@@ -28,20 +28,32 @@ import pl.touk.nussknacker.test.NuScalaTestAssertions
 
 import scala.jdk.CollectionConverters._
 
-trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NuScalaTestAssertions {
+trait KafkaSourceFactoryProcessMixin
+    extends AnyFunSuite
+    with Matchers
+    with KafkaSourceFactoryMixin
+    with FlinkSpec
+    with BeforeAndAfter
+    with NuScalaTestAssertions {
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
+  protected lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
 
   protected lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes =
-    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, getClass.getClassLoader,
-      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))))
+    ModelDefinitionWithTypes(
+      ProcessDefinitionExtractor.extractObjectWithMethods(
+        creator,
+        getClass.getClassLoader,
+        process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+      )
+    )
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   before {
@@ -57,12 +69,18 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
     env.withJobRunning(process.id)(action)
   }
 
-  protected def runAndVerifyResult(topicName: String, process: CanonicalProcess, obj: ObjToSerialize): List[InputMeta[Any]] = {
+  protected def runAndVerifyResult(
+      topicName: String,
+      process: CanonicalProcess,
+      obj: ObjToSerialize
+  ): List[InputMeta[Any]] = {
     val topic = createTopic(topicName)
     pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data shouldBe List(InputMeta(obj.key, topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, obj.headers.asJava, 0))
+        SinkForInputMeta.data shouldBe List(
+          InputMeta(obj.key, topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, obj.headers.asJava, 0)
+        )
         SinkForSampleValue.data shouldBe List(obj.value)
         RecordingExceptionConsumer.dataFor(runId) should have size 0
       }
@@ -72,32 +90,34 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
 
   object SourceType extends Enumeration {
     type SourceType = Value
-    val jsonKeyJsonValueWithMeta: SourceType.Value = Value("kafka-jsonKeyJsonValueWithMeta")
-    val jsonValueWithMeta: SourceType.Value = Value("kafka-jsonValueWithMeta")
+    val jsonKeyJsonValueWithMeta: SourceType.Value       = Value("kafka-jsonKeyJsonValueWithMeta")
+    val jsonValueWithMeta: SourceType.Value              = Value("kafka-jsonValueWithMeta")
     val jsonValueWithMetaWithException: SourceType.Value = Value("kafka-jsonValueWithMeta-withException")
   }
 
-  protected def createProcess(topic: String,
-                              sourceType: SourceType.Value,
-                              customVariables: Map[String, String] = Map.empty,
-                              topicParamValue: String => String = topic => s"'$topic'"
-                             ): CanonicalProcess = {
-    //should check and recognize all variables based on #input and #inputMeta
-    val inputVariables = Map("id" ->" #input.id", "field" -> "#input.field")
+  protected def createProcess(
+      topic: String,
+      sourceType: SourceType.Value,
+      customVariables: Map[String, String] = Map.empty,
+      topicParamValue: String => String = topic => s"'$topic'"
+  ): CanonicalProcess = {
+    // should check and recognize all variables based on #input and #inputMeta
+    val inputVariables = Map("id" -> " #input.id", "field" -> "#input.field")
     val metaVariables = Map(
-      "topic" -> "#inputMeta.topic",
-      "partition" -> "#inputMeta.partition",
-      "offset" -> "#inputMeta.offset",
-      "timestamp" -> "#inputMeta.timestamp",
+      "topic"         -> "#inputMeta.topic",
+      "partition"     -> "#inputMeta.partition",
+      "offset"        -> "#inputMeta.offset",
+      "timestamp"     -> "#inputMeta.timestamp",
       "timestampType" -> "#inputMeta.timestampType.name",
-      "leaderEpoch" -> "#inputMeta.leaderEpoch"
+      "leaderEpoch"   -> "#inputMeta.leaderEpoch"
     )
     val keyVariables = sourceType match {
-      case SourceType.jsonKeyJsonValueWithMeta => Map("key1" -> "#inputMeta.key.partOne", "key2" -> "#inputMeta.key.partTwo")
+      case SourceType.jsonKeyJsonValueWithMeta =>
+        Map("key1" -> "#inputMeta.key.partOne", "key2" -> "#inputMeta.key.partTwo")
       case SourceType.jsonValueWithMeta => Map("key" -> "#inputMeta.key")
-      case _ => Map.empty[String, String]
+      case _                            => Map.empty[String, String]
     }
-    val headerVariables = Map("headers" -> """#inputMeta.headers.get("headerOne")""")
+    val headerVariables   = Map("headers" -> """#inputMeta.headers.get("headerOne")""")
     val checkAllVariables = inputVariables ++ metaVariables ++ keyVariables ++ headerVariables ++ customVariables
 
     val process = ScenarioBuilder
@@ -105,16 +125,17 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
       .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
-      .foldRight(process.asInstanceOf[GraphBuilder[CanonicalProcess]])( (variable, builder) =>
+      .foldRight(process.asInstanceOf[GraphBuilder[CanonicalProcess]])((variable, builder) =>
         variable match {
           case (id, expression) => builder.buildSimpleVariable(s"id$id", s"name$id", expression)
         }
       )
 
     processWithVariables
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName -> "#input"),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName -> "#inputMeta")
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName    -> "#inputMeta")
       )
 
   }

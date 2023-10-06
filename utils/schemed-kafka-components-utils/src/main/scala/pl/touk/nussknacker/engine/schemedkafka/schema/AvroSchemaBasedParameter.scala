@@ -12,7 +12,12 @@ import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
-import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter, TypingResultValidator}
+import pl.touk.nussknacker.engine.util.parameters.{
+  SchemaBasedParameter,
+  SchemaBasedRecordParameter,
+  SingleSchemaBasedParameter,
+  TypingResultValidator
+}
 
 import scala.collection.immutable.ListMap
 
@@ -23,11 +28,17 @@ object AvroSchemaBasedParameter {
   /*
     We extract editor form from Avro schema
    */
-  def apply(schema: Schema, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+  def apply(schema: Schema, restrictedParamNames: Set[ParameterName])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
     toSchemaBasedParameter(schema, paramName = None, defaultValue = None, restrictedParamNames = restrictedParamNames)
 
-  private def toSchemaBasedParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], restrictedParamNames: Set[ParameterName])
-                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+  private def toSchemaBasedParameter(
+      schema: Schema,
+      paramName: Option[String],
+      defaultValue: Option[Expression],
+      restrictedParamNames: Set[ParameterName]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
     if (schema.getType == Schema.Type.RECORD) {
@@ -35,15 +46,27 @@ object AvroSchemaBasedParameter {
       if (containsRestrictedNames(recordFields, restrictedParamNames)) {
         /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
          so they do not collide with other parameters like Topic or Key. */
-        Invalid(NonEmptyList.one(
-          CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""", None)))
+        Invalid(
+          NonEmptyList.one(
+            CustomNodeError(
+              nodeId.id,
+              s"""Record field name is restricted. Restricted names are ${restrictedParamNames.mkString(", ")}""",
+              None
+            )
+          )
+        )
       } else {
         val listOfValidatedParams = recordFields.map { recordField =>
           val fieldName = recordField.name()
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
           val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
-            toSchemaBasedParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue, restrictedParamNames)
+            toSchemaBasedParameter(
+              schema = recordField.schema(),
+              paramName = Some(concatName),
+              defaultValue,
+              restrictedParamNames
+            )
           }
           sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
         }
@@ -54,8 +77,11 @@ object AvroSchemaBasedParameter {
     }
   }
 
-  private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-    new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
+  private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
+    new AvroDefaultExpressionDeterminer(handleNotSupported = true)
+      .determine(fieldSchema)
       .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
 
   private def containsRestrictedNames(fields: List[Schema.Field], restrictedParamNames: Set[ParameterName]): Boolean = {
@@ -69,10 +95,10 @@ object AvroSinkSingleValueParameter {
 
   def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SingleSchemaBasedParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val name = paramName.getOrElse(SinkValueParamName)
+    val name   = paramName.getOrElse(SinkValueParamName)
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
-      ).copy(
+    ).copy(
       isLazyParameter = true,
       defaultValue = defaultValue
     )
@@ -80,4 +106,5 @@ object AvroSinkSingleValueParameter {
     // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
     SingleSchemaBasedParameter(parameter, TypingResultValidator.emptyValidator)
   }
+
 }

@@ -10,15 +10,24 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.source.flink.{KafkaSourceFactoryMixin, SampleConsumerRecordDeserializationSchemaFactory}
+import pl.touk.nussknacker.engine.kafka.source.flink.{
+  KafkaSourceFactoryMixin,
+  SampleConsumerRecordDeserializationSchemaFactory
+}
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 
-class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with KafkaSpec with BeforeAndAfterAll with KafkaSourceFactoryMixin {
+class ConsumerRecordToJsonFormatterSpec
+    extends AnyFunSuite
+    with Matchers
+    with KafkaSpec
+    with BeforeAndAfterAll
+    with KafkaSourceFactoryMixin {
 
   private val topic = "dummyTopic"
-  private val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
+  private val deserializationSchemaFactory =
+    new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
 
   private lazy val sampleKeyValueFormatter =
     new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue].create(
@@ -28,7 +37,7 @@ class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with K
 
   test("check sample serializer and deserializer") {
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
-    val resultKeyObj = sampleKeyJsonDeserializer.deserialize(topic, sampleKeyBytes)
+    val resultKeyObj                       = sampleKeyJsonDeserializer.deserialize(topic, sampleKeyBytes)
     resultKeyObj shouldEqual sampleKey
     val resultValueObj = sampleValueJsonDeserializer.deserialize(topic, sampleValueBytes)
     resultValueObj shouldEqual sampleValue
@@ -36,17 +45,27 @@ class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with K
 
   test("prepare and parse test data from ConsumerRecord with key, with headers") {
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
-    val givenObj = createConsumerRecord(topic, 11, 22L,100L, TimestampType.NO_TIMESTAMP_TYPE, sampleKeyBytes, sampleValueBytes, sampleHeaders, Optional.empty[Integer])
+    val givenObj = createConsumerRecord(
+      topic,
+      11,
+      22L,
+      100L,
+      TimestampType.NO_TIMESTAMP_TYPE,
+      sampleKeyBytes,
+      sampleValueBytes,
+      sampleHeaders,
+      Optional.empty[Integer]
+    )
     val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-    val resultObj = sampleKeyValueFormatter.parseRecord(topic, testRecord)
+    val resultObj  = sampleKeyValueFormatter.parseRecord(topic, testRecord)
     checkResult(resultObj, givenObj)
   }
 
   test("prepare and parse test data from ConsumerRecord with key, empty headers") {
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
-    val givenObj = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 11, 22L, sampleKeyBytes, sampleValueBytes)
+    val givenObj   = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 11, 22L, sampleKeyBytes, sampleValueBytes)
     val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-    val resultObj = sampleKeyValueFormatter.parseRecord("topic", testRecord)
+    val resultObj  = sampleKeyValueFormatter.parseRecord("topic", testRecord)
     checkResult(resultObj, givenObj)
   }
 
@@ -55,24 +74,38 @@ class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with K
     val givenObj = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 11, 22L, Array.emptyByteArray, sampleValueBytes)
     intercept[Exception] {
       val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-      val resultObj = sampleKeyValueFormatter.parseRecord("topic", testRecord)
+      val resultObj  = sampleKeyValueFormatter.parseRecord("topic", testRecord)
     }.getMessage should startWith("Failed to decode")
   }
 
   test("decode and format partially defined ConsumerRecord using default values") {
-    val testRecord = TestRecord(Json.obj(
-      "key" -> Json.obj("partOne" -> Json.fromString("abc"), "partTwo" -> Json.fromLong(2)),
-      "value" -> Json.obj("id" -> Json.fromString("def"), "field" -> Json.fromString("ghi"))
-    ))
+    val testRecord = TestRecord(
+      Json.obj(
+        "key"   -> Json.obj("partOne" -> Json.fromString("abc"), "partTwo" -> Json.fromLong(2)),
+        "value" -> Json.obj("id" -> Json.fromString("def"), "field" -> Json.fromString("ghi"))
+      )
+    )
     val resultObj = sampleKeyValueFormatter.parseRecord("topic", testRecord)
-    val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]]("topic", 0, 0L, """{"partOne":"abc","partTwo":2}""".getBytes, """{"id":"def","field":"ghi"}""".getBytes)
+    val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
+      "topic",
+      0,
+      0L,
+      """{"partOne":"abc","partTwo":2}""".getBytes,
+      """{"id":"def","field":"ghi"}""".getBytes
+    )
     checkResult(resultObj, expectedObj)
   }
 
   test("decode and format basic string-and-value-only test data using default values") {
     val testRecord = TestRecord(Json.fromString("lorem ipsum"))
-    val resultObj = BasicRecordFormatter.parseRecord("topic", testRecord)
-    val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]]("topic", 0, 0L, Array.emptyByteArray, "lorem ipsum".getBytes(StandardCharsets.UTF_8))
+    val resultObj  = BasicRecordFormatter.parseRecord("topic", testRecord)
+    val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
+      "topic",
+      0,
+      0L,
+      Array.emptyByteArray,
+      "lorem ipsum".getBytes(StandardCharsets.UTF_8)
+    )
     checkResult(resultObj, expectedObj)
   }
 

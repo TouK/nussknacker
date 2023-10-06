@@ -16,9 +16,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class CustomValidatedService extends EagerService {
 
   @MethodToInvoke
-  def invoke(@ParamName("age") age: Int,
-             @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
-             @OutputVariableName varName: String)(implicit nodeId: NodeId): ContextTransformation = {
+  def invoke(
+      @ParamName("age") age: Int,
+      @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
+      @OutputVariableName varName: String
+  )(implicit nodeId: NodeId): ContextTransformation = {
 
     def returnType: ValidatedNel[ProcessCompilationError, TypingResult] = {
       if (age < 18) {
@@ -34,15 +36,22 @@ class CustomValidatedService extends EagerService {
       }
     }
 
-    EnricherContextTransformation(varName, returnType, new ServiceInvoker {
-      override def invokeService(params: Map[String, Any])(implicit ec: ExecutionContext,
-                                                           collector: InvocationCollectors.ServiceInvocationCollector,
-                                                           contextId: ContextId,
-                                                           componentUseCase: ComponentUseCase): Future[Any] = {
-        Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
+    EnricherContextTransformation(
+      varName,
+      returnType,
+      new ServiceInvoker {
+        override def invokeService(params: Map[String, Any])(
+            implicit ec: ExecutionContext,
+            collector: InvocationCollectors.ServiceInvocationCollector,
+            contextId: ContextId,
+            componentUseCase: ComponentUseCase
+        ): Future[Any] = {
+          Future.successful(
+            s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
+          )
+        }
       }
-    })
+    )
   }
-
 
 }

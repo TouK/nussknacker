@@ -11,8 +11,10 @@ import scala.util.Using
 
 object ModelJarBuilder {
 
-  //mainly for testing
-  def buildJarWithConfigCreator[T<:ProcessConfigCreator:ClassTag](outputFile: File = Files.createTempFile("creator", ".jar").toFile) : File = {
+  // mainly for testing
+  def buildJarWithConfigCreator[T <: ProcessConfigCreator: ClassTag](
+      outputFile: File = Files.createTempFile("creator", ".jar").toFile
+  ): File = {
     val output = new FileOutputStream(outputFile)
     Using.resource(new JarOutputStream(output)) { jarOutput =>
       putToJar(
@@ -24,7 +26,6 @@ object ModelJarBuilder {
     outputFile
   }
 
-
   private def putToJar(jarOutputStream: JarOutputStream, name: String, bytes: Array[Byte]) = {
     val entry = new JarEntry(name)
     jarOutputStream.putNextEntry(entry)
@@ -32,4 +33,3 @@ object ModelJarBuilder {
   }
 
 }
-

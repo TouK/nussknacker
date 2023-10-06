@@ -23,7 +23,7 @@ object Company extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "name" -> DefaultName,
+    "name"    -> DefaultName,
     "address" -> Address.exampleData
   )
 
@@ -34,4 +34,5 @@ object Company extends TestSchemaWithRecord {
       |   address: ${Address.jsonMap}
       |}
      """.stripMargin
+
 }

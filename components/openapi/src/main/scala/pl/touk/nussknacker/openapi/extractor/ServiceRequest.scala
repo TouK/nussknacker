@@ -21,26 +21,30 @@ object ServiceRequest {
     addSecurities(swaggerService, new ServiceRequest(rootUrl, swaggerService, inputParams).apply)
 
   def addSecurities(swaggerService: SwaggerService, request: SwaggerRequestType): SwaggerRequestType =
-    swaggerService.securities.foldLeft(request) {
-      (request, security) =>
-        security.addSecurity(request)
+    swaggerService.securities.foldLeft(request) { (request, security) =>
+      security.addSecurity(request)
     }
+
 }
 
 private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]) {
 
   private val uri: Uri = {
     val root = Uri(rootUrl.toURI)
-    val paramParts = swaggerService.pathParts.map {
-      case PlainPart(value) =>
-        value
-      case PathParameterPart(parameterName) =>
-        safeParam(parameterName).getOrElse("").toString
-    }.map(PathSegment(_))
+    val paramParts = swaggerService.pathParts
+      .map {
+        case PlainPart(value) =>
+          value
+        case PathParameterPart(parameterName) =>
+          safeParam(parameterName).getOrElse("").toString
+      }
+      .map(PathSegment(_))
 
-    val queryParams: List[Uri.QuerySegment] = swaggerService.parameters.collect { case paramDef@QueryParameter(name, _) =>
-      safeParam(name).toList.flatMap(ParametersExtractor.queryParams(paramDef, _))
-    }.flatten
+    val queryParams: List[Uri.QuerySegment] = swaggerService.parameters
+      .collect { case paramDef @ QueryParameter(name, _) =>
+        safeParam(name).toList.flatMap(ParametersExtractor.queryParams(paramDef, _))
+      }
+      .flatten
       .map(qs => Uri.QuerySegment.KeyValue(qs._1, qs._2))
 
     val path = root.addPathSegments(paramParts)
@@ -50,8 +54,8 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   def apply: SwaggerRequestType = {
     val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
-    //FIXME: lepsza obsluga (rozpoznawanie multi headers, itp...)
-    val headers: List[Header] = swaggerService.parameters.collect { case paramDef@HeaderParameter(value, _) =>
+    // FIXME: lepsza obsluga (rozpoznawanie multi headers, itp...)
+    val headers: List[Header] = swaggerService.parameters.collect { case paramDef @ HeaderParameter(value, _) =>
       safeParam(value).map(value => new Header(paramDef.name, value.toString)).toList
     }.flatten
 
@@ -61,12 +65,12 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
 
     val requestWithContentType = swaggerService.requestContentType match {
       case Some(value) => request.contentType(value)
-      case None => request
+      case None        => request
     }
 
     (swaggerService.parameters.collectFirst {
-      case e@SingleBodyParameter(sw@SwaggerObject(_, _, _)) => safeParam(e.name)
-      case e@SingleBodyParameter(sw@_) => primitiveBodyParam(e.name)
+      case e @ SingleBodyParameter(sw @ SwaggerObject(_, _, _)) => safeParam(e.name)
+      case e @ SingleBodyParameter(sw @ _)                      => primitiveBodyParam(e.name)
     }.flatten match {
       case None => request
       case Some(body) =>
@@ -75,10 +79,12 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
 
   }
 
-  //flatMap is for handling null values in the map
+  // flatMap is for handling null values in the map
   private def safeParam(name: String): Option[Any] = inputParams.get(name).flatMap(Option(_))
 
-  //primitive body params are wrapped twice
-  private def primitiveBodyParam(name: String): Option[Any] = inputParams.get(name)
+  // primitive body params are wrapped twice
+  private def primitiveBodyParam(name: String): Option[Any] = inputParams
+    .get(name)
     .map(_.asInstanceOf[Map[String, Any]].get(name))
+
 }

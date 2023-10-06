@@ -24,9 +24,13 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
     ScalaServiceLoader.load[CustomProcessValidatorFactory](classLoader)
   }
 
-  private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator]) extends CustomProcessValidator {
+  private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator])
+      extends CustomProcessValidator {
+
     override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
       customValidators.map(_.validate(process)).sequence.map(_ => ())
     }
+
   }
+
 }

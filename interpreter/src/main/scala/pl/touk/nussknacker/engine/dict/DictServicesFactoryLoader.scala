@@ -12,4 +12,5 @@ object DictServicesFactoryLoader extends LoadClassFromClassLoader {
       SimpleDictServicesFactory
     })
   }
+
 }

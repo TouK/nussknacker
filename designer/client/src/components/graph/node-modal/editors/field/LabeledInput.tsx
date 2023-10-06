@@ -1,5 +1,6 @@
 import React, { PropsWithChildren } from "react";
 import Input, { InputProps } from "./Input";
+import { NodeRow } from "../../NodeDetailsContent/NodeStyled";
 
 export type LabeledInputProps = PropsWithChildren<
     Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "validators" | "onChange">
@@ -7,9 +8,9 @@ export type LabeledInputProps = PropsWithChildren<
 
 export default function LabeledInput({ children, ...props }: LabeledInputProps): JSX.Element {
     return (
-        <div className="node-row">
+        <NodeRow>
             {children}
             <Input {...props} className={"node-value"} />
-        </div>
+        </NodeRow>
     );
 }

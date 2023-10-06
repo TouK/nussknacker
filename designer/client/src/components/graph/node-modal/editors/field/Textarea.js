@@ -17,7 +17,6 @@ export default function Textarea(props) {
         validators,
         readOnly,
         formattedValue,
-        type,
         inputClassName,
         onFocus,
     } = props;

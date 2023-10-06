@@ -12,24 +12,32 @@ import scala.language.higherKinds
 
 object transformers {
 
-  //This is case where were process events one by one, ignoring batching
+  // This is case where were process events one by one, ignoring batching
   trait SingleElementComponent extends LiteCustomComponent {
 
-
-    final override def createTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
+    final override def createTransformation[F[_]: Monad, Result](
+        continuation: DataBatch => F[ResultType[Result]],
+        context: CustomComponentContext[F]
+    ): DataBatch => F[ResultType[Result]] = {
       val singleTransformation = createSingleTransformation(continuation, context)
       batch => Monoid.combineAll(batch.map(singleTransformation))
     }
 
-    def createSingleTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]]
+    def createSingleTransformation[F[_]: Monad, Result](
+        continuation: DataBatch => F[ResultType[Result]],
+        context: CustomComponentContext[F]
+    ): Context => F[ResultType[Result]]
 
   }
 
-  //This is case where we don't want to affect invocation flow, just modify context
-  //i.e. it's not flatMap but map (but with possible side effects)
+  // This is case where we don't want to affect invocation flow, just modify context
+  // i.e. it's not flatMap but map (but with possible side effects)
   trait ContextMappingComponent extends SingleElementComponent {
 
-    final override def createSingleTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): Context => F[ResultType[Result]] = {
+    final override def createSingleTransformation[F[_]: Monad, Result](
+        continuation: DataBatch => F[ResultType[Result]],
+        context: CustomComponentContext[F]
+    ): Context => F[ResultType[Result]] = {
       val transformation = createStateTransformation[F](context)
       ctx => transformation(ctx).flatMap(newCtx => continuation(DataBatch(newCtx :: Nil)))
     }

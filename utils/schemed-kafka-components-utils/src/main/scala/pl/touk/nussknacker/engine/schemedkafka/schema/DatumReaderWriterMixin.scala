@@ -21,13 +21,19 @@ trait DatumReaderWriterMixin {
     */
   protected val primitives: mutable.Map[String, Schema] = AvroSchemaUtils.getPrimitiveSchemas.asScala
 
-  def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] = record match {
-    case _: SpecificRecord => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
-    case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
-    case _ => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
-  }
+  def createDatumWriter(record: Any, schema: Schema, useSchemaReflection: Boolean): GenericDatumWriter[Any] =
+    record match {
+      case _: SpecificRecord        => new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+      case _ if useSchemaReflection => new ReflectDatumWriter[Any](schema, AvroUtils.reflectData)
+      case _                        => new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+    }
 
-  def createDatumReader(writerSchema: Schema, readerSchema: Schema, useSchemaReflection: Boolean, useSpecificAvroReader: Boolean): DatumReader[AnyRef] = {
+  def createDatumReader(
+      writerSchema: Schema,
+      readerSchema: Schema,
+      useSchemaReflection: Boolean,
+      useSpecificAvroReader: Boolean
+  ): DatumReader[AnyRef] = {
     val writerSchemaIsPrimitive = primitives.values.exists(_.equals(readerSchema))
 
     if (useSchemaReflection && !writerSchemaIsPrimitive) {
@@ -38,4 +44,5 @@ trait DatumReaderWriterMixin {
       StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData)
     }
   }
+
 }

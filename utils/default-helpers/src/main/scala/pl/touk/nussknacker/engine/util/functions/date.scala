@@ -7,7 +7,11 @@ import java.time.temporal.Temporal
 
 object date extends DateUtils(Clock.systemDefaultZone())
 
-class DateUtils(override protected val clock: Clock) extends DateConversions with DateConstants with DateRangeChecker with HideToString {
+class DateUtils(override protected val clock: Clock)
+    extends DateConversions
+    with DateConstants
+    with DateRangeChecker
+    with HideToString {
 
   @Documentation(description = "Returns current time as an Instant")
   def now(): Instant = Instant.now(clock)
@@ -44,7 +48,8 @@ trait DateConversions {
   def toEpochMilli(offset: LocalDateTime, zone: ZoneId): Long = offset.atZone(zone).toInstant.toEpochMilli
 
   @Documentation(description = "Converts LocalDateTime with given time zone offset into epoch (millis from 1970-01-01)")
-  def toEpochMilli(offset: LocalDateTime, zoneOffset: ZoneOffset): Long = offset.atOffset(zoneOffset).toInstant.toEpochMilli
+  def toEpochMilli(offset: LocalDateTime, zoneOffset: ZoneOffset): Long =
+    offset.atOffset(zoneOffset).toInstant.toEpochMilli
 
   @Documentation(description = "Converts epoch (millis from 1970-01-01) into an Instant")
   def toInstant(timestampMillis: Long): Instant = Instant.ofEpochMilli(timestampMillis)
@@ -70,44 +75,50 @@ trait DateConstants {
   @Documentation(description = "Returns default time zone")
   def defaultTimeZone(): ZoneId = clock.getZone
 
-  def MONDAY: DayOfWeek = DayOfWeek.MONDAY
-  def TUESDAY: DayOfWeek = DayOfWeek.TUESDAY
+  def MONDAY: DayOfWeek    = DayOfWeek.MONDAY
+  def TUESDAY: DayOfWeek   = DayOfWeek.TUESDAY
   def WEDNESDAY: DayOfWeek = DayOfWeek.WEDNESDAY
-  def THURSDAY: DayOfWeek = DayOfWeek.THURSDAY
-  def FRIDAY: DayOfWeek = DayOfWeek.FRIDAY
-  def SATURDAY: DayOfWeek = DayOfWeek.SATURDAY
-  def SUNDAY: DayOfWeek = DayOfWeek.SUNDAY
+  def THURSDAY: DayOfWeek  = DayOfWeek.THURSDAY
+  def FRIDAY: DayOfWeek    = DayOfWeek.FRIDAY
+  def SATURDAY: DayOfWeek  = DayOfWeek.SATURDAY
+  def SUNDAY: DayOfWeek    = DayOfWeek.SUNDAY
 
-  def JANUARY: Month = Month.JANUARY
-  def FEBRUARY: Month = Month.FEBRUARY
-  def MARCH: Month = Month.MARCH
-  def APRIL: Month = Month.APRIL
-  def MAY: Month = Month.MAY
-  def JUNE: Month = Month.JUNE
-  def JULY: Month = Month.JULY
-  def AUGUST: Month = Month.AUGUST
+  def JANUARY: Month   = Month.JANUARY
+  def FEBRUARY: Month  = Month.FEBRUARY
+  def MARCH: Month     = Month.MARCH
+  def APRIL: Month     = Month.APRIL
+  def MAY: Month       = Month.MAY
+  def JUNE: Month      = Month.JUNE
+  def JULY: Month      = Month.JULY
+  def AUGUST: Month    = Month.AUGUST
   def SEPTEMBER: Month = Month.SEPTEMBER
-  def OCTOBER: Month = Month.OCTOBER
-  def NOVEMBER: Month = Month.NOVEMBER
-  def DECEMBER: Month = Month.DECEMBER
+  def OCTOBER: Month   = Month.OCTOBER
+  def NOVEMBER: Month  = Month.NOVEMBER
+  def DECEMBER: Month  = Month.DECEMBER
 
 }
 
 trait DateRangeChecker {
 
   @Documentation(description = "Computes Period between two dates: start date inclusive and end date exclusive")
-  def periodBetween(startDateInclusive: LocalDate, endDateExclusive: LocalDate): Period = Period.between(startDateInclusive, endDateExclusive)
+  def periodBetween(startDateInclusive: LocalDate, endDateExclusive: LocalDate): Period =
+    Period.between(startDateInclusive, endDateExclusive)
 
   @Documentation(description = "Computes Period between two dates: start date inclusive and end date exclusive")
-  def periodBetween(startDateInclusive: ZonedDateTime, endDateExclusive: ZonedDateTime): Period = Period.between(startDateInclusive.toLocalDate, endDateExclusive.toLocalDate)
+  def periodBetween(startDateInclusive: ZonedDateTime, endDateExclusive: ZonedDateTime): Period =
+    Period.between(startDateInclusive.toLocalDate, endDateExclusive.toLocalDate)
 
   @Documentation(description = "Computes Period between two dates: start date inclusive and end date exclusive")
-  def periodBetween(startDateInclusive: OffsetDateTime, endDateExclusive: OffsetDateTime): Period = Period.between(startDateInclusive.toLocalDate, endDateExclusive.toLocalDate)
+  def periodBetween(startDateInclusive: OffsetDateTime, endDateExclusive: OffsetDateTime): Period =
+    Period.between(startDateInclusive.toLocalDate, endDateExclusive.toLocalDate)
 
   @Documentation(description = "Computes Duration between two dates: start date inclusive and end date exclusive")
-  def durationBetween(startDateInclusive: Temporal, endDateExclusive: Temporal): Duration = Duration.between(startDateInclusive, endDateExclusive)
+  def durationBetween(startDateInclusive: Temporal, endDateExclusive: Temporal): Duration =
+    Duration.between(startDateInclusive, endDateExclusive)
 
-  @Documentation(description = "Checks if time is in range <fromInclusive, toInclusive>. if to < from, then checks if time is in one of ranges <from, 24:00> and <00:00, to>")
+  @Documentation(description =
+    "Checks if time is in range <fromInclusive, toInclusive>. if to < from, then checks if time is in one of ranges <from, 24:00> and <00:00, to>"
+  )
   def isBetween(time: LocalTime, fromInclusive: LocalTime, toInclusive: LocalTime): Boolean = {
     if (!toInclusive.isBefore(fromInclusive)) { // normal range (from <= to) e.g. 09:00 - 17:00
       !time.isBefore(fromInclusive) && !time.isAfter(toInclusive)
@@ -116,12 +127,16 @@ trait DateRangeChecker {
     }
   }
 
-  @Documentation(description = "Checks if day of week is in range <fromInclusive, toInclusive>. if to < from in ISO standard (numerous from MONDAY), then checks if day of week is in one of ranges <from, SUNDAY> and <MONDAY, to>")
+  @Documentation(description =
+    "Checks if day of week is in range <fromInclusive, toInclusive>. if to < from in ISO standard (numerous from MONDAY), then checks if day of week is in one of ranges <from, SUNDAY> and <MONDAY, to>"
+  )
   def isBetween(dayOfWeek: DayOfWeek, fromInclusive: DayOfWeek, toInclusive: DayOfWeek): Boolean = {
     checkInRangeHandlingToLowerThenFrom(dayOfWeek.getValue, fromInclusive.getValue, toInclusive.getValue)
   }
 
-  @Documentation(description = "Checks if month is in range <fromInclusive, toInclusive>. if to < from, then checks if month is in one of ranges <from, DECEMBER> and <JANUARY, to>")
+  @Documentation(description =
+    "Checks if month is in range <fromInclusive, toInclusive>. if to < from, then checks if month is in one of ranges <from, DECEMBER> and <JANUARY, to>"
+  )
   def isBetween(month: Month, fromInclusive: Month, toInclusive: Month): Boolean = {
     checkInRangeHandlingToLowerThenFrom(month.getValue, fromInclusive.getValue, toInclusive.getValue)
   }

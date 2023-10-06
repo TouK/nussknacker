@@ -15,10 +15,12 @@ import scala.concurrent.{ExecutionContext, Future}
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
-  def createDeploymentManager(modelData: BaseModelData, config: Config)
-                             (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                              sttpBackend: SttpBackend[Future, Any],
-                              deploymentService: ProcessingTypeDeploymentService): DeploymentManager
+  def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any],
+      deploymentService: ProcessingTypeDeploymentService
+  ): DeploymentManager
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 
@@ -35,13 +37,21 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
  * This currently also requires the DeploymentManagerProvider to provide its metaDataType.
  * TODO: set the defaults in one place without overriding
  */
-final case class MetaDataInitializer(metadataType: MetadataType,
-                                     overrideDefaultProperties: ProcessName => Map[String, String] = _ => Map.empty) {
+final case class MetaDataInitializer(
+    metadataType: MetadataType,
+    overrideDefaultProperties: ProcessName => Map[String, String] = _ => Map.empty
+) {
+
   def create(name: ProcessName, initialProperties: Map[String, String]): MetaData =
-    MetaData(name.value, ProcessAdditionalFields(None, initialProperties ++ overrideDefaultProperties(name), metadataType))
+    MetaData(
+      name.value,
+      ProcessAdditionalFields(None, initialProperties ++ overrideDefaultProperties(name), metadataType)
+    )
+
 }
 
 object MetaDataInitializer {
   type MetadataType = String
-  def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer = MetaDataInitializer(metadataType, _ => overridingProperties)
+  def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer =
+    MetaDataInitializer(metadataType, _ => overridingProperties)
 }

@@ -12,7 +12,7 @@ class CharSequenceSerializer extends Serializer[AnyRef] {
   override def serialize(topic: String, data: AnyRef): Array[Byte] = {
     data match {
       case charSeq: CharSequence => charSeq.toString.getBytes(StandardCharsets.UTF_8)
-      case null => null
+      case null                  => null
       case _ => throw new IllegalArgumentException(s"Unexpected key class: ${data.getClass}. Should be CharSequence")
     }
   }

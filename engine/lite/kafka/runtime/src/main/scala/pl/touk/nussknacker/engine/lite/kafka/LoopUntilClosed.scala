@@ -17,14 +17,20 @@ import scala.util.{Failure, Success, Try}
 
 //Runs task in loop, in several parallel copies restarting on errors
 //TODO: probably there is some util for that? :)
-class TaskRunner(taskName: String,
-                 taskParallelCount: Int,
-                 singleRun: String => Task,
-                 terminationTimeout: Duration,
-                 waitAfterFailureDelay: FiniteDuration,
-                 metricsProviderForScenario: MetricsProviderForScenario) extends AutoCloseable with LazyLogging {
-  def status(): TaskStatus = Option(tasks).filterNot(_.isEmpty)
-    .map(_.maxBy(_.status)).map(_.status)
+class TaskRunner(
+    taskName: String,
+    taskParallelCount: Int,
+    singleRun: String => Task,
+    terminationTimeout: Duration,
+    waitAfterFailureDelay: FiniteDuration,
+    metricsProviderForScenario: MetricsProviderForScenario
+) extends AutoCloseable
+    with LazyLogging {
+
+  def status(): TaskStatus = Option(tasks)
+    .filterNot(_.isEmpty)
+    .map(_.maxBy(_.status))
+    .map(_.status)
     .getOrElse(Running)
 
   private val threadFactory = new BasicThreadFactory.Builder()
@@ -67,6 +73,7 @@ class TaskRunner(taskName: String,
       logger.error("Thread pool termination timeout")
     }
   }
+
 }
 
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails
@@ -74,16 +81,20 @@ trait Task extends Runnable with AutoCloseable {
   def init(): Unit
 }
 
-class LoopUntilClosed(taskId: String,
-                      prepareSingleRunner: () => Task,
-                      waitAfterFailureDelay: FiniteDuration,
-                      metricsProviderForScenario: MetricsProviderForScenario) extends Runnable with AutoCloseable with LazyLogging {
+class LoopUntilClosed(
+    taskId: String,
+    prepareSingleRunner: () => Task,
+    waitAfterFailureDelay: FiniteDuration,
+    metricsProviderForScenario: MetricsProviderForScenario
+) extends Runnable
+    with AutoCloseable
+    with LazyLogging {
 
-  private val closed = new AtomicBoolean(false)
+  private val closed               = new AtomicBoolean(false)
   @volatile var status: TaskStatus = DuringDeploy
 
   override def run(): Unit = {
-    //we recreate runner until closed
+    // we recreate runner until closed
     var attempt = 1
     registerMetrics(() => attempt)
     var previousErrorWithTimestamp = Option.empty[(Throwable, Long)]
@@ -101,40 +112,45 @@ class LoopUntilClosed(taskId: String,
 
   private def registerMetrics(attempt: () => Int): Unit = {
     def metricId(name: String) = MetricIdentifier(NonEmptyList.of("task", name), Map("taskId" -> taskId))
-    metricsProviderForScenario.registerGauge(metricId("attempt"), new Gauge[Int] {
-      override def getValue: Int = attempt()
-    })
-    metricsProviderForScenario.registerGauge(metricId("restarting"), new Gauge[Int] {
-      override def getValue: Int = if (status == TaskStatus.Restarting) 1 else 0
-    })
+    metricsProviderForScenario.registerGauge(
+      metricId("attempt"),
+      new Gauge[Int] {
+        override def getValue: Int = attempt()
+      }
+    )
+    metricsProviderForScenario.registerGauge(
+      metricId("restarting"),
+      new Gauge[Int] {
+        override def getValue: Int = if (status == TaskStatus.Restarting) 1 else 0
+      }
+    )
 
   }
 
   private def handleSleepBeforeRestart(previousErrorWithTimestamp: Option[(Throwable, Long)]): Option[Try[Unit]] = {
-    previousErrorWithTimestamp.map {
-      case (e, failureTimestamp) =>
-        val delayToWait = failureTimestamp + waitAfterFailureDelay.toMillis - System.currentTimeMillis()
-        if (delayToWait > 0) {
-          logger.warn(s"Failed to run. Waiting: $delayToWait millis to restart...", e)
-          tryWithInterruptedHandle {
-            status = Restarting
-            Thread.sleep(delayToWait)
-          } { }
-        } else {
-          logger.warn(s"Failed to run. Restarting...", e)
-          Success(())
-        }
+    previousErrorWithTimestamp.map { case (e, failureTimestamp) =>
+      val delayToWait = failureTimestamp + waitAfterFailureDelay.toMillis - System.currentTimeMillis()
+      if (delayToWait > 0) {
+        logger.warn(s"Failed to run. Waiting: $delayToWait millis to restart...", e)
+        tryWithInterruptedHandle {
+          status = Restarting
+          Thread.sleep(delayToWait)
+        } {}
+      } else {
+        logger.warn(s"Failed to run. Restarting...", e)
+        Success(())
+      }
     }
   }
 
-  //We don't use Using.resources etc. because we want to treat throwing in .close() differently - this should be propagated
-  //and handled differently as it leads to resource leak, so we'll let uncaughtExceptionHandler deal with that
+  // We don't use Using.resources etc. because we want to treat throwing in .close() differently - this should be propagated
+  // and handled differently as it leads to resource leak, so we'll let uncaughtExceptionHandler deal with that
   private def handleOneRunLoop(): Try[Unit] = {
     val singleRun = prepareSingleRunner()
     tryWithInterruptedHandle {
       singleRun.init()
       status = Running
-      //we loop until closed or exception occurs, then we close ourselves
+      // we loop until closed or exception occurs, then we close ourselves
       while (!closed.get()) {
         singleRun.run()
       }
@@ -143,8 +159,7 @@ class LoopUntilClosed(taskId: String,
     }
   }
 
-  private def tryWithInterruptedHandle(runWithSomeWaiting: => Unit)
-                                      (handleFinally: => Unit): Try[Unit] = {
+  private def tryWithInterruptedHandle(runWithSomeWaiting: => Unit)(handleFinally: => Unit): Try[Unit] = {
     try {
       runWithSomeWaiting
       Success(())
@@ -155,7 +170,7 @@ class LoopUntilClosed(taskId: String,
         We want to ignore it and proceed with normal closing - otherwise there will be errors in closing consumer
        */
       case _: InterruptedException | _: InterruptException if closed.get() =>
-        //This is important - as it's the only way to clear interrupted flag...
+        // This is important - as it's the only way to clear interrupted flag...
         val wasInterrupted = Thread.interrupted()
         logger.debug(s"Interrupted: $wasInterrupted, finishing normally")
         Success(())
@@ -169,4 +184,5 @@ class LoopUntilClosed(taskId: String,
   override def close(): Unit = {
     closed.set(true)
   }
+
 }

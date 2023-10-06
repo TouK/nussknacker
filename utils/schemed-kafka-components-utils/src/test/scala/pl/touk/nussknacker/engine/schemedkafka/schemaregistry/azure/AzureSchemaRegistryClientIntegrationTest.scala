@@ -13,16 +13,19 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import scala.beans.BeanProperty
 
 @Network
-class AzureSchemaRegistryClientIntegrationTest extends AnyFunSuite with Matchers
-  with ValidatedValuesDetailedMessage with OptionValues {
+class AzureSchemaRegistryClientIntegrationTest
+    extends AnyFunSuite
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with OptionValues {
 
   private val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
 
-  private val schemaRegistryConfigMap = Map(
-    "schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net",
-    "schema.group" -> "test-group")
+  private val schemaRegistryConfigMap =
+    Map("schema.registry.url" -> s"https://$eventHubsNamespace.servicebus.windows.net", "schema.group" -> "test-group")
 
-  private val schemaRegistryConfig = SchemaRegistryClientKafkaConfig(schemaRegistryConfigMap, SchemaRegistryCacheConfig(), None)
+  private val schemaRegistryConfig =
+    SchemaRegistryClientKafkaConfig(schemaRegistryConfigMap, SchemaRegistryCacheConfig(), None)
   private val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(schemaRegistryConfig)
 
   test("getAllTopics should return topic for corresponding schema based on schema name") {
@@ -31,21 +34,30 @@ class AzureSchemaRegistryClientIntegrationTest extends AnyFunSuite with Matchers
 
     val topics = schemaRegistryClient.getAllTopics.validValue
 
-    topics should contain (givenTopic)
+    topics should contain(givenTopic)
   }
 
   test("getFreshSchema should return version for topic for corresponding schema based on schema name") {
     val givenTopic = "nu-cloud-multiple-versions-test"
-    val aFieldOnlySchema = createRecordSchema(givenTopic, _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault())
-    val abFieldsSchema = createRecordSchema(givenTopic,
-      _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault()
-        .name("b").`type`(Schema.create(Schema.Type.STRING)).withDefault("bDefault"))
+    val aFieldOnlySchema =
+      createRecordSchema(givenTopic, _.name("a").`type`(Schema.create(Schema.Type.STRING)).noDefault())
+    val abFieldsSchema = createRecordSchema(
+      givenTopic,
+      _.name("a")
+        .`type`(Schema.create(Schema.Type.STRING))
+        .noDefault()
+        .name("b")
+        .`type`(Schema.create(Schema.Type.STRING))
+        .withDefault("bDefault")
+    )
 
     val aFieldOnlySchemaProps = schemaRegistryClient.registerSchemaVersionIfNotExists(aFieldOnlySchema)
-    val abFieldsSchemaProps = schemaRegistryClient.registerSchemaVersionIfNotExists(abFieldsSchema)
+    val abFieldsSchemaProps   = schemaRegistryClient.registerSchemaVersionIfNotExists(abFieldsSchema)
 
-    val resultForAFieldOnlySchema = schemaRegistryClient.getFreshSchema(givenTopic, Some(aFieldOnlySchemaProps.getVersion), isKey = false).validValue
-    val resultForABFieldsSchema = schemaRegistryClient.getFreshSchema(givenTopic, Some(abFieldsSchemaProps.getVersion), isKey = false).validValue
+    val resultForAFieldOnlySchema =
+      schemaRegistryClient.getFreshSchema(givenTopic, Some(aFieldOnlySchemaProps.getVersion), isKey = false).validValue
+    val resultForABFieldsSchema =
+      schemaRegistryClient.getFreshSchema(givenTopic, Some(abFieldsSchemaProps.getVersion), isKey = false).validValue
 
     resultForAFieldOnlySchema.schema shouldEqual aFieldOnlySchema
     resultForAFieldOnlySchema.id.asString shouldEqual aFieldOnlySchemaProps.getId
@@ -62,8 +74,11 @@ class AzureSchemaRegistryClientIntegrationTest extends AnyFunSuite with Matchers
 
     schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(schema))
   }
-  private def createRecordSchema(topicName: String,
-                                 assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]) = {
+
+  private def createRecordSchema(
+      topicName: String,
+      assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
+  ) = {
     val fields = SchemaBuilder
       .record(SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(topicName))
       .namespace("not.important.namespace")

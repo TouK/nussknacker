@@ -12,9 +12,9 @@ import scala.util.Using
 
 trait ProcessRepository {
 
-  def add(id: ProcessName, deploymentData: RequestResponseDeploymentData) : Unit
+  def add(id: ProcessName, deploymentData: RequestResponseDeploymentData): Unit
 
-  def remove(id: ProcessName) : Unit
+  def remove(id: ProcessName): Unit
 
   def loadAll: Map[ProcessName, RequestResponseDeploymentData]
 
@@ -31,7 +31,8 @@ class EmptyProcessRepository extends ProcessRepository {
 }
 
 object FileProcessRepository {
-  def apply(path: String) : FileProcessRepository = {
+
+  def apply(path: String): FileProcessRepository = {
     val dir = new File(path)
     dir.mkdirs()
     if (!dir.isDirectory || !dir.canRead) {
@@ -39,6 +40,7 @@ object FileProcessRepository {
     }
     new FileProcessRepository(dir)
   }
+
 }
 
 class FileProcessRepository(path: File) extends ProcessRepository {
@@ -59,12 +61,17 @@ class FileProcessRepository(path: File) extends ProcessRepository {
       s.getLines().mkString("\n")
     }
 
-  override def loadAll: Map[ProcessName, RequestResponseDeploymentData] = path.listFiles().filter(_.isFile).map { file =>
-    ProcessName(file.getName) -> CirceUtil.decodeJson[RequestResponseDeploymentData](fileToString(file))
-      .fold(error => throw new IllegalStateException(s"Could not decode deployment data for file: $file", error), identity)
-  }.toMap
+  override def loadAll: Map[ProcessName, RequestResponseDeploymentData] = path
+    .listFiles()
+    .filter(_.isFile)
+    .map { file =>
+      ProcessName(file.getName) -> CirceUtil
+        .decodeJson[RequestResponseDeploymentData](fileToString(file))
+        .fold(
+          error => throw new IllegalStateException(s"Could not decode deployment data for file: $file", error),
+          identity
+        )
+    }
+    .toMap
 
 }
-
-
-

@@ -27,14 +27,14 @@ trait KafkaAvroSourceSpecMixin {
 
   object KafkaAvroSourceMockSchemaRegistry {
 
-    val RecordTopic: String = "testAvroRecordTopic1"
-    val RecordTopicWithKey: String = "testAvroRecordTopic1WithKey"
-    val IntTopicWithKey: String = "testAvroIntTopic1WithKey"
-    val IntTopicNoKey: String = "testAvroIntTopic1NoKey"
-    val ArrayOfNumbersTopic: String = "testArrayOfNumbersTopic"
-    val ArrayOfRecordsTopic: String = "testArrayOfRecordsTopic"
-    val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
-    val PaymentDateTopic: String = "testPaymentDateTopic"
+    val RecordTopic: String                    = "testAvroRecordTopic1"
+    val RecordTopicWithKey: String             = "testAvroRecordTopic1WithKey"
+    val IntTopicWithKey: String                = "testAvroIntTopic1WithKey"
+    val IntTopicNoKey: String                  = "testAvroIntTopic1NoKey"
+    val ArrayOfNumbersTopic: String            = "testArrayOfNumbersTopic"
+    val ArrayOfRecordsTopic: String            = "testArrayOfRecordsTopic"
+    val InvalidDefaultsTopic: String           = "testAvroInvalidDefaultsTopic1"
+    val PaymentDateTopic: String               = "testPaymentDateTopic"
     val GeneratedWithLogicalTypesTopic: String = "testGeneratedWithLogicalTypesTopic"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
@@ -52,8 +52,7 @@ trait KafkaAvroSourceSpecMixin {
 
     val ArrayOfRecordsV2Schema: Schema = arraySchema(FullNameV2.schema.toString)
 
-    private def arraySchema(itemsType: String) = AvroUtils.parseSchema(
-      s"""{
+    private def arraySchema(itemsType: String) = AvroUtils.parseSchema(s"""{
          |  "type": "array",
          |  "items": $itemsType
          |}
@@ -95,4 +94,5 @@ trait KafkaAvroSourceSpecMixin {
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
+
 }

@@ -22,14 +22,18 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val scenario = ScenarioBuilder
       .streamingLite("t1")
       .source("source", TestScenarioRunner.testDataSource)
-      //we test component created manually
+      // we test component created manually
       .enricher("customByHand", "o1", "customByHand", "param" -> "#input")
-      //we test component registered via normal ConfigProvider
+      // we test component registered via normal ConfigProvider
       .enricher("custom", "o2", "custom", "param" -> "#input")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "{#o1, #o2}")
 
-    val runner = new LiteTestScenarioRunner(List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
-      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")), EngineRuntime)
+    val runner = new LiteTestScenarioRunner(
+      List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
+      Map.empty,
+      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")),
+      EngineRuntime
+    )
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
     result.validValue shouldBe RunResult.success(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
@@ -42,7 +46,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .buildVariable("v", "v", "varField" -> "#input.field")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
 
-    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty(), EngineRuntime)
+    val runner = new LiteTestScenarioRunner(List.empty, Map.empty, ConfigFactory.empty(), EngineRuntime)
 
     val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
     result.validValue shouldBe RunResult.success("abc")

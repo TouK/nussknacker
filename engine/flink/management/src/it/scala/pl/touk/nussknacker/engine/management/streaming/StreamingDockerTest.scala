@@ -24,7 +24,8 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
-  implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  implicit val backend: SttpBackend[Future, Any] =
+    AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   protected var kafkaClient: KafkaClient = _
@@ -44,17 +45,25 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   protected lazy val deploymentManager: DeploymentManager =
     FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(ConfigWithUnresolvedVersion(config))
 
-  protected def deployProcessAndWaitIfRunning(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
+  protected def deployProcessAndWaitIfRunning(
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      savepointPath: Option[String] = None
+  ): Assertion = {
     deployProcess(process, processVersion, savepointPath)
     eventually {
       val jobStatuses = deploymentManager.getProcessStates(ProcessName(process.id)).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.id}, $jobStatuses")
 
-      jobStatuses.map(_.status) should contain (SimpleStateStatus.Running)
+      jobStatuses.map(_.status) should contain(SimpleStateStatus.Running)
     }
   }
 
-  protected def deployProcess(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
+  protected def deployProcess(
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      savepointPath: Option[String] = None
+  ): Option[ExternalDeploymentId] = {
     deploymentManager.deploy(processVersion, DeploymentData.empty, process, savepointPath).futureValue
   }
 
@@ -63,7 +72,8 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
     eventually {
       val statuses = deploymentManager
         .getProcessStates(ProcessName(processId))
-        .futureValue.value
+        .futureValue
+        .value
       val runningOrDurringCancelJobs = statuses
         .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
 

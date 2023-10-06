@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, Proce
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -29,71 +29,102 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-class FlinkProcessCompiler(creator: ProcessConfigCreator,
-                           val processConfig: Config,
-                           val diskStateBackendSupport: Boolean,
-                           objectNaming: ObjectNaming,
-                           val componentUseCase: ComponentUseCase) extends Serializable {
+class FlinkProcessCompiler(
+    creator: ProcessConfigCreator,
+    val processConfig: Config,
+    val diskStateBackendSupport: Boolean,
+    objectNaming: ObjectNaming,
+    val componentUseCase: ComponentUseCase
+) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
+  def this(modelData: ModelData) = this(
+    modelData.configCreator,
+    modelData.processConfig,
+    diskStateBackendSupport = true,
+    modelData.objectNaming,
+    componentUseCase = ComponentUseCase.EngineRuntime
+  )
 
-  def compileProcess(process: CanonicalProcess,
-                     processVersion: ProcessVersion,
-                     resultCollector: ResultCollector,
-                     userCodeClassLoader: ClassLoader): FlinkProcessCompilerData =
+  def compileProcess(
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      resultCollector: ResultCollector,
+      userCodeClassLoader: ClassLoader
+  ): FlinkProcessCompilerData =
     compileProcess(process, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
 
-  def compileProcess(process: CanonicalProcess,
-                     processVersion: ProcessVersion,
-                     resultCollector: ResultCollector)
-                    (usedNodes: UsedNodes, userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
+  def compileProcess(process: CanonicalProcess, processVersion: ProcessVersion, resultCollector: ResultCollector)(
+      usedNodes: UsedNodes,
+      userCodeClassLoader: ClassLoader
+  ): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
 
-    //TODO: this should be somewhere else?
+    // TODO: this should be somewhere else?
     val timeout = processConfig.as[FiniteDuration]("timeout")
 
-    //TODO: should this be the default?
-    val asyncExecutionContextPreparer = creator.asyncExecutionContextPreparer(processObjectDependencies).getOrElse(
-      processConfig.as[DefaultAsyncExecutionConfigPreparer]("asyncExecutionConfig")
-    )
+    // TODO: should this be the default?
+    val asyncExecutionContextPreparer = creator
+      .asyncExecutionContextPreparer(processObjectDependencies)
+      .getOrElse(
+        processConfig.as[DefaultAsyncExecutionConfigPreparer]("asyncExecutionConfig")
+      )
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
-    val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
+    val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor         = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, fragmentDefinitionExtractor, listenersToUse,
-        userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
+      ProcessCompilerData.prepare(
+        process,
+        definitionWithTypes,
+        dictRegistry,
+        fragmentDefinitionExtractor,
+        listenersToUse,
+        userCodeClassLoader,
+        resultCollector,
+        componentUseCase,
+        customProcessValidator
+      )
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
       jobData = JobData(process.metaData, processVersion),
-      exceptionHandler = exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
+      exceptionHandler =
+        exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase
     )
   }
 
-  //TODO: should this be configurable somehow?
+  // TODO: should this be configurable somehow?
   private def prepareDefaultListeners(usedNodes: UsedNodes) = {
-    //see comment in Interpreter.interpretNext
-    //TODO: how should we handle branch?
-    val nodesHandledInNextParts = (nodeData: NodeData) => nodeData.isInstanceOf[CustomNode] || nodeData.isInstanceOf[node.Sink]
-    List(LoggingListener,
+    // see comment in Interpreter.interpretNext
+    // TODO: how should we handle branch?
+    val nodesHandledInNextParts = (nodeData: NodeData) =>
+      nodeData.isInstanceOf[CustomNode] || nodeData.isInstanceOf[node.Sink]
+    List(
+      LoggingListener,
       new NodeCountingListener(usedNodes.nodes.filterNot(nodesHandledInNextParts).map(_.id) ++ usedNodes.nextParts),
-      new EndCountingListener(usedNodes.nodes))
+      new EndCountingListener(usedNodes.nodes)
+    )
   }
 
-
-  protected def definitions(processObjectDependencies: ProcessObjectDependencies, userCodeClassLoader: ClassLoader): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+  protected def definitions(
+      processObjectDependencies: ProcessObjectDependencies,
+      userCodeClassLoader: ClassLoader
+  ): (ModelDefinitionWithTypes, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
-    val modelDefinitionWithTypes = ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, userCodeClassLoader, processObjectDependencies))
-    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries)
+    val modelDefinitionWithTypes = ModelDefinitionWithTypes(
+      ProcessDefinitionExtractor.extractObjectWithMethods(creator, userCodeClassLoader, processObjectDependencies)
+    )
+    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(
+      modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries
+    )
     (modelDefinitionWithTypes, dictRegistry)
   }
 
@@ -102,13 +133,17 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     DictServicesFactoryLoader.justOne(userCodeClassLoader)
   }
 
+  protected def adjustListeners(
+      defaults: List[ProcessListener],
+      processObjectDependencies: ProcessObjectDependencies
+  ): List[ProcessListener] = defaults
 
-  protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
-
-  protected def exceptionHandler(metaData: MetaData,
-                                 processObjectDependencies: ProcessObjectDependencies,
-                                 listeners: Seq[ProcessListener],
-                                 classLoader: ClassLoader): FlinkExceptionHandler = {
+  protected def exceptionHandler(
+      metaData: MetaData,
+      processObjectDependencies: ProcessObjectDependencies,
+      listeners: Seq[ProcessListener],
+      classLoader: ClassLoader
+  ): FlinkExceptionHandler = {
     componentUseCase match {
       case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
@@ -119,6 +154,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
     }
   }
+
 }
 
 //The logic of listeners invocation is a bit tricky for CustomNodes/Sinks (see Interpreter.interpretNode)

@@ -10,5 +10,4 @@ trait ExpressionSubstitutionsCollector {
 
 case class ExpressionSubstitution(position: PositionRange, replacement: String)
 
-
 case class PositionRange(start: Int, end: Int)

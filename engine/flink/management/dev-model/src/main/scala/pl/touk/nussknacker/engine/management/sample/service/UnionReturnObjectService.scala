@@ -12,14 +12,18 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
 
-  override def invoke(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[AnyRef] =
+  override def invoke(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector,
+      contextId: ContextId,
+      metaData: MetaData,
+      componentUseCase: ComponentUseCase
+  ): Future[AnyRef] =
     Future.successful(Map("foo" -> 1))
 
   override def parameters: List[Parameter] = List.empty
 
-  override def returnType: typing.TypingResult = Typed(
-    TypedObjectTypingResult(Map("foo" -> Typed[Int])),
-    TypedObjectTypingResult(Map("bar" -> Typed[Int])))
+  override def returnType: typing.TypingResult =
+    Typed(TypedObjectTypingResult(Map("foo" -> Typed[Int])), TypedObjectTypingResult(Map("bar" -> Typed[Int])))
 
 }

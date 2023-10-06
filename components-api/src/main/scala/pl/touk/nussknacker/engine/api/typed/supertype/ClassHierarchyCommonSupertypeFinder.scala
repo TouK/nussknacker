@@ -29,8 +29,8 @@ object ClassHierarchyCommonSupertypeFinder {
 
   def findCommonSupertypes(first: Class[_], sec: Class[_]): Set[Class[_]] = {
     // We need to have breadth first search to make reduction below work
-    val firstBfs = classesBfs(first)
-    val secBfs = classesBfs(sec)
+    val firstBfs     = classesBfs(first)
+    val secBfs       = classesBfs(sec)
     val intersection = firstBfs.intersect(secBfs)
     // We try to reduce this list - sometimes it is useful when it is exact one element (see klassCommonSupertypeReturningTypedClass)
     // also this type can be shown on FE
@@ -48,7 +48,9 @@ object ClassHierarchyCommonSupertypeFinder {
   }
 
   private def bfsNodesForThisAndAllLevelsBelow(classesOnThisLevel: ListSet[Class[_]]): ListSet[Class[_]] = {
-    classesOnThisLevel ++ classesOnThisLevel.flatMap(classOnThisLevel => bfsNodesForThisAndAllLevelsBelow(classesOnLowerLevel(classOnThisLevel)))
+    classesOnThisLevel ++ classesOnThisLevel.flatMap(classOnThisLevel =>
+      bfsNodesForThisAndAllLevelsBelow(classesOnLowerLevel(classOnThisLevel))
+    )
   }
 
   private def classesOnLowerLevel(classOnUpperLevel: Class[_]): ListSet[Class[_]] = {

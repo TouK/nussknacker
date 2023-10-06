@@ -8,7 +8,7 @@ import scala.reflect.{ClassTag, classTag}
 
 object ConsumerRecordHelper {
 
-  def asJson[T: Decoder : ClassTag](data: Array[Byte]): T = {
+  def asJson[T: Decoder: ClassTag](data: Array[Byte]): T = {
     val clazz = classTag[T].runtimeClass
 
     if (classOf[String].isAssignableFrom(clazz)) {

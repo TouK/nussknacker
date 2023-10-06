@@ -16,33 +16,42 @@ import scala.util.control.NonFatal
 
 class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) extends LazyLogging {
 
-  def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Unit] = {
+  def checkRequiredSlotsExceedAvailableSlots(
+      canonicalProcess: CanonicalProcess,
+      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+  ): Future[Unit] = {
     val collectedSlotsCheckInputs = for {
-      slotsBalance <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobsIds)
+      slotsBalance    <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobsIds)
       clusterOverview <- OptionT(client.getClusterOverview.map(Option(_)))
     } yield (slotsBalance, clusterOverview)
 
     val checkResult = for {
-      collectedInputs <- OptionT(collectedSlotsCheckInputs.value.recover {
-        case NonFatal(ex) =>
-          logger.warn("Error during collecting inputs needed for available slots checking. Slots checking will be omitted", ex)
-          None
+      collectedInputs <- OptionT(collectedSlotsCheckInputs.value.recover { case NonFatal(ex) =>
+        logger.warn(
+          "Error during collecting inputs needed for available slots checking. Slots checking will be omitted",
+          ex
+        )
+        None
       })
       (slotsBalance, clusterOverview) = collectedInputs
       _ <- OptionT(
         if (slotsBalance.value > clusterOverview.`slots-available`)
           Future.failed(NotEnoughSlotsException(clusterOverview, slotsBalance))
         else
-          Future.successful(Option(())))
+          Future.successful(Option(()))
+      )
     } yield ()
     checkResult.value.map(_ => ())
   }
 
-  private def determineSlotsBalance(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
+  private def determineSlotsBalance(
+      canonicalProcess: CanonicalProcess,
+      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+  ): OptionT[Future, SlotsBalance] = {
     canonicalProcess.metaData.typeSpecificData match {
       case stream: StreamMetaData =>
         val requiredSlotsFuture = for {
-          releasedSlots <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds)
+          releasedSlots  <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds)
           allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, canonicalProcess.metaData.id)
         } yield Option(SlotsBalance(releasedSlots, allocatedSlots))
         OptionT(requiredSlotsFuture)
@@ -50,9 +59,15 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
     }
   }
 
-  private def slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Int] = {
-    Future.sequence(currentlyDeployedJobsIds
-      .map(deploymentId => client.getJobConfig(deploymentId.value).map(_.`job-parallelism`))).map(_.sum)
+  private def slotsThatWillBeReleasedAfterJobCancel(
+      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+  ): Future[Int] = {
+    Future
+      .sequence(
+        currentlyDeployedJobsIds
+          .map(deploymentId => client.getJobConfig(deploymentId.value).map(_.`job-parallelism`))
+      )
+      .map(_.sum)
   }
 
   private def slotsAllocatedByProcessThatWilBeDeployed(stream: StreamMetaData, processId: String): Future[Int] = {
@@ -60,7 +75,9 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
       .map(definedParallelism => Future.successful(definedParallelism))
       .getOrElse(client.getJobManagerConfig.map { config =>
         val defaultParallelism = config.get(CoreOptions.DEFAULT_PARALLELISM)
-        logger.debug(s"Not specified parallelism for process: $processId, will be used default configured on jobmanager: $defaultParallelism")
+        logger.debug(
+          s"Not specified parallelism for process: $processId, will be used default configured on jobmanager: $defaultParallelism"
+        )
         defaultParallelism
       })
   }
@@ -70,16 +87,23 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
 object FlinkSlotsChecker {
 
   case class NotEnoughSlotsException(availableSlots: Int, totalSlots: Int, slotsBalance: SlotsBalance)
-    extends IllegalArgumentException(s"Not enough free slots on Flink cluster. Available slots: $availableSlots, requested: ${Math.max(0, slotsBalance.value)}. ${
-      if (slotsBalance.allocated > 1)
-        "Decrease scenario's parallelism or extend Flink cluster resources"
-      else
-        "Extend resources of Flink cluster resources"
-    }")
+      extends IllegalArgumentException(
+        s"Not enough free slots on Flink cluster. Available slots: $availableSlots, requested: ${Math
+            .max(0, slotsBalance.value)}. ${if (slotsBalance.allocated > 1)
+            "Decrease scenario's parallelism or extend Flink cluster resources"
+          else
+            "Extend resources of Flink cluster resources"}"
+      )
 
   object NotEnoughSlotsException {
+
     def apply(clusterOverview: ClusterOverview, slotsBalance: SlotsBalance): NotEnoughSlotsException =
-      NotEnoughSlotsException(availableSlots = clusterOverview.`slots-available`, totalSlots = clusterOverview.`slots-total`, slotsBalance = slotsBalance)
+      NotEnoughSlotsException(
+        availableSlots = clusterOverview.`slots-available`,
+        totalSlots = clusterOverview.`slots-total`,
+        slotsBalance = slotsBalance
+      )
+
   }
 
   case class SlotsBalance(released: Int, allocated: Int) {

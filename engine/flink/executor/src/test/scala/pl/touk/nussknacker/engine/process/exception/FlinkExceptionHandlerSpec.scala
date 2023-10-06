@@ -15,23 +15,30 @@ import scala.jdk.CollectionConverters._
 
 class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
-  private val config = ConfigFactory.parseMap(Map[String, Any](
-    "exceptionHandler.type" -> TestExceptionConsumerProvider.typeName,
-    "exceptionHandler.param1" -> "param",
-    //it's difficult to mock RuntimeContext for metrics so we switch it off..
-    "exceptionHandler.withRateMeter" -> false,
-    "restartStrategy.default.strategy" -> "fixed-delay",
-    "restartStrategy.default.delay" -> "10 ms",
-    "restartStrategy.default.attempts" -> 10
-  ).asJava)
+  private val config = ConfigFactory.parseMap(
+    Map[String, Any](
+      "exceptionHandler.type"   -> TestExceptionConsumerProvider.typeName,
+      "exceptionHandler.param1" -> "param",
+      // it's difficult to mock RuntimeContext for metrics so we switch it off..
+      "exceptionHandler.withRateMeter"   -> false,
+      "restartStrategy.default.strategy" -> "fixed-delay",
+      "restartStrategy.default.delay"    -> "10 ms",
+      "restartStrategy.default.attempts" -> 10
+    ).asJava
+  )
 
   private val metaData = MetaData("processId", StreamMetaData())
 
-  private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(List((classOf[FlinkEspExceptionConsumerProvider],
-    classOf[TestExceptionConsumerProvider]))) { loader =>
-    new FlinkExceptionHandler(metaData, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming), listeners = Nil, loader)
+  private def configurableExceptionHandler = ClassLoaderWithServices.withCustomServices(
+    List((classOf[FlinkEspExceptionConsumerProvider], classOf[TestExceptionConsumerProvider]))
+  ) { loader =>
+    new FlinkExceptionHandler(
+      metaData,
+      ProcessObjectDependencies(config, DefaultNamespacedObjectNaming),
+      listeners = Nil,
+      loader
+    )
   }
-
 
   test("should load strategy from configuration") {
     configurableExceptionHandler.restartStrategy shouldBe RestartStrategies.fixedDelayRestart(10, 10)
@@ -41,8 +48,9 @@ class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
     val info = new NuExceptionInfo[NonTransientException](None, NonTransientException("", ""), Context(""))
 
     configurableExceptionHandler.handle(info)
-    TestExceptionConsumerProvider.threadLocal.get() shouldBe(metaData, config.getConfig("exceptionHandler"), info)
+    TestExceptionConsumerProvider.threadLocal.get() shouldBe (metaData, config.getConfig("exceptionHandler"), info)
   }
+
 }
 
 object TestExceptionConsumerProvider {
@@ -61,4 +69,5 @@ class TestExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
     (exceptionInfo: NuExceptionInfo[NonTransientException]) => {
       TestExceptionConsumerProvider.threadLocal.set((metaData, exceptionHandlerConfig, exceptionInfo))
     }
+
 }

@@ -21,9 +21,12 @@ import scala.reflect.ClassTag
   */
 class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
-  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
+  override def create[K: ClassTag, V: ClassTag](
+      kafkaConfig: KafkaConfig,
+      kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
+  ): RecordFormatter = {
     val asJsonDeserializerFactory = new KafkaJsonKeyValueDeserializationSchemaFactory
-    val asJsonDeserializer = asJsonDeserializerFactory.create[Json, Json](kafkaConfig, None, None)
+    val asJsonDeserializer        = asJsonDeserializerFactory.create[Json, Json](kafkaConfig, None, None)
 
     new ConsumerRecordToJsonFormatter[Json, Json](asJsonDeserializer)
   }
@@ -32,10 +35,16 @@ class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
 class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
-  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[K] =
+  override protected def createKeyDeserializer[K: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[K] =
     toJsonDeserializer.asInstanceOf[Deserializer[K]]
 
-  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
+  override protected def createValueDeserializer[V: ClassTag](
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      kafkaConfig: KafkaConfig
+  ): Deserializer[V] =
     toJsonDeserializer.asInstanceOf[Deserializer[V]]
 
   // always deserialize key to valid Json
@@ -48,4 +57,5 @@ class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyV
     override def deserialize(topic: String, data: Array[Byte]): Json =
       CirceUtil.decodeJsonUnsafe[Json](data)
   }
+
 }

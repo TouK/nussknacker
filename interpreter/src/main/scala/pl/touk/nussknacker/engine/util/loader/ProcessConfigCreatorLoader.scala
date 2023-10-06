@@ -12,7 +12,9 @@ object ProcessConfigCreatorLoader extends LoadClassFromClassLoader {
 
   override def loadAll(classLoader: ClassLoader): List[SPCC] = {
     ScalaServiceLoader.load[SPCC](classLoader) ++
-      ScalaServiceLoader.load[JPCC](classLoader)
+      ScalaServiceLoader
+        .load[JPCC](classLoader)
         .map(ProcessConfigCreatorMapping.toProcessConfigCreator)
   }
+
 }

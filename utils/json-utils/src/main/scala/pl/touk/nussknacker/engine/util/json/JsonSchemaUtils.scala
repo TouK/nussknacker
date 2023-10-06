@@ -21,17 +21,18 @@ object JsonSchemaUtils {
   )
 
   def jsonToCirce(json: AnyRef): Json = json match {
-    case a: java.lang.Boolean => fromBoolean(a)
-    case a: java.math.BigInteger => fromBigInt(a)
-    case a: java.math.BigDecimal => fromBigDecimal(a)
-    case a: java.lang.Double => fromBigDecimal(BigDecimal.valueOf(a))
-    case a: java.lang.Integer => fromInt(a)
-    case a: java.lang.Long => fromLong(a)
-    case a: java.lang.String => fromString(a)
-    case a: JSONArray => fromValues(a.asScala.map(jsonToCirce))
+    case a: java.lang.Boolean      => fromBoolean(a)
+    case a: java.math.BigInteger   => fromBigInt(a)
+    case a: java.math.BigDecimal   => fromBigDecimal(a)
+    case a: java.lang.Double       => fromBigDecimal(BigDecimal.valueOf(a))
+    case a: java.lang.Integer      => fromInt(a)
+    case a: java.lang.Long         => fromLong(a)
+    case a: java.lang.String       => fromString(a)
+    case a: JSONArray              => fromValues(a.asScala.map(jsonToCirce))
     case a if a == JSONObject.NULL => Null
-    case a: JSONObject => fromJsonObject(JsonObject.fromIterable(a.keys().asScala.map(name => (name, jsonToCirce(a.get(name)))).toList))
-    //should not happen, based on JSONTokener.nextValue docs
+    case a: JSONObject =>
+      fromJsonObject(JsonObject.fromIterable(a.keys().asScala.map(name => (name, jsonToCirce(a.get(name)))).toList))
+    // should not happen, based on JSONTokener.nextValue docs
     case a => throw new IllegalArgumentException(s"Should not happen, JSON: ${a.getClass}")
   }
 

@@ -7,7 +7,12 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, ContextInitializingFunction, Source}
+import pl.touk.nussknacker.engine.api.process.{
+  BasicContextInitializer,
+  ContextInitializer,
+  ContextInitializingFunction,
+  Source
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -31,37 +36,49 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
   // * for production sources (eg BaseFlinkSource, KafkaSource) it is used to determine type information for flinkSourceFunction
   def typeInformation: TypeInformation[Raw]
 
-  def timestampAssigner : Option[TimestampWatermarkHandler[Raw]]
+  def timestampAssigner: Option[TimestampWatermarkHandler[Raw]]
 
   val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
-  def prepareSourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext, sourceFunction: SourceFunction[Raw]): DataStream[Context] = {
+  def prepareSourceStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext,
+      sourceFunction: SourceFunction[Raw]
+  ): DataStream[Context] = {
 
-    //1. add source and 2. set UID
-    val rawSourceWithUid = setUidToNodeIdIfNeed(flinkNodeContext, env
-      .addSource[Raw](sourceFunction, typeInformation)
-      .name(flinkNodeContext.nodeId))
+    // 1. add source and 2. set UID
+    val rawSourceWithUid = setUidToNodeIdIfNeed(
+      flinkNodeContext,
+      env
+        .addSource[Raw](sourceFunction, typeInformation)
+        .name(flinkNodeContext.nodeId)
+    )
 
-    //3. assign timestamp and watermark policy
+    // 3. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = timestampAssigner
       .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
       .getOrElse(rawSourceWithUid)
 
-    //4. initialize Context and spool Context to the stream
+    // 4. initialize Context and spool Context to the stream
     val nodeId = flinkNodeContext.nodeId
     rawSourceWithUidAndTimestamp
       .map(
         new FlinkContextInitializingFunction(
-          contextInitializer, nodeId,
-          flinkNodeContext.convertToEngineRuntimeContext),
+          contextInitializer,
+          nodeId,
+          flinkNodeContext.convertToEngineRuntimeContext
+        ),
         flinkNodeContext.contextTypeInfo
       )
   }
+
 }
 
-class FlinkContextInitializingFunction[Raw](contextInitializer: ContextInitializer[Raw], nodeId: String,
-                                            convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-  extends RichMapFunction[Raw, Context] {
+class FlinkContextInitializingFunction[Raw](
+    contextInitializer: ContextInitializer[Raw],
+    nodeId: String,
+    convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+) extends RichMapFunction[Raw, Context] {
 
   private var initializingStrategy: ContextInitializingFunction[Raw] = _
 

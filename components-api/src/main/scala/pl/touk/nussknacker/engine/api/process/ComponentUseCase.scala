@@ -13,10 +13,10 @@ package pl.touk.nussknacker.engine.api.process
 sealed trait ComponentUseCase
 
 object ComponentUseCase {
-  case object EngineRuntime extends ComponentUseCase
-  case object TestRuntime extends ComponentUseCase
-  case object Validation extends ComponentUseCase
-  case object ServiceQuery extends ComponentUseCase
+  case object EngineRuntime      extends ComponentUseCase
+  case object TestRuntime        extends ComponentUseCase
+  case object Validation         extends ComponentUseCase
+  case object ServiceQuery       extends ComponentUseCase
   case object TestDataGeneration extends ComponentUseCase
 
 }

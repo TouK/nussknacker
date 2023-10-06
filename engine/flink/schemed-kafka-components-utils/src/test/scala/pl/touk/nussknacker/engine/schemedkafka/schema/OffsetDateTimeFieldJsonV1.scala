@@ -5,7 +5,9 @@ import java.time.format.DateTimeFormatter
 
 object OffsetDateTimeFieldJsonV1 extends TestSchemaWithRecord {
 
-  override def exampleData: Map[String, Any] = exampleData(ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME).toOffsetDateTime)
+  override def exampleData: Map[String, Any] = exampleData(
+    ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME).toOffsetDateTime
+  )
 
   override def stringSchema: String = ???
 

@@ -24,4 +24,5 @@ trait WithExceptionHandler {
       exceptionHandler.close()
     }
   }
+
 }

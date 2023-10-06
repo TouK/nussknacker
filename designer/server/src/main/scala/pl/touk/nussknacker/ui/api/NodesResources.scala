@@ -55,18 +55,18 @@ import scala.concurrent.{ExecutionContext, Future}
 /** This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
   */
 class NodesResources(
-  val processRepository: FetchingProcessRepository[Future],
-  fragmentRepository: FragmentRepository,
-  typeToConfig: ProcessingTypeDataProvider[ModelData, _],
-  processValidation: ProcessValidation,
-  typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _]
+    val processRepository: FetchingProcessRepository[Future],
+    fragmentRepository: FragmentRepository,
+    typeToConfig: ProcessingTypeDataProvider[ModelData, _],
+    processValidation: ProcessValidation,
+    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _]
 )(implicit val ec: ExecutionContext)
     extends ProcessDirectives
     with FailFastCirceSupport
     with RouteWithUser {
 
   private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
-  private val nodeValidator = new NodeValidator
+  private val nodeValidator           = new NodeValidator
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -141,7 +141,7 @@ class NodesResources(
                 }
               }
             } ~ path("suggestions") {
-              val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
+              val expressionSuggester                         = typeToExpressionSuggester.forTypeUnsafe(processingType)
               implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
               implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] =
                 ExpressionSuggestionRequest.decoder(typeDecoder)
@@ -164,18 +164,19 @@ class NodesResources(
       }
     }
   }
+
 }
 
 object NodesResources {
 
   def validate(
-    modelData: ModelData,
-    request: ParametersValidationRequest,
-    processName: String
+      modelData: ModelData,
+      request: ParametersValidationRequest,
+      processName: String
   ): List[NodeValidationError] = {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
-    val context = prepareValidationContext(modelData)(request.variableTypes)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData)
+    val context                     = prepareValidationContext(modelData)(request.variableTypes)
+    val expressionCompiler          = ExpressionCompiler.withoutOptimization(modelData)
     request.parameters
       .map(param => expressionCompiler.compile(param.expression, Some(param.name), context, param.typ)(NodeId("")))
       .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
@@ -194,7 +195,7 @@ object NodesResources {
   }
 
   def prepareParametersValidationDecoder(modelData: ModelData): Decoder[ParametersValidationRequest] = {
-    implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val typeDecoder: Decoder[TypingResult]                 = prepareTypingResultDecoder(modelData)
     implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
     deriveConfiguredDecoder[ParametersValidationRequest]
   }
@@ -212,7 +213,7 @@ object NodesResources {
   }
 
   def prepareValidationContext(
-    modelData: ModelData
+      modelData: ModelData
   )(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
     val emptyCtx = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(metaData)
     // It's a bit tricky, because FE does not distinguish between global and local vars...
@@ -223,18 +224,19 @@ object NodesResources {
 }
 
 class NodeValidator {
+
   def validate(
-    nodeData: NodeValidationRequest,
-    modelData: ModelData,
-    processId: String,
-    fragmentRepository: FragmentRepository
+      nodeData: NodeValidationRequest,
+      modelData: ModelData,
+      processId: String,
+      fragmentRepository: FragmentRepository
   ): NodeValidationResult = {
     implicit val metaData: MetaData = nodeData.processProperties.toMetaData(processId)
 
     val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
     val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext(modelData))
 
-    val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
+    val edges            = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
     val fragmentResolver = FragmentResolver(k => fragmentRepository.get(k).map(_.canonical))
     new NodeDataValidator(modelData, fragmentResolver).validate(
       nodeData.nodeData,
@@ -268,6 +270,7 @@ class NodeValidator {
         )
     }
   }
+
 }
 
 class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
@@ -280,6 +283,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
         .headOption
         .map(_.nodeAdditionalInfo(pt.processConfig))
     )
+
   private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader
@@ -288,75 +292,78 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
         .map(_.propertiesAdditionalInfo(pt.processConfig))
     )
 
-  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(implicit
-    ec: ExecutionContext
+  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(
+      implicit ec: ExecutionContext
   ): Future[Option[AdditionalInfo]] = {
     (for {
       provider <- OptionT.fromOption[Future](nodeProviders.forType(processingType).flatten)
-      data <- OptionT(provider(nodeData))
+      data     <- OptionT(provider(nodeData))
     } yield data).value
   }
 
-  def prepareAdditionalInfoForProperties(metaData: MetaData, processingType: ProcessingType)(implicit
-    ec: ExecutionContext
+  def prepareAdditionalInfoForProperties(metaData: MetaData, processingType: ProcessingType)(
+      implicit ec: ExecutionContext
   ): Future[Option[AdditionalInfo]] = {
     (for {
       provider <- OptionT.fromOption[Future](propertiesProviders.forType(processingType).flatten)
-      data <- OptionT(provider(metaData))
+      data     <- OptionT(provider(metaData))
     } yield data).value
   }
+
 }
 
-@JsonCodec(encodeOnly = true) case class TestSourceParameters(
-  sourceId: String,
-  parameterExpressions: Map[String, Expression]
+@JsonCodec(encodeOnly = true) final case class TestSourceParameters(
+    sourceId: String,
+    parameterExpressions: Map[String, Expression]
 )
 
-@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(
-  sourceParameters: TestSourceParameters,
-  displayableProcess: DisplayableProcess
+@JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(
+    sourceParameters: TestSourceParameters,
+    displayableProcess: DisplayableProcess
 )
 
-@JsonCodec(encodeOnly = true) case class ParametersValidationResult(
-  validationErrors: List[NodeValidationError],
-  validationPerformed: Boolean
+@JsonCodec(encodeOnly = true) final case class ParametersValidationResult(
+    validationErrors: List[NodeValidationError],
+    validationPerformed: Boolean
 )
 
 // TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
-@JsonCodec(encodeOnly = true) case class ParametersValidationRequest(
-  scenarioName: String,
-  parameters: List[UIValueParameter],
-  processProperties: ProcessProperties,
-  variableTypes: Map[String, TypingResult]
+@JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
+    scenarioName: String,
+    parameters: List[UIValueParameter],
+    processProperties: ProcessProperties,
+    variableTypes: Map[String, TypingResult]
 )
 
-@JsonCodec(encodeOnly = true) case class NodeValidationResult(
-  parameters: Option[List[UIParameter]],
-  expressionType: Option[TypingResult],
-  validationErrors: List[NodeValidationError],
-  validationPerformed: Boolean
+@JsonCodec(encodeOnly = true) final case class NodeValidationResult(
+    parameters: Option[List[UIParameter]],
+    expressionType: Option[TypingResult],
+    validationErrors: List[NodeValidationError],
+    validationPerformed: Boolean
 )
 
-@JsonCodec(encodeOnly = true) case class NodeValidationRequest(
-  nodeData: NodeData,
-  processProperties: ProcessProperties,
-  variableTypes: Map[String, TypingResult],
-  branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
-  // TODO: remove Option when FE is ready
-  outgoingEdges: Option[List[Edge]]
+@JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
+    nodeData: NodeData,
+    processProperties: ProcessProperties,
+    variableTypes: Map[String, TypingResult],
+    branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
+    // TODO: remove Option when FE is ready
+    outgoingEdges: Option[List[Edge]]
 )
 
-@JsonCodec(encodeOnly = true) case class PropertiesValidationRequest(processProperties: ProcessProperties)
+@JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(processProperties: ProcessProperties)
 
 // TODO like in 'validate' create globalVariables based on processingType on backend side. Do not pass them from FE.
-case class ExpressionSuggestionRequest(
-  expression: Expression,
-  caretPosition2d: CaretPosition2d,
-  variables: Map[String, TypingResult]
+final case class ExpressionSuggestionRequest(
+    expression: Expression,
+    caretPosition2d: CaretPosition2d,
+    variables: Map[String, TypingResult]
 )
 
 object ExpressionSuggestionRequest {
+
   implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
     deriveConfiguredDecoder[ExpressionSuggestionRequest]
   }
+
 }

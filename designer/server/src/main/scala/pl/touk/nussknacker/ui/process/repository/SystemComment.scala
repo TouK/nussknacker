@@ -6,15 +6,14 @@ import pl.touk.nussknacker.ui.listener.Comment
 
 sealed trait SystemComment extends Comment
 
-case class UpdateProcessComment(override val value: String) extends SystemComment
+final case class UpdateProcessComment(override val value: String) extends SystemComment
 
 object UpdateProcessComment {
   implicit val encoder: Encoder[UpdateProcessComment] = Encoder.encodeString.contramap(_.value)
   implicit val decoder: Decoder[UpdateProcessComment] = Decoder.decodeString.map(UpdateProcessComment(_))
 }
 
-case class MigrationComment(migrationsApplied: List[ProcessMigration]) extends SystemComment {
+final case class MigrationComment(migrationsApplied: List[ProcessMigration]) extends SystemComment {
 
   override def value: String = s"Migrations applied: ${migrationsApplied.map(_.description).mkString(", ")}"
 }
-

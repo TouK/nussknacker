@@ -23,16 +23,19 @@ sealed trait PeriodicProcessEvent {
   val deployment: PeriodicProcessDeployment
 }
 
-case class DeployedEvent(deployment: PeriodicProcessDeployment, externalDeploymentId: Option[ExternalDeploymentId]) extends PeriodicProcessEvent
+case class DeployedEvent(deployment: PeriodicProcessDeployment, externalDeploymentId: Option[ExternalDeploymentId])
+    extends PeriodicProcessEvent
 
-case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
+case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails])
+    extends PeriodicProcessEvent
 
-case class FailedOnDeployEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
+case class FailedOnDeployEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails])
+    extends PeriodicProcessEvent
 
-case class FailedOnRunEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
+case class FailedOnRunEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails])
+    extends PeriodicProcessEvent
 
 case class ScheduledEvent(deployment: PeriodicProcessDeployment, firstSchedule: Boolean) extends PeriodicProcessEvent
-
 
 object EmptyListener extends EmptyListener
 

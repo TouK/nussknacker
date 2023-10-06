@@ -3,17 +3,21 @@ package pl.touk.nussknacker.engine.expression
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.ast._
-import pl.touk.nussknacker.engine.spel.ast.{OptionallyTypedNode, ReplacingStrategy, SpelSubstitutionsCollector, TypedTreeLevel}
+import pl.touk.nussknacker.engine.spel.ast.{
+  OptionallyTypedNode,
+  ReplacingStrategy,
+  SpelSubstitutionsCollector,
+  TypedTreeLevel
+}
 
 class ExpressionSubstitutorSpec extends AnyFunSuite with Matchers {
 
   test("indexer substitution") {
     val expression = "#foo['bar']"
     val replacementPF: PartialFunction[List[TypedTreeLevel], String] = {
-      case
-        TypedTreeLevel(OptionallyTypedNode(literal: StringLiteral, _) :: Nil) ::
-        TypedTreeLevel(OptionallyTypedNode(_: Indexer, _) :: _) ::
-        _ if literal.getLiteralValue.getValue == "bar" =>
+      case TypedTreeLevel(OptionallyTypedNode(literal: StringLiteral, _) :: Nil) ::
+          TypedTreeLevel(OptionallyTypedNode(_: Indexer, _) :: _) ::
+          _ if literal.getLiteralValue.getValue == "bar" =>
         "'baz'"
     }
 
@@ -47,7 +51,7 @@ class ExpressionSubstitutorSpec extends AnyFunSuite with Matchers {
   }
 
   private def replace(expression: String, replacementPF: PartialFunction[List[TypedTreeLevel], String]) = {
-    val collector = new SpelSubstitutionsCollector(_ => None, ReplacingStrategy.fromPartialFunction(replacementPF))
+    val collector     = new SpelSubstitutionsCollector(_ => None, ReplacingStrategy.fromPartialFunction(replacementPF))
     val substitutions = collector.collectSubstitutions(expression)
     ExpressionSubstitutor.substitute(expression, substitutions)
   }

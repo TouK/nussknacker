@@ -41,12 +41,14 @@ class TestReporter extends MetricReporter with CharacterFilter {
   private val processToMetric = new ConcurrentHashMap[(ProcessName, String), Metric]()
 
   def namedMetricsForScenario(implicit scenarioName: ProcessName): Map[String, Metric] = {
-    processToMetric.asScala.toMap.filterKeysNow { case (scenarioName1, _) =>
-      scenarioName1 == scenarioName
-    }.map { case ((_, name), metric) => name -> metric }
+    processToMetric.asScala.toMap
+      .filterKeysNow { case (scenarioName1, _) =>
+        scenarioName1 == scenarioName
+      }
+      .map { case ((_, name), metric) => name -> metric }
   }
 
-  def testMetrics[T<:Metric](metricNamePattern: String)(implicit scenarioName: ProcessName): Iterable[T] =
+  def testMetrics[T <: Metric](metricNamePattern: String)(implicit scenarioName: ProcessName): Iterable[T] =
     namedMetricsForScenario.filterKeysNow(_.contains(metricNamePattern)).values.map(_.asInstanceOf[T])
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
@@ -67,4 +69,3 @@ class TestReporter extends MetricReporter with CharacterFilter {
 
   override def filterCharacters(input: String): String = input
 }
-

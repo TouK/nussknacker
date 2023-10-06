@@ -6,34 +6,54 @@ import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 object MethodTypeInfoSubclassChecker {
+
   def check(subclassInfo: MethodTypeInfo, superclassInfo: MethodTypeInfo): ValidatedNel[ParameterListError, Unit] = {
-    val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult) = subclassInfo
+    val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult)       = subclassInfo
     val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassInfo
 
     val validatedVarArgs = (subclassVarArgOption, superclassVarArgOption) match {
       case (Some(sub), Some(sup)) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
       case (Some(sub), Some(sup)) => NotSubclassVarArgument(sub.refClazz, sup.refClazz).invalidNel
-      case (Some(_), None) => BadVarArg.invalidNel
-      case (None, Some(_)) => ().validNel
-      case (None, None) => ().validNel
+      case (Some(_), None)        => BadVarArg.invalidNel
+      case (None, Some(_))        => ().validNel
+      case (None, None)           => ().validNel
     }
 
-    val validatedLength = if (superclassVarArgOption.isDefined)
-      Validated.condNel(subclassNoVarArg.length >= superclassNoVarArg.length, (), NotEnoughArguments(subclassNoVarArg.length, superclassNoVarArg.length))
-    else
-      Validated.condNel(subclassNoVarArg.length == superclassNoVarArg.length, (), WrongNumberOfArguments(subclassNoVarArg.length, superclassNoVarArg.length))
+    val validatedLength =
+      if (superclassVarArgOption.isDefined)
+        Validated.condNel(
+          subclassNoVarArg.length >= superclassNoVarArg.length,
+          (),
+          NotEnoughArguments(subclassNoVarArg.length, superclassNoVarArg.length)
+        )
+      else
+        Validated.condNel(
+          subclassNoVarArg.length == superclassNoVarArg.length,
+          (),
+          WrongNumberOfArguments(subclassNoVarArg.length, superclassNoVarArg.length)
+        )
 
-    val zippedParameters = subclassNoVarArg.zip(superclassVarArgOption.map(superclassNoVarArg.padTo(subclassNoVarArg.length, _)).getOrElse(superclassNoVarArg))
-    val validatedNoVarArgs = zippedParameters.zipWithIndex.map {
-      case ((sub, sup), _) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
-      case ((sub, sup), i) => NotSubclassArgument(i + 1, sub.refClazz, sup.refClazz).invalidNel
-    }.sequence.map(_ => ())
+    val zippedParameters = subclassNoVarArg.zip(
+      superclassVarArgOption.map(superclassNoVarArg.padTo(subclassNoVarArg.length, _)).getOrElse(superclassNoVarArg)
+    )
+    val validatedNoVarArgs = zippedParameters.zipWithIndex
+      .map {
+        case ((sub, sup), _) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
+        case ((sub, sup), i) => NotSubclassArgument(i + 1, sub.refClazz, sup.refClazz).invalidNel
+      }
+      .sequence
+      .map(_ => ())
 
     val validatedResult =
-      Validated.condNel(subclassResult.canBeSubclassOf(superclassResult), (), NotSubclassResult(subclassResult, superclassResult))
+      Validated.condNel(
+        subclassResult.canBeSubclassOf(superclassResult),
+        (),
+        NotSubclassResult(subclassResult, superclassResult)
+      )
 
     validatedVarArgs combine validatedLength combine validatedNoVarArgs combine validatedResult
   }
+
 }
 
 trait ParameterListError {

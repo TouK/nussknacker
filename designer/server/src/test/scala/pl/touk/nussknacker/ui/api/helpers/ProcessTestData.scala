@@ -37,30 +37,30 @@ object ProcessTestData {
   import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
 
-  val existingSourceFactory = "barSource"
-  val otherExistingSourceFactory = "fooSource"
+  val existingSourceFactory       = "barSource"
+  val otherExistingSourceFactory  = "fooSource"
   val secretExistingSourceFactory = "secretSource"
-  val csvSourceFactory = "csv-source"
+  val csvSourceFactory            = "csv-source"
 
-  val existingSinkFactory = "barSink"
-  val existingSinkFactory2 = "barSink2"
+  val existingSinkFactory            = "barSink"
+  val existingSinkFactory2           = "barSink2"
   val existingSinkFactoryKafkaString = "kafka-string"
-  val otherExistingSinkFactory = "barSink"
+  val otherExistingSinkFactory       = "barSink"
 
-  val existingServiceId = "barService"
-  val otherExistingServiceId = "fooService"
-  val otherExistingServiceId2 = "fooService2"
-  val otherExistingServiceId3 = "fooService3"
+  val existingServiceId         = "barService"
+  val otherExistingServiceId    = "fooService"
+  val otherExistingServiceId2   = "fooService2"
+  val otherExistingServiceId3   = "fooService3"
   val notBlankExistingServiceId = "notBlank"
-  val otherExistingServiceId4 = "fooService4"
+  val otherExistingServiceId4   = "fooService4"
 
   val processorId = "fooProcessor"
 
-  val existingStreamTransformer = "transformer"
-  val otherExistingStreamTransformer = "otherTransformer"
+  val existingStreamTransformer                = "transformer"
+  val otherExistingStreamTransformer           = "otherTransformer"
   val overriddenOtherExistingStreamTransformer = "overriddenOtherTransformer"
-  val otherExistingStreamTransformer2 = "otherTransformer2"
-  val optionalEndingStreamTransformer = "optionalEndingTransformer"
+  val otherExistingStreamTransformer2          = "otherTransformer2"
+  val optionalEndingStreamTransformer          = "optionalEndingTransformer"
 
   class SimpleTestComponentIdProvider extends ComponentIdProvider {
     def createComponentId(processingType: String, name: Option[String], componentType: ComponentType): ComponentId =
@@ -69,41 +69,61 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] = ProcessDefinitionBuilder.empty
-    .withSourceFactory(existingSourceFactory)
-    .withSourceFactory(otherExistingSourceFactory)
-    .withSourceFactory(csvSourceFactory)
-    .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
-    .withSinkFactory(otherExistingSinkFactory)
-    .withSinkFactory(existingSinkFactory)
-    .withSinkFactory(existingSinkFactoryKafkaString,
-      Parameter[String](TopicParamName),
-      Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
-    )
-    .withService(existingServiceId)
-    .withService(otherExistingServiceId)
-    .withService(processorId, None)
-    .withService(otherExistingServiceId2, Parameter[Any]("expression"))
-    .withService(otherExistingServiceId3, Parameter[String]("expression"))
-    .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed[String]))
-    .withService(otherExistingServiceId4, Parameter[JavaSampleEnum]("expression").copy(
-      editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
-      validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))))
-    )
-    .withCustomStreamTransformer(existingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
-      manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
-      manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer2, Some(Typed[String]), CustomTransformerAdditionalData(
-      manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(optionalEndingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
-      manyInputs = false, canBeEnding = true))
+  val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
+    ProcessDefinitionBuilder.empty
+      .withSourceFactory(existingSourceFactory)
+      .withSourceFactory(otherExistingSourceFactory)
+      .withSourceFactory(csvSourceFactory)
+      .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
+      .withSinkFactory(otherExistingSinkFactory)
+      .withSinkFactory(existingSinkFactory)
+      .withSinkFactory(
+        existingSinkFactoryKafkaString,
+        Parameter[String](TopicParamName),
+        Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
+      )
+      .withService(existingServiceId)
+      .withService(otherExistingServiceId)
+      .withService(processorId, None)
+      .withService(otherExistingServiceId2, Parameter[Any]("expression"))
+      .withService(otherExistingServiceId3, Parameter[String]("expression"))
+      .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed[String]))
+      .withService(
+        otherExistingServiceId4,
+        Parameter[JavaSampleEnum]("expression").copy(
+          editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
+          validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a"))))
+        )
+      )
+      .withCustomStreamTransformer(
+        existingStreamTransformer,
+        Some(Typed[String]),
+        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+      )
+      .withCustomStreamTransformer(
+        otherExistingStreamTransformer,
+        Some(Typed[String]),
+        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+      )
+      .withCustomStreamTransformer(
+        otherExistingStreamTransformer2,
+        Some(Typed[String]),
+        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+      )
+      .withCustomStreamTransformer(
+        optionalEndingStreamTransformer,
+        Some(Typed[String]),
+        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true)
+      )
 
-  val processDefinitionWithIds: ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
+  val processDefinitionWithIds
+      : ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
     processDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
 
   def processValidation: ProcessValidation = ProcessValidation(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
+    ),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
     new FragmentResolver(new StubFragmentRepository(Set()))
@@ -111,13 +131,15 @@ object ProcessTestData {
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
 
-  val validProcessWithEmptySpelExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
+  val validProcessWithEmptySpelExpr: CanonicalProcess =
+    validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
   val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
-  val archivedValidProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
+  val archivedValidProcessDetails: ValidatedProcessDetails =
+    TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
   def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
     .streaming(id)
@@ -133,27 +155,37 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.TestCat): ValidatedDisplayableProcess = {
+  def toValidatedDisplayable(
+      espProcess: CanonicalProcess,
+      category: String = TestCategories.TestCat
+  ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
     new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
   }
 
-  val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(ScenarioBuilder.streaming("fooProcess").sources(
-    GraphBuilder
-      .source("source1", existingSourceFactory)
-      .branchEnd("branch1", "join1"),
-    GraphBuilder
-      .source("source2", existingSourceFactory)
-      .branchEnd("branch2", "join1"),
-    GraphBuilder
-      .join("join1", "union", Some("outputVar"),
-        List(
-          "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
-          "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
-        )
+  val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(
+    ScenarioBuilder
+      .streaming("fooProcess")
+      .sources(
+        GraphBuilder
+          .source("source1", existingSourceFactory)
+          .branchEnd("branch1", "join1"),
+        GraphBuilder
+          .source("source2", existingSourceFactory)
+          .branchEnd("branch2", "join1"),
+        GraphBuilder
+          .join(
+            "join1",
+            "union",
+            Some("outputVar"),
+            List(
+              "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
+              "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
+            )
+          )
+          .filter("always-true-filter", """#outputVar.key != "not key1 or key2"""")
+          .emptySink("sink1", existingSinkFactory)
       )
-      .filter("always-true-filter", """#outputVar.key != "not key1 or key2"""")
-      .emptySink("sink1", existingSinkFactory))
   )
 
   val technicalValidProcess: CanonicalProcess =
@@ -163,21 +195,29 @@ object ProcessTestData {
       .buildSimpleVariable("var1", "var1", "'foo'")
       .filter("filter1", "#var1 == 'foo'")
       .enricher("enricher1", "output1", existingServiceId)
-      .switch("switch1", "1 == 1", "switchVal",
-        Case("true", GraphBuilder
-          .filter("filter2", "1 != 0")
-          .enricher("enricher2", "output2", existingServiceId)
-          .emptySink("sink1", existingSinkFactory))
-        ,
-        Case("false", GraphBuilder
-          .filter("filter3", "1 != 0")
-          .enricher("enricher3", "output3", existingServiceId)
-          .emptySink("sink2", existingSinkFactory)
-        ))
+      .switch(
+        "switch1",
+        "1 == 1",
+        "switchVal",
+        Case(
+          "true",
+          GraphBuilder
+            .filter("filter2", "1 != 0")
+            .enricher("enricher2", "output2", existingServiceId)
+            .emptySink("sink1", existingSinkFactory)
+        ),
+        Case(
+          "false",
+          GraphBuilder
+            .filter("filter3", "1 != 0")
+            .enricher("enricher3", "output3", existingServiceId)
+            .emptySink("sink2", existingSinkFactory)
+        )
+      )
 
   val invalidProcess: CanonicalProcess = {
     val missingSourceFactory = "missingSource"
-    val missingSinkFactory = "fooSink"
+    val missingSinkFactory   = "fooSink"
 
     ScenarioBuilder
       .streaming("fooProcess")
@@ -186,20 +226,23 @@ object ProcessTestData {
   }
 
   val invalidProcessWithEmptyMandatoryParameter: CanonicalProcess = {
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder
+      .streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
       .emptySink("sink", existingSinkFactory)
   }
 
   val invalidProcessWithBlankParameter: CanonicalProcess =
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder
+      .streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
       .emptySink("sink", existingSinkFactory)
 
   val invalidProcessWithWrongFixedExpressionValue: CanonicalProcess = {
-    ScenarioBuilder.streaming("fooProcess")
+    ScenarioBuilder
+      .streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)
@@ -207,13 +250,18 @@ object ProcessTestData {
 
   val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
-    properties = ProcessProperties.combineTypeSpecificProperties(StreamMetaData(
-      Some(2)),
-      ProcessAdditionalFields(Some("scenario description"), Map(
-        "maxEvents" -> "text",
-        "unknown" -> "x",
-        "numberOfThreads" -> "wrong fixed value"
-      ), StreamMetaData.typeName)),
+    properties = ProcessProperties.combineTypeSpecificProperties(
+      StreamMetaData(Some(2)),
+      ProcessAdditionalFields(
+        Some("scenario description"),
+        Map(
+          "maxEvents"       -> "text",
+          "unknown"         -> "x",
+          "numberOfThreads" -> "wrong fixed value"
+        ),
+        StreamMetaData.typeName
+      )
+    ),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -250,34 +298,55 @@ object ProcessTestData {
   }
 
   val sampleFragmentOneOut = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
-      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
-    ), List.empty)
+    CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      List(
+        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
   }
 
   val sampleFragment = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
-      SplitNode(Split("split"), List(
-        List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
-        List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty)))
-      ))
-    ), List.empty)
+    CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      List(
+        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+        SplitNode(
+          Split("split"),
+          List(
+            List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
+            List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty)))
+          )
+        )
+      ),
+      List.empty
+    )
   }
 
   val sampleFragment2 = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param2", FragmentClazzRef[String])))),
-      SplitNode(Split("split"), List(
-        List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
-        List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty))),
-        List(FlatNode(FragmentOutputDefinition("out3", "out2", List.empty)))
-      ))
-    ), List.empty)
+    CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      List(
+        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param2", FragmentClazzRef[String])))),
+        SplitNode(
+          Split("split"),
+          List(
+            List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
+            List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty))),
+            List(FlatNode(FragmentOutputDefinition("out3", "out2", List.empty)))
+          )
+        )
+      ),
+      List.empty
+    )
   }
 
-  def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
+  def createEmptyUpdateProcessCommand(
+      processName: ProcessName,
+      comment: Option[UpdateProcessComment]
+  ): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
       properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
@@ -290,34 +359,44 @@ object ProcessTestData {
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")), None)
   }
 
-  def validProcessWithFragment(processName: ProcessName, fragment: CanonicalProcess = sampleFragmentOneOut): ProcessUsingFragment = {
+  def validProcessWithFragment(
+      processName: ProcessName,
+      fragment: CanonicalProcess = sampleFragmentOneOut
+  ): ProcessUsingFragment = {
     ProcessUsingFragment(
       process = ScenarioBuilder
         .streaming(processName.value)
         .source("source", existingSourceFactory)
-        .fragment(fragment.metaData.id, fragment.metaData.id, Nil, Map.empty, Map(
-          "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
-        )),
+        .fragment(
+          fragment.metaData.id,
+          fragment.metaData.id,
+          Nil,
+          Map.empty,
+          Map(
+            "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+          )
+        ),
       fragment = fragment
     )
   }
 
   def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
-    val process = validDisplayableProcess.toDisplayable
+    val process    = validDisplayableProcess.toDisplayable
     val properties = process.properties
 
     process.copy(
       properties = properties.copy(
-        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields(None, Map.empty, properties.additionalFields.metaDataType))
+        additionalFields =
+          additionalFields.getOrElse(ProcessAdditionalFields(None, Map.empty, properties.additionalFields.metaDataType))
       )
     )
   }
 
-  case class ProcessUsingFragment(process: CanonicalProcess, fragment: CanonicalProcess)
+  final case class ProcessUsingFragment(process: CanonicalProcess, fragment: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(StreamMetaData.typeName, Map(
-    StreamMetaData.parallelismName -> "1",
-    StreamMetaData.spillStateToDiskName -> "true")
+  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(
+    StreamMetaData.typeName,
+    Map(StreamMetaData.parallelismName -> "1", StreamMetaData.spillStateToDiskName -> "true")
   )
 
 }

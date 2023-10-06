@@ -13,10 +13,11 @@ object ProcessDefinitionExtractor {
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
   // We don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
   def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
-    TypesInformation.extract(definition.services.values ++
-      definition.sourceFactories.values ++
-      definition.customStreamTransformers.values.map(_._1) ++
-      definition.expressionConfig.globalVariables.values
+    TypesInformation.extract(
+      definition.services.values ++
+        definition.sourceFactories.values ++
+        definition.customStreamTransformers.values.map(_._1) ++
+        definition.expressionConfig.globalVariables.values
     )(definition.settings) ++
       TypesInformation.extractFromClassList(definition.expressionConfig.additionalClasses)(definition.settings)
   }
@@ -24,27 +25,37 @@ object ProcessDefinitionExtractor {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
-  //TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
-  def extractObjectWithMethods(creator: ProcessConfigCreator,
-                               classLoader: ClassLoader,
-                               processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
+  // TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
+  def extractObjectWithMethods(
+      creator: ProcessConfigCreator,
+      classLoader: ClassLoader,
+      processObjectDependencies: ProcessObjectDependencies
+  ): ProcessDefinition[ObjectWithMethodDef] = {
 
     val componentsFromProviders = extractFromComponentProviders(classLoader, processObjectDependencies)
-    val services = creator.services(processObjectDependencies) ++ componentsFromProviders.services
+    val services                = creator.services(processObjectDependencies) ++ componentsFromProviders.services
     val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ componentsFromProviders.sourceFactories
-    val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
-    val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ componentsFromProviders.customTransformers
+    val sinkFactories   = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
+    val customStreamTransformers =
+      creator.customStreamTransformers(processObjectDependencies) ++ componentsFromProviders.customTransformers
 
-    val expressionConfig = creator.expressionConfig(processObjectDependencies)
+    val expressionConfig   = creator.expressionConfig(processObjectDependencies)
     val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
 
-    val servicesDefs = ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
+    val servicesDefs =
+      ObjectWithMethodDef.forMap(services, ProcessObjectDefinitionExtractor.service, componentsUiConfig)
 
-    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customStreamTransformer, componentsUiConfig)
+    val customStreamTransformersDefs = ObjectWithMethodDef.forMap(
+      customStreamTransformers,
+      ProcessObjectDefinitionExtractor.customStreamTransformer,
+      componentsUiConfig
+    )
 
-    val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig)
+    val sourceFactoriesDefs =
+      ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig)
 
-    val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
+    val sinkFactoriesDefs =
+      ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
@@ -54,7 +65,8 @@ object ProcessDefinitionExtractor {
       sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
       toExpressionDefinition(expressionConfig),
-      settings)
+      settings
+    )
   }
 
   private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
@@ -72,9 +84,13 @@ object ProcessDefinitionExtractor {
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed,
       expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders)
+      expressionConfig.customConversionsProviders
+    )
 
-  def extractFromComponentProviders(classLoader: ClassLoader, processObjectDependencies: ProcessObjectDependencies): ComponentExtractor.ComponentsGroupedByType = {
+  def extractFromComponentProviders(
+      classLoader: ClassLoader,
+      processObjectDependencies: ProcessObjectDependencies
+  ): ComponentExtractor.ComponentsGroupedByType = {
     ComponentExtractor(classLoader).extractComponents(processObjectDependencies)
   }
 
@@ -86,7 +102,10 @@ object ProcessDefinitionExtractor {
   case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)
 
   case class ModelDefinitionWithTypes(modelDefinition: ProcessDefinition[ObjectWithMethodDef]) {
-    @transient lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(modelDefinition))
+
+    @transient lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(
+      ProcessDefinitionExtractor.extractTypes(modelDefinition)
+    )
 
     def filter(predicate: ObjectWithMethodDef => Boolean): ModelDefinitionWithTypes = {
       ModelDefinitionWithTypes(modelDefinition.filter(predicate))
@@ -95,15 +114,18 @@ object ProcessDefinitionExtractor {
     def transform(f: ObjectWithMethodDef => ObjectWithMethodDef): ModelDefinitionWithTypes = {
       ModelDefinitionWithTypes(modelDefinition.transform(f))
     }
+
   }
 
-  case class ProcessDefinition[T](services: Map[String,T],
-                                  sourceFactories: Map[String, T],
-                                  sinkFactories: Map[String, T],
-                                  //TODO: find easier way to handle *AdditionalData?
-                                  customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
-                                  expressionConfig: ExpressionDefinition[T],
-                                  settings: ClassExtractionSettings) {
+  case class ProcessDefinition[T](
+      services: Map[String, T],
+      sourceFactories: Map[String, T],
+      sinkFactories: Map[String, T],
+      // TODO: find easier way to handle *AdditionalData?
+      customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
+      expressionConfig: ExpressionDefinition[T],
+      settings: ClassExtractionSettings
+  ) {
 
     import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -116,37 +138,55 @@ object ProcessDefinitionExtractor {
       names.toList
     }
 
-    private def servicesWithIds(componentIdProvider: ComponentIdProvider, processingType: String): List[(ComponentIdWithName, T)] =
+    private def servicesWithIds(
+        componentIdProvider: ComponentIdProvider,
+        processingType: String
+    ): List[(ComponentIdWithName, T)] =
       services.map { case (name, obj) =>
         val hasNoReturn = obj match {
-          case objDef: ObjectDefinition => objDef.returnType.isEmpty
+          case objDef: ObjectDefinition              => objDef.returnType.isEmpty
           case objWithMethodDef: ObjectWithMethodDef => objWithMethodDef.returnType.isEmpty
         }
 
-        val id = componentIdProvider.createComponentId(processingType, Some(name), if (hasNoReturn) ComponentType.Processor else ComponentType.Enricher)
+        val id = componentIdProvider.createComponentId(
+          processingType,
+          Some(name),
+          if (hasNoReturn) ComponentType.Processor else ComponentType.Enricher
+        )
         ComponentIdWithName(id, name) -> obj
       }.toList
 
-    private def customStreamTransformersWithIds(componentIdProvider: ComponentIdProvider, processingType: String): List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))] =
+    private def customStreamTransformersWithIds(
+        componentIdProvider: ComponentIdProvider,
+        processingType: String
+    ): List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))] =
       customStreamTransformers.map { case (name, obj) =>
         val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.CustomNode)
         ComponentIdWithName(id, name) -> obj
       }.toList
 
-    private def sinkFactoriesWithIds(componentIdProvider: ComponentIdProvider, processingType: String): List[(ComponentIdWithName, T)] =
+    private def sinkFactoriesWithIds(
+        componentIdProvider: ComponentIdProvider,
+        processingType: String
+    ): List[(ComponentIdWithName, T)] =
       sinkFactories.map { case (name, obj) =>
         val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.Sink)
         ComponentIdWithName(id, name) -> obj
       }.toList
 
-    private def sourceFactoriesWithIds(componentIdProvider: ComponentIdProvider, processingType: String): List[(ComponentIdWithName, T)] =
+    private def sourceFactoriesWithIds(
+        componentIdProvider: ComponentIdProvider,
+        processingType: String
+    ): List[(ComponentIdWithName, T)] =
       sourceFactories.map { case (name, obj) =>
         val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.Source)
         ComponentIdWithName(id, name) -> obj
       }.toList
 
-    def withComponentIds(componentIdProvider: ComponentIdProvider,
-                         processingType: String): ProcessDefinitionWithComponentIds[T] =
+    def withComponentIds(
+        componentIdProvider: ComponentIdProvider,
+        processingType: String
+    ): ProcessDefinitionWithComponentIds[T] =
       ProcessDefinitionWithComponentIds(
         servicesWithIds(componentIdProvider, processingType),
         sourceFactoriesWithIds(componentIdProvider, processingType),
@@ -164,46 +204,66 @@ object ProcessDefinitionExtractor {
       sourceFactories.filter(kv => predicate(kv._2)),
       sinkFactories.filter(kv => predicate(kv._2)),
       customStreamTransformers.filter(ct => predicate(ct._2._1)),
-      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2))))
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2)))
+    )
 
     def transform[R](f: T => R): ProcessDefinition[R] = copy(
       services.mapValuesNow(f),
       sourceFactories.mapValuesNow(f),
       sinkFactories.mapValuesNow(f),
       customStreamTransformers.mapValuesNow { case (o, additionalData) => (f(o), additionalData) },
-      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f)))
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
+    )
 
   }
 
-  case class ExpressionDefinition[T](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
-                                     languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
-                                     dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
-                                     staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                     dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList,
-                                     customConversionsProviders: List[ConversionsProvider])
+  case class ExpressionDefinition[T](
+      globalVariables: Map[String, T],
+      globalImports: List[String],
+      additionalClasses: List[Class[_]],
+      languages: LanguageConfiguration,
+      optimizeCompilation: Boolean,
+      strictTypeChecking: Boolean,
+      dictionaries: Map[String, DictDefinition],
+      hideMetaVariable: Boolean,
+      strictMethodsChecking: Boolean,
+      staticMethodInvocationsChecking: Boolean,
+      methodExecutionForUnknownAllowed: Boolean,
+      dynamicPropertyAccessAllowed: Boolean,
+      spelExpressionExcludeList: SpelExpressionExcludeList,
+      customConversionsProviders: List[ConversionsProvider]
+  )
 
   case class ComponentIdWithName(id: ComponentId, name: String)
 
   def mapByName[T](mapByNameWithId: List[(ComponentIdWithName, T)]): Map[String, T] =
-    mapByNameWithId.map{ case (idWithName, value) => idWithName.name -> value}.toMap
+    mapByNameWithId.map { case (idWithName, value) => idWithName.name -> value }.toMap
 
-  case class ProcessDefinitionWithComponentIds[T](services: List[(ComponentIdWithName, T)],
-                                                  sourceFactories: List[(ComponentIdWithName, T)],
-                                                  sinkFactories: List[(ComponentIdWithName, T)],
-                                                  //TODO: find easier way to handle *AdditionalData?
-                                                  customStreamTransformers: List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))],
-                                                  expressionConfig: ExpressionDefinition[T],
-                                                  settings: ClassExtractionSettings) {
+  case class ProcessDefinitionWithComponentIds[T](
+      services: List[(ComponentIdWithName, T)],
+      sourceFactories: List[(ComponentIdWithName, T)],
+      sinkFactories: List[(ComponentIdWithName, T)],
+      // TODO: find easier way to handle *AdditionalData?
+      customStreamTransformers: List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))],
+      expressionConfig: ExpressionDefinition[T],
+      settings: ClassExtractionSettings
+  ) {
 
     val allDefinitions: List[(ComponentIdWithName, T)] =
-      services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.map { case (idWithName, (value, _)) => (idWithName, value) }
+      services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.map { case (idWithName, (value, _)) =>
+        (idWithName, value)
+      }
 
     def transform[R](f: T => R): ProcessDefinitionWithComponentIds[R] = copy(
       services.map { case (idWithName, value) => (idWithName, f(value)) },
       sourceFactories.map { case (idWithName, value) => (idWithName, f(value)) },
       sinkFactories.map { case (idWithName, value) => (idWithName, f(value)) },
-      customStreamTransformers.map { case (idWithName, (value, additionalData)) => (idWithName, (f(value), additionalData)) },
-      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f)))
+      customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
+        (idWithName, (f(value), additionalData))
+      },
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
+    )
 
   }
+
 }

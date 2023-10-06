@@ -16,19 +16,29 @@ import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, TestCategories, Test
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 
-class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class ComponentResourcesSpec
+    extends AnyFunSpec
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
-  //These should be defined as lazy val's because of racing, there are some missing tables in db..
+  // These should be defined as lazy val's because of racing, there are some missing tables in db..
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
+
   private lazy val componentService = DefaultComponentService(
     ComponentLinksConfigExtractor.extract(testDbConfig),
     testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
     processService,
-    processCategoryService)
+    processCategoryService
+  )
+
   private lazy val componentRoute = new ComponentResource(componentService)
 
-  //Here we test only response, logic is tested in DefaultComponentServiceSpec
+  // Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {
     getComponents() ~> check {
       status shouldBe StatusCodes.OK
@@ -46,15 +56,19 @@ class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fai
   }
 
   it("should return component usages") {
-    val processName = ProcessName("someTest")
-    val sourceComponentName = "kafka" //it's real component name from DevProcessConfigCreator
+    val processName         = ProcessName("someTest")
+    val sourceComponentName = "kafka" // it's real component name from DevProcessConfigCreator
     val process = ScenarioBuilder
       .streaming(processName.value)
       .source("source", sourceComponentName)
       .emptySink("sink", "kafka")
 
     val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-    val componentId = defaultComponentIdProvider.createComponentId(TestProcessingTypes.Streaming, Some(sourceComponentName), ComponentType.Source)
+    val componentId = defaultComponentIdProvider.createComponentId(
+      TestProcessingTypes.Streaming,
+      Some(sourceComponentName),
+      ComponentType.Source
+    )
 
     getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK

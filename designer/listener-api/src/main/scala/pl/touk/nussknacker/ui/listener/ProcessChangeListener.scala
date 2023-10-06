@@ -7,9 +7,13 @@ trait ProcessChangeListener {
 }
 
 object ProcessChangeListener {
+
   def noop: ProcessChangeListener = new ProcessChangeListener {
+
     override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = event match {
       case _ => ()
     }
+
   }
+
 }

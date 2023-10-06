@@ -1,13 +1,13 @@
 export const variables = {
     alert: {
         info: "#cccccc",
-        infoColor: "#b3b3b3",
         warningIcon: "#FF9A4D",
         warning: "#FF9A4D",
         error: "#f25c6e",
         okColor: "#8fad60",
         text: "#333333",
     },
+    infoColor: "#b3b3b3",
     sucess: "#64d864",
     primary: "#0058a9",
     panelTitleTextColor: "#808080",
@@ -33,5 +33,9 @@ export const variables = {
     commentBkgColor: "#333333",
     formControllHeight: 46,
     warningColor: "#FF9A4D",
-    // buttonTextColor: "#f6f6f6",
+    modalHeaderHeight: 30,
+    modalLabelTextColor: "#999999",
+    buttonBlueColor: "#FFFFFF",
+    buttonBlueBkgColor: "#0E9AE0",
+    processesHoverColor: "#b3b3b3",
 };

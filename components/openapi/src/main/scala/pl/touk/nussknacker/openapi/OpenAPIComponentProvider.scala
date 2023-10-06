@@ -26,23 +26,24 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   override def resolveConfigForExecution(config: Config): Config = {
     // we need to load config to resolve url which can be potentially a system env variable
     val openAPIsConfig = ConfigFactory.load(config).rootAs[OpenAPIServicesConfig]
-    val services = try {
-      SwaggerOpenApiDefinitionDiscovery.discoverOpenAPIServices(openAPIsConfig)
-    } catch {
-      case NonFatal(ex) =>
-        logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)
-        List.empty
-    }
-    val servicesToUse = services.collect {
-      case Valid(service) => ConfigFactory.parseString(service.asJson.spaces2).root()
+    val services =
+      try {
+        SwaggerOpenApiDefinitionDiscovery.discoverOpenAPIServices(openAPIsConfig)
+      } catch {
+        case NonFatal(ex) =>
+          logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)
+          List.empty
+      }
+    val servicesToUse = services.collect { case Valid(service) =>
+      ConfigFactory.parseString(service.asJson.spaces2).root()
     }
     logErrors(services)
     config.withValue("services", ConfigValueFactory.fromIterable(servicesToUse.asJava))
   }
 
   private def logErrors(services: List[Validated[ServiceParseError, SwaggerService]]): Unit = {
-    val errors = services.collect {
-      case Invalid(serviceError) => s"${serviceError.name.value} (${serviceError.errors.toList.mkString(", ")})"
+    val errors = services.collect { case Invalid(serviceError) =>
+      s"${serviceError.name.value} (${serviceError.errors.toList.mkString(", ")})"
     }
     if (errors.nonEmpty) {
       logger.warn(s"Failed to parse following services: ${errors.mkString(", ")}")
@@ -50,14 +51,16 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   }
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
+    val openAPIsConfig          = config.rootAs[OpenAPIServicesConfig]
     val serviceDefinitionConfig = config.getList("services").render(ConfigRenderOptions.concise())
     val swaggerServices =
       CirceUtil.decodeJsonUnsafe[List[SwaggerService]](serviceDefinitionConfig, "Failed to parse service config")
     val creator = prepareBaseEnricherCreator(openAPIsConfig)
 
-    SwaggerEnrichers.prepare(openAPIsConfig, swaggerServices, creator)
-      .map(service => ComponentDefinition(service.name.value, service.service, docsUrl = service.documentation)).toList
+    SwaggerEnrichers
+      .prepare(openAPIsConfig, swaggerServices, creator)
+      .map(service => ComponentDefinition(service.name.value, service.service, docsUrl = service.documentation))
+      .toList
   }
 
   protected def prepareBaseEnricherCreator(config: OpenAPIServicesConfig): SwaggerEnricherCreator = {

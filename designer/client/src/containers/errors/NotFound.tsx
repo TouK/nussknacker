@@ -1,6 +1,6 @@
 import React from "react";
-import { ErrorTemplate } from "./ErrorTemplate";
 import { useTranslation } from "react-i18next";
+import { RootErrorPage } from "../../components/common/RootErrorBoundary";
 
 export function NotFound(props: { message?: string }): JSX.Element {
     const { t } = useTranslation();
@@ -12,5 +12,5 @@ export function NotFound(props: { message?: string }): JSX.Element {
             "Maybe try one of the links in the menu or press back to go to the previous page.",
     );
 
-    return <ErrorTemplate message={message} description={description} />;
+    return <RootErrorPage message={message} description={description} />;
 }

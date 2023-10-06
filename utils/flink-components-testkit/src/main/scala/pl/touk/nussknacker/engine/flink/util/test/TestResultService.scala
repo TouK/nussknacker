@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.util.test.{TestComponentsHolder, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.{TestExtensionsHolder, TestScenarioRunner}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,8 +23,9 @@ class TestResultService extends Service {
 
 object TestResultService {
 
-  def extractFromTestComponentsHolder[R](testComponentHolder: TestComponentsHolder): List[R] = {
-    testComponentHolder.components[Service]
+  def extractFromTestComponentsHolder[R](testExtensionsHolder: TestExtensionsHolder): List[R] = {
+    testExtensionsHolder
+      .components[Service]
       .find(_.name == TestScenarioRunner.testResultService)
       .map(_.component)
       .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))

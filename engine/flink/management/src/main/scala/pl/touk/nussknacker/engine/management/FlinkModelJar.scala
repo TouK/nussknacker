@@ -12,11 +12,11 @@ import scala.util.Using
 
 class FlinkModelJar extends LazyLogging {
 
-  //TODO: handle multiple models?
+  // TODO: handle multiple models?
   private var modelFile: Option[File] = None
 
-  //we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
-  //currently we just generate random file names
+  // we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
+  // currently we just generate random file names
   def buildJobJar(modelData: BaseModelData): File = synchronized {
     modelFile match {
       case Some(file) => file
@@ -28,7 +28,7 @@ class FlinkModelJar extends LazyLogging {
   }
 
   protected def generateModelFileName(): File = {
-    //currently we want to have one such file for one nussknacker execution
+    // currently we want to have one such file for one nussknacker execution
     val tempFile = Files.createTempFile("tempModelJar", ".jar").toFile
     tempFile.deleteOnExit()
     tempFile

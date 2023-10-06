@@ -9,8 +9,9 @@ trait ParameterDefaultValueDeterminer {
   def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression]
 }
 
-
-case class DefaultValueDeterminerParameters(parameterData: ParameterData,
-                                            isOptional: Boolean,
-                                            parameterConfig: ParameterConfig,
-                                            determinedEditor: Option[ParameterEditor])
+case class DefaultValueDeterminerParameters(
+    parameterData: ParameterData,
+    isOptional: Boolean,
+    parameterConfig: ParameterConfig,
+    determinedEditor: Option[ParameterEditor]
+)

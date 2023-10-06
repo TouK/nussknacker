@@ -13,7 +13,13 @@ import pl.touk.nussknacker.sql.utils._
 
 import scala.jdk.CollectionConverters._
 
-class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
+class DatabaseLookupLiteRuntimeTest
+    extends AnyFunSuite
+    with Matchers
+    with LiteRuntimeTest
+    with BeforeAndAfterAll
+    with WithHsqlDB {
+
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",
@@ -28,11 +34,11 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
           "type" -> "databaseEnricher",
           "config" -> Map(
             "databaseLookupEnricher" -> Map(
-              "name" -> "sql-lookup-enricher",
+              "name"   -> "sql-lookup-enricher",
               "dbPool" -> hsqlConfigValues.asJava
             ).asJava,
             "databaseQueryEnricher" -> Map(
-              "name" -> "sql-query-enricher",
+              "name"   -> "sql-query-enricher",
               "dbPool" -> hsqlConfigValues.asJava
             ).asJava
           ).asJava
@@ -47,11 +53,14 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
     val process = ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", "request")
-      .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
-        "Table" -> "'PERSONS'",
+      .enricher(
+        "sql-lookup-enricher",
+        "output",
+        "sql-lookup-enricher",
+        "Table"      -> "'PERSONS'",
         "Key column" -> "'ID'",
-        "Key value" -> "#input.id",
-        "Cache TTL" -> ""
+        "Key value"  -> "#input.id",
+        "Cache TTL"  -> ""
       )
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
@@ -61,9 +70,8 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
-    inside(resultList.head) {
-      case resp: TestResponse =>
-        resp.name shouldEqual "John"
+    inside(resultList.head) { case resp: TestResponse =>
+      resp.name shouldEqual "John"
     }
   }
 
@@ -71,11 +79,14 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
     val process = ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", "request")
-      .enricher("sql-lookup-enricher", "output", "sql-lookup-enricher",
-        "Table" -> "'PERSONS_LOWER'",
+      .enricher(
+        "sql-lookup-enricher",
+        "output",
+        "sql-lookup-enricher",
+        "Table"      -> "'PERSONS_LOWER'",
         "Key column" -> "'id'",
-        "Key value" -> "#input.id",
-        "Cache TTL" -> ""
+        "Key value"  -> "#input.id",
+        "Cache TTL"  -> ""
       )
       .emptySink("response", "response", "name" -> "#output.name", "count" -> "")
 
@@ -85,9 +96,8 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
-    inside(resultList.head) {
-      case resp: TestResponse =>
-        resp.name shouldEqual "John"
+    inside(resultList.head) { case resp: TestResponse =>
+      resp.name shouldEqual "John"
     }
   }
 

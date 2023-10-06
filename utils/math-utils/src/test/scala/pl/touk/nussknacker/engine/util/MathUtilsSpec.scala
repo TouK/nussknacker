@@ -14,12 +14,12 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
     minForByte shouldBe 1.byteValue()
   }
 
-  test("min for not nulls")  {
+  test("min for not nulls") {
     MathUtils.min(1, 2) shouldEqual 1
 
-    val minForIntAndDouble = MathUtils.min(1, 2D)
+    val minForIntAndDouble = MathUtils.min(1, 2d)
     minForIntAndDouble.getClass shouldEqual classOf[java.lang.Double]
-    minForIntAndDouble shouldEqual 1D
+    minForIntAndDouble shouldEqual 1d
 
     val minForIntAndBigDecimal = MathUtils.min(1, java.math.BigDecimal.valueOf(2))
     minForIntAndBigDecimal.getClass shouldEqual classOf[java.math.BigDecimal]
@@ -39,13 +39,13 @@ class MathUtilsSpec extends AnyFunSuite with Matchers {
     minForByte shouldBe 1
   }
 
-  test("sum for not nulls")  {
+  test("sum for not nulls") {
     MathUtils.sum(1, 0) shouldEqual 1
     MathUtils.sum(1, 2) shouldEqual 3
 
-    val sumForIntAndDouble = MathUtils.sum(1, 2D)
+    val sumForIntAndDouble = MathUtils.sum(1, 2d)
     sumForIntAndDouble.getClass shouldEqual classOf[java.lang.Double]
-    sumForIntAndDouble shouldEqual 3D
+    sumForIntAndDouble shouldEqual 3d
 
     val sumForIntAndBigDecimal = MathUtils.sum(1, java.math.BigDecimal.valueOf(2))
     sumForIntAndBigDecimal.getClass shouldEqual classOf[java.math.BigDecimal]
