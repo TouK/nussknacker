@@ -1,4 +1,3 @@
-import { variables } from "../../stylesheets/variables";
 import { tintPrimary } from "./helpers";
 import { createTheme } from "@mui/material";
 
@@ -12,8 +11,6 @@ declare module "@mui/material/styles" {
         custom: typeof custom;
     }
 }
-
-const { success } = variables;
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
     // eslint-disable-next-line i18next/no-literal-string
@@ -76,7 +73,7 @@ const custom = {
         warning: "#FF9A4D",
         error: "#f25c6e",
         ok: "#8fad60",
-        success,
+        success: "#64d864",
         ...selectColors,
         ...colors,
     },
@@ -119,22 +116,22 @@ export const nuTheme = createTheme({
                     marginTop: 10,
                     cursor: "pointer",
                     maxHeight: 400,
-                    ".MuiAlert-icon": { color: variables.alert.text, alignSelf: "center" },
+                    ".MuiAlert-icon": { color: custom.colors.secondaryBackground, alignSelf: "center" },
                 },
                 standardSuccess: {
-                    backgroundColor: variables.success,
-                    color: variables.alert.text,
+                    backgroundColor: custom.colors.success,
+                    color: custom.colors.secondaryBackground,
                 },
                 standardError: {
-                    backgroundColor: variables.alert.error,
-                    color: variables.alert.text,
+                    backgroundColor: custom.colors.error,
+                    color: custom.colors.secondaryBackground,
                 },
                 standardWarning: {
                     backgroundColor: custom.colors.warning,
                 },
                 standardInfo: {
-                    backgroundColor: variables.alert.info,
-                    color: variables.alert.text,
+                    backgroundColor: "#cccccc",
+                    color: custom.colors.secondaryBackground,
                 },
             },
         },

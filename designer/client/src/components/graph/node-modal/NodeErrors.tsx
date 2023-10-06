@@ -3,7 +3,6 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeTip from "./NodeTip";
 import { css } from "@emotion/css";
 import { NodeValidationError } from "../../../types";
-import { variables } from "../../../stylesheets/variables";
 
 //TODO: remove style overrides, cleanup
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
@@ -29,7 +28,7 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
             <NodeTip
                 title={errorMessage}
                 className={nodeTip}
-                icon={<DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center", width: 24, height: 24 }} />}
+                icon={<DangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "center", width: 24, height: 24 })} />}
             />
             <div>
                 {errors.map(({ description, fieldName, message }, index) => (

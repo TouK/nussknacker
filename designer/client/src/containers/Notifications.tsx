@@ -35,9 +35,9 @@ const prepareNotification =
                             type={type}
                             icon={
                                 type == "error" ? (
-                                    <DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
+                                    <DangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "center" })} />
                                 ) : (
-                                    <CheckCircleIcon sx={{ color: variables.success, alignSelf: "center" }} />
+                                    <CheckCircleIcon sx={(theme) => ({ color: theme.custom.colors.success, alignSelf: "center" })} />
                                 )
                             }
                             message={message}
