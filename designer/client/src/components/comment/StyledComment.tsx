@@ -26,7 +26,7 @@ export const AddCommentPanel = styled("div")`
     flex-direction: column !important;
     textarea {
         width: 100% !important;
-        height: ${variables.formControllHeight}px !important;
+        height: ${variables.formControlHeight} !important;
         font-size: 12px;
         font-weight: 400;
         border-radius: 3px;

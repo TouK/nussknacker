@@ -2,7 +2,7 @@ import { ComponentType, SVGProps } from "react";
 import { lighten, styled } from "@mui/material";
 import { variables } from "../../stylesheets/variables";
 import { Link } from "react-router-dom";
-import { alpha } from "../../containers/theme";
+import { alpha } from "../../containers/theme/helpers";
 
 export const LinkStyled = styled(Link)`
     color: ${variables.warningColor};

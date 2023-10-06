@@ -6,7 +6,7 @@ export const SyledBlueButton = styled("button")`
     border: none;
     width: 360px;
     min-width: 300px;
-    height: ${variables.formControllHeight}px;
+    height: ${variables.formControlHeight};
     background-color: ${variables.buttonBlueBkgColor};
     color: ${variables.buttonBlueColor};
     display: flex;

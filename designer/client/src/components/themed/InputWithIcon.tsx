@@ -1,8 +1,8 @@
 import { css, cx } from "@emotion/css";
 import React, { PropsWithChildren, useCallback, useRef } from "react";
-import { useNkTheme } from "../../containers/theme";
 import { InputProps, ThemedInput } from "./ThemedInput";
 import { ClearIcon } from "../table/SearchFilter";
+import { useTheme } from "@mui/material";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
@@ -10,9 +10,11 @@ type Props = PropsWithChildren<InputProps> & {
 };
 
 export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Props): JSX.Element {
-    const { theme } = useNkTheme();
-    const size = theme.spacing.controlHeight;
+    const theme = useTheme();
 
+    const size = theme.custom.spacing.controlHeight;
+
+    console.log("size", size);
     const wrapperWithAddonStyles = css({
         position: "relative",
     });
@@ -32,8 +34,8 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
         height: size / 2,
         marginLeft: size / 4,
         svg: {
-            boxShadow: `0 0 ${size / 4}px ${size / 8}px ${theme.colors.secondaryBackground}, 0 0 ${size / 2}px ${size / 2}px ${
-                theme.colors.secondaryBackground
+            boxShadow: `0 0 ${size / 4}px ${size / 8}px ${theme.custom.colors.secondaryBackground}, 0 0 ${size / 2}px ${size / 2}px ${
+                theme.custom.colors.secondaryBackground
             } inset`,
         },
     });

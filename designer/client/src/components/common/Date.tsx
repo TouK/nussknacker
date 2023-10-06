@@ -1,9 +1,9 @@
 import React from "react";
 import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
 import { variables } from "../../stylesheets/variables";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
-const StyledDate = styled.span(() => ({
+const StyledDate = styled("span")(() => ({
     whiteSpace: "normal",
     color: variables.commentHeaderColor,
 }));

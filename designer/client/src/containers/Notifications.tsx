@@ -37,7 +37,7 @@ const prepareNotification =
                                 type == "error" ? (
                                     <DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
                                 ) : (
-                                    <CheckCircleIcon sx={{ color: variables.sucess, alignSelf: "center" }} />
+                                    <CheckCircleIcon sx={{ color: variables.success, alignSelf: "center" }} />
                                 )
                             }
                             message={message}

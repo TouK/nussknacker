@@ -3,12 +3,14 @@ import { FooterButtonProps } from "@touk/window-manager/cjs/components/window/fo
 import "ladda/dist/ladda.min.css";
 import React, { useCallback, useState } from "react";
 import Button, { SLIDE_UP } from "react-ladda";
-import { alpha, tint, useNkTheme } from "../containers/theme";
+import { useTheme } from "@mui/material";
+import { tint, alpha, useFocus } from "../containers/theme/helpers";
 
 //TODO: replace. does not cleanly unmount. brings problems to tests.
 export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
     const { classname, action, title, disabled } = props;
-    const { theme, withFocus } = useNkTheme();
+    const theme = useTheme();
+    const withFocus = useFocus();
     const [loading, setLoading] = useState(false);
     const onClick = useCallback(async () => {
         setLoading(true);
@@ -20,7 +22,9 @@ export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
         setLoading(false);
     }, [action]);
 
-    const { spacing = { baseUnit: 2 }, colors } = theme;
+    const {
+        custom: { spacing, colors },
+    } = theme;
     const { baseUnit } = spacing;
     const buttonClass = css({
         //increase specificity over ladda
@@ -65,7 +69,7 @@ export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
             loading={loading}
             className={cx(buttonClass, withFocus, classname)}
             data-style={SLIDE_UP}
-            data-color={theme.colors.accent}
+            data-color={theme.custom.colors.accent}
             disabled={disabled}
         >
             {title}

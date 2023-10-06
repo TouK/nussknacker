@@ -1,8 +1,8 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
-import { useNkTheme } from "../../containers/theme";
 import SearchSvg from "../../assets/img/search.svg";
 import DeleteSvg from "../../assets/img/toolbarButtons/delete.svg";
+import { useTheme } from "@mui/material";
 
 const flex = css({
     width: 0, // edge 18. why? because! 🙃
@@ -10,14 +10,14 @@ const flex = css({
 });
 
 export function SearchIcon(props: { isEmpty?: boolean }): JSX.Element {
-    const { theme } = useNkTheme();
+    const theme = useTheme();
     return (
         <SearchSvg
             className={cx(
                 flex,
                 css({
                     ".icon-fill": {
-                        fill: props.isEmpty ? theme.colors.secondaryColor : theme.colors.accent,
+                        fill: props.isEmpty ? theme.custom.colors.secondaryColor : theme.custom.colors.accent,
                     },
                 }),
             )}
@@ -26,14 +26,15 @@ export function SearchIcon(props: { isEmpty?: boolean }): JSX.Element {
 }
 
 export function ClearIcon(): JSX.Element {
-    const { theme } = useNkTheme();
+    const theme = useTheme();
+
     return (
         <DeleteSvg
             className={cx(
                 flex,
                 css({
                     path: {
-                        fill: theme.colors.mutedColor,
+                        fill: theme.custom.colors.mutedColor,
                     },
                 }),
             )}
