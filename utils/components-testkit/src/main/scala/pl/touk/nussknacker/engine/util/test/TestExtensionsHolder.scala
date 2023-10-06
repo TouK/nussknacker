@@ -13,7 +13,7 @@ case class TestExtensionsHolder(runId: TestRunId) extends Serializable {
 
   def components[T <: Component: ClassTag]: List[ComponentDefinition] = TestExtensionsHolder.componentsForId[T](runId)
 
-  def globalVariables: Map[String, AnyRef] = TestExtensionsHolder.variables(runId)
+  def globalVariables: Map[String, AnyRef] = TestExtensionsHolder.globalVariablesForId(runId)
 
   def clean(): Unit = TestExtensionsHolder.clean(runId)
 
@@ -23,11 +23,12 @@ object TestExtensionsHolder {
 
   private var extensions = Map[TestRunId, Extensions]()
 
-  def componentsForId[T <: Component: ClassTag](id: TestRunId): List[ComponentDefinition] = extensions(id).components.collect {
-    case ComponentDefinition(name, component: T, _, _) => ComponentDefinition(name, component)
-  }
+  def componentsForId[T <: Component: ClassTag](id: TestRunId): List[ComponentDefinition] =
+    extensions(id).components.collect { case ComponentDefinition(name, component: T, _, _) =>
+      ComponentDefinition(name, component)
+    }
 
-  def globalVariables(id: TestRunId): Map[String, AnyRef] = extensions(id).variables
+  def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = extensions(id).variables
 
   def registerTestExtensions(
       componentDefinitions: List[ComponentDefinition],
