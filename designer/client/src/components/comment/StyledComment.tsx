@@ -20,13 +20,14 @@ export const RemoveButton = styled("span")`
     }
 `;
 
-export const AddCommentPanel = styled("div")`
+export const AddCommentPanel = styled("div")(
+    ({ theme }) => `
     font-size: 12px !important;
     display: flex;
     flex-direction: column !important;
     textarea {
         width: 100% !important;
-        height: ${variables.formControlHeight} !important;
+        height: ${theme.custom.spacing.controlHeight} !important;
         font-size: 12px;
         font-weight: 400;
         border-radius: 3px;
@@ -38,7 +39,8 @@ export const AddCommentPanel = styled("div")`
             outline-color: ${variables.defaultTextColor};
         }
     }
-`;
+`,
+);
 
 export const CommentButton = styled(NkButton)`
     font-size: 12px !important;

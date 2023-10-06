@@ -13,7 +13,7 @@ declare module "@mui/material/styles" {
     }
 }
 
-const { primary, warningColor: warning, errorColor: error, okColor: ok, success, formControlHeight } = variables;
+const { errorColor: error, okColor: ok, success } = variables;
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
     // eslint-disable-next-line i18next/no-literal-string
@@ -40,7 +40,6 @@ const colors = {
     mutedColor: base,
     focusColor: d1,
     evenBackground: d3,
-    selectedValue: d2,
     accent: "#668547",
 };
 
@@ -66,21 +65,18 @@ const custom = {
         zIndex: 1600,
     },
     spacing: {
-        controlHeight: parseFloat(formControlHeight),
+        controlHeight: 36,
         baseUnit: 4,
     },
     fontSize: 14,
     colors: {
         danger: "#DE350B",
         dangerLight: "#FFBDAD",
-        selectedValue: primary,
-        accent: primary,
-        warning,
+        accent: "#0058a9",
+        warning: "#FF9A4D",
         error,
         ok,
         success,
-        warn: warning,
-        info: primary,
         ...selectColors,
         ...colors,
     },
@@ -134,7 +130,7 @@ export const nuTheme = createTheme({
                     color: variables.alert.text,
                 },
                 standardWarning: {
-                    backgroundColor: variables.alert.warning,
+                    backgroundColor: custom.colors.warning,
                 },
                 standardInfo: {
                     backgroundColor: variables.alert.info,
