@@ -30,7 +30,7 @@ import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
 
-type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
+export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
 interface NodeTypeDetailsContentProps {
     node: NodeType;

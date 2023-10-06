@@ -3,13 +3,14 @@ import { SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSetting
 import { Switch } from "@mui/material";
 import { NodeInput } from "../../../../../components/withFocus";
 import { useTranslation } from "react-i18next";
-import { UpdatedFields } from "../FieldsSelect";
+import { Option, UpdatedFields } from "../FieldsSelect";
 
 interface SettingsWithoutStringBool {
     item: UpdatedFields;
+    currentOption: Option;
 }
 
-export default function SettingsWithoutStringBool({ item }: SettingsWithoutStringBool) {
+export default function SettingsWithoutStringBool({ item, currentOption }: SettingsWithoutStringBool) {
     const { t } = useTranslation();
 
     return (
@@ -18,7 +19,7 @@ export default function SettingsWithoutStringBool({ item }: SettingsWithoutStrin
                 <SettingLabelStyled style={{ flexBasis: "30%" }}>{t("fragment.text1", "Required:")}</SettingLabelStyled>
                 <Switch />
             </SettingRow>
-            {(item.currentOption?.includes("String") || item.currentOption?.includes("Boolean")) && (
+            {(currentOption?.value.includes("String") || currentOption?.value.includes("Boolean")) && (
                 <div>
                     <p>Hello</p>
                 </div>

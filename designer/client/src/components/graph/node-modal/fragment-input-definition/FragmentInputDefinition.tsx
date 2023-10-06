@@ -36,7 +36,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
         addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);
     }, [addElement, defaultTypeOption.value]);
 
-    const fields = useMemo(() => node.parameters || [], [node.parameters]);
+    // const fields = useMemo(() => node.parameters || [], [node.parameters]);
 
     return (
         <NodeCommonDetailsDefinition {...passProps}>
@@ -46,7 +46,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 addField={addField}
                 removeField={removeElement}
                 namespace={"parameters"}
-                fields={fields}
+                node={node}
                 options={orderedTypeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}

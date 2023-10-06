@@ -19,12 +19,7 @@ interface ItemProps {
     showValidation?: boolean;
     onChange: (path: string, value: string) => void;
     options: Option[];
-    updatedCurrentField: (
-        currentIndex: number,
-        settingsOpen: boolean,
-        selectedSettingOption: string,
-        settingsOptionsForCurrentType: any,
-    ) => void;
+    updatedCurrentField: (currentIndex: number, settingsOpen: boolean, settingsOptions: any) => void;
 }
 
 function Item(props: ItemProps): JSX.Element {
@@ -65,13 +60,13 @@ function Item(props: ItemProps): JSX.Element {
         }
     };
 
-    const openSettingMenu = useMemo(() => {
+    const openSettingMenu = () => {
         const { value: currentOption } = getCurrentOption(item);
-        // console.log(currentOption, "currentOption");
-        // const fieldsForCurrentOption = validateFieldsForCurrentOption(currentOption);
-        updatedCurrentField(index, !isOpen, currentOption, "");
+        console.log(currentOption, "currentOption");
+        const fieldsForCurrentOption = validateFieldsForCurrentOption(currentOption);
+        updatedCurrentField(index, !isOpen, "");
         setIsOpen(!isOpen);
-    }, [getCurrentOption]);
+    };
 
     return (
         <div>
@@ -93,7 +88,7 @@ function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={isOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {isOpen && <SettingsWithoutStringBool item={item} />}
+            {isOpen && <SettingsWithoutStringBool item={item} currentOption={getCurrentOption(item)} />}
         </div>
     );
 }
