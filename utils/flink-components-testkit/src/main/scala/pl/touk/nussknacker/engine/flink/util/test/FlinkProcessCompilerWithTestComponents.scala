@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
 }
 import pl.touk.nussknacker.engine.definition.{GlobalVariableDefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
+import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
 
 import scala.reflect.ClassTag
 
@@ -25,7 +25,7 @@ class FlinkProcessCompilerWithTestComponents(
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
-    testComponentsHolder: TestComponentsHolder
+    testComponentsHolder: TestExtensionsHolder
 ) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   override protected def definitions(
@@ -90,7 +90,7 @@ class FlinkProcessCompilerWithTestComponents(
   private def testComponentsWithCategories[T <: Component: ClassTag] =
     testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestComponentsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
+  def this(componentsHolder: TestExtensionsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
     modelData.configCreator,
     modelData.processConfig,
     false,

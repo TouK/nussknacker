@@ -16,9 +16,9 @@ object ModelWithTestExtensions {
       components: List[ComponentDefinition],
       globalVariables: Map[String, AnyRef]
   )(action: ModelData => T): T = {
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components, globalVariables)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components, globalVariables)
     val configWithRunId = config.withValue(
-      s"components.${TestComponentsProvider.name}.${TestComponentsProvider.testRunIdConfig}",
+      s"components.${TestExtensionsProvider.name}.${TestExtensionsProvider.testRunIdConfig}",
       fromAnyRef(testComponentHolder.runId.id)
     )
     val model = LocalModelData(configWithRunId, new EmptyProcessConfigCreator)

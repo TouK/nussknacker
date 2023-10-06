@@ -65,7 +65,7 @@ class FlinkTestScenarioRunner(
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalVariables)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -76,7 +76,7 @@ class FlinkTestScenarioRunner(
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalVariables)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -89,11 +89,11 @@ class FlinkTestScenarioRunner(
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalVariables)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder)
   }
 
-  private def run(scenario: CanonicalProcess, testComponentHolder: TestComponentsHolder): RunnerResult[Unit] = {
+  private def run(scenario: CanonicalProcess, testComponentHolder: TestExtensionsHolder): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
     // TODO: get flink mini cluster through composition
@@ -117,7 +117,7 @@ class FlinkTestScenarioRunner(
     }
   }
 
-  private def collectResults[R](testComponentHolder: TestComponentsHolder): RunListResult[R] = {
+  private def collectResults[R](testComponentHolder: TestExtensionsHolder): RunListResult[R] = {
     val results = TestResultService.extractFromTestComponentsHolder(testComponentHolder)
     // TODO: add runtime errors handling
     RunResult.successes(results)
