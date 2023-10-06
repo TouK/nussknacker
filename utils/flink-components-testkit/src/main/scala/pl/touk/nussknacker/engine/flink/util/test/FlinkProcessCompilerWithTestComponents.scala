@@ -72,7 +72,9 @@ class FlinkProcessCompilerWithTestComponents(
     val expressionConfigWithTests = definitions.expressionConfig.copy(
       definitions.expressionConfig.globalVariables ++
         GlobalVariableDefinitionExtractor.extractDefinitions(
-          testExtensionsHolder.globalVariables.view.mapValues(WithCategories.anyCategory).toMap
+          testExtensionsHolder.globalVariables.view.map { case (key, value) =>
+            key -> WithCategories.anyCategory(value)
+          }.toMap
         )
     )
 
