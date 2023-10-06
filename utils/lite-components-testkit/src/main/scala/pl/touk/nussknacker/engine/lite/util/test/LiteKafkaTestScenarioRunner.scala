@@ -15,7 +15,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
@@ -58,6 +58,7 @@ object LiteKafkaTestScenarioRunner {
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
         List.empty,
+        Map.empty,
         config,
         MockSchemaRegistryClientFactory.confluentBased(schemaRegistryClient),
         testRuntimeMode = false
@@ -69,7 +70,8 @@ object LiteKafkaTestScenarioRunner {
 }
 
 case class LiteKafkaTestScenarioRunnerBuilder(
-    extraComponents: List[ComponentDefinition],
+    components: List[ComponentDefinition],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClientFactor: SchemaRegistryClientFactoryWithRegistration,
     testRuntimeMode: Boolean
@@ -78,7 +80,12 @@ case class LiteKafkaTestScenarioRunnerBuilder(
   import TestScenarioRunner._
 
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
-    copy(extraComponents = extraComponents)
+    copy(components = extraComponents)
+
+  override def withExtraGlobalVariables(
+      globalVariables: Map[String, AnyRef]
+  ): LiteKafkaTestScenarioRunnerBuilder =
+    copy(globalVariables = globalVariables)
 
   override def inTestRuntimeMode: LiteKafkaTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
@@ -103,7 +110,8 @@ case class LiteKafkaTestScenarioRunnerBuilder(
         )
     }
     new LiteKafkaTestScenarioRunner(
-      mockedKafkaComponents ++ extraComponents,
+      mockedKafkaComponents ++ components,
+      globalVariables,
       config,
       schemaRegistryClient,
       componentUseCase(testRuntimeMode),
@@ -115,6 +123,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
 
 class LiteKafkaTestScenarioRunner(
     components: List[ComponentDefinition],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClient: SchemaRegistryClientWithRegistration,
     componentUseCase: ComponentUseCase,
@@ -127,9 +136,10 @@ class LiteKafkaTestScenarioRunner(
   type StringInput = ConsumerRecord[String, String]
   type AvroInput   = ConsumerRecord[Any, KafkaAvroElement]
 
-  private val delegate: LiteTestScenarioRunner = new LiteTestScenarioRunner(components, config, componentUseCase)
-  private val kafkaConfig: KafkaConfig         = KafkaConfig.parseConfig(config)
-  private val keyStringDeserializer            = new StringDeserializer
+  private val delegate: LiteTestScenarioRunner =
+    new LiteTestScenarioRunner(components, globalVariables, config, componentUseCase)
+  private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
+  private val keyStringDeserializer    = new StringDeserializer
 
   def runWithStringData(
       scenario: CanonicalProcess,

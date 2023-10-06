@@ -20,7 +20,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication
   action itself. The `def authenticate(): Directive1[AuthenticatedUser]` should be treated as deprecated. It's 
   used in the NU APIs which are still Akka HTTP-based. When we get rid of Akka HTTP, it will be removed.
-* [#4762](https://github.com/TouK/nussknacker/pull/4762) Rename RegExpParameterValidator to LiteralRegExpParameterValidator
+* [#4762](https://github.com/TouK/nussknacker/pull/4762) Rename `RegExpParameterValidator` to `LiteralRegExpParameterValidator`
 
 ### REST API changes
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
