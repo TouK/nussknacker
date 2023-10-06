@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
@@ -24,7 +23,6 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
-import scala.util.Try
 
 class JsonSchemaRequestResponseSource(
     val definition: String,
@@ -78,8 +76,9 @@ class JsonSchemaRequestResponseSource(
     handleSchemaWithUnionTypes(params)
   }
 
-  // TODO handle anyOf, allOf, oneOf schemas properly. Ideally with editor support not to use raw editor
-  // As for now when CombinedSchemas (union) is used we validate json through provided schemas and choose first one that works.
+  // TODO handle anyOf, allOf, oneOf schemas better than 'first matched schema' - now it works kinda' like "anyOf" for all combined schemas
+  // 1. Improve editor to handle display of combined schemas e.g. by using raw mode when combined schema occurs
+  // 2. In `JsonToNuStruct` handle different types of combined schema, not just first valid occurrence
   private def handleSchemaWithUnionTypes(params: Map[String, AnyRef]): Any = {
     inputSchema match {
       case cs: CombinedSchema => {
@@ -87,7 +86,7 @@ class JsonSchemaRequestResponseSource(
           .get(SinkRawValueParamName)
           .map { params =>
             val json                       = BestEffortJsonEncoder.defaultForTests.encode(params)
-            val schema                     = getValidatingSchemaForJson(cs, json)
+            val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
             JsonToNuStruct(json, swaggerTyped)
           }
@@ -104,7 +103,7 @@ class JsonSchemaRequestResponseSource(
     }
   }
 
-  private def getValidatingSchemaForJson(combinedSchema: CombinedSchema, json: Json): Schema = {
+  private def getFirstMatchingSchemaForJson(combinedSchema: CombinedSchema, json: Json): Schema = {
     combinedSchema.getSubschemas.asScala
       .flatMap { s => s.validateData(JsonSchemaUtils.circeToJson(json)).toOption.map(_ => s) }
       .headOption
