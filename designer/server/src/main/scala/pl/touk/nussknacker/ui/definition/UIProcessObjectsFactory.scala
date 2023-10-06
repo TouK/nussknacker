@@ -77,7 +77,7 @@ object UIProcessObjectsFactory {
         componentsConfig = combinedComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.processConfig),
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.mapValuesNow(_._2),
+        customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.map { case (idWithName, (_, additionalData)) => (idWithName, additionalData) }.toMap,
         processingType
       ),
       processDefinition = createUIProcessDefinition(
@@ -104,7 +104,7 @@ object UIProcessObjectsFactory {
   }
 
   private def toComponentsUiConfig(processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition]): ComponentsUiConfig =
-    processDefinition.allDefinitions.map{ case (idWithName, value) => idWithName.name -> value.componentConfig}
+    processDefinition.allDefinitions.map{ case (idWithName, value) => idWithName.name -> value.componentConfig}.toMap
 
   private def finalizeProcessDefinition(processDefinitionWithIds: ProcessDefinitionWithComponentIds[ObjectDefinition],
                              combinedComponentsConfig: Map[String, SingleComponentConfig],
@@ -229,7 +229,7 @@ object UIProcessObjectsFactory {
       sourceFactories = mapByName(transformed.sourceFactories),
       sinkFactories = mapByName(transformed.sinkFactories),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
-      customStreamTransformers = mapByName(transformed.customStreamTransformers).mapValuesNow(_._1),
+      customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) => (name, value) },
       globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )

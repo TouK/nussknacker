@@ -199,7 +199,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.map { case (idWithName, (_, additionalData)) => (idWithName, additionalData) }.toMap,
       TestProcessingTypes.Streaming
     )
     groups
@@ -215,7 +215,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = Map(),
       componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.map { case (idWithName, (_, additionalData)) => (idWithName, additionalData) }.toMap,
       TestProcessingTypes.Streaming
     )
     groups
