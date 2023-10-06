@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.{ModelWithTestExtensions, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
@@ -43,7 +43,7 @@ object RequestResponseTestScenarioRunner {
 
 class RequestResponseTestScenarioRunner(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     componentUseCase: ComponentUseCase
 ) extends TestScenarioRunner {
@@ -51,7 +51,7 @@ class RequestResponseTestScenarioRunner(
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
-    ModelWithTestComponents.withTestComponents(config, components, globalVariables) { modelData =>
+    ModelWithTestExtensions.withExtensions(config, components, globalVariables) { modelData =>
       RequestResponseInterpreter[Id](
         scenario,
         ProcessVersion.empty,
@@ -79,7 +79,7 @@ class RequestResponseTestScenarioRunner(
 
 case class RequestResponseTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
@@ -92,7 +92,7 @@ case class RequestResponseTestScenarioRunnerBuilder(
     copy(components = components)
 
   override def withGlobalVariables(
-      globalVariables: Map[String, WithCategories[AnyRef]]
+      globalVariables: Map[String, AnyRef]
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)
 

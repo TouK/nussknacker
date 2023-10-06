@@ -33,7 +33,7 @@ object LiteTestScenarioRunner {
 
 case class LiteTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[LiteTestScenarioRunner, LiteTestScenarioRunnerBuilder] {
@@ -44,7 +44,7 @@ case class LiteTestScenarioRunnerBuilder(
     copy(components = extraComponents)
 
   override def withGlobalVariables(
-      globalVariables: Map[String, WithCategories[AnyRef]]
+      globalVariables: Map[String, AnyRef]
   ): LiteTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)
 
@@ -63,7 +63,7 @@ case class LiteTestScenarioRunnerBuilder(
  */
 class LiteTestScenarioRunner(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     componentUseCase: ComponentUseCase
 ) extends ClassBasedTestScenarioRunner {
@@ -87,9 +87,8 @@ class LiteTestScenarioRunner(
     val inputId    = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
 
-    ModelWithTestComponents.withTestComponents(config, testSource :: testSink :: components, globalVariables) {
-      modelData =>
-        SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
+    ModelWithTestExtensions.withExtensions(config, testSource :: testSink :: components, globalVariables) { modelData =>
+      SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
     }
   }
 

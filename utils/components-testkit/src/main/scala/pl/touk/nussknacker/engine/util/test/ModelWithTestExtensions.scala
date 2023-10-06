@@ -7,14 +7,14 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, WithCategories}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-object ModelWithTestComponents {
+object ModelWithTestExtensions {
 
   // we add components by hand, which should be tested in scenario
   // components are registered in special ComponentProvider, which is configured with appropriate testRunId
-  def withTestComponents[T](
+  def withExtensions[T](
       config: Config,
       components: List[ComponentDefinition],
-      globalVariables: Map[String, WithCategories[AnyRef]]
+      globalVariables: Map[String, AnyRef]
   )(action: ModelData => T): T = {
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components, globalVariables)
     val configWithRunId = config.withValue(

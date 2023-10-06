@@ -71,7 +71,7 @@ object LiteKafkaTestScenarioRunner {
 
 case class LiteKafkaTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClientFactor: SchemaRegistryClientFactoryWithRegistration,
     testRuntimeMode: Boolean
@@ -83,7 +83,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(components = extraComponents)
 
   override def withGlobalVariables(
-      globalVariables: Map[String, WithCategories[AnyRef]]
+      globalVariables: Map[String, AnyRef]
   ): LiteKafkaTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)
 
@@ -123,7 +123,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
 
 class LiteKafkaTestScenarioRunner(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     schemaRegistryClient: SchemaRegistryClientWithRegistration,
     componentUseCase: ComponentUseCase,
