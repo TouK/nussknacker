@@ -10,6 +10,10 @@ import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
 import { RemoteComponent } from "./ExternalLib/RemoteComponent";
 
+export type BaseTab = {
+    tab: BaseTabData;
+};
+
 export type BaseTabData = {
     // expected:
     //  * url of working app - to include in iframe
@@ -57,7 +61,7 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     );
 };
 
-export const IframeTab = ({ tab }: { tab: BaseTabData }) => {
+export const IframeTab = ({ tab }: BaseTab) => {
     const { addAccessTokenInQueryParam, accessTokenInQuery, url } = tab;
     const accessToken = (addAccessTokenInQueryParam || accessTokenInQuery?.enabled) && SystemUtils.getAccessToken();
     const accessTokenParam = {};
@@ -89,11 +93,7 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
     );
 }
 
-export const DynamicTab = memo(function DynamicComponent<
-    P extends {
-        tab: BaseTabData;
-    },
->({ tab, ...props }: P): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<P extends BaseTab>({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {
         case "Remote":
