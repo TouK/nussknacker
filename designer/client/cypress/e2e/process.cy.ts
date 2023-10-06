@@ -151,8 +151,11 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
-        it("should have equal snapshot", () => {
+        // This test is for  deploy scenario dialog snapshot comparing only (equal snapshot).
+        // For some reason cypress does not have a valid snapshot comparison inside another test case.
+        it("should make a deploy of the new version", () => {
             cy.viewport("macbook-15");
+
             cy.deployScenario(undefined, true);
         });
 
