@@ -361,7 +361,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       modelData,
       ConfigFactory.empty())
   }
-  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService))
+  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService))
 
   it should "return components for each user" in {
     val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)

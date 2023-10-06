@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultCompon
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
-object DefaultComponentIdProvider extends LazyLogging {
+object ComponentIdProviderFactory extends LazyLogging {
 
   def createUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData],
                    categoryService: ProcessCategoryService): ComponentIdProvider = {
