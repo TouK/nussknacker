@@ -55,7 +55,7 @@ private object testComponents {
 
 class FlinkTestScenarioRunner(
     val components: List[ComponentDefinition],
-    val globalVariables: Map[String, WithCategories[AnyRef]],
+    val globalVariables: Map[String, AnyRef],
     val config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
     componentUseCase: ComponentUseCase
@@ -139,7 +139,7 @@ object FlinkTestScenarioRunner {
 
 case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
-    globalVariables: Map[String, WithCategories[AnyRef]],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
     testRuntimeMode: Boolean
@@ -152,7 +152,7 @@ case class FlinkTestScenarioRunnerBuilder(
   }
 
   override def withGlobalVariables(
-      globalVariables: Map[String, WithCategories[AnyRef]]
+      globalVariables: Map[String, AnyRef]
   ): FlinkTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)
 
