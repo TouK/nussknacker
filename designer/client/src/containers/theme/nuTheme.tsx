@@ -13,7 +13,7 @@ declare module "@mui/material/styles" {
     }
 }
 
-const { errorColor: error, okColor: ok, success } = variables;
+const { success } = variables;
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
     // eslint-disable-next-line i18next/no-literal-string
@@ -74,8 +74,8 @@ const custom = {
         dangerLight: "#FFBDAD",
         accent: "#0058a9",
         warning: "#FF9A4D",
-        error,
-        ok,
+        error: "#f25c6e",
+        ok: "#8fad60",
         success,
         ...selectColors,
         ...colors,
