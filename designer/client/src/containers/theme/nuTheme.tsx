@@ -38,6 +38,8 @@ const colors = {
     focusColor: d1,
     evenBackground: d3,
     accent: "#668547",
+    mineShaft: "#3e3e3e",
+    silver: "#cccccc",
 };
 
 const selectColors = {
@@ -74,6 +76,7 @@ const custom = {
         error: "#f25c6e",
         ok: "#8fad60",
         success: "#64d864",
+        info: "#b3b3b3",
         ...selectColors,
         ...colors,
     },
@@ -130,7 +133,7 @@ export const nuTheme = createTheme({
                     backgroundColor: custom.colors.warning,
                 },
                 standardInfo: {
-                    backgroundColor: "#cccccc",
+                    backgroundColor: custom.colors.silver,
                     color: custom.colors.secondaryBackground,
                 },
             },

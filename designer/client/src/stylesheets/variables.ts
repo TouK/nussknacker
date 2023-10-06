@@ -1,14 +1,6 @@
 export const variables = {
-    alert: {
-        warningIcon: "#FF9A4D",
-        warning: "#FF9A4D",
-    },
-    infoColor: "#b3b3b3",
-    panelTitleTextColor: "#808080",
-    panelHeaderBackground: "#3e3e3e",
     buttonSize: "72",
     rightPanelButtonFontSize: "11px",
-    buttonTextColor: "#cccccc",
     buttonBkgColor: "#4d4d4d",
     buttonBkgHover: "#444444",
     focusColor: "#0058a9",
@@ -23,9 +15,7 @@ export const variables = {
     sidebarWidth: 290,
     commentHeaderColor: "#afafaf",
     commentBkgColor: "#333333",
-    warningColor: "#FF9A4D",
     modalHeaderHeight: 30,
     modalLabelTextColor: "#999999",
     buttonBlueBkgColor: "#0E9AE0",
-    processesHoverColor: "#b3b3b3",
 };

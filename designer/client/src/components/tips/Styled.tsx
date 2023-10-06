@@ -1,21 +1,23 @@
 import { ComponentType, SVGProps } from "react";
-import { lighten, styled, Theme } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { variables } from "../../stylesheets/variables";
 import { Link } from "react-router-dom";
 import { alpha } from "../../containers/theme/helpers";
 
-export const LinkStyled = styled(Link)`
-    color: ${variables.warningColor};
+export const LinkStyled = styled(Link)(
+    ({ theme }) => `
+    color: ${theme.custom.colors.warning};
     font-weight: 600;
     white-space: normal !important;
     &:hover {
-        color: ${lighten(variables.warningColor, 0.25)};
+        color: ${lighten(theme.custom.colors.warning, 0.25)};
     }
     &:focus {
-        color: ${variables.warningColor};
+        color: ${theme.custom.colors.warning};
         text-decoration: none;
     }
-`;
+`,
+);
 
 export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) =>
     styled(Icon)(

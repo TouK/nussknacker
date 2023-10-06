@@ -27,7 +27,7 @@ export const StyledBlueButton = styled("button")(
             width: 20px;
             margin-left: 20px;
             &:hover {
-                background: ${variables.processesHoverColor};
+                background: ${theme.custom.colors.info};
             }
         }
     }

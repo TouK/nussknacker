@@ -164,7 +164,7 @@ export const NodeTableStyled = styled("div")(
             text-decoration: none;
 
             &:hover {
-                color: ${variables.infoColor};
+                color: ${theme.custom.colors.info};
             }
         }
     }

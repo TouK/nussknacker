@@ -17,7 +17,7 @@ export default function TestErrors(): JSX.Element {
         <NodeTableBody>
             <NodeRow>
                 <div className="node-label">
-                    <NodeTip title={"Test case error"} icon={<WarningIcon sx={{ color: variables.alert.warningIcon }} />} />
+                    <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.custom.colors.warning })} />} />
                 </div>
                 <div className="node-value">
                     <div className="node-error">

@@ -69,7 +69,8 @@ export const DownloadButton = styled(NkButton)`
     border: 1px solid ${variables.buttonBorderColor};
 `;
 
-export const AttachHeader = styled("div")`
+export const AttachHeader = styled("div")(
+    ({ theme }) => `
     span {
         color: ${variables.commentHeaderColor};
         &.date {
@@ -79,9 +80,10 @@ export const AttachHeader = styled("div")`
     }
     p {
         font-style: italic;
-        color: ${variables.panelTitleTextColor};
+        color: ${theme.custom.colors.mutedColor};
     }
-`;
+`,
+);
 
 export const ProcessAttachmentsStyled = styled("div")`
     cursor: default;
