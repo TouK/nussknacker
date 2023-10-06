@@ -151,7 +151,7 @@ case class FlinkTestScenarioRunnerBuilder(
     copy(components = components)
   }
 
-  override def withGlobalVariables(
+  override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): FlinkTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)

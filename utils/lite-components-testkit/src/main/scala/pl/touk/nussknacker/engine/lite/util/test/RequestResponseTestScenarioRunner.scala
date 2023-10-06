@@ -91,7 +91,7 @@ case class RequestResponseTestScenarioRunnerBuilder(
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(components = components)
 
-  override def withGlobalVariables(
+  override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)

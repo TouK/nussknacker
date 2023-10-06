@@ -28,7 +28,7 @@ object TestExtensionsHolder {
       ComponentDefinition(name, component)
     }
 
-  def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = extensions(id).variables
+  def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = extensions(id).globalVariables
 
   def registerTestExtensions(
       componentDefinitions: List[ComponentDefinition],
@@ -43,7 +43,7 @@ object TestExtensionsHolder {
     extensions -= runId
   }
 
-  private case class Extensions(components: List[ComponentDefinition], variables: Map[String, AnyRef])
+  private case class Extensions(components: List[ComponentDefinition], globalVariables: Map[String, AnyRef])
 
 }
 

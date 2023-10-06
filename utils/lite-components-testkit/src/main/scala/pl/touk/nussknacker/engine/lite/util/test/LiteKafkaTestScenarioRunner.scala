@@ -82,7 +82,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
     copy(components = extraComponents)
 
-  override def withGlobalVariables(
+  override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): LiteKafkaTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)
