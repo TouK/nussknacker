@@ -1,16 +1,19 @@
 package pl.touk.nussknacker.ui.definition
 
+import cats.implicits.catsSyntaxSemigroup
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ComponentIdWithName, ProcessDefinition, ProcessDefinitionWithComponentIds, mapByName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -38,71 +41,116 @@ object UIProcessObjectsFactory {
     }
   }
 
-  def prepareUIProcessObjects(modelDataForType: ModelData,
-                              staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
-                              deploymentManager: DeploymentManager,
-                              user: LoggedUser,
-                              fragmentsDetails: Set[FragmentDetails],
-                              isFragment: Boolean,
-                              processCategoryService: ProcessCategoryService,
-                              additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
-                              processingType: ProcessingType): UIProcessObjects = {
-    val processConfig = modelDataForType.processConfig
+  def prepareUIProcessObjects(
+      modelDataForType: ModelData,
+      processDefinition: ProcessDefinition[ObjectDefinition],
+      deploymentManager: DeploymentManager,
+      user: LoggedUser,
+      fragmentsDetails: Set[FragmentDetails],
+      isFragment: Boolean,
+      processCategoryService: ProcessCategoryService,
+      additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
+      processingType: ProcessingType
+  ): UIProcessObjects = {
+    val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
-    val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
+    val fragmentInputs =
+      extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
 
-    //FIXME: how to handle dynamic configuration of fragments??
-    val fragmentInputs = extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
-    val uiProcessDefinition = createUIProcessDefinition(staticObjectsDefinition, fragmentInputs,
-      uiClazzDefinitions, processCategoryService)
+    val combinedComponentsConfig =
+      getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentInputs, processDefinition)
 
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
-    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
+    val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig)) // combinedComponentsConfig potentially changes componentIds
 
-    //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
-    //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val combinedComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
-
-    val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
-    val componentIdToName = staticObjectsDefinition.componentIdToName(componentIdProvider, processingType)
-
-    val additionalComponentsUIConfig = additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).flatMap {
-      case (componentId, config) => componentIdToName.get(componentId).map(_ -> config.toSingleComponentConfig)
-    }
-
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(additionalComponentsUIConfig, combinedComponentsConfig)
-
-    val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
-
-    val additionalPropertiesConfigForUi = additionalPropertiesConfig
-      .filter(_ => !isFragment) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
-      .mapValuesNow(createUIAdditionalPropertyConfig)
-
-    val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
-    val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
+    val finalProcessDefinition = finalizeProcessDefinition(
+      processDefinition.withComponentIds(componentIdProvider, processingType),
+      combinedComponentsConfig,
+      additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).mapValuesNow(_.toSingleComponentConfig)
+    )
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
-        processDefinition = uiProcessDefinition,
+        processDefinition = finalProcessDefinition,
+        fragmentInputs = fragmentInputs,
         isFragment = isFragment,
-        componentsConfig = finalComponentsConfig,
-        componentsGroupMapping = componentsGroupMapping,
+        componentsConfig = combinedComponentsConfig,
+        componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.processConfig),
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2),
+        customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.mapValuesNow(_._2),
         processingType
       ),
-      processDefinition = uiProcessDefinition,
-      componentsConfig = finalComponentsConfig,
-      additionalPropertiesConfig = additionalPropertiesConfigForUi,
+      processDefinition = createUIProcessDefinition(
+        finalProcessDefinition,
+        fragmentInputs,
+        modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition),
+        processCategoryService
+      ),
+      componentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig, // combinedComponentsConfig also contains config for components not part of processDefinition (fragments, base components)
+      // TODO remove `componentsConfig` field? merge it with processDefinition? it would require FE changes
+      additionalPropertiesConfig = additionalPropertiesConfig
+        .filter(_ =>
+          !isFragment
+        ) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
+        .mapValuesNow(createUIAdditionalPropertyConfig),
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
-        processDefinition = staticObjectsDefinition,
+        processDefinition = finalProcessDefinition,
         isFragment = isFragment,
         fragmentsDetails = fragmentsDetails
       ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
-      defaultAsyncInterpretation = defaultAsyncInterpretation.value)
+      defaultAsyncInterpretation = getDefaultAsyncInterpretation(modelDataForType.processConfig)
+    )
+  }
+
+  private def toComponentsUiConfig(processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition]): ComponentsUiConfig =
+    processDefinition.allDefinitions.map{ case (idWithName, value) => idWithName.name -> value.componentConfig}
+
+  private def finalizeProcessDefinition(processDefinitionWithIds: ProcessDefinitionWithComponentIds[ObjectDefinition],
+                             combinedComponentsConfig: Map[String, SingleComponentConfig],
+                             additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]) = {
+
+    val finalizeComponentConfig: ((ComponentIdWithName, ObjectDefinition)) => (ComponentIdWithName, ObjectDefinition) = {
+      case (idWithName, value) =>
+        val finalConfig = additionalComponentsUiConfig.getOrElse(idWithName.id, SingleComponentConfig.zero) |+|
+          combinedComponentsConfig.getOrElse(idWithName.name, SingleComponentConfig.zero) |+|
+          value.componentConfig
+
+        idWithName -> value.withComponentConfig(finalConfig)
+    }
+
+    processDefinitionWithIds.copy(
+      services = processDefinitionWithIds.services.map(finalizeComponentConfig),
+      sourceFactories = processDefinitionWithIds.sourceFactories.map(finalizeComponentConfig),
+      sinkFactories = processDefinitionWithIds.sinkFactories.map(finalizeComponentConfig),
+      customStreamTransformers = processDefinitionWithIds.customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
+        val (_, finalValue) = finalizeComponentConfig(idWithName, value)
+        idWithName -> (finalValue, additionalData)
+      },
+    )
+  }
+
+  private def getCombinedComponentsConfig(
+      fixedComponentsUiConfig: ComponentsUiConfig,
+      fragmentInputs: Map[String, FragmentObjectDefinition],
+      processDefinition: ProcessDefinition[ObjectDefinition],
+  ): ComponentsUiConfig = {
+    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
+    val processDefinitionComponentsConfig = processDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+
+    // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in processDefinitionComponentsConfig...
+    // maybe we can put them also in uiProcessDefinition.allDefinitions?
+    ComponentDefinitionPreparer.combineComponentsConfig(
+      fragmentsComponentsConfig,
+      fixedComponentsUiConfig,
+      processDefinitionComponentsConfig
+    )
+  }
+
+  private def getDefaultAsyncInterpretation(processConfig: Config) = {
+    val defaultUseAsyncInterpretationFromConfig =
+      processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
+    DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig).value
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
@@ -142,7 +190,10 @@ object UIProcessObjectsFactory {
 
   case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
-  def createUIObjectDefinition(objectDefinition: ObjectDefinition, processCategoryService: ProcessCategoryService): UIObjectDefinition = {
+  private def createUIObjectDefinition(
+      objectDefinition: ObjectDefinition,
+      processCategoryService: ProcessCategoryService
+  ): UIObjectDefinition = {
     UIObjectDefinition(
       parameters = objectDefinition.parameters.map(createUIParameter),
       returnType = objectDefinition.returnType,
@@ -151,7 +202,10 @@ object UIProcessObjectsFactory {
     )
   }
 
-  def createUIFragmentObjectDefinition(fragmentObjectDefinition: FragmentObjectDefinition, processCategoryService: ProcessCategoryService): UIFragmentObjectDefinition = {
+  private def createUIFragmentObjectDefinition(
+      fragmentObjectDefinition: FragmentObjectDefinition,
+      processCategoryService: ProcessCategoryService
+  ): UIFragmentObjectDefinition = {
     UIFragmentObjectDefinition(
       parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
       outputParameters = fragmentObjectDefinition.outputsDefinition,
@@ -161,7 +215,7 @@ object UIProcessObjectsFactory {
     )
   }
 
-  def createUIProcessDefinition(processDefinition: ProcessDefinition[ObjectDefinition],
+  def createUIProcessDefinition(processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
                                 fragmentInputs: Map[String, FragmentObjectDefinition],
                                 types: Set[UIClazzDefinition],
                                 processCategoryService: ProcessCategoryService): UIProcessDefinition = {
@@ -171,11 +225,11 @@ object UIProcessObjectsFactory {
 
     val transformed = processDefinition.transform(createUIObjectDef)
     UIProcessDefinition(
-      services = transformed.services,
-      sourceFactories = transformed.sourceFactories,
-      sinkFactories = transformed.sinkFactories,
+      services = mapByName(transformed.services),
+      sourceFactories = mapByName(transformed.sourceFactories),
+      sinkFactories = mapByName(transformed.sinkFactories),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
-      customStreamTransformers = transformed.customStreamTransformers.mapValuesNow(_._1),
+      customStreamTransformers = mapByName(transformed.customStreamTransformers).mapValuesNow(_._1),
       globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )

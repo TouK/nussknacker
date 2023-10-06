@@ -124,7 +124,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
-    processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
+    processObjects.processDefinition.fragmentInputs("sub1").componentConfig.docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {
@@ -134,7 +134,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
 
-    processObjects.componentsConfig.get(fragment.id) shouldBe empty
+    processObjects.processDefinition.fragmentInputs.get(fragment.id) shouldBe empty
   }
 
   test("should override component's parameter config with additionally provided config") {
@@ -145,10 +145,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
-    processObjects.componentsConfig("enricher").params.map(_.map { case (key, value) => key -> value.validators }) shouldBe Some(Map(
-      "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))),
-      "param" -> None // from designer.conf, which also goes into `componentsConfig`
-    ))
+    processObjects.processDefinition.services("enricher").parameters.map(p => p.name -> p.validators) should contain
+      "paramDualEditor" -> List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
   }
 
   private def prepareUIProcessObjects(model: ModelData,

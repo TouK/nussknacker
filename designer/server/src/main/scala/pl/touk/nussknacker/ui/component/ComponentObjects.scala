@@ -53,7 +53,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
                                      fragments: Set[FragmentDetails]): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
-      staticObjectsDefinition = processingTypeData.staticObjectsDefinition,
+      processDefinition = processingTypeData.staticObjectsDefinition,
       deploymentManager = processingTypeData.deploymentManager,
       user = user,
       fragmentsDetails = fragments,
