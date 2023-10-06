@@ -8,6 +8,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
+import pl.touk.nussknacker.ui.security.oidc.{DefaultOidcAuthorizationData, OidcUserInfo}
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.Uri
 
@@ -45,9 +46,9 @@ trait WithJwtOauth2Service {
       .thenRespond(s""" { "sub": "admin" } """)
   )
 
-  implicit private val decoder: Decoder[OpenIdConnectUserInfo] = OpenIdConnectUserInfo.decoder
+  implicit private val decoder: Decoder[OidcUserInfo] = OidcUserInfo.decoder
   protected val jwtOAuth2Service =
-    new JwtOAuth2Service(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](config), config)
+    new JwtOAuth2Service(OAuth2ClientApi[OidcUserInfo, DefaultOidcAuthorizationData](config), config)
 }
 
 class JwtOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
@@ -62,7 +63,12 @@ class JwtOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers wi
       JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
     val seconds =
-      jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(validAccessToken).futureValue._2.get.getEpochSecond - Instant
+      jwtOAuth2Service
+        .checkAuthorizationAndAuthenticateUser(validAccessToken)
+        .futureValue
+        ._2
+        .get
+        .getEpochSecond - Instant
         .now()
         .getEpochSecond
 

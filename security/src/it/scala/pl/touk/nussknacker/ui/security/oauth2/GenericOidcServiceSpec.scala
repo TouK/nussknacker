@@ -7,7 +7,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
+import pl.touk.nussknacker.ui.security.oidc.{
+  DefaultOidcAuthorizationData,
+  OidcAuthenticationConfiguration,
+  OidcProfileAuthentication,
+  OidcService,
+  OidcUserInfo
+}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.{SttpBackend, _}
 
@@ -30,10 +36,9 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
-    val oidcService = new UserMappingOAuth2Service(
+    val oidcService = new UserMappingOAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData](
       new OidcService(config),
-      (userInfo: OpenIdConnectUserInfo) =>
-        OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
+      new OidcProfileAuthentication(config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)
@@ -44,14 +49,13 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
       val (authData, userData) =
-        open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
+        open.obtainAuthorizationAndAuthenticateUser(authorizationCode, config.redirectUri.get.toString).futureValue
       userData.username shouldBe "user1"
       userData.roles should contain("ARole")
 
-      val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
+      val profile = open.checkAuthorizationAndAuthenticateUser(authData.accessToken).futureValue
       profile._1.username shouldBe "user1"
       profile._1.roles should contain("ARole")
-
     }
   }
 
@@ -84,9 +88,9 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
+      audience = Some("test-client"),
       rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
       usernameClaim = Some(UsernameClaim.PreferredUsername),
-      accessTokenIsJwt = true,
     ).withDiscovery
 
 }

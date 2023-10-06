@@ -4,7 +4,6 @@ import cats.data.NonEmptyList.one
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
@@ -32,8 +31,7 @@ class JwtOAuth2Service[
 ) extends BaseOAuth2Service[UserInfoData, AuthorizationData](clientApi)
     with LazyLogging {
 
-  protected val accessTokenIsJwt: Boolean                   = configuration.jwt.exists(_.accessTokenIsJwt)
-  protected val requiredAccessTokenAudience: Option[String] = configuration.jwt.flatMap(_.audience)
+  protected val accessTokenIsJwt: Boolean = configuration.jwt.exists(_.accessTokenIsJwt)
 
   protected lazy val jwtValidator: JwtValidator = new JwtValidator(_ =>
     configuration.jwt
@@ -47,23 +45,35 @@ class JwtOAuth2Service[
       case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
     }
 
-  override def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
     if (accessTokenIsJwt) {
-      Future(accessToken)
-        .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
-        .flatMap(claims =>
-          if (verifyAccessTokenAudience(claims)) {
-            Future.successful(claims.expirationTime)
-          } else
-            Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim"))))
-        )
+      introspectJwtToken[AccessTokenClaims](accessToken).map { claims =>
+        verifyAccessTokenAudience(claims)
+      }
     } else {
       super.introspectAccessToken(accessToken)
     }
   }
 
-  protected def verifyAccessTokenAudience(claims: JwtStandardClaims): Boolean = {
-    requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)
+  private def verifyAccessTokenAudience(claims: AccessTokenClaims) = {
+    configuration.jwt.flatMap(_.audience) match {
+      case None =>
+        toIntrospectedData(claims)
+      case Some(requiredAudience) if claims.audienceAsList.contains(requiredAudience) =>
+        toIntrospectedData(claims)
+      case Some(requiredAudience) =>
+        throw OAuth2CompoundException(
+          one(
+            OAuth2AccessTokenRejection(
+              s"Invalid audience claim: ${claims.audienceAsList.mkString(",")} - it should contains $requiredAudience"
+            )
+          )
+        )
+    }
+  }
+
+  protected def toIntrospectedData(claims: AccessTokenClaims): IntrospectedAccessTokenData = {
+    IntrospectedAccessTokenData(claims.subject, claims.expirationTime, Set.empty)
   }
 
   override protected def obtainAuthorization(
@@ -74,18 +84,4 @@ class JwtOAuth2Service[
       .accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 
-}
-
-@ConfiguredJsonCodec(decodeOnly = true) final case class DefaultJwtAccessToken(
-    @JsonKey("iss") issuer: Option[String],
-    @JsonKey("sub") subject: Option[String],
-    @JsonKey("aud") audience: Option[Either[List[String], String]],
-    @JsonKey("exp") expirationTime: Option[Instant],
-    @JsonKey("nbf") notBefore: Option[Instant],
-    @JsonKey("iat") issuedAt: Option[Instant],
-    @JsonKey("jti") jwtId: Option[String]
-) extends JwtStandardClaims
-
-object DefaultJwtAccessToken extends EitherCodecs with EpochSecondsCodecs {
-  implicit val config: Configuration = Configuration.default
 }

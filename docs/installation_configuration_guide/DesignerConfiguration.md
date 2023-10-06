@@ -272,7 +272,6 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                             |
 | authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                           |
 | authentication.usernameClaim         | optional    | string         |                             | The OIDC claim from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) claim from JWT. |
-| authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format.        |
 
 #### Auth0 sample configuration
 
