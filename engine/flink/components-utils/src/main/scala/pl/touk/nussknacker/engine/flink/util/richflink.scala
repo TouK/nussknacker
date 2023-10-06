@@ -31,6 +31,7 @@ object richflink {
         .flatMap(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value), typeInfo)
         .keyBy((k: ValueWithContext[KeyedValue[String, T]]) => k.value.key)
     }
+
   }
 
   implicit class ExplicitUid[T](dataStream: DataStream[T]) {
@@ -46,6 +47,7 @@ object richflink {
         case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId)
         case other                                   => other
       }
+
   }
 
 }

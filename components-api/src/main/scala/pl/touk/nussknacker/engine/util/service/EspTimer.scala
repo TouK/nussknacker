@@ -9,6 +9,7 @@ case class EspTimer(rateMeter: RateMeter, histogram: Histogram) {
     rateMeter.mark()
     histogram.update(delta)
   }
+
 }
 
 object EspTimer {

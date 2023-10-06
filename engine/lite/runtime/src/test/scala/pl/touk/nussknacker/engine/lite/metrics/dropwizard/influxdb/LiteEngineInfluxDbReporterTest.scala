@@ -34,11 +34,13 @@ class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
   }
 
   object StubbedLiteEngineInfluxDbReporter extends LiteEngineInfluxDbReporter {
+
     override protected def createAndRunReporter(
         metricRegistry: MetricRegistry,
         prefix: MetricName,
         influxSenderConfig: InfluxSenderConfig
     ): InfluxDbReporter = null
+
   }
 
 }

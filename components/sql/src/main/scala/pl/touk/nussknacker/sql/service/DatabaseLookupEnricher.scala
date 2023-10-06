@@ -38,6 +38,7 @@ object DatabaseLookupEnricher {
     }
     Parameter(KeyValueParamName, columnDef.typing).copy(isLazyParameter = true)
   }
+
 }
 
 class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider)

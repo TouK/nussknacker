@@ -30,9 +30,11 @@ class ProcessReportResources(
     with ProcessDirectives {
 
   private implicit val offsetDateTimeToInstant: Unmarshaller[String, Instant] = new Unmarshaller[String, Instant] {
+
     override def apply(value: String)(implicit ec: ExecutionContext, materializer: Materializer): Future[Instant] = {
       FastFuture(Try(OffsetDateTime.parse(value).toInstant))
     }
+
   }
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {

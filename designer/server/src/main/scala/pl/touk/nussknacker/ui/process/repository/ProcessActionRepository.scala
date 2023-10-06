@@ -28,20 +28,25 @@ trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): F[Option[ProcessAction]]
+
   def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(
       implicit ec: ExecutionContext
   ): F[List[ProcessAction]]
+
   def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
       actionTypesOpt: Option[Set[ProcessActionType]]
   ): F[Map[ProcessId, ProcessAction]]
+
 }
 
 object DbProcessActionRepository {
+
   def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _])(
       implicit ec: ExecutionContext
   ): DbProcessActionRepository[DB] =
     new DbProcessActionRepository[DB](dbRef, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepository
+
 }
 
 abstract class DbProcessActionRepository[F[_]](

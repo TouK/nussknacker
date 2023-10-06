@@ -372,6 +372,7 @@ class K8sDeploymentManager(
       user: User
   ): Future[SavepointResult] =
     Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
+
 }
 
 object K8sDeploymentManager {

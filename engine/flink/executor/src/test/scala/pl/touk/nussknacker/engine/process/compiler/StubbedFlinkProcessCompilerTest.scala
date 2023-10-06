@@ -162,6 +162,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   object SampleConfigCreator extends BaseSampleConfigCreator[Int](List.empty) {
+
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] = {
@@ -174,6 +175,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
         "source-no-test-support" -> WithCategories(SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int])))
       )
     }
+
   }
 
   object SampleTestSupportParametersSource

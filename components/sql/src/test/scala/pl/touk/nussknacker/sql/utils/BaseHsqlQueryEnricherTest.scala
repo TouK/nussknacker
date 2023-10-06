@@ -34,4 +34,5 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     service.close()
     super.afterAll()
   }
+
 }

@@ -36,6 +36,7 @@ object sinks {
         }
       )
     }
+
   }
 
   trait LazyParamSink[Res <: AnyRef] extends SingleContextSink[Res] {
@@ -59,6 +60,7 @@ object sinks {
           )
       )
     }
+
   }
 
 }

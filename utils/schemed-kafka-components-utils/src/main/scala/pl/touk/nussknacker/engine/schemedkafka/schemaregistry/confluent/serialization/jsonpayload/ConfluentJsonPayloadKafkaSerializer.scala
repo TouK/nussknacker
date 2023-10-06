@@ -39,6 +39,7 @@ class ConfluentJsonPayloadKafkaSerializer(
 }
 
 object ConfluentJsonPayloadSerializerFactory extends SchemaRegistryBasedSerializerFactory {
+
   override def createSerializer(
       schemaRegistryClient: SchemaRegistryClient,
       kafkaConfig: KafkaConfig,

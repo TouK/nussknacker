@@ -35,7 +35,6 @@ final case class OidcAuthenticationConfiguration(
     rolesClaims: Option[List[String]] = None,
     tokenCookie: Option[TokenCookieConfig] = None,
     usernameClaim: Option[UsernameClaim] = None,
-    accessTokenIsJwt: Boolean = false,
     overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
 ) extends URIExtensions {
 
@@ -58,11 +57,11 @@ final case class OidcAuthenticationConfiguration(
       .getOrElse(throw new NoSuchElementException("A tokenEndpoint must provided or OIDC Discovery available")),
     redirectUri = redirectUri,
     jwt = Some(new JwtConfiguration {
-      def accessTokenIsJwt: Boolean                 = OidcAuthenticationConfiguration.this.accessTokenIsJwt
-      def userinfoFromIdToken: Boolean              = true
-      def audience: Option[String]                  = OidcAuthenticationConfiguration.this.audience
-      def authServerPublicKey: Option[PublicKey]    = None
-      def idTokenNonceVerificationRequired: Boolean = false
+      override def accessTokenIsJwt: Boolean                 = OidcAuthenticationConfiguration.this.audience.isDefined
+      override def userinfoFromIdToken: Boolean              = true
+      override def audience: Option[String]                  = OidcAuthenticationConfiguration.this.audience
+      override def authServerPublicKey: Option[PublicKey]    = None
+      override def idTokenNonceVerificationRequired: Boolean = false
     }),
     authorizeParams = Map("response_type" -> "code", "scope" -> scope) ++
       // To make possible some OIDC compliant servers authorize user to correct API ("resource server"), audience need to be passed.
@@ -110,4 +109,5 @@ object OidcAuthenticationConfiguration {
       config: Config
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration =
     create(config).withDiscovery
+
 }

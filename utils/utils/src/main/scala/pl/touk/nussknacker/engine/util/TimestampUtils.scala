@@ -25,4 +25,5 @@ object TimestampUtils {
         s"Field $fieldName is of an invalid type for a timestamp field: ${if (other == null) "null" else other.getClass}"
       )
   }
+
 }

@@ -46,6 +46,7 @@ class KafkaContextInitializer[K, V](
 
   override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
+
       override def apply(input: ConsumerRecord[K, V]): Context = {
         // Scala map wrapper causes some serialization problems
         val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
@@ -65,6 +66,7 @@ class KafkaContextInitializer[K, V](
           .withVariable(VariableConstants.InputVariableName, input.value())
           .withVariable(VariableConstants.InputMetaVariableName, inputMeta)
       }
+
     }
 
 }

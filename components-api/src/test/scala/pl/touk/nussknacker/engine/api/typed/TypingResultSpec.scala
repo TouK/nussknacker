@@ -364,6 +364,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       Typed.genericTypeClass(classOf[java.util.Map[_, _]], List.empty)
     }
   }
+
   test("should correctly handle type aliases") {
     Typed.fromDetailedType[StringKeyMap[Integer]] shouldEqual Typed.fromDetailedType[java.util.Map[String, Integer]]
   }

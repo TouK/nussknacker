@@ -116,6 +116,7 @@ class MapAscendingTimestampExtractor(timestampField: String) extends Serializabl
         System.currentTimeMillis()
     }
   }
+
 }
 
 object MapAscendingTimestampExtractor {

@@ -15,6 +15,7 @@ import sttp.client3.SttpBackend
 import scala.concurrent.{ExecutionContext, Future}
 
 class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
+
   override def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,

@@ -76,12 +76,15 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
   }
 
   object ResourceQuotaExceededException {
+
     val fullCluster: ResourceQuotaExceededException = ResourceQuotaExceededException(
       "Cluster is full. Release some cluster resources."
     )
+
     val notEnoughResources: ResourceQuotaExceededException = ResourceQuotaExceededException(
       "Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."
     )
+
   }
 
   case class ResourceQuotaExceededException(message: String) extends IllegalArgumentException(message)

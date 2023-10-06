@@ -25,6 +25,7 @@ object validationHelpers {
   }
 
   object SimpleStreamTransformer extends CustomStreamTransformer {
+
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
         @ParamName("stringVal")
@@ -33,6 +34,7 @@ object validationHelpers {
         )
         stringVal: LazyParameter[String]
     ) = {}
+
   }
 
   object SimpleStringService extends Service {
@@ -188,6 +190,7 @@ object validationHelpers {
         })
         .implementedBy(null)
     }
+
   }
 
   object MissingParamHandleGenericNodeTransformation
@@ -226,6 +229,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
+
     override def nodeDependencies: List[NodeDependency] =
       List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
 
@@ -292,9 +296,11 @@ object validationHelpers {
         } yield record).toList)
       }
     }
+
   }
 
   class GenericParametersSourceNoTestSupport extends GenericParametersSource {
+
     override def implementation(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
@@ -304,9 +310,11 @@ object validationHelpers {
         // no override
       }
     }
+
   }
 
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
+
     override def implementation(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
@@ -317,9 +325,11 @@ object validationHelpers {
           CirceUtil.decodeJsonUnsafe[String](testRecord.json)
       }
     }
+
   }
 
   class SourceWithTestParameters extends GenericParametersSource {
+
     override def implementation(
         params: Map[String, Any],
         dependencies: List[NodeDependencyValue],
@@ -334,9 +344,11 @@ object validationHelpers {
         override def parametersToTestData(params: Map[String, AnyRef]): String = ""
       }
     }
+
   }
 
   object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
+
     protected def outputParameters(
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
@@ -368,6 +380,7 @@ object validationHelpers {
   }
 
   object GenericParametersProcessor extends EagerService with GenericParameters[ServiceInvoker] {
+
     protected def outputParameters(
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
@@ -406,6 +419,7 @@ object validationHelpers {
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
       }
     }
+
     override def nodeDependencies: List[NodeDependency] =
       List(OutputVariableNameDependency, TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
   }

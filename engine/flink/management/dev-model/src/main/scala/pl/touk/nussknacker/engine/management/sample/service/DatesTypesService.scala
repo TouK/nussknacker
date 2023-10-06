@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, Simple
 import scala.concurrent.Future
 
 class DatesTypesService extends Service with Serializable {
+
   @MethodToInvoke
   def invoke(
       @ParamName("dateTimeParam") dateTimeParam: LocalDateTime,
@@ -40,4 +41,5 @@ class DatesTypesService extends Service with Serializable {
   ): Future[Unit] = {
     ???
   }
+
 }

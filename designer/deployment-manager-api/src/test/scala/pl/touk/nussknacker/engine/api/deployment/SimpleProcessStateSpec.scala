@@ -27,4 +27,5 @@ class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
   }
+
 }

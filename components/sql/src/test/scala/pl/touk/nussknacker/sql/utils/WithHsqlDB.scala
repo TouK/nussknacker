@@ -42,4 +42,5 @@ trait WithHsqlDB {
   override def afterAll(): Unit = {
     Option(conn).foreach(_.close())
   }
+
 }

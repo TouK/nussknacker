@@ -279,6 +279,7 @@ case class DynamicService(valueToReturn: String) extends Service {
   def invoke(): Future[String] = {
     Future.successful(valueToReturn)
   }
+
 }
 
 class AutoLoadedProvider extends ComponentProvider {
@@ -297,8 +298,10 @@ class AutoLoadedProvider extends ComponentProvider {
 }
 
 object AutoService extends Service {
+
   @MethodToInvoke
   def invoke(): Future[String] = {
     ???
   }
+
 }

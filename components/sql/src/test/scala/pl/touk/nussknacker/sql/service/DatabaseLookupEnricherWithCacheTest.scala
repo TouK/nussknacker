@@ -51,4 +51,5 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
   }
+
 }

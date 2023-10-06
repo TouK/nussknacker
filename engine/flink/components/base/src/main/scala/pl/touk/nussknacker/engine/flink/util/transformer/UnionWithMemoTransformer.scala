@@ -109,6 +109,7 @@ class UnionWithMemoTransformer(
                 .process(new UnionMemoFunction(stateTimeout, mapTypeInfo), returnTypeInfo)
             ).asInstanceOf[SingleOutputStreamOperator[ValueWithContext[AnyRef]]]
           }
+
         }
       )
 
@@ -137,6 +138,7 @@ class UnionWithMemoTransformer(
     }
     validatedIdentical.product(validatedBranches).product(validatedContext).map(_._2)
   }
+
 }
 
 class UnionMemoFunction(stateTimeout: Duration, typeInfo: TypeInformation[java.util.Map[String, AnyRef]])

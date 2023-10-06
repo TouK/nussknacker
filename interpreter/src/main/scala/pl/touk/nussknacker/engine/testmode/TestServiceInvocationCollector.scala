@@ -38,6 +38,7 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
         }
     }
   }
+
 }
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
@@ -49,4 +50,5 @@ case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String
       _.updateExternalInvocationResult(nodeId, ContextId(context.id), ref, result)
     )
   }
+
 }

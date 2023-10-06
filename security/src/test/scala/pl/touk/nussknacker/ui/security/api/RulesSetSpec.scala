@@ -139,4 +139,5 @@ class RulesSetSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChe
       rulesSet.globalPermissions shouldBe permissions
     }
   }
+
 }

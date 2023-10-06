@@ -272,7 +272,6 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                             |
 | authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                           |
 | authentication.usernameClaim         | optional    | string         |                             | The OIDC claim from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) claim from JWT. |
-| authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format.        |
 
 #### Auth0 sample configuration
 
@@ -674,14 +673,15 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
 
 By default, only `Scenarios` tab is configured.
 
-| Parameter name             | Type                    | Description                                                                                             |
-|----------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
-| id                         | string                  | Unique identifier                                                                                       |
-| title                      | string                  | Title appearing in UI                                                                                   |
-| type                       | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                                                                 |
-| url                        | string                  | URL of the tab                                                                                          |
-| requiredPermission         | string                  | Optional parameter, name of [Global Permission](#security)                                              |
-| addAccessTokenInQueryParam | boolean                 | Optional parameter, when true add accessToken (if OAuth2 authentication is used) to iframe query params |
+| Parameter name                   | Type                    | Default value | Description                                                                                                              |
+|----------------------------------|-------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| id                               | string                  |               | Unique identifier                                                                                                        |
+| title                            | string                  |               | Title appearing in UI                                                                                                    |
+| type                             | IFrame/Local/Remote/Url |               | Type of tab (see below for explanation)                                                                                  |
+| url                              | string                  |               | URL of the tab                                                                                                           |
+| requiredPermission               | string                  |               | Optional parameter, name of [Global Permission](#security)                                                               |
+| accessTokenInQuery.enabled       | boolean                 | false         | When true the parameter holding access token (if OAuth2 authentication is used) will be added to iframe query parameters |
+| accessTokenInQuery.parameterName | string                  | auth_token    | Optional name of query parameter that holds the access token                                                             |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame

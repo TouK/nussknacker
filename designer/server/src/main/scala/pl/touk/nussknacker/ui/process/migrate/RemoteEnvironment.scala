@@ -52,11 +52,13 @@ trait RemoteEnvironment {
   def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(
       implicit ec: ExecutionContext
   ): Future[Either[EspError, List[TestMigrationResult]]]
+
 }
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
 
 final case class MigrationValidationError(errors: ValidationErrors) extends EspError {
+
   override def getMessage: String = {
     val messages = errors.globalErrors.map(_.message) ++
       errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
@@ -64,6 +66,7 @@ final case class MigrationValidationError(errors: ValidationErrors) extends EspE
       }
     s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
   }
+
 }
 
 final case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
@@ -106,6 +109,7 @@ class HttpRemoteEnvironment(
       )
     )
   }
+
 }
 
 final case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
@@ -336,4 +340,5 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       }
     }
   }
+
 }

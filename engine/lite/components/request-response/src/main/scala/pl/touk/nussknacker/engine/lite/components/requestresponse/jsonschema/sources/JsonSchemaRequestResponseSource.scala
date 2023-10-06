@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import org.everit.json.schema.Schema
+import org.everit.json.schema.{CombinedSchema, Schema}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -17,9 +17,11 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sin
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, JsonSchemaUtils}
+import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
+import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
 
 class JsonSchemaRequestResponseSource(
@@ -71,9 +73,43 @@ class JsonSchemaRequestResponseSource(
   }
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
-    val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-    val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
-    JsonToNuStruct(json, swaggerTyped)
+    handleSchemaWithUnionTypes(params)
+  }
+
+  // TODO handle anyOf, allOf, oneOf schemas better than 'first matched schema' - now it works kinda' like "anyOf" for all combined schemas
+  // 1. Improve editor to handle display of combined schemas e.g. by using raw mode when combined schema occurs
+  // 2. In `JsonToNuStruct` handle different types of combined schema, not just first valid occurrence
+  private def handleSchemaWithUnionTypes(params: Map[String, AnyRef]): Any = {
+    inputSchema match {
+      case cs: CombinedSchema => {
+        params
+          .get(SinkRawValueParamName)
+          .map { params =>
+            val json                       = BestEffortJsonEncoder.defaultForTests.encode(params)
+            val schema                     = getFirstMatchingSchemaForJson(cs, json)
+            val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
+            JsonToNuStruct(json, swaggerTyped)
+          }
+          .getOrElse {
+            throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
+              s"Expected combined schema with ${SinkRawValueParamName} parameter but ${cs} was found"
+            )
+          }
+      }
+      case _ =>
+        val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
+        val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
+        JsonToNuStruct(json, swaggerTyped)
+    }
+  }
+
+  private def getFirstMatchingSchemaForJson(combinedSchema: CombinedSchema, json: Json): Schema = {
+    combinedSchema.getSubschemas.asScala
+      .flatMap { s => s.validateData(JsonSchemaUtils.circeToJson(json)).toOption.map(_ => s) }
+      .headOption
+      .getOrElse(
+        throw new IllegalArgumentException(s"There is no valid input for provided combined schema ${combinedSchema}")
+      )
   }
 
   private def decodeJsonWithError(str: String): Json =

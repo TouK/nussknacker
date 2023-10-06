@@ -66,6 +66,7 @@ object PeriodicProcessesRepository {
   private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
     ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
   }
+
 }
 
 trait PeriodicProcessesRepository {
@@ -441,6 +442,7 @@ object DBIOActionInstances {
         case Right(r) => pure(r)
         case Left(l)  => tailRecM(l)(f)
       }
+
   }
 
 }

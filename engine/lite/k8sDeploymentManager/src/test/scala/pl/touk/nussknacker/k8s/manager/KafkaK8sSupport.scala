@@ -171,4 +171,5 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
     val command = s"curl -v -H Content-Type:application/json localhost:8081/subjects/$name/versions -d $req"
     runInPod(srPodName, command, _.contains(""""id":"""))
   }
+
 }

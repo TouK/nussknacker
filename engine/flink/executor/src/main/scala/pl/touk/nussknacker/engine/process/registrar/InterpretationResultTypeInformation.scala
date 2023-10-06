@@ -31,4 +31,5 @@ object InterpretationResultTypeInformation {
   ): TypeInformation[InterpretationResult] = {
     InterpretationResultMapTypeInfo(possibleContexts.mapValuesNow(create(detection, _)))
   }
+
 }

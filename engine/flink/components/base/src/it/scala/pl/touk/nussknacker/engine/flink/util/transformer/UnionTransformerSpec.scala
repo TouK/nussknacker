@@ -196,4 +196,5 @@ class UnionTransformerSpec
     result.successes.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
     result.errors shouldBe Nil
   }
+
 }

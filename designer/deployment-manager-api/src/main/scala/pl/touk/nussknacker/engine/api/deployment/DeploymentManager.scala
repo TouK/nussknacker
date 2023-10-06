@@ -13,6 +13,7 @@ import scala.concurrent.Future
 
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
+
   final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] =

@@ -164,4 +164,5 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
     val newCP = ProcessMarshaller.fromJson(newJsonWithAdditionalProperties).getOrElse(throw new AssertionError())
     oldCP shouldBe newCP
   }
+
 }

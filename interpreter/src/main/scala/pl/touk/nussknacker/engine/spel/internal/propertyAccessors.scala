@@ -40,6 +40,7 @@ object propertyAccessors {
     override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
       // can we extract anything else here?
       throw NonTransientException(name, s"Cannot invoke method/property $name on null object")
+
   }
 
   /* PropertyAccessor for methods without parameters - e.g. parameters in case classes
@@ -92,6 +93,7 @@ object propertyAccessors {
         ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name
       )
     }
+
   }
 
   object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {

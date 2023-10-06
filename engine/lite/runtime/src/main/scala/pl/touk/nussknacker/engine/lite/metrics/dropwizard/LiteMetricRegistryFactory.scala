@@ -67,6 +67,7 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
       environment: String,
       additionalTags: Map[String, String] = Map.empty
   )
+
 }
 
 object LiteMetricRegistryFactory extends LazyLogging {

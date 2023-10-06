@@ -28,4 +28,5 @@ object SinkValue {
     } catch {
       case _: ClassCastException => throw InvalidSinkValue(paramName)
     }
+
 }

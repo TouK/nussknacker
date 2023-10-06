@@ -37,6 +37,7 @@ object ProcessConfigEnricher {
     def inputConfigDuringExecution: Config = {
       ConfigFactory.parseString(inputConfigDuringExecutionJson)
     }
+
   }
 
   case class InitialScheduleData(canonicalProcess: CanonicalProcess, inputConfigDuringExecutionJson: String)
@@ -51,9 +52,11 @@ object ProcessConfigEnricher {
   case class EnrichedProcessConfig(inputConfigDuringExecutionJson: String)
 
   object EnrichedProcessConfig {
+
     def apply(config: Config): EnrichedProcessConfig = {
       EnrichedProcessConfig(InputConfigDuringExecution.serialize(config))
     }
+
   }
 
   def identity: ProcessConfigEnricher = new ProcessConfigEnricher {
@@ -63,6 +66,7 @@ object ProcessConfigEnricher {
     override def onDeploy(deployData: DeployData): Future[EnrichedProcessConfig] =
       Future.successful(EnrichedProcessConfig(deployData.inputConfigDuringExecutionJson))
   }
+
 }
 
 trait ProcessConfigEnricherFactory {
@@ -70,11 +74,15 @@ trait ProcessConfigEnricherFactory {
 }
 
 object ProcessConfigEnricherFactory {
+
   def noOp: ProcessConfigEnricherFactory = new ProcessConfigEnricherFactory {
+
     override def apply(
         config: Config
     )(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ProcessConfigEnricher = {
       ProcessConfigEnricher.identity
     }
+
   }
+
 }

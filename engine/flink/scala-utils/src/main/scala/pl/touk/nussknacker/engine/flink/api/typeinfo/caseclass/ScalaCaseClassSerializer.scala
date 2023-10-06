@@ -114,4 +114,5 @@ object ScalaCaseClassSerializer {
       constructorMethodMirror.apply(arr.toIndexedSeq: _*).asInstanceOf[T]
     }
   }
+
 }

@@ -37,14 +37,17 @@ private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) exten
     Option(schema.getMaximum).map(x => BigInt(s"$x")),
     Option(schema.getExclusiveMaximumLimit).map(x => BigInt(s"$x") - 1)
   ).flatten.sorted(Ordering.BigInt.reverse).headOption
+
 }
 
 object JsonSchemaOutputValidator {
 
   private implicit class RichTypedClass(t: TypedClass) {
+
     val representsMapWithStringKeys: Boolean = {
       t.klass == classOf[java.util.Map[_, _]] && t.params.size == 2 && t.params.head == Typed.typedClass[String]
     }
+
   }
 
   private val BigDecimalClass = classOf[java.math.BigDecimal]
@@ -403,4 +406,5 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def buildFieldPath(key: String, path: Option[String], useIndexer: Boolean = false) = Some(
     path.map(p => if (useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)
   )
+
 }

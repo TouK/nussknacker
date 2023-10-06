@@ -10,6 +10,7 @@ trait NuRestAssureExtensions {
       val _ = f
       requestSpecification
     }
+
   }
 
   implicit class AppConfiguration[T <: RequestSpecification](requestSpecification: T) {
@@ -20,5 +21,7 @@ trait NuRestAssureExtensions {
     }
 
   }
+
 }
+
 object NuRestAssureExtensions extends NuRestAssureExtensions

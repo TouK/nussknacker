@@ -77,6 +77,7 @@ class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extend
 }
 
 object EvaluationContextPreparer {
+
   def default(classLoader: ClassLoader, expressionConfig: ExpressionDefinition[_]): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors = internal.propertyAccessors.configured()
@@ -102,4 +103,5 @@ object EvaluationContextPreparer {
         )
     }
   }
+
 }

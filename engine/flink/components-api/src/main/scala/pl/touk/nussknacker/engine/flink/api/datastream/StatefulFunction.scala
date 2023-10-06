@@ -48,4 +48,5 @@ trait StatefulFunction[I, O, S] extends RichFunction {
     val info = new ValueStateDescriptor[S]("state", stateSerializer)
     state = getRuntimeContext().getState(info)
   }
+
 }

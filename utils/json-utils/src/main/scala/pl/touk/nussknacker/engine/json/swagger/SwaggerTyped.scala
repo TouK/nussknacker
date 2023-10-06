@@ -61,6 +61,7 @@ object SwaggerEnum {
     Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
   private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
   private lazy val om                              = new ObjectMapper()
+
   def apply(schema: Schema[_]): SwaggerEnum = {
     val list = schema.getEnum.asScala.toList.map {
       case j: ObjectNode => om.convertValue(j, new TypeReference[java.util.Map[String, Any]]() {})
@@ -69,6 +70,7 @@ object SwaggerEnum {
     }
     SwaggerEnum(list)
   }
+
 }
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
@@ -81,9 +83,11 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
 @JsonCodec case class PatternWithSwaggerTyped(pattern: String, propertyType: SwaggerTyped) {
   private lazy val compiledPattern: Pattern = Pattern.compile(pattern)
+
   def testPropertyName(propertyName: PropertyName): Boolean = {
     compiledPattern.asPredicate().test(propertyName)
   }
+
 }
 
 //mapped to Unknown in type system
@@ -147,6 +151,7 @@ object SwaggerTyped {
   }
 
   private object IsArraySchema {
+
     def unapply(schema: Schema[_]): Option[Schema[_]] = schema match {
       case a: ArraySchema => Some(a)
       // this is how OpenAPI is parsed when `type: array` is used
@@ -154,6 +159,7 @@ object SwaggerTyped {
         Some(oth)
       case _ => None
     }
+
   }
 
   private def swaggerUnion(
@@ -252,14 +258,18 @@ object SwaggerTyped {
       case _                                                       => SwaggerLong
     }
   }
+
 }
+
 object SwaggerArray {
+
   private[swagger] def apply(
       schema: Schema[_],
       swaggerRefSchemas: SwaggerRefSchemas,
       usedRefs: Set[String]
   ): SwaggerArray =
     SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas, usedRefs))
+
 }
 
 object SwaggerObject {

@@ -9,6 +9,7 @@ import java.util.UUID
 trait LiteralSpEL {
 
   import scala.jdk.CollectionConverters._
+
   protected def toSpELLiteral(data: Any): String = {
 
     def convertCollection(data: List[String]) = s"""{${data.mkString(", ")}}"""
@@ -46,9 +47,11 @@ trait LiteralSpEL {
 }
 
 object LiteralSpELImplicits {
+
   implicit class LiteralSpELImplicits(data: Any) extends LiteralSpEL {
     def toSpELLiteral: String = toSpELLiteral(data)
   }
+
 }
 
 final case class SpecialSpELElement(value: String) extends AnyVal

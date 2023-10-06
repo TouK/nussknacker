@@ -218,7 +218,9 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _]) extends BaseEndpointDefini
       )
 
 }
+
 object AppApiEndpoints {
+
   object Dtos {
 
     @derive(encoder, decoder, schema)
@@ -227,9 +229,11 @@ object AppApiEndpoints {
         message: Option[String],
         processes: Option[Set[String]]
     )
+
     object HealthCheckProcessSuccessResponseDto {
 
       sealed trait Status extends EnumEntry with Uppercase
+
       object Status extends Enum[Status] with CirceEnum[Status] {
         case object Ok extends Status
 
@@ -245,9 +249,11 @@ object AppApiEndpoints {
         message: Option[String],
         processes: Option[Set[String]]
     )
+
     object HealthCheckProcessErrorResponseDto {
 
       sealed trait Status extends EnumEntry with Uppercase
+
       object Status extends Enum[Status] with CirceEnum[Status] {
         case object Error extends Status
 
@@ -267,6 +273,7 @@ object AppApiEndpoints {
         processingType: Map[String, Map[String, String]],
         globalBuildInfo: Option[Map[String, String]] = None
     )
+
     object BuildInfoDto {
 
       implicit val circeCodec: CirceCodec[BuildInfoDto] = {
@@ -308,10 +315,13 @@ object AppApiEndpoints {
           }
         )
       }
+
     }
 
     final case class ServerConfigInfoDto(configJson: Json)
+
     object ServerConfigInfoDto {
+
       implicit val schema: Schema[ServerConfigInfoDto] = Schema
         .anyObject[Json]
         .map[ServerConfigInfoDto](json => Some(ServerConfigInfoDto(json)))(_.configJson)
@@ -322,11 +332,15 @@ object AppApiEndpoints {
           Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
         )
       }
+
     }
 
     type UserCategoriesWithProcessingTypesDto = Map[String, String]
+
     object UserCategoriesWithProcessingTypesDto {
       def apply(map: Map[String, String]): UserCategoriesWithProcessingTypesDto = map
     }
+
   }
+
 }

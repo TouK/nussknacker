@@ -39,4 +39,5 @@ class PullProcessRepository(fetchingProcessRepository: FetchingProcessRepository
     )(Future.successful)
     processDetails <- fetchLatestProcessDetailsForProcessId[PS](processId)
   } yield processDetails
+
 }

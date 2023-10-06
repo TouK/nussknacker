@@ -81,6 +81,7 @@ object CirceUtil {
           _.filterKeys(k => !keysSet.contains(k)).toMap
         }
     }
+
   }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit

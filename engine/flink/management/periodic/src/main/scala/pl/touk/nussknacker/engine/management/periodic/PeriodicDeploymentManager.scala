@@ -87,6 +87,7 @@ object PeriodicDeploymentManager {
       toClose
     )
   }
+
 }
 
 class PeriodicDeploymentManager private[periodic] (
@@ -218,4 +219,5 @@ class PeriodicDeploymentManager private[periodic] (
       canonicalProcess: CanonicalProcess
   ): Future[Either[CustomActionError, CustomActionResult]] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
+
 }

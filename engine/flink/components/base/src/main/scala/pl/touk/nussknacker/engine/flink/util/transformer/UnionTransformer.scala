@@ -74,6 +74,7 @@ case object UnionTransformer extends UnionTransformer(None) {
       ValidationContext(Map(variableName -> branchReturnType), Map.empty, parent)
     }
   }
+
 }
 
 /**
@@ -103,6 +104,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
       .definedBy(transformContextsDefinition(outputExpressionByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
+
           override def transform(
               inputs: Map[String, DataStream[Context]],
               context: FlinkCustomNodeContext
@@ -127,6 +129,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
               )
               .getOrElse(connectedStream)
           }
+
         }
       )
 

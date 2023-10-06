@@ -82,4 +82,5 @@ class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[SinkFactory]] = Map(
     "sink" -> WithCategories(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
   )
+
 }

@@ -27,6 +27,7 @@ object MethodTypeInfo {
 }
 
 case class MethodTypeInfo(noVarArgs: List[Parameter], varArg: Option[Parameter], result: TypingResult) {
+
   // Returns all parameters including varArg presented as Array[VarArgType];
   // this the same as method.getParameters. This method is used in logic
   // that is independent of whether a function has varArgs.
@@ -34,4 +35,5 @@ case class MethodTypeInfo(noVarArgs: List[Parameter], varArg: Option[Parameter],
     noVarArgs ::: varArg.map { case Parameter(name, refClazz) =>
       Parameter(name, Typed.genericTypeClass[Array[Object]](refClazz :: Nil))
     }.toList
+
 }

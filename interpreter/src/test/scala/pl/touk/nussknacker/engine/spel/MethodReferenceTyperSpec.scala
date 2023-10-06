@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
+
   private case class Helper() {
     def simpleFunction(a: Int): Int = ???
 
@@ -177,6 +178,7 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
       )
     }
   }
+
 }
 
 trait CustomErrorTypingFunctionHelper extends TypingFunction {
@@ -188,6 +190,7 @@ trait CustomErrorTypingFunctionHelper extends TypingFunction {
       arguments: List[TypingResult]
   ): Validated[NonEmptyList[GenericFunctionTypingError], TypingResult] =
     if (arguments == expectedArguments) result.validNel else OtherError(error).invalidNel
+
 }
 
 trait TypingFunctionHelper extends CustomErrorTypingFunctionHelper {

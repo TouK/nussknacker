@@ -12,6 +12,7 @@ sealed trait LoggedUser {
 }
 
 object LoggedUser {
+
   def apply(
       authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule],
@@ -47,6 +48,7 @@ object LoggedUser {
       )
     }
   }
+
 }
 
 final case class CommonUser(
@@ -55,6 +57,7 @@ final case class CommonUser(
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
     globalPermissions: List[GlobalPermission] = Nil
 ) extends LoggedUser {
+
   def categories(permission: Permission): Set[String] = categoryPermissions.collect {
     case (category, permissions) if permissions contains permission => category
   }.toSet

@@ -500,4 +500,5 @@ class LiteRequestResponseFunctionalTest
   object SpELObject {
     def apply(value: String): Map[String, Any] = Map(ObjectFieldName -> fromString(value))
   }
+
 }

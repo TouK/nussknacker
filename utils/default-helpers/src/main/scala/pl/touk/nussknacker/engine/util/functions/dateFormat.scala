@@ -27,15 +27,19 @@ class DateFormatUtils(defaultLocale: Locale) extends HideToString {
   @Documentation(description = "Parse LocalTime in DateTimeFormatter format")
   def parseLocalTime(text: String, format: String): LocalTime =
     LocalTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+
   @Documentation(description = "Parse LocalDate in DateTimeFormatter format")
   def parseLocalDate(text: String, format: String): LocalDate =
     LocalDate.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+
   @Documentation(description = "Parse LocalDateTime in DateTimeFormatter format")
   def parseLocalDateTime(text: String, format: String): LocalDateTime =
     LocalDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+
   @Documentation(description = "Parse OffsetDateTime in DateTimeFormatter format")
   def parseOffsetDateTime(text: String, format: String): OffsetDateTime =
     OffsetDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))
+
   @Documentation(description = "Parse ZonedDateTime in DateTimeFormatter format")
   def parseZonedDateTime(text: String, format: String): ZonedDateTime =
     ZonedDateTime.parse(text, DateTimeFormatter.ofPattern(format, defaultLocale))

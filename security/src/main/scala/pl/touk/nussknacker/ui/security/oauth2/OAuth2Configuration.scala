@@ -44,6 +44,13 @@ final case class OAuth2Configuration(
 
   override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
 
+  def getUserRoles(identity: String): Set[String] =
+    findUserById(identity)
+      .map(_.roles)
+      .getOrElse(Set.empty)
+
+  def findUserById(id: String): Option[ConfigUser] = users.find(_.identity == id)
+
   def authorizeUrl: Option[URI] = Option(
     Uri(authorizeUri)
       .addParam("client_id", clientId)
@@ -64,6 +71,7 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 
   val name                                        = "OAuth2"
@@ -117,6 +125,7 @@ object JwtConfiguration {
       certificateFile: Option[String],
       idTokenNonceVerificationRequired: Boolean = false
   ) extends JwtConfiguration {
+
     def authServerPublicKey: Some[PublicKey] = {
       val charset: Charset = StandardCharsets.UTF_8
 
@@ -136,5 +145,7 @@ object JwtConfiguration {
           )
       }
     }
+
   }
+
 }

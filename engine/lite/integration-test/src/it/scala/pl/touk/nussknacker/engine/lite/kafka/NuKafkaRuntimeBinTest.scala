@@ -59,4 +59,5 @@ class NuKafkaRuntimeBinTest
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
   }
+
 }

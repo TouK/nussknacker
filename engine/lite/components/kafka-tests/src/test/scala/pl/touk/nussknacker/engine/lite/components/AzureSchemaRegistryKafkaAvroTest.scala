@@ -41,6 +41,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
   private val schemaRegistryClientFactory = AzureSchemaRegistryClientFactory
 
   private val eventHubsNamespace = Option(System.getenv("AZURE_EVENT_HUBS_NAMESPACE")).getOrElse("nu-cloud")
+
   private val config = ConfigFactory
     .empty()
     .withValue(

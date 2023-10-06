@@ -29,6 +29,7 @@ object DBFetchingProcessRepository {
       implicit ec: ExecutionContext
   ) =
     new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
+
 }
 
 abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, actionRepository: ProcessActionRepository[DB])
@@ -247,4 +248,5 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
         )
     }
   }
+
 }

@@ -8,24 +8,25 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.{ModelWithTestExtensions, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
 object RequestResponseTestScenarioRunner {
+
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def requestResponseBased(baseConfig: Config = ConfigFactory.load()): RequestResponseTestScenarioRunnerBuilder = {
-      RequestResponseTestScenarioRunnerBuilder(Nil, baseConfig, testRuntimeMode = false)
+      RequestResponseTestScenarioRunnerBuilder(Nil, Map.empty, baseConfig, testRuntimeMode = false)
     }
+
   }
 
   val stringFieldSchema: String = """{
@@ -42,6 +43,7 @@ object RequestResponseTestScenarioRunner {
 
 class RequestResponseTestScenarioRunner(
     components: List[ComponentDefinition],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     componentUseCase: ComponentUseCase
 ) extends TestScenarioRunner {
@@ -49,7 +51,7 @@ class RequestResponseTestScenarioRunner(
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
-    ModelWithTestComponents.withTestComponents(config, components) { modelData =>
+    ModelWithTestExtensions.withExtensions(config, components, globalVariables) { modelData =>
       RequestResponseInterpreter[Id](
         scenario,
         ProcessVersion.empty,
@@ -76,7 +78,8 @@ class RequestResponseTestScenarioRunner(
 }
 
 case class RequestResponseTestScenarioRunnerBuilder(
-    extraComponents: List[ComponentDefinition],
+    components: List[ComponentDefinition],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     testRuntimeMode: Boolean
 ) extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
@@ -86,12 +89,17 @@ case class RequestResponseTestScenarioRunnerBuilder(
   override def withExtraComponents(
       extraComponents: List[ComponentDefinition]
   ): RequestResponseTestScenarioRunnerBuilder =
-    copy(extraComponents = extraComponents)
+    copy(components = components)
+
+  override def withExtraGlobalVariables(
+      globalVariables: Map[String, AnyRef]
+  ): RequestResponseTestScenarioRunnerBuilder =
+    copy(globalVariables = globalVariables)
 
   override def inTestRuntimeMode: RequestResponseTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
   override def build(): RequestResponseTestScenarioRunner =
-    new RequestResponseTestScenarioRunner(extraComponents, config, componentUseCase(testRuntimeMode))
+    new RequestResponseTestScenarioRunner(components, globalVariables, config, componentUseCase(testRuntimeMode))
 
 }

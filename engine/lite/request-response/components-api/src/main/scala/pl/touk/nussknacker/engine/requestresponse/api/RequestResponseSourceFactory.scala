@@ -33,4 +33,5 @@ trait RequestResponseSource[T] extends BaseLiteSource[Any] {
   override def transform(record: Any): Context = {
     new BasicContextInitializingFunction[Any](contextIdGenerator, VariableConstants.InputVariableName)(record)
   }
+
 }

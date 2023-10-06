@@ -74,6 +74,7 @@ class OneParamInterpreterBenchmark {
   }
 
 }
+
 class OneParamService(instantlyCompletedFuture: Boolean) extends Service {
 
   @MethodToInvoke

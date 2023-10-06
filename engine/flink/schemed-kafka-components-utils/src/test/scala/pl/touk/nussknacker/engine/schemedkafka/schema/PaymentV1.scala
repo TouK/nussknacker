@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object PaymentV1 extends TestSchemaWithRecord {
+
   val stringSchema: String =
     s"""
        |{
@@ -70,4 +71,5 @@ object PaymentV1 extends TestSchemaWithRecord {
        |  },
        |  vat: #input.vat
        |}""".stripMargin
+
 }

@@ -18,6 +18,7 @@ object InfluxDbHttpReporter {
       .forRegistry(metricRegistry)
       .prefixedWith(prefix)
       .build(new InfluxDbHttpSender(conf))
+
 }
 
 class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with LazyLogging {

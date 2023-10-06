@@ -18,6 +18,7 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
   private val classLoader                                           = getClass.getClassLoader
 
   private val anonymousUserRole = "Anonymous"
+
   private val config = ConfigFactory.parseString(s"""
         authentication: {
           method: "BasicAuth"

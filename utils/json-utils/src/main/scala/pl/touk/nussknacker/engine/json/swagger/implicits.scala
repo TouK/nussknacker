@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 object implicits {
 
   implicit class RichSwaggerTyped(st: SwaggerTyped) {
+
     def editorOpt: Option[ParameterEditor] =
       st match {
         case SwaggerString =>
@@ -62,5 +63,7 @@ object implicits {
           )
         case _ => None
       }
+
   }
+
 }

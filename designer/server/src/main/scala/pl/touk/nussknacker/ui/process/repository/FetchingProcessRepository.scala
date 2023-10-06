@@ -12,6 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 object FetchingProcessRepository {
+
   final case class FetchProcessesDetailsQuery(
       isFragment: Option[Boolean] = None,
       isArchived: Option[Boolean] = None,
@@ -30,6 +31,7 @@ object FetchingProcessRepository {
 
     def deployed: FetchProcessesDetailsQuery = unarchivedProcesses.copy(isDeployed = Some(true))
   }
+
 }
 
 abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {

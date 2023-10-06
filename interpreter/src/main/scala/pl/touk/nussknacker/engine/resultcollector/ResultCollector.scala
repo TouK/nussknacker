@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableActi
 import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.language.higherKinds
+
 /*
   This is base API for collecting results of invocations of services (in the future - also sinks, custom nodes etc.),
   used by tests from UI, service queries from UI etc.
@@ -34,6 +35,7 @@ trait ResultCollector extends Serializable {
 
 //just invoke the action and ignore raw output from CollectableAction
 object ProductionServiceInvocationCollector extends ResultCollector {
+
   override def collectWithResponse[A, F[_]: Monad](
       contextId: ContextId,
       nodeId: NodeId,
@@ -45,10 +47,12 @@ object ProductionServiceInvocationCollector extends ResultCollector {
   ): F[A] = {
     action.map(_.result)
   }
+
 }
 
 //Sanity check, when we compile objects just for validation, we don't really want to invoke e.g. REST services etc.
 object PreventInvocationCollector extends ResultCollector {
+
   override def collectWithResponse[A, F[_]: Monad](
       contextId: ContextId,
       nodeId: NodeId,
@@ -60,4 +64,5 @@ object PreventInvocationCollector extends ResultCollector {
   ): F[A] = {
     throw new IllegalArgumentException("Service invocations should not be used in this context")
   }
+
 }

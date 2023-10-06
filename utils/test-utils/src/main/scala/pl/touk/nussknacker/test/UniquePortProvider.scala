@@ -24,6 +24,7 @@ object DefaultUniquePortProvider extends UniquePortProvider {
   def nextPort(): Int = {
     RetryingUniquePortProvider.nextFreePort(() => port.incrementAndGet())
   }
+
 }
 
 private object RetryingUniquePortProvider {
@@ -43,4 +44,5 @@ private object RetryingUniquePortProvider {
         nextFreePort(generateNewPort, maxAttempts - 1)
     }
   }
+
 }

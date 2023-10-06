@@ -11,9 +11,11 @@ import sttp.monad.MonadError
 import scala.language.{higherKinds, implicitConversions}
 
 class InfluxException(cause: Throwable) extends Exception(cause)
+
 final case class InvalidInfluxResponse(message: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Influx query failed with message '$message'"
 }
+
 final case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) extends InfluxException(cause) {
   override def getMessage: String = s"Connection to influx failed with message '$body'"
 }
@@ -23,10 +25,12 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
   implicit val monadError: MonadError[F] = backend.responseMonad
 
   private implicit class RequestExtensions[U[_], T, -R](val request: RequestT[U, T, R]) {
+
     def withAuthentication(): RequestT[U, T, R] = (for {
       user     <- config.user
       password <- config.password
     } yield request.auth.basic(user, password)).getOrElse(request)
+
   }
 
   def query(query: String): F[List[InfluxSeries]] = {
@@ -68,6 +72,7 @@ object InfluxSeries {
   private implicit val numberOrStringDecoder: Decoder[Any] =
     Decoder.decodeBigDecimal.asInstanceOf[Decoder[Any]] or Decoder.decodeString.asInstanceOf[Decoder[Any]] or Decoder
       .const[Any]("")
+
   implicit val decoder: Decoder[InfluxSeries] = deriveConfiguredDecoder[InfluxSeries]
 
 }

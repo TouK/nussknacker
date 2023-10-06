@@ -76,6 +76,7 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
     val finalConfig   = config.config.withFallback(minimalConfig)
     Json.parse(finalConfig.root().render(ConfigRenderOptions.concise())).as[Ingress]
   }
+
 }
 
 object IngressPreparer {

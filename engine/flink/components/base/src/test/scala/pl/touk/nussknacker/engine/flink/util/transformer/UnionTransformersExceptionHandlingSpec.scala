@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
+
   override protected def registerInEnvironment(
       env: MiniClusterExecutionEnvironment,
       modelData: ModelData,
@@ -22,10 +23,12 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
   private val configCreator = new EmptyProcessConfigCreator() {
+
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map("union" -> WithCategories(UnionTransformer), "union-memo" -> WithCategories(UnionWithMemoTransformer))
+
   }
 
   test("should handle exceptions in union keys") {

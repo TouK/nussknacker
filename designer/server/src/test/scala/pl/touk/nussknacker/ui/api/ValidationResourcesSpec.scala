@@ -227,4 +227,5 @@ class ValidationResourcesSpec
       testCode
     }
   }
+
 }

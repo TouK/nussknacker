@@ -39,6 +39,7 @@ private[engine] object MaybeArtificial {
     override def ap[A, B](ff: MaybeArtificial[A => B])(fa: MaybeArtificial[A]): MaybeArtificial[B] = {
       new MaybeArtificial(ff.value(fa.value), fa.errors ++ ff.errors)
     }
+
   }
 
   // we need to make sure it's unique to prevent weird errors
@@ -54,4 +55,5 @@ private[engine] object MaybeArtificial {
     artificialSink(errors: _*).map(
       node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _)
     )
+
 }

@@ -12,4 +12,5 @@ object DBPoolsConfig {
   def apply(config: Config): Map[String, DBPoolConfig] = config
     .getAs[Map[String, DBPoolConfig]](configPath)
     .getOrElse(Map.empty)
+
 }

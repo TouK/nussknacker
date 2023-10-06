@@ -101,4 +101,5 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     ),
     history = Some(history)
   )
+
 }

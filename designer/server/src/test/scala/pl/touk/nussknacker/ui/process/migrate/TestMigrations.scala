@@ -36,6 +36,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.otherExistingServiceId, parameters))
     }
+
   }
 
   object Migration2 extends ProcessMigration {
@@ -48,6 +49,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       canonicalProcess.copy(metaData =
         canonicalProcess.metaData.withTypeSpecificData(typeSpecificData = StreamMetaData(Some(11)))
       )
+
   }
 
   object Migration3 extends NodeMigration {
@@ -60,6 +62,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
     }
+
   }
 
   object Migration4 extends NodeMigration {
@@ -72,6 +75,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.existingServiceId, Parameter("newParam", "'abc'") :: parameters))
     }
+
   }
 
   object Migration5 extends NodeMigration {
@@ -94,6 +98,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service = ServiceRef(ProcessTestData.otherExistingServiceId, parameters))
     }
+
   }
 
   object Migration7 extends NodeMigration {
@@ -115,6 +120,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
           )
         )
     }
+
   }
 
   object Migration8 extends NodeMigration {
@@ -127,6 +133,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, _), _) =>
         n.copy(ref = ref.copy(typ = ProcessTestData.otherExistingSourceFactory))
     }
+
   }
 
   object Migration9 extends NodeMigration {
@@ -139,6 +146,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
         n.copy(ref = ref.copy(parameters = Parameter("newParam", "'abc'") :: parameters))
     }
+
   }
 
 }

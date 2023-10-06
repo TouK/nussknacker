@@ -193,6 +193,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
   override val typeInformation: TypeInformation[ConsumerRecord[K, V]] = {
     TypeInformation.of(classOf[ConsumerRecord[K, V]])
   }
+
 }
 
 object FlinkKafkaSource {

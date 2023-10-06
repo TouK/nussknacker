@@ -93,4 +93,5 @@ object Serializers extends LazyLogging {
 
     override def copy(kryo: Kryo, original: Product): Product = original
   }
+
 }

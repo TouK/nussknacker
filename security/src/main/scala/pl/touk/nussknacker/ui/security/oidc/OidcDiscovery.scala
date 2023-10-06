@@ -33,6 +33,7 @@ object OidcDiscovery extends LazyLogging {
         logger.warn(s"Unable to retrieve the OpenID Provider's configuration: ${err.getMessage}")
         None
     }
+
 }
 
 @ConfiguredJsonCodec

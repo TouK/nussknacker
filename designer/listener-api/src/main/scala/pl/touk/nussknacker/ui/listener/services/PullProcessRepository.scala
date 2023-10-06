@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.listener.User
 import scala.concurrent.{ExecutionContext, Future}
 
 trait PullProcessRepository {
+
   def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](
       id: ProcessId
   )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]]
@@ -20,4 +21,5 @@ trait PullProcessRepository {
       implicit listenerUser: User,
       ec: ExecutionContext
   ): Future[Option[BaseProcessDetails[PS]]]
+
 }

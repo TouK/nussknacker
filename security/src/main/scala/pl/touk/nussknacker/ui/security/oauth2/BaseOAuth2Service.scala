@@ -18,21 +18,15 @@ class BaseOAuth2Service[
     extends OAuth2Service[UserInfoData, AuthorizationData]
     with LazyLogging {
 
-  final def obtainAuthorizationAndUserInfo(
+  final def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(AuthorizationData, UserInfoData)] = {
     for {
       authorizationData <- obtainAuthorization(authorizationCode, redirectUri)
-      userInfo          <- obtainUserInfo(authorizationData)
+      userInfo          <- authenticateUser(authorizationData)
     } yield (authorizationData, userInfo)
   }
-
-  final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] =
-    for {
-      expirationInstant <- introspectAccessToken(accessToken)
-      userInfo          <- obtainUserInfo(accessToken)
-    } yield (userInfo, expirationInstant)
 
   protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
     clientApi.accessTokenRequest(authorizationCode, redirectUri)
@@ -42,7 +36,7 @@ class BaseOAuth2Service[
   or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
   or do both.
    */
-  protected def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
   }
 
@@ -51,11 +45,15 @@ class BaseOAuth2Service[
   that provides information about a user only with his valid access token.
   The following two methods shall call such a resource.
    */
-  protected def obtainUserInfo(authorizationData: AuthorizationData): Future[UserInfoData] =
-    obtainUserInfo(authorizationData.accessToken)
+  protected def authenticateUser(authorizationData: AuthorizationData): Future[UserInfoData] =
+    authenticateUser(authorizationData.accessToken, IntrospectedAccessTokenData.empty)
 
-  protected def obtainUserInfo(accessToken: String): Future[UserInfoData] =
+  override private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[UserInfoData] =
     clientApi.profileRequest(accessToken)
+
 }
 
 @ConfiguredJsonCodec final case class DefaultOAuth2AuthorizationData(
@@ -70,6 +68,7 @@ object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
 }
 
 object BaseOAuth2Service {
+
   def apply[
       UserInfoData: Decoder
   ](configuration: OAuth2Configuration)(
@@ -77,4 +76,5 @@ object BaseOAuth2Service {
       backend: SttpBackend[Future, Any]
   ): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
     new BaseOAuth2Service(OAuth2ClientApi[UserInfoData, DefaultOAuth2AuthorizationData](configuration))
+
 }

@@ -43,6 +43,7 @@ object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
     case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
     case other           => other.noSpaces.getBytes(StandardCharsets.UTF_8)
   }
+
 }
 
 class AvroPayloadRecordFormatterSupport(keyMessageReader: AvroMessageReader, valueMessageReader: AvroMessageReader)

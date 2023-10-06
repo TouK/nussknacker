@@ -94,4 +94,5 @@ trait KafkaAvroSourceSpecMixin {
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
+
 }

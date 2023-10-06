@@ -105,6 +105,7 @@ class CustomJsonEncoder1 extends ToJsonEncoder {
   override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case CustomClassToEncode(value) =>
     obj("customEncode" -> encode(value))
   }
+
 }
 
 class CustomJsonEncoder2 extends ToJsonEncoder {
@@ -112,6 +113,7 @@ class CustomJsonEncoder2 extends ToJsonEncoder {
   override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case _: NestedClassToEncode =>
     fromString("value")
   }
+
 }
 
 case class CustomClassToEncode(value: Any)

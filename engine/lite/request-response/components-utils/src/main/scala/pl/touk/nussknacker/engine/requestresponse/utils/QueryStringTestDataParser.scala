@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class QueryStringTestDataParser extends TestRecordParser[TypedMap] {
+
   override def parse(testRecord: TestRecord): TypedMap = {
     val queryString = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
     val paramMap = queryString
@@ -27,4 +28,5 @@ class QueryStringTestDataParser extends TestRecordParser[TypedMap] {
     // TODO: validation??
     TypedMap(paramMap)
   }
+
 }

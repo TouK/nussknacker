@@ -63,6 +63,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .customNode("custom", "out1", existingStreamTransformer)
     .customNode("custom2", "out2", otherExistingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
+
   private val processDetails1 = displayableToProcess(TestProcessUtil.toDisplayable(process1))
 
   private val processDetails1ButDeployed = processDetails1.copy(lastAction =
@@ -89,6 +90,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .source("source", existingSourceFactory)
     .customNode("custom", "out1", otherExistingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
+
   private val processDetails2 = displayableToProcess(TestProcessUtil.toDisplayable(process2))
 
   private val processWithSomeBasesStreaming = ScenarioBuilder
@@ -103,6 +105,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
       Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
     )
+
   private val processDetailsWithSomeBasesStreaming = displayableToProcess(
     TestProcessUtil.toDisplayable(processWithSomeBasesStreaming)
   )
@@ -118,6 +121,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
       Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
     )
+
   private val processDetailsWithSomeBasesFraud = displayableToProcess(
     TestProcessUtil.toDisplayable(processWithSomeBasesFraud, TestProcessingTypes.Fraud)
   )
@@ -135,6 +139,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
       )
     )
+
   private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
   private val defaultComponentIdProvider = new DefaultComponentIdProvider(

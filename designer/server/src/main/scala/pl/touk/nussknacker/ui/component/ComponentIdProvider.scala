@@ -98,4 +98,5 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
       .orElse(componentIdForDefaultComponentId)
       .getOrElse(defaultComponentId)
   }
+
 }

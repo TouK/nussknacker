@@ -87,6 +87,7 @@ trait KafkaAvroSpecMixin
       ProcessSettingsPreparer(modelData),
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
+
         override def prepareExecutionConfig(
             config: ExecutionConfig
         )(jobData: JobData, deploymentData: DeploymentData): Unit = {
@@ -96,6 +97,7 @@ trait KafkaAvroSpecMixin
             kafkaConfig
           )
         }
+
       }
     )
 
@@ -305,6 +307,7 @@ trait KafkaAvroSpecMixin
         key,
         validationMode
       )
+
   }
 
   protected def roundTripKeyValueObject(

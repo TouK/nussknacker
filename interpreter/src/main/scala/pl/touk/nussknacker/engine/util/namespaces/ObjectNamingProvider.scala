@@ -10,9 +10,11 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
   * [[DefaultNamespacedObjectNaming]] otherwise.
   */
 object ObjectNamingProvider extends LazyLogging with Serializable {
+
   def apply(classLoader: ClassLoader): ObjectNaming = {
     ScalaServiceLoader.loadClass[ObjectNaming](classLoader) {
       DefaultNamespacedObjectNaming
     }
   }
+
 }

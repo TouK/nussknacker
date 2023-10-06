@@ -60,6 +60,7 @@ object DatabaseQueryEnricher {
   ) {
     val outputType: TypingResult = strategy.resultType(tableDef)
   }
+
 }
 
 /*
@@ -80,6 +81,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   override type State = TransformationState
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
+
   protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
     (argsCount: Int, params: Map[String, Any]) => {
       QueryArguments(
@@ -89,6 +91,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
         }.toList
       )
     }
+
   protected var dataSource: HikariDataSource = _
 
   override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {

@@ -175,4 +175,5 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
       QueryParameter("queryParam", SwaggerString)
     )
   }
+
 }

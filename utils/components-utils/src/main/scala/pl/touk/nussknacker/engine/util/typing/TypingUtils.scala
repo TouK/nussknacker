@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.util.typing
+
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util

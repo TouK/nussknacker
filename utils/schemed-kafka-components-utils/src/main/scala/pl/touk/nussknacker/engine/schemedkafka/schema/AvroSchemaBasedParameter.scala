@@ -106,4 +106,5 @@ object AvroSinkSingleValueParameter {
     // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
     SingleSchemaBasedParameter(parameter, TypingResultValidator.emptyValidator)
   }
+
 }

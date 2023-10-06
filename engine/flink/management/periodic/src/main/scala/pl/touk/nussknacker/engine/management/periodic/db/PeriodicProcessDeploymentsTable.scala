@@ -57,6 +57,7 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
       status
     ) <>
       ((PeriodicProcessDeploymentEntity.apply _).tupled, PeriodicProcessDeploymentEntity.unapply)
+
   }
 
   object PeriodicProcessDeployments extends TableQuery(new PeriodicProcessDeploymentsTable(_))

@@ -6,10 +6,13 @@ import scala.language.implicitConversions
 
 //https://github.com/milessabin/shapeless/blob/master/examples/src/main/scala/shapeless/examples/basecopy.scala
 object copySyntax {
+
   class CopySyntax[T](t: T) {
+
     object copy extends RecordArgs {
       def applyRecord[R <: HList](r: R)(implicit update: UpdateRepr[T, R]): T = update(t, r)
     }
+
   }
 
   implicit def apply[T](t: T): CopySyntax[T] = new CopySyntax[T](t)
@@ -37,10 +40,12 @@ object UpdateRepr {
       ut: Lazy[UpdateRepr[T, R]]
   ): UpdateRepr[H :+: T, R] =
     new UpdateRepr[H :+: T, R] {
+
       def apply(t: H :+: T, r: R): H :+: T = t match {
         case Inl(h) => Inl(uh.value(h, r))
         case Inr(t) => Inr(ut.value(t, r))
       }
+
     }
 
   implicit def genProdUpdateRepr[T, R <: HList, Repr <: HList](
@@ -60,4 +65,5 @@ object UpdateRepr {
     new UpdateRepr[T, R] {
       def apply(t: T, r: R): T = gen.from(update.value(gen.to(t), r))
     }
+
 }

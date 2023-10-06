@@ -114,4 +114,5 @@ class K8sPodsResourceQuotaCheckerTest extends AnyFunSuite {
     val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(None, quotaList(quota, anotherQuota), 1, None)
     quotaExceeded shouldEqual Valid(())
   }
+
 }

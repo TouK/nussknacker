@@ -25,6 +25,7 @@ trait TagsEntityFactory extends BaseEntityFactory {
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.Cascade
     )
+
   }
 
   val tagsTable: LTableQuery[TagsEntityFactory#TagsEntity] = LTableQuery(new TagsEntity(_))

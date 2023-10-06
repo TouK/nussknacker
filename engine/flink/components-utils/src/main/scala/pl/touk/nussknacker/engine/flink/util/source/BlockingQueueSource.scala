@@ -104,4 +104,5 @@ object BlockingQueueSource {
     }
     new BlockingQueueSource[T](assigner)
   }
+
 }

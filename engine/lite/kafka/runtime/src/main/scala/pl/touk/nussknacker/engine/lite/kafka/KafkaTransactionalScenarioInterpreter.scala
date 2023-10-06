@@ -88,6 +88,7 @@ object KafkaTransactionalScenarioInterpreter {
       engineRuntimeContextPreparer
     )
   }
+
 }
 
 class KafkaTransactionalScenarioInterpreter private[kafka] (

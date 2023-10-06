@@ -53,6 +53,7 @@ class ProcessCompiler(
   override def compile(process: CanonicalProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
   }
+
 }
 
 trait ProcessValidator extends LazyLogging {

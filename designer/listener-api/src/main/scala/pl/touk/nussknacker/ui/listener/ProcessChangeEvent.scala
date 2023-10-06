@@ -14,6 +14,7 @@ object ProcessChangeEvent {
   final case class OnCategoryChanged(processId: ProcessId, oldCategory: String, newCategory: String)
       extends ProcessChangeEvent
   final case class OnDeleted(processId: ProcessId) extends ProcessChangeEvent
+
   final case class OnDeployActionSuccess(
       processId: ProcessId,
       version: VersionId,
@@ -21,6 +22,7 @@ object ProcessChangeEvent {
       deployedAt: Instant,
       action: ProcessActionType
   ) extends ProcessChangeEvent
+
   final case class OnDeployActionFailed(processId: ProcessId, reason: Throwable) extends ProcessChangeEvent
   final case class OnRenamed(processId: ProcessId, oldName: ProcessName, newName: ProcessName)
       extends ProcessChangeEvent

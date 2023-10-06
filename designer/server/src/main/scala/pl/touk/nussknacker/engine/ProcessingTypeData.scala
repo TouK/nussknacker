@@ -84,4 +84,5 @@ object ProcessingTypeData {
       ProcessingTypeUsageStatistics(managerConfig)
     )
   }
+
 }

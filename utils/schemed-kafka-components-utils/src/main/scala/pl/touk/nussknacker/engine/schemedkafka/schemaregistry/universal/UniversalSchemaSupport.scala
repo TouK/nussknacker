@@ -27,9 +27,11 @@ class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 }
 
 object UniversalSchemaSupportDispatcher {
+
   def apply(kafkaConfig: KafkaConfig): UniversalSchemaSupportDispatcher = new UniversalSchemaSupportDispatcher(
     kafkaConfig
   )
+
 }
 
 trait UniversalSchemaSupport {
@@ -38,6 +40,7 @@ trait UniversalSchemaSupport {
   def typeDefinition(schema: ParsedSchema): TypingResult
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
+
   def extractParameter(
       schema: ParsedSchema,
       rawMode: Boolean,
@@ -62,6 +65,7 @@ trait UniversalSchemaSupport {
     data =>
       recordFormatterSupport(schemaRegistryClient).formatMessage(formValueEncoder(schema, ValidationMode.lax)(data))
   }
+
 }
 
 class UnsupportedSchemaType(schemaType: String)

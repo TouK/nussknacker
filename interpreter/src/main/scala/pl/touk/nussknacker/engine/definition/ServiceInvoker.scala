@@ -91,6 +91,7 @@ object DefaultServiceInvoker {
   private object ServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[Future[_]])
+
     override protected val additionalDependencies = Set[Class[_]](
       classOf[ExecutionContext],
       classOf[ServiceInvocationCollector],
@@ -99,12 +100,14 @@ object DefaultServiceInvoker {
       classOf[ContextId],
       classOf[ComponentUseCase]
     )
+
     override def acceptCustomTransformation: Boolean = false
   }
 
   private object JavaServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[java.util.concurrent.CompletionStage[_]])
+
     override protected val additionalDependencies = Set[Class[_]](
       classOf[Executor],
       classOf[ServiceInvocationCollector],
@@ -113,12 +116,14 @@ object DefaultServiceInvoker {
       classOf[ContextId],
       classOf[ComponentUseCase]
     )
+
     override def acceptCustomTransformation: Boolean = false
   }
 
   private object EagerServiceDefinitionExtractor extends AbstractMethodDefinitionExtractor[Service] {
 
     override protected val expectedReturnType: Option[Class[_]] = Some(classOf[ServiceInvoker])
+
     override protected val additionalDependencies = Set[Class[_]](
       classOf[ExecutionContext],
       classOf[ServiceInvocationCollector],

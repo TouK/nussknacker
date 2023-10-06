@@ -58,4 +58,5 @@ trait BaseOpenAPITest {
     enrichers.foreach(_._2.open(context))
     enrichers
   }
+
 }

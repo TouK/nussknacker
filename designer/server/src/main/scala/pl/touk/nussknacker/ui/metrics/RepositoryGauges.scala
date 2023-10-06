@@ -29,6 +29,7 @@ class RepositoryGauges(
   }
 
   private class GlobalGauge extends CachedGauge[Values](repositoryGaugesCacheDuration.toSeconds, TimeUnit.SECONDS) {
+
     override def loadValue(): Values = {
       implicit val user: LoggedUser = NussknackerInternalUser.instance
       val result =

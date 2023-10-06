@@ -8,6 +8,7 @@ import java.security.{KeyFactory, PublicKey}
 import java.util.Base64
 
 object CertificatesAndKeys {
+
   def publicKeyFromString(keyStr: String, charset: Charset): PublicKey = {
     val keySpec = new X509EncodedKeySpec(decodeBase64(extractBase64EncodedPEM(keyStr), charset))
     KeyFactory.getInstance("RSA").generatePublic(keySpec)

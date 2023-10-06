@@ -342,4 +342,5 @@ class DBFetchingProcessRepositorySpec
     fetchedProcess shouldBe Symbol("defined")
     fetchedProcess.get
   }
+
 }

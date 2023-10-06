@@ -11,4 +11,5 @@ object NussknackerApp extends IOApp {
       _          <- appFactory.createApp().use { _ => IO.never }
     } yield ExitCode.Success
   }
+
 }

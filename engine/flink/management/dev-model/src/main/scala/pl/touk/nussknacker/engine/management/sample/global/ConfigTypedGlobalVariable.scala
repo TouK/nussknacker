@@ -36,4 +36,5 @@ object ConfigTypedGlobalVariable extends TypedGlobalVariable {
     // TODO: check is this correct?
     metaData.additionalFields.properties.get("environment").getOrElse("other")
   }
+
 }

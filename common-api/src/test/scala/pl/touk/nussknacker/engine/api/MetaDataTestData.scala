@@ -7,24 +7,28 @@ object MetaDataTestData {
 
   // flink
   val flinkEmptyTypeData: StreamMetaData = StreamMetaData(None, None, None, None)
+
   val flinkFullTypeData: StreamMetaData = StreamMetaData(
     parallelism = Some(5),
     spillStateToDisk = Some(false),
     useAsyncInterpretation = Some(true),
     checkpointIntervalInSeconds = Some(1000L)
   )
+
   val flinkEmptyProperties: Map[String, String] = Map(
     "parallelism"                 -> "",
     "spillStateToDisk"            -> "",
     "useAsyncInterpretation"      -> "",
     "checkpointIntervalInSeconds" -> ""
   )
+
   val flinkFullProperties: Map[String, String] = Map(
     "parallelism"                 -> "5",
     "spillStateToDisk"            -> "false",
     "useAsyncInterpretation"      -> "true",
     "checkpointIntervalInSeconds" -> "1000"
   )
+
   val flinkInvalidTypeProperties: Map[String, String] = Map(
     "parallelism"                 -> "non-int",
     "spillStateToDisk"            -> "non-boolean",

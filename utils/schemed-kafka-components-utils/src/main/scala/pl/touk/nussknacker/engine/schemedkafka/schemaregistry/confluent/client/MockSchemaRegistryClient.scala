@@ -40,4 +40,5 @@ class MockSchemaRegistryClient extends CMockSchemaRegistryClient with LazyLoggin
       throw new RestClientException("Version not found", 404, versionNotFoundCode)
     }
   }
+
 }

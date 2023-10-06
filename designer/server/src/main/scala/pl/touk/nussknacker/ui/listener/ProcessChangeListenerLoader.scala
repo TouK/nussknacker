@@ -22,6 +22,7 @@ object ProcessChangeListenerLoader extends LazyLogging {
   }
 
   class ProcessChangeListenerAggregate(listeners: Seq[ProcessChangeListener]) extends ProcessChangeListener {
+
     override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
       def handleSafely(listener: ProcessChangeListener): Unit = {
         try {
@@ -33,6 +34,7 @@ object ProcessChangeListenerLoader extends LazyLogging {
       }
       listeners.foreach(handleSafely)
     }
+
   }
 
 }

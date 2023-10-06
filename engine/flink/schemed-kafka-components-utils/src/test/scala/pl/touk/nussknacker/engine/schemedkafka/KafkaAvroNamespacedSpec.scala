@@ -60,6 +60,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
   }
+
 }
 
 class TestObjectNaming(namespace: String) extends ObjectNaming {
@@ -83,6 +84,7 @@ class TestObjectNaming(namespace: String) extends ObjectNaming {
       config: Config,
       namingContext: NamingContext
   ): Option[ObjectNamingParameters] = None
+
 }
 
 object KafkaAvroNamespacedMockSchemaRegistry {

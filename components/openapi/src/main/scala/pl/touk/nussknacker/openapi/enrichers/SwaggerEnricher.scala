@@ -77,6 +77,7 @@ class SwaggerEnricher(
     super.close()
     httpBackendProvider.close()
   }
+
 }
 
 class SwaggerEnricherCreator(httpBackendProvider: HttpBackendProvider) {

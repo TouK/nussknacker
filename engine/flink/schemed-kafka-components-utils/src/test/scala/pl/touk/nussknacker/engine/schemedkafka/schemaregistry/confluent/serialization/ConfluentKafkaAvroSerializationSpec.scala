@@ -187,4 +187,5 @@ class ConfluentKafkaAvroSerializationSpec
       valueSchema,
       Option(SchemaId.fromInt(schemaRegistryClient.getId(s"$topic-value", new AvroSchema(valueSchema))))
     ).toParsedSchemaData
+
 }

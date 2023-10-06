@@ -14,6 +14,7 @@ trait ValidatedValuesDetailedMessage {
   ): ValidatedValuable[E, A] = new ValidatedValuable(validated, pos)
 
   class ValidatedValuable[E, A](validated: Validated[E, A], pos: source.Position) {
+
     def validValue: A = {
       validated match {
         case Invalid(value) =>
@@ -39,6 +40,7 @@ trait ValidatedValuesDetailedMessage {
           )
       }
     }
+
   }
 
 }

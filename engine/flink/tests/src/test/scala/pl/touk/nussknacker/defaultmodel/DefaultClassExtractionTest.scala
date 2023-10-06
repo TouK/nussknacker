@@ -18,6 +18,7 @@ class DefaultClassExtractionTest extends ClassExtractionBaseTest {
       )
     LocalModelData(config, new DefaultConfigCreator)
   }
+
   protected override val outputResource = "/extractedTypes/defaultModel.json"
 
 }

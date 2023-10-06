@@ -35,6 +35,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
   private val testUser =
     TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = TestCategories)
+
   private val testReqRespUser = TestFactory.userWithCategoriesReadPermission(
     username = "testReqRespUser",
     categories = TestCategories ++ ReqResCategories
@@ -190,4 +191,5 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       processRepository = TestFactory.newDummyWriteProcessRepository(),
       processValidation = TestFactory.processValidation
     )
+
 }

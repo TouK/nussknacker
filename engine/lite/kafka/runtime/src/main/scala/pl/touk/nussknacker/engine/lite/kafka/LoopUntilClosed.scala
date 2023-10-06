@@ -26,6 +26,7 @@ class TaskRunner(
     metricsProviderForScenario: MetricsProviderForScenario
 ) extends AutoCloseable
     with LazyLogging {
+
   def status(): TaskStatus = Option(tasks)
     .filterNot(_.isEmpty)
     .map(_.maxBy(_.status))
@@ -72,6 +73,7 @@ class TaskRunner(
       logger.error("Thread pool termination timeout")
     }
   }
+
 }
 
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails
@@ -182,4 +184,5 @@ class LoopUntilClosed(
   override def close(): Unit = {
     closed.set(true)
   }
+
 }

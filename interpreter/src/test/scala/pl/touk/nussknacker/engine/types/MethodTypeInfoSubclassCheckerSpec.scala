@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class MethodTypeInfoSubclassCheckerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+
   private def check(
       subclassNoVarArgs: List[TypingResult],
       subclassVarArg: Option[TypingResult],
@@ -128,4 +129,5 @@ class MethodTypeInfoSubclassCheckerSpec extends AnyFunSuite with Matchers with V
       MethodTypeInfo(Nil, None, Typed[Int])
     ) shouldBe NotSubclassResult(Typed[String], Typed[Int]).invalidNel
   }
+
 }

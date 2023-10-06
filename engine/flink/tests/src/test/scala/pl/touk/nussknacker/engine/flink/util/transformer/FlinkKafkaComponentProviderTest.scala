@@ -32,4 +32,5 @@ class FlinkKafkaComponentProviderTest extends AnyFunSuite {
 
     components.size shouldBe 2
   }
+
 }

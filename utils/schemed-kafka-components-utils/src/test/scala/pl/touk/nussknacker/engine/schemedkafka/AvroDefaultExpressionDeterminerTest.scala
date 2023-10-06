@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
+
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.jdk.CollectionConverters._
@@ -150,4 +151,5 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
        |   ]
        |}
     """.stripMargin)
+
 }

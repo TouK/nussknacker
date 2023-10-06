@@ -69,4 +69,5 @@ trait FlinkStubbedRunner {
       exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
     }
   }
+
 }

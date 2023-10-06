@@ -152,4 +152,5 @@ class ScenarioTestService(
     }
     processCounter.computeCounts(canonical, counts.get)
   }
+
 }

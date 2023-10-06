@@ -15,11 +15,13 @@ object multiplicity {
   case class Many[T](many: List[T]) extends Multiplicity[T]
 
   object Multiplicity {
+
     def apply[T](args: List[T]): Multiplicity[T] = args match {
       case Nil        => Empty[T]()
       case one :: Nil => One(one)
       case many       => Many(many)
     }
+
   }
 
 }

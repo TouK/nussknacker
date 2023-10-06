@@ -11,6 +11,7 @@ object LiteEngineRuntimeContextPreparer {
   private object CloseableNoOpMetricsProviderForScenario extends NoOpMetricsProviderForScenario with AutoCloseable {
     override def close(): Unit = {}
   }
+
 }
 
 class LiteEngineRuntimeContextPreparer(

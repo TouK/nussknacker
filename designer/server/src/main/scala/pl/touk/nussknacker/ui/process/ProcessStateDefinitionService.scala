@@ -39,6 +39,7 @@ class ProcessStateDefinitionService(
       .filter(_.categories.nonEmpty)
       .toList
   }
+
 }
 
 object ProcessStateDefinitionService {

@@ -62,7 +62,9 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
       count += 1
       output
     }
+
   }
+
 }
 
 class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) extends EmptyProcessConfigCreator {

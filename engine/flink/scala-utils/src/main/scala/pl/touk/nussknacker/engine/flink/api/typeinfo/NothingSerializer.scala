@@ -71,6 +71,7 @@ class NothingSerializer extends TypeSerializer[Any] {
   override def hashCode(): Int = {
     classOf[NothingSerializer].hashCode()
   }
+
 }
 
 class NothingSerializerSnapshot

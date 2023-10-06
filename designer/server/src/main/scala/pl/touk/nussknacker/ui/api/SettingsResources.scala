@@ -71,6 +71,7 @@ class SettingsResources(
 @JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
+
   def create(
       validationPattern: String,
       exampleComment: Option[String]
@@ -85,6 +86,7 @@ object DeploymentCommentSettings {
   def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
     new DeploymentCommentSettings(validationPattern, exampleComment)
   }
+
 }
 
 final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
@@ -107,7 +109,16 @@ object TopTabType extends Enumeration {
     `type`: TopTabType.Value,
     url: String,
     requiredPermission: Option[String],
-    addAccessTokenInQueryParam: Option[Boolean]
+    // Deprecated: use accessTokenInQuery.enabled setting instead
+    addAccessTokenInQueryParam: Option[Boolean],
+    accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings())
+)
+
+@JsonCodec final case class AccessTokenInQueryTabSettings(
+    enabled: Boolean = false,
+    // The default parameter name is consistent with parameter name used by Grafana:
+    // https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/jwt/?plcmt=learn-nav#url-login
+    parameterName: Option[String] = Some("auth_token")
 )
 
 @JsonCodec final case class ToggleFeaturesOptions(

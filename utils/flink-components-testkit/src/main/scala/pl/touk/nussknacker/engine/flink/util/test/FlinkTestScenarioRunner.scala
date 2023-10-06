@@ -4,7 +4,12 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{
+  ComponentUseCase,
+  EmptyProcessConfigCreator,
+  SourceFactory,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -50,6 +55,7 @@ private object testComponents {
 
 class FlinkTestScenarioRunner(
     val components: List[ComponentDefinition],
+    val globalVariables: Map[String, AnyRef],
     val config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
     componentUseCase: ComponentUseCase
@@ -59,7 +65,7 @@ class FlinkTestScenarioRunner(
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -70,7 +76,7 @@ class FlinkTestScenarioRunner(
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
     }
@@ -83,11 +89,11 @@ class FlinkTestScenarioRunner(
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents      = testDataSourceComponent(data) :: noopSourceComponent :: Nil
-    val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
     run(scenario, testComponentHolder)
   }
 
-  private def run(scenario: CanonicalProcess, testComponentHolder: TestComponentsHolder): RunnerResult[Unit] = {
+  private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
     // TODO: get flink mini cluster through composition
@@ -95,7 +101,7 @@ class FlinkTestScenarioRunner(
 
     // It's copied from registrar.register only for handling compilation errors..
     // TODO: figure how to get compilation result on highest level - registrar.register?
-    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData, componentUseCase)
+    val compiler = new FlinkProcessCompilerWithTestComponents(testExtensionsHolder, modelData, componentUseCase)
     val compileProcessData = compiler.compileProcess(
       scenario,
       ProcessVersion.empty,
@@ -111,8 +117,8 @@ class FlinkTestScenarioRunner(
     }
   }
 
-  private def collectResults[R](testComponentHolder: TestComponentsHolder): RunListResult[R] = {
-    val results = TestResultService.extractFromTestComponentsHolder(testComponentHolder)
+  private def collectResults[R](testExtensionsHolder: TestExtensionsHolder): RunListResult[R] = {
+    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
     // TODO: add runtime errors handling
     RunResult.successes(results)
   }
@@ -122,15 +128,18 @@ class FlinkTestScenarioRunner(
 object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+
     def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-      FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster, testRuntimeMode = false)
+      FlinkTestScenarioRunnerBuilder(List.empty, Map.empty, config, flinkMiniCluster, testRuntimeMode = false)
     }
+
   }
 
 }
 
 case class FlinkTestScenarioRunnerBuilder(
     components: List[ComponentDefinition],
+    globalVariables: Map[String, AnyRef],
     config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
     testRuntimeMode: Boolean
@@ -142,10 +151,21 @@ case class FlinkTestScenarioRunnerBuilder(
     copy(components = components)
   }
 
+  override def withExtraGlobalVariables(
+      globalVariables: Map[String, AnyRef]
+  ): FlinkTestScenarioRunnerBuilder =
+    copy(globalVariables = globalVariables)
+
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
   override def build() =
-    new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
+    new FlinkTestScenarioRunner(
+      components,
+      globalVariables,
+      config,
+      flinkMiniCluster,
+      componentUseCase(testRuntimeMode)
+    )
 
 }

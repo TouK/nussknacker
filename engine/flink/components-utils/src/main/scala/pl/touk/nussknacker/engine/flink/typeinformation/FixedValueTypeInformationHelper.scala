@@ -55,6 +55,7 @@ object FixedValueTypeInformationHelper {
       new SimpleTypeSerializerSnapshot(new Supplier[TypeSerializer[Map[String, AnyRef]]] {
         override def get(): TypeSerializer[Map[String, AnyRef]] = EmptyMapSerializer
       }) {}
+
   }
 
   object NullSerializer extends FixedValueTypeInformationHelper[AnyRef] {
@@ -64,6 +65,7 @@ object FixedValueTypeInformationHelper {
       new SimpleTypeSerializerSnapshot[AnyRef](new Supplier[TypeSerializer[AnyRef]] {
         override def get(): TypeSerializer[AnyRef] = NullSerializer
       }) {}
+
   }
 
 }

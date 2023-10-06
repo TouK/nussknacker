@@ -167,6 +167,7 @@ object MethodDefinitionExtractor {
             .getOrElse(throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
       }
     }
+
   }
 
   private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinitionExtractor[T]])

@@ -37,9 +37,11 @@ class ExpressionSuggester(
       case _ => Future.successful(Nil)
     }
   }
+
 }
 
 object ExpressionSuggester {
+
   def apply(modelData: ModelData): ExpressionSuggester = {
     new ExpressionSuggester(
       modelData.modelDefinition.expressionConfig,
@@ -48,11 +50,14 @@ object ExpressionSuggester {
       modelData.modelClassLoader.classLoader
     )
   }
+
 }
 
 @JsonCodec(decodeOnly = true)
 final case class CaretPosition2d(row: Int, column: Int) {
+
   def normalizedCaretPosition(inputValue: String): Int = {
     inputValue.split("\n").take(row).map(_.length).sum + row + column
   }
+
 }

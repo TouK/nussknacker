@@ -35,6 +35,7 @@ trait WithTestHttpClientCreator extends WithSttpTestUtils {
   }
 
 }
+
 object WithTestHttpClientCreator extends WithTestHttpClientCreator
 
 trait WithTestHttpClient extends WithSttpTestUtils with BeforeAndAfterAll {
@@ -51,4 +52,5 @@ trait WithTestHttpClient extends WithSttpTestUtils with BeforeAndAfterAll {
     clientResources.unsafeRunSync()
     super.afterAll()
   }
+
 }

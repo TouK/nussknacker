@@ -53,10 +53,13 @@ class TestComponentProvider extends ComponentProvider {
             .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
             .withVariable(VariableConstants.InputVariableName, value)
         }
+
       }
+
   }
 
   object KafkaSink extends SinkFactory {
+
     @MethodToInvoke
     def invoke(
         @ParamName(`TopicParamName`) topicName: String,
@@ -66,6 +69,7 @@ class TestComponentProvider extends ComponentProvider {
         implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
         value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
+
   }
 
 }

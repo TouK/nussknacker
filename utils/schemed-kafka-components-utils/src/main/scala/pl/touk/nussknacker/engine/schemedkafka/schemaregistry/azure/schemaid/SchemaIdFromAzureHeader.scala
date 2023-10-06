@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 import java.nio.ByteBuffer
 
 object SchemaIdFromAzureHeader extends SchemaIdFromMessageExtractor {
+
   override private[schemedkafka] def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {
     if (args.isKey) {
       None // Azure schema registry doesn't support keys serialized in Avro format

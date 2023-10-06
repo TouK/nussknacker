@@ -109,9 +109,11 @@ class TestModelMigrations(
     newErrors: ValidationResult,
     shouldFailOnNewErrors: Boolean
 ) {
+
   def shouldFail: Boolean = {
     shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
   }
+
 }
 
 private final case class MigratedProcessDetails(

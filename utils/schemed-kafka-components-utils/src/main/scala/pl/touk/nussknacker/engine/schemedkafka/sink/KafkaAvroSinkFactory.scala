@@ -41,6 +41,7 @@ object KafkaAvroSinkFactory {
     Parameter.optional[CharSequence](KafkaUniversalComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[AnyRef](KafkaUniversalComponentTransformer.SinkValueParamName).copy(isLazyParameter = true)
   )
+
 }
 
 class KafkaAvroSinkFactory(

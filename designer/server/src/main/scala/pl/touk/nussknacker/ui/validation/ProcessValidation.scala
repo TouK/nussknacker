@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 
 object ProcessValidation {
+
   def apply(
       modelData: ProcessingTypeDataProvider[ModelData, _],
       additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
@@ -32,6 +33,7 @@ object ProcessValidation {
   ): ProcessValidation = {
     new ProcessValidation(modelData, additionalProperties, additionalValidators, fragmentResolver, None)
   }
+
 }
 
 class ProcessValidation(

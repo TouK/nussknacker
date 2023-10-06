@@ -16,4 +16,5 @@ object ProcessConfigCreatorLoader extends LoadClassFromClassLoader {
         .load[JPCC](classLoader)
         .map(ProcessConfigCreatorMapping.toProcessConfigCreator)
   }
+
 }

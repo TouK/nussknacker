@@ -31,4 +31,5 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
       _.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None)
     )
   }
+
 }

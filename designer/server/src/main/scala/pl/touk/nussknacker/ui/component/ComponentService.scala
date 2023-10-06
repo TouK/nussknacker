@@ -27,6 +27,7 @@ trait ComponentService {
   def getComponentUsages(componentId: ComponentId)(
       implicit user: LoggedUser
   ): Future[XError[List[ComponentUsagesInScenario]]]
+
 }
 
 object DefaultComponentService {
@@ -197,6 +198,7 @@ class DefaultComponentService private (
         head.copy(categories = categories)
     }.toList
   }
+
 }
 
 private final case class ComponentNotFoundError(componentId: ComponentId)
