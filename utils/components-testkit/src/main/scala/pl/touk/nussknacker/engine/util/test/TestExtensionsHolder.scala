@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.testmode.TestRunId
-import pl.touk.nussknacker.engine.util.test.TestExtensionsProvider.testRunIdConfig
+import pl.touk.nussknacker.engine.util.test.TestComponentsProvider.testRunIdConfig
 
 import java.util.UUID
 import scala.reflect.ClassTag
@@ -47,7 +47,7 @@ object TestExtensionsHolder {
 
 }
 
-object TestExtensionsProvider {
+object TestComponentsProvider {
 
   val name = "test"
 
@@ -55,9 +55,9 @@ object TestExtensionsProvider {
 
 }
 
-class TestExtensionsProvider extends ComponentProvider {
+class TestComponentsProvider extends ComponentProvider {
 
-  override def providerName: String = TestExtensionsProvider.name
+  override def providerName: String = TestComponentsProvider.name
 
   override def resolveConfigForExecution(config: Config): Config = config
 

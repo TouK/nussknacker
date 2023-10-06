@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, WithCategories}
+import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ModelWithTestExtensions {
@@ -16,16 +16,16 @@ object ModelWithTestExtensions {
       components: List[ComponentDefinition],
       globalVariables: Map[String, AnyRef]
   )(action: ModelData => T): T = {
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components, globalVariables)
+    val testExtensionsHolder = TestExtensionsHolder.registerTestExtensions(components, globalVariables)
     val configWithRunId = config.withValue(
-      s"components.${TestExtensionsProvider.name}.${TestExtensionsProvider.testRunIdConfig}",
-      fromAnyRef(testComponentHolder.runId.id)
+      s"components.${TestComponentsProvider.name}.${TestComponentsProvider.testRunIdConfig}",
+      fromAnyRef(testExtensionsHolder.runId.id)
     )
     val model = LocalModelData(configWithRunId, new EmptyProcessConfigCreator)
     try {
       action(model)
     } finally {
-      testComponentHolder.clean()
+      testExtensionsHolder.clean()
     }
   }
 

@@ -25,7 +25,7 @@ class FlinkProcessCompilerWithTestComponents(
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
-    testComponentsHolder: TestExtensionsHolder
+    testExtensionsHolder: TestExtensionsHolder
 ) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   override protected def definitions(
@@ -72,7 +72,7 @@ class FlinkProcessCompilerWithTestComponents(
     val expressionConfigWithTests = definitions.expressionConfig.copy(
       definitions.expressionConfig.globalVariables ++
         GlobalVariableDefinitionExtractor.extractDefinitions(
-          testComponentsHolder.globalVariables.view.mapValues(WithCategories.anyCategory).toMap
+          testExtensionsHolder.globalVariables.view.mapValues(WithCategories.anyCategory).toMap
         )
     )
 
@@ -88,15 +88,15 @@ class FlinkProcessCompilerWithTestComponents(
   }
 
   private def testComponentsWithCategories[T <: Component: ClassTag] =
-    testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
+    testExtensionsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestExtensionsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
+  def this(testExtensionsHolder: TestExtensionsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
     modelData.configCreator,
     modelData.processConfig,
     false,
     modelData.objectNaming,
     componentUseCase,
-    componentsHolder
+    testExtensionsHolder
   )
 
 }
