@@ -288,7 +288,7 @@ class AppApiSpec
              |  "name": "nussknacker-common-api",
              |  "gitCommit": "^\\\\w{40}$$",
              |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$",
-             |  "version": "1.12.0-SNAPSHOT",
+             |  "version": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+(?:-.+)*$$",
              |  "processingType": {
              |    "streaming": {
              |      "process-version": "0.1",
