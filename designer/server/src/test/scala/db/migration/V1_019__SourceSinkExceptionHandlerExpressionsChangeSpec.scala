@@ -231,4 +231,5 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
       case Valid(converted) => converted
     }
   }
+
 }

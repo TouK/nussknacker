@@ -47,4 +47,5 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
     } else {
       None
     }
+
 }

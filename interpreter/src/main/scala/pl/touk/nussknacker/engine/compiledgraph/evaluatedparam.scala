@@ -9,6 +9,7 @@ object evaluatedparam {
   case class TypedParameter(name: String, typedValue: TypedValue)
 
   object Parameter {
+
     def apply(typedExpression: TypedExpression, parameterDefinition: definition.Parameter): Parameter = {
       Parameter(
         parameterDefinition.name,
@@ -19,6 +20,7 @@ object evaluatedparam {
         typedExpression.typingInfo
       )
     }
+
   }
 
   case class Parameter(

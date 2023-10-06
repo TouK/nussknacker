@@ -31,6 +31,7 @@ object SynchronousLiteInterpreter {
 
   implicit val ec: ExecutionContext                             = SynchronousExecutionContext.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
+
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 
     private val waitTime = 10 seconds

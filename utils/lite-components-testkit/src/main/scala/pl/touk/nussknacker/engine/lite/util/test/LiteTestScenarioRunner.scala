@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.util.test._
 import scala.reflect.ClassTag
 
 object LiteTestScenarioRunner {
+
   implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def liteBased(config: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
@@ -80,6 +81,7 @@ class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Conf
       SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
     }
   }
+
 }
 
 private[test] class SimpleSourceFactory(result: TypingResult)
@@ -115,10 +117,13 @@ private[test] class SimpleSourceFactory(result: TypingResult)
     case typing.TypedUnion(possibleTypes)  => possibleTypes.map(_.objType).toList
     case typing.TypedNull | typing.Unknown => Nil
   }
+
 }
 
 private[test] object SimpleSinkFactory extends SinkFactory {
+
   @MethodToInvoke
   def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = (_: LazyParameterInterpreter) =>
     value
+
 }

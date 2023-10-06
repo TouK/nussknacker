@@ -281,4 +281,5 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
       expressionCompiler.withExpressionParsers(modify),
       nodeCompiler.withExpressionParsers(modify)
     )
+
 }

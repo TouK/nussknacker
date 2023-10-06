@@ -13,6 +13,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
   val someProcessDescription = "scenario description"
   val someNodeDescription    = "single node description"
+
   val processWithoutAdditionalProperties: Json = parse(s"""
        |{
        |    "metaData" : {
@@ -93,4 +94,5 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
     parse(processAfterMarshallAndUnmarshall).toOption.get shouldBe baseProcess
   }
+
 }

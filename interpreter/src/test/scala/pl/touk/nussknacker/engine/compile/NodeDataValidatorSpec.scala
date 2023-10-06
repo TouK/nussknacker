@@ -43,6 +43,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     )
 
   private val defaultFragmentId: String = "fragment1"
+
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
     List(
@@ -50,6 +51,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     )
   )
+
   private val defaultFragmentOutgoingEdges: List[OutgoingEdge] = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
 
   def getModelData(aConfig: Config = defaultConfig): LocalModelData = {

@@ -28,6 +28,7 @@ object LiteralSpELWithAvroImplicits {
 
         field.name() -> value
       }.toMap
+
   }
 
 }

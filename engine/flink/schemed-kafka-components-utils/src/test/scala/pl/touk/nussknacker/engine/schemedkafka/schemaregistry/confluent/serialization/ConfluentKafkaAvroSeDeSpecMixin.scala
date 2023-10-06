@@ -67,6 +67,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
       val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
       kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
     }
+
   }
 
 }

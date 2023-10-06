@@ -136,4 +136,5 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
     checkIfWrapped(flinkClient.cancel(deploymentId))
     checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None))
   }
+
 }

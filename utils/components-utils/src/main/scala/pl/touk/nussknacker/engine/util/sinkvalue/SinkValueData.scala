@@ -21,6 +21,7 @@ object SinkValueData {
           key -> toLazyParameter(value)
         }: _*))
     }
+
   }
 
   case class SinkSingleValue(value: LazyParameter[AnyRef]) extends SinkValue

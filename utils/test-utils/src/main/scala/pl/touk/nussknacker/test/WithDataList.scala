@@ -16,4 +16,5 @@ trait WithDataList[T] extends Serializable {
   def clear(predicate: Predicate[T] = _ => true): Unit = {
     dataList.removeIf(predicate)
   }
+
 }

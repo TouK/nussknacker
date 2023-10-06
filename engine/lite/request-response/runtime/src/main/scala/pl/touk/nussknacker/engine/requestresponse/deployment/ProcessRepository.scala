@@ -31,6 +31,7 @@ class EmptyProcessRepository extends ProcessRepository {
 }
 
 object FileProcessRepository {
+
   def apply(path: String): FileProcessRepository = {
     val dir = new File(path)
     dir.mkdirs()
@@ -39,6 +40,7 @@ object FileProcessRepository {
     }
     new FileProcessRepository(dir)
   }
+
 }
 
 class FileProcessRepository(path: File) extends ProcessRepository {

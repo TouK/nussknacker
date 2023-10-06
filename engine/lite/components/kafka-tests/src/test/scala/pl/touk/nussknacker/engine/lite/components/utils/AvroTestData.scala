@@ -300,4 +300,5 @@ object AvroTestData {
        |  ]
        |}
     """.stripMargin)
+
 }

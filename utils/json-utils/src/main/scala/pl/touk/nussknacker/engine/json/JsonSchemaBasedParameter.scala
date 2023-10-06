@@ -115,6 +115,7 @@ object JsonSchemaBasedParameter {
     ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
       JsonDefaultExpressionDeterminer
         .determineWithHandlingNotSupportedTypes(fieldSchema, paramName)
+
   }
 
 }

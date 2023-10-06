@@ -21,4 +21,5 @@ class AuthorizeProcess(processRepository: FetchingProcessRepository[Future])(
           .exists(user.can(_, permission))
       )
   }
+
 }

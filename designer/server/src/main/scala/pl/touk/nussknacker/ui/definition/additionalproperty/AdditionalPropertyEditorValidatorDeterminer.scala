@@ -19,4 +19,5 @@ protected class AdditionalPropertyEditorValidatorDeterminer(editor: Option[Simpl
       case _                                        => None
     }
   }
+
 }

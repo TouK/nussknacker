@@ -55,6 +55,7 @@ class PeriodicProcessServiceTest
   private val yearNow      = LocalDate.now().get(ChronoField.YEAR)
   private val cronInFuture = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow + 1}")
   private val cronInPast   = CronScheduleProperty(s"0 0 6 6 9 ? ${yearNow - 1}")
+
   private val canonicalProcess = ScenarioBuilder
     .streaming(processName.value)
     .source("start", "source")
@@ -66,14 +67,17 @@ class PeriodicProcessServiceTest
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
+
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
       scheduledProcessesRepository = repository,
       new PeriodicProcessListener {
+
         override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = { case k =>
           events.append(k)
         }
+
       },
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
         override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
@@ -82,6 +86,7 @@ class PeriodicProcessServiceTest
       DeploymentRetryConfig(),
       PeriodicExecutionConfig(),
       new ProcessConfigEnricher {
+
         override def onInitialSchedule(
             initialScheduleData: ProcessConfigEnricher.InitialScheduleData
         ): Future[ProcessConfigEnricher.EnrichedProcessConfig] = {
@@ -105,9 +110,11 @@ class PeriodicProcessServiceTest
             )
           )
         }
+
       },
       Clock.systemDefaultZone()
     )
+
   }
 
   test("findToBeDeployed - should return scheduled and to be retried scenarios") {
@@ -417,4 +424,5 @@ class PeriodicProcessServiceTest
         deployment.scheduleName.value shouldBe Some(expectedScheduleName)
     }
   }
+
 }

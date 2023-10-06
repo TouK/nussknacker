@@ -21,6 +21,7 @@ object SpelExpressionExcludeList {
       "exec\\(".r
     )
   )
+
 }
 
 case class SpelExpressionExcludeList(excludedPatterns: List[Regex]) {
@@ -44,4 +45,5 @@ case class SpelExpressionExcludeList(excludedPatterns: List[Regex]) {
       case _: Object             => targetObject.getClass.getName
     }
   }
+
 }

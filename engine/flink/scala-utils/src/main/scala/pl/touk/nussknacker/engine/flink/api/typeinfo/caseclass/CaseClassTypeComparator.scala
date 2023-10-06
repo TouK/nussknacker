@@ -160,4 +160,5 @@ class CaseClassComparator[T <: Product](
 
     localIndex - index
   }
+
 }

@@ -33,6 +33,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
 
   private val inputSchema  = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
   private val outputSchema = """{"type" : "object", "properties": {"place": {"type": "string"}}}"""
+
   private val scenario = ScenarioBuilder
     .requestResponse("test")
     .additionalFields(
@@ -59,12 +60,14 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(
     List(OApiServer("https://nussknacker.io", Some("request response test")))
   )
+
   private val requestResponseConfig: RequestResponseConfig = RequestResponseConfig(definitionConfig)
   private val openRoutes =
     new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
   private val password = "password"
   private val securityConfig: RequestResponseSecurityConfig =
     RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
+
   private val securedRoutes = new ScenarioRoute(
     new RequestResponseHttpHandler(interpreter),
     requestResponseConfig.copy(security = Some(securityConfig)),

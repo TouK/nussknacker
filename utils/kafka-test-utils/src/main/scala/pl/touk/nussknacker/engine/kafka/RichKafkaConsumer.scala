@@ -72,6 +72,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
     }
 
   }
+
 }
 
 object RichKafkaConsumer {

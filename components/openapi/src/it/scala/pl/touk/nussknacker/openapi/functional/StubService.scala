@@ -42,4 +42,5 @@ class StubService(val swaggerDefinition: String = "/customer-swagger.json") {
       }
     }
   }
+
 }

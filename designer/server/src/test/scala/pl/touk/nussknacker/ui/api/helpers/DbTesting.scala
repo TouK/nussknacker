@@ -24,6 +24,7 @@ trait WithTestDb extends BeforeAndAfterAll {
     releaseDbRefResources.unsafeRunSync()
     super.afterAll()
   }
+
 }
 
 trait WithTestHsqlDb extends WithTestDb {
@@ -39,6 +40,7 @@ trait WithTestHsqlDb extends WithTestDb {
       ).asJava
     ).asJava
   )
+
 }
 
 trait WithTestPostgresDb extends WithTestDb {
@@ -58,6 +60,7 @@ trait WithTestPostgresDb extends WithTestDb {
       ).asJava
     ).asJava
   )
+
 }
 
 trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
@@ -87,6 +90,7 @@ trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
     session.prepareStatement("""delete from "environments"""").execute()
     session.prepareStatement("""delete from "processes"""").execute()
   }
+
 }
 
 trait WithHsqlDbTesting extends DbTesting with WithTestHsqlDb {

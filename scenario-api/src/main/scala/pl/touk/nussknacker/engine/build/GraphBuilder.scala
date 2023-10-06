@@ -184,6 +184,7 @@ trait GraphBuilder[R] {
     }
     new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
   }
+
 }
 
 private[build] class SimpleGraphBuilder[R <: Node](val creator: GraphBuilder.Creator[R]) extends GraphBuilder[R] {

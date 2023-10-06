@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
 import java.time.LocalDateTime
 
 object PeriodicProcessDeploymentGen {
+
   def apply(): PeriodicProcessDeployment = {
     PeriodicProcessDeployment(
       id = PeriodicProcessDeploymentId(42),
@@ -26,4 +27,5 @@ object PeriodicProcessDeploymentGen {
       )
     )
   }
+
 }

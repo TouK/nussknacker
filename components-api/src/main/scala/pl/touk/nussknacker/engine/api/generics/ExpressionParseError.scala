@@ -14,4 +14,5 @@ case class Signature(noVarArgs: List[TypingResult], varArg: Option[TypingResult]
     case Some(x) => s"$name(${typesToString(noVarArgs :+ x)}...)"
     case None    => s"$name(${typesToString(noVarArgs)})"
   }
+
 }

@@ -117,11 +117,14 @@ object ContextTransformation {
         transformContexts: Map[String, ValidationContext] => ValidatedNel[ProcessCompilationError, ValidationContext]
     ): JoinDefinedByBuilder =
       new JoinDefinedByBuilder(new JoinContextTransformationDef {
+
         override def transform(
             contextByBranchId: Map[String, ValidationContext]
         ): ValidatedNel[ProcessCompilationError, ValidationContext] =
           transformContexts(contextByBranchId)
+
       })
+
   }
 
   class JoinDefinedByBuilder(definition: JoinContextTransformationDef) {
@@ -158,10 +161,12 @@ trait JoinContextTransformationDef extends AbstractContextTransformationDef {
 
   def andThen(nextTransformation: ContextTransformationDef): JoinContextTransformationDef =
     new JoinContextTransformationDef {
+
       override def transform(
           contextByBranchId: Map[String, ValidationContext]
       ): ValidatedNel[ProcessCompilationError, ValidationContext] =
         JoinContextTransformationDef.this.transform(contextByBranchId).andThen(nextTransformation.transform)
+
     }
 
 }

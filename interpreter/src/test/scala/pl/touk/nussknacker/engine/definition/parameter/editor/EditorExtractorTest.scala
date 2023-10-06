@@ -240,4 +240,5 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       .get
     ParameterData(parameter, Typed.typedClass(parameter.getType))
   }
+
 }

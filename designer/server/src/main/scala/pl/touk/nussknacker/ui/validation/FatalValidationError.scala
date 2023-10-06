@@ -30,4 +30,5 @@ final case class FatalValidationError(errors: List[NodeValidationError]) extends
   private def formatError(e: NodeValidationError): String = {
     s"${e.message}:${e.description}"
   }
+
 }

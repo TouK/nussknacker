@@ -34,12 +34,14 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     createBasicProcess("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
   private val marketingFragment =
     createFragment("marketingFragment", category = categoryMarketing, json = Some(subJson))
+
   private val marketingArchivedFragment = createFragment(
     "marketingArchivedFragment",
     isArchived = true,
     category = categoryMarketing,
     lastAction = Some(Archive)
   )
+
   private val marketingArchivedProcess = createBasicProcess(
     "marketingArchivedProcess",
     isArchived = true,
@@ -49,6 +51,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
   private val fraudProcess =
     createBasicProcess("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
+
   private val fraudArchivedProcess = createBasicProcess(
     "fraudArchivedProcess",
     isArchived = true,
@@ -57,8 +60,10 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     lastAction = Some(Archive),
     json = Some(json)
   )
+
   private val fraudFragment =
     createFragment("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
+
   private val fraudArchivedFragment = createFragment(
     "fraudArchivedFragment",
     isArchived = true,
@@ -74,6 +79,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     lastAction = Some(Cancel),
     json = Some(json)
   )
+
   private val fraudSecondFragment =
     createFragment("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
 
@@ -81,6 +87,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val secretFragment = createFragment("secretFragment", category = categorySecret)
   private val secretArchivedFragment =
     createFragment("secretArchivedFragment", isArchived = true, category = categorySecret, lastAction = Some(Archive))
+
   private val secretArchivedProcess = createBasicProcess(
     "secretArchivedProcess",
     isArchived = true,
@@ -524,4 +531,5 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       result shouldBe expected
     }
   }
+
 }

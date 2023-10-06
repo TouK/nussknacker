@@ -11,4 +11,5 @@ object UiAdditionalPropertyEditorDeterminer {
       case None                                => StringParameterEditor
     }
   }
+
 }

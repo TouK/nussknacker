@@ -67,6 +67,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       "dictBar" -> EmbeddedDictDefinition(Map("sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots")),
     )
   )
+
   private val dictServices = UiDictServices(dictRegistry, new SimpleDictQueryService(dictRegistry, 10))
 
   private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(
@@ -103,6 +104,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       ),
     )
   )
+
   private val expressionSuggester = new ExpressionSuggester(
     ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true),
     clazzDefinitions,
@@ -595,4 +597,5 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       suggestion("#input", Typed[A]),
     )
   }
+
 }

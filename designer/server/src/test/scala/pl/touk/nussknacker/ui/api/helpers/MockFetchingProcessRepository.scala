@@ -39,6 +39,7 @@ object MockFetchingProcessRepository {
       canonicals
     )
   }
+
 }
 
 class MockFetchingProcessRepository private (

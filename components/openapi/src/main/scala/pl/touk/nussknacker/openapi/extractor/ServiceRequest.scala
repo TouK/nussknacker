@@ -24,6 +24,7 @@ object ServiceRequest {
     swaggerService.securities.foldLeft(request) { (request, security) =>
       security.addSecurity(request)
     }
+
 }
 
 private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]) {
@@ -85,4 +86,5 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
   private def primitiveBodyParam(name: String): Option[Any] = inputParams
     .get(name)
     .map(_.asInstanceOf[Map[String, Any]].get(name))
+
 }

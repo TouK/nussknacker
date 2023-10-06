@@ -97,6 +97,7 @@ class OptionSerializer[A](val elemSerializer: TypeSerializer[A]) extends TypeSer
   override def snapshotConfiguration(): TypeSerializerSnapshot[Option[A]] = {
     new ScalaOptionSerializerSnapshot[A](this)
   }
+
 }
 
 object OptionSerializer {
@@ -118,6 +119,7 @@ object OptionSerializer {
         getSingleNestedSerializerAndConfig.f1
       )
     }
+
   }
 
   object OptionSerializerConfigSnapshot {

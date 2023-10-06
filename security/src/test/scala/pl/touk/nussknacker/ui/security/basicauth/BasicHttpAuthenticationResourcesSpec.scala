@@ -9,6 +9,7 @@ import java.net.URI
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
+
   class DummyConfiguration(
       usersList: List[ConfigUser],
       rulesList: List[ConfigRule] = List.empty,
@@ -73,4 +74,5 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
     def verify(secret: String, hasher: String => String): Boolean    = secret == hasher(receivedSecret)
     override def provideVerify(verifier: String => Boolean): Boolean = false
   }
+
 }

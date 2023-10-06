@@ -487,6 +487,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       tasksOverview(running = 1)
     )
   }
+
   private def tasksOverview(
       total: Int = 1,
       created: Int = 0,

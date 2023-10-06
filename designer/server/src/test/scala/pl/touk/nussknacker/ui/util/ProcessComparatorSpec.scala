@@ -152,4 +152,5 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
       )
     )
   }
+
 }

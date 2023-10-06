@@ -41,6 +41,7 @@ class MockConfluentSchemaRegistryClientBuilder {
     registry.foreach(reg => register(client, reg))
     client
   }
+
 }
 
 private[client] case class RegistryItem(topic: String, schema: Schema, version: Int, isKey: Boolean, id: Int)

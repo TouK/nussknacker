@@ -28,7 +28,9 @@ class NuDesignerExposedApiHttpService(appApiHttpService: AppApiHttpService) {
   def allEndpoints: List[ServerEndpoint[Any, Future]] = {
     swaggerEndpoints ::: apiEndpoints
   }
+
 }
+
 object NuDesignerExposedApiHttpService {
 
   val openApiDocumentTitle = "Nussknacker Designer API"

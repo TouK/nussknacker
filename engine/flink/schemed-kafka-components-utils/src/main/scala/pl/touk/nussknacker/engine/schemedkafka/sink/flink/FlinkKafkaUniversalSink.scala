@@ -77,5 +77,7 @@ class FlinkKafkaUniversalSink(
           .orNull
       }
     }
+
   }
+
 }

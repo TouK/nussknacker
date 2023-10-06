@@ -116,12 +116,14 @@ trait NuResourcesTest
 
   protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider =
     new FlinkStreamingDeploymentManagerProvider {
+
       override def createDeploymentManager(modelData: BaseModelData, config: Config)(
           implicit ec: ExecutionContext,
           actorSystem: ActorSystem,
           sttpBackend: SttpBackend[Future, Any],
           deploymentService: ProcessingTypeDeploymentService
       ): DeploymentManager = deploymentManager
+
     }
 
   protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
@@ -499,12 +501,15 @@ trait NuResourcesTest
 final case class ProcessVersionJson(id: Long)
 
 object ProcessVersionJson {
+
   def apply(process: Json): ProcessVersionJson = ProcessVersionJson(
     process.hcursor.downField("processVersionId").as[Long].toOption.get
   )
+
 }
 
 object ProcessJson extends OptionValues {
+
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.value
     val state      = process.hcursor.downField("state").as[Option[Json]].toOption.value
@@ -521,6 +526,7 @@ object ProcessJson extends OptionValues {
       process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
     )
   }
+
 }
 
 final case class ProcessJson(
@@ -544,20 +550,24 @@ final case class ProcessJson(
 final case class StateJson(name: String, icon: URI, tooltip: String, description: String)
 
 object StateJson extends OptionValues {
+
   def apply(json: Json): StateJson = new StateJson(
     json.hcursor.downField("status").downField("name").as[String].toOption.value,
     json.hcursor.downField("icon").as[String].toOption.map(URI.create) value,
     json.hcursor.downField("tooltip").as[String].toOption.value,
     json.hcursor.downField("description").as[String].toOption.value,
   )
+
 }
 
 object CreateProcessResponse {
+
   def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
     data.hcursor.downField("id").as[Long].map(ProcessId(_)).toOption.get,
     data.hcursor.downField("versionId").as[Long].map(VersionId(_)).toOption.get,
     data.hcursor.downField("processName").as[String].map(ProcessName(_)).toOption.get
   )
+
 }
 
 final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)
@@ -622,6 +632,7 @@ object ProcessesQueryEnrichments {
 
       url
     }
+
   }
 
 }

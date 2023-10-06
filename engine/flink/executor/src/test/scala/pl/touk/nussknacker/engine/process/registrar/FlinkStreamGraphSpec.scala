@@ -45,4 +45,5 @@ trait FlinkStreamGraphSpec
       node #:: node.getOutEdgeIndices.asScala.to(LazyList).map(graph.getStreamNode).flatMap(traverse)
 
   }
+
 }

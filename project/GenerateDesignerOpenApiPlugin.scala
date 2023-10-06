@@ -19,4 +19,5 @@ object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
         .value
     }
   )
+
 }

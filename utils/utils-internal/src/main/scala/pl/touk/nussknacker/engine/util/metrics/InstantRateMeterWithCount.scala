@@ -6,4 +6,5 @@ case class InstantRateMeterWithCount(rateMeter: InstantRateMeter, counter: Count
     rateMeter.mark()
     counter.update(1)
   }
+
 }

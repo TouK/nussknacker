@@ -69,6 +69,7 @@ object ExpressionCompiler {
     val parsers        = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
   }
+
 }
 
 class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {

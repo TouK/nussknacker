@@ -47,5 +47,7 @@ class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSuppor
         Thread.sleep(2000)
       }
     }
+
   }
+
 }

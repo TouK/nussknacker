@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import scala.concurrent.Future
 
 object ConfiguratorService extends Service with Serializable {
+
   @MethodToInvoke
   def invoke(
       @ParamName("Template ID")
@@ -25,4 +26,5 @@ object ConfiguratorService extends Service with Serializable {
       @Nullable
       jsonConfig: String
   ): Future[Unit] = Future.successful(())
+
 }

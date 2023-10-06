@@ -12,4 +12,5 @@ object SpelConfig {
       true
     }
   }
+
 }

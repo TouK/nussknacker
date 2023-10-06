@@ -76,4 +76,5 @@ case class InterpretationResultMapTypeSerializer(ctx: Map[String, TypeSerializer
   override def snapshotConfiguration(): TypeSerializerSnapshot[InterpretationResult] = {
     throw new IllegalArgumentException("InterpretationResult should not be serialized in state")
   }
+
 }

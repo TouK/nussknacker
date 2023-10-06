@@ -164,6 +164,7 @@ class NodesResources(
       }
     }
   }
+
 }
 
 object NodesResources {
@@ -223,6 +224,7 @@ object NodesResources {
 }
 
 class NodeValidator {
+
   def validate(
       nodeData: NodeValidationRequest,
       modelData: ModelData,
@@ -268,6 +270,7 @@ class NodeValidator {
         )
     }
   }
+
 }
 
 class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
@@ -280,6 +283,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
         .headOption
         .map(_.nodeAdditionalInfo(pt.processConfig))
     )
+
   private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] =
     typeToConfig.mapValues(pt =>
       ScalaServiceLoader
@@ -305,6 +309,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
       data     <- OptionT(provider(metaData))
     } yield data).value
   }
+
 }
 
 @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
@@ -356,7 +361,9 @@ final case class ExpressionSuggestionRequest(
 )
 
 object ExpressionSuggestionRequest {
+
   implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
     deriveConfiguredDecoder[ExpressionSuggestionRequest]
   }
+
 }

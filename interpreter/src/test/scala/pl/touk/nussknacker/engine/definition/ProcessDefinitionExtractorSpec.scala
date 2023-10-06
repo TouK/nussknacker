@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   FixedExpressionValue,
   FixedValuesValidator,
+  LiteralRegExpParameterValidator,
   MandatoryParameterValidator,
-  Parameter,
-  RegExpParameterValidator
+  Parameter
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
@@ -174,11 +174,15 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
       processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef]
     val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(
-      List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match..."))
+      List(
+        MandatoryParameterValidator,
+        LiteralRegExpParameterValidator(".*", "has to match...", "really has to match...")
+      )
     )
   }
 
   object TestCreator extends ProcessConfigCreator {
+
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
@@ -248,6 +252,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
         )
         someStupidNameWithoutMeaning: LazyParameter[String]
     ): Unit = {}
+
   }
 
   object TransformerWithGenericParam extends CustomStreamTransformer {
@@ -303,6 +308,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
         )
         someStupidNameWithoutMeaning: String
     ): Unit = {}
+
   }
 
   object TransformerWithDefaultValueForParameter extends CustomStreamTransformer {
@@ -313,6 +319,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
         @DefaultValue("'foo'")
         someStupidNameWithoutMeaning: String
     ): Unit = {}
+
   }
 
   object TransformerWithOptionalDefaultValueForParameter extends CustomStreamTransformer {
@@ -323,6 +330,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
         @DefaultValue("'foo'")
         @Nullable someStupidNameWithoutMeaning: String
     ): Unit = {}
+
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)
@@ -331,6 +339,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
 
   case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
       extends EagerServiceWithStaticParametersAndReturnType {
+
     override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
@@ -338,6 +347,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = ???
+
   }
 
   object SampleHelper {
@@ -351,4 +361,5 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
 
     override def initialReturnType: TypingResult = Typed(classOf[Int])
   }
+
 }

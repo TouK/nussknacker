@@ -35,4 +35,5 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
       case _                                                     => false
     }
   }
+
 }

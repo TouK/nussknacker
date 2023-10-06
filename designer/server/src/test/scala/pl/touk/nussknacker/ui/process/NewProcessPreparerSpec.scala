@@ -22,4 +22,5 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty
   }
+
 }

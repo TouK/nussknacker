@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.ui.factory
+
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
@@ -45,4 +46,5 @@ class LocalProcessingTypeDataProviderFactory(
     val combinedData    = CombinedProcessingTypeData.create(processingTypes, categoriesService)
     new MapBasedProcessingTypeDataProvider(processingTypes, combinedData)
   }
+
 }

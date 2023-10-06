@@ -62,4 +62,5 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
       )
     )
   }
+
 }

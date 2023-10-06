@@ -39,12 +39,14 @@ case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
     WriterT[CompilationValid, List[CanonicalBranch], T](Invalid(NonEmptyList.of(value)))
 
   private implicit class RichValidatedWithBranches[T](value: ValidatedWithBranches[T]) {
+
     def andThen[Y](fun: T => ValidatedWithBranches[Y]): ValidatedWithBranches[Y] = {
       WriterT[CompilationValid, List[CanonicalBranch], Y](value.run.andThen { case (additional, iValue) =>
         val result = fun(iValue)
         result.mapWritten(additional ++ _).run
       })
     }
+
   }
 
   def resolve(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
@@ -220,6 +222,7 @@ case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
   }
 
   object NodeDataFun {
+
     val id: NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = n
     }
@@ -227,6 +230,7 @@ case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
     def nodeIdPrefix(prefix: List[String]): NodeDataFun = new NodeDataFun {
       override def apply[T <: NodeData](n: T): T = prefixNodeId(prefix, n)
     }
+
   }
 
   private def prefixNodeId[T <: NodeData](prefix: List[String], nodeData: T): T = {

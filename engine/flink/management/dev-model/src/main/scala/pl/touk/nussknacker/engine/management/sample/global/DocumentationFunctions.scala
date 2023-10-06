@@ -28,6 +28,7 @@ import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 
 object DocumentationFunctions {
+
   @GenericType(typingFunction = classOf[HeadGenericFunction])
   def head[T](list: java.util.List[T]): T =
     list.get(0)
@@ -43,6 +44,7 @@ object DocumentationFunctions {
         case _                                        => ArgumentTypeError.invalidNel
       }
     }
+
   }
 
   @GenericType(typingFunction = classOf[PlusGenericFunction])
@@ -84,6 +86,7 @@ object DocumentationFunctions {
         }
       case _ => ArgumentTypeError.invalidNel
     }
+
   }
 
   @GenericType(typingFunction = classOf[UnionGenericFunction])
@@ -94,6 +97,7 @@ object DocumentationFunctions {
   }
 
   private class UnionGenericFunction extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
@@ -105,6 +109,7 @@ object DocumentationFunctions {
       case _ =>
         ArgumentTypeError.invalidNel
     }
+
   }
 
   @GenericType(typingFunction = classOf[GetFieldGenericFunction])
@@ -127,6 +132,7 @@ object DocumentationFunctions {
       case _ =>
         ArgumentTypeError.invalidNel
     }
+
   }
 
   @GenericType(typingFunction = classOf[ToListGenericFunction])
@@ -135,6 +141,7 @@ object DocumentationFunctions {
     elems.asJava
 
   private class ToListGenericFunction extends TypingFunction {
+
     override def computeResultType(
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
@@ -144,5 +151,7 @@ object DocumentationFunctions {
         .getOrElse(Unknown)
       Typed.genericTypeClass[java.util.List[_]](commonSupertype :: Nil).validNel
     }
+
   }
+
 }

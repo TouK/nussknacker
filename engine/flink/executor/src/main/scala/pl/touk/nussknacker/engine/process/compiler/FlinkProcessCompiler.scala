@@ -154,6 +154,7 @@ class FlinkProcessCompiler(
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
     }
   }
+
 }
 
 //The logic of listeners invocation is a bit tricky for CustomNodes/Sinks (see Interpreter.interpretNode)

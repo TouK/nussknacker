@@ -24,4 +24,5 @@ object AvroStringSettingsInTests {
     field.setAccessible(true)
     field.setBoolean(AvroStringSettings, value)
   }
+
 }

@@ -31,6 +31,7 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
       )
     }
   }
+
   it should "support basic auth" in {
     val validCredentials = BasicHttpCredentials("admin", "admin")
     Get("/secured") ~> addCredentials(validCredentials) ~> route(basic) ~> check {
@@ -38,6 +39,7 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
       responseAs[String] shouldEqual "Authenticated!"
     }
   }
+
   it should "reject basic auth invalid credentials" in {
     val invalidCredentials = BasicHttpCredentials("admin", "wrong password")
     Get("/secured") ~> addCredentials(invalidCredentials) ~> route(basic) ~> check {
@@ -45,13 +47,16 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
       responseAs[String] shouldEqual "The supplied authentication is invalid"
     }
   }
+
   ignore should "support access any header"
+
   it should "reject cookie auth without credentials" in {
     Get("/secured") ~> route(cookieAuth) ~> check {
       status shouldEqual StatusCodes.BadRequest
       responseAs[String] shouldEqual "Request is missing required cookie 'authCookieToken'"
     }
   }
+
   it should "support cookie session" in {
     val cookie = Cookie("authCookieToken", "Im_a_random_hash")
     Get("/secured") ~> addHeader(cookie) ~> route(cookieAuth) ~> check {
@@ -59,6 +64,7 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
       responseAs[String] shouldEqual "Authenticated!"
     }
   }
+
   it should "reject invalid cookie session" in {
     val cookie = Cookie("authCookieToken", "Im_ugly_thief")
     Get("/secured") ~> addHeader(cookie) ~> route(cookieAuth) ~> check {
@@ -66,12 +72,15 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
       responseAs[String] shouldEqual "The supplied authentication is invalid"
     }
   }
+
 }
 
 private object Auth {
+
   val basic = {
     authenticateBasic(realm = "nussknacker", myUserPassAuthenticator)
   }
+
   val cookieAuth = {
     cookie("authCookieToken").flatMap { cookie =>
       extractExecutionContext.flatMap { implicit ec =>
@@ -85,6 +94,7 @@ private object Auth {
       }
     }
   }
+
   val someAdmin = Some(AuthenticatedUser("1", "admin", Set.empty))
 
   def authenticator(cookie: HttpCookiePair)(implicit ec: ExecutionContext): Future[Option[AuthenticatedUser]] = {
@@ -101,6 +111,7 @@ private object Auth {
       case p @ Credentials.Provided(id) if p.verify("admin") => someAdmin
       case _                                                 => None
     }
+
 }
 
 private object SecurityApiSpec {

@@ -92,4 +92,5 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
       id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
+
 }

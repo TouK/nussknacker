@@ -32,4 +32,5 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
 
     components.size shouldBe 11
   }
+
 }

@@ -33,6 +33,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Tes
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
   }
+
 }
 
 trait WithMockableDeploymentManager extends NuItTest {
@@ -45,4 +46,5 @@ trait WithMockableDeploymentManager extends NuItTest {
         .parseString("""{ type: "mockable" }""")
         .root()
     )
+
 }

@@ -42,6 +42,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
     "nussknacker.io/scenarioId"      -> "1",
     "nussknacker.io/scenarioVersion" -> "1",
   )
+
   private val anotations = Map("nussknacker.io/scenarioVersion" -> processVersion.asJson.spaces2)
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
@@ -441,4 +442,5 @@ class DeploymentPreparerTest extends AnyFunSuite {
       deploymentPreparer.prepare(ProcessVersion.empty, liteStreamMetaData, resources, 2)
     }
   }
+
 }

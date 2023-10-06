@@ -27,12 +27,14 @@ object InputMetaTypeInformationProvider {
       ("leaderEpoch", TypeInformation.of(classOf[Integer]))
     )
   }
+
 }
 
 /**
   * Implementation of customisation for TypeInformationDetection that provides type information for InputMeta.
   */
 class InputMetaTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
+
   override def customise(
       originalDetection: TypeInformationDetection
   ): PartialFunction[TypingResult, TypeInformation[_]] = {

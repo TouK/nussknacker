@@ -99,4 +99,5 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
     roundTripKeyValueObject(factory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
   }
+
 }

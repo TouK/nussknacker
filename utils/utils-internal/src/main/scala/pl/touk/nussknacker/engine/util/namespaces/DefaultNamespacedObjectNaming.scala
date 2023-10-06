@@ -75,10 +75,12 @@ object DefaultNamespacedObjectNamingParameters {
 
 case class DefaultNamespacedObjectNamingParameters(originalName: String, namespace: String)
     extends ObjectNamingParameters {
+
   override def toTags: Map[String, String] = {
     Map(
       originalNameTag -> originalName,
       namespaceTag    -> namespace
     )
   }
+
 }

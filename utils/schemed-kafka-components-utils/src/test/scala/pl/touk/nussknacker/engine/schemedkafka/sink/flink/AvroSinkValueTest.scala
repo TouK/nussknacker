@@ -67,4 +67,5 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
       .asInstanceOf[SinkSingleValue]
       .value shouldBe value
   }
+
 }

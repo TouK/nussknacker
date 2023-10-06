@@ -18,6 +18,7 @@ trait NuRestAssureMatchers {
   def matchJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
     new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString)
 }
+
 object NuRestAssureMatchers extends NuRestAssureMatchers {
 
   private type JSON = ujson.Value.Value
@@ -36,6 +37,7 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     override def describeTo(description: Description): Unit = {
       description.appendValue(expectedJsonString)
     }
+
   }
 
   private class MatchJsonWithRegexValues(expectedJsonWithRegexValuesString: String)
@@ -158,6 +160,7 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     private def stringToRegex(str: String) = Try(str.r)
 
     private sealed trait JsonValueParent
+
     private object JsonValueParent {
       case object Root                                               extends JsonValueParent
       sealed case class Field(parent: JsonValueParent, name: String) extends JsonValueParent
@@ -170,6 +173,9 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
         case JsonValueParent.Field(parent, fieldName) => s"${parent.show}.$fieldName"
         case JsonValueParent.Array(parent, index)     => s"${parent.show}[$index]"
       }
+
     }
+
   }
+
 }

@@ -96,6 +96,7 @@ class AdditionalPropertiesValidator(
       .sequence
       .map(_ => ())
   }
+
 }
 
 private final case class MissingRequiredPropertyValidator(actualPropertyNames: List[String]) {
@@ -106,6 +107,7 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
 
     if (actualPropertyNames.contains(propertyName)) valid(()) else invalid(MissingRequiredProperty(propertyName, label))
   }
+
 }
 
 private final case class UnknownPropertyValidator(config: Map[String, AdditionalPropertyConfig]) {
@@ -114,4 +116,5 @@ private final case class UnknownPropertyValidator(config: Map[String, Additional
 
     if (config.get(propertyName).nonEmpty) valid(()) else invalid(UnknownProperty(propertyName))
   }
+
 }

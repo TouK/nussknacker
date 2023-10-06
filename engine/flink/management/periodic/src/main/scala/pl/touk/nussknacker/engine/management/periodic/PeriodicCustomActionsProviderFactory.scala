@@ -7,10 +7,12 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import scala.concurrent.Future
 
 trait PeriodicCustomActionsProviderFactory {
+
   def create(
       periodicProcessesRepository: PeriodicProcessesRepository,
       periodicProcessService: PeriodicProcessService
   ): PeriodicCustomActionsProvider
+
 }
 
 object PeriodicCustomActionsProviderFactory {
@@ -20,10 +22,12 @@ object PeriodicCustomActionsProviderFactory {
 
 trait PeriodicCustomActionsProvider {
   def customActions: List[CustomAction]
+
   def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
   ): Future[Either[CustomActionError, CustomActionResult]]
+
 }
 
 object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider {
@@ -34,4 +38,5 @@ object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider 
       canonicalProcess: CanonicalProcess
   ): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+
 }

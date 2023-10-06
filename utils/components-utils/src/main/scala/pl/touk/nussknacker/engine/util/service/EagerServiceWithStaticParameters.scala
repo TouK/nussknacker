@@ -128,4 +128,5 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       validationContext: ValidationContext,
       parameters: Map[String, DefinedSingleParameter]
   ): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
+
 }

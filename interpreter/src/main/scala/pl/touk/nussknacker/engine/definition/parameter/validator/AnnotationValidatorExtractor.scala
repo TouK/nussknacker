@@ -8,9 +8,11 @@ import scala.reflect.ClassTag
 
 class AnnotationValidatorExtractor[T <: Annotation: ClassTag](parameterValidatorProvider: T => ParameterValidator)
     extends ValidatorExtractor {
+
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
     params.parameterData.getAnnotation[T].map(parameterValidatorProvider)
   }
+
 }
 
 object AnnotationValidatorExtractor {

@@ -55,4 +55,5 @@ private[registrar] class SyncInterpretationFunction(
       Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)
     }
   }
+
 }

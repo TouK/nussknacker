@@ -30,11 +30,14 @@ class RulesSet(rules: List[ConfigRule], allCategories: List[String]) {
     allCategories
       .find(c => c.toLowerCase.equals(category.toLowerCase))
       .orElse(Option(category)) // If category not exists at systemCategories - allCategories then return base category
+
 }
 
 object RulesSet {
+
   def getOnlyMatchingRules(roles: List[String], rules: List[ConfigRule], allCategories: List[String]): RulesSet = {
     val filtered = rules.filter(rule => roles.map(_.toLowerCase).contains(rule.role.toLowerCase))
     new RulesSet(filtered, allCategories)
   }
+
 }

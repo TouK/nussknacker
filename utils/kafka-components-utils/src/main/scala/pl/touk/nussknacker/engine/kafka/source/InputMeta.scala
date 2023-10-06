@@ -73,4 +73,5 @@ class InputMetaToJson extends ToJsonEncoder {
   override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case a: InputMeta[_] =>
     forJsonKey(a.copy(key = encode(a.key)))
   }
+
 }

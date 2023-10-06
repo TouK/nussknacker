@@ -19,6 +19,7 @@ import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
+
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
@@ -48,7 +49,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .thenRespond(userInfo.asJson.toString)
     val service = ExampleOAuth2ServiceFactory.service(config)
 
-    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").futureValue
+    val (data, _) = service.obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe tokenResponse.accessToken
@@ -59,7 +60,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   it should ("handling BadRequest response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.BadRequest)
     service
-      .obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .recover { case OAuth2ErrorHandler(_) =>
         succeed
       }
@@ -69,7 +70,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   it should ("should InternalServerError response from authenticate request") in {
     val service = createErrorOAuth2Service(config.accessTokenUri, StatusCode.InternalServerError)
     service
-      .obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .recover { case ex @ OAuth2CompoundException(errors) =>
         errors.toList
           .collectFirst { case _: OAuth2ServerError =>
@@ -83,7 +84,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   it should ("handling BadRequest response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.BadRequest)
     service
-      .checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .checkAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP")
       .recover { case OAuth2ErrorHandler(_) =>
         succeed
       }
@@ -93,7 +94,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   it should ("should InternalServerError response from profile request") in {
     val service = createErrorOAuth2Service(config.profileUri, StatusCode.InternalServerError)
     service
-      .checkAuthorizationAndObtainUserinfo("6V1reBXblpmfjRJP")
+      .checkAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP")
       .recover { case ex @ OAuth2CompoundException(errors) =>
         errors.toList
           .collectFirst { case _: OAuth2ServerError =>
@@ -103,4 +104,5 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       }
       .futureValue
   }
+
 }

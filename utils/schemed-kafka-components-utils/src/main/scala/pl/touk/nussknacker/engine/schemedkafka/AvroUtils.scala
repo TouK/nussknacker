@@ -38,6 +38,7 @@ object AvroUtils extends LazyLogging {
   }
 
   def genericData: GenericData = addLogicalTypeConversions(new GenericData(_) {
+
     override def deepCopy[T](schema: Schema, value: T): T = {
       val copiedRecord = super.deepCopy(schema, value)
       value match {

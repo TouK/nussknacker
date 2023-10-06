@@ -13,4 +13,5 @@ class AvroToJsonBasedOnSchemaEncoder extends ToJsonBasedOnSchemaEncoder {
       val map = e.getSchema.getFields.asScala.map(_.name()).map(n => n -> e.get(n)).toMap
       delegateEncode(map, s, fieldName)
   }
+
 }

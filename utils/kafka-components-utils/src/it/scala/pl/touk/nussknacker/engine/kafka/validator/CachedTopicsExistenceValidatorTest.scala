@@ -17,6 +17,7 @@ import java.util.Collections
 import scala.concurrent.duration.DurationInt
 
 object TopicsExistenceValidationConfigForTest {
+
   val config: TopicsExistenceValidationConfig = {
     // longer timeout, as container might need some time to make initial assignements etc.
     TopicsExistenceValidationConfig(
@@ -24,6 +25,7 @@ object TopicsExistenceValidationConfigForTest {
       validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 5 seconds)
     )
   }
+
   def kafkaContainer = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
 }
 
@@ -76,6 +78,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
 
     v.validateTopic("test.topic.2") shouldBe Symbol("valid")
   }
+
 }
 
 class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
@@ -104,4 +107,5 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
     container.stop()
     v.validateTopic("not.existing") shouldBe Symbol("valid")
   }
+
 }

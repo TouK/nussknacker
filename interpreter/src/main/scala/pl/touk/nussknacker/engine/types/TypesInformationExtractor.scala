@@ -145,18 +145,22 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   private case class DiscoveryPath(path: List[DiscoverySegment]) {
     def pushSegment(seg: DiscoverySegment): DiscoveryPath = DiscoveryPath(seg :: path)
+
     def print: String = {
       path.reverse.map(_.print).mkString(" > ")
     }
+
   }
 
   private sealed trait DiscoverySegment {
     def print: String
+
     protected def classNameWithStrippedPackages(cl: TypingResult): String = cl match {
       case TypedClass(klass, _) => klass.getCanonicalName.replaceAll("(.).*?\\.", "$1.")
       // In fact, should not happen except Unknown...
       case other => other.display
     }
+
   }
 
   private case class Clazz(cl: TypingResult) extends DiscoverySegment {

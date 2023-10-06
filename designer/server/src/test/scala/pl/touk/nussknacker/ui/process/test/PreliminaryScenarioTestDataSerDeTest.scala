@@ -11,6 +11,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
   private val maxSamplesCount   = 5
   private val testDataMaxLength = 200
+
   private val serDe = new PreliminaryScenarioTestDataSerDe(
     TestDataSettings(
       maxSamplesCount = maxSamplesCount,
@@ -29,6 +30,7 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
       PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")),
     )
   )
+
   private val rawStringScenarioTestData =
     """{"sourceId":"source1","record":{"f1":"field value","f2":42},"timestamp":24}
       |"a JSON string"""".stripMargin
@@ -71,4 +73,5 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
     error shouldBe s"Could not parse record: '$invalidRecord'"
   }
+
 }

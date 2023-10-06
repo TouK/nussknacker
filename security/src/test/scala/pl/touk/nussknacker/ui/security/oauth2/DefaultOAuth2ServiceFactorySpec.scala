@@ -15,6 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Random, Success}
 
 class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
+
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
@@ -40,7 +41,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
       .thenRespond(validUserInfo.asJson.toString())
     val service   = DefaultOAuth2ServiceFactory.service(config)
-    val (data, _) = service.obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored").futureValue
+    val (data, _) = service.obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe validAuthorizationData.accessToken
@@ -54,7 +55,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .thenRespond(Response(None, StatusCode.BadRequest))
     val service = DefaultOAuth2ServiceFactory.service(config)
     service
-      .obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .transform {
         case Failure(OAuth2CompoundException(_)) => Success(succeed)
         case _                                   => Failure(fail())
@@ -68,7 +69,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .thenRespond(Response(None, StatusCode.InternalServerError))
     val service = DefaultOAuth2ServiceFactory.service(config)
     service
-      .obtainAuthorizationAndUserInfo("6V1reBXblpmfjRJP", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("6V1reBXblpmfjRJP", "http://ignored")
       .transform {
         case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) =>
           Success(succeed)
@@ -86,9 +87,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     val user = service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .map { case (user, _) => LoggedUser(user, rules, List.empty) }
       .futureValue
@@ -112,9 +113,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     val user = service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .map { case (user, _) => LoggedUser(user, rules, List.empty) }
       .futureValue
@@ -142,9 +143,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     val user = service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .map { case (user, _) => LoggedUser(user, rules, List.empty) }
       .futureValue
@@ -173,9 +174,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     val user = service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .map { case (user, _) => LoggedUser(user, rules, List.empty) }
       .futureValue
@@ -199,9 +200,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .transform {
         case Failure(OAuth2CompoundException(_)) => Success(succeed)
@@ -219,9 +220,9 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     val service = DefaultOAuth2ServiceFactory.service(config)
 
     service
-      .obtainAuthorizationAndUserInfo("code", "http://ignored")
+      .obtainAuthorizationAndAuthenticateUser("code", "http://ignored")
       .flatMap { case (authorizationData, _) =>
-        service.checkAuthorizationAndObtainUserinfo(authorizationData.accessToken)
+        service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
       .transform {
         case Failure(OAuth2CompoundException(errors)) if errors.toList.exists(_.isInstanceOf[OAuth2ServerError]) =>
@@ -230,4 +231,5 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       }
       .futureValue
   }
+
 }

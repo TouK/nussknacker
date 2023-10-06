@@ -50,6 +50,7 @@ object NuRuntimeApp extends App with LazyLogging {
     } finally {
       Await.result(system.terminate(), 5.seconds)
     }
+
   System.exit(exitCode)
 
   private def runAfterActorSystemCreation(): Unit = {

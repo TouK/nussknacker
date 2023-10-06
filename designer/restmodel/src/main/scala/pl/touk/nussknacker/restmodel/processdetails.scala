@@ -20,6 +20,7 @@ object processdetails {
   val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
   object BasicProcess {
+
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
       id = baseProcessDetails.id,
       name = ProcessName(baseProcessDetails.name),
@@ -39,6 +40,7 @@ object processdetails {
       lastDeployedAction = baseProcessDetails.lastDeployedAction,
       state = baseProcessDetails.state
     )
+
   }
 
   @JsonCodec final case class BasicProcess(
@@ -112,6 +114,7 @@ object processdetails {
       user = modifiedBy,
       modelVersion = modelVersion
     )
+
   }
 
   // TODO we should split ProcessDetails and ProcessShape (json), than it won't be needed. Also BasicProcess won't be necessary than.

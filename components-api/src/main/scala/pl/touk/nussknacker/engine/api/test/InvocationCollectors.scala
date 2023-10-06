@@ -35,6 +35,7 @@ object InvocationCollectors {
         action: => Future[CollectableAction[A]],
         names: TransmissionNames = TransmissionNames.default
     )(implicit ec: ExecutionContext): Future[A]
+
   }
 
   case class TransmissionNames(invocationName: String, resultName: String)

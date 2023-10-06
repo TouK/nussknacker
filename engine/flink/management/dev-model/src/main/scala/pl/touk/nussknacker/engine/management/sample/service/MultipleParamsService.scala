@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import scala.concurrent.Future
 
 case object MultipleParamsService extends Service {
+
   @MethodToInvoke
   def invoke(
       @ParamName("foo") foo: String,
@@ -18,4 +19,5 @@ case object MultipleParamsService extends Service {
       @ParamName("baz") baz: String,
       @ParamName("quax") quax: String
   ) = Future.successful(())
+
 }

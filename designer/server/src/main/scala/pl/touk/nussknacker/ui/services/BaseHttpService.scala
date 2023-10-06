@@ -74,6 +74,7 @@ abstract class BaseHttpService(
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
 }
+
 object BaseHttpService {
 
   // we assume that our endpoints have no special requirements (in the Tapir sense)

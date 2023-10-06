@@ -28,6 +28,7 @@ object triggers {
   // Window won't be emitted on end, but after each event. This would be useful e.g. when we want to have
   // daily (i.e. for current day) aggregate for each incoming event, but we're not interested in daily summary on each midnight
   case class FireOnEachEvent[T, W <: Window](delegate: Trigger[_ >: T, W]) extends DelegatingTrigger[T, W](delegate) {
+
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       val result = super.onElement(element, timestamp, window, ctx)
       result match {
@@ -46,16 +47,19 @@ object triggers {
       super.onEventTime(time, window, ctx)
       TriggerResult.CONTINUE
     }
+
   }
 
   case class ClosingEndEventTrigger[T, W <: Window](delegate: Trigger[_ >: T, W], endFunction: T => Boolean)
       extends DelegatingTrigger[T, W](delegate) {
+
     override def onElement(element: T, timestamp: Long, window: W, ctx: Trigger.TriggerContext): TriggerResult = {
       if (endFunction(element)) {
         TriggerResult.FIRE_AND_PURGE
       } else super.onElement(element, timestamp, window, ctx)
 
     }
+
   }
 
 }

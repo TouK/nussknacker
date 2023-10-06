@@ -16,6 +16,7 @@ object AggregateWindowsConfig {
   def loadOrDefault(config: Config): AggregateWindowsConfig = {
     config.getAs[AggregateWindowsConfig]("aggregateWindowsConfig").getOrElse(AggregateWindowsConfig.Default)
   }
+
 }
 
 case class AggregateWindowsConfig(tumblingWindowsOffset: Option[java.time.Duration])

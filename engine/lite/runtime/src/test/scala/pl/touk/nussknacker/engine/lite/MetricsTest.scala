@@ -145,4 +145,5 @@ class MetricsTest extends AnyFunSuite with Matchers {
     }
 
   }
+
 }

@@ -54,4 +54,5 @@ class DatabaseEnricherInvoker(
     queryArguments.value.foreach { arg =>
       statement.setObject(arg.index, arg.value)
     }
+
 }

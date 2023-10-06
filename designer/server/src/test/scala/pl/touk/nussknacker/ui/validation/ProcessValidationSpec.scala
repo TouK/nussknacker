@@ -833,6 +833,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
   }
+
 }
 
 private object ProcessValidationSpec {
@@ -988,9 +989,11 @@ private object ProcessValidationSpec {
     override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
       Validated.condNel(process.id != badName, (), badNameError)
     }
+
   }
 
   class WithoutErrorsAndWarnings extends BeMatcher[ValidationResult] {
+
     override def apply(left: ValidationResult): MatchResult = {
       MatchResult(
         !left.hasErrors && !left.hasWarnings,
@@ -998,6 +1001,7 @@ private object ProcessValidationSpec {
         "ValidationResult should has either errors or warnings"
       )
     }
+
   }
 
   val withoutErrorsAndWarnings: WithoutErrorsAndWarnings = new WithoutErrorsAndWarnings()

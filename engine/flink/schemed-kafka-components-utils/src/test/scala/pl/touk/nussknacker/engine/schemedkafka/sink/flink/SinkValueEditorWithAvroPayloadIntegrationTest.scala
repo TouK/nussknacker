@@ -78,6 +78,7 @@ private object SinkValueEditorWithAvroPayloadIntegrationTest {
         "id" -> "nested_record1"
       )
     )
+
   }
 
   val topicSchemas = Map(
@@ -85,6 +86,7 @@ private object SinkValueEditorWithAvroPayloadIntegrationTest {
     "long"   -> AvroUtils.parseSchema("""{"type": "long"}"""),
     "array"  -> AvroUtils.parseSchema("""{"type": "array", "items": "long"}""")
   )
+
 }
 
 class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
@@ -143,4 +145,5 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
     val encoded     = encode(new NonRecordContainer(topicSchemas("array"), List(42L).asJava), topicSchemas("array"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = List(42L).asJava)
   }
+
 }

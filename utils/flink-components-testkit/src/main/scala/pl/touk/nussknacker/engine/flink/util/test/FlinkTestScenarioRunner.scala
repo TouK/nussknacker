@@ -122,9 +122,11 @@ class FlinkTestScenarioRunner(
 object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+
     def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
       FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster, testRuntimeMode = false)
     }
+
   }
 
 }

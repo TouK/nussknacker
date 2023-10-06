@@ -1658,12 +1658,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         variableName,
         Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
         new ServiceInvoker {
+
           override def invokeService(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
               contextId: ContextId,
               componentUseCase: ComponentUseCase
           ): Future[Any] = Future.successful(null)
+
         }
       )
 
@@ -1693,6 +1695,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         typingResult: TypingResult,
         metaData: MetaData
     ): ServiceInvoker = new ServiceInvoker {
+
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
@@ -1754,7 +1757,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         }
       )
     }
+
   }
+
 }
 
 class StartingWithACustomValidator extends CustomParameterValidator {
@@ -1775,4 +1780,5 @@ class StartingWithACustomValidator extends CustomParameterValidator {
           nodeId.id
         )
       )
+
 }

@@ -17,6 +17,7 @@ trait RunIdDataRecorder[T] extends WithDataList[(String, T)] {
   def clearData(id: String): Unit = {
     clear { case (eid, _) => eid == id }
   }
+
 }
 
 object RecordingExceptionConsumer extends RunIdDataRecorder[NuExceptionInfo[_ <: Throwable]]
@@ -35,6 +36,7 @@ object RecordingExceptionConsumerProvider {
     config
       .withValue("exceptionHandler.type", fromAnyRef(providerName))
       .withValue(s"exceptionHandler.$recordingConsumerIdPath", fromAnyRef(consumerId))
+
 }
 
 class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
@@ -47,4 +49,5 @@ class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvid
     val id = exceptionHandlerConfig.getOrElse[String](recordingConsumerIdPath, UUID.randomUUID().toString)
     new RecordingExceptionConsumer(id)
   }
+
 }

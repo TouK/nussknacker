@@ -13,6 +13,7 @@ case class ParameterData(typing: TypingResult, annotations: List[_ <: Annotation
   def getAnnotation[T <: Annotation: ClassTag]: Option[T] = annotations.collectFirst { case e: T =>
     e
   }
+
 }
 
 object ParameterData {

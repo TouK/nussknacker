@@ -572,4 +572,5 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       result shouldBe TypedObjectTypingResult(results)
     }
   }
+
 }

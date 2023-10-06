@@ -8,7 +8,6 @@ import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestA
 import sttp.client3.SttpBackend
 
 import java.net.URI
-import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,33 +16,39 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
 ) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData]
     with LazyLogging {
 
-  def obtainAuthorizationAndUserInfo(
+  def obtainAuthorizationAndAuthenticateUser(
       authorizationCode: String,
       redirectUri: String
   ): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
     for {
       accessTokenResponse <- clientApi.accessTokenRequest(authorizationCode, redirectUri)
-      authenticatedUser   <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
+      authenticatedUser   <- checkAuthorizationAndAuthenticateUser(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Instant])] =
-    clientApi
-      .profileRequest(accessToken)
-      .map { prf: TestProfileResponse =>
-        AuthenticatedUser(
-          prf.uid,
-          username = prf.email,
-          prf.clearance.roles
-        )
-      }
-      .map((_, None))
+  override private[oauth2] def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+    Future.successful(IntrospectedAccessTokenData.empty)
+
+  override private[oauth2] def authenticateUser(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[AuthenticatedUser] =
+    clientApi.profileRequest(accessToken).map { prf: TestProfileResponse =>
+      AuthenticatedUser(
+        id = prf.uid,
+        username = prf.email,
+        roles = prf.clearance.roles
+      )
+    }
+
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {
+
   override def create(
       configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): ExampleOAuth2Service =
     ExampleOAuth2ServiceFactory.service(configuration)
+
 }
 
 object ExampleOAuth2ServiceFactory {

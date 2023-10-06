@@ -28,4 +28,5 @@ class AggregateWindowsOffsetProviderSpec extends AnyFunSuite with Matchers {
       expectedOffset = Duration.apply(30, TimeUnit.MINUTES),
     ) shouldBe Duration.apply(10, TimeUnit.MINUTES)
   }
+
 }

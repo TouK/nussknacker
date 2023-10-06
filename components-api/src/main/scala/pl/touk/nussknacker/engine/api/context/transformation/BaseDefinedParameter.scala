@@ -28,6 +28,7 @@ sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 case class DefinedLazyParameter(expression: TypedExpression)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
+
 case class DefinedEagerParameter(value: Any, expression: TypedExpression)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter

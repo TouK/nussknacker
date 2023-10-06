@@ -37,7 +37,9 @@ trait ProcessEntityFactory extends BaseEntityFactory {
       (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
+
   }
+
 }
 
 final case class ProcessEntityData(

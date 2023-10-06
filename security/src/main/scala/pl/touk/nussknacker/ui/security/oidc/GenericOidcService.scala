@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.ui.security.oauth2
+package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client3.SttpBackend
 
 import scala.concurrent.duration.FiniteDuration
@@ -18,33 +19,24 @@ trait OidcAuthorizationData extends OAuth2AuthorizationData {
   */
 class GenericOidcService[
     UserData <: JwtStandardClaims: Decoder,
-    AuthorizationData <: OidcAuthorizationData,
-    AccessTokenClaims <: JwtStandardClaims: Decoder
+    AuthorizationData <: OidcAuthorizationData
 ](clientApi: OAuth2ClientApi[UserData, AuthorizationData], configuration: OAuth2Configuration)(
     implicit ec: ExecutionContext
-) extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](clientApi, configuration)
+) extends JwtOAuth2Service[UserData, AuthorizationData, UserData](clientApi, configuration)
     with LazyLogging {
 
   protected val useIdToken: Boolean = configuration.jwt.exists(_.userinfoFromIdToken)
 
-  override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
+  override protected def authenticateUser(authorization: AuthorizationData): Future[UserData] = {
     if (useIdToken) {
       val idToken = authorization.idToken.get
       introspectJwtToken[UserData](idToken)
         .filter(_.audienceAsList == List(configuration.clientId))
     } else {
-      super.obtainUserInfo(authorization)
+      super.authenticateUser(authorization)
     }
   }
 
-  override protected def obtainUserInfo(accessToken: String): Future[UserData] = {
-    if (accessTokenIsJwt) {
-      introspectJwtToken[UserData](accessToken)
-        .filter(verifyAccessTokenAudience)
-    } else {
-      super.obtainUserInfo(accessToken)
-    }
-  }
 }
 
 @ConfiguredJsonCodec final case class DefaultOidcAuthorizationData(
@@ -60,12 +52,20 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
+
   def apply(configuration: OAuth2Configuration)(
       implicit ec: ExecutionContext,
       backend: SttpBackend[Future, Any]
-  ): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
+  ): GenericOidcService[OidcUserInfo, DefaultOidcAuthorizationData] =
     new GenericOidcService(
-      OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
+      OAuth2ClientApi[OidcUserInfo, DefaultOidcAuthorizationData](configuration),
       configuration
-    )
+    ) {
+
+      override protected def toIntrospectedData(claims: OidcUserInfo): IntrospectedAccessTokenData = {
+        super.toIntrospectedData(claims).copy(roles = claims.roles)
+      }
+
+    }
+
 }

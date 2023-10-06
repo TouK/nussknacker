@@ -9,6 +9,7 @@ object UniversalTimestampFieldAssigner {
 
   def apply[K, V](fieldName: String): SerializableTimestampAssigner[ConsumerRecord[K, V]] =
     new SerializableTimestampAssigner[ConsumerRecord[K, V]] {
+
       override def extractTimestamp(element: ConsumerRecord[K, V], recordTimestamp: Long): Long = {
         val timestampOpt: Option[Long] = Option(element.value() match {
           case genericRecord: GenericRecord                    => genericRecord.get(fieldName)
@@ -17,5 +18,7 @@ object UniversalTimestampFieldAssigner {
 
         timestampOpt.getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
       }
+
     }
+
 }

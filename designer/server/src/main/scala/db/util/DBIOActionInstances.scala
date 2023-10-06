@@ -22,6 +22,7 @@ object DBIOActionInstances {
         case Right(r) => pure(r)
         case Left(l)  => tailRecM(l)(f)
       }
+
   }
 
 }

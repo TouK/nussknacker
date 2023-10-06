@@ -70,4 +70,5 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
     migrateMetadata(requestResponseScenario).get shouldBe newRequestResponseScenario
     migrateMetadata(streamScenario).get shouldBe streamScenario
   }
+
 }

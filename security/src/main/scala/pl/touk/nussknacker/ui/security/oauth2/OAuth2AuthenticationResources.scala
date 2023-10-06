@@ -106,7 +106,7 @@ class OAuth2AuthenticationResources(
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service
-      .obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+      .obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri)
       .map { case (auth, _) =>
         val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
         val cookieHeader = configuration.tokenCookie
@@ -145,9 +145,11 @@ class OAuth2AuthenticationResources(
       entity = HttpEntity(ContentTypes.`application/json`, Encoder.encodeMap[String, String].apply(entity).spaces2)
     )
   }
+
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
+
 object Oauth2AuthenticationResponse {
 
   implicit val encoder: Encoder[Oauth2AuthenticationResponse] = Encoder
@@ -155,4 +157,5 @@ object Oauth2AuthenticationResponse {
     .forProduct4("accessToken", "tokenType", "access_token", "token_type")(r =>
       (r.accessToken, r.tokenType, r.accessToken, r.tokenType)
     )
+
 }

@@ -52,6 +52,7 @@ class PeriodicDeploymentManagerTest
   private val processName = ProcessName("test1")
   private val processId   = ProcessId(1)
   private val idWithName  = ProcessIdWithName(processId, processName)
+
   private val processVersion = ProcessVersion(
     versionId = VersionId(42L),
     processName = processName,
@@ -64,6 +65,7 @@ class PeriodicDeploymentManagerTest
     val repository                    = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub                = new JarManagerStub
+
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
@@ -75,6 +77,7 @@ class PeriodicDeploymentManagerTest
       processConfigEnricher = ProcessConfigEnricher.identity,
       clock = Clock.systemDefaultZone()
     )
+
     val periodicDeploymentManager = new PeriodicDeploymentManager(
       delegate = delegateDeploymentManagerStub,
       service = periodicProcessService,

@@ -48,6 +48,7 @@ private object DefaultCacheBuilder {
       .maximumSize(cacheConfig.maximumSize)
       .expireAfter(cacheConfig.expiry)
   }
+
 }
 
 class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker()) extends Cache[K, V] {

@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingRes
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
+
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
@@ -38,6 +39,7 @@ object TypeInfos {
 
       checkNoVarArgs && checkVarArgs
     }
+
   }
 
   case class StaticMethodInfo(signature: MethodTypeInfo, name: String, description: Option[String]) extends MethodInfo {
@@ -47,9 +49,11 @@ object TypeInfos {
       if (isValidMethodInfo(arguments, signature)) signature.result.validNel
       else convertError(ArgumentTypeError, arguments).invalidNel
     }
+
   }
 
   object FunctionalMethodInfo {
+
     def apply(
         typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
         signature: MethodTypeInfo,
@@ -57,6 +61,7 @@ object TypeInfos {
         description: Option[String]
     ): FunctionalMethodInfo =
       FunctionalMethodInfo(typeFunction, NonEmptyList.one(signature), name, description)
+
   }
 
   case class FunctionalMethodInfo(
@@ -65,6 +70,7 @@ object TypeInfos {
       name: String,
       description: Option[String]
   ) extends MethodInfo {
+
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       val errorConverter            = SpelExpressionParseErrorConverter(this, arguments)
       val typesFromStaticMethodInfo = signatures.filter(isValidMethodInfo(arguments, _)).map(_.result)
@@ -82,6 +88,7 @@ object TypeInfos {
       }
       typeCalculated
     }
+
   }
 
   case class ClazzDefinition(
@@ -114,5 +121,7 @@ object TypeInfos {
         case nonEmpty => Some(Typed(nonEmpty.toSet))
       }
     }
+
   }
+
 }

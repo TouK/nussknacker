@@ -197,10 +197,12 @@ trait KafkaUtils extends LazyLogging {
 
   def producerCallback(promise: Promise[RecordMetadata]): Callback =
     new Callback {
+
       override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
         val result = if (exception == null) Success(metadata) else Failure(exception)
         promise.complete(result)
       }
+
     }
 
   // It can't be in AzureUtils because it must be accessible from Lite Runtime

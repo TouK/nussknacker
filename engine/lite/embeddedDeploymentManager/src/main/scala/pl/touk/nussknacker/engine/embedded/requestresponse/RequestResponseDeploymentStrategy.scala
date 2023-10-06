@@ -124,6 +124,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
       slugToScenarioRoute.remove(path)
       interpreter.close()
     }
+
   }
 
 }

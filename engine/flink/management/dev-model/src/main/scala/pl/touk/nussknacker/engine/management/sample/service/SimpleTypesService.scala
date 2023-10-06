@@ -9,6 +9,7 @@ import scala.concurrent.Future
 
 // In services all parameters are lazy evaluated
 class SimpleTypesService extends Service with Serializable {
+
   @MethodToInvoke
   def invoke(
       @ParamName("booleanParam")
@@ -52,4 +53,5 @@ class SimpleTypesService extends Service with Serializable {
   ): Future[Unit] = {
     ???
   }
+
 }

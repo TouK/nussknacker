@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 import io.circe.{Decoder, Encoder, Json}
 
 sealed trait SchemaId {
+
   def asInt: Int = this match {
     case IntSchemaId(value)  => value
     case str: StringSchemaId => throw new IllegalStateException(s"Schema in a string format: $str")

@@ -20,6 +20,7 @@ case class GetSchemaIdArgs(headers: Headers, data: Array[Byte], isKey: Boolean)
 
 class ChainedSchemaIdFromMessageExtractor(chain: List[SchemaIdFromMessageExtractor])
     extends SchemaIdFromMessageExtractor {
+
   override private[schemedkafka] def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {
     chain
       .to(LazyList)
@@ -36,7 +37,9 @@ class ChainedSchemaIdFromMessageExtractor(chain: List[SchemaIdFromMessageExtract
 }
 
 private class UseFallbackSchemaId(fallback: Option[SchemaId]) extends SchemaIdFromMessageExtractor {
+
   override private[schemedkafka] def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {
     fallback.map((_, ByteBuffer.wrap(args.data))).map(SchemaIdWithPositionedBuffer.apply _ tupled)
   }
+
 }

@@ -175,6 +175,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
       val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
       new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
     }
+
   }
 
 }
@@ -212,6 +213,7 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
   override def deserialize(topic: String, data: Array[Byte]): Any = {
     io.circe.parser.parse(new String(data, StandardCharsets.UTF_8)).toOption.get
   }
+
 }
 
 object SimpleKafkaJsonSerializer extends Serializer[Any] {
