@@ -10,21 +10,24 @@ import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
 import { RemoteComponent } from "./ExternalLib/RemoteComponent";
 
-export type DynamicTabData = {
-    title: string;
-    id: string;
+export type BaseTabData = {
     // expected:
     //  * url of working app - to include in iframe
     //  * url ({module}/{path}@{host}/{remoteEntry}.js) of hosted remoteEntry js file (module federation) with default exported react component - included as component
     //  * url of internal route in NK
     url: string;
-    requiredPermission?: string;
     type: "Local" | "IFrame" | "Remote" | "Url";
     addAccessTokenInQueryParam?: boolean;
     accessTokenInQuery?: {
         enabled: boolean;
         parameterName: string;
     };
+};
+
+export type DynamicTabData = BaseTabData & {
+    title: string;
+    id: string;
+    requiredPermission?: string;
 };
 
 export interface RemoteComponentProps {
@@ -54,7 +57,7 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     );
 };
 
-export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "accessTokenInQuery" | "url"> }) => {
+export const IframeTab = ({ tab }: { tab: BaseTabData }) => {
     const { addAccessTokenInQueryParam, accessTokenInQuery, url } = tab;
     const accessToken = (addAccessTokenInQueryParam || accessTokenInQuery?.enabled) && SystemUtils.getAccessToken();
     const accessTokenParam = {};
@@ -88,7 +91,7 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
 
 export const DynamicTab = memo(function DynamicComponent<
     P extends {
-        tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "accessTokenInQuery" | "url" | "type">;
+        tab: BaseTabData;
     },
 >({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
