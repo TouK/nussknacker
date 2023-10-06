@@ -68,15 +68,23 @@ You can inject list of your own or mocked components with `.withExtraComponents`
 Each component should match `ComponentDefinition`. It means that ComponentDefinition passed via `.withExtraComponents` overrides the one which could be already defined in modelData for given name. Example:
 ```scala
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-import pl.touk.nussknacker.engine.util.functions._
-
 val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
 val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
-val globalVariables = Map("DATE", date)
-
 val testScenarioRunner = TestScenarioRunner
       .flinkBased(resolvedConfig, flinkMiniCluster)
       .withExtraComponents(mockComponents)
+      .build()
+```
+
+### Injecting custom global variables
+You can inject map of your own UDFs (user defined functions) or variables using `.withGlobalVariables` on specified above `TestScenarioRunner` to be passed to engine model data. Example:
+
+```scala
+import pl.touk.nussknacker.engine.util.functions._
+val globalVariables = Map("DATE" -> date)
+
+val testScenarioRunner = TestScenarioRunner
+      .flinkBased(resolvedConfig, flinkMiniCluster)
       .withGlobalVariables(globalVariables)
       .build()
 ```
