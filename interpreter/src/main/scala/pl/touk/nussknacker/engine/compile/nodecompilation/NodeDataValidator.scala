@@ -5,7 +5,11 @@ import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  EmptyNodeId,
+  FragmentOutputNotDefined,
+  UnknownFragmentOutput
+}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
@@ -63,7 +67,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       )
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
-      nodeData match {
+      val compilationErrors = nodeData match {
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
         case a: CustomNode =>
           toValidationResponse(compiler.compileCustomNodeObject(a, Left(validationContext), ending = false))
@@ -104,7 +108,15 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
             )
           )
         case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case _                => ValidationNotPerformed
+        case Split(_, _) | FragmentUsageOutput(_, _, _, _) | FragmentInputDefinition(_, _, _) | BranchEndData(_) =>
+          ValidationNotPerformed
+      }
+
+      val nodeIdErrors = if (nodeData.id.isEmpty) List(EmptyNodeId) else Nil
+
+      compilationErrors match {
+        case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeIdErrors)
+        case ValidationNotPerformed => ValidationPerformed(nodeIdErrors, None, None)
       }
     }
   }

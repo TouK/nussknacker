@@ -61,7 +61,8 @@ object PrettyValidationErrors {
         node(
           "Nodes cannot have empty id",
           "Nodes cannot have empty id",
-          errorType = NodeValidationErrorType.RenderNotAllowed
+          errorType = NodeValidationErrorType.RenderNotAllowed,
+          fieldName = Some("id")
         )
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
