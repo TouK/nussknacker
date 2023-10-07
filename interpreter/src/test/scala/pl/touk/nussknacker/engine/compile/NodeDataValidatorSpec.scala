@@ -545,6 +545,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should validate empty node id") {
+    inside(validate(Variable("", "varName", "1", None), ValidationContext())) {
+      case ValidationPerformed(List(error), _, _) => error shouldBe EmptyNodeId
+    }
+  }
+
   private def genericParameters = List(
     definition
       .Parameter[String]("par1")
