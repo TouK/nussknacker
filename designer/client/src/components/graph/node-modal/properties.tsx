@@ -44,7 +44,7 @@ export function Properties({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                additionalValidators={[errorValidator(fieldErrors || [], "id")]}
+                errors={fieldErrors}
             />
             {node.isFragment && (
                 <NodeField

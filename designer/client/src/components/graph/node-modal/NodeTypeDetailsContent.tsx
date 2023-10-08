@@ -317,6 +317,7 @@ export function NodeTypeDetailsContent({
         case "Split":
             return (
                 <Split
+                    fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
@@ -339,6 +340,7 @@ export function NodeTypeDetailsContent({
         default:
             return (
                 <NodeDetailsFallback
+                    fieldErrors={fieldErrors}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
