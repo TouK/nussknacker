@@ -229,7 +229,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         "EmptyNodeId",
         "Nodes cannot have empty id",
         "Nodes cannot have empty id",
-        None,
+        Some("id"),
         RenderNotAllowed
       )
     )
