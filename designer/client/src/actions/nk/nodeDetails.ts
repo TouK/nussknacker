@@ -4,6 +4,7 @@ import { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResu
 
 import { debounce } from "lodash";
 import NodeUtils from "../../components/graph/NodeUtils";
+import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 
 type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
 type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string };
@@ -53,12 +54,13 @@ export function nodeDetailsClosed(nodeId: string): NodeDetailsClosed {
 const validate = debounce(
     async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
         const nodeId = validationRequestData.nodeData.id;
+        const nodeWithEditedId = applyIdFromFakeName(validationRequestData.nodeData);
         if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
             //NOTE: we don't validationRequestData contains processProperties, but they are refreshed only on modal open
-            const { data } = await HttpService.validateProperties(processId, validationRequestData.nodeData);
+            const { data } = await HttpService.validateProperties(processId, nodeWithEditedId);
             callback(data, nodeId);
         } else {
-            const { data } = await HttpService.validateNode(processId, validationRequestData);
+            const { data } = await HttpService.validateNode(processId, { ...validationRequestData, nodeData: nodeWithEditedId });
             callback(data, nodeId);
         }
     },
