@@ -44,6 +44,7 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <DisableField
                 node={node}
