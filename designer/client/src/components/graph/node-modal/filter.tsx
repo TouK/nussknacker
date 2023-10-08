@@ -43,6 +43,7 @@ export function Filter({
                 node={node}
                 setProperty={setProperty}
                 renderFieldLabel={renderFieldLabel}
+                errors={fieldErrors}
             />
             <StaticExpressionField
                 renderFieldLabel={renderFieldLabel}
