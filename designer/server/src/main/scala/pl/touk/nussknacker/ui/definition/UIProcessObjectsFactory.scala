@@ -83,17 +83,19 @@ object UIProcessObjectsFactory {
         .mapValuesNow(_.toSingleComponentConfig)
     )
 
+    val finalComponentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig
+
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
         processDefinition = finalProcessDefinition,
         fragmentInputs = fragmentInputs,
         isFragment = isFragment,
-        componentsConfig = combinedComponentsConfig,
+        componentsConfig = finalComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.processConfig),
         processCategoryService = processCategoryService,
         customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.map {
-          case (idWithName, (_, additionalData)) => (idWithName, additionalData)
+          case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
         }.toMap,
         processingType
       ),
@@ -103,7 +105,7 @@ object UIProcessObjectsFactory {
         modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
-      componentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig,
+      componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfig
         .filter(_ =>
           !isFragment

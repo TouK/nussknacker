@@ -3,14 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalComponentsUIConfigProvider,
-  ComponentGroupName,
-  ComponentId,
-  ParameterConfig,
-  SingleComponentConfig,
-  SingleComponentUIConfig
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -187,6 +180,25 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     processObjects.processDefinition.services("enricher").parameters.map(p => p.name -> p.validators) should contain
     "paramDualEditor" -> List(
       FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel")))
+    )
+  }
+
+  test("should override component's component groups with additionally provided config") {
+    val model: ModelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+      new EmptyProcessConfigCreator() {
+        override def services(
+            processObjectDependencies: ProcessObjectDependencies
+        ): Map[String, WithCategories[Service]] =
+          Map("enricher" -> WithCategories(TestService))
+      }
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
+      TestAdditionalComponentsUIConfigProvider.componentGroupName,
+      "enricher"
     )
   }
 

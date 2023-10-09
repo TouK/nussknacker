@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
   def paramConfig(name: String): ParameterConfig = params.flatMap(_.get(name)).getOrElse(ParameterConfig.empty)
 }
 
-@JsonCodec case class SingleComponentUIConfig(
+case class SingleComponentConfigWithoutId(
     params: Option[Map[String, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
@@ -40,8 +40,8 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
 
 }
 
-object SingleComponentUIConfig {
-  val zero: SingleComponentUIConfig = SingleComponentUIConfig(None, None, None, None)
+object SingleComponentConfigWithoutId {
+  val zero: SingleComponentConfigWithoutId = SingleComponentConfigWithoutId(None, None, None, None)
 }
 
 object SingleComponentConfig {

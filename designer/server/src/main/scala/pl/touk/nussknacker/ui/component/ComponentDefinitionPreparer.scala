@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
@@ -45,7 +45,7 @@ object ComponentDefinitionPreparer {
       componentsConfig: ComponentsUiConfig,
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
       processCategoryService: ProcessCategoryService,
-      customTransformerAdditionalData: Map[ComponentIdWithName, CustomTransformerAdditionalData],
+      customTransformerAdditionalData: Map[ComponentId, CustomTransformerAdditionalData],
       processingType: ProcessingType
   ): List[ComponentGroup] = {
     val userCategories               = processCategoryService.getUserCategories(user)
@@ -125,7 +125,7 @@ object ComponentDefinitionPreparer {
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
-        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName).manyInputs =>
+        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).manyInputs =>
           ComponentTemplate(
             ComponentType.CustomNode,
             idWithName.name,
@@ -139,7 +139,7 @@ object ComponentDefinitionPreparer {
             filterCategories(objectDefinition),
             objDefBranchParams(objectDefinition)
           )
-        case (idWithName, (objectDefinition, _)) if !customTransformerAdditionalData(idWithName).canBeEnding =>
+        case (idWithName, (objectDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
           ComponentTemplate(
             ComponentType.CustomNode,
             idWithName.name,
@@ -157,7 +157,7 @@ object ComponentDefinitionPreparer {
     val optionalEndingCustomTransformers = ComponentGroup(
       OptionalEndingCustomGroupName,
       processDefinition.customStreamTransformers.collect {
-        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName).canBeEnding =>
+        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).canBeEnding =>
           ComponentTemplate(
             ComponentType.CustomNode,
             idWithName.name,

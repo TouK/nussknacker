@@ -69,7 +69,7 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
+  private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
     ProcessDefinitionBuilder.empty
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
