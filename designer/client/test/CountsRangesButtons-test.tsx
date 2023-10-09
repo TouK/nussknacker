@@ -3,8 +3,7 @@ import React from "react";
 import { CountsRangesButtons } from "../src/components/modals/CalculateCounts/CountsRangesButtons";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, jest } from "@jest/globals";
-
-jest.mock("../src/containers/theme");
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -26,12 +25,20 @@ describe("CountsRangesButtons tests", () => {
     });
 
     it("should render buttons", () => {
-        const { container } = render(<CountsRangesButtons ranges={ranges} onChange={changeFn} limit={2} />);
+        const { container } = render(
+            <NuThemeProvider>
+                <CountsRangesButtons ranges={ranges} onChange={changeFn} limit={2} />
+            </NuThemeProvider>,
+        );
         expect(container).toMatchSnapshot();
     });
 
     it("should handle click", () => {
-        render(<CountsRangesButtons ranges={ranges} onChange={changeFn} />);
+        render(
+            <NuThemeProvider>
+                <CountsRangesButtons ranges={ranges} onChange={changeFn} />
+            </NuThemeProvider>,
+        );
         fireEvent.click(screen.getByRole("button", { name: /range1/ }));
         expect(changeFn).toHaveBeenCalledTimes(1);
         expect(changeFn).toHaveBeenCalledWith([range1.from(), range1.to()]);
@@ -40,7 +47,9 @@ describe("CountsRangesButtons tests", () => {
     it("should collapse buttons", () => {
         render(
             <div>
-                <CountsRangesButtons ranges={ranges} onChange={changeFn} limit={1} />
+                <NuThemeProvider>
+                    <CountsRangesButtons ranges={ranges} onChange={changeFn} limit={1} />
+                </NuThemeProvider>
             </div>,
         );
 
@@ -57,7 +66,11 @@ describe("CountsRangesButtons tests", () => {
     });
 
     it("should hide expand button when not needed", () => {
-        render(<CountsRangesButtons ranges={ranges} onChange={changeFn} limit={10} />);
+        render(
+            <NuThemeProvider>
+                <CountsRangesButtons ranges={ranges} onChange={changeFn} limit={10} />
+            </NuThemeProvider>,
+        );
 
         const buttons = screen.getAllByRole("button");
         expect(buttons).toHaveLength(3);

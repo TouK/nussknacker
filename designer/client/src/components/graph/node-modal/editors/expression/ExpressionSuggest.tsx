@@ -15,7 +15,6 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
 import { EditorMode, ExpressionLang } from "./types";
 import type { Ace } from "ace-builds";
-import { styled } from "@mui/material";
 import { SerializedStyles } from "@emotion/react";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
