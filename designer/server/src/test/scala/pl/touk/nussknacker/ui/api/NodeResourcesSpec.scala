@@ -260,14 +260,12 @@ class NodeResourcesSpec
   test("validate properties") {
     saveProcess(testProcess) {
       val request = PropertiesValidationRequest(
-        ProcessProperties.combineTypeSpecificProperties(
-          StreamMetaData(),
-          additionalFields = ProcessAdditionalFields(
-            None,
-            Map("numberOfThreads" -> "a", "environment" -> "test"),
-            StreamMetaData.typeName
-          )
-        )
+        additionalFields = ProcessAdditionalFields(
+          properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
+          metaDataType = StreamMetaData.typeName,
+          description = None
+        ),
+        id = testProcess.id
       )
 
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
