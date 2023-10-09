@@ -4,8 +4,9 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentTy
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+  ComponentIdWithName,
   CustomTransformerAdditionalData,
-  ProcessDefinition
+  ProcessDefinitionWithComponentIds
 }
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -100,7 +101,6 @@ object ComponentDefinitionPreparer {
             filterCategories(objDefinition)
           )
         }
-        .toList
     )
 
     val enrichers = ComponentGroup(
@@ -115,7 +115,6 @@ object ComponentDefinitionPreparer {
             filterCategories(objDefinition)
           )
         }
-        .toList
     )
 
     val customTransformers = ComponentGroup(
@@ -152,7 +151,7 @@ object ComponentDefinitionPreparer {
             ),
             filterCategories(objectDefinition)
           )
-      }.toList
+      }
     )
 
     val optionalEndingCustomTransformers = ComponentGroup(
@@ -170,7 +169,7 @@ object ComponentDefinitionPreparer {
             ),
             filterCategories(objectDefinition)
           )
-      }.toList
+      }
     )
 
     val sinks = ComponentGroup(
@@ -182,7 +181,7 @@ object ComponentDefinitionPreparer {
           Sink("", SinkRef(idWithName.name, objDefParams(objectDefinition))),
           filterCategories(objectDefinition)
         )
-      }.toList
+      }
     )
 
     val inputs = if (!isFragment) {
@@ -195,7 +194,7 @@ object ComponentDefinitionPreparer {
             Source("", SourceRef(idWithName.name, objDefParams(objDefinition))),
             filterCategories(objDefinition)
           )
-        }.toList
+        }
       )
     } else {
       ComponentGroup(
