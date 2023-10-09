@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   CustomTransformerAdditionalData,
-  ProcessDefinition,
   ProcessDefinitionWithComponentIds
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -26,7 +25,6 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcess
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -249,13 +247,9 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(
-      processDefinition,
-      fragmentInputs,
-      Set.empty,
-      processCategoryService
-    )
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val dynamicComponentsConfig = processDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
+      idWithName.name -> value.componentConfig
+    }
     val fixedComponentsConfig =
       fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
     val componentsConfig =

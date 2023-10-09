@@ -158,7 +158,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
-    processObjects.processDefinition.fragmentInputs("sub1").componentConfig.docsUrl shouldBe Some(docsUrl)
+    processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }
 
   test("should skip empty fragments in definitions") {

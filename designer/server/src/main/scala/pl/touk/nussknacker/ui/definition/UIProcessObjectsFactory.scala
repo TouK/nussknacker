@@ -103,10 +103,7 @@ object UIProcessObjectsFactory {
         modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
-      componentsConfig = toComponentsUiConfig(
-        finalProcessDefinition
-      ) |+| combinedComponentsConfig, // combinedComponentsConfig also contains config for components not part of processDefinition (fragments, base components)
-      // TODO remove `componentsConfig` field? merge it with processDefinition? it would require FE changes
+      componentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfig
         .filter(_ =>
           !isFragment
@@ -230,7 +227,6 @@ object UIProcessObjectsFactory {
       parameters = objectDefinition.parameters.map(createUIParameter),
       returnType = objectDefinition.returnType,
       categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
-      componentConfig = objectDefinition.componentConfig
     )
   }
 
@@ -243,8 +239,7 @@ object UIProcessObjectsFactory {
       outputParameters = fragmentObjectDefinition.outputsDefinition,
       returnType = fragmentObjectDefinition.objectDefinition.returnType,
       categories =
-        fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
-      componentConfig = fragmentObjectDefinition.objectDefinition.componentConfig
+        fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
     )
   }
 

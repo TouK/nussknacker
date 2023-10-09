@@ -82,7 +82,6 @@ package object definition {
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
-      componentConfig: SingleComponentConfig
   ) {
 
     def hasNoReturn: Boolean = returnType.isEmpty
@@ -93,11 +92,10 @@ package object definition {
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
-      categories: List[String],
-      componentConfig: SingleComponentConfig
+      categories: List[String]
   ) {
     def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories, componentConfig)
+      UIObjectDefinition(parameters, returnType, categories)
   }
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
