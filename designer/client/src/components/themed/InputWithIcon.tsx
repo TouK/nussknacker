@@ -14,7 +14,6 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
 
     const size = theme.custom.spacing.controlHeight;
 
-    console.log("size", size);
     const wrapperWithAddonStyles = css({
         position: "relative",
     });

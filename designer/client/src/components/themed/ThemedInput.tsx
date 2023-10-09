@@ -17,8 +17,8 @@ export const ThemedInput = forwardRef(function ThemedInput(
     const theme = useTheme();
     const styles = css({
         height: theme.custom.spacing.controlHeight,
-        borderRadius: theme?.custom.borderRadius,
-        color: theme?.custom.colors?.primaryColor,
+        borderRadius: theme.custom.borderRadius,
+        color: theme.custom.colors?.primaryColor,
         borderColor: theme.custom.colors.borderColor,
         backgroundColor: theme.custom.colors.secondaryBackground,
     });
