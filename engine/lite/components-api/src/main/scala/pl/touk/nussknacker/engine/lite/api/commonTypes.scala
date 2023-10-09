@@ -21,18 +21,23 @@ object commonTypes {
 
   type ErrorType = NuExceptionInfo[_ <: Throwable]
 
-  //Errors are collected, we don't stop processing after encountering error
+  // Errors are collected, we don't stop processing after encountering error
   type ResultType[T] = Writer[List[ErrorType], List[T]]
 
-  //TODO: express in terms of WriterT[F, ...]
-  implicit def monoid[F[_]:Monad, T]: Monoid[F[ResultType[T]]] = {
+  // TODO: express in terms of WriterT[F, ...]
+  implicit def monoid[F[_]: Monad, T]: Monoid[F[ResultType[T]]] = {
     val monad = implicitly[Monad[F]]
-    Monoid.instance[F[ResultType[T]]](monad.pure(Writer(Nil, Nil)), (x, y) => for {
-      xVal <- x
-      yVal <- y
-    } yield (xVal, yVal) match {
-      case (WriterT((errorsX, resultX)), WriterT((errorsY, resultY))) => Writer(errorsX ++ errorsY, resultX ++ resultY)
-    })
+    Monoid.instance[F[ResultType[T]]](
+      monad.pure(Writer(Nil, Nil)),
+      (x, y) =>
+        for {
+          xVal <- x
+          yVal <- y
+        } yield (xVal, yVal) match {
+          case (WriterT((errorsX, resultX)), WriterT((errorsY, resultY))) =>
+            Writer(errorsX ++ errorsY, resultX ++ resultY)
+        }
+    )
   }
 
 }

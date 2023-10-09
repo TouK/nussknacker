@@ -14,8 +14,8 @@ trait FunctionalTestMixin {
   import LiteKafkaTestScenarioRunner._
 
   protected val runner: LiteKafkaTestScenarioRunner = TestScenarioRunner.kafkaLiteBased().build()
-  protected val sourceName = "my-source"
-  protected val sinkName = "my-sink"
+  protected val sourceName                          = "my-source"
+  protected val sinkName                            = "my-sink"
 
   protected def randomTopic: String = UUID.randomUUID().toString
 
@@ -25,12 +25,30 @@ trait FunctionalTestMixin {
   protected def invalidRanges(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(Nil, Nil, Nil, rangeErrors.toList)
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String], rangeFieldErrors: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError, rangeFieldErrors)
-    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))))
+  protected def invalid(
+      typeFieldErrors: List[String],
+      missingFieldsError: List[String],
+      redundantFieldsError: List[String],
+      rangeFieldErrors: List[String]
+  ): Invalid[NonEmptyList[CustomNodeError]] = {
+    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(
+      typeFieldErrors,
+      missingFieldsError,
+      redundantFieldsError,
+      rangeFieldErrors
+    )
+    Invalid(
+      NonEmptyList.one(
+        CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))
+      )
+    )
   }
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] =
+  protected def invalid(
+      typeFieldErrors: List[String],
+      missingFieldsError: List[String],
+      redundantFieldsError: List[String]
+  ): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(typeFieldErrors, missingFieldsError, redundantFieldsError, Nil)
 
   protected def valid[T](data: T): Valid[RunListResult[T]] =

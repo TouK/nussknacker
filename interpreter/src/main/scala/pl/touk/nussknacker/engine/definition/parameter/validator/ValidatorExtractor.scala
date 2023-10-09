@@ -10,7 +10,9 @@ trait ValidatorExtractor {
 
 }
 
-case class ValidatorExtractorParameters(parameterData: ParameterData,
-                                        isOptional: Boolean,
-                                        parameterConfig: ParameterConfig,
-                                        extractedEditor: Option[ParameterEditor])
+case class ValidatorExtractorParameters(
+    parameterData: ParameterData,
+    isOptional: Boolean,
+    parameterConfig: ParameterConfig,
+    extractedEditor: Option[ParameterEditor]
+)

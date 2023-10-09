@@ -18,6 +18,7 @@ trait NuRestAssureMatchers {
   def matchJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
     new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString)
 }
+
 object NuRestAssureMatchers extends NuRestAssureMatchers {
 
   private type JSON = ujson.Value.Value
@@ -29,17 +30,18 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     override def matches(actual: Any): Boolean = {
       actual match {
         case str: String => ujson.read(str) == expectedJson
-        case _ => false
+        case _           => false
       }
     }
 
     override def describeTo(description: Description): Unit = {
       description.appendValue(expectedJsonString)
     }
+
   }
 
   private class MatchJsonWithRegexValues(expectedJsonWithRegexValuesString: String)
-    extends BaseMatcher[ValidatableResponse]
+      extends BaseMatcher[ValidatableResponse]
       with LazyLogging {
 
     private val expectedJson = ujson.read(expectedJsonWithRegexValuesString)
@@ -47,7 +49,7 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     override def matches(actual: Any): Boolean = {
       actual match {
         case str: String => check(ujson.read(str))
-        case _ => false
+        case _           => false
       }
     }
 
@@ -64,12 +66,14 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
       }
     }
 
-    private def compareJsons(currentJsonCursor: JSON,
-                             expectedJsonCursor: JSON,
-                             parent: JsonValueParent): Validated[String, Unit] = {
+    private def compareJsons(
+        currentJsonCursor: JSON,
+        expectedJsonCursor: JSON,
+        parent: JsonValueParent
+    ): Validated[String, Unit] = {
       (currentJsonCursor, expectedJsonCursor) match {
         case (Str(s1), Str(s2)) =>
-          if(s1 == s2) Validated.Valid(())
+          if (s1 == s2) Validated.Valid(())
           else compareAssumingThatExpectedStringCouldBeARegex(s1, s2, parent)
         case (Num(n1), Num(n2)) =>
           if (n1 == n2) Validated.Valid(())
@@ -96,10 +100,11 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
       if (a1 == a2) {
         Validated.Valid(())
       } else if (a1.value.size == a2.value.size) {
-        a1.value.zip(a2.value).zipWithIndex
-          .foldLeft(List.empty[Validated[String, Unit]]) {
-            case (validationResults, ((elemA1, elemA2), idx)) =>
-              compareJsons(elemA1, elemA2, JsonValueParent.Array(parent, idx)) :: validationResults
+        a1.value
+          .zip(a2.value)
+          .zipWithIndex
+          .foldLeft(List.empty[Validated[String, Unit]]) { case (validationResults, ((elemA1, elemA2), idx)) =>
+            compareJsons(elemA1, elemA2, JsonValueParent.Array(parent, idx)) :: validationResults
           }
           .reverse
           .sequence
@@ -114,9 +119,12 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
       val o2Keys = o2.value.keys.toList.sorted
       if (o1Keys == o2Keys) {
         o1Keys
-          .foldLeft(List.empty[Validated[String, Unit]]) {
-            case (validationResults, key) =>
-              compareJsons(o1.value.apply(key), o2.value.apply(key), JsonValueParent.Field(parent, key)) :: validationResults
+          .foldLeft(List.empty[Validated[String, Unit]]) { case (validationResults, key) =>
+            compareJsons(
+              o1.value.apply(key),
+              o2.value.apply(key),
+              JsonValueParent.Field(parent, key)
+            ) :: validationResults
           }
           .reverse
           .sequence
@@ -126,17 +134,17 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
       }
     }
 
-    private def compareAssumingThatExpectedStringCouldBeARegex(currentValueString: String,
-                                                               expectedValueRegex: String,
-                                                               source: JsonValueParent): Validated[String, Unit] = {
-      stringToRegex(expectedValueRegex)
-        .map { regex =>
-          currentValueString match {
-            case regex() => Validated.Valid(())
-            case _ => Validated.Invalid(errorString(currentValueString, expectedValueRegex, source, withRegex = true))
-          }
+    private def compareAssumingThatExpectedStringCouldBeARegex(
+        currentValueString: String,
+        expectedValueRegex: String,
+        source: JsonValueParent
+    ): Validated[String, Unit] = {
+      stringToRegex(expectedValueRegex).map { regex =>
+        currentValueString match {
+          case regex() => Validated.Valid(())
+          case _ => Validated.Invalid(errorString(currentValueString, expectedValueRegex, source, withRegex = true))
         }
-        .get
+      }.get
     }
 
     private def errorString(current: String, expected: String, source: JsonValueParent, withRegex: Boolean = false) = {
@@ -144,7 +152,7 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
          |* Comparing JSONs failed at ${source.show}
          |  Current value:
          |  $current
-         |  ${if(withRegex) "should match" else "expected value"}:
+         |  ${if (withRegex) "should match" else "expected value"}:
          |  $expected
          |""".stripMargin
     }
@@ -152,18 +160,22 @@ object NuRestAssureMatchers extends NuRestAssureMatchers {
     private def stringToRegex(str: String) = Try(str.r)
 
     private sealed trait JsonValueParent
+
     private object JsonValueParent {
-      case object Root extends JsonValueParent
+      case object Root                                               extends JsonValueParent
       sealed case class Field(parent: JsonValueParent, name: String) extends JsonValueParent
-      sealed case class Array(parent: JsonValueParent, index: Int) extends JsonValueParent
+      sealed case class Array(parent: JsonValueParent, index: Int)   extends JsonValueParent
 
       implicit val show: Show[JsonValueParent] = Show.show(showParent)
 
       private def showParent(parent: JsonValueParent) = parent match {
-        case JsonValueParent.Root => "$"
+        case JsonValueParent.Root                     => "$"
         case JsonValueParent.Field(parent, fieldName) => s"${parent.show}.$fieldName"
-        case JsonValueParent.Array(parent, index) => s"${parent.show}[$index]"
+        case JsonValueParent.Array(parent, index)     => s"${parent.show}[$index]"
       }
+
     }
+
   }
+
 }

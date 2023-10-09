@@ -12,6 +12,7 @@ object AdditionalPropertyValidatorDeterminerChain {
     )
     new AdditionalPropertyValidatorsDeterminerChain(strategies)
   }
+
 }
 
 class AdditionalPropertyValidatorsDeterminerChain(strategies: Iterable[AdditionalPropertyValidatorDeterminer]) {
@@ -22,4 +23,5 @@ class AdditionalPropertyValidatorsDeterminerChain(strategies: Iterable[Additiona
       .headOption
       .getOrElse(List.empty)
   }
+
 }

@@ -20,7 +20,7 @@ export function nodeValidationMiddleware(
     validatedActions: ActionType[] = [],
     ignoredActions: ActionType[] = [],
 ): Middleware<void, RootState, ThunkDispatch> {
-    const ignore = ["VALIDATION_RESULT", ...ignoredActions];
+    const ignore = ["VALIDATION_RESULT", UndoActionTypes.CLEAR_HISTORY, ...ignoredActions];
     const validate = [...Object.values(UndoActionTypes), ...validatedActions];
     const shouldValidate = (action: ActionType) => !ignore.includes(action) && validate.includes(action);
 

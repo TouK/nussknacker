@@ -25,8 +25,8 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
 
   private def updateNodes(array: Json, fun: Json => Json) = fromValues(array.asArray.getOrElse(List()).map(fun))
 
-  private def updateField(obj: Json, field: String, update: Json => Json): Json
-  = (obj.hcursor downField field).success.flatMap(_.withFocus(update).top).getOrElse(obj)
+  private def updateField(obj: Json, field: String, update: Json => Json): Json =
+    (obj.hcursor downField field).success.flatMap(_.withFocus(update).top).getOrElse(obj)
 
   private def updateCanonicalNode(node: Json): Json = {
     node.hcursor.downField("type").focus.flatMap(_.asString).getOrElse("") match {
@@ -39,9 +39,7 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
       case "Split" =>
         updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
       case "SubprocessInput" =>
-        updateField(node, "outputs", outputs =>
-          outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes))
-        )
+        updateField(node, "outputs", outputs => outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes)))
       case _ => node
     }
 
@@ -52,15 +50,21 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
       .downField("ref")
       .downField("parameters")
       .withFocus(updateParameterList)
-      .top.getOrElse(sourceOrSink)
+      .top
+      .getOrElse(sourceOrSink)
   }
 
   private def updateParameterList(old: Json): Json =
     fromValues(old.asArray.getOrElse(List()).map(updateParameter))
 
   private def updateParameter(old: Json): Json =
-    obj("name" -> old.hcursor.downField("name").focus.getOrElse(fromString("")),
-      "expression" -> obj("language" -> fromString("spel"), "expression" ->
-        fromString("'" + old.hcursor.downField("value").focus.flatMap(_.asString).getOrElse("") + "'")))
+    obj(
+      "name" -> old.hcursor.downField("name").focus.getOrElse(fromString("")),
+      "expression" -> obj(
+        "language" -> fromString("spel"),
+        "expression" ->
+          fromString("'" + old.hcursor.downField("value").focus.flatMap(_.asString).getOrElse("") + "'")
+      )
+    )
 
 }

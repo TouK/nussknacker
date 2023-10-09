@@ -3,7 +3,7 @@ import React, { forwardRef, Ref } from "react";
 import { useNkTheme } from "../../containers/theme";
 import { bootstrapStyles } from "../../styles";
 import { ValueFieldProps } from "../valueField";
-import { InputWithFocus } from "../withFocus";
+import { NodeInput } from "../withFocus";
 
 export type InputProps = ValueFieldProps<string> & {
     placeholder?: string;
@@ -24,7 +24,7 @@ export const ThemedInput = forwardRef(function ThemedInput(
     });
 
     return (
-        <InputWithFocus
+        <NodeInput
             ref={ref}
             type="text"
             placeholder={placeholder}

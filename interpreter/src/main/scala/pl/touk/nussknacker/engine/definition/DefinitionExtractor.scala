@@ -4,7 +4,12 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.definition.{
+  OutputVariableNameDependency,
+  Parameter,
+  TypedNodeDependency,
+  WithExplicitTypesToExtract
+}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
@@ -16,17 +21,22 @@ import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
 
-  def extract(objWithCategories: WithCategories[T], mergedComponentConfig: SingleComponentConfig): ObjectWithMethodDef = {
+  def extract(
+      objWithCategories: WithCategories[T],
+      mergedComponentConfig: SingleComponentConfig
+  ): ObjectWithMethodDef = {
     val obj = objWithCategories.value
 
     def fromMethodDefinition(methodDef: MethodDefinition): StandardObjectWithMethodDef = {
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
-      def notReturnAnything(typ: TypingResult) = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
+      def notReturnAnything(typ: TypingResult) =
+        Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
       val objectDefinition = ObjectDefinition(
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         objWithCategories.categories,
-        mergedComponentConfig)
+        mergedComponentConfig
+      )
       val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
       StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
     }
@@ -35,7 +45,9 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       case e: GenericNodeTransformation[_] =>
         Right(GenericNodeTransformationMethodDef(e, objWithCategories.categories, mergedComponentConfig))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).map(fromMethodDefinition)
+        methodDefinitionExtractor
+          .extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig)
+          .map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
@@ -84,52 +96,69 @@ object DefinitionExtractor {
 
   trait ComponentImplementationInvoker extends Serializable {
 
-    def invokeMethod(params: Map[String, Any],
-                     outputVariableNameOpt: Option[String],
-                     additional: Seq[AnyRef]): Any
+    def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any
 
   }
 
   object ComponentImplementationInvoker {
 
     val nullImplementationInvoker: ComponentImplementationInvoker = new ComponentImplementationInvoker {
-      override def invokeMethod(params: Map[String, Any],
-                                outputVariableNameOpt: Option[String],
-                                additional: Seq[AnyRef]): Any = null
+
+      override def invokeMethod(
+          params: Map[String, Any],
+          outputVariableNameOpt: Option[String],
+          additional: Seq[AnyRef]
+      ): Any = null
+
     }
 
   }
 
-
-  case class GenericNodeTransformationMethodDef(override val implementationInvoker: ComponentImplementationInvoker,
-                                                obj: GenericNodeTransformation[_],
-                                                override protected[definition] val categories: Option[List[String]],
-                                                override val componentConfig: SingleComponentConfig) extends ObjectWithMethodDef {
+  case class GenericNodeTransformationMethodDef(
+      override val implementationInvoker: ComponentImplementationInvoker,
+      obj: GenericNodeTransformation[_],
+      override protected[definition] val categories: Option[List[String]],
+      override val componentConfig: SingleComponentConfig
+  ) extends ObjectWithMethodDef {
     override def withImplementationInvoker(implementationInvoker: ComponentImplementationInvoker): ObjectWithMethodDef =
       copy(implementationInvoker = implementationInvoker)
 
-    def returnType: Option[TypingResult] = if (obj.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
+    def returnType: Option[TypingResult] =
+      if (obj.nodeDependencies.contains(OutputVariableNameDependency)) Some(Unknown) else None
 
   }
 
   object GenericNodeTransformationMethodDef {
 
-    def apply(obj: GenericNodeTransformation[_],
-              categories: Option[List[String]],
-              componentConfig: SingleComponentConfig): GenericNodeTransformationMethodDef = {
+    def apply(
+        obj: GenericNodeTransformation[_],
+        categories: Option[List[String]],
+        componentConfig: SingleComponentConfig
+    ): GenericNodeTransformationMethodDef = {
       val implementationInvoker = new ComponentImplementationInvoker {
-        override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+        override def invokeMethod(
+            params: Map[String, Any],
+            outputVariableNameOpt: Option[String],
+            additional: Seq[AnyRef]
+        ): Any = {
           val additionalParams = obj.nodeDependencies.map {
             case TypedNodeDependency(klazz) =>
-              additional.find(klazz.isInstance).map(TypedNodeDependencyValue)
+              additional
+                .find(klazz.isInstance)
+                .map(TypedNodeDependencyValue)
                 .getOrElse(throw new IllegalArgumentException(s"Failed to find dependency: $klazz"))
-            case OutputVariableNameDependency => outputVariableNameOpt.map(OutputVariableNameValue).getOrElse(throw new IllegalArgumentException("Output variable not defined"))
+            case OutputVariableNameDependency =>
+              outputVariableNameOpt
+                .map(OutputVariableNameValue)
+                .getOrElse(throw new IllegalArgumentException("Output variable not defined"))
             case other => throw new IllegalArgumentException(s"Cannot handle dependency $other")
           }
-          val finalStateValue = additional.collectFirst {
-            case FinalStateValue(value) => value
-          }.getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
-          //we assume parameters were already validated!
+          val finalStateValue = additional
+            .collectFirst { case FinalStateValue(value) =>
+              value
+            }
+            .getOrElse(throw new IllegalArgumentException("Final state not passed to invokeMethod"))
+          // we assume parameters were already validated!
           obj.implementation(params, additionalParams, finalStateValue.asInstanceOf[Option[obj.State]])
         }
       }
@@ -138,15 +167,16 @@ object DefinitionExtractor {
 
   }
 
-
   case class FinalStateValue(value: Option[Any])
 
   // TOOD: rename to MethodBasedComponentWithImplementation
-  case class StandardObjectWithMethodDef(implementationInvoker: ComponentImplementationInvoker,
-                                         obj: Any,
-                                         objectDefinition: ObjectDefinition,
-                                         // TODO: it should be removed - instead implementationInvoker should be transformed
-                                         runtimeClass: Class[_]) extends ObjectWithMethodDef {
+  case class StandardObjectWithMethodDef(
+      implementationInvoker: ComponentImplementationInvoker,
+      obj: Any,
+      objectDefinition: ObjectDefinition,
+      // TODO: it should be removed - instead implementationInvoker should be transformed
+      runtimeClass: Class[_]
+  ) extends ObjectWithMethodDef {
     override def withImplementationInvoker(implementationInvoker: ComponentImplementationInvoker): ObjectWithMethodDef =
       copy(implementationInvoker = implementationInvoker)
 
@@ -160,48 +190,68 @@ object DefinitionExtractor {
 
   }
 
-  private[definition] class MethodBasedComponentImplementationInvoker(obj: Any, private[definition] val methodDef: MethodDefinition)
-    extends ComponentImplementationInvoker with LazyLogging {
+  private[definition] class MethodBasedComponentImplementationInvoker(
+      obj: Any,
+      private[definition] val methodDef: MethodDefinition
+  ) extends ComponentImplementationInvoker
+      with LazyLogging {
 
-    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+    override def invokeMethod(
+        params: Map[String, Any],
+        outputVariableNameOpt: Option[String],
+        additional: Seq[AnyRef]
+    ): Any = {
       methodDef.invoke(obj, params, outputVariableNameOpt, additional)
     }
+
   }
 
   // TODO: rename to ComponentStaticDefinition
-  case class ObjectDefinition(parameters: List[Parameter],
-                              returnType: Option[TypingResult],
-                              categories: Option[List[String]],
-                              componentConfig: SingleComponentConfig)
+  case class ObjectDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult],
+      categories: Option[List[String]],
+      componentConfig: SingleComponentConfig
+  )
 
   object ObjectWithMethodDef {
 
     import cats.syntax.semigroup._
 
-    def forMap[T](objs: Map[String, WithCategories[_ <: T]], methodExtractor: MethodDefinitionExtractor[T], externalConfig: Map[String, SingleComponentConfig]): Map[String, ObjectWithMethodDef] = {
-      objs.map { case (id, obj) =>
-        val config = externalConfig.getOrElse(id, SingleComponentConfig.zero) |+| obj.componentConfig
-        id -> (obj, config)
-      }.collect {
-        case (id, (obj, config)) if !config.disabled =>
-          id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
-      }
+    def forMap[T](
+        objs: Map[String, WithCategories[_ <: T]],
+        methodExtractor: MethodDefinitionExtractor[T],
+        externalConfig: Map[String, SingleComponentConfig]
+    ): Map[String, ObjectWithMethodDef] = {
+      objs
+        .map { case (id, obj) =>
+          val config = externalConfig.getOrElse(id, SingleComponentConfig.zero) |+| obj.componentConfig
+          id -> (obj, config)
+        }
+        .collect {
+          case (id, (obj, config)) if !config.disabled =>
+            id -> new DefinitionExtractor(methodExtractor).extract(obj, config)
+        }
     }
 
     def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
       new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleComponentConfig.zero)
     }
+
   }
 
   object TypesInformation {
-    def extract(objectToExtractClassesFrom: Iterable[ObjectWithMethodDef])
-               (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
+
+    def extract(
+        objectToExtractClassesFrom: Iterable[ObjectWithMethodDef]
+    )(implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
       val classesToExtractDefinitions = objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 
-    def extractFromClassList(objectToExtractClassesFromCollection: Iterable[Class[_]])
-                            (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
+    def extractFromClassList(
+        objectToExtractClassesFromCollection: Iterable[Class[_]]
+    )(implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
       val ref = objectToExtractClassesFromCollection.map(Typed.apply)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(ref)
     }
@@ -223,12 +273,13 @@ object DefinitionExtractor {
       def explicitTypes(obj: ObjectWithMethodDef): List[TypingResult] = {
         obj.obj match {
           case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
-          case _ => Nil
+          case _                                    => Nil
         }
       }
 
       obj.returnType.toList ::: typesFromParameters(obj) ::: explicitTypes(obj)
     }
+
   }
 
 }

@@ -188,37 +188,34 @@ class ProcessUtils {
         }
     };
 
-    //TODO: this should be done without these switches..
     findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
-        if (node) {
-            const nodeDefinitionId = this.findNodeDefinitionId(node);
-            switch (node.type) {
-                case "Source": {
-                    return processDefinition.sourceFactories?.[nodeDefinitionId];
-                }
-                case "Sink": {
-                    return processDefinition.sinkFactories?.[nodeDefinitionId];
-                }
-                case "Enricher":
-                case "Processor": {
-                    return processDefinition.services?.[nodeDefinitionId];
-                }
-                case "Join":
-                case "CustomNode": {
-                    return processDefinition.customStreamTransformers?.[nodeDefinitionId];
-                }
-                case "FragmentInput": {
-                    return processDefinition.fragmentInputs?.[nodeDefinitionId];
-                }
-            }
-        }
-        return {
+        const foundDefinition = this.findDefinitionsForType(processDefinition, node)?.[this.findNodeDefinitionId(node)];
+        const emptyDefinition = {
             parameters: null,
             returnType: null,
         };
+        return foundDefinition || emptyDefinition;
     };
 
-    //TODO: this should be done without these switches..
+    private findDefinitionsForType = (processDefinition: ProcessDefinition, node?: NodeType): Record<string, NodeObjectTypeDefinition> => {
+        switch (node?.type) {
+            case "Source":
+                return processDefinition.sourceFactories;
+            case "Sink":
+                return processDefinition.sinkFactories;
+            case "Enricher":
+            case "Processor":
+                return processDefinition.services;
+            case "Join":
+            case "CustomNode":
+                return processDefinition.customStreamTransformers;
+            case "FragmentInput":
+                return processDefinition.fragmentInputs;
+            default:
+                return {};
+        }
+    };
+
     findNodeDefinitionId = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":

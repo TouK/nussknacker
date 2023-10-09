@@ -26,6 +26,7 @@ object AvroDefaultExpressionDeterminer {
   case class TypeNotSupported(schema: Schema) extends AvroDefaultToSpELExpressionError {
     override def getMessage: String = s"Default value for ${schema.getType} is not supported."
   }
+
 }
 
 /**
@@ -39,7 +40,9 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
   private val validatedNullExpression: ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Valid(Some(asSpelExpression("null")))
 
-  private def typeNotSupported(implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
+  private def typeNotSupported(
+      implicit fieldSchema: Schema.Field
+  ): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     if (handleNotSupported)
       Valid(None)
     else
@@ -56,7 +59,9 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
     * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in AvroSchemaTypeDefinitionExtractor
     */
   @tailrec
-  private def determine(schema: Schema, defaultValue: AnyRef)(implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] = {
+  private def determine(schema: Schema, defaultValue: AnyRef)(
+      implicit fieldSchema: Schema.Field
+  ): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] = {
     schema.getType match {
       case Schema.Type.RECORD =>
         typeNotSupported
@@ -70,11 +75,12 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
         // For unions Avro supports default to be the type of the first type in the union. See: https://issues.apache.org/jira/browse/AVRO-1118
         schema.getTypes.asScala.toList.headOption match {
           case Some(firstUnionSchema) => determine(firstUnionSchema, defaultValue)
-          case None => Invalid(InvalidValue).toValidatedNel
+          case None                   => Invalid(InvalidValue).toValidatedNel
         }
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
         withValidation[String](uuid => s"T(${classOf[UUID].getName}).fromString('$uuid')")
-      case Schema.Type.BYTES | Schema.Type.FIXED if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+      case Schema.Type.BYTES | Schema.Type.FIXED
+          if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
         typeNotSupported
       case Schema.Type.STRING =>
         withValidation[String](str => s"'$str'")
@@ -88,7 +94,9 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
         typeNotSupported
       case Schema.Type.INT =>
         withValidation[Integer](_.toString)
-      case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
+      case Schema.Type.LONG
+          if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes
+            .timestampMicros() =>
         withValidation[java.lang.Long](l => s"T(${classOf[Instant].getName}).ofEpochMilli(${l}L)")
       case Schema.Type.LONG if schema.getLogicalType == LogicalTypes.timeMicros() =>
         typeNotSupported
@@ -105,13 +113,14 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
     }
   }
 
-  private def withValidation[T <: AnyRef : ClassTag](toExpression: T => Expression)
-                                                    (implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
+  private def withValidation[T <: AnyRef: ClassTag](
+      toExpression: T => Expression
+  )(implicit fieldSchema: Schema.Field): ValidatedNel[AvroDefaultToSpELExpressionError, Option[Expression]] =
     Option(fieldSchema.defaultVal()) match {
       case Some(JsonProperties.NULL_VALUE) => validatedNullExpression
-      case Some(value: T) => Valid(Some(toExpression(value)))
-      case Some(_) => Invalid(InvalidValue).toValidatedNel
-      case None => Invalid(NullNotAllowed).toValidatedNel
+      case Some(value: T)                  => Valid(Some(toExpression(value)))
+      case Some(_)                         => Invalid(InvalidValue).toValidatedNel
+      case None                            => Invalid(NullNotAllowed).toValidatedNel
     }
 
   private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)

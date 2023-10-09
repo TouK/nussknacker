@@ -7,9 +7,11 @@ object ExpressionSubstitutor {
       expression
     } else {
       val sortedDesc = substitutions.sortBy(_.position.start).reverse
-      sortedDesc.foldLeft(new StringBuilder(expression)) { (prev, sub) =>
-        prev.replace(sub.position.start, sub.position.end, sub.replacement)
-      }.toString()
+      sortedDesc
+        .foldLeft(new StringBuilder(expression)) { (prev, sub) =>
+          prev.replace(sub.position.start, sub.position.end, sub.replacement)
+        }
+        .toString()
     }
   }
 

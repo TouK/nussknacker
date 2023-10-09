@@ -14,35 +14,48 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
 
   val podsResourceQuota = "pods"
 
-  def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int, strategy: Option[Strategy]): Validated[Throwable, Unit] = {
+  def hasReachedQuotaLimit(
+      oldDeploymentReplicasCount: Option[Int],
+      quotas: ResourceQuotaList,
+      replicasCount: Int,
+      strategy: Option[Strategy]
+  ): Validated[Throwable, Unit] = {
     quotas match {
       case ListResource(_, _, _, List()) => valid(())
-      case ListResource(_, _, _, List(quota)) => hasReachedQuotaLimitInternal(oldDeploymentReplicasCount, quota, replicasCount, strategy)
+      case ListResource(_, _, _, List(quota)) =>
+        hasReachedQuotaLimitInternal(oldDeploymentReplicasCount, quota, replicasCount, strategy)
       case _ =>
         logger.warn("More than one resource quota is not supported")
         valid(())
     }
   }
 
-  private def hasReachedQuotaLimitInternal(oldDeploymentReplicasCount: Option[Int], quotas: Resource.Quota, replicasCount: Int, strategy: Option[Strategy]): Validated[Throwable, Unit] = {
+  private def hasReachedQuotaLimitInternal(
+      oldDeploymentReplicasCount: Option[Int],
+      quotas: Resource.Quota,
+      replicasCount: Int,
+      strategy: Option[Strategy]
+  ): Validated[Throwable, Unit] = {
     val status = quotas.status
 
     def podResourceQuotaOf(resource: Option[ResourceList]): BigDecimal = {
       resource.flatMap(_.get(podsResourceQuota)).map(_.amount).sum
     }
 
-    val usedAmount = podResourceQuotaOf(status.map(_.used))
-    val hardAmount = podResourceQuotaOf(status.map(_.hard))
+    val usedAmount             = podResourceQuotaOf(status.map(_.used))
+    val hardAmount             = podResourceQuotaOf(status.map(_.hard))
     val currentDeploymentCount = BigDecimal(oldDeploymentReplicasCount.getOrElse(0))
     val requestedReplicasCount = BigDecimal(replicasCount)
-    val maxSurge = calculateMaxSurge(replicasCount, strategy)
-    val quotaExceeded = (usedAmount - currentDeploymentCount + requestedReplicasCount + maxSurge) > hardAmount
-    logger.trace(s"Scenario deployment resource quota exceed: $quotaExceeded, usedPods: $usedAmount, hardPods: $hardAmount, replicasCount: $requestedReplicasCount, currentScenarioDeploymentCount: $currentDeploymentCount")
+    val maxSurge               = calculateMaxSurge(replicasCount, strategy)
+    val quotaExceeded          = (usedAmount - currentDeploymentCount + requestedReplicasCount + maxSurge) > hardAmount
+    logger.trace(
+      s"Scenario deployment resource quota exceed: $quotaExceeded, usedPods: $usedAmount, hardPods: $hardAmount, replicasCount: $requestedReplicasCount, currentScenarioDeploymentCount: $currentDeploymentCount"
+    )
 
     if (quotaExceeded) {
       val error = usedAmount match {
         case `hardAmount` => ResourceQuotaExceededException.fullCluster
-        case _ =>  ResourceQuotaExceededException.notEnoughResources
+        case _            => ResourceQuotaExceededException.notEnoughResources
       }
       invalid(error)
     } else {
@@ -63,8 +76,15 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
   }
 
   object ResourceQuotaExceededException {
-    val fullCluster: ResourceQuotaExceededException = ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
-    val notEnoughResources: ResourceQuotaExceededException = ResourceQuotaExceededException("Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources.")
+
+    val fullCluster: ResourceQuotaExceededException = ResourceQuotaExceededException(
+      "Cluster is full. Release some cluster resources."
+    )
+
+    val notEnoughResources: ResourceQuotaExceededException = ResourceQuotaExceededException(
+      "Not enough free resources on the K8 cluster. Decrease parallelism or release cluster resources."
+    )
+
   }
 
   case class ResourceQuotaExceededException(message: String) extends IllegalArgumentException(message)

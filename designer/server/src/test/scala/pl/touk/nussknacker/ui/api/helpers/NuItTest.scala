@@ -7,11 +7,7 @@ import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-trait NuItTest
-  extends WithHsqlDbTesting
-    with DefaultUniquePortProvider
-    with TestPermissions
-    with BeforeAndAfterAll {
+trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with TestPermissions with BeforeAndAfterAll {
   this: Suite =>
 
   private val port = nextPort()
@@ -37,17 +33,18 @@ trait NuItTest
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
   }
+
 }
 
 trait WithMockableDeploymentManager extends NuItTest {
   this: Suite =>
 
-  abstract override def nuTestConfig: Config = super
-    .nuTestConfig
+  abstract override def nuTestConfig: Config = super.nuTestConfig
     .withValue(
       "scenarioTypes.streaming.deploymentConfig",
       ConfigFactory
         .parseString("""{ type: "mockable" }""")
         .root()
     )
+
 }

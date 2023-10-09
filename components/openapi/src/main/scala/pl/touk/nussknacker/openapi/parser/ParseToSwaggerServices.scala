@@ -10,30 +10,36 @@ import scala.jdk.CollectionConverters._
 private[parser] object ParseToSwaggerServices {
 
   def apply(
-    openapi: OpenAPI,
-    openAPIsConfig: OpenAPIServicesConfig
+      openapi: OpenAPI,
+      openAPIsConfig: OpenAPIServicesConfig
   ): List[Validated[ServiceParseError, SwaggerService]] = {
 
     val parseToService = new ParseToSwaggerService(
-      openapi, openAPIsConfig
+      openapi,
+      openAPIsConfig
     )
     for {
       (uriWithParameters, endpoint) <- Option(openapi.getPaths).map(_.asScala.toList).getOrElse(Nil)
-      (method, endpointDefinition) <- endpoint.readOperationsMap.asScala.toList
+      (method, endpointDefinition)  <- endpoint.readOperationsMap.asScala.toList
       serviceName = prepareServiceName(uriWithParameters, endpointDefinition, method)
-      if openAPIsConfig.allowedMethods.contains(method.name()) && serviceName.value.matches(openAPIsConfig.namePattern.regex)
-    } yield parseToService(serviceName, uriWithParameters, method, endpointDefinition).leftMap(ServiceParseError(serviceName, _))
+      if openAPIsConfig.allowedMethods.contains(method.name()) && serviceName.value.matches(
+        openAPIsConfig.namePattern.regex
+      )
+    } yield parseToService(serviceName, uriWithParameters, method, endpointDefinition).leftMap(
+      ServiceParseError(serviceName, _)
+    )
   }
 
   private def prepareServiceName(uriWithParameters: String, operation: Operation, method: HttpMethod): ServiceName = {
     val unsafeId = Option(operation.getOperationId) match {
       case Some(id) => id
-      case None => s"$method$uriWithParameters"
+      case None     => s"$method$uriWithParameters"
     }
     val safeId = unsafeId filterNot ("".contains(_)) flatMap {
       case '/' => "-"
-      case c => s"$c"
+      case c   => s"$c"
     }
     ServiceName(safeId)
   }
+
 }

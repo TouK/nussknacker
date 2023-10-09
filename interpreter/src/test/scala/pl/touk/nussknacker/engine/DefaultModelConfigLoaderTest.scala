@@ -49,4 +49,5 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
     config.hasPath("shouldNotLoad") shouldBe false
 
   }
+
 }

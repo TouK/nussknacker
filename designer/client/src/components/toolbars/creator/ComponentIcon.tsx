@@ -74,7 +74,7 @@ class Icon extends React.Component<Created> {
     }
 }
 
-interface ComponentIconProps {
+export interface ComponentIconProps {
     node: NodeType;
     className?: string;
 }

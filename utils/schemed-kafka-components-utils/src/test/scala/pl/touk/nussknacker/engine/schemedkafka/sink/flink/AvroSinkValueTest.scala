@@ -18,27 +18,35 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
     val recordSchema = SchemaBuilder
       .record("A")
       .fields()
-      .name("a").`type`().longType().noDefault()
-      .name("b").`type`()
-        .record("B")
-        .fields()
-          .name("c").`type`().longType().noDefault()
-        .endRecord().noDefault()
+      .name("a")
+      .`type`()
+      .longType()
+      .noDefault()
+      .name("b")
+      .`type`()
+      .record("B")
+      .fields()
+      .name("c")
+      .`type`()
+      .longType()
+      .noDefault()
+      .endRecord()
+      .noDefault()
       .endRecord()
 
     val value = new LazyParameter[AnyRef] {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
     }
 
-    val parameterValues = Map(
-      "a" -> value,
-      "b.c" -> value)
+    val parameterValues = Map("a" -> value, "b.c" -> value)
 
     val sinkParam = AvroSchemaBasedParameter(recordSchema, Set.empty).valueOr(e => fail(e.toString))
 
-    val fields: Map[String, SinkValue] = SinkValue.applyUnsafe(sinkParam, parameterValues)
+    val fields: Map[String, SinkValue] = SinkValue
+      .applyUnsafe(sinkParam, parameterValues)
       .asInstanceOf[SinkRecordValue]
-      .fields.toMap
+      .fields
+      .toMap
 
     fields("a").asInstanceOf[SinkSingleValue].value shouldBe value
 
@@ -52,11 +60,12 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
     }
     val parameterValues = Map(SinkValueParamName -> value)
-    val sinkParam = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))
+    val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))
 
     SinkValue
       .applyUnsafe(sinkParam, parameterValues)
       .asInstanceOf[SinkSingleValue]
       .value shouldBe value
   }
+
 }

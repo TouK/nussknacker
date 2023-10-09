@@ -18,8 +18,8 @@ trait QueryExecutor {
     }.toMap
     TypedMap(fields)
   }
-}
 
+}
 
 class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
@@ -32,6 +32,7 @@ class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor
     else
       null
   }
+
 }
 
 class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
@@ -40,10 +41,11 @@ class ResultSetQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
   override def execute(statement: PreparedStatement): QueryResult = {
     val resultSet = statement.executeQuery()
-    val results = new util.ArrayList[TypedMap]()
+    val results   = new util.ArrayList[TypedMap]()
     while (resultSet.next()) {
       results add toTypedMap(tableDef, resultSet)
     }
     results
   }
+
 }

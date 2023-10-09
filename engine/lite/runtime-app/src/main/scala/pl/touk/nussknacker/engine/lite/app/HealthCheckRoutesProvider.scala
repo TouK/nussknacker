@@ -15,7 +15,10 @@ import scala.concurrent.duration._
 
 class HealthCheckRoutesProvider(system: ActorSystem, scenarioInterpreter: RunnableScenarioInterpreter) {
 
-  system.actorOf(RunnableScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), RunnableScenarioInterpreterStatusCheckerActor.actorName)
+  system.actorOf(
+    RunnableScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter),
+    RunnableScenarioInterpreterStatusCheckerActor.actorName
+  )
 
   private val management = AkkaManagement(system)
 
@@ -41,9 +44,8 @@ class InterpreterIsRunningCheck(system: ActorSystem) extends (() => Future[Boole
 
 class RunnableScenarioInterpreterStatusCheckerActor(scenarioInterpreter: RunnableScenarioInterpreter) extends Actor {
 
-  override def receive: Receive = {
-    case GetStatus =>
-      context.sender() ! scenarioInterpreter.status()
+  override def receive: Receive = { case GetStatus =>
+    context.sender() ! scenarioInterpreter.status()
   }
 
 }

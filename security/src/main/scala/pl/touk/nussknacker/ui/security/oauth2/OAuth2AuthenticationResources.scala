@@ -18,13 +18,13 @@ import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2AuthenticationResources(override val name: String,
-                                    realm: String,
-                                    service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
-                                    configuration: OAuth2Configuration)
-                                   (implicit ec: ExecutionContext,
-                                    sttpBackend: SttpBackend[Future, Any])
-  extends AuthenticationResources
+class OAuth2AuthenticationResources(
+    override val name: String,
+    realm: String,
+    service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
+    configuration: OAuth2Configuration
+)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
+    extends AuthenticationResources
     with Directives
     with LazyLogging
     with AnonymousAccess {
@@ -55,14 +55,16 @@ class OAuth2AuthenticationResources(override val name: String,
     )
   }
 
-  override val frontendStrategySettings: FrontendStrategySettings = configuration.overrideFrontendAuthenticationStrategy.getOrElse(
-    FrontendStrategySettings.OAuth2(
-      configuration.authorizeUrl.map(_.toString),
-      configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
-      configuration.idTokenNonceVerificationRequired,
-      configuration.implicitGrantEnabled,
-      configuration.anonymousUserRole.isDefined
-    ))
+  override val frontendStrategySettings: FrontendStrategySettings =
+    configuration.overrideFrontendAuthenticationStrategy.getOrElse(
+      FrontendStrategySettings.OAuth2(
+        configuration.authorizeUrl.map(_.toString),
+        configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
+        configuration.idTokenNonceVerificationRequired,
+        configuration.implicitGrantEnabled,
+        configuration.anonymousUserRole.isDefined
+      )
+    )
 
   val anonymousUserRole: Option[String] = configuration.anonymousUserRole
 
@@ -104,25 +106,30 @@ class OAuth2AuthenticationResources(override val name: String,
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service
-      .obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+      .obtainAuthorizationAndAuthenticateUser(authorizationCode, redirectUri)
       .map { case (auth, _) =>
         val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
-        val cookieHeader = configuration
-          .tokenCookie
+        val cookieHeader = configuration.tokenCookie
           .map { config =>
-            `Set-Cookie`(HttpCookie(config.name,
-              auth.accessToken,
-              httpOnly = true,
-              secure = true, // consider making it configurable (with default value 'true') so one could setup development environment easier (by setting it to 'false')
-              path = config.path,
-              domain = config.domain,
-              maxAge = auth.expirationPeriod.map(_.toSeconds),
-            ))
+            `Set-Cookie`(
+              HttpCookie(
+                config.name,
+                auth.accessToken,
+                httpOnly = true,
+                secure =
+                  true, // consider making it configurable (with default value 'true') so one could setup development environment easier (by setting it to 'false')
+                path = config.path,
+                domain = config.domain,
+                maxAge = auth.expirationPeriod.map(_.toSeconds),
+              )
+            )
           }
-        ToResponseMarshallable(HttpResponse(
-          entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces),
-          headers = cookieHeader.toList
-        ))
+        ToResponseMarshallable(
+          HttpResponse(
+            entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces),
+            headers = cookieHeader.toList
+          )
+        )
       }
       .recover {
         case OAuth2ErrorHandler(ex) => {
@@ -138,9 +145,11 @@ class OAuth2AuthenticationResources(override val name: String,
       entity = HttpEntity(ContentTypes.`application/json`, Encoder.encodeMap[String, String].apply(entity).spaces2)
     )
   }
+
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
+
 object Oauth2AuthenticationResponse {
 
   implicit val encoder: Encoder[Oauth2AuthenticationResponse] = Encoder
@@ -148,4 +157,5 @@ object Oauth2AuthenticationResponse {
     .forProduct4("accessToken", "tokenType", "access_token", "token_type")(r =>
       (r.accessToken, r.tokenType, r.accessToken, r.tokenType)
     )
+
 }

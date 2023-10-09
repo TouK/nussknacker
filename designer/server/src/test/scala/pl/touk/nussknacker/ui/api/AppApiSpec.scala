@@ -10,12 +10,17 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLogging
+}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
 class AppApiSpec
-  extends AnyFreeSpecLike
+    extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
     with NuScenarioConfigurationHelper
@@ -40,13 +45,15 @@ class AppApiSpec
         .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
         .Then()
         .statusCode(200)
-        .body(equalsJson(
-          s"""{
+        .body(
+          equalsJson(
+            s"""{
              |  "status":"OK",
              |  "processes":null,
              |  "message":null
              |}""".stripMargin
-        ))
+          )
+        )
     }
   }
 
@@ -67,18 +74,21 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status": "ERROR",
                |  "message": "Scenarios with status PROBLEM",
                |  "processes": [ "id1", "id3" ]
                |}""".stripMargin
-          ))
+            )
+          )
       }
       "not return health check when scenario is canceled" in {
         given()
@@ -92,18 +102,21 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(500)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status": "ERROR",
                |  "message": "Scenarios with status PROBLEM",
                |  "processes": [ "id2" ]
                |}""".stripMargin
-          ))
+            )
+          )
       }
       "return health check ok if statuses are ok" in {
         given()
@@ -118,18 +131,21 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status": "OK",
                |  "message": null,
                |  "processes": null
                |}""".stripMargin
-          ))
+            )
+          )
       }
       "not report deployment in progress as fail" in {
         given()
@@ -144,17 +160,20 @@ class AppApiSpec
             )
           }
           .when()
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
           .Then()
           .statusCode(200)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status":"OK",
                |  "processes":null,
                |  "message":null
                |}""".stripMargin
-          ))
+            )
+          )
       }
     }
     "not authenticated should" - {
@@ -195,34 +214,40 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(500)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status": "ERROR",
                |  "message": "Scenarios with validation errors",
                |  "processes": [ "id1" ]
                |}""".stripMargin
-          ))
+            )
+          )
       }
       "return OK status and empty list of processes where there are no validation errors" in {
         given()
-          .applicationConfiguration { }
-          .auth().basic("reader", "reader")
+          .applicationConfiguration {}
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/validation")
           .Then()
           .statusCode(200)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "status": "OK",
                |  "message": null,
                |  "processes": null
                |}""".stripMargin
-          ))
+            )
+          )
       }
     }
     "not authenticated should" - {
@@ -257,23 +282,29 @@ class AppApiSpec
         .get(s"$nuDesignerHttpAddress/api/app/buildInfo")
         .Then()
         .statusCode(200)
-        .body(matchJsonWithRegexValues(
-          s"""{
+        .body(
+          matchJsonWithRegexValues(
+            s"""{
              |  "name": "nussknacker-common-api",
              |  "gitCommit": "^\\\\w{40}$$",
-             |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$",
-             |  "version": "1.12.0-SNAPSHOT",
+             |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$",
+             |  "version": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+(?:-.+)*$$",
              |  "processingType": {
              |    "streaming": {
              |      "process-version": "0.1",
              |      "engine-version": "0.1",
-             |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$"
+             |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$"
              |    }
+             |  },
+             |  "globalBuildInfo": {
+             |    "build-config-1": "1",
+             |    "build-config-2": "2"
              |  },
              |  "build-config-1": "1",
              |  "build-config-2": "2"
              |}""".stripMargin
-        ))
+          )
+        )
     }
   }
 
@@ -281,7 +312,8 @@ class AppApiSpec
     "return config when" - {
       "user is an admin" in {
         given()
-          .auth().basic("admin", "admin")
+          .auth()
+          .basic("admin", "admin")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
@@ -292,7 +324,8 @@ class AppApiSpec
     "not return config when" - {
       "user is an admin" in {
         given()
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config")
           .Then()
@@ -327,17 +360,20 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .get(s"$nuDesignerHttpAddress/api/app/config/categoriesWithProcessingType")
           .Then()
           .statusCode(200)
-          .body(equalsJson(
-            s"""{
+          .body(
+            equalsJson(
+              s"""{
                |  "Category1": "streaming",
                |  "Category2": "streaming"
                |}""".stripMargin
-          ))
+            )
+          )
       }
     }
     "not authenticated should" - {
@@ -382,7 +418,8 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("admin", "admin")
+          .auth()
+          .basic("admin", "admin")
           .when()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()
@@ -428,7 +465,8 @@ class AppApiSpec
               )
             )
           }
-          .auth().basic("reader", "reader")
+          .auth()
+          .basic("reader", "reader")
           .when()
           .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
           .Then()

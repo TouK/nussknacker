@@ -28,7 +28,7 @@ private[schemaregistry] class AvroMessageReader(serializer: Serializer[Any]) {
     val jsonString = jsonObj.noSpaces
     try {
       val reader: DatumReader[AnyRef] = GenericData.get().createDatumReader(schema).asInstanceOf[DatumReader[AnyRef]]
-      val obj = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
+      val obj                         = reader.read(null, decoderFactory.jsonDecoder(schema, jsonString))
       if (schema.getType == Type.STRING)
         obj.toString
       else
@@ -36,7 +36,9 @@ private[schemaregistry] class AvroMessageReader(serializer: Serializer[Any]) {
     } catch {
       case ex: Exception =>
         throw new SerializationException(
-          String.format("Error deserializing json %s to Avro of schema %s", jsonString, schema), ex)
+          String.format("Error deserializing json %s to Avro of schema %s", jsonString, schema),
+          ex
+        )
     }
   }
 

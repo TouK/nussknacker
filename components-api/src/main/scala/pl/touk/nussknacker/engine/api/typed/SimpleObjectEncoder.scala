@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 
 // TODO: Add support for more types.
 object SimpleObjectEncoder {
-  private val intClass = Typed.typedClass[Int]
-  private val longClass = Typed.typedClass[Long]
-  private val floatClass = Typed.typedClass[Float]
-  private val doubleClass = Typed.typedClass[Double]
+  private val intClass     = Typed.typedClass[Int]
+  private val longClass    = Typed.typedClass[Long]
+  private val floatClass   = Typed.typedClass[Float]
+  private val doubleClass  = Typed.typedClass[Double]
   private val booleanClass = Typed.typedClass[Boolean]
-  private val stringClass = Typed.typedClass[String]
+  private val stringClass  = Typed.typedClass[String]
 
   def encode(typ: TypedClass, data: Any): ValidatedNel[String, Json] = (typ, data) match {
     case (`intClass`, intValue: Int) =>
@@ -35,12 +35,13 @@ object SimpleObjectEncoder {
   }
 
   def decode(typ: TypedClass, obj: ACursor): Decoder.Result[Any] = typ match {
-    case `intClass` => obj.as[Int]
-    case `longClass` => obj.as[Long]
-    case `floatClass` => obj.as[Float]
-    case `doubleClass` => obj.as[Double]
+    case `intClass`     => obj.as[Int]
+    case `longClass`    => obj.as[Long]
+    case `floatClass`   => obj.as[Float]
+    case `doubleClass`  => obj.as[Double]
     case `booleanClass` => obj.as[Boolean]
-    case `stringClass` => obj.as[String]
-    case typ => Left(DecodingFailure(s"No decoding logic for $typ.", List()))
+    case `stringClass`  => obj.as[String]
+    case typ            => Left(DecodingFailure(s"No decoding logic for $typ.", List()))
   }
+
 }

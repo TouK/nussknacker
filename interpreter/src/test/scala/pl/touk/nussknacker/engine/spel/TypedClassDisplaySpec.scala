@@ -8,6 +8,7 @@ import java.util
 import scala.language.implicitConversions
 
 class TypedClassDisplaySpec extends AnyFunSuite with Matchers {
+
   test("parsing array display") {
     Typed.typedClass(classOf[Array[String]]).display should equal("Array[String]")
   }
@@ -17,10 +18,16 @@ class TypedClassDisplaySpec extends AnyFunSuite with Matchers {
   }
 
   test("parsing nested class display") {
-    Typed.genericTypeClass(classOf[util.AbstractMap.SimpleEntry[String, String]], List(Typed(classOf[String]), Typed(classOf[String]))).display should equal("SimpleEntry[String,String]")
+    Typed
+      .genericTypeClass(
+        classOf[util.AbstractMap.SimpleEntry[String, String]],
+        List(Typed(classOf[String]), Typed(classOf[String]))
+      )
+      .display should equal("SimpleEntry[String,String]")
   }
 
   test("parsing anonymous class display") {
-    Typed.typedClass(new java.io.Serializable{}.getClass).display should equal("")
+    Typed.typedClass(new java.io.Serializable {}.getClass).display should equal("")
   }
+
 }

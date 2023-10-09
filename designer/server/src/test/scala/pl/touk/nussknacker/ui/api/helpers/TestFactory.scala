@@ -21,7 +21,10 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.processingtypedata.{
+  MapBasedProcessingTypeDataProvider,
+  ProcessingTypeDataProvider
+}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -35,19 +38,22 @@ import scala.concurrent.{ExecutionContext, Future}
 object TestFactory extends TestPermissions {
 
   val (dummyDbRef: DbRef, _) = {
-    val dbConfig = ConfigFactory.parseMap(Map(
-      "db" -> Map(
-        "user" -> "SA",
-        "password" -> "",
-        "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-        "driver" -> "org.hsqldb.jdbc.JDBCDriver"
-      ).asJava).asJava)
+    val dbConfig = ConfigFactory.parseMap(
+      Map(
+        "db" -> Map(
+          "user"     -> "SA",
+          "password" -> "",
+          "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+          "driver"   -> "org.hsqldb.jdbc.JDBCDriver"
+        ).asJava
+      ).asJava
+    )
     DbRef.create(dbConfig).allocated.unsafeRunSync()
   }
 
-  //FIXME: remove testCategory dummy implementation
+  // FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
-    TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
+    TestCategories.TestCat  -> Permission.ALL_PERMISSIONS,
     TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
   )
 
@@ -55,20 +61,26 @@ object TestFactory extends TestPermissions {
 
   val processValidation: ProcessValidation = ProcessTestData.processValidation.withFragmentResolver(sampleResolver)
 
-  val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation.withFragmentResolver(sampleResolver)
-    .withAdditionalPropertiesConfig(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties))
+  val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation
+    .withFragmentResolver(sampleResolver)
+    .withAdditionalPropertiesConfig(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
+    )
 
-  val processResolving = new UIProcessResolving(processValidation,
+  val processResolving = new UIProcessResolving(
+    processValidation,
     mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))))
+      TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
+    )
+  )
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
   val posting = new ProcessPosting
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(Set(
-    FragmentDetails(ProcessTestData.sampleFragment, TestCategories.TestCat))
+  def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
+    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.TestCat))
   )
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
@@ -90,7 +102,10 @@ object TestFactory extends TestPermissions {
     new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef)) with DbioRepository
 
   def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
-    new DBProcessRepository(dbRef, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
+    new DBProcessRepository(
+      dbRef,
+      mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*)
+    )
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef)
@@ -98,8 +113,9 @@ object TestFactory extends TestPermissions {
   def newFragmentRepository(dbRef: DbRef): DbFragmentRepository =
     new DbFragmentRepository(dbRef, implicitly[ExecutionContext])
 
-  def newActionProcessRepository(dbRef: DbRef) = new DbProcessActionRepository[DB](dbRef,
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepository
+  def newActionProcessRepository(dbRef: DbRef) =
+    new DbProcessActionRepository[DB](dbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
+      with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository[DB] =
     newActionProcessRepository(dummyDbRef)
@@ -117,29 +133,45 @@ object TestFactory extends TestPermissions {
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
     route.securedRoute(user(permissions = permissions))
 
-  //FIXME: update
+  // FIXME: update
   def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
   def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser())
 
   def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
 
-  def userWithCategoriesReadPermission(id: String = "1", username: String = "user", categories: List[String]): LoggedUser =
+  def userWithCategoriesReadPermission(
+      id: String = "1",
+      username: String = "user",
+      categories: List[String]
+  ): LoggedUser =
     user(id, username, categories.map(c => c -> Set(Permission.Read)).toMap)
 
-  //FIXME: update
-  def user(id: String = "1", username: String = "user", permissions: CategorizedPermission = testPermissionEmpty): LoggedUser =
+  // FIXME: update
+  def user(
+      id: String = "1",
+      username: String = "user",
+      permissions: CategorizedPermission = testPermissionEmpty
+  ): LoggedUser =
     LoggedUser(id, username, permissions, globalPermissions = List("CustomFixedPermission"))
 
-  def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
+  def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
+    LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
-  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(data: _*))
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] =
+    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(data: _*))
 
-  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
+    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-    ProcessValidator.default(ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)), fragmentDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    ProcessValidator.default(
+      ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)),
+      fragmentDefinitionExtractor,
+      new SimpleDictRegistry(Map.empty),
+      CustomProcessValidatorLoader.emptyCustomProcessValidator
+    )
   }
 
 }

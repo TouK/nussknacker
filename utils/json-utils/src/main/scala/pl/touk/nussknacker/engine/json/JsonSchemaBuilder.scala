@@ -10,8 +10,8 @@ object JsonSchemaBuilder {
   def parseSchema(rawJsonSchema: String): Schema =
     parseSchemaAs(rawJsonSchema, useDefaults = true)
 
-  //TODO: parsing schema should be consistent with [io.confluent.kafka.schemaregistry.json.JsonSchema.rawSchema]
-  //TODO: Remove strict setting DRAFT7
+  // TODO: parsing schema should be consistent with [io.confluent.kafka.schemaregistry.json.JsonSchema.rawSchema]
+  // TODO: Remove strict setting DRAFT7
   def parseSchemaAs[T <: Schema](rawJsonSchema: String, useDefaults: Boolean): T = {
     val trimmedRawSchema = rawJsonSchema.trim
     val rawSchema: Object = if (trimmedRawSchema != "true") {

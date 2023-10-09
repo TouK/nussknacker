@@ -14,20 +14,20 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "serialize usual case class" in {
-    val obj = UsualCaseClass("a", 1)
+    val obj          = UsualCaseClass("a", 1)
     val deserialized = serializeAndDeserialize(obj)
     deserialized shouldBe obj
   }
 
   it should "serialize case class without params" in {
-    val obj = NoParams()
+    val obj          = NoParams()
     val deserialized = serializeAndDeserialize(obj)
     deserialized shouldBe obj
   }
 
   it should "serialize case class with implicit param" in {
     implicit val b: Long = 5L
-    val obj = WithImplicitVal("a")
+    val obj              = WithImplicitVal("a")
 
     val deserialized = serializeAndDeserialize(obj)
 
@@ -39,7 +39,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
 
     val deserialized = serializeAndDeserialize(obj.asInstanceOf[Product])
 
-    //deserialized shouldBe obj // it explodes here because of deserialized obj.$outer ???
+    // deserialized shouldBe obj // it explodes here because of deserialized obj.$outer ???
     deserialized.getClass shouldBe obj.getClass
     deserialized.hashCode() shouldBe obj.hashCode()
   }
@@ -62,10 +62,11 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
 
   def serializeAndDeserialize(caseClass: Product): Product = {
     val kryo = new Kryo()
-    val out = new Output(1024)
+    val out  = new Output(1024)
     CaseClassSerializer.write(kryo, out, caseClass)
     CaseClassSerializer.read(kryo, new Input(out.toBytes), caseClass.getClass.asInstanceOf[Class[Product]])
   }
+
 }
 
 case class WithImplicitVal(a: String)(implicit val b: Long)
@@ -84,7 +85,8 @@ trait Wrapper {
   abstract class Abstract[T](value: T) {
     def get1: T = value
 
-    override def equals(obj: Any): Boolean = obj != null && obj.isInstanceOf[Abstract[_]] && obj.asInstanceOf[Abstract[_]].get1 == value
+    override def equals(obj: Any): Boolean =
+      obj != null && obj.isInstanceOf[Abstract[_]] && obj.asInstanceOf[Abstract[_]].get1 == value
   }
 
   case class InnerGenericCaseClass[A](value: A) extends Abstract[A](value)
@@ -92,6 +94,7 @@ trait Wrapper {
   case class InnerGenericCaseClassWithTrait[A](value: A) extends Abstract[A](value) with SomeTrait[A] {
     override def get2: A = value
   }
+
 }
 
 object WrapperObj extends Wrapper {

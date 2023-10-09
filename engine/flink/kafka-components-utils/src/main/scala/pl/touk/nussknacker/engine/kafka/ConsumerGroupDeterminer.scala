@@ -10,7 +10,7 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
 
   def consumerGroup(processId: String, nodeId: String): String = {
     consumerGroupNamingStrategy match {
-      case ConsumerGroupNamingStrategy.ProcessId => processId
+      case ConsumerGroupNamingStrategy.ProcessId       => processId
       case ConsumerGroupNamingStrategy.ProcessIdNodeId => processId + "-" + nodeId
     }
   }
@@ -20,6 +20,8 @@ class ConsumerGroupDeterminer(consumerGroupNamingStrategy: ConsumerGroupNamingSt
 object ConsumerGroupDeterminer {
 
   def apply(config: KafkaConfig): ConsumerGroupDeterminer =
-    new ConsumerGroupDeterminer(config.consumerGroupNamingStrategy.getOrElse(ConsumerGroupNamingStrategy.ProcessIdNodeId))
+    new ConsumerGroupDeterminer(
+      config.consumerGroupNamingStrategy.getOrElse(ConsumerGroupNamingStrategy.ProcessIdNodeId)
+    )
 
 }

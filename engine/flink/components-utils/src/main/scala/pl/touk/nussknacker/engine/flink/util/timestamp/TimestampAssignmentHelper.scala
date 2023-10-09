@@ -12,7 +12,8 @@ class TimestampAssignmentHelper[T: TypeInformation](timestampAssigner: Timestamp
   def assignWatermarks(stream: DataStream[T]): DataStream[T] = {
     val timestampedStream = stream
       .process((value: T, ctx: ProcessFunction[T, TimestampedValue[T]]#Context, out: Collector[TimestampedValue[T]]) =>
-        out.collect(new TimestampedValue(value, ctx.timestamp())))
+        out.collect(new TimestampedValue(value, ctx.timestamp()))
+      )
 
     val withTimestampAssigner = timestampAssigner.assignTimestampAndWatermarks(timestampedStream)
     withTimestampAssigner.map((tv: TimestampedValue[T]) => tv.getValue)

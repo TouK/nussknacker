@@ -9,10 +9,12 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 import scala.jdk.CollectionConverters._
 
-case class CollectionSource[T: TypeInformation](list: List[T],
-                                                timestampAssigner: Option[TimestampWatermarkHandler[T]],
-                                                returnType: TypingResult
-                                               ) extends BasicFlinkSource[T] with ReturningType {
+case class CollectionSource[T: TypeInformation](
+    list: List[T],
+    timestampAssigner: Option[TimestampWatermarkHandler[T]],
+    returnType: TypingResult
+) extends BasicFlinkSource[T]
+    with ReturningType {
   override def flinkSourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava)
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]

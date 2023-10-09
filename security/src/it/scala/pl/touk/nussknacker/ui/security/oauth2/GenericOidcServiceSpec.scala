@@ -7,7 +7,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
+import pl.touk.nussknacker.ui.security.oidc.{
+  DefaultOidcAuthorizationData,
+  OidcAuthenticationConfiguration,
+  OidcProfileAuthentication,
+  OidcService,
+  OidcUserInfo
+}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.{SttpBackend, _}
 
@@ -28,38 +34,38 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId"
 
-
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
-    val oidcService = new UserMappingOAuth2Service(
+    val oidcService = new UserMappingOAuth2Service[OidcUserInfo, DefaultOidcAuthorizationData](
       new OidcService(config),
-      (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
+      new OidcProfileAuthentication(config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)
 
     List(oidcService, oidcServiceWithCache).foreach { open =>
-      //we emulate FE part
-      val loginResult = keyCloakLogin(config.oAuth2Configuration)
+      // we emulate FE part
+      val loginResult       = keyCloakLogin(config.oAuth2Configuration)
       val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
-      val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
+      val (authData, userData) =
+        open.obtainAuthorizationAndAuthenticateUser(authorizationCode, config.redirectUri.get.toString).futureValue
       userData.username shouldBe "user1"
       userData.roles should contain("ARole")
 
-      val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
+      val profile = open.checkAuthorizationAndAuthenticateUser(authData.accessToken).futureValue
       profile._1.username shouldBe "user1"
       profile._1.roles should contain("ARole")
-
     }
   }
 
-  //We emulate keycloak login form :)
+  // We emulate keycloak login form :)
   private def keyCloakLogin(config: OAuth2Configuration): Response[Either[String, String]] = {
     val redirectValue = basicRequest
       .get(uri"${config.authorizeUrl.get.toString}")
       .response(asString)
-      .send(backend).futureValue
+      .send(backend)
+      .futureValue
 
     val pattern = """.*action="([^"]*)".*""".r
     val passwordLocation = redirectValue.body.toOption.get.replaceAll("\n", "") match {
@@ -71,7 +77,8 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       .cookies(redirectValue.unsafeCookies)
       .body("username" -> "user1", "password" -> "pass1", "credentialId" -> "")
       .followRedirects(false)
-      .send(backend).futureValue
+      .send(backend)
+      .futureValue
   }
 
   private def oauth2Conf: OidcAuthenticationConfiguration =
@@ -81,14 +88,17 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
+      audience = Some("test-client"),
       rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
       usernameClaim = Some(UsernameClaim.PreferredUsername),
-      accessTokenIsJwt = true,
     ).withDiscovery
+
 }
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {
+
   override val container: KeycloakContainer = new KeycloakContainer()
-    //sample keycloak realm...
+    // sample keycloak realm...
     .withRealmImportFile("/keycloak.json")
+
 }

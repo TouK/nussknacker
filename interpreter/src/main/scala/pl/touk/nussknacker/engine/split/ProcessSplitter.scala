@@ -21,7 +21,7 @@ object ProcessSplitter {
 
   private def split(custom: CustomNode, next: SubsequentNode): CustomNodePart = {
     val nextWithParts = traverse(next)
-    val node = splittednode.OneOutputSubsequentNode(custom, nextWithParts.next)
+    val node          = splittednode.OneOutputSubsequentNode(custom, nextWithParts.next)
     CustomNodePart(node, nextWithParts.nextParts, nextWithParts.ends)
   }
 
@@ -39,21 +39,24 @@ object ProcessSplitter {
     node match {
       case FilterNode(data, nextTrue, nextFalse) =>
         (nextTrue.map(traverse), nextFalse.map(traverse)) match {
-          case (Some(nextTrueT), Some(nextFalseT)) => NextWithParts(
-            NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), Some(nextFalseT.next))),
-            nextTrueT.nextParts ::: nextFalseT.nextParts,
-            nextTrueT.ends ::: nextFalseT.ends
-          )
-          case (None, Some(nextFalseT)) => NextWithParts(
-            NextNode(splittednode.FilterNode(data, None, Some(nextFalseT.next))),
-            nextFalseT.nextParts,
-            DeadEnd(data.id) :: nextFalseT.ends
-          )
-          case (Some(nextTrueT), None) => NextWithParts(
-            NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), None)),
-            nextTrueT.nextParts,
-            DeadEnd(data.id) :: nextTrueT.ends
-          )
+          case (Some(nextTrueT), Some(nextFalseT)) =>
+            NextWithParts(
+              NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), Some(nextFalseT.next))),
+              nextTrueT.nextParts ::: nextFalseT.nextParts,
+              nextTrueT.ends ::: nextFalseT.ends
+            )
+          case (None, Some(nextFalseT)) =>
+            NextWithParts(
+              NextNode(splittednode.FilterNode(data, None, Some(nextFalseT.next))),
+              nextFalseT.nextParts,
+              DeadEnd(data.id) :: nextFalseT.ends
+            )
+          case (Some(nextTrueT), None) =>
+            NextWithParts(
+              NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), None)),
+              nextTrueT.nextParts,
+              DeadEnd(data.id) :: nextTrueT.ends
+            )
           case (None, None) => throw new IllegalStateException("should not happen")
         }
       case SwitchNode(data, nexts, defaultNext) =>
@@ -80,7 +83,7 @@ object ProcessSplitter {
         NextWithParts(PartRef(part.id), List(part), List.empty)
       case split: SplitNode =>
         val nextWithParts = split.nextParts.map(traverse)
-        val node = splittednode.SplitNode(split.data, nextWithParts.map(_.next))
+        val node          = splittednode.SplitNode(split.data, nextWithParts.map(_.next))
         NextWithParts(NextNode(node), nextWithParts.flatMap(_.nextParts), nextWithParts.flatMap(_.ends))
       case OneOutputSubsequentNode(other, next) =>
         traverse(next).map { nextT =>
@@ -95,7 +98,11 @@ object ProcessSplitter {
       case EndingNode(other) =>
         NextWithParts(NextNode(splittednode.EndingNode(other)), List.empty, List(NormalEnd(other.id)))
       case BranchEnd(branchEndData) =>
-        NextWithParts(NextNode(splittednode.EndingNode(branchEndData)), List.empty, List(end.BranchEnd(branchEndData.definition)))
+        NextWithParts(
+          NextNode(splittednode.EndingNode(branchEndData)),
+          List.empty,
+          List(end.BranchEnd(branchEndData.definition))
+        )
       case FragmentNode(id, _) =>
         throw new RuntimeException("Should not happen")
 

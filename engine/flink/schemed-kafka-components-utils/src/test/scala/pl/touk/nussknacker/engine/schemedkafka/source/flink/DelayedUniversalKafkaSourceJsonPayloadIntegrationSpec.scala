@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.SimpleKafkaJsonSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 
-class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec  {
+class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec {
 
   override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 

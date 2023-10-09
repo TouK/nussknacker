@@ -19,19 +19,19 @@ import sttp.model.{MediaType, StatusCode}
 import java.util.UUID
 
 class DictsFlowTest
-  extends AnyFunSuiteLike
+    extends AnyFunSuiteLike
     with NuItTest
     with WithTestHttpClient
     with Matchers
     with OptionValues
     with EitherValuesDetailedMessage {
 
-  private val DictId = "dict"
+  private val DictId         = "dict"
   private val VariableNodeId = "variableCheck"
-  private val VariableName = "variableToCheck"
-  private val EndNodeId = "end"
-  private val Key = "foo"
-  private val Label = "Foo"
+  private val VariableName   = "variableToCheck"
+  private val EndNodeId      = "end"
+  private val Key            = "foo"
+  private val Label          = "Foo"
 
   override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
@@ -39,12 +39,13 @@ class DictsFlowTest
     val response1 = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=fo")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Ok
     response1.bodyAsJson shouldEqual Json.arr(
       Json.obj(
-        "key" -> Json.fromString(Key),
+        "key"   -> Json.fromString(Key),
         "label" -> Json.fromString(Label)
       )
     )
@@ -52,14 +53,16 @@ class DictsFlowTest
     val response2 = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/notExisting/entry?label=fo")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.NotFound
 
     val response3 = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/$Streaming/dict/$DictId/entry?label=notexisting")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response3.code shouldEqual StatusCode.Ok
     response3.bodyAsJson shouldEqual Json.arr()
@@ -82,7 +85,8 @@ class DictsFlowTest
         .post(uri"$nuDesignerHttpAddress/api/processValidation")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJson(process).spaces2)
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Ok
     val invalidNodesJson = response1.extractFieldJsonValue("errors", "invalidNodes")
@@ -93,14 +97,20 @@ class DictsFlowTest
 
     val invalidNodesAfterSave = extractValidationResult(process)
     invalidNodesAfterSave.asObject.value should have size 1
-    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
+    invalidNodesAfterSave.hcursor
+      .downField(VariableNodeId)
+      .downN(0)
+      .downField("typ")
+      .as[String]
+      .rightValue shouldEqual {
       "ExpressionParserCompilationError"
     }
 
     val response2 = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
 
@@ -127,13 +137,14 @@ class DictsFlowTest
 
   test("export process with expression using dict") {
     val expressionUsingDictWithLabel = s"#DICT.$Label"
-    val expressionUsingDictWithKey = s"#DICT.$Key"
+    val expressionUsingDictWithKey   = s"#DICT.$Key"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
 
     val response1 = httpClient.send(
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processes/${process.id}/Category1?isFragment=false")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Created
 
@@ -142,14 +153,19 @@ class DictsFlowTest
         .post(uri"$nuDesignerHttpAddress/api/processesExport")
         .contentType(MediaType.ApplicationJson)
         .body(TestProcessUtil.toJson(process).noSpaces)
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
     val returnedEndResultExpression = extractVariableExpressionFromProcessExportResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual expressionUsingDictWithKey
   }
 
-  private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
+  private def saveProcessAndTestIt(
+      process: CanonicalProcess,
+      expressionUsingDictWithLabel: String,
+      expectedResult: String
+  ) = {
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
 
     val response = httpClient.send(
@@ -158,11 +174,12 @@ class DictsFlowTest
         .contentType(MediaType.MultipartFormData)
         .multipartBody(
           sttpPrepareMultiParts(
-            "testData" -> """{"sourceId":"source","record":"field1|field2"}""",
+            "testData"    -> """{"sourceId":"source","record":"field1|field2"}""",
             "processJson" -> TestProcessUtil.toJson(process).noSpaces
           )()
         )
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
 
     response.code shouldEqual StatusCode.Ok
@@ -178,7 +195,10 @@ class DictsFlowTest
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
       .emptySink(EndNodeId, "dead-end-lite")
 
-  private def saveProcessAndExtractValidationResult(process: CanonicalProcess, endResultExpressionToPost: String): Json = {
+  private def saveProcessAndExtractValidationResult(
+      process: CanonicalProcess,
+      endResultExpressionToPost: String
+  ): Json = {
     createEmptyScenario(process.id)
 
     val response1 = httpClient.send(
@@ -186,7 +206,8 @@ class DictsFlowTest
         .post(uri"$nuDesignerHttpAddress/api/processValidation")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJson(process).spaces2)
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response1.code shouldEqual StatusCode.Ok
     response1.extractFieldJsonValue("errors", "invalidNodes").asObject.value shouldBe empty
@@ -196,7 +217,8 @@ class DictsFlowTest
     val response2 = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
     val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
@@ -209,7 +231,8 @@ class DictsFlowTest
     val response = httpClient.send(
       quickRequest
         .post(uri"$nuDesignerHttpAddress/api/processes/$processId/Category1?isFragment=false")
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response.code shouldEqual StatusCode.Created
   }
@@ -220,7 +243,8 @@ class DictsFlowTest
         .put(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
-        .auth.basic("admin", "admin")
+        .auth
+        .basic("admin", "admin")
     )
     response.code shouldEqual StatusCode.Ok
     response.extractFieldJsonValue("errors", "invalidNodes")
@@ -250,8 +274,7 @@ class DictsFlowTest
   }
 
   private def extractedVariableResultFrom(json: Json) = {
-    json
-      .hcursor
+    json.hcursor
       .downField("results")
       .downField("nodeResults")
       .downField(EndNodeId)
@@ -260,7 +283,8 @@ class DictsFlowTest
       .downField("variables")
       .downField(VariableName)
       .downField("pretty")
-      .as[String].rightValue
+      .as[String]
+      .rightValue
   }
 
 }

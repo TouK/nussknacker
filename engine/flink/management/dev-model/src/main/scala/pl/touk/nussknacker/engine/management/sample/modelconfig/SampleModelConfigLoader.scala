@@ -8,8 +8,12 @@ import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, Model
 
 class SampleModelConfigLoader extends ModelConfigLoader {
 
-  override def resolveInputConfigDuringExecution(inputConfig: Config, configWithDefaults: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
-    val withExtractors = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
+  override def resolveInputConfigDuringExecution(
+      inputConfig: Config,
+      configWithDefaults: Config,
+      classLoader: ClassLoader
+  ): InputConfigDuringExecution = {
+    val withExtractors          = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
     val valueFromOriginalConfig = configWithDefaults.getAs[String]("configValueToLoadFrom").getOrElse("notFound")
     InputConfigDuringExecution(
       withExtractors

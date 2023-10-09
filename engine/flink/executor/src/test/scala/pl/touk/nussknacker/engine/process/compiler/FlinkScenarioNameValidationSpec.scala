@@ -23,14 +23,13 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
         .emptySink("emptySink", "monitor")
 
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, ConfigFactory.empty())
-    val modelData = LocalModelData(config, creator)
-    val processValidator = ProcessValidator.default(modelData, None)
+    val modelData                     = LocalModelData(config, creator)
+    val processValidator              = ProcessValidator.default(modelData, None)
 
     val validationResult = processValidator
       .validate(processWithInvalidName)
 
-    validationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ScenarioNameValidationError(_, _), _)) =>
+    validationResult.result should matchPattern { case Invalid(NonEmptyList(ScenarioNameValidationError(_, _), _)) =>
     }
   }
 

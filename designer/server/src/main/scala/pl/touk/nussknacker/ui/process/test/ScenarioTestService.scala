@@ -22,12 +22,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ScenarioTestService {
 
-  def apply(providers: ProcessingTypeDataProvider[ModelData, _],
-            testDataSettings: TestDataSettings,
-            processResolving: UIProcessResolving,
-            processCounter: ProcessCounter,
-            testExecutorService: ScenarioTestExecutorService,
-           ): ScenarioTestService = {
+  def apply(
+      providers: ProcessingTypeDataProvider[ModelData, _],
+      testDataSettings: TestDataSettings,
+      processResolving: UIProcessResolving,
+      processCounter: ProcessCounter,
+      testExecutorService: ScenarioTestExecutorService,
+  ): ScenarioTestService = {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
@@ -40,63 +41,84 @@ object ScenarioTestService {
 
 }
 
-class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
-                          testDataSettings: TestDataSettings,
-                          preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
-                          processResolving: UIProcessResolving,
-                          processCounter: ProcessCounter,
-                          testExecutorService: ScenarioTestExecutorService,
-                         ) extends LazyLogging {
+class ScenarioTestService(
+    testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
+    testDataSettings: TestDataSettings,
+    preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
+    processResolving: UIProcessResolving,
+    processCounter: ProcessCounter,
+    testExecutorService: ScenarioTestExecutorService,
+) extends LazyLogging {
 
   def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical = toCanonicalProcess(displayableProcess)
+    val canonical        = toCanonicalProcess(displayableProcess)
     testInfoProvider.getTestingCapabilities(canonical)
   }
 
   def testParametersDefinition(displayableProcess: DisplayableProcess): List[UISourceParameters] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical = toCanonicalProcess(displayableProcess)
-    testInfoProvider.getTestParameters(canonical)
-      .map{case (id, params) => UISourceParameters(id, params.map(UIProcessObjectsFactory.createUIParameter))}.toList
+    val canonical        = toCanonicalProcess(displayableProcess)
+    testInfoProvider
+      .getTestParameters(canonical)
+      .map { case (id, params) => UISourceParameters(id, params.map(UIProcessObjectsFactory.createUIParameter)) }
+      .toList
   }
 
   def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical = toCanonicalProcess(displayableProcess)
+    val canonical        = toCanonicalProcess(displayableProcess)
 
     for {
-      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
-      generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
+      _ <- Either.cond(
+        testSampleSize <= testDataSettings.maxSamplesCount,
+        (),
+        s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}"
+      )
+      generatedData <- testInfoProvider
+        .generateTestData(canonical, testSampleSize)
+        .toRight("Test data could not be generated for scenario")
       rawTestData <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 
-  def performTest[T](idWithName: ProcessIdWithName,
-                     displayableProcess: DisplayableProcess,
-                     rawTestData: RawScenarioTestData,
-                     testResultsVariableEncoder: Any => T)
-                    (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+  def performTest[T](
+      idWithName: ProcessIdWithName,
+      displayableProcess: DisplayableProcess,
+      rawTestData: RawScenarioTestData,
+      testResultsVariableEncoder: Any => T
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
-      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe.deserialize(rawTestData)
+      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
+        .deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
-      scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)
+      scenarioTestData <- testInfoProvider
+        .prepareTestData(preliminaryScenarioTestData, canonical)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, displayableProcess.processingType, scenarioTestData, testResultsVariableEncoder)
+      testResults <- testExecutorService.testProcess(
+        idWithName,
+        canonical,
+        displayableProcess.category,
+        displayableProcess.processingType,
+        scenarioTestData,
+        testResultsVariableEncoder
+      )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }
 
-  def performTest[T](idWithName: ProcessIdWithName,
-                     displayableProcess: DisplayableProcess,
-                     parameterTestData: TestSourceParameters,
-                     testResultsVariableEncoder: Any => T)
-                    (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+  def performTest[T](
+      idWithName: ProcessIdWithName,
+      displayableProcess: DisplayableProcess,
+      parameterTestData: TestSourceParameters,
+      testResultsVariableEncoder: Any => T
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val canonical = toCanonicalProcess(displayableProcess)
     for {
-      testResults <- testExecutorService.testProcess(idWithName,
+      testResults <- testExecutorService.testProcess(
+        idWithName,
         canonical,
         displayableProcess.category,
         displayableProcess.processingType,
@@ -115,7 +137,9 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
   private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
     if (testDataResultApproxByteSize > testDataSettings.resultsMaxBytes) {
-      logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: ${testDataSettings.resultsMaxBytes}")
+      logger.info(
+        s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: ${testDataSettings.resultsMaxBytes}"
+      )
       Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
     } else {
       Future.successful(())
@@ -128,4 +152,5 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     }
     processCounter.computeCounts(canonical, counts.get)
   }
+
 }

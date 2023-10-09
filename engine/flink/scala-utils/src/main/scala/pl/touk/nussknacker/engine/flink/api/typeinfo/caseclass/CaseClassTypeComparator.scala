@@ -29,10 +29,10 @@ import org.apache.flink.types.{KeyFieldOutOfBoundsException, NullKeyFieldExcepti
  */
 @Internal
 class CaseClassComparator[T <: Product](
-                                         keys: Array[Int],
-                                         scalaComparators: Array[TypeComparator[_]],
-                                         scalaSerializers: Array[TypeSerializer[_]])
-  extends TupleComparatorBase[T](keys, scalaComparators, scalaSerializers) {
+    keys: Array[Int],
+    scalaComparators: Array[TypeComparator[_]],
+    scalaSerializers: Array[TypeSerializer[_]]
+) extends TupleComparatorBase[T](keys, scalaComparators, scalaSerializers) {
 
   private val extractedKeys = new Array[AnyRef](keys.length)
 
@@ -51,8 +51,8 @@ class CaseClassComparator[T <: Product](
 
   def hash(value: T): Int = {
     val comparator = comparators(0).asInstanceOf[TypeComparator[Any]]
-    var code: Int = comparator.hash(value.productElement(keyPositions(0)))
-    var i = 1
+    var code: Int  = comparator.hash(value.productElement(keyPositions(0)))
+    var i          = 1
     try {
       while (i < keyPositions.length) {
         code *= TupleComparatorBase.HASH_SALT(i & 0x1f)
@@ -109,7 +109,7 @@ class CaseClassComparator[T <: Product](
     try {
       while (i < keyPositions.length) {
         val keyPos: Int = keyPositions(i)
-        val comparator = comparators(i).asInstanceOf[TypeComparator[Any]]
+        val comparator  = comparators(i).asInstanceOf[TypeComparator[Any]]
         val cmp: Int =
           comparator.compare(first.productElement(keyPos), second.productElement(keyPos))
         if (cmp != 0) {
@@ -128,8 +128,8 @@ class CaseClassComparator[T <: Product](
 
   def putNormalizedKey(value: T, target: MemorySegment, offsetParam: Int, numBytesParam: Int): Unit = {
     var numBytes = numBytesParam
-    var offset = offsetParam
-    var i: Int = 0
+    var offset   = offsetParam
+    var i: Int   = 0
     try {
       while (i < numLeadingNormalizableKeys && numBytes > 0) {
         {
@@ -151,16 +151,14 @@ class CaseClassComparator[T <: Product](
     val in = value.asInstanceOf[T]
 
     var localIndex: Int = index
-    var i = 0
+    var i               = 0
     while (i < comparators.length) {
-      localIndex += comparators(i).extractKeys(
-        in.productElement(keyPositions(i)),
-        target,
-        localIndex)
+      localIndex += comparators(i).extractKeys(in.productElement(keyPositions(i)), target, localIndex)
 
       i += 1
     }
 
     localIndex - index
   }
+
 }

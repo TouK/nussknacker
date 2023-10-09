@@ -8,17 +8,21 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 
-class CronSchedulePropertyExtractorTest extends AnyFunSuite
-  with Matchers with EitherValuesDetailedMessage with ValidatedValuesDetailedMessage with Inside {
+class CronSchedulePropertyExtractorTest
+    extends AnyFunSuite
+    with Matchers
+    with EitherValuesDetailedMessage
+    with ValidatedValuesDetailedMessage
+    with Inside {
 
   private val extractor = CronSchedulePropertyExtractor()
 
   test("should fail for missing cron property") {
     val process =
-        ScenarioBuilder
-          .streaming("test")
-          .source("test", "test")
-          .emptySink("test", "test")
+      ScenarioBuilder
+        .streaming("test")
+        .source("test", "test")
+        .emptySink("test", "test")
 
     val result = extractor(process)
     inside(result) { case Left("cron property is missing") => }
@@ -32,17 +36,19 @@ class CronSchedulePropertyExtractorTest extends AnyFunSuite
 
   test("should extract cron property") {
     val result = extractor(PeriodicProcessGen.buildCanonicalProcess())
-    
+
     inside(result) { case Right(CronScheduleProperty(_)) => }
   }
 
   test("should extract MultipleScheduleProperty") {
     val multipleSchedulesExpression = "{foo: '0 0 * * * ?', bar: '1 0 * * * ?'}"
-    val result = extractor(PeriodicProcessGen.buildCanonicalProcess(multipleSchedulesExpression))
-    result.rightValue shouldEqual MultipleScheduleProperty(Map(
-      "foo" -> CronScheduleProperty("0 0 * * * ?"),
-      "bar" -> CronScheduleProperty("1 0 * * * ?")
-    ))
+    val result                      = extractor(PeriodicProcessGen.buildCanonicalProcess(multipleSchedulesExpression))
+    result.rightValue shouldEqual MultipleScheduleProperty(
+      Map(
+        "foo" -> CronScheduleProperty("0 0 * * * ?"),
+        "bar" -> CronScheduleProperty("1 0 * * * ?")
+      )
+    )
 
     validate(multipleSchedulesExpression).validValue
   }

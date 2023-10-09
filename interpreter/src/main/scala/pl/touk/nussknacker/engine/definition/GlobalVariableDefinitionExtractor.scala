@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.definition
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
+  ComponentImplementationInvoker,
+  ObjectDefinition,
+  ObjectWithMethodDef,
+  StandardObjectWithMethodDef
+}
 
 object GlobalVariableDefinitionExtractor {
 
@@ -16,7 +21,7 @@ object GlobalVariableDefinitionExtractor {
   def extractDefinition(varWithCategories: WithCategories[AnyRef]): StandardObjectWithMethodDef = {
     val returnType = varWithCategories.value match {
       case typedGlobalVariable: TypedGlobalVariable => typedGlobalVariable.initialReturnType
-      case obj => Typed.fromInstance(obj)
+      case obj                                      => Typed.fromInstance(obj)
     }
     val objectDef = ObjectDefinition(
       parameters = Nil,
@@ -31,7 +36,8 @@ object GlobalVariableDefinitionExtractor {
       varWithCategories.value,
       objectDef,
       // Used only for services
-      classOf[Any])
+      classOf[Any]
+    )
   }
 
 }

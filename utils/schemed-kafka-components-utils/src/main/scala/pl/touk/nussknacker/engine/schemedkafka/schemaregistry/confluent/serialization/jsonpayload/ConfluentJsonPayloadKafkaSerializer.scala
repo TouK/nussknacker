@@ -17,28 +17,46 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.Sche
 import java.io.OutputStream
 
 //TODO: handle situation, where we have both json and avro payloads for one schema registry
-class ConfluentJsonPayloadKafkaSerializer(kafkaConfig: KafkaConfig,
-                                          confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
-                                          schemaEvolutionHandler: AvroSchemaEvolution,
-                                          avroSchemaOpt: Option[AvroSchema], isKey: Boolean)
-  extends ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, schemaEvolutionHandler, avroSchemaOpt, isKey = false) {
+class ConfluentJsonPayloadKafkaSerializer(
+    kafkaConfig: KafkaConfig,
+    confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
+    schemaEvolutionHandler: AvroSchemaEvolution,
+    avroSchemaOpt: Option[AvroSchema],
+    isKey: Boolean
+) extends ConfluentKafkaAvroSerializer(
+      kafkaConfig,
+      confluentSchemaRegistryClient,
+      schemaEvolutionHandler,
+      avroSchemaOpt,
+      isKey = false
+    ) {
 
-  override protected def encoderToUse(schema: Schema, out: OutputStream): Encoder = new NoWrappingJsonEncoder(schema, out)
+  override protected def encoderToUse(schema: Schema, out: OutputStream): Encoder =
+    new NoWrappingJsonEncoder(schema, out)
 
   override protected def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = {}
 
 }
 
 object ConfluentJsonPayloadSerializerFactory extends SchemaRegistryBasedSerializerFactory {
-  override def createSerializer(schemaRegistryClient: SchemaRegistryClient,
-                                kafkaConfig: KafkaConfig,
-                                schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                isKey: Boolean): Serializer[Any] = {
+
+  override def createSerializer(
+      schemaRegistryClient: SchemaRegistryClient,
+      kafkaConfig: KafkaConfig,
+      schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      isKey: Boolean
+  ): Serializer[Any] = {
     val avroSchemaOpt = schemaDataOpt.map(_.schema).map {
       case schema: AvroSchema => schema
       case schema => throw new IllegalArgumentException(s"Not supported schema type: ${schema.schemaType()}")
     }
-    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient], new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = false)
+    new ConfluentJsonPayloadKafkaSerializer(
+      kafkaConfig,
+      schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient],
+      new DefaultAvroSchemaEvolution,
+      avroSchemaOpt,
+      isKey = false
+    )
   }
 
 }

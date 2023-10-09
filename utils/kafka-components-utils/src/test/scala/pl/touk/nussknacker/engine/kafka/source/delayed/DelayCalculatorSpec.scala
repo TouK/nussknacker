@@ -11,4 +11,5 @@ class DelayCalculatorSpec extends AnyFunSuite with Matchers {
     fixedDelayCalculator.calculateDelay(5000, 4500) shouldBe 500
     fixedDelayCalculator.calculateDelay(5000, 5000) shouldBe 1000
   }
+
 }

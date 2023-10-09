@@ -16,13 +16,15 @@ import scala.jdk.CollectionConverters._
 // See pl.touk.nussknacker.defaultmodel.RunFlinkStreamingModelLocally for sample usage
 object LocalNussknackerWithSingleModel {
 
-  //default name in config
+  // default name in config
   val typeName = "streaming"
 
-  def run(modelData: ModelData,
-          deploymentManagerProvider: DeploymentManagerProvider,
-          managerConfig: Config,
-          categories: Set[String]): Resource[IO, Unit] = {
+  def run(
+      modelData: ModelData,
+      deploymentManagerProvider: DeploymentManagerProvider,
+      managerConfig: Config,
+      categories: Set[String]
+  ): Resource[IO, Unit] = {
     for {
       appConfig <- Resource.eval(IO {
         val file: File = prepareUsersFile()
@@ -30,7 +32,7 @@ object LocalNussknackerWithSingleModel {
           .parseMap(
             Map[String, Any](
               "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString,
-              "categoriesConfig" -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
+              "categoriesConfig"         -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
             ).asJava
           )
       })
@@ -38,20 +40,23 @@ object LocalNussknackerWithSingleModel {
     } yield ()
   }
 
-  def run(modelData: ModelData,
-          deploymentManagerProvider: DeploymentManagerProvider,
-          managerConfig: Config,
-          appConfig: Config): Resource[IO, Unit] = {
-    //TODO: figure out how to perform e.g. hotswap
-    val local = new LocalProcessingTypeDataProviderFactory(modelData, deploymentManagerProvider, managerConfig)
+  def run(
+      modelData: ModelData,
+      deploymentManagerProvider: DeploymentManagerProvider,
+      managerConfig: Config,
+      appConfig: Config
+  ): Resource[IO, Unit] = {
+    // TODO: figure out how to perform e.g. hotswap
+    val local      = new LocalProcessingTypeDataProviderFactory(modelData, deploymentManagerProvider, managerConfig)
     val appFactory = new NussknackerAppFactory(local)
     appFactory.createApp(appConfig)
   }
 
-  //TODO: easier way of handling users file
+  // TODO: easier way of handling users file
   private def prepareUsersFile(): File = {
     val file = Files.createTempFile("users", "conf").toFile
-    FileUtils.write(file,
+    FileUtils.write(
+      file,
       """users: [
         |  {
         |    identity: "admin"
@@ -65,8 +70,11 @@ object LocalNussknackerWithSingleModel {
         |    isAdmin: true
         |  }
         |]
-        |""".stripMargin, StandardCharsets.UTF_8)
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
     file.deleteOnExit()
     file
   }
+
 }

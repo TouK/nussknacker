@@ -40,36 +40,45 @@ trait CommentEntityFactory extends BaseEntityFactory {
 
 }
 
-
-case class CommentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, content: String, user: String, createDate: Timestamp) {
+final case class CommentEntityData(
+    id: Long,
+    processId: ProcessId,
+    processVersionId: VersionId,
+    content: String,
+    user: String,
+    createDate: Timestamp
+) {
   val createDateTime: Instant = createDate.toInstant
 }
 
 trait CommentActions {
   protected val profile: JdbcProfile
   import profile.api._
-  
+
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
-  
+
   def nextIdAction[T <: JdbcProfile](implicit jdbcProfile: T): DBIO[Long] = {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[CommentEntityData]] = {
+  def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])(
+      implicit ec: ExecutionContext,
+      loggedUser: LoggedUser
+  ): DB[Option[CommentEntityData]] = {
     comment match {
-      case Some(c) if c.value.nonEmpty => for {
-        newId <- nextIdAction
-        entityData = CommentEntityData(
-          id = newId,
-          processId = processId,
-          processVersionId = processVersionId,
-          content = c.value,
-          user = loggedUser.username,
-          createDate = Timestamp.from(Instant.now())
-        )
-        _ <- commentsTable += entityData
-      } yield Some(entityData)
+      case Some(c) if c.value.nonEmpty =>
+        for {
+          newId <- nextIdAction
+          entityData = CommentEntityData(
+            id = newId,
+            processId = processId,
+            processVersionId = processVersionId,
+            content = c.value,
+            user = loggedUser.username,
+            createDate = Timestamp.from(Instant.now())
+          )
+          _ <- commentsTable += entityData
+        } yield Some(entityData)
       case _ => DBIO.successful(None)
     }
   }

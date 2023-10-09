@@ -16,7 +16,9 @@ class FileProcessRepositoryTest extends AnyFunSuite with Matchers {
 
   private val processId = 54544L
 
-  private val canonicalProcessJson = """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"slug":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
+  private val canonicalProcessJson =
+    """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"slug":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
+
   private val deploymentJson =
     s"""
       |{
@@ -54,4 +56,5 @@ class FileProcessRepositoryTest extends AnyFunSuite with Matchers {
     deployment.deploymentTime shouldBe 5
     deployment.processJson shouldBe ProcessMarshaller.fromJsonUnsafe(canonicalProcessJson)
   }
+
 }

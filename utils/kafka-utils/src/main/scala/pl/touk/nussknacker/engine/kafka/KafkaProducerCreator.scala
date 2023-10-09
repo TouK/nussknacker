@@ -17,9 +17,11 @@ trait KafkaProducerCreator[K, V] {
 }
 
 case class DefaultProducerCreator[K, V](kafkaConfig: KafkaConfig) extends KafkaProducerCreator[K, V] {
+
   override def createProducer(clientId: String): Producer[K, V] = {
     new KafkaProducer[K, V](KafkaUtils.toProducerProperties(kafkaConfig, clientId))
   }
+
 }
 
 case class MockProducerCreator[K, V](mockProducer: MockProducer[K, V]) extends KafkaProducerCreator[K, V] {

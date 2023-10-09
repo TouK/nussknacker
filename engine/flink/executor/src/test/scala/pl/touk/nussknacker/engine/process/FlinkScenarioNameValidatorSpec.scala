@@ -11,34 +11,38 @@ class FlinkScenarioNameValidatorSpec extends AnyFlatSpec with Matchers with Tabl
   private lazy val validator = new FlinkScenarioNameValidator(ConfigFactory.empty())
 
   it should "pass valid names" in {
-    forAll(Table(
-      "scenario name",
-      "valid name",
-      "a",
-      "a a",
-      "1",
-      "_",
-      "-",
-    )) { scenarioName =>
+    forAll(
+      Table(
+        "scenario name",
+        "valid name",
+        "a",
+        "a a",
+        "1",
+        "_",
+        "-",
+      )
+    ) { scenarioName =>
       validateScenarioName(scenarioName).isValid shouldBe true
     }
   }
 
   it should "reject invalid names" in {
-    forAll(Table(
-      "scenario name",
-      " ",
-      "",
-      " a",
-      "a ",
-      " a ",
-      "ą",
-      "abc+",
-      "¹",
-      "０",
-      "あ",
-      "🚀",
-    )) { scenarioName =>
+    forAll(
+      Table(
+        "scenario name",
+        " ",
+        "",
+        " a",
+        "a ",
+        " a ",
+        "ą",
+        "abc+",
+        "¹",
+        "０",
+        "あ",
+        "🚀",
+      )
+    ) { scenarioName =>
       validateScenarioName(scenarioName).isValid shouldBe false
     }
   }

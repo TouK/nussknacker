@@ -20,7 +20,12 @@ import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
-import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData, UsedNodes}
+import pl.touk.nussknacker.engine.process.compiler.{
+  FlinkEngineRuntimeContextImpl,
+  FlinkProcessCompiler,
+  FlinkProcessCompilerData,
+  UsedNodes
+}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
@@ -42,20 +47,32 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, ResultCollector) => (UsedNodes, ClassLoader) => FlinkProcessCompilerData,
-                            streamExecutionEnvPreparer: StreamExecutionEnvPreparer) extends LazyLogging {
+class FlinkProcessRegistrar(
+    compileProcess: (CanonicalProcess, ProcessVersion, ResultCollector) => (
+        UsedNodes,
+        ClassLoader
+    ) => FlinkProcessCompilerData,
+    streamExecutionEnvPreparer: StreamExecutionEnvPreparer
+) extends LazyLogging {
 
   import FlinkProcessRegistrar._
 
   implicit def millisToTime(duration: Long): Time = Time.of(duration, TimeUnit.MILLISECONDS)
 
-  def register(env: StreamExecutionEnvironment, process: CanonicalProcess, processVersion: ProcessVersion, deploymentData: DeploymentData, testRunId: Option[TestRunId] = None): Unit = {
+  def register(
+      env: StreamExecutionEnvironment,
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
+      deploymentData: DeploymentData,
+      testRunId: Option[TestRunId] = None
+  ): Unit = {
     usingRightClassloader(env) { userClassLoader =>
-      //TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
-      val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
+      // TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
+      val collector =
+        testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
       val processCompilation = compileProcess(process, processVersion, collector)
-      val processWithDeps = processCompilation(UsedNodes.empty, userClassLoader)
+      val processWithDeps    = processCompilation(UsedNodes.empty, userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
@@ -68,7 +85,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
 
   protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.isInstanceOf[RemoteStreamEnvironment]
 
-  //In remote env we assume FlinkProcessRegistrar is loaded via userClassloader
+  // In remote env we assume FlinkProcessRegistrar is loaded via userClassloader
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: ClassLoader => Unit): Unit = {
     if (!isRemoteEnv(env)) {
       val flinkLoaderSimulation = streamExecutionEnvPreparer.flinkClassLoaderSimulation
@@ -81,42 +98,61 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
     }
   }
 
-  protected def createInterpreter(compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
+  protected def createInterpreter(
+      compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
+  ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
     (runtimeContext: RuntimeContext) =>
-      new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
+      new FlinkCompilerLazyInterpreterCreator(
+        runtimeContext,
+        compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader)
+      )
 
-  private def register(env: StreamExecutionEnvironment,
-                       compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
-                       processWithDeps: FlinkProcessCompilerData,
-                       testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
+  private def register(
+      env: StreamExecutionEnvironment,
+      compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
+      processWithDeps: FlinkProcessCompilerData,
+      testRunId: Option[TestRunId],
+      typeInformationDetection: TypeInformationDetection
+  ): Unit = {
 
-    val metaData = processWithDeps.metaData
+    val metaData         = processWithDeps.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
 
-    def nodeContext(nodeComponentId: NodeComponentInfo, validationContext: Either[ValidationContext, Map[String, ValidationContext]]): FlinkCustomNodeContext = {
+    def nodeContext(
+        nodeComponentId: NodeComponentInfo,
+        validationContext: Either[ValidationContext, Map[String, ValidationContext]]
+    ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compiledProcessWithDeps(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = processWithDeps.jobData
-      FlinkCustomNodeContext(jobData, nodeComponentId.nodeId, processWithDeps.processTimeout,
+      FlinkCustomNodeContext(
+        jobData,
+        nodeComponentId.nodeId,
+        processWithDeps.processTimeout,
         convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
-        lazyParameterHelper = new FlinkLazyParameterFunctionHelper(nodeComponentId, exceptionHandlerPreparer, createInterpreter(compiledProcessWithDeps(None))),
+        lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
+          nodeComponentId,
+          exceptionHandlerPreparer,
+          createInterpreter(compiledProcessWithDeps(None))
+        ),
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        processWithDeps.componentUseCase)
+        processWithDeps.componentUseCase
+      )
     }
 
     {
-      //it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
+      // it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
       processWithDeps.compileProcessOrFail().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
-        case (branchEnds, next: SourcePart) => branchEnds ++ registerSourcePart(next)
+        case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next)
         case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
       }
     }
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, BranchEndData] = {
-      //TODO: get rid of cast (but how??)
+      // TODO: get rid of cast (but how??)
       val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
@@ -130,55 +166,79 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
       registerNextParts(asyncAssigned, part)
     }
 
-    //thanks to correct sorting, we know that branchEnds contain all edges to joinPart
-    def registerJoinPart(joinPart: CustomNodePart,
-                         branchEnds: Map[BranchEndDefinition, BranchEndData]): Map[BranchEndDefinition, BranchEndData] = {
+    // thanks to correct sorting, we know that branchEnds contain all edges to joinPart
+    def registerJoinPart(
+        joinPart: CustomNodePart,
+        branchEnds: Map[BranchEndDefinition, BranchEndData]
+    ): Map[BranchEndDefinition, BranchEndData] = {
       val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
-          id -> (stream.map((value: InterpretationResult) => value.finalContext, typeInformationDetection.forContext(validationContext)), validationContext)
+          id -> (stream.map(
+            (value: InterpretationResult) => value.finalContext,
+            typeInformationDetection.forContext(validationContext)
+          ), validationContext)
       }
 
       val transformer = joinPart.transformer match {
-        case joinTransformer: FlinkCustomJoinTransformation => joinTransformer
+        case joinTransformer: FlinkCustomJoinTransformation                    => joinTransformer
         case JoinContextTransformation(_, impl: FlinkCustomJoinTransformation) => impl
         case other =>
           throw new IllegalArgumentException(s"Unknown join node transformer: $other")
       }
 
-      val outputVar = joinPart.node.data.outputVar.get
+      val outputVar     = joinPart.node.data.outputVar.get
       val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
       val newStart = transformer
-        .transform(inputs.mapValuesNow(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValuesNow(_._2))))
-        .map((value: ValueWithContext[AnyRef]) => newContextFun(value), typeInformationDetection.forContext(joinPart.validationContext))
+        .transform(
+          inputs.mapValuesNow(_._1),
+          nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValuesNow(_._2)))
+        )
+        .map(
+          (value: ValueWithContext[AnyRef]) => newContextFun(value),
+          typeInformationDetection.forContext(joinPart.validationContext)
+        )
 
       val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)
       registerNextParts(afterSplit, joinPart)
     }
 
-    //the method returns all possible branch ends in part, together with DataStream leading to them
-    def registerNextParts(start: SingleOutputStreamOperator[Unit], part: PotentiallyStartPart): Map[BranchEndDefinition, BranchEndData] = {
-      val branchesForParts = part.nextParts.map { part =>
-        val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore)
-        val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
+    // the method returns all possible branch ends in part, together with DataStream leading to them
+    def registerNextParts(
+        start: SingleOutputStreamOperator[Unit],
+        part: PotentiallyStartPart
+    ): Map[BranchEndDefinition, BranchEndData] = {
+      val branchesForParts = part.nextParts
+        .map { part =>
+          val typeInformationForTi =
+            InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore)
+          val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
-        registerSubsequentPart(sideOutput(start, new OutputTag[InterpretationResult](part.id, typeInformationForTi))
-          .map((value: InterpretationResult) => value.finalContext, typeInformationForVC), part)
-      }.foldLeft(Map[BranchEndDefinition, BranchEndData]()) {
-        _ ++ _
-      }
-      val branchForEnds = part.ends.collect {
-        case TypedEnd(be: BranchEnd, validationContext) =>
-          val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext)
-          be.definition -> BranchEndData(validationContext, sideOutput(start, new OutputTag[InterpretationResult](be.nodeId, ti)))
+          registerSubsequentPart(
+            sideOutput(start, new OutputTag[InterpretationResult](part.id, typeInformationForTi))
+              .map((value: InterpretationResult) => value.finalContext, typeInformationForVC),
+            part
+          )
+        }
+        .foldLeft(Map[BranchEndDefinition, BranchEndData]()) {
+          _ ++ _
+        }
+      val branchForEnds = part.ends.collect { case TypedEnd(be: BranchEnd, validationContext) =>
+        val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext)
+        be.definition -> BranchEndData(
+          validationContext,
+          sideOutput(start, new OutputTag[InterpretationResult](be.nodeId, ti))
+        )
       }.toMap
       branchesForParts ++ branchForEnds
     }
 
-    def registerSubsequentPart(start: SingleOutputStreamOperator[Context],
-                                  processPart: SubsequentPart): Map[BranchEndDefinition, BranchEndData] =
+    def registerSubsequentPart(
+        start: SingleOutputStreamOperator[Context],
+        processPart: SubsequentPart
+    ): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
-        case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
+        case part @ SinkPart(sink: FlinkSink, _, contextBefore, _) =>
           registerSinkPark(start, part, sink, contextBefore)
         case part: SinkPart =>
           // TODO: fixme "part.obj" is not stringified well
@@ -188,28 +248,35 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
           registerCustomNodePart(start, part)
       }
 
-    def registerSinkPark(start: SingleOutputStreamOperator[Context],
-                            part: SinkPart,
-                            sink: FlinkSink,
-                            contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
-      val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore)
+    def registerSinkPark(
+        start: SingleOutputStreamOperator[Context],
+        part: SinkPart,
+        sink: FlinkSink,
+        contextBefore: ValidationContext
+    ): Map[BranchEndDefinition, BranchEndData] = {
+      val typeInformationForIR  = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore)
       val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
-      val afterInterpretation = sideOutput(registerInterpretationPart(start, part, SinkInterpretationName),
-        new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR))
+      val afterInterpretation = sideOutput(
+        registerInterpretationPart(start, part, SinkInterpretationName),
+        new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR)
+      )
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
-      //TODO: maybe this logic should be moved to compiler instead?
+      // TODO: maybe this logic should be moved to compiler instead?
       val withSinkAdded = testRunId match {
         case None =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
         case Some(runId) =>
-          val typ = part.node.data.ref.typ
+          val typ            = part.node.data.ref.typ
           val collectingSink = SinkInvocationCollector(runId, part.id, typ)
           withValuePrepared
-            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), customNodeContext.valueWithContextInfo.forUnknown)
-            //FIXME: ...
+            .map(
+              (ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue),
+              customNodeContext.valueWithContextInfo.forUnknown
+            )
+            // FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
       }
 
@@ -217,8 +284,10 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
       Map()
     }
 
-    def registerCustomNodePart(start: DataStream[Context],
-                                  part: CustomNodePart): Map[BranchEndDefinition, BranchEndData] = {
+    def registerCustomNodePart(
+        start: DataStream[Context],
+        part: CustomNodePart
+    ): Map[BranchEndDefinition, BranchEndData] = {
       val transformer = part.transformer match {
         case t: FlinkCustomStreamTransformation => t
         case other =>
@@ -228,41 +297,66 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
       val newContextFun: ValueWithContext[_] => Context = part.node.data.outputVar match {
         case Some(name) => vwc => vwc.context.withVariable(name, vwc.value)
-        case None => _.context
+        case None       => _.context
       }
       val transformed = transformer
         .transform(start, customNodeContext)
-        .map((value: ValueWithContext[_]) => newContextFun(value), typeInformationDetection.forContext(part.validationContext))
+        .map(
+          (value: ValueWithContext[_]) => newContextFun(value),
+          typeInformationDetection.forContext(part.validationContext)
+        )
       // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
       registerNextParts(afterInterpretation, part)
     }
 
-    def registerInterpretationPart(stream: SingleOutputStreamOperator[Context],
-                                   part: ProcessPart,
-                                   name: String): SingleOutputStreamOperator[Unit] = {
-      val node = part.node
+    def registerInterpretationPart(
+        stream: SingleOutputStreamOperator[Context],
+        part: ProcessPart,
+        name: String
+    ): SingleOutputStreamOperator[Unit] = {
+      val node              = part.node
       val validationContext = part.validationContext
       val outputContexts = part.ends.map(pe => pe.end.nodeId -> pe.validationContext).toMap ++ (part match {
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
-        case _ => Map.empty
+        case _                       => Map.empty
       })
       val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
-      val metaData = processWithDeps.metaData
-      val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())
+      val metaData                      = processWithDeps.metaData
+      val streamMetaData =
+        MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())
 
       val configParameters = globalParameters.flatMap(_.configParameters)
-      val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
-      val shouldUseAsyncInterpretation = AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
+      val useIOMonad       = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
+      val shouldUseAsyncInterpretation =
+        AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
 
       val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
-        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, asyncExecutionContextPreparer, useIOMonad)
+        val asyncFunction = new AsyncInterpretationFunction(
+          compiledProcessWithDeps(Some(part)),
+          node,
+          validationContext,
+          asyncExecutionContextPreparer,
+          useIOMonad
+        )
         ExplicitUidInOperatorsSupport.setUidIfNeedJava[InterpretationResult](
-          ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
-          AsyncDataStream.orderedWait(stream, asyncFunction, processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
+          ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters),
+          node.id + "-$async"
+        )(
+          AsyncDataStream.orderedWait(
+            stream,
+            asyncFunction,
+            processWithDeps.processTimeout.toMillis,
+            TimeUnit.MILLISECONDS,
+            asyncExecutionContextPreparer.bufferSize
+          )
+        )
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
-        stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad), ti)
+        stream.flatMap(
+          new SyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad),
+          ti
+        )
       }
 
       resultStream
@@ -272,70 +366,84 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
 
   }
 
-  private def sideOutput[T](stream: SingleOutputStreamOperator[_], tag: OutputTag[T])
-    = streamExecutionEnvPreparer.sideOutputGetter(stream, tag)
+  private def sideOutput[T](stream: SingleOutputStreamOperator[_], tag: OutputTag[T]) =
+    streamExecutionEnvPreparer.sideOutputGetter(stream, tag)
 
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
     fromNodeData(processPart.node.data)
   }
+
 }
 
 object FlinkProcessRegistrar {
 
-  private[registrar] final val EndId = "$end"
-  final val InterpretationName = "interpretation"
+  private[registrar] final val EndId     = "$end"
+  final val InterpretationName           = "interpretation"
   final val CustomNodeInterpretationName = "customNodeInterpretation"
-  final val SinkInterpretationName = "sinkInterpretation"
-  final val BranchInterpretationName = "branchInterpretation"
+  final val SinkInterpretationName       = "sinkInterpretation"
+  final val BranchInterpretationName     = "branchInterpretation"
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  private def partCompilation[T](original: (UsedNodes, ClassLoader) => T)(part: Option[ProcessPart]): ClassLoader => T = {
-    val (nodesToUse, endingParts) = part.map { part =>
-      (SplittedNodesCollector.collectNodes(part.node).map(_.data),
-        part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(_.id))
-    }.getOrElse((Set.empty, Nil))
+  private def partCompilation[T](
+      original: (UsedNodes, ClassLoader) => T
+  )(part: Option[ProcessPart]): ClassLoader => T = {
+    val (nodesToUse, endingParts) = part
+      .map { part =>
+        (
+          SplittedNodesCollector.collectNodes(part.node).map(_.data),
+          part.cast[PotentiallyStartPart].toList.flatMap(_.nextParts).map(_.id)
+        )
+      }
+      .getOrElse((Set.empty, Nil))
     original(UsedNodes(nodesToUse, endingParts), _)
   }
-
-
 
   def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
     val config = compiler.processConfig
 
     val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
-    val rocksDBStateBackendConfig = config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
+    val rocksDBStateBackendConfig =
+      config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
 
     val defaultStreamExecutionEnvPreparer =
-      ScalaServiceLoader.load[FlinkCompatibilityProvider](getClass.getClassLoader)
-        .headOption.map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
-        .getOrElse(new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig))
+      ScalaServiceLoader
+        .load[FlinkCompatibilityProvider](getClass.getClassLoader)
+        .headOption
+        .map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
+        .getOrElse(
+          new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig)
+        )
     new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
   }
 
-  private[registrar] def operatorName(metaData: MetaData,
-                                      splittedNode: splittednode.SplittedNode[NodeData],
-                                      operation: String) = {
+  private[registrar] def operatorName(
+      metaData: MetaData,
+      splittedNode: splittednode.SplittedNode[NodeData],
+      operation: String
+  ) = {
     s"${metaData.id}-${splittedNode.id}-$operation"
   }
 
-  private[registrar] def interpretationOperatorName(metaData: MetaData,
-                                                    splittedNode: splittednode.SplittedNode[NodeData],
-                                                    interpretationName: String,
-                                                    shouldUseAsyncInterpretation: Boolean): String = {
+  private[registrar] def interpretationOperatorName(
+      metaData: MetaData,
+      splittedNode: splittednode.SplittedNode[NodeData],
+      interpretationName: String,
+      shouldUseAsyncInterpretation: Boolean
+  ): String = {
     interpretationOperatorName(metaData.id, splittedNode.id, interpretationName, shouldUseAsyncInterpretation)
   }
 
-  private[registrar] def interpretationOperatorName(scenarioId: String,
-                                                    nodeId: String,
-                                                    interpretationName: String,
-                                                    shouldUseAsyncInterpretation: Boolean) = {
+  private[registrar] def interpretationOperatorName(
+      scenarioId: String,
+      nodeId: String,
+      interpretationName: String,
+      shouldUseAsyncInterpretation: Boolean
+  ) = {
     s"$scenarioId-$nodeId-$interpretationName${if (shouldUseAsyncInterpretation) "Async" else "Sync"}"
   }
 
 }
 
 case class BranchEndData(validationContext: ValidationContext, stream: DataStream[InterpretationResult])
-
-

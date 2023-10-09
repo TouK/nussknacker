@@ -7,14 +7,16 @@ import sttp.client3.SttpBackendOptions
 
 import scala.concurrent.duration._
 
-case class HttpClientConfig(timeout: Option[FiniteDuration],
-                            connectTimeout: Option[FiniteDuration],
-                            maxPoolSize: Option[Int],
-                            useNative: Option[Boolean],
-                            followRedirect: Option[Boolean],
-                            forceShutdown: Option[Boolean],
-                            //this can be used to tune single scenario
-                            configForProcess: Option[Map[String, HttpClientConfig]]) {
+case class HttpClientConfig(
+    timeout: Option[FiniteDuration],
+    connectTimeout: Option[FiniteDuration],
+    maxPoolSize: Option[Int],
+    useNative: Option[Boolean],
+    followRedirect: Option[Boolean],
+    forceShutdown: Option[Boolean],
+    // this can be used to tune single scenario
+    configForProcess: Option[Map[String, HttpClientConfig]]
+) {
 
   def toAsyncHttpClientConfig(processId: Option[String]): DefaultAsyncHttpClientConfig.Builder = {
     val effectiveConfig = toEffectiveHttpClientConfig(processId)
@@ -41,24 +43,27 @@ case class HttpClientConfig(timeout: Option[FiniteDuration],
       timeout = extractConfig(_.timeout, DefaultHttpClientConfig.timeout),
       connectTimeout = extractConfig(_.connectTimeout, DefaultHttpClientConfig.timeout),
       maxPoolSize = extractConfig(_.maxPoolSize, DefaultHttpClientConfig.maxPoolSize),
-      //FIXME: does not work by default?
+      // FIXME: does not work by default?
       useNative = extractConfig(_.useNative, false),
       followRedirect = extractConfig(_.followRedirect, false),
       forceShutdown = extractConfig(_.forceShutdown, false)
     )
   }
+
 }
 
 object HttpClientConfig {
 
-  private case class EffectiveHttpClientConfig(timeout: FiniteDuration,
-                                               connectTimeout: FiniteDuration,
-                                               maxPoolSize: Int,
-                                               useNative: Boolean,
-                                               followRedirect: Boolean,
-                                               forceShutdown: Boolean)
+  private case class EffectiveHttpClientConfig(
+      timeout: FiniteDuration,
+      connectTimeout: FiniteDuration,
+      maxPoolSize: Int,
+      useNative: Boolean,
+      followRedirect: Boolean,
+      forceShutdown: Boolean
+  )
 
-  //ArbitraryTypeReader cannot handle nested option here... :/
+  // ArbitraryTypeReader cannot handle nested option here... :/
   implicit val vr: ValueReader[HttpClientConfig] = ValueReader.relative(conf => {
     import net.ceedubs.ficus.Ficus._
     def forOption[T](path: String)(implicit r: ValueReader[T]) = optionValueReader[T].read(conf, path)
@@ -72,11 +77,12 @@ object HttpClientConfig {
       configForProcess = forOption("configForProcess")(mapValueReader(vr))
     )
   })
+
 }
 
 object DefaultHttpClientConfig {
 
-  def apply() : HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None)
+  def apply(): HttpClientConfig = HttpClientConfig(None, None, None, None, None, None, None)
 
   val maxPoolSize: Int = 20
 

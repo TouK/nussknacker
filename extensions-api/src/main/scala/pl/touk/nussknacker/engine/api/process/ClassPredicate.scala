@@ -88,8 +88,8 @@ case class SuperClassPredicate(classPredicate: ClassPredicate) extends ClassPred
   def matches(clazz: Class[_]): Boolean = {
     // this is meant to be fast and do minimal allocations
     classPredicate.matches(clazz) ||
-      ClassUtils.getAllSuperclasses(clazz).asScala.exists(cl => classPredicate.matches(cl)) ||
-      ClassUtils.getAllInterfaces(clazz).asScala.exists(cl => classPredicate.matches(cl))
+    ClassUtils.getAllSuperclasses(clazz).asScala.exists(cl => classPredicate.matches(cl)) ||
+    ClassUtils.getAllInterfaces(clazz).asScala.exists(cl => classPredicate.matches(cl))
   }
 
 }

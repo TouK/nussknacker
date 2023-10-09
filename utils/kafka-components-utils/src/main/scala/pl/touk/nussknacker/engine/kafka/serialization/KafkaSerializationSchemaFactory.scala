@@ -20,7 +20,7 @@ trait KafkaSerializationSchemaFactory[T] extends Serializable {
   * @tparam T type of serialized object
   */
 case class FixedKafkaSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
-  extends KafkaSerializationSchemaFactory[T] {
+    extends KafkaSerializationSchemaFactory[T] {
 
   override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
     deserializationSchema(topic)

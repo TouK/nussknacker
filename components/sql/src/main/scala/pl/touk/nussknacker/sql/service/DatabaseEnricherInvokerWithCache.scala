@@ -15,38 +15,61 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object DatabaseEnricherInvokerWithCache {
 
-  case class CacheKey(query: String, queryArguments: QueryArguments)
-  case class CacheEntry[+A](value: A)
+  final case class CacheKey(query: String, queryArguments: QueryArguments)
+  final case class CacheEntry[+A](value: A)
 }
 
-class DatabaseEnricherInvokerWithCache(query: String,
-                                       argsCount: Int,
-                                       tableDef: TableDefinition,
-                                       strategy: QueryResultStrategy,
-                                       queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
-                                       cacheTTL: Duration,
-                                       override val returnType: typing.TypingResult,
-                                       override val getConnection: () => Connection,
-                                       override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement) extends DatabaseEnricherInvoker(query, argsCount, tableDef, strategy, queryArgumentsExtractor, returnType, getConnection, getTimeMeasurement) {
+class DatabaseEnricherInvokerWithCache(
+    query: String,
+    argsCount: Int,
+    tableDef: TableDefinition,
+    strategy: QueryResultStrategy,
+    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    cacheTTL: Duration,
+    override val returnType: typing.TypingResult,
+    override val getConnection: () => Connection,
+    override val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+) extends DatabaseEnricherInvoker(
+      query,
+      argsCount,
+      tableDef,
+      strategy,
+      queryArgumentsExtractor,
+      returnType,
+      getConnection,
+      getTimeMeasurement
+    ) {
   import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
-  private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine.newBuilder()
+  private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine
+    .newBuilder()
     .expireAfterWrite(cacheTTL)
     .buildAsync[CacheKey, CacheEntry[queryExecutor.QueryResult]]
 
   import scala.compat.java8.FutureConverters._
 
-  override def invokeService(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] = {
+  override def invokeService(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector,
+      contextId: ContextId,
+      componentUseCase: ComponentUseCase
+  ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
       val queryArguments = queryArgumentsExtractor(argsCount, params)
-      val cacheKey = CacheKey(query, queryArguments)
+      val cacheKey       = CacheKey(query, queryArguments)
 
-      cache.get(cacheKey, (k, unused) => {
-        // we use our own executor
-        queryDatabase(k.queryArguments).map(CacheEntry(_)).toJava.toCompletableFuture
-      }).toScala.map(_.value)
+      cache
+        .get(
+          cacheKey,
+          (k, unused) => {
+            // we use our own executor
+            queryDatabase(k.queryArguments).map(CacheEntry(_)).toJava.toCompletableFuture
+          }
+        )
+        .toScala
+        .map(_.value)
     }
   }
+
 }

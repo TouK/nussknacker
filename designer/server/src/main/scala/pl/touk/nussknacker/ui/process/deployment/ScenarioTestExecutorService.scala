@@ -11,17 +11,28 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
-  def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, processingType: ProcessingType,
-                     scenarioTestData: ScenarioTestData, variableEncoder: Any => T)
-                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
+  def testProcess[T](
+      id: ProcessIdWithName,
+      canonicalProcess: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
 
 }
 
-class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver,
-                                      dispatcher: DeploymentManagerDispatcher) extends ScenarioTestExecutorService {
-  override def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, processingType: ProcessingType,
-                              scenarioTestData: ScenarioTestData, variableEncoder: Any => T)
-                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
+class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, dispatcher: DeploymentManagerDispatcher)
+    extends ScenarioTestExecutorService {
+
+  override def testProcess[T](
+      id: ProcessIdWithName,
+      canonicalProcess: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
       manager = dispatcher.deploymentManagerUnsafe(processingType)

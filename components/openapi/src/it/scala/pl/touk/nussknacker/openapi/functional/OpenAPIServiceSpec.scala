@@ -23,30 +23,40 @@ import java.net.URL
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
+class OpenAPIServiceSpec
+    extends FixtureAnyFunSuite
+    with BeforeAndAfterAll
+    with Matchers
+    with LazyLogging
+    with PatientScalaFutures {
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-  implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId = ContextId("testContextId")
+  implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
+  implicit val contextId: ContextId               = ContextId("testContextId")
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
   def withFixture(test: OneArgTest): Outcome = {
     val definition = ResourceLoader.load("/customer-swagger.json")
 
-
     val client = new DefaultAsyncHttpClient()
     try {
       new StubService().withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
-        val config = OpenAPIServicesConfig(new URL("http://foo"), security = Some(securities),
-          rootUrl = Some(new URL(s"http://localhost:$port")))
-        val services = SwaggerParser.parse(definition, config).collect {
-          case Valid(service) => service
+        val config = OpenAPIServicesConfig(
+          new URL("http://foo"),
+          security = Some(securities),
+          rootUrl = Some(new URL(s"http://localhost:$port"))
+        )
+        val services = SwaggerParser.parse(definition, config).collect { case Valid(service) =>
+          service
         }
 
-        val enricher = SwaggerEnrichers.prepare(config, services,
-          new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client))).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
+        val enricher = SwaggerEnrichers
+          .prepare(config, services, new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
+          .head
+          .service
+          .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
         enricher.open(TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty)))
 
         withFixture(test.toNoArgTest(enricher))
@@ -57,7 +67,6 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
   }
 
   test("service returns customers") { service =>
-
     val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }

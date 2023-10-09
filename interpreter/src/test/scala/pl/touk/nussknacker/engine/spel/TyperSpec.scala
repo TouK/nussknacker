@@ -19,15 +19,22 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("simple expression") {
-    typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
-      PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
-      PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
-      PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
-    ), TypingResultWithContext(Typed.fromInstance(4))))
+    typeExpression("#x + 2", "x" -> 2) shouldBe Valid(
+      CollectedTypingResult(
+        Map(
+          PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
+          PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
+          PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
+        ),
+        TypingResultWithContext(Typed.fromInstance(4))
+      )
+    )
   }
 
   test("template") {
-    typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String])))
+    typeTemplate("result: #{#x + 2}", "x" -> 2) shouldBe Valid(
+      CollectedTypingResult(Map.empty, TypingResultWithContext(Typed[String]))
+    )
   }
 
   test("detect proper selection types") {
@@ -58,27 +65,44 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
-  private val strictTypeChecking = false
-  private val strictMethodsChecking = false
-  private val staticMethodInvocationsChecking = false
+  private val strictTypeChecking               = false
+  private val strictMethodsChecking            = false
+  private val staticMethodInvocationsChecking  = false
   private val methodExecutionForUnknownAllowed = false
-  private val dynamicPropertyAccessAllowed = false
-  private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
-  private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-  private val dict = new SimpleDictRegistry(Map.empty)
-  private val typer = new Typer(commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking,
-    TypeDefinitionSet.forDefaultAdditionalClasses, evaluationContextPreparer = null, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)
+  private val dynamicPropertyAccessAllowed     = false
+  private val classResolutionStrategy          = SupertypeClassResolutionStrategy.Union
+  private val commonSupertypeFinder            = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
+  private val dict                             = new SimpleDictRegistry(Map.empty)
+
+  private val typer = new Typer(
+    commonSupertypeFinder,
+    new KeysDictTyper(dict),
+    strictMethodsChecking,
+    staticMethodInvocationsChecking,
+    TypeDefinitionSet.forDefaultAdditionalClasses,
+    evaluationContextPreparer = null,
+    methodExecutionForUnknownAllowed,
+    dynamicPropertyAccessAllowed
+  )
+
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
-  private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    val parsed = parser.parseExpression(expr)
+  private def typeExpression(
+      expr: String,
+      variables: (String, Any)*
+  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
     typer.typeExpression(parsed, validationCtx)
   }
 
-  private def typeTemplate(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    val parsed = parser.parseExpression(expr, new TemplateParserContext())
+  private def typeTemplate(
+      expr: String,
+      variables: (String, Any)*
+  ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    val parsed        = parser.parseExpression(expr, new TemplateParserContext())
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
     typer.typeExpression(parsed, validationCtx)
   }
+
 }

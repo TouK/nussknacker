@@ -10,13 +10,13 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
   test("should detect nested URLs in classloader") {
 
     def resource(file: String): URL = getClass.getResource("/modelClassLoader" + file)
-    val nonFileUrl = new URL("http://dummy.com")
+    val nonFileUrl                  = new URL("http://dummy.com")
 
     val urls = List(resource(""), nonFileUrl)
 
     val loader = ModelClassLoader(urls, ".jara")
 
-    //we're not using .jar to avoid messing with .gitignore
+    // we're not using .jar to avoid messing with .gitignore
     val expected = Set(
       resource("/first.jara"),
       resource("/a/second.jara"),

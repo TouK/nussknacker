@@ -21,4 +21,5 @@ object DateHelper extends HideToString {
     val duration = Duration.between(from, to)
     Math.abs(duration.toMillis())
   }
+
 }

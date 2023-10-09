@@ -16,25 +16,28 @@ trait ClassMemberPredicate {
 
 object ClassMemberPredicate {
 
-  def apply(classPredicate: ClassPredicate, p: PartialFunction[Member, Boolean]): ClassMemberPredicate = new ClassMemberPredicate with Serializable {
+  def apply(classPredicate: ClassPredicate, p: PartialFunction[Member, Boolean]): ClassMemberPredicate =
+    new ClassMemberPredicate with Serializable {
 
-    override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
+      override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 
-    override def matchesMember(member: Member): Boolean = p.lift(member).getOrElse(false)
+      override def matchesMember(member: Member): Boolean = p.lift(member).getOrElse(false)
 
-  }
+    }
 
 }
 
-case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPredicate: ClassPredicate = _ => true) extends ClassMemberPredicate {
+case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPredicate: ClassPredicate = _ => true)
+    extends ClassMemberPredicate {
 
   override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 
   override def matchesMember(member: Member): Boolean = member match {
     case m: Method => returnClassPredicate.matches(m.getReturnType)
-    case f: Field => returnClassPredicate.matches(f.getType)
-    case _ => false
+    case f: Field  => returnClassPredicate.matches(f.getType)
+    case _         => false
   }
+
 }
 
 /**
@@ -55,7 +58,8 @@ case class MemberNamePredicate(classPredicate: ClassPredicate, memberNames: Set[
   * @param classPredicate - class predicate
   * @param memberNamePattern - class member's name pattern
   */
-case class MemberNamePatternPredicate(classPredicate: ClassPredicate, memberNamePattern: Pattern) extends ClassMemberPredicate {
+case class MemberNamePatternPredicate(classPredicate: ClassPredicate, memberNamePattern: Pattern)
+    extends ClassMemberPredicate {
 
   override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 

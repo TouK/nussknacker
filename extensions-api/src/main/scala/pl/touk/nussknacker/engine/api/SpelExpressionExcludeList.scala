@@ -19,7 +19,9 @@ object SpelExpressionExcludeList {
       "java\\.io".r,
       "java\\.nio".r,
       "exec\\(".r
-    ))
+    )
+  )
+
 }
 
 case class SpelExpressionExcludeList(excludedPatterns: List[Regex]) {
@@ -28,16 +30,20 @@ case class SpelExpressionExcludeList(excludedPatterns: List[Regex]) {
     val classFullName = getClassNameFromObject(targetObject)
     excludedPatterns.find(excluded =>
       excluded.findFirstMatchIn(classFullName) match {
-        case Some(_) => throw ExcludedPatternInvocationException(s"Method ${methodName} of class ${classFullName} is not allowed to be passed as a spel expression")
+        case Some(_) =>
+          throw ExcludedPatternInvocationException(
+            s"Method ${methodName} of class ${classFullName} is not allowed to be passed as a spel expression"
+          )
         case None => false
-      })
+      }
+    )
   }
 
   private def getClassNameFromObject(targetObject: Object): String = {
     targetObject match {
       case targetClass: Class[_] => targetClass.getName
-      case _: Object => targetObject.getClass.getName
+      case _: Object             => targetObject.getClass.getName
     }
   }
-}
 
+}

@@ -10,14 +10,14 @@ object KafkaComponentsUtils extends KafkaUtils {
 
   def validateTopicsExistence(topics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
-      .validateTopics(topics.map(_.prepared)).valueOr(err => throw err)
+      .validateTopics(topics.map(_.prepared))
+      .valueOr(err => throw err)
   }
 
-  def prepareKafkaTopic(topic :String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
+  def prepareKafkaTopic(topic: String, processObjectDependencies: ProcessObjectDependencies): PreparedKafkaTopic =
     PreparedKafkaTopic(
       topic,
-      processObjectDependencies
-        .objectNaming
+      processObjectDependencies.objectNaming
         .prepareName(topic, processObjectDependencies.config, KafkaTopicUsageKey)
     )
 

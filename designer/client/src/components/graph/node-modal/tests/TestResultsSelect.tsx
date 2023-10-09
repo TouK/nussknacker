@@ -1,8 +1,9 @@
 import React from "react";
 import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
-import { SelectWithFocus } from "../../../withFocus";
+import { SelectNodeWithFocus } from "../../../withFocus";
 import { css, cx } from "@emotion/css";
 import { useNkTheme } from "../../../../containers/theme";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export interface TestResultsSelectProps {
     results: NodeTestResults;
@@ -20,7 +21,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
     }
 
     return (
-        <div className="node-row">
+        <NodeRow>
             <div
                 className={cx(
                     "node-label",
@@ -34,7 +35,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                 Test case:
             </div>
             <div className="node-value">
-                <SelectWithFocus
+                <SelectNodeWithFocus
                     className="node-input selectResults"
                     onChange={(e) => onChange(TestResultUtils.stateForSelectTestResults(results, e.target.value))}
                     value={value}
@@ -44,8 +45,8 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                             {id} ({display})
                         </option>
                     ))}
-                </SelectWithFocus>
+                </SelectNodeWithFocus>
             </div>
-        </div>
+        </NodeRow>
     );
 }

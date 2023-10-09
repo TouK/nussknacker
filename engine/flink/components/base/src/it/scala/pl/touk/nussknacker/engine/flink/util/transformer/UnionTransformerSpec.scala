@@ -12,7 +12,13 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
-class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+class UnionTransformerSpec
+    extends AnyFunSuite
+    with BeforeAndAfterEach
+    with Matchers
+    with FlinkSpec
+    with LazyLogging
+    with VeryPatientScalaFutures {
 
   import ValidatedValuesDetailedMessage._
   import spel.Implicits._
@@ -38,20 +44,28 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = ScenarioBuilder.streaming("sample-union-memo").sources(
-      GraphBuilder.source("start-foo", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", "noopSource")
-        .branchEnd(BranchBarId, UnionNodeId),
-      GraphBuilder
-        .join(UnionNodeId, "union-memo", Some(OutVariableName),
-          List(
-            BranchFooId -> List("key" -> "'fooKey'", "value" -> "#input"),
-            BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
-          ), "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
-        )
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.$BranchFooId")
-    )
+    val scenario = ScenarioBuilder
+      .streaming("sample-union-memo")
+      .sources(
+        GraphBuilder
+          .source("start-foo", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchFooId, UnionNodeId),
+        GraphBuilder
+          .source("start-bar", "noopSource")
+          .branchEnd(BranchBarId, UnionNodeId),
+        GraphBuilder
+          .join(
+            UnionNodeId,
+            "union-memo",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List("key" -> "'fooKey'", "value" -> "#input"),
+              BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
+            ),
+            "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
+          )
+          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.$BranchFooId")
+      )
 
     val result = testScenarioRunner.runWithData(scenario, data)
     result.validValue shouldBe RunResult.successes(data)
@@ -60,19 +74,27 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
   test("should unify streams with union when one branch is empty") {
     val testScenarioRunner = TestScenarioRunner.flinkBased(config, flinkMiniCluster).build()
 
-    val scenario = ScenarioBuilder.streaming("sample-union").sources(
-      GraphBuilder.source("start-foo", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", TestScenarioRunner.noopSource)
-        .branchEnd(BranchBarId, UnionNodeId),
-      GraphBuilder
-        .join(UnionNodeId, "union", Some(OutVariableName),
-          List(
-            BranchFooId -> List("Output expression" -> "{a: #input}"),
-            BranchBarId -> List("Output expression" -> "{a: '123'}"))
-        )
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
-    )
+    val scenario = ScenarioBuilder
+      .streaming("sample-union")
+      .sources(
+        GraphBuilder
+          .source("start-foo", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchFooId, UnionNodeId),
+        GraphBuilder
+          .source("start-bar", TestScenarioRunner.noopSource)
+          .branchEnd(BranchBarId, UnionNodeId),
+        GraphBuilder
+          .join(
+            UnionNodeId,
+            "union",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List("Output expression" -> "{a: #input}"),
+              BranchBarId -> List("Output expression" -> "{a: '123'}")
+            )
+          )
+          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+      )
 
     val result = testScenarioRunner.runWithData(scenario, data)
     result.validValue shouldBe RunResult.successes(data)
@@ -83,19 +105,27 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = ScenarioBuilder.streaming("sample-union").sources(
-      GraphBuilder.source("start-foo", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchBarId, UnionNodeId),
-      GraphBuilder
-        .join(UnionNodeId, "union", Some(OutVariableName),
-          List(
-            BranchFooId -> List("Output expression" -> "{a: #input}"),
-            BranchBarId -> List("Output expression" -> "{a: '123'}"))
-        )
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
-    )
+    val scenario = ScenarioBuilder
+      .streaming("sample-union")
+      .sources(
+        GraphBuilder
+          .source("start-foo", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchFooId, UnionNodeId),
+        GraphBuilder
+          .source("start-bar", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchBarId, UnionNodeId),
+        GraphBuilder
+          .join(
+            UnionNodeId,
+            "union",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List("Output expression" -> "{a: #input}"),
+              BranchBarId -> List("Output expression" -> "{a: '123'}")
+            )
+          )
+          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+      )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
     result.successes.toSet shouldBe data.toSet + "123"
@@ -107,23 +137,30 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = ScenarioBuilder.streaming("sample-union").sources(
-      GraphBuilder.source("start-foo", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", "noopSource")
-        .branchEnd(BranchBarId, UnionNodeId),
-      GraphBuilder
-        .join(UnionNodeId, "union", Some(OutVariableName),
-          List(
-            BranchFooId -> List("Output expression" -> "{a: #input}"),
-            BranchBarId -> List("Output expression" -> "{b: 123}")
+    val scenario = ScenarioBuilder
+      .streaming("sample-union")
+      .sources(
+        GraphBuilder
+          .source("start-foo", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchFooId, UnionNodeId),
+        GraphBuilder
+          .source("start-bar", "noopSource")
+          .branchEnd(BranchBarId, UnionNodeId),
+        GraphBuilder
+          .join(
+            UnionNodeId,
+            "union",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List("Output expression" -> "{a: #input}"),
+              BranchBarId -> List("Output expression" -> "{b: 123}")
+            )
           )
-        )
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
-    )
+          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+      )
 
     val result = testScenarioRunner.runWithData(scenario, data).invalidValue
-    result.toList should contain (CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
+    result.toList should contain(CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
   }
 
   test("should not throw when one branch emits error") {
@@ -132,24 +169,32 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = ScenarioBuilder.streaming("sample-union").sources(
-      GraphBuilder.source("start-foo", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchFooId, UnionNodeId),
-      GraphBuilder.source("start-bar", TestScenarioRunner.testDataSource)
-        .branchEnd(BranchBarId, UnionNodeId),
-      GraphBuilder
-        .join(UnionNodeId, "union", Some(OutVariableName),
-          List(
-            BranchFooId -> List("Output expression" -> "#input"),
-            BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
+    val scenario = ScenarioBuilder
+      .streaming("sample-union")
+      .sources(
+        GraphBuilder
+          .source("start-foo", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchFooId, UnionNodeId),
+        GraphBuilder
+          .source("start-bar", TestScenarioRunner.testDataSource)
+          .branchEnd(BranchBarId, UnionNodeId),
+        GraphBuilder
+          .join(
+            UnionNodeId,
+            "union",
+            Some(OutVariableName),
+            List(
+              BranchFooId -> List("Output expression" -> "#input"),
+              BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
+            )
           )
-        )
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName")
-    )
+          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName")
+      )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
     result.successes.size shouldBe 6
     result.successes.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
     result.errors shouldBe Nil
   }
+
 }

@@ -26,70 +26,87 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 
-class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
+class OpenApiScenarioIntegrationTest
+    extends AnyFlatSpec
+    with BeforeAndAfterAll
+    with Matchers
+    with FlinkSpec
+    with LazyLogging
+    with VeryPatientScalaFutures
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import spel.Implicits._
 
   // This tests don't use StubService implementation for handling requests - only for serving openapi definition. Invocation is handled by provided sttp backend.
-  def withSwagger(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService().withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend))
-  }
+  def withSwagger(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
+    new StubService().withCustomerService { port =>
+      test(prepareScenarioRunner(port, sttpBackend))
+    }
 
-  def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
-  }
+  def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
+    new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
+      test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
+    }
 
-  def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
-  }
+  def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
+    new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
+      test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
+    }
 
   val stubbedBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
     case request =>
       request.headers match {
-        case headers if headers.exists(_.name == HeaderNames.ContentType)
-          && !headers.contains(Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString())) =>
+        case headers
+            if headers.exists(_.name == HeaderNames.ContentType)
+              && !headers.contains(Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString())) =>
           Response("Unsupported media type", StatusCode.UnsupportedMediaType)
         case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
       }
   }
 
   it should "should enrich scenario with data" in withSwagger(stubbedBackend) { testScenarioRunner =>
-    //given
-    val data = List("10")
+    // given
+    val data     = List("10")
     val scenario = scenarioWithEnricher(("customer_id", "#input"))
 
-    //when
+    // when
     val result = testScenarioRunner.runWithData(scenario, data)
 
-    //then
-    result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+    // then
+    result.validValue shouldBe RunResult.success(
+      TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))
+    )
   }
 
+  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) {
+    testScenarioRunner =>
+      // given
+      val data     = List("10")
+      val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
 
-  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) { testScenarioRunner =>
-    //given
-    val data = List("10")
-    val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
+      // when
+      val result = testScenarioRunner.runWithData(scenario, data)
 
-    //when
-    val result = testScenarioRunner.runWithData(scenario, data)
-
-    //then
-    result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+      // then
+      result.validValue shouldBe RunResult.success(
+        TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD"))
+      )
   }
 
-  it should "call enricher returning string" in withPrimitiveReturnType(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
-    case _ => Response.ok((s""""justAString""""))
-  }) { testScenarioRunner =>
-    //given
-    val data = List("10")
+  it should "call enricher returning string" in withPrimitiveReturnType(
+    SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case _ =>
+      Response.ok((s""""justAString""""))
+    }
+  ) { testScenarioRunner =>
+    // given
+    val data     = List("10")
     val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
 
-    //when
+    // when
     val result = testScenarioRunner.runWithData(scenario, data)
 
-    //then
+    // then
     result.validValue shouldBe RunResult.success("justAString")
   }
 
@@ -102,12 +119,15 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
       .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#customer")
   }
 
-  private def prepareScenarioRunner(port: Int, sttpBackend: SttpBackend[Future, Any],
-                                    openAPIsConfigCustomize: OpenAPIServicesConfig => OpenAPIServicesConfig = identity) = {
-    val url = new URL(s"http://localhost:$port/swagger")
-    val rootUrl = new URL(s"http://localhost:$port/customers")
+  private def prepareScenarioRunner(
+      port: Int,
+      sttpBackend: SttpBackend[Future, Any],
+      openAPIsConfigCustomize: OpenAPIServicesConfig => OpenAPIServicesConfig = identity
+  ) = {
+    val url            = new URL(s"http://localhost:$port/swagger")
+    val rootUrl        = new URL(s"http://localhost:$port/customers")
     val openAPIsConfig = openAPIsConfigCustomize(OpenAPIServicesConfig(url, rootUrl = Some(rootUrl)))
-    val stubComponent = prepareStubbedComponent(sttpBackend, openAPIsConfig, url)
+    val stubComponent  = prepareStubbedComponent(sttpBackend, openAPIsConfig, url)
     // TODO: switch to liteBased after adding ability to override components there (currently there is only option to append not conflicting once) and rename class to *FunctionalTest
     TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
@@ -115,12 +135,17 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
       .build()
   }
 
-  private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Any], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
+  private def prepareStubbedComponent(
+      sttpBackend: SttpBackend[Future, Any],
+      openAPIsConfig: OpenAPIServicesConfig,
+      url: URL
+  ) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
-    val services = SwaggerParser.parse(definition, openAPIsConfig).collect {
-      case Valid(service) => service
+    val services = SwaggerParser.parse(definition, openAPIsConfig).collect { case Valid(service) =>
+      service
     }
-    val stubbedGetCustomerOpenApiService = new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend, Nil)
+    val stubbedGetCustomerOpenApiService =
+      new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend, Nil)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
   }
 

@@ -6,7 +6,12 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  FlinkCustomStreamTransformation,
+  FlinkLazyParameterFunctionHelper,
+  LazyParameterInterpreterFunction
+}
 import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 import pl.touk.nussknacker.engine.api.NodeId
@@ -29,35 +34,45 @@ import scala.concurrent.duration._
 object TransformStateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   @MethodToInvoke(returnType = classOf[AnyRef])
-  def invoke(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
-             @ParamName("transformWhen") transformWhen: LazyParameter[java.lang.Boolean],
-             @AdditionalVariables(Array(new AdditionalVariable(name = "previous", clazz = classOf[AnyRef])))
-             @ParamName("newValue") newValue: LazyParameter[AnyRef],
-             @ParamName("stateTimeoutSeconds") stateTimeoutSeconds: Long,
-             @OutputVariableName variableName: String)
-            (implicit nodeId: NodeId): ContextTransformation =
+  def invoke(
+      @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
+      @ParamName("transformWhen") transformWhen: LazyParameter[java.lang.Boolean],
+      @AdditionalVariables(Array(new AdditionalVariable(name = "previous", clazz = classOf[AnyRef])))
+      @ParamName("newValue") newValue: LazyParameter[AnyRef],
+      @ParamName("stateTimeoutSeconds") stateTimeoutSeconds: Long,
+      @OutputVariableName variableName: String
+  )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation
       .definedBy(_.withVariable(OutputVar.customNode(variableName), newValue.returnType))
       .implementedBy(
         FlinkCustomStreamTransformation { (stream, nodeContext) =>
           implicit val nctx: FlinkCustomNodeContext = nodeContext
-          setUidToNodeIdIfNeed(nodeContext,
+          setUidToNodeIdIfNeed(
+            nodeContext,
             stream
               .groupBy(groupBy)
-              .process(new TransformStateFunction[String](
-                nodeContext.lazyParameterHelper, transformWhen, newValue, stateTimeoutSeconds.seconds)))
+              .process(
+                new TransformStateFunction[String](
+                  nodeContext.lazyParameterHelper,
+                  transformWhen,
+                  newValue,
+                  stateTimeoutSeconds.seconds
+                )
+              )
+          )
         }
       )
+
 }
 
-
 //We don't actually care about T here, but it's needed because of type/variance problems...
-class TransformStateFunction[T](protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
-                             transformWhenParam: LazyParameter[java.lang.Boolean],
-                             newValueParam: LazyParameter[AnyRef],
-                             stateTimeout: FiniteDuration)
-  extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState]
-  with LazyParameterInterpreterFunction {
+class TransformStateFunction[T](
+    protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
+    transformWhenParam: LazyParameter[java.lang.Boolean],
+    newValueParam: LazyParameter[AnyRef],
+    stateTimeout: FiniteDuration
+) extends LatelyEvictableStateFunction[ValueWithContext[T], ValueWithContext[AnyRef], GenericState]
+    with LazyParameterInterpreterFunction {
 
   override protected def stateDescriptor: ValueStateDescriptor[GenericState] =
     new ValueStateDescriptor[GenericState]("state", classOf[GenericState])
@@ -66,9 +81,11 @@ class TransformStateFunction[T](protected val lazyParameterHelper: FlinkLazyPara
 
   private lazy val evaluateNewValue = lazyParameterInterpreter.syncInterpretationFunction(newValueParam)
 
-  override def processElement(keyWithContext: ValueWithContext[T],
-                              ctx: KeyedProcessFunction[String, ValueWithContext[T], ValueWithContext[AnyRef]]#Context,
-                              out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement(
+      keyWithContext: ValueWithContext[T],
+      ctx: KeyedProcessFunction[String, ValueWithContext[T], ValueWithContext[AnyRef]]#Context,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     collectHandlingErrors(keyWithContext.context, out) {
       val previousValue = Option(state.value()).map(_.value).orNull
       val newValue = if (evaluateTransformWhen(keyWithContext.context)) {

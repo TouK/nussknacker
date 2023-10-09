@@ -13,31 +13,47 @@ import sttp.client3.{SttpBackend, UriContext, asString, basicRequest}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with ExtremelyPatientScalaFutures with LazyLogging with EitherValuesDetailedMessage {
+class NuKafkaRuntimeDockerProbesTest
+    extends AnyFunSuite
+    with BaseNuKafkaRuntimeDockerTest
+    with Matchers
+    with ExtremelyPatientScalaFutures
+    with LazyLogging
+    with EitherValuesDetailedMessage {
 
   override val container: Container = {
-    kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
+    kafkaContainer.start()          // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
-    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+    fixture =
+      prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
     startRuntimeContainer(fixture.scenarioFile, checkReady = false)
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 
   private def registerSchemas(): Unit = {
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.inputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.outputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
   }
 
   private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
-  private val baseManagementUrl = uri"http://localhost:$mappedRuntimeApiPort"
+  private val baseManagementUrl                          = uri"http://localhost:$mappedRuntimeApiPort"
 
   test("readiness probe") {
     eventually {
       val readyResult = basicRequest
         .get(baseManagementUrl.withPath("ready"))
         .response(asString)
-        .send(backend).futureValue.body.rightValue
+        .send(backend)
+        .futureValue
+        .body
+        .rightValue
       readyResult shouldBe "OK"
     }
   }
@@ -47,7 +63,10 @@ class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntime
       val livenessResult = basicRequest
         .get(baseManagementUrl.withPath("alive"))
         .response(asString)
-        .send(backend).futureValue.body.rightValue
+        .send(backend)
+        .futureValue
+        .body
+        .rightValue
       livenessResult shouldBe "OK"
     }
   }

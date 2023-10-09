@@ -18,14 +18,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
-  private implicit val ec = ExecutionContext.global
-  private implicit val user = LoggedUser("test user", "test user")
-  private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
+  private implicit val ec                         = ExecutionContext.global
+  private implicit val user                       = LoggedUser("test user", "test user")
+  private implicit val actorSystem: ActorSystem   = ActorSystem(getClass.getSimpleName)
   private implicit val materializer: Materializer = Materializer(actorSystem)
   private val service = new ProcessAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
 
   test("should respect size limit") {
-    val random12bytes = getRandomBytesSourceStream(3,4)
+    val random12bytes = getRandomBytesSourceStream(3, 4)
 
     val error = service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random12bytes).failed.futureValue
 
@@ -33,7 +33,7 @@ class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaF
   }
 
   test("should accept attachment with allowed size") {
-    val random10bytes = getRandomBytesSourceStream(5,2)
+    val random10bytes = getRandomBytesSourceStream(5, 2)
 
     service.saveAttachment(ProcessId(123L), VersionId(12L), "data", random10bytes).futureValue
   }
@@ -45,16 +45,26 @@ class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaF
       ByteString(b)
     }.toList)
   }
+
 }
 
 private object TestProcessActivityRepository extends ProcessActivityRepository {
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = ???
+
+  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(
+      implicit ec: ExecutionContext,
+      loggedUser: LoggedUser
+  ): Future[Unit] = ???
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = ???
 
-  override def findActivity(processId: ProcessIdWithName)(implicit ec: ExecutionContext): Future[DbProcessActivityRepository.ProcessActivity] = ???
+  override def findActivity(processId: ProcessIdWithName)(
+      implicit ec: ExecutionContext
+  ): Future[DbProcessActivityRepository.ProcessActivity] = ???
 
-  override def addAttachment(attachmentToAdd: ProcessAttachmentService.AttachmentToAdd)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
+  override def addAttachment(
+      attachmentToAdd: ProcessAttachmentService.AttachmentToAdd
+  )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = Future.successful(())
 
-  override def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = ???
+  override def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] =
+    ???
 }

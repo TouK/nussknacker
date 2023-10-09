@@ -24,7 +24,11 @@ import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecode
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
+import pl.touk.nussknacker.ui.process.deployment.{
+  CustomActionInvokerService,
+  DeploymentManagerDispatcher,
+  DeploymentService
+}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -40,22 +44,26 @@ object ManagementResources {
 
   implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
 
-    implicit val nodeResult: Encoder[NodeResult[Json]] = deriveConfiguredEncoder
+    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]] = deriveConfiguredEncoder
-    //TODO: do we want more information here?
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
+    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
+    // TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
     implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
 
     override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) => Json.obj(
-        "nodeResults" -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
-        "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-        "externalInvocationResults" -> externalInvocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-        "exceptions" -> exceptions.sortBy(_.context.id).asJson
-      )
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+        Json.obj(
+          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
+          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
+            node -> list.sortBy(_.contextId)
+          }.asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id).asJson
+        )
     }
+
   }
 
   val testResultsVariableEncoder: Any => io.circe.Json = {
@@ -64,26 +72,30 @@ object ManagementResources {
 
       val displayableJson = displayable.asJson
       displayable.originalDisplay match {
-        case None => Json.obj("pretty" -> displayableJson)
+        case None           => Json.obj("pretty" -> displayableJson)
         case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
       }
     case null => Json.Null
-    case a => Json.obj("pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a))
+    case a =>
+      Json.obj(
+        "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
+      )
   }
 
 }
 
-class ManagementResources(val processAuthorizer: AuthorizeProcess,
-                          val processRepository: FetchingProcessRepository[Future],
-                          deploymentCommentSettings: Option[DeploymentCommentSettings],
-                          deploymentService: DeploymentService,
-                          dispatcher: DeploymentManagerDispatcher,
-                          customActionInvokerService: CustomActionInvokerService,
-                          metricRegistry: MetricRegistry,
-                          scenarioTestService: ScenarioTestService,
-                          typeToConfig: ProcessingTypeDataProvider[ModelData, _])
-                         (implicit val ec: ExecutionContext)
-  extends Directives
+class ManagementResources(
+    val processAuthorizer: AuthorizeProcess,
+    val processRepository: FetchingProcessRepository[Future],
+    deploymentCommentSettings: Option[DeploymentCommentSettings],
+    deploymentService: DeploymentService,
+    dispatcher: DeploymentManagerDispatcher,
+    customActionInvokerService: CustomActionInvokerService,
+    metricRegistry: MetricRegistry,
+    scenarioTestService: ScenarioTestService,
+    typeToConfig: ProcessingTypeDataProvider[ModelData, _]
+)(implicit val ec: ExecutionContext)
+    extends Directives
     with LazyLogging
     with RouteWithUser
     with FailFastCirceSupport
@@ -92,17 +104,17 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
 
   import ManagementResources._
 
-  //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
+  // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
-  private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
+  private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
-  case class ValidationError(message: String) extends Exception(message) with BadRequestError
+  sealed case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap { comment =>
       DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
-        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
+        case Invalid(exc)             => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
       }
     }
   }
@@ -114,7 +126,10 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           canDeploy(processId) {
             complete {
               convertSavepointResultToResponse(
-                dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
+                dispatcher
+                  .deploymentManagerUnsafe(processId.id)(ec, user)
+                  .flatMap(_.savepoint(processId.name, savepointDir))
+              )
             }
           }
         }
@@ -124,7 +139,10 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             canDeploy(processId) {
               complete {
                 convertSavepointResultToResponse(
-                  dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
+                  dispatcher
+                    .deploymentManagerUnsafe(processId.id)(ec, user)
+                    .flatMap(_.stop(processId.name, savepointDir, user.toManagerUser))
+                )
               }
             }
           }
@@ -135,7 +153,8 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               withDeploymentComment { deploymentComment =>
                 complete {
                   deploymentService
-                    .deployProcessAsync(processId, Some(savepointPath), deploymentComment).map(_ => ())
+                    .deployProcessAsync(processId, Some(savepointPath), deploymentComment)
+                    .map(_ => ())
                     .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
@@ -151,7 +170,8 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                 complete {
                   measureTime("deployment", metricRegistry) {
                     deploymentService
-                      .deployProcessAsync(processId, None, deploymentComment).map(_ => ())
+                      .deployProcessAsync(processId, None, deploymentComment)
+                      .map(_ => ())
                       .andThen(toResponseTryPF(StatusCodes.OK))
                   }
                 }
@@ -174,7 +194,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               }
             }
           } ~
-          //TODO: maybe Write permission is enough here?
+          // TODO: maybe Write permission is enough here?
           path("test" / Segment) { processName =>
             (post & processId(processName)) { idWithName =>
               canDeploy(idWithName.id) {
@@ -184,7 +204,12 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                       parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                         case Right(displayableProcess) =>
                           scenarioTestService
-                            .performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder)
+                            .performTest(
+                              idWithName,
+                              displayableProcess,
+                              RawScenarioTestData(testDataContent),
+                              testResultsVariableEncoder
+                            )
                             .flatMap { results =>
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                             }
@@ -198,45 +223,63 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               }
             }
           } ~
-          path("generateAndTest" / IntNumber) {
-            testSampleSize => {
-              (post & entity(as[DisplayableProcess])) { displayableProcess => {
-                processId(displayableProcess.id) { idWithName =>
-                  canDeploy(idWithName) {
-                    complete {
-                      measureTime("generateAndTest", metricRegistry) {
-                        scenarioTestService.generateData(displayableProcess, testSampleSize) match {
-                          case Left(error) => Future.failed(UnmarshallError(error))
-                          case Right(rawScenarioTestData) =>
-                            scenarioTestService.performTest(idWithName, displayableProcess, rawScenarioTestData, testResultsVariableEncoder)
-                              .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
-                              .recover(EspErrorToHttp.errorToHttp)
+          path("generateAndTest" / IntNumber) { testSampleSize =>
+            {
+              (post & entity(as[DisplayableProcess])) { displayableProcess =>
+                {
+                  processId(displayableProcess.id) { idWithName =>
+                    canDeploy(idWithName) {
+                      complete {
+                        measureTime("generateAndTest", metricRegistry) {
+                          scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                            case Left(error) => Future.failed(UnmarshallError(error))
+                            case Right(rawScenarioTestData) =>
+                              scenarioTestService
+                                .performTest(
+                                  idWithName,
+                                  displayableProcess,
+                                  rawScenarioTestData,
+                                  testResultsVariableEncoder
+                                )
+                                .flatMap { results =>
+                                  Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                                }
+                                .recover(EspErrorToHttp.errorToHttp)
+                          }
                         }
                       }
                     }
                   }
                 }
               }
-              }
             }
           } ~
-          path("testWithParameters" / Segment) {
-            processName => {
+          path("testWithParameters" / Segment) { processName =>
+            {
               (post & processDetailsForName[Unit](processName)) { process =>
                 val modelData = typeToConfig.forTypeUnsafe(process.processingType)
-                implicit val requestDecoder: Decoder[TestFromParametersRequest] = prepareTestFromParametersDecoder(modelData)
-                (post & entity(as[TestFromParametersRequest])) { testParametersRequest => {
-                  processId(testParametersRequest.displayableProcess.id) { idWithName =>
-                    canDeploy(idWithName) {
-                      complete {
-                        scenarioTestService.performTest(idWithName, testParametersRequest.displayableProcess,
-                          testParametersRequest.sourceParameters, testResultsVariableEncoder)
-                          .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
-                          .recover(EspErrorToHttp.errorToHttp)
+                implicit val requestDecoder: Decoder[TestFromParametersRequest] =
+                  prepareTestFromParametersDecoder(modelData)
+                (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
+                  {
+                    processId(testParametersRequest.displayableProcess.id) { idWithName =>
+                      canDeploy(idWithName) {
+                        complete {
+                          scenarioTestService
+                            .performTest(
+                              idWithName,
+                              testParametersRequest.displayableProcess,
+                              testParametersRequest.sourceParameters,
+                              testResultsVariableEncoder
+                            )
+                            .flatMap { results =>
+                              Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                            }
+                            .recover(EspErrorToHttp.errorToHttp)
+                        }
                       }
                     }
                   }
-                }
                 }
               }
             }
@@ -245,18 +288,19 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {
-                customActionInvokerService.invokeCustomAction(req.actionName, process, params)
+                customActionInvokerService
+                  .invokeCustomAction(req.actionName, process, params)
                   .flatMap {
-                    case res@Right(_) =>
+                    case res @ Right(_) =>
                       toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                    case res@Left(err) =>
+                    case res @ Left(err) =>
                       val response = toHttpResponse(CustomActionResponse(res)) _
                       err match {
-                        case _: CustomActionFailure => response(StatusCodes.InternalServerError)
-                        case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
-                        case _: CustomActionForbidden => response(StatusCodes.Forbidden)
+                        case _: CustomActionFailure        => response(StatusCodes.InternalServerError)
+                        case _: CustomActionInvalidStatus  => response(StatusCodes.Forbidden)
+                        case _: CustomActionForbidden      => response(StatusCodes.Forbidden)
                         case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                        case _: CustomActionNonExisting => response(StatusCodes.NotFound)
+                        case _: CustomActionNonExisting    => response(StatusCodes.NotFound)
                       }
                   }
               }
@@ -273,4 +317,5 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
       .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
       .recover(EspErrorToHttp.errorToHttp)
   }
+
 }

@@ -11,7 +11,7 @@ trait TagsEntityFactory extends BaseEntityFactory {
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
   class TagsEntity(tag: Tag) extends Table[TagsEntityData](tag, "tags") {
-    
+
     def name = column[String]("name")
 
     def processId = column[ProcessId]("process_id", NotNull)
@@ -25,9 +25,10 @@ trait TagsEntityFactory extends BaseEntityFactory {
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.Cascade
     )
+
   }
 
-  val tagsTable: LTableQuery[TagsEntityFactory#TagsEntity] = LTableQuery(new TagsEntity(_))   
+  val tagsTable: LTableQuery[TagsEntityFactory#TagsEntity] = LTableQuery(new TagsEntity(_))
 }
 
-case class TagsEntityData(name: String, processId: ProcessId)
+final case class TagsEntityData(name: String, processId: ProcessId)

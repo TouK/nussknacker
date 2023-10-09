@@ -16,19 +16,27 @@ object sinks {
 
   trait SingleContextSink[Res] extends LiteSink[Res] {
 
-    def createSingleTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]])
+    def createSingleTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): (TypingResult, Context => F[Either[ErrorType, Res]])
 
-    override def createTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, DataBatch => F[ResultType[(Context, Res)]]) = {
+    override def createTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]]) = {
       val (typeResult, invocation) = createSingleTransformation[F](context)
-      (typeResult, ctxs => {
-        Monoid.combineAll(ctxs.map { ctx =>
-          invocation(ctx).map[ResultType[(Context, Res)]] {
-            case Left(error) => Writer(List(error), Nil)
-            case Right(output) => Writer.value((ctx, output) :: Nil)
-          }
-        })
-      })
+      (
+        typeResult,
+        ctxs => {
+          Monoid.combineAll(ctxs.map { ctx =>
+            invocation(ctx).map[ResultType[(Context, Res)]] {
+              case Left(error)   => Writer(List(error), Nil)
+              case Right(output) => Writer.value((ctx, output) :: Nil)
+            }
+          })
+        }
+      )
     }
+
   }
 
   trait LazyParamSink[Res <: AnyRef] extends SingleContextSink[Res] {
@@ -36,16 +44,23 @@ object sinks {
     // TODO: Replace with response: LazyParameter[Res] - interpreter is now not needed
     def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[Res]
 
-    override def createSingleTransformation[F[_] : Monad](context: CustomComponentContext[F]): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
-      val response = prepareResponse(context.interpreter)
+    override def createSingleTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
+      val response    = prepareResponse(context.interpreter)
       val interpreter = context.interpreter.syncInterpretationFunction(response)
-      (response.returnType, ctx => implicitly[Monad[F]].pure(
-        // FIXME: figure out how to pass componentName here
-        withErrors(context, Some(ComponentInfo("unknown", ComponentType.Sink)), ctx) {
-          interpreter(ctx)
-        }
-      ))
+      (
+        response.returnType,
+        ctx =>
+          implicitly[Monad[F]].pure(
+            // FIXME: figure out how to pass componentName here
+            withErrors(context, Some(ComponentInfo("unknown", ComponentType.Sink)), ctx) {
+              interpreter(ctx)
+            }
+          )
+      )
     }
+
   }
 
 }

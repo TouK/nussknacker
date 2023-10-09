@@ -74,4 +74,5 @@ object FailingService extends Service {
     case `failTrigger` => Future.failed(new IllegalArgumentException(failMessage))
     case _             => Future.successful("OK")
   }
+
 }

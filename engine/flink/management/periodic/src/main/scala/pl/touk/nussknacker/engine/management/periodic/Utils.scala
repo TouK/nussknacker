@@ -9,4 +9,5 @@ object Utils extends LazyLogging {
   } catch {
     case t: Throwable => logger.error("Error occurred, but skipping it", t)
   }
+
 }

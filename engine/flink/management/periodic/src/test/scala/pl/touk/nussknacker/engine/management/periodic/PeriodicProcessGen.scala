@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarDa
 import java.time.LocalDateTime
 
 object PeriodicProcessGen {
+
   def apply(): PeriodicProcess = {
     PeriodicProcess(
       id = PeriodicProcessId(42),
@@ -25,10 +26,11 @@ object PeriodicProcessGen {
   }
 
   def buildCanonicalProcess(cronProperty: String = "0 0 * * * ?"): CanonicalProcess = {
-      ScenarioBuilder
-        .streaming("test")
-        .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
-        .source("test", "test")
-        .emptySink("test", "test")
+    ScenarioBuilder
+      .streaming("test")
+      .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
+      .source("test", "test")
+      .emptySink("test", "test")
   }
+
 }

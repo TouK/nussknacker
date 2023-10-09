@@ -3,8 +3,20 @@ package pl.touk.nussknacker.engine.api.typed
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.supertype.{
+  CommonSupertypeFinder,
+  NumberTypesPromotionStrategy,
+  SupertypeClassResolutionStrategy
+}
+import pl.touk.nussknacker.engine.api.typed.typing.{
+  Typed,
+  TypedClass,
+  TypedNull,
+  TypedObjectTypingResult,
+  TypedUnion,
+  TypingResult,
+  Unknown
+}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -53,8 +65,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed[Int]) shouldBe true
     Typed[Int].canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
 
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(
-      Typed(Typed[Long], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed(Typed[Long], Typed[Int])) shouldBe true
   }
 
   test("determine if can be subclass for unknown") {
@@ -86,42 +97,67 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
   }
 
   test("find common supertype for simple types enabled strictTypeChecking") {
-    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
+      NumberTypesPromotionStrategy.ForMathOperation
     commonSuperTypeFinder.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
-    commonSuperTypeFinder.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
+    commonSuperTypeFinder
+      .commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
     commonSuperTypeFinder.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
     commonSuperTypeFinder.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
     commonSuperTypeFinder.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
 
-    commonSuperTypeFinder.commonSupertype(Typed[Float], Typed.tagged(Typed.typedClass[Float], "example")) shouldEqual Typed(Set.empty)
-    commonSuperTypeFinder.commonSupertype(Typed.tagged(Typed.typedClass[Float], "example"), Typed[Float]) shouldEqual Typed(Set.empty)
+    commonSuperTypeFinder.commonSupertype(
+      Typed[Float],
+      Typed.tagged(Typed.typedClass[Float], "example")
+    ) shouldEqual Typed(Set.empty)
+    commonSuperTypeFinder.commonSupertype(
+      Typed.tagged(Typed.typedClass[Float], "example"),
+      Typed[Float]
+    ) shouldEqual Typed(Set.empty)
   }
 
   test("find common supertype for simple types disabled strictTypeChecking") {
-    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
-    val typeFinderDisabledStrictTypeChecking = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, false)
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
+      NumberTypesPromotionStrategy.ForMathOperation
+    val typeFinderDisabledStrictTypeChecking =
+      new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, false)
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
-    typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
+    typeFinderDisabledStrictTypeChecking.commonSupertype(
+      Typed[java.lang.Integer],
+      Typed[java.lang.Double]
+    ) shouldEqual Typed[java.lang.Double]
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[Int], Typed[Long]) shouldEqual Typed[java.lang.Long]
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[Float], Typed[Long]) shouldEqual Typed[java.lang.Float]
 
-    typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[Float], Typed.tagged(Typed.typedClass[Float], "example")) shouldEqual Typed[java.lang.Float]
-    typeFinderDisabledStrictTypeChecking.commonSupertype(Typed.tagged(Typed.typedClass[Float], "example"), Typed[Float]) shouldEqual Typed[java.lang.Float]
+    typeFinderDisabledStrictTypeChecking.commonSupertype(
+      Typed[Float],
+      Typed.tagged(Typed.typedClass[Float], "example")
+    ) shouldEqual Typed[java.lang.Float]
+    typeFinderDisabledStrictTypeChecking.commonSupertype(
+      Typed.tagged(Typed.typedClass[Float], "example"),
+      Typed[Float]
+    ) shouldEqual Typed[java.lang.Float]
   }
 
   test("find special types") {
-    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
+      NumberTypesPromotionStrategy.ForMathOperation
     commonSuperTypeFinder.commonSupertype(Unknown, Unknown) shouldEqual Unknown
     commonSuperTypeFinder.commonSupertype(Unknown, Typed[Long]) shouldEqual Unknown
 
     commonSuperTypeFinder.commonSupertype(
       TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
-      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))
+    ) shouldEqual
+      TypedObjectTypingResult(
+        Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String])
+      )
 
     commonSuperTypeFinder.commonSupertype(
-      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("foo" -> Typed[Long]))) shouldEqual
+      TypedObjectTypingResult(Map("foo" -> Typed[String])),
+      TypedObjectTypingResult(Map("foo" -> Typed[Long]))
+    ) shouldEqual
       TypedObjectTypingResult(Map.empty[String, TypingResult])
   }
 
@@ -157,13 +193,31 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
 
   test("common supertype with generics") {
     implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[Comparable[Number]], Typed.fromDetailedType[Integer]) shouldEqual Typed.fromDetailedType[Comparable[Number]]
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[Integer], Typed.fromDetailedType[Comparable[Number]]) shouldEqual Typed.fromDetailedType[Comparable[Number]]
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Integer]], Typed.fromDetailedType[util.List[Number]]) shouldEqual Typed.fromDetailedType[util.List[Number]]
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Integer]], Typed.fromDetailedType[util.Collection[Number]]) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[Comparable[Number]],
+      Typed.fromDetailedType[Integer]
+    ) shouldEqual Typed.fromDetailedType[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[Integer],
+      Typed.fromDetailedType[Comparable[Number]]
+    ) shouldEqual Typed.fromDetailedType[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[util.List[Integer]],
+      Typed.fromDetailedType[util.List[Number]]
+    ) shouldEqual Typed.fromDetailedType[util.List[Number]]
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[util.List[Integer]],
+      Typed.fromDetailedType[util.Collection[Number]]
+    ) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
     // below weird examples which will work
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Number]], Typed.fromDetailedType[util.Collection[Integer]]) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
-    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[String]], Typed.fromDetailedType[util.Collection[Integer]]) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[util.List[Number]],
+      Typed.fromDetailedType[util.Collection[Integer]]
+    ) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
+    commonSuperTypeFinder.commonSupertype(
+      Typed.fromDetailedType[util.List[String]],
+      Typed.fromDetailedType[util.Collection[Integer]]
+    ) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
   }
 
   test("common supertype with union of not matching classes strategy with enabled strictTypeChecking") {
@@ -180,14 +234,26 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     import ClassHierarchy._
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
-    unionFinder.commonSupertype(Typed.tagged(Typed.typedClass[Dog], "dog"), Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
-    unionFinder.commonSupertype(Typed[Cactus], Typed.tagged(Typed.typedClass[Dog], "dog")) shouldEqual Typed(Typed[Dog], Typed[Cactus])
+    unionFinder.commonSupertype(Typed.tagged(Typed.typedClass[Dog], "dog"), Typed[Cactus]) shouldEqual Typed(
+      Typed[Dog],
+      Typed[Cactus]
+    )
+    unionFinder.commonSupertype(Typed[Cactus], Typed.tagged(Typed.typedClass[Dog], "dog")) shouldEqual Typed(
+      Typed[Dog],
+      Typed[Cactus]
+    )
   }
 
   test("determine if can be subclass for tagged value") {
-    Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
-    Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
-    Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
+    Typed
+      .tagged(Typed.typedClass[String], "tag1")
+      .canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe true
+    Typed
+      .tagged(Typed.typedClass[String], "tag1")
+      .canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe false
+    Typed
+      .tagged(Typed.typedClass[String], "tag1")
+      .canBeSubclassOf(Typed.tagged(Typed.typedClass[Integer], "tag1")) shouldBe false
     Typed.tagged(Typed.typedClass[String], "tag1").canBeSubclassOf(Typed.typedClass[String]) shouldBe true
     Typed.typedClass[String].canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
   }
@@ -204,13 +270,11 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       case TypedClass(optionClass, mapTypeArg :: Nil) if optionClass == classOf[Option[Any]] =>
         inside(mapTypeArg) {
           case TypedClass(optionClass, keyTypeArg :: valueTypeArg :: Nil) if optionClass == classOf[Map[Any, Any]] =>
-            inside(keyTypeArg) {
-              case TypedClass(keyClass, Nil) =>
-                keyClass shouldBe classOf[String]
+            inside(keyTypeArg) { case TypedClass(keyClass, Nil) =>
+              keyClass shouldBe classOf[String]
             }
-            inside(valueTypeArg) {
-              case TypedClass(keyClass, Nil) =>
-                keyClass shouldBe classOf[java.lang.Integer]
+            inside(valueTypeArg) { case TypedClass(keyClass, Nil) =>
+              keyClass shouldBe classOf[java.lang.Integer]
             }
         }
     }
@@ -300,6 +364,7 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
       Typed.genericTypeClass(classOf[java.util.Map[_, _]], List.empty)
     }
   }
+
   test("should correctly handle type aliases") {
     Typed.fromDetailedType[StringKeyMap[Integer]] shouldEqual Typed.fromDetailedType[java.util.Map[String, Integer]]
   }

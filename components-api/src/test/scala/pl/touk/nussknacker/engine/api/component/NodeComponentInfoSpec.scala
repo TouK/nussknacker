@@ -9,4 +9,5 @@ class NodeComponentInfoSpec extends AnyFunSuite with Matchers {
     val nodeComponentInfo = NodeComponentInfo.forBaseNode("nodeId", ComponentType.Filter)
     nodeComponentInfo shouldBe NodeComponentInfo("nodeId", "filter", ComponentType.Filter)
   }
+
 }

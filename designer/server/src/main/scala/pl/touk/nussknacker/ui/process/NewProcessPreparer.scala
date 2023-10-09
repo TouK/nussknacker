@@ -11,7 +11,10 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 object NewProcessPreparer {
 
-  def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]): NewProcessPreparer =
+  def apply(
+      processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _],
+      additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+  ): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
 
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
@@ -22,16 +25,19 @@ object NewProcessPreparer {
 
 }
 
+class NewProcessPreparer(
+    emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
+    additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+) {
 
-class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
-                         additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
-    val initialProperties = additionalFields.forTypeUnsafe(processingType).map {
-      case (key, config) => (key, config.defaultValue.getOrElse(""))
+    val initialProperties = additionalFields.forTypeUnsafe(processingType).map { case (key, config) =>
+      (key, config.defaultValue.getOrElse(""))
     }
     val name = ProcessName(processId)
-    val initialMetadata = if (isFragment) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
+    val initialMetadata =
+      if (isFragment) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,

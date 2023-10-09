@@ -58,12 +58,11 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_031__FragmentSpecificData.migrateMetadata(oldJson)
 
     converted shouldBe expectedScenario
   }
-
 
   it should "convert fragment metadata" in {
     val rawJsonString =
@@ -83,12 +82,11 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_031__FragmentSpecificData.migrateMetadata(oldJson)
 
     converted shouldBe expectedFragment
   }
-
 
   it should "do nothing if json already without 'isSubprocess' field" in {
     val rawJsonString =
@@ -107,9 +105,10 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_031__FragmentSpecificData.migrateMetadata(oldJson)
 
     converted shouldBe Some(oldJson)
   }
+
 }

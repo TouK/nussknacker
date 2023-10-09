@@ -12,7 +12,7 @@ object FlinkStateStatus {
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Cancel)
-    case SimpleStateStatus.Restarting => List(ProcessActionType.Cancel)
+    case SimpleStateStatus.Restarting   => List(ProcessActionType.Cancel)
   }
 
 }

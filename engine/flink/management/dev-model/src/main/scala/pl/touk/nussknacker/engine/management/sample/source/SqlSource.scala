@@ -13,4 +13,5 @@ object SqlSource extends SourceFactory {
   @MethodToInvoke
   def source(@ParamName("sql") @SimpleEditor(`type` = SimpleEditorType.SQL_EDITOR) sql: String) =
     new CollectionSource[Any](List.empty, None, Unknown)(TypeInformation.of(classOf[Any]))
+
 }
