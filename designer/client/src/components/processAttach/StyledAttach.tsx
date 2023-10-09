@@ -74,9 +74,9 @@ export const DownloadButton = styled(NkButton)(
 export const AttachHeader = styled("div")(
     ({ theme }) => `
     span {
-        color: ${variables.commentHeaderColor};
+        color: ${theme.custom.colors.silverChalice};
         &.date {
-            color: ${variables.commentHeaderColor};
+            color: ${theme.custom.colors.silverChalice};
             font-style: italic;
         }
     }

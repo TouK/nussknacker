@@ -1,11 +1,10 @@
 import React from "react";
 import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
-import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 
-const StyledDate = styled("span")(() => ({
+const StyledDate = styled("span")(({ theme }) => ({
     whiteSpace: "normal",
-    color: variables.commentHeaderColor,
+    color: theme.custom.colors.silverChalice,
 }));
 
 export default function Date({ date }: { date: string }): JSX.Element {

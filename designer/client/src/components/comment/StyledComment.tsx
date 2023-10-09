@@ -32,7 +32,7 @@ export const AddCommentPanel = styled("div")(
         font-weight: 400;
         border-radius: 3px;
         border: none;
-        background-color: ${variables.commentBkgColor};
+        background-color: ${theme.custom.colors.secondaryBackground};
         padding: 4px 6px;
         resize: none;
         &:focus {
@@ -42,9 +42,10 @@ export const AddCommentPanel = styled("div")(
 `,
 );
 
-export const CommentButton = styled(NkButton)`
+export const CommentButton = styled(NkButton)(
+    ({ theme }) => `
     font-size: 12px !important;
-    background-color: ${variables.commentBkgColor} !important;
+    background-color: ${theme.custom.colors.secondaryBackground} !important;
     border: none !important;
     width: 20% !important;
     height: 30px !important;
@@ -56,7 +57,8 @@ export const CommentButton = styled(NkButton)`
     &:hover {
         background-color: #3d3d3d !important;
     }
-`;
+`,
+);
 
 export const PanelComment = styled("div")`
     margin-top: 1px;

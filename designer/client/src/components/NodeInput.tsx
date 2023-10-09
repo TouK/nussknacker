@@ -6,7 +6,7 @@ export const NodeInputCss = (theme: Theme) => css`
     width: 100%;
     padding: 0 10px;
     border: none;
-    background-color: ${variables.commentBkgColor} !important;
+    background-color: ${theme.custom.colors.secondaryBackground} !important;
     color: ${theme.custom.colors.secondaryColor} !important;
     font-weight: 400;
     font-size: 14px;

@@ -40,6 +40,9 @@ const colors = {
     accent: "#668547",
     mineShaft: "#3e3e3e",
     tundora: d3,
+    scorpion: "#5D5D5D",
+    silverChalice: "#afafaf",
+    cerulean: "#0E9AE0",
 };
 
 const selectColors = {

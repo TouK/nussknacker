@@ -1,11 +1,10 @@
-import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 import { VersionType } from "./HistoryItem";
 import Badge from "../deployed.svg";
 import color from "color";
 
 export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
-    ({ theme }) => `
+    ({ theme, type }) => `
     cursor: pointer;
     overflow: hidden;
     position: relative;
@@ -53,8 +52,8 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
 
     color: ${theme.custom.colors.secondaryColor};
 
-    ${(props) =>
-        props.type === VersionType.current &&
+    ${
+        type === VersionType.current &&
         `
     color: ${theme.custom.colors.secondaryColor};
     &:hover::after {
@@ -63,19 +62,22 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
     &::after {
         background-color: ${theme.custom.colors.secondaryColor};
     }
-  `}
+  `
+    }
 
-    ${(props) =>
-        props.type === VersionType.past &&
+    ${
+        type === VersionType.past &&
         `
     color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.8);
-  `}
+  `
+    }
 
-  ${(props) =>
-      props.type === VersionType.future &&
+  ${
+      type === VersionType.future &&
       `
     color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.3);
-  `}
+  `
+  }
 
   &:hover {
         background-color: ${theme.custom.colors.tundora};

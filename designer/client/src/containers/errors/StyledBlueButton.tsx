@@ -8,7 +8,7 @@ export const StyledBlueButton = styled("button")(
     width: 360px;
     min-width: 300px;
     height: ${theme.custom.spacing.controlHeight};
-    background-color: ${variables.buttonBlueBkgColor};
+    background-color: ${theme.custom.colors.cerulean};
     color: ${theme.palette.success.contrastText};
     display: flex;
     align-items: center;
@@ -19,7 +19,7 @@ export const StyledBlueButton = styled("button")(
     border-radius: 0;
     &:hover {
         color: ${theme.palette.success.contrastText};
-        background: ${lighten(variables.buttonBlueBkgColor, 0.25)};
+        background: ${lighten(theme.custom.colors.cerulean, 0.25)};
     }
     &:focus {
         color: ${theme.palette.success.contrastText};
