@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.definition
 
+import pl.touk.nussknacker.engine.api.component.AdditionalComponentsUIConfigProvider.SingleComponentConfigWithoutId
 import pl.touk.nussknacker.engine.api.component.{
   AdditionalComponentsUIConfigProvider,
   ComponentGroupName,
   ComponentId,
-  ParameterConfig,
-  SingleComponentConfigWithoutId
+  ParameterConfig
 }
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes

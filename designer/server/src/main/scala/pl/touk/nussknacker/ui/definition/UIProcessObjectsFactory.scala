@@ -83,7 +83,10 @@ object UIProcessObjectsFactory {
         .mapValuesNow(_.toSingleComponentConfig)
     )
 
-    val finalComponentsConfig = toComponentsUiConfig(finalProcessDefinition) |+| combinedComponentsConfig
+    val finalComponentsConfig =
+      toComponentsUiConfig(
+        finalProcessDefinition
+      ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ProcessDefinition doesn't contain configs for base components and fragments
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
