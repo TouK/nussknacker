@@ -1,5 +1,4 @@
 import { styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
 
 export const VersionHeader = styled("div")`
     margin: 15px 30px;

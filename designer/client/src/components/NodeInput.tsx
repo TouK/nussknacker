@@ -1,5 +1,4 @@
 import { css, Theme } from "@mui/material";
-import { variables } from "../stylesheets/variables";
 
 export const NodeInputCss = (theme: Theme) => css`
     height: 35px;

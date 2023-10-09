@@ -3,7 +3,6 @@ import { createSelector } from "reselect";
 import { useSelector } from "react-redux";
 import CommentContent from "./CommentContent";
 import Date from "../common/Date";
-import { variables } from "../../stylesheets/variables";
 import { ProcessCommentsList, RemoveButton } from "./StyledComment";
 import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
 import { ListSeparator } from "../common/ListSeparator";

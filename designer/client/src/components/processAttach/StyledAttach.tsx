@@ -1,6 +1,5 @@
 import { styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
-import { variables } from "../../stylesheets/variables";
 
 export const AddAttachmentsWrapper = styled("div")`
     font-size: 12px;

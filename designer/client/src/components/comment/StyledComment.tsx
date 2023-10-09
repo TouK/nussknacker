@@ -1,6 +1,5 @@
 import { styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
-import { variables } from "../../stylesheets/variables";
 
 export const ProcessCommentsWrapper = styled("div")`
     padding: 0 13px 10px;

@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { matchPath, useLocation } from "react-router-dom";
 import { MetricsBasePath } from "../../containers/paths";
 import { styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
 
 const BackIcon = styled(ProcessBackIcon)(() => ({
     height: "12px",

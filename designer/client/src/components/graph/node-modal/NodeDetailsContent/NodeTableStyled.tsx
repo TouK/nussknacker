@@ -1,5 +1,4 @@
 import { styled } from "@mui/material";
-import { variables } from "../../../../stylesheets/variables";
 import { customCheckbox } from "./CustomCheckbox";
 
 export const NodeTableStyled = styled("div")(

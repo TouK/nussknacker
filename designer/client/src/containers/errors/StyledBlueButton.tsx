@@ -1,5 +1,4 @@
 import { lighten, styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
 
 export const StyledBlueButton = styled("button")(
     ({ theme }) => `
