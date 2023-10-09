@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -31,6 +32,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider
 }
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -577,6 +579,48 @@ class DeploymentServiceSpec
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
+  test("Should return during deploy for process in deploy in progress") {
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
+    val _ = actionRepository
+      .addInProgressAction(processId, ProcessActionType.Deploy, Some(VersionId(1)), None)
+      .dbioActionValues
+
+    val state = deploymentService.getProcessState(ProcessIdWithName(processId, processName)).futureValue
+    state.status shouldBe SimpleStateStatus.DuringDeploy
+  }
+
+  test("Should return valid inProgress state") {
+    val (duringDeployProcessId: ProcessId, duringCancelProcessId: ProcessId) = prepareProcessesInProgress
+
+    val processesInProgress = deploymentService.getProcessesInProgress.futureValue
+
+    processesInProgress shouldBe Map(
+      duringDeployProcessId -> Set(ProcessActionType.Deploy),
+      duringCancelProcessId -> Set(ProcessActionType.Cancel)
+    )
+  }
+
+  test("Should return valid process list") {
+    prepareProcessesInProgress
+
+    val processesInProgress = deploymentService.getProcessesInProgress.futureValue
+
+    val processes = fetchingProcessRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery()).dbioActionValues
+
+    val resultWithCachedInProgress = processes
+      .map(baseProcess => deploymentService.getProcessState(baseProcess, Some(processesInProgress)))
+      .sequence
+      .futureValue
+
+    val resultWithoutCachedInProgress = processes
+      .map(baseProcess => deploymentService.getProcessState(baseProcess))
+      .sequence
+      .futureValue
+
+    resultWithCachedInProgress shouldBe resultWithoutCachedInProgress
+  }
+
   test(
     "Should return not deployed status for archived never deployed process with running state (it should never happen)"
   ) {
@@ -715,6 +759,24 @@ class DeploymentServiceSpec
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
       .flatMap(_ => actionRepository.markProcessAsArchived(processId = processId, initialVersionId))
+  }
+
+  private def prepareProcessesInProgress = {
+    val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: Nil =
+      (1 to 3).map(_ => generateProcessName).toList
+
+    val processIdsInProgress = for {
+      (duringDeployProcessId, _) <- preparedUnArchivedProcess(duringDeployProcessName, None)
+      (duringCancelProcessId, _) <- prepareDeployedProcess(duringCancelProcessName)
+      _ <- actionRepository
+        .addInProgressAction(duringDeployProcessId, ProcessActionType.Deploy, Some(VersionId.initialVersionId), None)
+      _ <- actionRepository
+        .addInProgressAction(duringCancelProcessId, ProcessActionType.Cancel, Some(VersionId.initialVersionId), None)
+      _ <- prepareDeployedProcess(otherProcess)
+    } yield (duringDeployProcessId, duringCancelProcessId)
+
+    val (duringDeployProcessId, duringCancelProcessId) = processIdsInProgress.dbioActionValues
+    (duringDeployProcessId, duringCancelProcessId)
   }
 
   private def prepareProcessWithAction(

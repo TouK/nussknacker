@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   DeployedScenarioData,
@@ -57,12 +58,15 @@ trait DeploymentService extends ProcessStateService {
 
 trait ProcessStateService {
 
+  def getProcessesInProgress: Future[Map[ProcessId, Set[ProcessActionType]]]
+
   def getProcessState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
   def getProcessState(
-      processDetails: BaseProcessDetails[_]
+      processDetails: BaseProcessDetails[_],
+      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
 }

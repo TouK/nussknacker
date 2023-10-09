@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   DeployedScenarioData,
@@ -20,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
-      processDetails: processdetails.BaseProcessDetails[_]
+      processDetails: processdetails.BaseProcessDetails[_],
+      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     getProcessState(processDetails.idWithName)
 
@@ -63,4 +65,6 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
+  override def getProcessesInProgress: Future[Map[ProcessId, Set[ProcessActionType]]] =
+    Future.successful(Map.empty)
 }

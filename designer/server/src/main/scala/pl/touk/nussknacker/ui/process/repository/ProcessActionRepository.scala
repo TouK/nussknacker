@@ -264,6 +264,20 @@ abstract class DbProcessActionRepository[F[_]](
     run(query.result.map(_.toSet))
   }
 
+  def getInProgressCanceledAndDeployed: F[Map[ProcessId, Set[ProcessActionType]]] = {
+    val query = processActionsTable
+      .filter(action =>
+        action.state === ProcessActionState.InProgress &&
+          action.actionType
+            .inSet(ProcessActionType.Deploy :: ProcessActionType.Cancel :: Nil)
+      )
+      .map(pa => (pa.processId, pa.actionType))
+    run(
+      query.result
+        .map(_.groupMapReduce { case (processId, _) => processId } { case (_, actionType) => Set(actionType) }(_ ++ _))
+    )
+  }
+
   def getUserActionsAfter(
       user: LoggedUser,
       possibleActionTypes: Set[ProcessActionType],
