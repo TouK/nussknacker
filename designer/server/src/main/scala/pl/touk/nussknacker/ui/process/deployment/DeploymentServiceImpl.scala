@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.implicits.catsSyntaxApplicativeId
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -327,12 +328,20 @@ class DeploymentServiceImpl(
     } yield result)
   }
 
+  override def getProcessesInProgress: Future[Map[ProcessId, Set[ProcessActionType]]] =
+    dbioRunner.run(
+      actionRepository.getInProgressCanceledAndDeployed
+    )
+
   override def getProcessState(
-      processDetails: BaseProcessDetails[_]
+      processDetails: BaseProcessDetails[_],
+      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
-      inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionTypes)
+      inProgressActionTypes <- processesInProgress.fold(
+        actionRepository.getInProgressActionTypes(processDetails.processId)
+      )(_.getOrElse(processDetails.processId, Set.empty).pure)
+      result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
 
