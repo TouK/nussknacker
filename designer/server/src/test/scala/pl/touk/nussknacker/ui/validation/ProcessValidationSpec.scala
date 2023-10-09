@@ -22,12 +22,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -49,10 +49,14 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
+  flinkProcessValidation,
+  mapProcessingTypeDataProvider,
+  possibleValues
+}
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.jdk.CollectionConverters._
 
@@ -351,6 +355,36 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("validate empty scenario id") {
+    val scenarioWithEmptyId = ProcessValidationSpec.validProcess.copy(id = "")
+    flinkProcessValidation.validate(scenarioWithEmptyId).errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "ScenarioNameValidationError",
+              "Scenario name is mandatory and cannot be empty",
+              "Scenario name is mandatory and cannot be empty",
+              Some("id"),
+              ValidationResults.NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+  }
+
+  test("validate empty fragment id") {
+    val scenarioWithEmptyId = ProcessValidationSpec.validFragment.copy(id = "")
+    TestFactory.processValidation.validate(scenarioWithEmptyId).errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "ScenarioNameValidationError",
+              "Fragment name is mandatory and cannot be empty",
+              "Fragment name is mandatory and cannot be empty",
+              Some("id"),
+              ValidationResults.NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+  }
+
   test("don't validate properties on fragment") {
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
       mapProcessingTypeDataProvider(
@@ -374,7 +408,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   }
 
-  test("validate type) scenario field") {
+  test("validate type scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
       mapProcessingTypeDataProvider(
@@ -872,6 +906,29 @@ private object ProcessValidationSpec {
         )
       ) ++ FlinkStreamingPropertiesConfig.properties)
     )
+  )
+
+  val validProcess: DisplayableProcess = createProcess(
+    List(
+      Source("in", SourceRef(existingSourceFactory, List())),
+      Sink("out", SinkRef(existingSinkFactory, List()))
+    ),
+    List(Edge("in", "out", None))
+  )
+
+  val validFragment: DisplayableProcess = DisplayableProcess(
+    "test",
+    ProcessProperties.combineTypeSpecificProperties(
+      StreamMetaData(),
+      additionalFields = ProcessAdditionalFields(None, FragmentSpecificData().toMap, FragmentSpecificData.typeName)
+    ),
+    nodes = List(
+      FragmentInputDefinition("in", List()),
+      FragmentOutputDefinition("out", "outputName")
+    ),
+    edges = List(Edge("in", "out", None)),
+    processingType = TestProcessingTypes.Streaming,
+    category = Category1
   )
 
   def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
