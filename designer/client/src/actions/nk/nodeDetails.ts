@@ -54,13 +54,16 @@ export function nodeDetailsClosed(nodeId: string): NodeDetailsClosed {
 const validate = debounce(
     async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
         const nodeId = validationRequestData.nodeData.id;
-        const nodeWithEditedId = applyIdFromFakeName(validationRequestData.nodeData);
-        if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
+        const nodeWithChangedName = applyIdFromFakeName(validationRequestData.nodeData);
+        if (NodeUtils.nodeIsProperties(nodeWithChangedName)) {
             //NOTE: we don't validationRequestData contains processProperties, but they are refreshed only on modal open
-            const { data } = await HttpService.validateProperties(processId, nodeWithEditedId);
+            const { data } = await HttpService.validateProperties(processId, nodeWithChangedName);
             callback(data, nodeId);
         } else {
-            const { data } = await HttpService.validateNode(processId, { ...validationRequestData, nodeData: nodeWithEditedId });
+            const { data } = await HttpService.validateNode(processId, {
+                ...validationRequestData,
+                nodeData: nodeWithChangedName,
+            });
             callback(data, nodeId);
         }
     },
