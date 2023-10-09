@@ -17,10 +17,6 @@ const configuration = withDefaultConfig(
                 singleton: true,
                 requiredVersion: dependencies["@mui/material"],
             },
-            "@mui/styles": {
-                singleton: true,
-                requiredVersion: dependencies["@mui/styles"],
-            },
             react: {
                 eager: true,
                 singleton: true,

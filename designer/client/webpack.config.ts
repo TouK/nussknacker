@@ -294,10 +294,6 @@ module.exports = withModuleFederationPlugins(config, {
             singleton: true,
             requiredVersion: dependencies["@emotion/react"],
         },
-        "@emotion/styles": {
-            singleton: true,
-            requiredVersion: dependencies["@mui/styles"],
-        },
         "@mui/material": {
             singleton: true,
             requiredVersion: dependencies["@mui/material"],
