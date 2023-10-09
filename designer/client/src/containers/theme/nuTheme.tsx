@@ -8,7 +8,7 @@ declare module "@mui/material/styles" {
     }
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
     interface ThemeOptions {
-        custom: typeof custom;
+        custom?: typeof custom;
     }
 }
 
