@@ -45,7 +45,7 @@ export const FormRow = styled("div")(
         padding: 0 20px;
         display: inline-block;
         color: ${theme.custom.colors.secondaryColor};
-        background-color: ${variables.commentBkgColor};
+        background-color: ${theme.custom.colors.secondaryColor};
         border: none;
         font-size: 14px;
         font-weight: 400;

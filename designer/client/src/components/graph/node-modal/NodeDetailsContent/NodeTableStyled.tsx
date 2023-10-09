@@ -54,16 +54,16 @@ export const NodeTableStyled = styled("div")(
             height: auto;
         }
         textarea:-moz-read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         textarea:read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         input:-moz-read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         input:read-only {
-            background-color: ${variables.panelBkgColor} !important;
+            background-color: ${theme.custom.colors.tundora} !important;
         }
         ${customCheckbox("20px")};
         input[type="checkbox"] {
@@ -112,7 +112,7 @@ export const NodeTableStyled = styled("div")(
         width: 100%;
         padding: 0 10px;
         border: none;
-        background-color: ${variables.commentBkgColor};
+        background-color: ${theme.custom.colors.secondaryColor};
         color: ${theme.custom.colors.secondaryColor};
         font-weight: 400;
         font-size: 14px;
@@ -120,13 +120,13 @@ export const NodeTableStyled = styled("div")(
     }
 
     .node-input:-moz-disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     .node-input:disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     .read-only {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
         span {
             margin-top: 10px;
             font-size: 15px;

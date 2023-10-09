@@ -1,4 +1,3 @@
-import { variables } from "../../stylesheets/variables";
 import { css, Theme } from "@mui/material";
 
 export const buttonBaseStyle = (theme: Theme) =>
@@ -14,6 +13,6 @@ export const buttonBaseStyle = (theme: Theme) =>
             cursor: "not-allowed !important",
         },
         "&:not(:disabled):hover,&:not(.disabled):hover": {
-            backgroundColor: `${variables.buttonBkgHover}`,
+            backgroundColor: `${theme.custom.colors.tundora}`,
         },
     });

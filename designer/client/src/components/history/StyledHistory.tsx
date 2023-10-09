@@ -45,7 +45,7 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
         top: 14px;
         width: 16px;
         height: 16px;
-        background: ${variables.panelBkgColor};
+        background: ${theme.custom.colors.tundora};
         border: 2px solid ${theme.custom.colors.secondaryColor};
         border-radius: 50%;
         padding-left: 10px;
@@ -78,11 +78,11 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
   `}
 
   &:hover {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
         box-sizing: border-box;
 
         &::after {
-            background-color: ${variables.historyItemBackground};
+            background-color: ${theme.custom.colors.mutedColor};
         }
     }
 `,

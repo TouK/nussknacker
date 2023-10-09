@@ -12,10 +12,10 @@ export const NodeInputCss = (theme: Theme) => css`
     font-size: 14px;
     outline: 1px solid rgba(255, 255, 255, 0.075);
     &:-moz-disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     &:disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     &[type="checkbox"] {
         height: 20px;

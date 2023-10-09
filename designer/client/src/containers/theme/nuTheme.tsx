@@ -39,7 +39,7 @@ const colors = {
     evenBackground: d3,
     accent: "#668547",
     mineShaft: "#3e3e3e",
-    tundora: d4,
+    tundora: d3,
 };
 
 const selectColors = {
