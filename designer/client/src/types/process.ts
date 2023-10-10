@@ -21,6 +21,12 @@ export type ProcessId = Process["id"];
 
 export type Category = string;
 
+export type ProcessAdditionalFields = {
+    description: string | null;
+    properties: { [key: string]: string };
+    metaDataType: string;
+};
+
 export type CustomAction = {
     name: string;
     allowedStateStatusNames: Array<string>;

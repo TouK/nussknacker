@@ -9,7 +9,7 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessDefinitionData, ProcessId, PropertiesType } from "../types";
+import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessId } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -111,6 +111,11 @@ type NotificationActions = {
 export interface TestProcessResponse {
     results: TestResults;
     counts: ProcessCounts;
+}
+
+export interface PropertiesValidationRequest {
+    id: string;
+    additionalFields: ProcessAdditionalFields;
 }
 
 class HttpService {
@@ -434,12 +439,8 @@ class HttpService {
         return promise;
     }
 
-    validateProperties(processId: string, processProperties: PropertiesType): Promise<AxiosResponse<ValidationData>> {
-        // TODO: type request properly, don't map it here
-        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {
-            additionalFields: processProperties.additionalFields,
-            id: processProperties.id,
-        });
+    validateProperties(processId: string, propertiesRequest: PropertiesValidationRequest): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, propertiesRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"), error, true),
         );
