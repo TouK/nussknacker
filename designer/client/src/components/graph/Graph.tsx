@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
+import styles from "jointjs/dist/joint.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { findDOMNode } from "react-dom";
@@ -8,7 +9,6 @@ import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHe
 import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
-import styles from "./graphTheme.styl";
 import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
@@ -41,6 +41,7 @@ interface Props extends GraphProps {
     isPristine?: boolean;
 }
 
+console.log(styles);
 function handleActionOnLongPress<T extends dia.CellView>(
     shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
     longPressAction: (cellView: T, event: dia.Event) => void,

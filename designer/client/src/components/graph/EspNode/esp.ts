@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, shapes, util } from "jointjs";
-import "../graphTheme.styl";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
 

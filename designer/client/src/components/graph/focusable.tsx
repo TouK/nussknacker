@@ -1,7 +1,9 @@
-import { css, cx } from "@emotion/css";
+import { cx } from "@emotion/css";
+import { useTheme } from "@mui/material";
 import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
+import { GraphTheme } from "./GraphTheme";
 
 interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     onResize?: (current: DOMRectReadOnly) => void;
@@ -11,6 +13,7 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
     { onClick, className, onResize, ...props },
     forwardedRef,
 ) {
+    const theme = useTheme();
     const clickHandler: MouseEventHandler<HTMLDivElement> = useCallback(
         (event) => {
             event.currentTarget?.focus();
@@ -30,13 +33,13 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
 
     const { observe } = useSizeWithRef(forwardedRef, options);
 
-    const styles = css({
-        minHeight: 300,
-        minWidth: 300,
-        color: "white",
-    });
-
     return (
-        <div className={cx(styles, className)} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
+        <div
+            className={cx(GraphTheme(theme), className)}
+            ref={onResize ? observe : forwardedRef}
+            tabIndex={-1}
+            onClick={clickHandler}
+            {...props}
+        />
     );
 });
