@@ -57,7 +57,10 @@ const validate = debounce(
         const nodeWithChangedName = applyIdFromFakeName(validationRequestData.nodeData);
         if (NodeUtils.nodeIsProperties(nodeWithChangedName)) {
             //NOTE: we don't validationRequestData contains processProperties, but they are refreshed only on modal open
-            const { data } = await HttpService.validateProperties(processId, nodeWithChangedName);
+            const { data } = await HttpService.validateProperties(processId, {
+                additionalFields: nodeWithChangedName.additionalFields,
+                id: nodeWithChangedName.id,
+            });
             callback(data, nodeId);
         } else {
             const { data } = await HttpService.validateNode(processId, {
