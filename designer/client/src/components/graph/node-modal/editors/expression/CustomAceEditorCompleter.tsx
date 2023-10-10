@@ -75,6 +75,7 @@ export class CustomAceEditorCompleter implements Ace.Completer {
     public identifierRegexps = identifierRegexpsWithoutDot;
     // This is necessary to make live auto complete works after dot
     public triggerCharacters = ["."];
+    private revertOpenPopup: (() => void) | null;
 
     constructor(private expressionSuggester: ExpressionSuggester) {}
 
@@ -96,8 +97,31 @@ export class CustomAceEditorCompleter implements Ace.Completer {
 
         const value = editor.getValue();
 
+        this.overrideOpenPopup(editor);
+
         this.expressionSuggester.suggestionsFor(value, caretPosition2d).then((suggestions) => {
             callback(null, suggestions.map(suggestionToCompletion));
         });
     }
+
+    private overrideOpenPopup({ completer }: Editor) {
+        if (!this.revertOpenPopup) {
+            const originalFn = completer.openPopup;
+
+            completer.openPopup = function (editor, prefix, keepPopupPosition) {
+                // prevent popup detach when fast switching from fully fitted completion to dotted completions
+                // this occurs when prefix is empty after entering "." at the end
+                // we could safely force some not empty prefix - backend reads whole line
+                const modifiedPrefix = keepPopupPosition && !prefix ? "." : prefix;
+                originalFn.apply(this, [editor, modifiedPrefix, keepPopupPosition]);
+            };
+
+            this.revertOpenPopup = () => {
+                completer.openPopup = originalFn;
+                this.revertOpenPopup = null;
+            };
+        }
+    }
+
+    cancel = () => this.revertOpenPopup();
 }
