@@ -19,6 +19,7 @@ export const SettingLabelStyled = styled("div")`
     line-height: 16px;
     letter-spacing: -0.01em;
     text-align: left;
+    flex-basis: 30%;
 `;
 
 export const SettingRow = styled(NodeRow)`

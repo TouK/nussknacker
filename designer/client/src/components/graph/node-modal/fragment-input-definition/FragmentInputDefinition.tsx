@@ -1,21 +1,22 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { useCallback, useMemo } from "react";
+import React, { SetStateAction, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { Parameter } from "../../../../types";
+import { NodeType, Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
-import { find, head, orderBy } from "lodash";
+import { orderBy, find, head } from "lodash";
 
 interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
+    setEditedNode: (n: SetStateAction<NodeType>) => void;
 }
 
 export default function FragmentInputDefinition(props: Props): JSX.Element {
-    const { removeElement, addElement, ...passProps } = props;
-    const { node, setProperty, isEditMode, showValidation } = passProps;
+    const { addElement, removeElement, ...passProps } = props;
+    const { node, setEditedNode, isEditMode, setProperty, showValidation } = passProps;
 
     const readOnly = !isEditMode;
     const definitionData = useSelector(getProcessDefinitionData);
@@ -36,17 +37,18 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
         addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);
     }, [addElement, defaultTypeOption.value]);
 
-    // const fields = useMemo(() => node.parameters || [], [node.parameters]);
+    const fields = useMemo(() => node.parameters || [], [node.parameters]);
 
     return (
         <NodeCommonDetailsDefinition {...passProps}>
             <FieldsSelect
-                label="Parameters"
-                onChange={setProperty}
                 addField={addField}
                 removeField={removeElement}
+                label="Parameters"
+                onChange={setProperty}
+                setEditedNode={setEditedNode}
                 namespace={"parameters"}
-                node={node}
+                fields={fields}
                 options={orderedTypeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}

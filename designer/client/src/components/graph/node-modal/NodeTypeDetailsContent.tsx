@@ -183,13 +183,14 @@ export function NodeTypeDetailsContent({
         case "FragmentInputDefinition":
             return (
                 <FragmentInputDefinition
-                    addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
                     node={node}
-                    removeElement={removeElement}
                     renderFieldLabel={renderFieldLabel}
+                    setEditedNode={setEditedNode}
                     setProperty={setProperty}
+                    removeElement={removeElement}
+                    addElement={addElement}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
                 />

@@ -1,31 +1,31 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
 import { Validator } from "../../editors/Validators";
-import { Option, UpdatedFields } from "../FieldsSelect";
+import { Option } from "../FieldsSelect";
 import { Parameter } from "../../../../../types";
 import SettingsButton from "../SettingsButton";
 import { FieldsRow } from "../FieldsRow";
-import SettingsWithoutStringBool from "../settings/SettingsWithoutStringBool";
+import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
+import { UpdatedItem, onChangeType } from "./";
+import { addNewFields, validateFieldsForCurrentOption } from "./utils";
 
 interface ItemProps {
     index: number;
-    item: UpdatedFields;
+    item: UpdatedItem;
     validators: Validator[];
     namespace: string;
     readOnly?: boolean;
     showValidation?: boolean;
-    onChange: (path: string, value: string) => void;
+    onChange: (path: string, value: onChangeType) => void;
     options: Option[];
-    updatedCurrentField: (currentIndex: number, settingsOpen: boolean, settingsOptions: any) => void;
 }
 
-function Item(props: ItemProps): JSX.Element {
-    const { index, item, validators, namespace, readOnly, showValidation, onChange, options, updatedCurrentField } = props;
+export function Item(props: ItemProps): JSX.Element {
+    const { index, item, validators, namespace, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
-    const [isOpen, setIsOpen] = useState(false);
     const [isMarked] = useDiffMark();
 
     const getCurrentOption = useCallback(
@@ -37,35 +37,11 @@ function Item(props: ItemProps): JSX.Element {
         [options],
     );
 
-    const validateFieldsForCurrentOption = (currentOption: string) => {
-        const defaultOption = {
-            required: false,
-            hintText: "",
-            initialValue: "",
-        };
-        if (currentOption === "string" || currentOption === "bool") {
-            return {
-                ...defaultOption,
-                presetSelection: "List 1" || "any value with suggestions",
-                inputMode: "Fixed list",
-                mode: "Preset" || "User Defined list",
-            };
-        } else if (currentOption !== "string" && currentOption !== "boolean") {
-            return {
-                ...defaultOption,
-                validation: true,
-                validationExpression: "",
-                validationErrorMessage: "",
-            };
-        }
-    };
-
     const openSettingMenu = () => {
-        const { value: currentOption } = getCurrentOption(item);
-        console.log(currentOption, "currentOption");
-        const fieldsForCurrentOption = validateFieldsForCurrentOption(currentOption);
-        updatedCurrentField(index, !isOpen, "");
-        setIsOpen(!isOpen);
+        onChange(`${path}.settingsOpen`, !item.settingsOpen);
+        const { value } = getCurrentOption(item);
+        const fields = validateFieldsForCurrentOption(value, item.inputMode);
+        addNewFields(fields, item, onChange, path);
     };
 
     return (
@@ -81,16 +57,18 @@ function Item(props: ItemProps): JSX.Element {
                 />
                 <TypeSelect
                     readOnly={readOnly}
-                    onChange={(value) => onChange(`${path}.typ.refClazzName`, value)}
+                    onChange={(value) => {
+                        onChange(`${path}.typ.refClazzName`, value);
+                        const fields = validateFieldsForCurrentOption(value, item.inputMode);
+                        addNewFields(fields, item, onChange, path);
+                    }}
                     value={getCurrentOption(item)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
                 />
-                <SettingsButton isOpen={isOpen} openSettingMenu={openSettingMenu} />
+                <SettingsButton isOpen={item.settingsOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {isOpen && <SettingsWithoutStringBool item={item} currentOption={getCurrentOption(item)} />}
+            {item.settingsOpen && <Settings path={path} item={item} onChange={onChange} currentOption={getCurrentOption(item)} />}
         </div>
     );
 }
-
-export default Item;
