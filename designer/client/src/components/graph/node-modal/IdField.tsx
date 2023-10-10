@@ -38,11 +38,7 @@ export function IdField({
     const nodes = useSelector(getProcessNodesIds);
     const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
 
-    const validators = (additionalValidators || []).concat(
-        errorValidator(errors, "id"),
-        mandatoryValueValidator,
-        uniqueScenarioValueValidator(otherNodes),
-    );
+    const validators = (additionalValidators || []).concat(errorValidator(errors, "id"), uniqueScenarioValueValidator(otherNodes));
     const [isMarked] = useDiffMark();
     const propName = `id`;
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName]);
