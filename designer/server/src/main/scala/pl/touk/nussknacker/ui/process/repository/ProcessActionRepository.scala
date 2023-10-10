@@ -274,7 +274,9 @@ abstract class DbProcessActionRepository[F[_]](
       .map(pa => (pa.processId, pa.actionType))
     run(
       query.result
-        .map(_.groupMapReduce { case (processId, _) => processId } { case (_, actionType) => Set(actionType) }(_ ++ _))
+        .map(_.foldLeft(Map.empty[ProcessId, Set[ProcessActionType]]) { case (map, (processId, actionType)) =>
+          map + (processId -> (map.getOrElse(processId, Set.empty) + actionType))
+        })
     )
   }
 
