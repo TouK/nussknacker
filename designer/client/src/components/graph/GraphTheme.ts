@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
 import { Theme } from "@mui/material";
 
-export const GraphTheme = (theme: Theme) => css`
+export const graphTheme = (theme: Theme) => css`
     min-height: 300px;
     min-width: 300px;
     color: white; //TODO: Move me to  MUI Theme

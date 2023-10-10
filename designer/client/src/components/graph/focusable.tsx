@@ -3,7 +3,8 @@ import { useTheme } from "@mui/material";
 import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
-import { GraphTheme } from "./GraphTheme";
+import { graphTheme } from "./GraphTheme";
+import { styledGraphWrapper } from "../../stylesheets/styledGraphWrapper";
 
 interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     onResize?: (current: DOMRectReadOnly) => void;
@@ -34,12 +35,14 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
     const { observe } = useSizeWithRef(forwardedRef, options);
 
     return (
-        <div
-            className={cx(GraphTheme(theme), className)}
-            ref={onResize ? observe : forwardedRef}
-            tabIndex={-1}
-            onClick={clickHandler}
-            {...props}
-        />
+        <div className={cx(styledGraphWrapper(theme))}>
+            <div
+                className={cx(graphTheme(theme), className)}
+                ref={onResize ? observe : forwardedRef}
+                tabIndex={-1}
+                onClick={clickHandler}
+                {...props}
+            />
+        </div>
     );
 });
