@@ -1,10 +1,10 @@
 import React from "react";
 import { t } from "i18next";
-import { Switch } from "@mui/material";
 import { Option } from "../FieldsSelect";
-import { UpdatedItem, onChangeType } from "../item";
+import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
-import { SettingRow, SettingLabelStyled } from "./StyledSettingsComponnets";
+import { UpdatedItem, onChangeType } from "../item";
+import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 
 interface ValidationsFields {
     item: UpdatedItem;
@@ -21,7 +21,12 @@ export default function ValidationsFields({ onChange, currentOption, path, item 
                 item?.inputMode !== "Any value with suggestions" && (
                     <SettingRow>
                         <SettingLabelStyled>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
-                        <Switch value={item.validation} onChange={() => onChange(`${path}.validation`, !item.validation)} />
+                        <FormControlLabel
+                            control={
+                                <CustomSwitch checked={item.validation} onChange={() => onChange(`${path}.validation`, !item.validation)} />
+                            }
+                            label=""
+                        />
                         <div style={{ width: "100%", justifyContent: "flex-end", display: "flex" }}>
                             <SettingLabelStyled style={{ flexBasis: "70%", minWidth: "70%" }}>
                                 {t(

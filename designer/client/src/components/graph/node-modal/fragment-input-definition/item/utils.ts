@@ -1,4 +1,5 @@
 import { Fields, InputMode, PresetType, UpdatedItem, onChangeType } from ".";
+import { Option } from "../FieldsSelect";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
     Object.entries(fields).map(([key, value]) => {
@@ -30,4 +31,8 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
             validationErrorMessage: "",
         };
     }
+};
+
+export const isValidOption = (option: Option) => {
+    return option?.value.includes("String") || option?.value.includes("Boolean");
 };

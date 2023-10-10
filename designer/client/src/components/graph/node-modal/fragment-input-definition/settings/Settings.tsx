@@ -1,6 +1,6 @@
 import React from "react";
-import { SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSettingsComponnets";
-import { Switch } from "@mui/material";
+import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSettingsComponnets";
+import { FormControlLabel } from "@mui/material";
 import { NodeInput } from "../../../../withFocus";
 import { useTranslation } from "react-i18next";
 import { Option } from "../FieldsSelect";
@@ -23,14 +23,21 @@ export default function Settings({ item, path, onChange, currentOption }: Settin
         <SettingsWrapper>
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.required", "Required:")}</SettingLabelStyled>
-                <Switch />
+                <FormControlLabel
+                    control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
+                    label=""
+                />
             </SettingRow>
             <StringSetting path={path} item={item} currentOption={currentOption} onChange={onChange} />
             <ValidationsFields item={item} path={path} currentOption={currentOption} onChange={onChange} />
-            <InitialValue item={item} path={path} onChange={onChange} />
+            <InitialValue item={item} path={path} currentOption={currentOption} onChange={onChange} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <NodeInput style={{ width: "70%" }} />
+                <NodeInput
+                    value={item.hintText}
+                    onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
+                    style={{ width: "70%" }}
+                />
             </SettingRow>
         </SettingsWrapper>
     );

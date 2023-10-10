@@ -59,6 +59,7 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
+
                         const fields = validateFieldsForCurrentOption(value, item.inputMode);
                         addNewFields(fields, item, onChange, path);
                     }}

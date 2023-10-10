@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { Option } from "../FieldsSelect";
+import { TypeSelect } from "../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import { UpdatedItem, onChangeType } from "../item";
 import PresetTypesSetting from "./PresetTypesSetting";
-import { Option } from "../FieldsSelect";
 import { variables } from "../../../../../stylesheets/variables";
-import { SelectNodeWithFocus } from "../../../../../components/withFocus";
+import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
+import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
+import { isValidOption } from "../item/utils";
 
 interface StringSetting {
     onChange: (path: string, value: onChangeType) => void;
@@ -21,21 +22,15 @@ export default function StringSetting({ onChange, path, item, currentOption }: S
 
     return (
         <>
-            {(currentOption?.value.includes("String") || currentOption?.value.includes("Boolean")) && (
+            {isValidOption(currentOption) && (
                 <>
                     <SettingRow>
                         <SettingLabelStyled>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
-                        <SelectNodeWithFocus
-                            value={item.inputMode ?? localInputMode[0]}
-                            onChange={(e) => onChange(`${path}.inputMode`, e.currentTarget.value)}
-                            style={{ width: "70%" }}
-                        >
-                            {localInputMode.map((currentInputMode) => (
-                                <option key={currentInputMode} value={currentInputMode}>
-                                    {currentInputMode}
-                                </option>
-                            ))}
-                        </SelectNodeWithFocus>
+                        <TypeSelect
+                            onChange={(value) => onChange(`${path}.inputMode`, value)}
+                            value={{ value: item.inputMode ?? localInputMode[0], label: item.inputMode ?? localInputMode[0] }}
+                            options={localInputMode.map((option) => ({ value: option, label: option }))}
+                        />
                     </SettingRow>
                     <SettingRow>
                         <SettingLabelStyled></SettingLabelStyled>

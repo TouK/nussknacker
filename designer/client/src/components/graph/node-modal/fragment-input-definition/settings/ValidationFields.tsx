@@ -15,9 +15,7 @@ export default function ValidationFields({ validatioErrorMessage, validationExpr
     return (
         <>
             <SettingRow>
-                <SettingLabelStyled style={{ flexBasis: "30%" }}>
-                    {t("fragment.validation.validationExpression", "Validation expression:")}
-                </SettingLabelStyled>
+                <SettingLabelStyled>{t("fragment.validation.validationExpression", "Validation expression:")}</SettingLabelStyled>
                 <NodeInput
                     value={validationExpression}
                     onChange={(e) => onChange(`${path}.validationExpression`, e.currentTarget.value)}
@@ -25,9 +23,7 @@ export default function ValidationFields({ validatioErrorMessage, validationExpr
                 />
             </SettingRow>
             <SettingRow>
-                <SettingLabelStyled style={{ flexBasis: "30%" }}>
-                    {t("fragment.validation.validationErrorMessage", "Validation error message:")}
-                </SettingLabelStyled>
+                <SettingLabelStyled>{t("fragment.validation.validationErrorMessage", "Validation error message:")}</SettingLabelStyled>
                 <NodeInput
                     value={validatioErrorMessage}
                     onChange={(e) => onChange(`${path}.validatioErrorMessage`, e.currentTarget.value)}

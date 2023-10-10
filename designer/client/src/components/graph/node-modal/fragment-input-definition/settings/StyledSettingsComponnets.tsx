@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { Switch, styled } from "@mui/material";
 import { variables } from "../../../../../stylesheets/variables";
 import { NodeRow } from "../../../node-modal/NodeDetailsContent/NodeStyled";
 
@@ -24,4 +24,13 @@ export const SettingLabelStyled = styled("div")`
 
 export const SettingRow = styled(NodeRow)`
     align-items: center;
+`;
+
+export const CustomSwitch = styled(Switch)`
+    input[type="checkbox"] {
+        all: initial !important;
+    }
+    input[type="checkbox"]:after {
+        all: initial !important;
+    }
 `;
