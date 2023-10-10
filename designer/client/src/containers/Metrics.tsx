@@ -29,7 +29,7 @@ function useMetricsUrl(processId?: ProcessId): string {
 function Metrics(): JSX.Element {
     const { processId } = useParams<{ processId: string }>();
     const url = useMetricsUrl(processId);
-    return <CustomTabWrapper tab={{ url, type: "IFrame", addAccessTokenInQueryParam: true }} />;
+    return <CustomTabWrapper tab={{ url, type: "IFrame", accessTokenInQuery: { enabled: true, parameterName: "auth_token" } }} />;
 }
 
 export default Metrics;

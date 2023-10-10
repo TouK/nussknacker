@@ -151,8 +151,17 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
+        // This test is for  deploy scenario dialog snapshot comparing only (equal snapshot).
+        // For some reason cypress does not have a valid snapshot comparison inside another test case.
+        it("should make a deploy of the new version", () => {
+            cy.viewport("macbook-15");
+
+            cy.deployScenario(undefined, true);
+        });
+
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
+
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
             cy.get("@button").click();
@@ -172,7 +181,6 @@ describe("Process", () => {
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-
             cy.cancelScenario();
 
             cy.deployScenario();

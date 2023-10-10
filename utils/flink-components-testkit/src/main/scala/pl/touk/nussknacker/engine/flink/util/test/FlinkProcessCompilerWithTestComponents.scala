@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   CustomTransformerAdditionalData,
   ModelDefinitionWithTypes
 }
-import pl.touk.nussknacker.engine.definition.ProcessObjectDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{GlobalVariableDefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
+import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
 
 import scala.reflect.ClassTag
 
@@ -25,7 +25,7 @@ class FlinkProcessCompilerWithTestComponents(
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
-    testComponentsHolder: TestComponentsHolder
+    testExtensionsHolder: TestExtensionsHolder
 ) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   override protected def definitions(
@@ -69,26 +69,36 @@ class FlinkProcessCompilerWithTestComponents(
     val sinksWithTests                   = definitions.sinkFactories ++ testSinkDefs
     val customStreamTransformerWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
 
+    val expressionConfigWithTests = definitions.expressionConfig.copy(
+      definitions.expressionConfig.globalVariables ++
+        GlobalVariableDefinitionExtractor.extractDefinitions(
+          testExtensionsHolder.globalVariables.view.map { case (key, value) =>
+            key -> WithCategories.anyCategory(value)
+          }.toMap
+        )
+    )
+
     val definitionsWithTestComponents = definitions.copy(
       services = servicesWithTests,
       sinkFactories = sinksWithTests,
       sourceFactories = sourcesWithTests,
-      customStreamTransformers = customStreamTransformerWithTests
+      customStreamTransformers = customStreamTransformerWithTests,
+      expressionConfig = expressionConfigWithTests
     )
 
     (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)
   }
 
   private def testComponentsWithCategories[T <: Component: ClassTag] =
-    testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
+    testExtensionsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestComponentsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
+  def this(testExtensionsHolder: TestExtensionsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(
     modelData.configCreator,
     modelData.processConfig,
     false,
     modelData.objectNaming,
     componentUseCase,
-    componentsHolder
+    testExtensionsHolder
   )
 
 }

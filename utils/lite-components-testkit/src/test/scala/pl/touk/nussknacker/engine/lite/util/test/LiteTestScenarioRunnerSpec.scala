@@ -30,6 +30,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
 
     val runner = new LiteTestScenarioRunner(
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
+      Map.empty,
       ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")),
       EngineRuntime
     )
@@ -45,7 +46,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .buildVariable("v", "v", "varField" -> "#input.field")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
 
-    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty(), EngineRuntime)
+    val runner = new LiteTestScenarioRunner(List.empty, Map.empty, ConfigFactory.empty(), EngineRuntime)
 
     val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
     result.validValue shouldBe RunResult.success("abc")
