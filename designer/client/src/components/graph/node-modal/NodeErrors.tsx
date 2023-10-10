@@ -4,7 +4,6 @@ import NodeTip from "./NodeTip";
 import { css } from "@emotion/css";
 import { NodeValidationError } from "../../../types";
 
-//TODO: remove style overrides, cleanup
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
     const { errors = [], message: errorMessage } = props;
 

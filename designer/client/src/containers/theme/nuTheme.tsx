@@ -61,7 +61,6 @@ const selectColors = {
 };
 
 const custom = {
-    themeClass: "",
     borderRadius: 0,
     ConnectionErrorModal: {
         zIndex: 1600,
