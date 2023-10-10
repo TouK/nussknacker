@@ -40,7 +40,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("id")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                validators={[mandatoryValueValidator, errorValidator(fieldErrors, "id")]}
+                validators={[errorValidator(fieldErrors, "id")]}
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
