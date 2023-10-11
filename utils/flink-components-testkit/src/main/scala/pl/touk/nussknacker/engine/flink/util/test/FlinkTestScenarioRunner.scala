@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.testComponents.{noopSourceComponent, testDataSourceComponent, testResultServiceComponent}
@@ -23,8 +24,8 @@ import scala.reflect.ClassTag
 
 private object testComponents {
 
-  def testDataSourceComponent[T: ClassTag : TypeInformation](data: List[T]): ComponentDefinition = {
-    ComponentDefinition(TestScenarioRunner.testDataSource, SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])))
+  def testDataSourceComponent[T: ClassTag : TypeInformation](data: List[T], timestampAssigner: Option[TimestampWatermarkHandler[T]]): ComponentDefinition = {
+    ComponentDefinition(TestScenarioRunner.testDataSource, SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, timestampAssigner, Typed.apply[T])))
   }
 
   def noopSourceComponent: ComponentDefinition = {
@@ -44,10 +45,21 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
                               flinkMiniCluster: FlinkMiniClusterHolder,
                               componentUseCase: ComponentUseCase
                              ) extends ClassBasedTestScenarioRunner {
-
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: testResultServiceComponent :: Nil
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
+  }
+
+  /**
+   * Can be used to test Flink aggregates where record timestamp is crucial
+   */
+  def runWithDataAndTimestampAssigner[I: ClassTag, R](scenario: CanonicalProcess, data: List[I], timestampAssigner: TimestampWatermarkHandler[I]): RunnerListResult[R] = {
+    implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Some(timestampAssigner)))
+  }
+
+  private def runWithTestSourceComponent[I: ClassTag, R](scenario: CanonicalProcess, testDataSourceComponent: ComponentDefinition): RunnerListResult[R] = {
+    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalProcessVariables)
     run(scenario, testComponentHolder).map { _ =>
       collectResults(testComponentHolder)
@@ -70,7 +82,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: Nil
+    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
     val testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents, globalProcessVariables)
     run(scenario, testComponentHolder)
   }
