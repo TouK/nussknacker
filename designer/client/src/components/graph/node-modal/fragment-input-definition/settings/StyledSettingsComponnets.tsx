@@ -1,6 +1,5 @@
 import React from "react";
 import { Switch, Typography, styled } from "@mui/material";
-import { variables } from "../../../../../stylesheets/variables";
 import { NodeRow } from "../../../node-modal/NodeDetailsContent/NodeStyled";
 
 export const SettingsWrapper = styled("div")`
@@ -12,9 +11,10 @@ export const SettingsWrapper = styled("div")`
     margin-bottom: 20px;
 `;
 
-export const SettingLabelStyled = styled("div")`
+export const SettingLabelStyled = styled("div")(
+    ({ theme }) => `
     font-family: Open Sans;
-    color: ${variables.modalLabelTextColor};
+    color: ${theme.custom.colors.baseColor};
     font-size: 12px;
     font-weight: 400;
     line-height: 16px;
@@ -23,7 +23,8 @@ export const SettingLabelStyled = styled("div")`
     align-items: center;
     display: flex;
     flex-basis: 30%;
-`;
+`,
+);
 
 export const SettingRow = styled(NodeRow)`
     align-items: center;

@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
 import { setAndPreserveLocationParams, visualizationUrl } from "../../../../common/VisualizationUrl";
-import { alpha, tint, useNkTheme } from "../../../../containers/theme";
 import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType, Process } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
@@ -22,8 +21,8 @@ import { applyIdFromFakeName } from "../IdField";
 import { mapValues } from "lodash";
 import { ensureArray } from "../../../../common/arrayUtils";
 import { useNavigate } from "react-router-dom";
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "../../../../containers/useMuiTheme";
+import { useTheme } from "@mui/material";
+import { alpha, tint } from "../../../../containers/theme/helpers";
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
@@ -65,8 +64,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }, [process, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
-    const { theme } = useNkTheme();
-    const muiTheme = useMuiTheme();
+    const theme = useTheme();
 
     const applyButtonData: WindowButtonProps | null = useMemo(
         () =>
@@ -78,20 +76,20 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       classname: css({
                           //increase (x4) specificity over ladda
                           "&&&&": {
-                              backgroundColor: theme.colors.accent,
+                              backgroundColor: theme.custom.colors.accent,
                               ":hover": {
-                                  backgroundColor: tint(theme.colors.accent, 0.25),
+                                  backgroundColor: tint(theme.custom.colors.accent, 0.25),
                               },
                               "&[disabled], &[data-loading]": {
                                   "&, &:hover": {
-                                      backgroundColor: alpha(theme.colors.accent, 0.5),
+                                      backgroundColor: alpha(theme.custom.colors.accent, 0.5),
                                   },
                               },
                           },
                       }),
                   }
                 : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
+        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.custom.colors.accent],
     );
 
     const openFragmentButtonData: WindowButtonProps | null = useMemo(
@@ -137,9 +135,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             }}
         >
             <ErrorBoundary>
-                <ThemeProvider theme={muiTheme}>
-                    <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
-                </ThemeProvider>
+                <NodeGroupContent node={editedNode} edges={outputEdges} onChange={!readOnly && onChange} />
             </ErrorBoundary>
         </WindowContent>
     );

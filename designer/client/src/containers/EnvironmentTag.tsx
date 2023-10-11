@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux";
 import { getEnvironmentAlert } from "../reducers/selectors/settings";
 import React, { useMemo } from "react";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
 // TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
 export enum EnvironmentTagColor {
@@ -11,7 +11,7 @@ export enum EnvironmentTagColor {
     yellow = "indicator-yellow",
 }
 
-const Tag = styled.div(
+const Tag = styled("div")(
     {
         display: "inline-block",
         padding: "3px 8px",

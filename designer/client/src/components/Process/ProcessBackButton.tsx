@@ -5,22 +5,21 @@ import { useTranslation } from "react-i18next";
 import { matchPath, useLocation } from "react-router-dom";
 import { MetricsBasePath } from "../../containers/paths";
 import { styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
 
 const BackIcon = styled(ProcessBackIcon)(() => ({
     height: "12px",
 }));
 
-const ButtonText = styled("span")(() => ({
+const ButtonText = styled("span")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: 600,
-    color: variables.buttonTextColor,
+    color: theme.custom.colors.secondaryColor,
     marginLeft: "8px",
 }));
 
-const ProcessLinkButton = styled(ProcessLink)(() => ({
-    backgroundColor: variables.buttonBorderColor,
-    border: `1px solid ${variables.menuButtonBorderColor}`,
+const ProcessLinkButton = styled(ProcessLink)(({ theme }) => ({
+    backgroundColor: theme.custom.colors.tundora,
+    border: `1px solid ${theme.custom.colors.tundora}`,
     borderRadius: "3px",
     height: "25px",
     display: "flex",
@@ -28,7 +27,7 @@ const ProcessLinkButton = styled(ProcessLink)(() => ({
     padding: "0 8px",
     cursor: "pointer",
     "&:hover, &:focus": {
-        backgroundColor: variables.menuButtonActiveBKColor,
+        backgroundColor: theme.custom.colors.scorpion,
     },
 }));
 
