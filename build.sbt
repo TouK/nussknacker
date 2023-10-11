@@ -379,7 +379,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage    := forScalaVersion(
+    dockerBaseImage       := forScalaVersion(
       scalaVersion.value,
       "eclipse-temurin:17-jre-jammy",
       (
@@ -387,21 +387,10 @@ lazy val commonDockerSettings = {
         12
       ) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
     ),
-    dockerUsername     := dockerUserName,
-    dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerBuildCommand := {
-      if (sys.props("os.arch") != "amd64") {
-        //         use buildx with platform to build supported amd64 images on other CPU architectures
-        //         this may require that you have first run 'docker buildx create' to set docker buildx up
-        dockerExecCommand.value ++ Seq(
-          "buildx",
-          "build",
-          "--platform=linux/amd64",
-          "--load"
-        ) ++ dockerBuildOptions.value :+ "."
-      } else dockerBuildCommand.value
-    },
-    dockerAliases      := {
+    dockerUsername        := dockerUserName,
+    dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
+    dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"),
+    dockerAliases         := {
       // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
 
