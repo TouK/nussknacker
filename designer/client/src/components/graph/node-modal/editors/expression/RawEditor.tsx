@@ -5,7 +5,8 @@ import ExpressionSuggest from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
 import { Validator } from "../Validators";
-import { NodeInputCss } from "../../../../../components/NodeInput";
+import { NodeInputCss } from "../../../../NodeInput";
+import { useTheme } from "@mui/material";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -38,6 +39,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
         editorMode,
     } = props;
 
+    const theme = useTheme();
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
     const className1 = useMemo(() => cn("node-input"), []);
@@ -47,7 +49,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             rows: rows,
             cols: cols,
             className: className1,
-            style: NodeInputCss,
+            style: NodeInputCss(theme),
             value: value,
             language: language,
             onValueChange: onValueChange,

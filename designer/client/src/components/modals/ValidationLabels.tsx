@@ -1,4 +1,4 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import { isEmpty } from "lodash";
 import React from "react";
 import { LimitedValidationLabel } from "../common/ValidationLabel";
@@ -15,7 +15,7 @@ type ValidationError = {
     description: string;
 };
 
-const LabelsContainer = styled.div({
+const LabelsContainer = styled("div")({
     display: "inline-grid",
     maxWidth: "fit-content",
 });

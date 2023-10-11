@@ -3,10 +3,10 @@ import { createSelector } from "reselect";
 import { useSelector } from "react-redux";
 import CommentContent from "./CommentContent";
 import Date from "../common/Date";
-import { variables } from "../../stylesheets/variables";
 import { ProcessCommentsList, RemoveButton } from "./StyledComment";
 import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
 import { ListSeparator } from "../common/ListSeparator";
+import { Box } from "@mui/material";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
@@ -28,7 +28,10 @@ export default function CommentsList({ deleteComment }: CommentsListProps) {
                 <div key={comment.id}>
                     <div style={{ width: "100%" }}>
                         <Date date={comment.createDate} />
-                        <span style={{ color: variables.commentHeaderColor }}>{`| v${comment.processVersionId} | ${comment.user}`}</span>
+                        <Box
+                            component={"span"}
+                            sx={(theme) => ({ color: theme.custom.colors.silverChalice })}
+                        >{`| v${comment.processVersionId} | ${comment.user}`}</Box>
                         {comment.user != loggedUser.id ? null : (
                             <RemoveButton className="glyphicon glyphicon-remove" onClick={() => deleteComment(comment)} />
                         )}

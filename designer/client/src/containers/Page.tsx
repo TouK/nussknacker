@@ -1,6 +1,6 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
-export const Page = styled.div({
+export const Page = styled("div")({
     position: "relative",
     overflow: "hidden",
     height: "100%",

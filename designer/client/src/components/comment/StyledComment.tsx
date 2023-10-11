@@ -1,6 +1,5 @@
 import { styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
-import { variables } from "../../stylesheets/variables";
 
 export const ProcessCommentsWrapper = styled("div")`
     padding: 0 13px 10px;
@@ -20,29 +19,32 @@ export const RemoveButton = styled("span")`
     }
 `;
 
-export const AddCommentPanel = styled("div")`
+export const AddCommentPanel = styled("div")(
+    ({ theme }) => `
     font-size: 12px !important;
     display: flex;
     flex-direction: column !important;
     textarea {
         width: 100% !important;
-        height: ${variables.formControllHeight}px !important;
+        height: ${theme.custom.spacing.controlHeight} !important;
         font-size: 12px;
         font-weight: 400;
         border-radius: 3px;
         border: none;
-        background-color: ${variables.commentBkgColor};
+        background-color: ${theme.custom.colors.secondaryBackground};
         padding: 4px 6px;
         resize: none;
         &:focus {
-            outline-color: ${variables.defaultTextColor};
+            outline-color: ${theme.custom.colors.secondaryColor};
         }
     }
-`;
+`,
+);
 
-export const CommentButton = styled(NkButton)`
+export const CommentButton = styled(NkButton)(
+    ({ theme }) => `
     font-size: 12px !important;
-    background-color: ${variables.commentBkgColor} !important;
+    background-color: ${theme.custom.colors.secondaryBackground} !important;
     border: none !important;
     width: 20% !important;
     height: 30px !important;
@@ -54,7 +56,8 @@ export const CommentButton = styled(NkButton)`
     &:hover {
         background-color: #3d3d3d !important;
     }
-`;
+`,
+);
 
 export const PanelComment = styled("div")`
     margin-top: 1px;
