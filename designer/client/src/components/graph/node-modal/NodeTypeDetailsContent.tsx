@@ -30,7 +30,7 @@ import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
 
-export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
+type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
 interface NodeTypeDetailsContentProps {
     node: NodeType;
@@ -183,14 +183,13 @@ export function NodeTypeDetailsContent({
         case "FragmentInputDefinition":
             return (
                 <FragmentInputDefinition
+                    addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
                     node={node}
-                    renderFieldLabel={renderFieldLabel}
-                    setEditedNode={setEditedNode}
-                    setProperty={setProperty}
                     removeElement={removeElement}
-                    addElement={addElement}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
                     showValidation={showValidation}
                     variableTypes={variableTypes}
                 />

@@ -1,9 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { SetStateAction, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { NodeType, Parameter } from "../../../../types";
+import { Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
@@ -11,12 +11,11 @@ import { orderBy, find, head } from "lodash";
 
 interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
-    setEditedNode: (n: SetStateAction<NodeType>) => void;
 }
 
 export default function FragmentInputDefinition(props: Props): JSX.Element {
     const { addElement, removeElement, variableTypes, ...passProps } = props;
-    const { node, setEditedNode, isEditMode, setProperty, showValidation } = passProps;
+    const { node, isEditMode, setProperty, showValidation } = passProps;
 
     const readOnly = !isEditMode;
     const definitionData = useSelector(getProcessDefinitionData);
@@ -42,17 +41,16 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     return (
         <NodeCommonDetailsDefinition {...passProps}>
             <FieldsSelect
-                addField={addField}
-                removeField={removeElement}
                 label="Parameters"
                 onChange={setProperty}
-                setEditedNode={setEditedNode}
+                addField={addField}
+                removeField={removeElement}
                 namespace={"parameters"}
                 fields={fields}
-                variableTypes={variableTypes}
                 options={orderedTypeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
             />
         </NodeCommonDetailsDefinition>
     );

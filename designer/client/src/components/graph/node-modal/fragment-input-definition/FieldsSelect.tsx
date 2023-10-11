@@ -1,5 +1,5 @@
-import React, { SetStateAction, useCallback, useMemo } from "react";
-import { NodeType, Parameter, VariableTypes } from "../../../../types";
+import React, { useCallback, useMemo } from "react";
+import { Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "./DndItems";
 import { NodeRowFields } from "./NodeRowFields";
@@ -12,13 +12,12 @@ export interface Option {
 
 interface FieldsSelectProps {
     addField: () => void;
-    removeField: (path: string, index: number) => void;
     label: string;
     fields: Parameter[];
     namespace: string;
     onChange: (propToMutate: string, newValue: string) => void;
-    setEditedNode: (n: SetStateAction<NodeType>) => void;
     options: Option[];
+    removeField: (path: string, index: number) => void;
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
@@ -27,7 +26,7 @@ interface FieldsSelectProps {
 function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation } = props;
 
-    const ItemEl = useCallback(
+    const ItemElement = useCallback(
         ({ index, item, validators }: { index: number; item: UpdatedItem; validators: Validator[] }) => {
             return (
                 <Item
@@ -59,7 +58,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     ),
                 ];
 
-                return { item, el: <ItemEl key={index} index={index} item={item} validators={validators} /> };
+                return { item, el: <ItemElement key={index} index={index} item={item} validators={validators} /> };
             }),
         [Item, fields],
     );
