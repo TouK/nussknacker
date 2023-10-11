@@ -15,7 +15,6 @@ import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
-import { variables } from "../stylesheets/variables";
 import { ThunkAction } from "../actions/reduxTypes";
 
 const prepareNotification =
@@ -35,9 +34,9 @@ const prepareNotification =
                             type={type}
                             icon={
                                 type == "error" ? (
-                                    <DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
+                                    <DangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "center" })} />
                                 ) : (
-                                    <CheckCircleIcon sx={{ color: variables.sucess, alignSelf: "center" }} />
+                                    <CheckCircleIcon sx={(theme) => ({ color: theme.custom.colors.success, alignSelf: "center" })} />
                                 )
                             }
                             message={message}

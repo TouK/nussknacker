@@ -1,9 +1,9 @@
 import { css, cx } from "@emotion/css";
 import React, { forwardRef, Ref } from "react";
-import { useNkTheme } from "../../containers/theme";
 import { bootstrapStyles } from "../../styles";
 import { ValueFieldProps } from "../valueField";
 import { NodeInput } from "../withFocus";
+import { useTheme } from "@mui/material";
 
 export type InputProps = ValueFieldProps<string> & {
     placeholder?: string;
@@ -14,13 +14,13 @@ export const ThemedInput = forwardRef(function ThemedInput(
     { value, onChange, placeholder, className }: InputProps,
     ref: Ref<HTMLInputElement>,
 ): JSX.Element {
-    const { theme } = useNkTheme();
+    const theme = useTheme();
     const styles = css({
-        height: theme?.spacing?.controlHeight,
-        borderRadius: theme?.borderRadius,
-        color: theme?.colors?.primaryColor,
-        borderColor: theme.colors.borderColor,
-        backgroundColor: theme.colors.secondaryBackground,
+        height: theme.custom.spacing.controlHeight,
+        borderRadius: theme.custom.borderRadius,
+        color: theme.custom.colors?.primaryColor,
+        borderColor: theme.custom.colors.borderColor,
+        backgroundColor: theme.custom.colors.secondaryBackground,
     });
 
     return (

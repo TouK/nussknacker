@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { alpha } from "../containers/theme";
+import { alpha } from "../containers/theme/helpers";
 import HttpService, { AppBuildInfo } from "../http/HttpService";
 
 function useAppInfo(): AppBuildInfo {

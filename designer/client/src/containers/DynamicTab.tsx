@@ -3,12 +3,12 @@ import React, { memo, useMemo } from "react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import { splitUrl } from "./ExternalLib";
 import { ModuleUrl } from "./ExternalLib/types";
-import { MuiThemeProvider } from "./muiThemeProvider";
 import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
 import { RemoteComponent } from "./ExternalLib/RemoteComponent";
+import { NuThemeProvider } from "./theme/nuThemeProvider";
 
 export type BaseTab = {
     tab: BaseTabData;
@@ -52,11 +52,11 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
         <ErrorBoundary FallbackComponent={() => <NotFound />}>
-            <MuiThemeProvider>
+            <NuThemeProvider>
                 <ScopedCssBaseline style={{ flex: 1, overflow: "hidden" }}>
                     <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
                 </ScopedCssBaseline>
-            </MuiThemeProvider>
+            </NuThemeProvider>
         </ErrorBoundary>
     );
 };

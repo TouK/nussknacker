@@ -1,4 +1,4 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 import { useSelector } from "react-redux";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
@@ -11,9 +11,9 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
-import { alpha } from "../../containers/theme";
+import { alpha } from "../../containers/theme/helpers";
 
-const PlainButton = styled.button({
+const PlainButton = styled("button")({
     background: "unset",
     border: "unset",
     padding: "unset",
@@ -55,7 +55,7 @@ const Popup = styled(FocusLock)(({ theme }) => ({
     zIndex: 1501,
     position: "absolute",
     inset: "3em 0 auto auto",
-    background: alpha(theme.colors.secondaryBackground, 0.8),
+    background: alpha(theme.custom.colors.secondaryBackground, 0.8),
     backdropFilter: "blur(4px)",
 }));
 
