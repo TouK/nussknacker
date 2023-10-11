@@ -86,7 +86,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      - name: Setup buildx builder
+        uses: docker/setup-buildx-action@v3
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
