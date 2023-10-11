@@ -4,7 +4,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 
 interface SettingsButton {
     isOpen: boolean;
-    openSettingMenu: React.Dispatch<React.SetStateAction<boolean>>;
+    openSettingMenu: () => void;
 }
 
 export default function SettingsButton({ isOpen, openSettingMenu }) {

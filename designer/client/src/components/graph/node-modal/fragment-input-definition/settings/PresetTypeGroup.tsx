@@ -1,8 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, SettingRow, SyledFormControlLabel } from "./StyledSettingsComponnets";
-import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
-import { variables } from "../../../../../stylesheets/variables";
+import { FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
 import { onChangeType, PresetType } from "../item";
 
 interface PresetTypeGroup {
@@ -13,6 +12,7 @@ interface PresetTypeGroup {
 
 export default function PresetTypeGroup({ presetType, onChange, path }) {
     const { t } = useTranslation();
+    const theme = useTheme();
 
     return (
         <SettingRow>
@@ -30,13 +30,13 @@ export default function PresetTypeGroup({ presetType, onChange, path }) {
                 }}
             >
                 <FormControlLabel
-                    sx={{ color: variables.defaultTextColor }}
+                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value="Preset"
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</SyledFormControlLabel>}
                 />
                 <FormControlLabel
-                    sx={{ color: variables.defaultTextColor }}
+                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value="UserDefinitionList"
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</SyledFormControlLabel>}

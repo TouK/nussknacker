@@ -3,7 +3,7 @@ import { Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "./DndItems";
 import { NodeRowFields } from "./NodeRowFields";
-import { Item, UpdatedItem } from "./item";
+import { Item, UpdatedItem, onChangeType } from "./item";
 
 export interface Option {
     value: string;
@@ -15,7 +15,7 @@ interface FieldsSelectProps {
     label: string;
     fields: Parameter[];
     namespace: string;
-    onChange: (propToMutate: string, newValue: string) => void;
+    onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     removeField: (path: string, index: number) => void;
     readOnly?: boolean;

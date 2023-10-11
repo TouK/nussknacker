@@ -26,6 +26,38 @@ export const SettingLabelStyled = styled("div")(
 `,
 );
 
+export const ListItemContainer = styled("div")`
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+`;
+
+export const ListItemWrapper = styled("div")`
+    width: 70%;
+    display: flex;
+    justify-content: flex-start;
+    max-height: 100px;
+    flex-wrap: wrap;
+    overflow: auto;
+    margin-top: 10px;
+    ::-webkit-scrollbar-track {
+        width: 15px;
+        height: 100px;
+        background: rgba(51, 51, 51, 1);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(173, 173, 173, 1);
+        background-clip: content-box;
+        border: 3.5px solid transparent;
+        border-radius: 100px;
+        height: 60px;
+    }
+    ::-webkit-scrollbar {
+        width: 15px;
+        height: 100px;
+    }
+`;
+
 export const SettingRow = styled(NodeRow)`
     align-items: center;
 `;
