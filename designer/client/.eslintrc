@@ -70,10 +70,7 @@
             }
         },
         {
-            "files": ["**/*.ts"],
-            "parserOptions": {
-                // "project": "tsconfig.json"
-            }
+            "files": ["**/*.ts"]
         },
         {
             "files": ["cypress/**/*.ts"],
