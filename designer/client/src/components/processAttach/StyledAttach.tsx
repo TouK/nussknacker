@@ -1,6 +1,5 @@
 import { styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
-import { variables } from "../../stylesheets/variables";
 
 export const AddAttachmentsWrapper = styled("div")`
     font-size: 12px;
@@ -63,25 +62,29 @@ export const DownloadAttachment = styled("div")`
     font-size: 25px;
 `;
 
-export const DownloadButton = styled(NkButton)`
+export const DownloadButton = styled(NkButton)(
+    ({ theme }) => `
     width: 27px !important;
     height: 27px !important;
-    border: 1px solid ${variables.buttonBorderColor};
-`;
+    border: 1px solid ${theme.custom.colors.tundora};
+`,
+);
 
-export const AttachHeader = styled("div")`
+export const AttachHeader = styled("div")(
+    ({ theme }) => `
     span {
-        color: ${variables.commentHeaderColor};
+        color: ${theme.custom.colors.silverChalice};
         &.date {
-            color: ${variables.commentHeaderColor};
+            color: ${theme.custom.colors.silverChalice};
             font-style: italic;
         }
     }
     p {
         font-style: italic;
-        color: ${variables.panelTitleTextColor};
+        color: ${theme.custom.colors.mutedColor};
     }
-`;
+`,
+);
 
 export const ProcessAttachmentsStyled = styled("div")`
     cursor: default;

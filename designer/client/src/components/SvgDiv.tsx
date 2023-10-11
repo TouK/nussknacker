@@ -1,7 +1,7 @@
 import React, { ComponentType, DetailedHTMLProps, HTMLAttributes } from "react";
 import loadable from "@loadable/component";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import { absoluteBePath } from "../common/UrlUtils";
 
 const absoluteExp = /^(?<root>(?<proto>(https?:)?\/)?\/)?.*\.svg$/i;
@@ -32,7 +32,7 @@ const AsyncSvg = loadable.lib(
     },
 );
 
-const Flex = styled.div({
+const Flex = styled("div")({
     display: "flex",
     width: "100%",
     height: "100%",
