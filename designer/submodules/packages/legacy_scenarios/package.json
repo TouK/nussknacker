@@ -60,7 +60,7 @@
         "jest-mock": "27.4.6",
         "legacy-css-loader": "npm:css-loader@5.2.7",
         "moment-locales-webpack-plugin": "1.2.0",
-        "postcss": "8.4.5",
+        "postcss": "8.4.31",
         "postcss-import": "14.1.0",
         "postcss-loader": "6.2.1",
         "postcss-move-props-to-bg-image-query": "4.0.0",
