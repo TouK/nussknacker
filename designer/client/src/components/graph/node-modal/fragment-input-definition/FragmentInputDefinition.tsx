@@ -7,15 +7,15 @@ import { Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
-import { orderBy, find, head } from "lodash";
+import { find, head, orderBy } from "lodash";
 
 interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
 }
 
 export default function FragmentInputDefinition(props: Props): JSX.Element {
-    const { addElement, removeElement, variableTypes, ...passProps } = props;
-    const { node, isEditMode, setProperty, showValidation } = passProps;
+    const { removeElement, addElement, variableTypes, ...passProps } = props;
+    const { node, setProperty, isEditMode, showValidation } = passProps;
 
     const readOnly = !isEditMode;
     const definitionData = useSelector(getProcessDefinitionData);

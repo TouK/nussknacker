@@ -18,7 +18,8 @@ interface Settings {
     currentOption: Option;
 }
 
-export default function Settings({ item, path, onChange, variableTypes, currentOption }: Settings) {
+export default function Settings(props: Settings) {
+    const { item, path, onChange, variableTypes, currentOption } = props;
     const { t } = useTranslation();
 
     return (
