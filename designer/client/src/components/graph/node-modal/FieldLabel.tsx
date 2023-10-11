@@ -1,4 +1,4 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -14,7 +14,7 @@ function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: Nod
     return processDefinitionData.componentsConfig[nodeId]?.params;
 }
 
-const Footer = styled.div({
+const Footer = styled("div")({
     fontWeight: 500,
     opacity: 0.7,
     display: "-webkit-box",

@@ -1,14 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import { css } from "@emotion/css";
-import { Global, Theme, ThemeProvider, ThemeProviderProps, useTheme } from "@emotion/react";
+import { GlobalStyles, Theme, useTheme } from "@mui/material";
 import Color from "color";
-import React, { useMemo } from "react";
-import { darkTheme } from "./darkTheme";
-import { defaultAppTheme } from "./defaultAppTheme";
-
-type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
-};
+import React from "react";
+import { css } from "@emotion/css";
 
 export function tint(base: string, amount = 0): string {
     return Color(base).mix(Color("white"), amount).hsl().string();
@@ -31,39 +25,6 @@ export function tintPrimary(base: string): {
         primary25: tint(base, 0.25),
     };
 }
-
-export type NkTheme = DeepPartial<typeof defaultAppTheme>;
-
-declare module "@emotion/react" {
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
-    interface Theme extends NkTheme {}
-}
-
-export function NkThemeProvider({ children, theme = darkTheme, ...props }: Partial<ThemeProviderProps>): JSX.Element {
-    return (
-        <ThemeProvider theme={theme} {...props}>
-            {children}
-        </ThemeProvider>
-    );
-}
-
-export const useNkTheme: () => { withFocus: string; theme: NkTheme } = () => {
-    const theme = useTheme();
-
-    const withFocus = useMemo(
-        () =>
-            css({
-                ":focus, :active:focus": {
-                    outline: "none",
-                    borderColor: theme?.colors?.focusColor,
-                    boxShadow: `0 0 0 1px ${theme?.colors?.focusColor}`,
-                },
-            }),
-        [theme],
-    );
-
-    return { theme, withFocus };
-};
 
 export function getContrastColor(color: string, contrast = 5, ratio = 0.1) {
     const baseColor = Color(color);
@@ -97,8 +58,20 @@ function colorsToVariables(colors: Record<string, string>): Record<`--${string}`
 
 function themeToVariables(theme: Theme): { ":root": Record<`--${string}`, string> } {
     return {
-        ":root": colorsToVariables(theme.colors),
+        ":root": colorsToVariables(theme.custom.colors),
     };
 }
 
-export const GlobalCSSVariables = () => <Global styles={themeToVariables} />;
+export const GlobalCSSVariables = () => <GlobalStyles styles={themeToVariables} />;
+
+export const useFocus = () => {
+    const theme = useTheme();
+
+    return css({
+        ":focus, :active:focus": {
+            outline: "none",
+            borderColor: theme.custom.colors.focusColor,
+            boxShadow: `0 0 0 1px ${theme.custom.colors.focusColor}`,
+        },
+    });
+};
