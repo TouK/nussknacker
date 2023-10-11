@@ -41,7 +41,7 @@ export default function PresetTypesSetting({ presetType, presetSelection, path, 
                             }
                         }}
                     />
-                    {addListItem.length > 0 && <ListItems addListItem={addListItem} onChange={onChange} path={path} />}
+                    {addListItem?.length > 0 && <ListItems addListItem={addListItem} onChange={onChange} path={path} />}
                 </SettingRow>
             )}
         </>

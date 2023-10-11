@@ -4,7 +4,7 @@ import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
 import { Validator } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
-import { Parameter } from "../../../../../types";
+import { Parameter, VariableTypes } from "../../../../../types";
 import SettingsButton from "../SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
@@ -19,12 +19,13 @@ interface ItemProps {
     namespace: string;
     readOnly?: boolean;
     showValidation?: boolean;
+    variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
 }
 
 export function Item(props: ItemProps): JSX.Element {
-    const { index, item, validators, namespace, readOnly, showValidation, onChange, options } = props;
+    const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
 
@@ -69,7 +70,15 @@ export function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={item.settingsOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {item.settingsOpen && <Settings path={path} item={item} onChange={onChange} currentOption={getCurrentOption(item)} />}
+            {item.settingsOpen && (
+                <Settings
+                    path={path}
+                    item={item}
+                    onChange={onChange}
+                    currentOption={getCurrentOption(item)}
+                    variableTypes={variableTypes}
+                />
+            )}
         </div>
     );
 }

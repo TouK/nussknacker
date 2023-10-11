@@ -1,5 +1,4 @@
 import { Fields, InputMode, PresetType, UpdatedItem, onChangeType } from ".";
-import { Option } from "../FieldsSelect";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
     Object.entries(fields).map(([key, value]) => {
@@ -16,14 +15,14 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
         initialValue: "",
     };
 
-    if (currentOption.includes("String") || currentOption.includes("Boolean")) {
+    if (isValidOption(currentOption) && inputMode === "Any value with suggestions") {
         return {
             ...defaultOption,
             inputMode: "Fixed list" as InputMode,
             presetType: "Preset" as PresetType,
             presetSelection: "",
         };
-    } else if (!currentOption.includes("String") && !currentOption.includes("Boolean") && inputMode !== "Any value with suggestions") {
+    } else {
         return {
             ...defaultOption,
             validation: true,
@@ -33,6 +32,6 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
     }
 };
 
-export const isValidOption = (option: Option) => {
-    return option?.value.includes("String") || option?.value.includes("Boolean");
+export const isValidOption = (value: string) => {
+    return value?.includes("String") || value?.includes("Boolean");
 };

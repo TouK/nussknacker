@@ -5,15 +5,17 @@ import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
 import { UpdatedItem, onChangeType } from "../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
+import { VariableTypes } from "../../../../../types";
 
 interface ValidationsFields {
     item: UpdatedItem;
     currentOption: Option;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
+    variableTypes: VariableTypes;
 }
 
-export default function ValidationsFields({ onChange, currentOption, path, item }: ValidationsFields) {
+export default function ValidationsFields({ onChange, currentOption, path, variableTypes, item }: ValidationsFields) {
     return (
         <>
             {!currentOption?.value.includes("String") &&
@@ -37,12 +39,13 @@ export default function ValidationsFields({ onChange, currentOption, path, item 
                         </div>
                     </SettingRow>
                 )}
-            {item.validation && (
+            {item?.validation && (
                 <ValidationFields
                     path={path}
                     onChange={onChange}
                     validatioErrorMessage={item.validatioErrorMessage}
                     validationExpression={item.validationExpression}
+                    variableTypes={variableTypes}
                 />
             )}
         </>

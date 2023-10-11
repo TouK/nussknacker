@@ -1,38 +1,47 @@
 import React from "react";
-import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
-import { NodeInput } from "../../../../withFocus";
+import { SettingLabelStyled, SettingRow, fieldLabel } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
 import { UpdatedItem, onChangeType } from "../item";
 import { Option } from "../FieldsSelect";
 import { TypeSelect } from "../TypeSelect";
 import { isValidOption } from "../item/utils";
+import EditableEditor from "../../editors/EditableEditor";
+import { ExpressionLang } from "../../editors/expression/types";
+import { VariableTypes } from "../../../../../types";
 
 interface InitialValue {
     item: UpdatedItem;
     path: string;
     currentOption: Option;
+    variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
 }
 
-export default function InitialValue({ onChange, item, path, currentOption }: InitialValue) {
+export default function InitialValue({ onChange, item, path, variableTypes, currentOption }: InitialValue) {
     const { t } = useTranslation();
 
     return (
-        <SettingRow>
-            <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
-            {item.presetType === "Preset" && item.inputMode === "Fixed list" && isValidOption(currentOption) ? (
-                <TypeSelect
-                    onChange={(value) => onChange(`${path}.initialValue`, value)}
-                    value={{ value: item.initialValue, label: item.initialValue }}
-                    options={[{ value: "option", label: "option" }]}
-                />
+        <>
+            {item.presetType === "Preset" && item.inputMode === "Fixed list" && isValidOption(currentOption.value) ? (
+                <SettingRow>
+                    <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
+                    <TypeSelect
+                        onChange={(value) => onChange(`${path}.initialValue`, value)}
+                        value={{ value: item.initialValue, label: item.initialValue }}
+                        options={[{ value: "option", label: "option" }]}
+                    />
+                </SettingRow>
             ) : (
-                <NodeInput
-                    value={item.initialValue}
-                    onChange={(e) => onChange(`${path}.initialValue`, e.currentTarget.value)}
-                    style={{ width: "70%" }}
+                <EditableEditor
+                    fieldName="initialValue"
+                    fieldLabel={t("fragment.initialValue", "Initial value:")}
+                    renderFieldLabel={() => fieldLabel(t("fragment.initialValue", "Initial value:"))}
+                    expressionObj={{ language: ExpressionLang.SpEL, expression: item.initialValue }}
+                    onValueChange={(value) => onChange(`${path}.initialValue`, value)}
+                    variableTypes={variableTypes}
+                    errors={[]}
                 />
             )}
-        </SettingRow>
+        </>
     );
 }

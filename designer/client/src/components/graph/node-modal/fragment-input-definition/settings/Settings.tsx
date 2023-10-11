@@ -1,22 +1,24 @@
 import React from "react";
-import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSettingsComponnets";
-import { FormControlLabel } from "@mui/material";
-import { NodeInput } from "../../../../withFocus";
-import { useTranslation } from "react-i18next";
 import { Option } from "../FieldsSelect";
-import { UpdatedItem, onChangeType } from "../item";
-import ValidationsFields from "./ValidationsFields";
 import StringSetting from "./StringSetting";
 import InitialValue from "./InitialValue";
+import { useTranslation } from "react-i18next";
+import { FormControlLabel } from "@mui/material";
+import { UpdatedItem, onChangeType } from "../item";
+import ValidationsFields from "./ValidationsFields";
+import { VariableTypes } from "../../../../../types";
+import { TextAreaNodeWithFocus } from "../../../../withFocus";
+import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSettingsComponnets";
 
 interface Settings {
     item: UpdatedItem;
     path: string;
+    variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     currentOption: Option;
 }
 
-export default function Settings({ item, path, onChange, currentOption }: Settings) {
+export default function Settings({ item, path, onChange, variableTypes, currentOption }: Settings) {
     const { t } = useTranslation();
 
     return (
@@ -29,11 +31,11 @@ export default function Settings({ item, path, onChange, currentOption }: Settin
                 />
             </SettingRow>
             <StringSetting path={path} item={item} currentOption={currentOption} onChange={onChange} />
-            <ValidationsFields item={item} path={path} currentOption={currentOption} onChange={onChange} />
-            <InitialValue item={item} path={path} currentOption={currentOption} onChange={onChange} />
+            <ValidationsFields item={item} path={path} currentOption={currentOption} onChange={onChange} variableTypes={variableTypes} />
+            <InitialValue item={item} path={path} currentOption={currentOption} onChange={onChange} variableTypes={variableTypes} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <NodeInput
+                <TextAreaNodeWithFocus
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}

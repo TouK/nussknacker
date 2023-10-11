@@ -15,7 +15,7 @@ interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
 }
 
 export default function FragmentInputDefinition(props: Props): JSX.Element {
-    const { addElement, removeElement, ...passProps } = props;
+    const { addElement, removeElement, variableTypes, ...passProps } = props;
     const { node, setEditedNode, isEditMode, setProperty, showValidation } = passProps;
 
     const readOnly = !isEditMode;
@@ -49,6 +49,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 setEditedNode={setEditedNode}
                 namespace={"parameters"}
                 fields={fields}
+                variableTypes={variableTypes}
                 options={orderedTypeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}

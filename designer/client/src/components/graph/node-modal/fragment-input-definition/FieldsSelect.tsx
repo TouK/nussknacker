@@ -1,5 +1,5 @@
 import React, { SetStateAction, useCallback, useMemo } from "react";
-import { NodeType, Parameter } from "../../../../types";
+import { NodeType, Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "./DndItems";
 import { NodeRowFields } from "./NodeRowFields";
@@ -21,10 +21,11 @@ interface FieldsSelectProps {
     options: Option[];
     readOnly?: boolean;
     showValidation?: boolean;
+    variableTypes: VariableTypes;
 }
 
 function FieldsSelect(props: FieldsSelectProps): JSX.Element {
-    const { fields, label, namespace, options, onChange, removeField, addField, readOnly, showValidation } = props;
+    const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation } = props;
 
     const ItemEl = useCallback(
         ({ index, item, validators }: { index: number; item: UpdatedItem; validators: Validator[] }) => {
@@ -37,11 +38,12 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     onChange={onChange}
                     options={options}
                     readOnly={readOnly}
+                    variableTypes={variableTypes}
                     showValidation={showValidation}
                 />
             );
         },
-        [namespace, onChange, options, readOnly, showValidation],
+        [namespace, onChange, options, variableTypes, readOnly, showValidation],
     );
 
     const changeOrder = useCallback((value) => onChange(namespace, value), [namespace, onChange]);
