@@ -7,20 +7,20 @@ import ProcessBackButton from "../Process/ProcessBackButton";
 import { RootPath } from "../../containers/paths";
 import { EnvironmentTag } from "../../containers/EnvironmentTag";
 import { HideIfEmbedded } from "./HideIfEmbedded";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import { Menu } from "./menu";
 
-const Header = styled.header(({ theme }) => ({
+const Header = styled("header")(({ theme }) => ({
     display: "flex",
     overflow: "hidden",
     userSelect: "none",
-    background: theme.colors.secondaryBackground,
+    background: theme.custom.colors.secondaryBackground,
     color: "#e6e6e6",
     height: "3.125em",
     alignItems: "stretch",
 }));
 
-const Grid = styled.div({
+const Grid = styled("div")({
     display: "grid",
     gridAutoFlow: "column",
     alignItems: "center",

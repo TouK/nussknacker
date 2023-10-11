@@ -1,10 +1,10 @@
-import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 import { VersionType } from "./HistoryItem";
 import Badge from "../deployed.svg";
 import color from "color";
 
-export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
+export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
+    ({ theme, type }) => `
     cursor: pointer;
     overflow: hidden;
     position: relative;
@@ -24,7 +24,7 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         top: 0;
         width: 20px;
         height: 999px;
-        border: 2px solid ${variables.defaultTextColor};
+        border: 2px solid ${theme.custom.colors.secondaryColor};
         border-width: 0px 0 0 2px;
         padding-left: 10px;
     }
@@ -44,47 +44,51 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         top: 14px;
         width: 16px;
         height: 16px;
-        background: ${variables.panelBkgColor};
-        border: 2px solid ${variables.defaultTextColor};
+        background: ${theme.custom.colors.tundora};
+        border: 2px solid ${theme.custom.colors.secondaryColor};
         border-radius: 50%;
         padding-left: 10px;
     }
 
-    color: ${variables.defaultTextColor};
+    color: ${theme.custom.colors.secondaryColor};
 
-    ${(props) =>
-        props.type === VersionType.current &&
+    ${
+        type === VersionType.current &&
         `
-    color: ${variables.defaultTextColor};
+    color: ${theme.custom.colors.secondaryColor};
     &:hover::after {
-        background-color: ${variables.defaultTextColor} !important;
+        background-color: ${theme.custom.colors.secondaryColor} !important;
     }
     &::after {
-        background-color: ${variables.defaultTextColor};
+        background-color: ${theme.custom.colors.secondaryColor};
     }
-  `}
+  `
+    }
 
-    ${(props) =>
-        props.type === VersionType.past &&
+    ${
+        type === VersionType.past &&
         `
-    color: rgba(${color.rgb(variables.defaultTextColor).array()}, 0.8);
-  `}
+    color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.8);
+  `
+    }
 
-  ${(props) =>
-        props.type === VersionType.future &&
-        `
-    color: rgba(${color.rgb(variables.defaultTextColor).array()}, 0.3);
-  `}
+  ${
+      type === VersionType.future &&
+      `
+    color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.3);
+  `
+  }
 
   &:hover {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
         box-sizing: border-box;
 
         &::after {
-            background-color: ${variables.historyItemBackground};
+            background-color: ${theme.custom.colors.mutedColor};
         }
     }
-`;
+`,
+);
 
 export const TrackVertical = styled("div")`
     width: 8px !important;

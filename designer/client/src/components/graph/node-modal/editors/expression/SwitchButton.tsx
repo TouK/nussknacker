@@ -1,15 +1,14 @@
 import React from "react";
 import { ButtonWithFocus } from "../../../../withFocus";
-import styled from "@emotion/styled";
+import { styled, useTheme } from "@mui/material";
 import { EditorType } from "./Editor";
-import { useTheme } from "@emotion/react";
 import { css } from "@emotion/css";
 
 export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     width: 35,
     height: 35,
     padding: 5,
-    backgroundColor: theme.colors.secondaryBackground,
+    backgroundColor: theme.custom.colors.secondaryBackground,
     border: "none",
     opacity: disabled ? 0.5 : 1,
     filter: disabled ? "saturate(0)" : "non",
@@ -46,7 +45,7 @@ function getTypeIcon(type: EditorType) {
 export function SimpleEditorIcon({ type }: { type: EditorType }) {
     const theme = useTheme();
     const Icon = getTypeIcon(type);
-    return <Icon className={css({ color: theme.colors.ok })} />;
+    return <Icon className={css({ color: theme.custom.colors.ok })} />;
 }
 
 export const RawEditorIcon = CodeIcon;

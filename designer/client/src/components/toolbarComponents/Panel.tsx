@@ -1,5 +1,5 @@
 import { Collapse, styled } from "@mui/material";
-import { getContrastColor, getDarkenContrastColor } from "../../containers/theme";
+import { getContrastColor, getDarkenContrastColor } from "../../containers/theme/helpers";
 
 const __panelBorder = "--panel-Border";
 const __panelHeaderText = "--panel-HeaderText";
