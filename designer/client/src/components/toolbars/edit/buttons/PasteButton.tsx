@@ -1,17 +1,17 @@
-import React, { useCallback, useRef } from "react";
+import React, { ComponentProps, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/paste.svg";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
-import { styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { isTouchDevice } from "../../../../helpers/detectDevice";
 
-const TransparentBox = styled("div")({
+const TransparentBox = styled(Box)({
     opacity: 0,
     overflow: "hidden",
 });
-type TransparentBoxProps = Parameters<typeof TransparentBox>[0];
+type TransparentBoxProps = ComponentProps<typeof Box>;
 
 function FakeInput(props: TransparentBoxProps) {
     const clearInput = useCallback((e) => {

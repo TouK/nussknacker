@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
 const PANEL_WIDTH = 298;
 type TogglePanelType = "RIGHT" | "LEFT";
@@ -29,7 +29,7 @@ function validLeftProps(props: IconWrapper) {
     }
 }
 
-const IconWrapper = styled.div((props: IconWrapper) => ({
+const IconWrapper = styled("div")((props: IconWrapper) => ({
     position: "absolute",
     bottom: 0,
     fontSize: 0,
