@@ -60,7 +60,8 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
       name: String,
       typ: TypingResult,
-      expression: Expression
+      expression: Expression,
+      validators: List[ParameterValidator]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIParameter(

@@ -177,10 +177,22 @@ object NodesResources {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
     val context                     = prepareValidationContext(modelData)(request.variableTypes)
     val expressionCompiler          = ExpressionCompiler.withoutOptimization(modelData)
-    request.parameters
+    val compilationErrors = request.parameters
       .map(param => expressionCompiler.compile(param.expression, Some(param.name), context, param.typ)(NodeId("")))
       .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
       .flatten
+    val additionalValidatorsErrors = request.parameters
+      .flatMap(param =>
+        param.validators
+          .map { validator =>
+            validator.isValid(param.name, param.expression.expression, None)(NodeId(""))
+          }
+      )
+      .collect { case Invalid(e) =>
+        PrettyValidationErrors.formatErrorMessage(e)
+      }
+
+    compilationErrors ++ additionalValidatorsErrors
   }
 
   def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {

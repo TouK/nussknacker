@@ -17,6 +17,7 @@ import { getGenericActionValidation } from "../../reducers/selectors/genericActi
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
+import { errorValidator } from "../graph/node-modal/editors/Validators";
 
 export type GenericActionLayout = {
     name: string;
@@ -66,11 +67,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
             const paramValidators = simpleEditorValidators(uiParam, validationResult.validationErrors, uiParam.name, uiParam.name);
             return { ...object, [uiParam.name]: paramValidators };
         }, {});
-        const areParamsValid = Object.keys(parameterValidators).reduce(
-            (a, name) => a && parameterValidators[name].every((v) => v.isValid(value[name].expression)),
-            true,
-        );
-        setIsValid(areParamsValid);
+        setIsValid(validationResult.validationErrors.length == 0);
         setValidators(parameterValidators);
     }, [value, validationResult, dispatch, setValue]);
 
@@ -82,6 +79,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                         name: uiParam.name,
                         typ: uiParam.typ,
                         expression: value[uiParam.name],
+                        validators: uiParam.validators,
                     };
                 }),
                 processProperties: processProperties,
@@ -91,7 +89,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
         );
     }, [value]);
 
-    useEffect(() => setValue(value), [setValue, value]);
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
@@ -108,7 +105,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                     <Editor
                                         editorConfig={param?.editor}
                                         className={"node-value"}
-                                        validators={validators[fieldName] || []}
+                                        validators={[errorValidator(validationResult.validationErrors, fieldName)]}
                                         formatter={formatter}
                                         expressionInfo={null}
                                         onValueChange={setParam(fieldName)}
@@ -119,7 +116,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                         showSwitch={true}
                                         showValidation={true}
                                         variableTypes={action.variableTypes}
-                                        errors={{}}
                                     />
                                 </NodeRow>
                             );
