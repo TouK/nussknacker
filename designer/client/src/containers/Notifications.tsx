@@ -108,7 +108,7 @@ export function Notifications(): JSX.Element {
 
                 if (!isNetworkAccess) {
                     handleChangeConnectionError("NO_NETWORK_ACCESS");
-                } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error.response.status)) {
+                } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error.response?.status)) {
                     handleChangeConnectionError("NO_BACKEND_ACCESS");
                 } else {
                     const errorResponseData = error?.response?.data || error.message;

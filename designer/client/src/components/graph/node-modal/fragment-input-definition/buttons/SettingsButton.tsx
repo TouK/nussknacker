@@ -1,5 +1,5 @@
 import React from "react";
-import { ButtonWithFocus } from "../../../withFocus";
+import { ButtonWithFocus } from "../../../../withFocus";
 import TuneIcon from "@mui/icons-material/Tune";
 
 interface SettingsButton {
@@ -7,7 +7,7 @@ interface SettingsButton {
     openSettingMenu: () => void;
 }
 
-export default function SettingsButton({ isOpen, openSettingMenu }) {
+export default function SettingsButton({ isOpen, openSettingMenu }: SettingsButton) {
     return (
         <ButtonWithFocus
             style={{
@@ -18,7 +18,7 @@ export default function SettingsButton({ isOpen, openSettingMenu }) {
                 backgroundColor: isOpen && "#444444",
             }}
             className="addRemoveButton"
-            title={""}
+            title={"SettingsButton"}
             onClick={openSettingMenu}
         >
             <TuneIcon />

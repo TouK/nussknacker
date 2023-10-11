@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ButtonWithFocus } from "../../../withFocus";
+import { ButtonWithFocus } from "../../../../withFocus";
 
 export function RemoveButton({ onClick }: { onClick: () => void }): JSX.Element {
     const { t } = useTranslation();

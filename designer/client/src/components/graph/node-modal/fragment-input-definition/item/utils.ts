@@ -15,7 +15,7 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
         initialValue: "",
     };
 
-    if (isValidOption(currentOption) && inputMode === "Any value with suggestions") {
+    if (isValidOption(currentOption) && inputMode !== "Any value with suggestions") {
         return {
             ...defaultOption,
             inputMode: "Fixed list" as InputMode,

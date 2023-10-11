@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { AddButton } from "./AddButton";
+import { AddButton } from "./buttons/AddButton";
 
 interface FieldsControlProps {
     readOnly?: boolean;

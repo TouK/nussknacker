@@ -39,7 +39,6 @@ export default function InitialValue({ onChange, item, path, variableTypes, curr
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item.initialValue }}
                     onValueChange={(value) => onChange(`${path}.initialValue`, value)}
                     variableTypes={variableTypes}
-                    errors={[]}
                 />
             )}
         </>

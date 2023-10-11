@@ -2,7 +2,7 @@ import React, { PropsWithChildren, useCallback } from "react";
 import { NodeRow } from "./NodeRow";
 import { useFieldsContext } from "./NodeRowFields";
 import { NodeValue } from "./NodeValue";
-import { RemoveButton } from "./RemoveButton";
+import { RemoveButton } from "./buttons/RemoveButton";
 import { cx } from "@emotion/css";
 
 interface FieldsRow {
