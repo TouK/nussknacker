@@ -46,7 +46,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
         backgroundColor: colors.primaryBackground,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.tundora,
+            backgroundColor: disabled ? colors.primaryBackground : colors.doveGray,
         },
     });
 

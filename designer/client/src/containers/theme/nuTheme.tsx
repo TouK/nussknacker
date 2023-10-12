@@ -43,6 +43,7 @@ const colors = {
     scorpion: "#5D5D5D",
     silverChalice: "#afafaf",
     cerulean: "#0E9AE0",
+    doveGray: d4,
 };
 
 const selectColors = {

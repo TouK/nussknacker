@@ -2,7 +2,7 @@ import { css, Theme } from "@mui/material";
 
 export const buttonBaseStyle = (theme: Theme) =>
     css({
-        border: `1px solid ${theme.custom.colors.tundora}`,
+        border: `1px solid ${theme.custom.colors.doveGray}`,
         borderRadius: 0,
         backgroundColor: `${theme.custom.colors.primaryBackground}`,
         color: `${theme.custom.colors.secondaryColor}`,
