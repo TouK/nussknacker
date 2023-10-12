@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.api.component
 import pl.touk.nussknacker.engine.api.component.AdditionalComponentsUIConfigProvider.SingleComponentConfigWithoutId
 
 /**
-  * The current implementation allows providing configs only for standard components - meaning that fragments and base components aren't handled
-  */
+ * Trait allowing the provision of UI configuration for components, without requiring a model reload.
+ *
+ * TODO: The current implementation allows providing configs only for standard components - meaning that fragments and base components aren't handled.
+ */
 trait AdditionalComponentsUIConfigProvider extends Serializable {
 
   def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentConfigWithoutId]
