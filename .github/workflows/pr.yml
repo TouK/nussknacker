@@ -629,6 +629,7 @@ jobs:
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish
+
       - name: Log disk usage
         run: df -h
       - name: Publish docker
