@@ -58,11 +58,12 @@ If you want to implement own `DeploymentManager`, you should implement this inte
 
 - [ProcessChangeListenerFactory](https://github.com/TouK/nussknacker/blob/staging/designer/listener-api/src/main/scala/pl/touk/nussknacker/ui/listener/ProcessChangeListenerFactory.scala)
 - Security
-  - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/designer/security/api/AuthenticationProvider.scala)
-  - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/designer/security/oauth2/OAuth2ServiceFactory.scala)
+  - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
+  - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
 - [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/designer/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
-- [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
-- [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/designer/restmodel/src/main/scala/pl/touk/nussknacker/restmodel/validation/CustomProcessValidator.scala)
+- [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/AdditionalInfoProvider.scala)
+- [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/CustomProcessValidator.scala)
+- [AdditionalComponentsUIConfigProvider](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/component/AdditionalComponentsUIConfigProvider.scala)
              
 ## Modules architecture and conventions
 

@@ -28,6 +28,8 @@ package object definition {
       defaultAsyncInterpretation: Boolean
   )
 
+  // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
+  // this would also make config merging logic in `UIProcessObjectsFactory.prepareUIProcessObjects` simpler
   @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
       services: Map[String, UIObjectDefinition],
       sourceFactories: Map[String, UIObjectDefinition],

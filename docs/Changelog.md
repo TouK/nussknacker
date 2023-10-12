@@ -2,6 +2,7 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) Added AdditionalComponentsUIConfigProvider API that allows changing components' configs without model reload
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
   * Use `processingType` instead of `processName`
   * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
