@@ -17,7 +17,7 @@ export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFrag
                         context: "FRAGMENT",
                     })}
                 />
-            ) : state ? (
+            ) : state || isArchived ? (
                 <NuIcon
                     title={t("scenario.iconTitle", "{{tooltip}}", {
                         context: state?.status.name,
