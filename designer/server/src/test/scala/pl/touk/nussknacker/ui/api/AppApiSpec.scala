@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
@@ -22,8 +22,8 @@ import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelp
 class AppApiSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with NuScenarioConfigurationHelper
     with WithMockableDeploymentManager
+    with NuScenarioConfigurationHelper
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
