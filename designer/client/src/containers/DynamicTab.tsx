@@ -97,7 +97,7 @@ export const DynamicTab = memo(function DynamicComponent<P extends BaseTab>({ ta
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {
         case "Remote":
-            return <RemoteModuleTab url={tab.url} componentProps={componentProps} />;
+            return <RemoteModuleTab url={tab.url as ModuleUrl} componentProps={componentProps} />;
         case "IFrame":
             return <IframeTab tab={tab} />;
     }
