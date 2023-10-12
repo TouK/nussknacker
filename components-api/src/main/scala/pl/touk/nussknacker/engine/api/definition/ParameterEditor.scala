@@ -76,6 +76,10 @@ case object CronParameterEditor extends SimpleParameterEditor
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
 
+// we keep both presetId and possibleValues in the editor, so in various places we can rely on possibleValues, and just update them on save/deploy based on presetId
+@JsonCodec case class FixedValuesPresetParameterEditor(presetId: String, possibleValues: List[FixedExpressionValue])
+    extends SimpleParameterEditor
+
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
 @JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)

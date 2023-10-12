@@ -6,8 +6,8 @@ object EditorBasedValidatorExtractor extends ValidatorExtractor {
 
   override def extract(params: ValidatorExtractorParameters): Option[ParameterValidator] = {
     params.extractedEditor.collect {
-      case FixedValuesParameterEditor(possibleValues) => FixedValuesValidator(possibleValues)
-//      case DualParameterEditor(FixedValuesParameterEditor(possibleValues), _) => FixedValuesValidator(possibleValues) TODO ?
+      case FixedValuesParameterEditor(possibleValues)          => FixedValuesValidator(possibleValues)
+      case FixedValuesPresetParameterEditor(_, possibleValues) => FixedValuesValidator(possibleValues)
     }
   }
 
