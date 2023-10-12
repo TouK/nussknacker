@@ -37,20 +37,21 @@ const colors = {
     mutedColor: base,
     focusColor: d1,
     evenBackground: d3,
-    accent: "#668547",
+    dingley: "#668547",
     mineShaft: "#3e3e3e",
     tundora: d3,
     scorpion: "#5D5D5D",
     silverChalice: "#afafaf",
     cerulean: "#0E9AE0",
     doveGray: d4,
+    charcoal: "#444444",
 };
 
 const selectColors = {
     ...tintPrimary(colors.focusColor),
     neutral0: colors.secondaryBackground,
     neutral5: colors.secondaryColor,
-    neutral10: colors.accent,
+    neutral10: colors.dingley,
     neutral20: colors.mutedColor,
     neutral30: colors.borderColor,
     neutral40: colors.secondaryColor,
