@@ -100,14 +100,10 @@ class ProcessesResources(
             complete {
               // To not overload engine, for list of processes we provide statuses that can be cached
               implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-              (processRepository
-                .fetchProcessesDetails[Unit](
-                  query.toRepositoryQuery
-                ) zip deploymentService.getProcessesInProgress).flatMap { case (processesList, processesInProgress) =>
-                processesList
-                  .map(enrichDetailsWithProcessState[Unit](_, Some(processesInProgress)))
-                  .sequence
-              }.toBasicProcess
+              processRepository
+                .fetchProcessesDetails[Unit](query.toRepositoryQuery)
+                .flatMap(deploymentService.enrichDetailsWithProcessState)
+                .toBasicProcess
             }
           }
         }
@@ -125,11 +121,10 @@ class ProcessesResources(
       } ~ path("processes" / "status") {
         get {
           complete {
-            for {
-              (processes, processesInProgress) <- processService
-                .getProcesses[Unit] zip deploymentService.getProcessesInProgress
-              statuses <- fetchProcessStatesForProcesses(processes, processesInProgress)
-            } yield statuses
+            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
+            processService
+              .getProcesses[Unit]
+              .flatMap(deploymentService.fetchProcessStatesForProcesses)
           }
         }
       } ~ path("processes" / "import" / Segment) { processName =>
@@ -310,29 +305,14 @@ class ProcessesResources(
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
 
-  private def fetchProcessStatesForProcesses(
-      processes: List[BaseProcessDetails[Unit]],
-      processesInProgress: Map[ProcessId, Set[ProcessActionType]]
-  )(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
-    // To not overload engine, for list of processes we provide statuses that can be cached
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-    processes
-      .map(process =>
-        deploymentService.getProcessState(process, Some(processesInProgress)).map(status => process.name -> status)
-      )
-      .sequence[Future, (String, ProcessState)]
-      .map(_.toMap)
-  }
-
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](
-      process: BaseProcessDetails[PS],
-      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
+      process: BaseProcessDetails[PS]
   )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
     if (process.isFragment)
       Future.successful(process)
     else
       deploymentService
-        .getProcessState(process, processesInProgress)
+        .getProcessState(process)
         .map(state => process.copy(state = Some(state)))
   }
 
