@@ -58,15 +58,26 @@ trait DeploymentService extends ProcessStateService {
 
 trait ProcessStateService {
 
-  def getProcessesInProgress: Future[Map[ProcessId, Set[ProcessActionType]]]
+  def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]]
+
+  def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[Map[String, ProcessState]]
+
+  def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[List[BaseProcessDetails[_]]]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
   def getProcessState(
-      processDetails: BaseProcessDetails[_],
-      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
+      processDetails: BaseProcessDetails[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
 }

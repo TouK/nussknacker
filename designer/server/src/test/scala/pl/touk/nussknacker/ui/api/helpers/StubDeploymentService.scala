@@ -21,8 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
-      processDetails: processdetails.BaseProcessDetails[_],
-      processesInProgress: Option[Map[ProcessId, Set[ProcessActionType]]] = None
+      processDetails: processdetails.BaseProcessDetails[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     getProcessState(processDetails.idWithName)
 
@@ -65,6 +64,22 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-  override def getProcessesInProgress: Future[Map[ProcessId, Set[ProcessActionType]]] =
+  override def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
     Future.successful(Map.empty)
+
+  override def fetchProcessStatesForProcesses(processes: List[processdetails.BaseProcessDetails[Unit]])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[Map[ProcessingType, ProcessState]] =
+    Future.successful(Map.empty)
+
+  override def enrichDetailsWithProcessState(
+      processList: List[processdetails.BaseProcessDetails[_]]
+  )(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[List[processdetails.BaseProcessDetails[_]]] = Future.successful(processList)
+
 }

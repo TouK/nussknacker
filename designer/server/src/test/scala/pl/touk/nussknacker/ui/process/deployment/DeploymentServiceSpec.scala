@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -40,7 +41,7 @@ import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
@@ -593,7 +594,7 @@ class DeploymentServiceSpec
   test("Should return valid inProgress state") {
     val (duringDeployProcessId: ProcessId, duringCancelProcessId: ProcessId) = prepareProcessesInProgress
 
-    val processesInProgress = deploymentService.getProcessesInProgress.futureValue
+    val processesInProgress = deploymentService.getInProgressActionTypesForAllProcesses.futureValue
 
     processesInProgress shouldBe Map(
       duringDeployProcessId -> Set(ProcessActionType.Deploy),
@@ -604,21 +605,36 @@ class DeploymentServiceSpec
   test("Should return valid process list") {
     prepareProcessesInProgress
 
-    val processesInProgress = deploymentService.getProcessesInProgress.futureValue
+    val processes = fetchingProcessRepository
+      .fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isFragment = Some(false)))
+      .dbioActionValues
 
-    val processes = fetchingProcessRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery()).dbioActionValues
-
-    val resultWithCachedInProgress = processes
-      .map(baseProcess => deploymentService.getProcessState(baseProcess, Some(processesInProgress)))
-      .sequence
-      .futureValue
+    val resultWithCachedInProgress = deploymentService.fetchProcessStatesForProcesses(processes).futureValue
 
     val resultWithoutCachedInProgress = processes
-      .map(baseProcess => deploymentService.getProcessState(baseProcess))
+      .map(baseProcess => Future.successful(baseProcess.name) zip deploymentService.getProcessState(baseProcess))
       .sequence
       .futureValue
+      .toMap
 
     resultWithCachedInProgress shouldBe resultWithoutCachedInProgress
+  }
+
+  test("Should enrich BaseProcessDetails") {
+    prepareProcessesInProgress
+
+    val processesDetails = fetchingProcessRepository
+      .fetchProcessesDetails[Unit](ProcessesQuery.empty.toRepositoryQuery)
+      .dbioActionValues
+
+    val processesDetailsWithState = deploymentService.enrichDetailsWithProcessState(processesDetails).futureValue
+
+    processesDetailsWithState.map(_.state.map(_.status.name)) shouldBe List(
+      Some("DURING_DEPLOY"),
+      Some("DURING_CANCEL"),
+      Some("RUNNING"),
+      None
+    )
   }
 
   test(
@@ -762,8 +778,8 @@ class DeploymentServiceSpec
   }
 
   private def prepareProcessesInProgress = {
-    val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: Nil =
-      (1 to 3).map(_ => generateProcessName).toList
+    val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: fragmentName :: Nil =
+      (1 to 4).map(_ => generateProcessName).toList
 
     val processIdsInProgress = for {
       (duringDeployProcessId, _) <- preparedUnArchivedProcess(duringDeployProcessName, None)
@@ -773,6 +789,7 @@ class DeploymentServiceSpec
       _ <- actionRepository
         .addInProgressAction(duringCancelProcessId, ProcessActionType.Cancel, Some(VersionId.initialVersionId), None)
       _ <- prepareDeployedProcess(otherProcess)
+      _ <- prepareFragment(fragmentName)
     } yield (duringDeployProcessId, duringCancelProcessId)
 
     val (duringDeployProcessId, duringCancelProcessId) = processIdsInProgress.dbioActionValues
