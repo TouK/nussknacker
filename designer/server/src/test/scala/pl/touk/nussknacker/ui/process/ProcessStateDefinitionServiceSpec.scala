@@ -33,7 +33,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
        |}
        |""".stripMargin)
 
-  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
+  private val categoryService = ConfigProcessCategoryService(categoryConfig)
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =

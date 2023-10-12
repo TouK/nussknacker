@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -82,6 +82,8 @@ class DefaultComponentService private (
 
   private val componentObjectsService = new ComponentObjectsService(categoryService)
 
+  private val userCategoryService = new UserCategoryService(categoryService)
+
   private def componentIdProvider: ComponentIdProvider = processingTypeDataProvider.combined
 
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
@@ -124,7 +126,7 @@ class DefaultComponentService private (
       processingType: ProcessingType,
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
-    val userCategories               = categoryService.getUserCategories(user)
+    val userCategories               = userCategoryService.getUserCategories(user)
     val processingTypeCategories     = categoryService.getProcessingTypeCategories(processingType)
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 

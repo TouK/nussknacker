@@ -17,8 +17,10 @@ class ProcessStateDefinitionService(
     categoryService: ProcessCategoryService
 ) {
 
+  private val userCategoryService = new UserCategoryService(categoryService)
+
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val userAccessibleCategories = categoryService.getUserCategories(user)
+    val userAccessibleCategories = userCategoryService.getUserCategories(user)
     processingTypeDataProvider.combined
       .map { case (statusName, (stateDefinition, processingTypes)) =>
         val categoriesWhereStateAppears = processingTypes.flatMap { processingType =>

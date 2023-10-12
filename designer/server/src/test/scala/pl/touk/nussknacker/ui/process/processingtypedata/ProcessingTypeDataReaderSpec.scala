@@ -51,7 +51,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    implicit val categoriesService: ProcessCategoryService = new ConfigProcessCategoryService(config)
+    implicit val categoriesService: ProcessCategoryService = ConfigProcessCategoryService(config)
     val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(config)).all
 
     scenarioTypes.keySet shouldEqual Set("foo")

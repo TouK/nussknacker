@@ -67,7 +67,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     fragmentReqResp
   )
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+  private val processCategoryService = ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)

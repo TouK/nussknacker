@@ -88,7 +88,7 @@ class AkkaHttpBasedRouteProvider(
       _                    = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       deploymentServiceSupplier = new DelayedInitDeploymentServiceSupplier
-      processCategoryService    = new ConfigProcessCategoryService(resolvedConfig)
+      processCategoryService    = ConfigProcessCategoryService(resolvedConfig)
       typeToConfigAndReload <- prepareProcessingTypeData(
         config,
         deploymentServiceSupplier,

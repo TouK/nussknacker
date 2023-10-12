@@ -124,6 +124,8 @@ class DBProcessService(
   import cats.instances.future._
   import cats.syntax.either._
 
+  private val userCategoryService = new UserCategoryService(processCategoryService)
+
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
       if (process.isFragment) {
@@ -434,7 +436,7 @@ class DBProcessService(
       isFragment: Option[Boolean],
       isArchived: Option[Boolean]
   ): Future[List[BaseProcessDetails[PS]]] = {
-    val userCategories = processCategoryService.getUserCategories(user)
+    val userCategories = userCategoryService.getUserCategories(user)
     val shapeStrategy  = implicitly[ProcessShapeFetchStrategy[PS]]
     fetchingProcessRepository.fetchProcessesDetails(
       FetchProcessesDetailsQuery(isFragment = isFragment, isArchived = isArchived, categories = Some(userCategories))

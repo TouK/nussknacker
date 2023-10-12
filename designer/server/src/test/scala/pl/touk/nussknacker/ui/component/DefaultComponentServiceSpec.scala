@@ -38,7 +38,12 @@ import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigE
 import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
+import pl.touk.nussknacker.ui.process.{
+  ConfigProcessCategoryService,
+  DBProcessService,
+  ProcessCategoryService,
+  UserCategoryService
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefaultComponentServiceSpec
@@ -252,7 +257,7 @@ class DefaultComponentServiceSpec
        |}
        |""".stripMargin)
 
-  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
+  private val categoryService = ConfigProcessCategoryService(categoryConfig)
 
   private val baseComponents: List[ComponentListElement] =
     List(
@@ -384,7 +389,7 @@ class DefaultComponentServiceSpec
 
     val availableCategories =
       if (categories.isEmpty)
-        categoryService.getUserCategories(user).sorted
+        new UserCategoryService(categoryService).getUserCategories(user).sorted
       else
         categories.filter(user.can(_, Permission.Read)).sorted
 
