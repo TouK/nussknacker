@@ -613,8 +613,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log disk usage
+        run: df -h
       - name: Setup buildx builder
         uses: docker/setup-buildx-action@v3
+      - name: Log disk usage
+        run: df -h
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
