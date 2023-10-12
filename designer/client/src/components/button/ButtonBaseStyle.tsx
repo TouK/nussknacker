@@ -13,6 +13,6 @@ export const buttonBaseStyle = (theme: Theme) =>
             cursor: "not-allowed !important",
         },
         "&:not(:disabled):hover,&:not(.disabled):hover": {
-            backgroundColor: `${theme.custom.colors.tundora}`,
+            backgroundColor: `${theme.custom.colors.doveGray}`,
         },
     });

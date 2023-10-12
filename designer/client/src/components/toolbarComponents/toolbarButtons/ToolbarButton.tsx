@@ -39,14 +39,14 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
         borderColor: hasError ? colors.error : "transparent",
         ":focus": {
-            borderColor: colors.accent,
+            borderColor: colors.cobalt,
         },
 
         color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
 
         backgroundColor: colors.primaryBackground,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.doveGray,
+            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
         },
     });
 
