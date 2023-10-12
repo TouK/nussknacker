@@ -6,18 +6,25 @@ import { UpdatedItem, onChangeType } from "../item";
 import { ListItems } from "./ListItems";
 import { TypeSelect } from "../TypeSelect";
 
-interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection" | "presetType" | "presetSelection" | "addListItem"> {
+interface PresetTypesSetting
+    extends Pick<UpdatedItem, "presetSelection" | "allowOnlyValuesFromFixedValuesList" | "presetSelection" | "addListItem"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
 }
 
-export default function PresetTypesSetting({ presetType, presetSelection, path, addListItem, onChange }: PresetTypesSetting) {
+export default function PresetTypesSetting({
+    allowOnlyValuesFromFixedValuesList,
+    presetSelection,
+    path,
+    addListItem,
+    onChange,
+}: PresetTypesSetting) {
     const { t } = useTranslation();
     const [temporareListItem, setTemporeryListItem] = useState("");
 
     return (
         <>
-            {presetType === "Preset" ? (
+            {allowOnlyValuesFromFixedValuesList ? (
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect

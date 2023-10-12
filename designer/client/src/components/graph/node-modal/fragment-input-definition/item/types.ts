@@ -21,19 +21,18 @@ export interface FragmentValidation {
 
 export interface AllValueExcludeStringAndBoolean extends FragmentValidation, DefaultItemType {}
 
-export type PresetType = "Preset" | "UserDefinitionList";
 export type InputMode = "Fixed list" | "Any value with suggestions" | "Any value";
 
 export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
     inputMode: InputMode;
-    presetType: PresetType;
+    allowOnlyValuesFromFixedValuesList: boolean;
     addListItem: string[];
     presetSelection: string;
 }
 
 interface DefaultFields {
     inputMode: InputMode;
-    presetType: PresetType;
+    allowOnlyValuesFromFixedValuesList: boolean;
     addListItem?: string[];
     presetSelection: string;
     required: boolean;

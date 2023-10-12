@@ -1,4 +1,4 @@
-import { Fields, InputMode, PresetType, UpdatedItem, onChangeType } from ".";
+import { Fields, InputMode, UpdatedItem, onChangeType } from ".";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
     Object.entries(fields).map(([key, value]) => {
@@ -19,7 +19,7 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
         return {
             ...defaultOption,
             inputMode: "Fixed list" as InputMode,
-            presetType: "Preset" as PresetType,
+            allowOnlyValuesFromFixedValuesList: true,
             presetSelection: "",
         };
     } else {

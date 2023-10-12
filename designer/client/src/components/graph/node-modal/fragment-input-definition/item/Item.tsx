@@ -5,7 +5,7 @@ import { TypeSelect } from "../TypeSelect";
 import { Validator } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
 import { Parameter, VariableTypes } from "../../../../../types";
-import SettingsButton from "../SettingsButton";
+import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";

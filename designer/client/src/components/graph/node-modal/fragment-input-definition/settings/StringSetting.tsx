@@ -36,11 +36,15 @@ export default function StringSetting({ onChange, path, item, currentOption }: S
                             options={localInputMode.map((option) => ({ value: option, label: option }))}
                         />
                     </SettingRow>
-                    <PresetTypeGroup path={path} onChange={onChange} presetType={item.presetType} />
+                    <PresetTypeGroup
+                        path={path}
+                        onChange={onChange}
+                        allowOnlyValuesFromFixedValuesList={item.allowOnlyValuesFromFixedValuesList}
+                    />
                     <PresetTypesSetting
                         path={path}
                         onChange={onChange}
-                        presetType={item.presetType}
+                        allowOnlyValuesFromFixedValuesList={item.allowOnlyValuesFromFixedValuesList}
                         presetSelection={item.presetSelection}
                         addListItem={item.addListItem}
                     />
