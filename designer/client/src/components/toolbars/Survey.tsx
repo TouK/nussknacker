@@ -1,15 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { useNkTheme } from "../../containers/theme";
 import React, { useCallback } from "react";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { DragHandle } from "../toolbarComponents/DragHandle";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography, useTheme } from "@mui/material";
 import { useWindows, WindowKind } from "../../windowManager";
 import { useSurvey } from "./useSurvey";
 
 function Survey(): JSX.Element {
     const { t } = useTranslation();
-    const { theme } = useNkTheme();
+    const theme = useTheme();
     const [survey, hideSurvey] = useSurvey();
 
     const { open } = useWindows();
@@ -32,7 +31,7 @@ function Survey(): JSX.Element {
     }
 
     return (
-        <ToolbarWrapper onClose={hideSurvey} color={theme.colors.accent}>
+        <ToolbarWrapper onClose={hideSurvey} color={theme.custom.colors.accent}>
             <DragHandle>
                 <Stack p={1} spacing={0.5}>
                     <Typography variant="body2">{survey.text}</Typography>

@@ -44,8 +44,8 @@ export const isDeployPossible = createSelector(
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
 export const isMigrationPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState],
-    (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment],
+    (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isArchivePossible = createSelector(

@@ -6,7 +6,6 @@ import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { variables } from "../../../../stylesheets/variables";
 import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
@@ -23,7 +22,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                 <NodeLabelStyled>
                     <NodeTip
                         title={"Variables in test case"}
-                        icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
+                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
                     />
                 </NodeLabelStyled>
             </NodeRow>
