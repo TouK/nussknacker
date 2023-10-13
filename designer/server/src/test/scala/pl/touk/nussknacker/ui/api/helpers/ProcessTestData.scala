@@ -248,7 +248,7 @@ object ProcessTestData {
       .emptySink("sink", existingSinkFactory)
   }
 
-  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
+  val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),

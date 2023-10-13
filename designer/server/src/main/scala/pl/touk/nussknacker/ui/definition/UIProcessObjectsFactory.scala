@@ -26,9 +26,9 @@ import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
-import pl.touk.nussknacker.ui.definition.additionalproperty.{
-  AdditionalPropertyValidatorDeterminerChain,
-  UiAdditionalPropertyEditorDeterminer
+import pl.touk.nussknacker.ui.definition.scenarioproperty.{
+  ScenarioPropertyValidatorDeterminerChain,
+  UiScenarioPropertyEditorDeterminer
 }
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
@@ -46,7 +46,7 @@ object UIProcessObjectsFactory {
       fragmentsDetails: Set[FragmentDetails],
       isFragment: Boolean,
       processCategoryService: ProcessCategoryService,
-      additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
+      scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType,
       additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
   ): UIProcessObjects = {
@@ -97,11 +97,11 @@ object UIProcessObjectsFactory {
         processCategoryService
       ),
       componentsConfig = finalComponentsConfig,
-      additionalPropertiesConfig = additionalPropertiesConfig
+      scenarioPropertiesConfig = scenarioPropertiesConfig
         .filter(_ =>
           !isFragment
-        ) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
-        .mapValuesNow(createUIAdditionalPropertyConfig),
+        ) // fixme: it should be introduced separate config for scenarioPropertiesConfig for fragments. For now we skip that
+        .mapValuesNow(createUIScenarioPropertyConfig),
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = finalProcessDefinition,
         isFragment = isFragment,
@@ -275,10 +275,10 @@ object UIProcessObjectsFactory {
     )
   }
 
-  def createUIAdditionalPropertyConfig(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
-    val editor               = UiAdditionalPropertyEditorDeterminer.determine(config)
-    val determinedValidators = AdditionalPropertyValidatorDeterminerChain(config).determine()
-    UiAdditionalPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
+  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
+    val editor               = UiScenarioPropertyEditorDeterminer.determine(config)
+    val determinedValidators = ScenarioPropertyValidatorDeterminerChain(config).determine()
+    UiScenarioPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
 
 }

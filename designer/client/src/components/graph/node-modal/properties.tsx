@@ -1,12 +1,12 @@
 import { NodeType, NodeValidationError } from "../../../types";
 import { useSelector } from "react-redux";
-import { getAdditionalPropertiesConfig } from "./NodeDetailsContent/selectors";
+import { getScenarioPropertiesConfig } from "./NodeDetailsContent/selectors";
 import React, { useMemo } from "react";
 import { sortBy } from "lodash";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { errorValidator } from "./editors/Validators";
-import AdditionalProperty from "./AdditionalProperty";
+import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
@@ -28,12 +28,12 @@ export function Properties({
     fieldErrors?: NodeValidationError[];
     showValidation?: boolean;
 }): JSX.Element {
-    const additionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig);
+    const scenarioPropertiesConfig = useSelector(getScenarioPropertiesConfig);
     //fixme move this configuration to some better place?
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-    const additionalPropertiesSorted = useMemo(
-        () => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name),
-        [additionalPropertiesConfig],
+    const scenarioPropertiesSorted = useMemo(
+        () => sortBy(Object.entries(scenarioPropertiesConfig), ([name]) => name),
+        [scenarioPropertiesConfig],
     );
 
     return (
@@ -60,8 +60,8 @@ export function Properties({
                     autoFocus
                 />
             )}
-            {additionalPropertiesSorted.map(([propName, propConfig]) => (
-                <AdditionalProperty
+            {scenarioPropertiesSorted.map(([propName, propConfig]) => (
+                <ScenarioProperty
                     key={propName}
                     showSwitch={showSwitch}
                     showValidation={showValidation}

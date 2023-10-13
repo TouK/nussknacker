@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.definition.additionalproperty
+package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -8,33 +8,33 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesValidator,
   MandatoryParameterValidator
 }
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 
-class AdditionalPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
+class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Matchers {
 
   test("determine property validator based on config") {
-    val config = AdditionalPropertyConfig(
+    val config = ScenarioPropertyConfig(
       None,
       None,
       Some(List(MandatoryParameterValidator)),
       None
     )
 
-    val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
+    val determined = ScenarioPropertyValidatorDeterminerChain(config).determine()
 
     determined shouldBe List(MandatoryParameterValidator)
   }
 
   test("determine property validator based on fixed value editor") {
     val possibleValues = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
-    val config = AdditionalPropertyConfig(
+    val config = ScenarioPropertyConfig(
       None,
       Some(FixedValuesParameterEditor(possibleValues)),
       None,
       None
     )
 
-    val determined = AdditionalPropertyValidatorDeterminerChain(config).determine()
+    val determined = ScenarioPropertyValidatorDeterminerChain(config).determine()
 
     determined shouldBe List(FixedValuesValidator(possibleValues))
   }

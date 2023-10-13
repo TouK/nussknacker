@@ -1438,7 +1438,7 @@ lazy val liteDeploymentManager = (project in lite("deploymentManager"))
   )
   .dependsOn(
     liteEngineKafkaRuntime,       // for tests mechanism purpose
-    requestResponseComponentsApi, // for rr additional properties
+    requestResponseComponentsApi, // for rr scenario properties
     deploymentManagerApi % "provided"
   )
 
