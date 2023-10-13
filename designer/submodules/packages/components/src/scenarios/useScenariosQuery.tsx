@@ -87,7 +87,7 @@ export function useScenariosWithStatus(): UseQueryResult<ProcessType[]> {
             ...scenarios,
             data: data.map((scenario) => ({
                 ...scenario,
-                state: statuses?.data?.[scenario.id],
+                state: statuses?.data?.[scenario.id] ?? scenario.state,
             })),
         } as UseQueryResult<ProcessType[]>;
     }, [scenarios, statuses]);
