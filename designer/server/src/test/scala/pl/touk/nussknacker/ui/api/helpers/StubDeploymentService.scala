@@ -64,9 +64,6 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-  override def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
-    Future.successful(Map.empty)
-
   override def fetchProcessStatesForProcesses(processes: List[processdetails.BaseProcessDetails[Unit]])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
