@@ -9,7 +9,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
 }
 
 .emotion-1 {
-  border: 1px solid #4D4D4D;
+  border: 1px solid #666666;
   border-radius: 0;
   background-color: #4D4D4D;
   color: #CCCCCC;
@@ -34,11 +34,11 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
 
 .emotion-1:not(:disabled):hover,
 .emotion-1:not(.disabled):hover {
-  background-color: #4D4D4D;
+  background-color: #666666;
 }
 
 .emotion-5 {
-  border: 1px solid #4D4D4D;
+  border: 1px solid #666666;
   border-radius: 0;
   background-color: #4D4D4D;
   color: #CCCCCC;
@@ -63,7 +63,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
 
 .emotion-5:not(:disabled):hover,
 .emotion-5:not(.disabled):hover {
-  background-color: #4D4D4D;
+  background-color: #666666;
 }
 
 <div>
