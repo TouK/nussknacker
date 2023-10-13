@@ -48,7 +48,7 @@ export default function ValidationsFields({ onChange, currentOption, path, varia
                 <ValidationFields
                     path={path}
                     onChange={onChange}
-                    validatioErrorMessage={item.validatioErrorMessage}
+                    validationErrorMessage={item.validationErrorMessage}
                     validationExpression={item.validationExpression}
                     variableTypes={variableTypes}
                 />
