@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -13,7 +13,7 @@ object NewProcessPreparer {
 
   def apply(
       processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _],
-      additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+      additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
 
@@ -27,7 +27,7 @@ object NewProcessPreparer {
 
 class NewProcessPreparer(
     emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
-    additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+    additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
 ) {
 
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {

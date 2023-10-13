@@ -112,10 +112,10 @@ class AkkaHttpBasedRouteProvider(
       val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val additionalProperties = typeToConfig.mapValues(_.additionalPropertiesConfig)
+      val scenarioProperties = typeToConfig.mapValues(_.scenarioPropertiesConfig)
       val processValidation = ProcessValidation(
         modelData,
-        additionalProperties,
+        scenarioProperties,
         typeToConfig.mapValues(_.additionalValidators),
         fragmentResolver
       )
@@ -166,7 +166,7 @@ class AkkaHttpBasedRouteProvider(
 
       Initialization.init(modelData.mapValues(_.migrations), dbRef, processRepository, environment)
 
-      val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
+      val newProcessPreparer = NewProcessPreparer(typeToConfig, scenarioProperties)
 
       val customActionInvokerService = new CustomActionInvokerServiceImpl(
         futureProcessRepository,

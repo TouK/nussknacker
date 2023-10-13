@@ -22,7 +22,7 @@ package object definition {
       componentGroups: List[ComponentGroup],
       processDefinition: UIProcessDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
-      additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
+      scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
       customActions: List[UICustomAction],
       defaultAsyncInterpretation: Boolean
@@ -138,7 +138,7 @@ package object definition {
       components: List[ComponentTemplate]
   )
 
-  @JsonCodec final case class UiAdditionalPropertyConfig(
+  @JsonCodec final case class UiScenarioPropertyConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
       validators: List[ParameterValidator],

@@ -6,7 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   MissingSourceFactory,
@@ -306,11 +306,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("not allow required scenario fields") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+    val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(
         TestProcessingTypes.Streaming -> (Map(
-          "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-          "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
+          "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
+          "field2" -> ScenarioPropertyConfig(None, None, None, Some("label2"))
         ) ++ FlinkStreamingPropertiesConfig.properties)
       )
     )
@@ -352,11 +352,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("don't validate properties on fragment") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+    val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(
         TestProcessingTypes.Streaming -> (Map(
-          "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-          "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
+          "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
+          "field2" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
         ) ++ FlinkStreamingPropertiesConfig.properties)
       )
     )
@@ -376,16 +376,16 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   test("validate type) scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+    val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(
         TestProcessingTypes.Streaming -> (Map(
-          "field1" -> AdditionalPropertyConfig(
+          "field1" -> ScenarioPropertyConfig(
             None,
             Some(FixedValuesParameterEditor(possibleValues)),
             Some(List(FixedValuesValidator(possibleValues))),
             Some("label")
           ),
-          "field2" -> AdditionalPropertyConfig(
+          "field2" -> ScenarioPropertyConfig(
             None,
             None,
             Some(List(LiteralParameterValidator.integerValidator)),
@@ -405,10 +405,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("handle unknown properties validation") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+    val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(
         TestProcessingTypes.Streaming -> (Map(
-          "field2" -> AdditionalPropertyConfig(
+          "field2" -> ScenarioPropertyConfig(
             None,
             None,
             Some(List(LiteralParameterValidator.integerValidator)),
@@ -618,7 +618,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("check for wrong fixed expression value in additional property") {
+  test("check for wrong fixed expression value in scenario property") {
     val process = createProcessWithParams(
       List.empty,
       Map(
@@ -849,22 +849,22 @@ private object ProcessValidationSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
     )
 
-  val validator: ProcessValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+  val validator: ProcessValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> (Map(
-        "requiredStringProperty" -> AdditionalPropertyConfig(
+        "requiredStringProperty" -> ScenarioPropertyConfig(
           None,
           Some(StringParameterEditor),
           Some(List(MandatoryParameterValidator)),
           Some("label")
         ),
-        "numberOfThreads" -> AdditionalPropertyConfig(
+        "numberOfThreads" -> ScenarioPropertyConfig(
           None,
           Some(FixedValuesParameterEditor(possibleValues)),
           Some(List(FixedValuesValidator(possibleValues))),
           None
         ),
-        "maxEvents" -> AdditionalPropertyConfig(
+        "maxEvents" -> ScenarioPropertyConfig(
           None,
           None,
           Some(List(LiteralParameterValidator.integerValidator)),
@@ -887,7 +887,7 @@ private object ProcessValidationSpec {
 
   private def createProcessWithParams(
       nodeParams: List[evaluatedparam.Parameter],
-      additionalProperties: Map[String, String],
+      scenarioProperties: Map[String, String],
       category: String = Category1
   ): DisplayableProcess = {
     createProcess(
@@ -899,7 +899,7 @@ private object ProcessValidationSpec {
       List(Edge("inID", "custom", None), Edge("custom", "out", None)),
       TestProcessingTypes.Streaming,
       category,
-      additionalProperties
+      scenarioProperties
     )
   }
 
