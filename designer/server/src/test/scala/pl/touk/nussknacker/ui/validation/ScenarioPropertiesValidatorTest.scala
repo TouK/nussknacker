@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   StringParameterEditor
 }
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 
-class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
+class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private val reqFieldName      = "propReq"
   private val regexpFieldName   = "propRegExp"
   private val optionalFieldName = "propOpt"
@@ -23,23 +23,23 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private val possibleValues    = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
   private val label             = "foo"
 
-  private val validator = new AdditionalPropertiesValidator(
+  private val validator = new ScenarioPropertiesValidator(
     TestFactory.mapProcessingTypeDataProvider(
       "streaming" -> Map(
-        reqFieldName -> AdditionalPropertyConfig(
+        reqFieldName -> ScenarioPropertyConfig(
           None,
           None,
           Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
           Some(label)
         ),
-        regexpFieldName -> AdditionalPropertyConfig(
+        regexpFieldName -> ScenarioPropertyConfig(
           None,
           None,
           Some(List(LiteralParameterValidator.numberValidator)),
           Some(label)
         ),
-        optionalFieldName -> AdditionalPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
-        optFixedFieldName -> AdditionalPropertyConfig(
+        optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
+        optFixedFieldName -> ScenarioPropertyConfig(
           None,
           Some(FixedValuesParameterEditor(possibleValues)),
           Some(List(FixedValuesValidator(possibleValues))),

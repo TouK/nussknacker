@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.management.dev.periodic
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
@@ -31,8 +30,8 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
   // TODO: move it to PeriodicDeploymentManagerProvider with ability to override
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map(
-    CronSchedulePropertyExtractor.CronPropertyDefaultName -> AdditionalPropertyConfig(
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] = Map(
+    CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
       defaultValue = None, // TODO: Maybe once a day at 0:00 ?
       editor = None,
       validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),

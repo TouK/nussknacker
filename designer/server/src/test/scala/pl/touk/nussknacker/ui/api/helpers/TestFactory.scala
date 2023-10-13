@@ -63,7 +63,7 @@ object TestFactory extends TestPermissions {
 
   val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation
     .withFragmentResolver(sampleResolver)
-    .withAdditionalPropertiesConfig(
+    .withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
     )
 

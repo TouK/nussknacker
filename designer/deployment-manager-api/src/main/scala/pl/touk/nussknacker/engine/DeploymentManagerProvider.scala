@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
@@ -24,7 +24,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def metaDataInitializer(config: Config): MetaDataInitializer
 
-  def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
+  def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] = Map.empty
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
 
@@ -32,7 +32,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
 /**
  * This class contains the logic of overriding defaults set through the standard mechanism - defaultValue field in
- * AdditionalPropertyConfig. These initial values have to be overwritten because some initial values cannot be statically
+ * ScenarioPropertyConfig. These initial values have to be overwritten because some initial values cannot be statically
  * defined (like slug in request-response).
  * This currently also requires the DeploymentManagerProvider to provide its metaDataType.
  * TODO: set the defaults in one place without overriding

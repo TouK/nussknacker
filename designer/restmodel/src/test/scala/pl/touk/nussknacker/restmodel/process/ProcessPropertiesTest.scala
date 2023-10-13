@@ -36,7 +36,7 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("construct ProcessProperties from TypeSpecificData and additional properties") {
+  test("construct ProcessProperties from TypeSpecificData and scenario properties") {
     forAll(fullMetaDataCases) {
       (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         {
