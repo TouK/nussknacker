@@ -41,7 +41,8 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingTypeData,
       user = NussknackerInternalUser.instance, // We need admin user to receive all components info
       fragments = Set.empty,
-      additionalComponentsUIConfigProvider = AdditionalComponentsUIConfigProvider.empty
+      additionalComponentsUIConfigProvider =
+        AdditionalComponentsUIConfigProvider.empty // this method is only used in ComponentIdProviderFactory, and because AdditionalComponentsUIConfigProvider can't change ComponentId, we don't need it
     )
     ComponentObjects(uiProcessObjects)
   }
