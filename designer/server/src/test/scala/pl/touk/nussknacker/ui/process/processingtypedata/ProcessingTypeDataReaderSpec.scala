@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.{
   CombinedProcessingTypeData,
   ConfigWithUnresolvedVersion,
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.{
 }
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
-import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
