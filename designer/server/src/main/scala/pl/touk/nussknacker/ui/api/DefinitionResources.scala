@@ -3,10 +3,11 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.api.component.AdditionalComponentsUIConfigProvider
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
@@ -17,7 +18,8 @@ class DefinitionResources(
     modelDataProvider: ProcessingTypeDataProvider[ModelData, _],
     processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
     fragmentRepository: FragmentRepository,
-    processCategoryService: ProcessCategoryService
+    processCategoryService: ProcessCategoryService,
+    additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -53,7 +55,8 @@ class DefinitionResources(
                     isFragment,
                     processCategoryService,
                     processingTypeData.additionalPropertiesConfig,
-                    processingType
+                    processingType,
+                    additionalComponentsUIConfigProvider
                   )
                 )
               }

@@ -28,6 +28,8 @@ package object definition {
       defaultAsyncInterpretation: Boolean
   )
 
+  // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
+  // this would also make config merging logic in `UIProcessObjectsFactory.prepareUIProcessObjects` simpler
   @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
       services: Map[String, UIObjectDefinition],
       sourceFactories: Map[String, UIObjectDefinition],
@@ -82,7 +84,6 @@ package object definition {
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
-      componentConfig: SingleComponentConfig
   ) {
 
     def hasNoReturn: Boolean = returnType.isEmpty
@@ -93,11 +94,10 @@ package object definition {
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
-      categories: List[String],
-      componentConfig: SingleComponentConfig
+      categories: List[String]
   ) {
     def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories, componentConfig)
+      UIObjectDefinition(parameters, returnType, categories)
   }
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
