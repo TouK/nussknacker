@@ -9,13 +9,9 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider.componentGroupName
 
-object TestAdditionalComponentsUIConfigProvider {
+object TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
   val componentGroupName: ComponentGroupName = ComponentGroupName("someComponentGroup")
-}
-
-class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
 
   override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentConfigWithoutId] = {
     if (processingType == TestProcessingTypes.Streaming) {

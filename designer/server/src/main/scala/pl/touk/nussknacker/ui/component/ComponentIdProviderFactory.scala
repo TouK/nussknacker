@@ -15,7 +15,8 @@ object ComponentIdProviderFactory extends LazyLogging {
     logger.debug("Creating component id provider")
 
     val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap     = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentObjectsMap =
+      processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragmentsAndAdditionalUIConfigs)
     val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
       case (_, componentsObjects) => componentsObjects.config
     })

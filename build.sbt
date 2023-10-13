@@ -1460,6 +1460,7 @@ lazy val componentsApi = (project in file("components-api"))
         "com.iheart"                 %% "ficus"                   % ficusV,
         "org.springframework"         % "spring-core"             % springV,
         "com.google.code.findbugs"    % "jsr305"                  % findBugsV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV
       )
     }
   )

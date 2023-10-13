@@ -3,7 +3,11 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{
+  AdditionalComponentsUIConfigProvider,
+  ComponentGroupName,
+  SingleComponentConfig
+}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -214,7 +218,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       isFragment = false,
       new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
-      TestProcessingTypes.Streaming
+      TestProcessingTypes.Streaming,
+      TestAdditionalComponentsUIConfigProvider
     )
   }
 

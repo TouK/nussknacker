@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   ComponentIdWithName,
   ProcessDefinition,
@@ -20,10 +19,9 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   mapByName
 }
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -40,17 +38,6 @@ object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
 
-  private lazy val additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = {
-    Multiplicity(ScalaServiceLoader.load[AdditionalComponentsUIConfigProvider](getClass.getClassLoader)) match {
-      case Empty()       => AdditionalComponentsUIConfigProvider.empty
-      case One(provider) => provider
-      case Many(moreThanOne) =>
-        throw new IllegalArgumentException(
-          s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne"
-        )
-    }
-  }
-
   def prepareUIProcessObjects(
       modelDataForType: ModelData,
       processDefinition: ProcessDefinition[ObjectDefinition],
@@ -60,7 +47,8 @@ object UIProcessObjectsFactory {
       isFragment: Boolean,
       processCategoryService: ProcessCategoryService,
       additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
-      processingType: ProcessingType
+      processingType: ProcessingType,
+      additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
   ): UIProcessObjects = {
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
