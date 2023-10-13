@@ -8,7 +8,6 @@ import { TableCellAvatar } from "./tableCellAvatar";
 export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFragment" | "state"> }) {
     const { t } = useTranslation();
     const { isFragment, state } = process;
-
     return (
         <TableCellAvatar>
             {isFragment ? (
