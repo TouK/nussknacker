@@ -26,6 +26,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -105,11 +106,22 @@ class BaseFlowTest
         componentId = None
       ),
       "enricher" -> SingleComponentConfig(
-        params =
-          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
+        params = Some(
+          Map(
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "paramDualEditor" -> ParameterConfig(
+              None,
+              None,
+              Some(
+                List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
+              ),
+              None
+            )
+          )
+        ),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = None,
+        componentGroup = Some(TestAdditionalComponentsUIConfigProvider.componentGroupName),
         componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(

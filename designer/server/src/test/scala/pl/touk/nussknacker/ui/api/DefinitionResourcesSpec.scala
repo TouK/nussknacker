@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec
@@ -37,7 +38,8 @@ class DefinitionResourcesSpec
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    processCategoryService
+    processCategoryService,
+    TestAdditionalComponentsUIConfigProvider
   )
 
   it("should handle missing scenario type") {

@@ -17,7 +17,7 @@ object LocalModelData {
       migrations: ProcessMigrations = ProcessMigrations.empty,
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
-      objectNaming: ObjectNaming = DefaultNamespacedObjectNaming
+      objectNaming: ObjectNaming = DefaultNamespacedObjectNaming,
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
