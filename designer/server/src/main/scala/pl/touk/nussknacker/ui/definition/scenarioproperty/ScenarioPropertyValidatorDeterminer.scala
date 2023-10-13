@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.ui.definition.additionalproperty
+package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.definition.ParameterValidator
 
-trait AdditionalPropertyValidatorDeterminer {
+trait ScenarioPropertyValidatorDeterminer {
 
   def determine(): Option[List[ParameterValidator]]
 }

@@ -106,12 +106,12 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("return info about validator based on param fixed value editor for additional properties") {
+  it("return info about validator based on param fixed value editor for scenario properties") {
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
       val validators: Json = responseAs[Json].hcursor
-        .downField("additionalPropertiesConfig")
+        .downField("scenarioPropertiesConfig")
         .downField("numberOfThreads")
         .downField("validators")
         .focus

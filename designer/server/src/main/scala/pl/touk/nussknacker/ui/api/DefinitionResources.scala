@@ -54,7 +54,7 @@ class DefinitionResources(
                     fragments,
                     isFragment,
                     processCategoryService,
-                    processingTypeData.additionalPropertiesConfig,
+                    processingTypeData.scenarioPropertiesConfig,
                     processingType,
                     additionalComponentsUIConfigProvider
                   )
