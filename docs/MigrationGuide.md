@@ -6,10 +6,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.13.0 (Not released yet)
 
 ### Code API changes
-* [#TODO](https://github.com/TouK/nussknacker/pull/xxxx) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
 
 ### Other changes
-* [#TODO](https://github.com/TouK/nussknacker/pull/xxxx) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 
 ## In version 1.12.0 (Not released yet)
 
