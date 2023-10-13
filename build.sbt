@@ -389,7 +389,7 @@ lazy val commonDockerSettings = {
     ),
     dockerUsername        := dockerUserName,
     dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerBuildxPlatforms := Seq("linux/arm64"),
+    dockerBuildxPlatforms := Seq("linux/amd64"),
     dockerAliases         := {
       // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
