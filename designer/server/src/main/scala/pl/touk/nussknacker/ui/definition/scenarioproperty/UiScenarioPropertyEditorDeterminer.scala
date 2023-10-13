@@ -1,11 +1,11 @@
-package pl.touk.nussknacker.ui.definition.additionalproperty
+package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.definition.{SimpleParameterEditor, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 
-object UiAdditionalPropertyEditorDeterminer {
+object UiScenarioPropertyEditorDeterminer {
 
-  def determine(config: AdditionalPropertyConfig): SimpleParameterEditor = {
+  def determine(config: ScenarioPropertyConfig): SimpleParameterEditor = {
     config.editor match {
       case Some(editor: SimpleParameterEditor) => editor
       case None                                => StringParameterEditor

@@ -78,10 +78,10 @@ object ExecutionConfigPreparer extends LazyLogging {
         "user"         -> processVersion.user,
         "deploymentId" -> deploymentData.deploymentId.value
       )
-      val additionalProperties = deploymentData.additionalDeploymentData.map { case (k, v) =>
+      val scenarioProperties = deploymentData.additionalDeploymentData.map { case (k, v) =>
         s"deployment.properties.$k" -> v
       }
-      baseProperties ++ additionalProperties
+      baseProperties ++ scenarioProperties
     }
 
   }

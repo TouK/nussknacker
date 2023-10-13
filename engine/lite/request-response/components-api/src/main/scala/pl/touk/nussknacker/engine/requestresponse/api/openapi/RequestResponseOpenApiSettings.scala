@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.requestresponse.api.openapi
 
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, JsonValidator, MandatoryParameterValidator}
 
 object RequestResponseOpenApiSettings {
@@ -10,14 +10,14 @@ object RequestResponseOpenApiSettings {
   private val emptySchema  = "{}"
 
   // TODO: add json schema validator
-  val additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map(
-    InputSchemaProperty -> AdditionalPropertyConfig(
+  val scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig] = Map(
+    InputSchemaProperty -> ScenarioPropertyConfig(
       Some(emptySchema),
       Some(JsonParameterEditor),
       Some(List(MandatoryParameterValidator, JsonValidator)),
       Some("Input schema")
     ),
-    OutputSchemaProperty -> AdditionalPropertyConfig(
+    OutputSchemaProperty -> ScenarioPropertyConfig(
       Some(emptySchema),
       Some(JsonParameterEditor),
       Some(List(MandatoryParameterValidator, JsonValidator)),
