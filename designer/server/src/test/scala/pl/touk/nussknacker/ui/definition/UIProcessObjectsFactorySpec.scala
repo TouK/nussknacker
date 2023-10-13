@@ -3,11 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalComponentsUIConfigProvider,
-  ComponentGroupName,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -16,8 +12,10 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -201,9 +199,19 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
     processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
-      TestAdditionalComponentsUIConfigProvider.componentGroupName,
+      TestAdditionalUIConfigProvider.componentGroupName,
       "enricher"
     )
+  }
+
+  test("should override scenario properties with additionally provided config") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
+      .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
@@ -219,7 +227,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming,
-      TestAdditionalComponentsUIConfigProvider
+      TestAdditionalUIConfigProvider
     )
   }
 

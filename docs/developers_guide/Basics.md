@@ -63,7 +63,7 @@ If you want to implement own `DeploymentManager`, you should implement this inte
 - [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/designer/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
 - [AdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/AdditionalInfoProvider.scala)
 - [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/CustomProcessValidator.scala)
-- [AdditionalComponentsUIConfigProviderFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/component/AdditionalComponentsUIConfigProviderFactory.scala)
+- [AdditionalUIConfigProviderFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/component/AdditionalUIConfigProviderFactory.scala)
              
 ## Modules architecture and conventions
 
