@@ -14,26 +14,21 @@ const baseEspGraph = () => css`
     }
 `;
 
-const espButtonBase = css`
-    width: unit(72, px); //TODO: Change me to MUI value
-    height: unit(72, px); //TODO: Change me to MUI value
-    font-size: 11px; //TODO: Change me to MUI value
-    margin: 10px 22px 10px 0; //TODO: change 22px to MUI value
-    img {
-        display: block;
-        margin: auto;
-    }
+export const buttonBase = css`
+  border: 1px solid #666666;
+  border-radius: 0;
+  background-color: #4d4d4d;
+  color: #cccccc;
+  transition: background-color 0.2s;
+  user-select: none;
+  &:disabled,&.disabled {
+    opacity: 0.3;
+    cursor: not-allowed !important;
+  }
 
-    svg {
-        width: 40px;
-        display: block;
-        margin: auto;
-    }
-
-    &.dropzone {
-        padding-top: 4px; /*why?*/
-        display: inline-block;
-    }
+  &:not(:disabled):hover,&:not(.disabled):hover {
+    background-color: #444444;
+  }
 `;
 
 const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties["color"]) => css`
@@ -193,7 +188,7 @@ export const StyledGraphWrapper = styled("div")(
         }
 
         body .modalButton {
-            ${espButtonBase};
+            ${buttonBase};
             width: 120px;
             height: 30px;
             font-size: 18px;
@@ -317,38 +312,6 @@ export const StyledGraphWrapper = styled("div")(
         .marked {
             border: 2px solid #8fad60 !important; // TODO: change me to MUI color
         }
-
-        .fieldsControl {
-            .addRemoveButton {
-                ${espButtonBase};
-                width: 35px;
-                height: 35px;
-                font-weight: bold;
-                font-size: 20px;
-            }
-
-            .fieldName {
-                width: 28%;
-            }
-            .handle-bars {
-                height: 35px;
-                width: 12px;
-                margin-left: 6px;
-                cursor: grab;
-            }
-
-            .node-value {
-                &.fieldName {
-                    flex-basis: 30%;
-                    max-width: 20em;
-                }
-
-                &.fieldRemove {
-                    flex: 0;
-                }
-            }
-        }
-
         .branch-parameter-row {
             margin-top: 0;
             margin-bottom: 0;

@@ -1,5 +1,7 @@
 import { tintPrimary } from "./helpers";
 import { createTheme } from "@mui/material";
+import { css } from "@emotion/css";
+import { buttonBase } from "../../stylesheets/styledGraphWrapper";
 
 declare module "@mui/material/styles" {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface

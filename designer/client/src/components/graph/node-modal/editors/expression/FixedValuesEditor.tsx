@@ -1,10 +1,11 @@
 import React from "react";
 import Creatable from "react-select/creatable";
-import styles from "../../../../../stylesheets/select.styl";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { Validator } from "../Validators";
 import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
+import { cx } from "@emotion/css";
+import { styledSelect } from "../../../../../stylesheets/styledSelect";
 
 type Props = {
     editorConfig: $TodoType;
@@ -53,18 +54,43 @@ export default class FixedValuesEditor extends React.Component<Props> {
         const options = getOptions(editorConfig.possibleValues);
         const currentOption = this.currentOption(expressionObj, options);
 
+        // @ts-ignore
+      const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = styledSelect({});
         return (
-            <div className={`node-value-select ${className}`}>
+            <div className={cx(className)}>
                 <Creatable
-                    classNamePrefix={styles.nodeValueSelect}
                     value={currentOption}
+                    classNamePrefix={"test"}
                     onChange={(newValue) => onValueChange(newValue.value)}
                     options={options}
                     isDisabled={readOnly}
                     formatCreateLabel={(x) => x}
                     menuPortalTarget={document.body}
                     createOptionPosition={"first"}
+                    styles={{
+                        input: (base) => ({ ...input(base) }),
+                        control: (base, props) => ({
+                            ...control(base, props.isFocused, props.isDisabled),
+                        }),
+                        menu: (base) => ({
+                            ...menu(base),
+                        }),
+                        menuPortal: (base) => ({
+                            ...menuPortal(base),
+                        }),
+                        menuList: (base) => ({
+                            ...menuList(base),
+                        }),
+                        option: (base, props) => ({
+                            ...menuOption(base, props.isSelected, props.isFocused),
+                        }),
+                        valueContainer: (base, props) => ({
+                            ...valueContainer(base, props.hasValue),
+                        }),
+                        singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    }}
                 />
+
                 {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
             </div>
         );
