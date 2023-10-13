@@ -22,7 +22,7 @@ export default function InitialValue({ onChange, item, path, variableTypes, curr
 
     return (
         <>
-            {item.allowOnlyValuesFromFixedValuesList && item.inputMode === "Fixed list" && isValidOption(currentOption.value) ? (
+            {item.allowOnlyValuesFromFixedValuesList && isValidOption(currentOption.value) ? (
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
                     <TypeSelect

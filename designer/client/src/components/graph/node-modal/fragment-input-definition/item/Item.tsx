@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
@@ -9,7 +9,7 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { UpdatedItem, onChangeType } from "./";
+import { InputMode, UpdatedItem, onChangeType } from "./";
 import { addNewFields, validateFieldsForCurrentOption } from "./utils";
 
 interface ItemProps {
@@ -28,6 +28,11 @@ export function Item(props: ItemProps): JSX.Element {
     const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
+    const localInputMode = useMemo(
+        () => ["Fixed list", "Any value with suggestions", "Any value"].map((option) => ({ value: option, label: option })),
+        [],
+    );
+    const [selectedInputMode, setSelectedInputMode] = useState<InputMode>(localInputMode[0].value as InputMode);
 
     const getCurrentOption = useCallback(
         (field: Parameter) => {
@@ -41,7 +46,7 @@ export function Item(props: ItemProps): JSX.Element {
     const openSettingMenu = () => {
         onChange(`${path}.settingsOpen`, !item.settingsOpen);
         const { value } = getCurrentOption(item);
-        const fields = validateFieldsForCurrentOption(value, item.inputMode);
+        const fields = validateFieldsForCurrentOption(value, selectedInputMode);
         addNewFields(fields, item, onChange, path);
     };
 
@@ -49,6 +54,7 @@ export function Item(props: ItemProps): JSX.Element {
         <div>
             <FieldsRow index={index}>
                 <MapKey
+                    className="parametersFieldName"
                     readOnly={readOnly}
                     showValidation={showValidation}
                     isMarked={isMarked(`${path}.name`)}
@@ -60,8 +66,7 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
-
-                        const fields = validateFieldsForCurrentOption(value, item.inputMode);
+                        const fields = validateFieldsForCurrentOption(value, selectedInputMode);
                         addNewFields(fields, item, onChange, path);
                     }}
                     value={getCurrentOption(item)}
@@ -77,6 +82,9 @@ export function Item(props: ItemProps): JSX.Element {
                     onChange={onChange}
                     currentOption={getCurrentOption(item)}
                     variableTypes={variableTypes}
+                    localInputMode={localInputMode}
+                    selectedInputMode={selectedInputMode}
+                    setSelectedInputMode={setSelectedInputMode}
                 />
             )}
         </div>

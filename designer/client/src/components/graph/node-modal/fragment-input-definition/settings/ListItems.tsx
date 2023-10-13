@@ -4,21 +4,21 @@ import { onChangeType } from "../item";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
 
 interface ListItemsProps {
-    addListItem: string[];
+    fixedValueList: string[];
     onChange: (path: string, value: onChangeType) => void;
     path: string;
 }
 
-export const ListItems = ({ addListItem, onChange, path }: ListItemsProps) => {
+export const ListItems = ({ fixedValueList, onChange, path }: ListItemsProps) => {
     const handleDelete = (currentIndex: number) => {
-        const filtredItemList = addListItem.filter((_, index) => index !== currentIndex);
-        onChange(`${path}.addListItem`, filtredItemList);
+        const filtredItemList = fixedValueList.filter((_, index) => index !== currentIndex);
+        onChange(`${path}.fixedValueList`, filtredItemList);
     };
 
     return (
         <ListItemContainer>
             <ListItemWrapper>
-                {addListItem.map((item, index) => (
+                {fixedValueList.map((item, index) => (
                     <Chip
                         variant="outlined"
                         sx={{ marginRight: "10px", marginBottom: "10px" }}

@@ -2,29 +2,23 @@ import React, { useState } from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { NodeInput } from "../../../../../components/withFocus";
 import { useTranslation } from "react-i18next";
-import { UpdatedItem, onChangeType } from "../item";
+import { PresetType, UpdatedItem, onChangeType } from "../item";
 import { ListItems } from "./ListItems";
 import { TypeSelect } from "../TypeSelect";
 
-interface PresetTypesSetting
-    extends Pick<UpdatedItem, "presetSelection" | "allowOnlyValuesFromFixedValuesList" | "presetSelection" | "addListItem"> {
+interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection" | "fixedValueList" | "presetSelection" | "fixedValueList"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
+    presetType: PresetType;
 }
 
-export default function PresetTypesSetting({
-    allowOnlyValuesFromFixedValuesList,
-    presetSelection,
-    path,
-    addListItem,
-    onChange,
-}: PresetTypesSetting) {
+export default function PresetTypesSetting({ fixedValueList, presetSelection, path, presetType, onChange }: PresetTypesSetting) {
     const { t } = useTranslation();
     const [temporareListItem, setTemporeryListItem] = useState("");
 
     return (
         <>
-            {allowOnlyValuesFromFixedValuesList ? (
+            {presetType === "Preset" ? (
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
@@ -42,13 +36,13 @@ export default function PresetTypesSetting({
                         onChange={(e) => setTemporeryListItem(e.currentTarget.value)}
                         onKeyUp={(event) => {
                             if (event.key === "Enter") {
-                                const updatedList = [...addListItem, temporareListItem];
-                                onChange(`${path}.addListItem`, updatedList);
+                                const updatedList = [...fixedValueList, temporareListItem];
+                                onChange(`${path}.fixedValueList`, updatedList);
                                 setTemporeryListItem("");
                             }
                         }}
                     />
-                    {addListItem?.length > 0 && <ListItems addListItem={addListItem} onChange={onChange} path={path} />}
+                    {fixedValueList?.length > 0 && <ListItems fixedValueList={fixedValueList} onChange={onChange} path={path} />}
                 </SettingRow>
             )}
         </>

@@ -20,12 +20,12 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
             ...defaultOption,
             inputMode: "Fixed list" as InputMode,
             allowOnlyValuesFromFixedValuesList: true,
+            fixedValueList: [],
             presetSelection: "",
         };
     } else {
         return {
             ...defaultOption,
-            validation: true,
             validationExpression: "",
             validationErrorMessage: "",
         };

@@ -2,15 +2,17 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, SettingRow, SyledFormControlLabel } from "./StyledSettingsComponnets";
 import { FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
-import { onChangeType } from "../item";
+import { PresetType, onChangeType } from "../item";
 
 interface PresetTypeGroup {
     onChange: (path: string, value: onChangeType) => void;
-    allowOnlyValuesFromFixedValuesList: boolean;
     path: string;
+    presetType: PresetType;
+    setPresetType: React.Dispatch<React.SetStateAction<PresetType>>;
 }
 
-export default function PresetTypeGroup({ allowOnlyValuesFromFixedValuesList, onChange, path }: PresetTypeGroup) {
+export default function PresetTypeGroup(props: PresetTypeGroup) {
+    const { onChange, path, presetType, setPresetType } = props;
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -18,9 +20,9 @@ export default function PresetTypeGroup({ allowOnlyValuesFromFixedValuesList, on
         <SettingRow>
             <SettingLabelStyled></SettingLabelStyled>
             <RadioGroup
-                value={allowOnlyValuesFromFixedValuesList}
+                value={presetType}
                 onChange={(event) => {
-                    onChange(`${path}.allowOnlyValuesFromFixedValuesList`, event.target.value === "true");
+                    setPresetType(event.target.value as PresetType);
                     if (event.target.value !== "Preset") {
                         onChange(`${path}.addListItem`, []);
                         onChange(`${path}.initialValue`, "");
@@ -31,13 +33,13 @@ export default function PresetTypeGroup({ allowOnlyValuesFromFixedValuesList, on
             >
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value="true"
+                    value={"Preset"}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</SyledFormControlLabel>}
                 />
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value="false"
+                    value={"User defined list"}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</SyledFormControlLabel>}
                 />

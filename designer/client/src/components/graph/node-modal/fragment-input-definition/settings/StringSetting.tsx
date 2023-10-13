@@ -2,7 +2,7 @@ import React from "react";
 import { Option } from "../FieldsSelect";
 import { TypeSelect } from "../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { UpdatedItem, onChangeType } from "../item";
+import { InputMode, PresetType, UpdatedItem, onChangeType } from "../item";
 import PresetTypesSetting from "./PresetTypesSetting";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { isValidOption } from "../item/utils";
@@ -13,11 +13,17 @@ interface StringSetting {
     item: UpdatedItem;
     currentOption: Option;
     path: string;
+    presetType: PresetType;
+    setPresetType: React.Dispatch<React.SetStateAction<PresetType>>;
+    setSelectedInputMode: React.Dispatch<React.SetStateAction<InputMode>>;
+    selectedInputMode: InputMode;
+    localInputMode: Option[];
 }
 
-export default function StringSetting({ onChange, path, item, currentOption }: StringSetting) {
+export default function StringSetting(props: StringSetting) {
+    const { onChange, path, item, currentOption, presetType, setPresetType, setSelectedInputMode, selectedInputMode, localInputMode } =
+        props;
     const { t } = useTranslation();
-    const localInputMode = ["Fixed list", "Any value with suggestions", "Any value"];
 
     return (
         <>
@@ -30,23 +36,20 @@ export default function StringSetting({ onChange, path, item, currentOption }: S
                                 if (value === "Fixed list") {
                                     onChange(`${path}.initialValue`, "");
                                 }
-                                onChange(`${path}.inputMode`, value);
+                                setSelectedInputMode(value as InputMode);
+                                onChange(`${path}.allowOnlyValuesFromFixedValuesList`, value === "Fixed list");
                             }}
-                            value={{ value: item.inputMode ?? localInputMode[0], label: item.inputMode ?? localInputMode[0] }}
-                            options={localInputMode.map((option) => ({ value: option, label: option }))}
+                            value={{ value: selectedInputMode, label: selectedInputMode }}
+                            options={localInputMode}
                         />
                     </SettingRow>
-                    <PresetTypeGroup
-                        path={path}
-                        onChange={onChange}
-                        allowOnlyValuesFromFixedValuesList={item.allowOnlyValuesFromFixedValuesList}
-                    />
+                    <PresetTypeGroup presetType={presetType} setPresetType={setPresetType} path={path} onChange={onChange} />
                     <PresetTypesSetting
                         path={path}
                         onChange={onChange}
-                        allowOnlyValuesFromFixedValuesList={item.allowOnlyValuesFromFixedValuesList}
+                        presetType={presetType}
                         presetSelection={item.presetSelection}
-                        addListItem={item.addListItem}
+                        fixedValueList={item.fixedValueList}
                     />
                 </>
             )}

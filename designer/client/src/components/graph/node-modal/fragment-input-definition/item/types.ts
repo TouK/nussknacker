@@ -15,25 +15,24 @@ export interface DefaultItemType extends Parameter {
 
 export interface FragmentValidation {
     validation: boolean;
-    validatioErrorMessage: string;
+    validationErrorMessage: string;
     validationExpression: string;
 }
 
 export interface AllValueExcludeStringAndBoolean extends FragmentValidation, DefaultItemType {}
 
+export type PresetType = "Preset" | "User defined list";
 export type InputMode = "Fixed list" | "Any value with suggestions" | "Any value";
 
 export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
-    inputMode: InputMode;
     allowOnlyValuesFromFixedValuesList: boolean;
-    addListItem: string[];
+    fixedValueList?: string[];
     presetSelection: string;
 }
 
 interface DefaultFields {
-    inputMode: InputMode;
     allowOnlyValuesFromFixedValuesList: boolean;
-    addListItem?: string[];
+    fixedValueList?: string[];
     presetSelection: string;
     required: boolean;
     hintText: string;
@@ -41,7 +40,6 @@ interface DefaultFields {
 }
 
 interface DefaultFieldsWithValidation {
-    validation: boolean;
     validationExpression: string;
     validationErrorMessage: string;
 }

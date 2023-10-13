@@ -1,10 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FragmentValidation, onChangeType } from "../item";
-import { fieldLabel } from "./StyledSettingsComponnets";
+import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
 import { ExpressionLang } from "../../editors/expression/types";
 import { VariableTypes } from "../../../../../types";
 import EditableEditor from "../../editors/EditableEditor";
+import { NodeInput } from "../../../../withFocus";
 
 interface ValidationFields extends Omit<FragmentValidation, "validation"> {
     onChange: (path: string, value: onChangeType) => void;
@@ -12,7 +13,13 @@ interface ValidationFields extends Omit<FragmentValidation, "validation"> {
     variableTypes: VariableTypes;
 }
 
-export default function ValidationFields({ validatioErrorMessage, validationExpression, variableTypes, path, onChange }: ValidationFields) {
+export default function ValidationFields({
+    validationErrorMessage,
+    validationExpression,
+    variableTypes,
+    path,
+    onChange,
+}: ValidationFields) {
     const { t } = useTranslation();
     return (
         <>
@@ -24,15 +31,14 @@ export default function ValidationFields({ validatioErrorMessage, validationExpr
                 onValueChange={(value) => onChange(`${path}.validationExpression`, value)}
                 variableTypes={variableTypes}
             />
-
-            <EditableEditor
-                fieldName="validationErrorMessage"
-                fieldLabel={t("fragment.validation.validationErrorMessage", "Validation error message:")}
-                renderFieldLabel={() => fieldLabel(t("fragment.validation.validationErrorMessage", "Validation error message:"))}
-                expressionObj={{ language: ExpressionLang.SpEL, expression: validatioErrorMessage }}
-                onValueChange={(value) => onChange(`${path}.validatioErrorMessage`, value)}
-                variableTypes={variableTypes}
-            />
+            <SettingRow>
+                {fieldLabel(t("fragment.validation.validationErrorMessage", "Validation error message:"))}
+                <NodeInput
+                    style={{ width: "70%" }}
+                    value={validationErrorMessage}
+                    onChange={(event) => onChange(`${path}.validationErrorMessage`, event.currentTarget.value)}
+                />
+            </SettingRow>
         </>
     );
 }
