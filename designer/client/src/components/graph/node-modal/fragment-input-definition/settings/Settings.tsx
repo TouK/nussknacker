@@ -22,7 +22,7 @@ interface Settings {
 }
 
 export default function Settings(props: Settings) {
-    const { item, path, onChange, variableTypes, currentOption } = props;
+    const { item, path, onChange } = props;
     const [presetType, setPresetType] = useState<PresetType>("Preset");
     const { t } = useTranslation();
 
@@ -37,7 +37,7 @@ export default function Settings(props: Settings) {
             </SettingRow>
             <StringSetting {...props} presetType={presetType} setPresetType={setPresetType} />
             <ValidationsFields {...props} />
-            <InitialValue item={item} path={path} currentOption={currentOption} onChange={onChange} variableTypes={variableTypes} />
+            <InitialValue {...props} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

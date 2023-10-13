@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { t } from "i18next";
 import { Option } from "../FieldsSelect";
 import { FormControlLabel } from "@mui/material";
@@ -16,35 +16,37 @@ interface ValidationsFields {
     selectedInputMode: InputMode;
 }
 
-export default function ValidationsFields({ onChange, currentOption, path, variableTypes, item, selectedInputMode }: ValidationsFields) {
-    const showValidation =
-        !currentOption?.value.includes("String") &&
-        !currentOption?.value.includes("Boolean") &&
-        selectedInputMode !== "Any value with suggestions";
+export default function ValidationsFields(props: ValidationsFields) {
+    const { onChange, currentOption, path, variableTypes, item, selectedInputMode } = props;
+    const [validation, setValidation] = useState(true);
 
-    const [validation, setValidation] = useState(showValidation);
+    const showValidation = useMemo(
+        () =>
+            (!currentOption?.value.includes("String") && !currentOption?.value.includes("Boolean")) ||
+            selectedInputMode === "Any value with suggestions",
+        [currentOption, selectedInputMode],
+    );
+
     return (
         <>
-            {!currentOption?.value.includes("String") &&
-                !currentOption?.value.includes("Boolean") &&
-                selectedInputMode !== "Any value with suggestions" && (
-                    <SettingRow>
-                        <SettingLabelStyled>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
-                        <FormControlLabel
-                            control={<CustomSwitch checked={validation} onChange={(event) => setValidation(event.currentTarget.checked)} />}
-                            label=""
-                        />
-                        <div style={{ width: "100%", justifyContent: "flex-end", display: "flex" }}>
-                            <SettingLabelStyled style={{ flexBasis: "70%", minWidth: "70%" }}>
-                                {t(
-                                    "fragment.validation.validationWarning",
-                                    "When validation is enabled, the parameter's value will be evaluated and validated at deployment time. In run-time, Nussknacker will use this precalculated value for each processed data record.",
-                                )}
-                            </SettingLabelStyled>
-                        </div>
-                    </SettingRow>
-                )}
-            {validation && (
+            {showValidation && (
+                <SettingRow>
+                    <SettingLabelStyled>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
+                    <FormControlLabel
+                        control={<CustomSwitch checked={validation} onChange={(event) => setValidation(event.currentTarget.checked)} />}
+                        label=""
+                    />
+                    <div style={{ width: "100%", justifyContent: "flex-end", display: "flex" }}>
+                        <SettingLabelStyled style={{ flexBasis: "70%", minWidth: "70%" }}>
+                            {t(
+                                "fragment.validation.validationWarning",
+                                "When validation is enabled, the parameter's value will be evaluated and validated at deployment time. In run-time, Nussknacker will use this precalculated value for each processed data record.",
+                            )}
+                        </SettingLabelStyled>
+                    </div>
+                </SettingRow>
+            )}
+            {showValidation && validation && (
                 <ValidationFields
                     path={path}
                     onChange={onChange}

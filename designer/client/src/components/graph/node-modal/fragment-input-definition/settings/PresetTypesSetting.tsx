@@ -23,8 +23,8 @@ export default function PresetTypesSetting({ fixedValueList, presetSelection, pa
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
                         onChange={(value) => onChange(`${path}.presetSelection`, value)}
-                        value={{ value: presetSelection, label: presetSelection }}
-                        options={[{ value: "option", label: "option" }]}
+                        value={{ value: "Defined list 1", label: "Defined list 1" }}
+                        options={[{ value: "Defined list 1", label: "Defined list 1" }]}
                     />
                 </SettingRow>
             ) : (
