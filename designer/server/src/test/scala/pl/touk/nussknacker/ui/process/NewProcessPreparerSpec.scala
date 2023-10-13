@@ -7,8 +7,6 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
 class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
 
-  val processDefinition = ProcessTestData.processDefinition
-
   it should "create new empty process" in {
     val processingType = "testProcessingType"
 

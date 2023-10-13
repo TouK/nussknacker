@@ -1,5 +1,9 @@
 # Changelog
 
+1.13.0 (Not released yet)
+-------------------------
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) Added AdditionalComponentsUIConfigProviderFactory API that allows changing components' configs without model reload
+
 1.12.0 (Not released yet)
 -------------------------
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
