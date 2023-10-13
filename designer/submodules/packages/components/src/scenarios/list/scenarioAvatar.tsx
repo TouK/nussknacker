@@ -5,9 +5,9 @@ import { AccountTree, NoiseControlOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { TableCellAvatar } from "./tableCellAvatar";
 
-export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFragment" | "isArchived" | "state"> }) {
+export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFragment" | "state"> }) {
     const { t } = useTranslation();
-    const { isFragment, isArchived, state } = process;
+    const { isFragment, state } = process;
 
     return (
         <TableCellAvatar>
@@ -17,14 +17,13 @@ export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFrag
                         context: "FRAGMENT",
                     })}
                 />
-            ) : state || isArchived ? (
+            ) : state ? (
                 <NuIcon
                     title={t("scenario.iconTitle", "{{tooltip}}", {
                         context: state?.status.name,
                         tooltip: state?.tooltip,
                     })}
-                    color={isArchived ? "#C7C7C7" : undefined}
-                    src={isArchived ? "/assets/process/archived.svg" : state.icon}
+                    src={state.icon}
                 />
             ) : (
                 <NoiseControlOff sx={{ opacity: 0.1 }} />
