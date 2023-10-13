@@ -328,12 +328,6 @@ class DeploymentServiceImpl(
     } yield result)
   }
 
-  // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
-  override def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
-    dbioRunner.run(
-      actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
-    )
-
   override def getProcessState(
       processDetails: BaseProcessDetails[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
@@ -361,12 +355,18 @@ class DeploymentServiceImpl(
       freshnessPolicy: DataFreshnessPolicy
   ): Future[List[BaseProcessDetails[_]]] =
     for {
-      processesInProgress <- getInProgressActionTypesForAllProcesses
+      actionsInProgress <- getInProgressActionTypesForAllProcesses
       processesWithState <- processList.map {
         case process if process.isFragment => Future.successful((process, None))
-        case process => Future.successful(process) zip getProcessState(process, processesInProgress).map(Option.apply)
+        case process => Future.successful(process) zip getProcessState(process, actionsInProgress).map(Option(_))
       }.sequence
     } yield processesWithState.map { case (process, state) => process.copy(state = state) }
+
+  // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
+  private def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
+    dbioRunner.run(
+      actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+    )
 
   private def getProcessState(
       processDetails: BaseProcessDetails[_],

@@ -591,17 +591,6 @@ class DeploymentServiceSpec
     state.status shouldBe SimpleStateStatus.DuringDeploy
   }
 
-  test("Should return valid inProgress state") {
-    val (duringDeployProcessId: ProcessId, duringCancelProcessId: ProcessId) = prepareProcessesInProgress
-
-    val processesInProgress = deploymentService.getInProgressActionTypesForAllProcesses.futureValue
-
-    processesInProgress shouldBe Map(
-      duringDeployProcessId -> Set(ProcessActionType.Deploy),
-      duringCancelProcessId -> Set(ProcessActionType.Cancel)
-    )
-  }
-
   test("Should return valid process list") {
     prepareProcessesInProgress
 

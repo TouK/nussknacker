@@ -58,8 +58,6 @@ trait DeploymentService extends ProcessStateService {
 
 trait ProcessStateService {
 
-  def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]]
-
   def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
