@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "author": "",
     "contextPath": "legacy_scenarios",
-    "dependencies": {
+    "devDependencies": {
         "@emotion/css": "11.10.8",
         "@emotion/react": "11.10.4",
         "@emotion/styled": "11.10.4",
@@ -33,9 +33,7 @@
         "react-transition-group": "4.4.2",
         "reactable": "1.1.0",
         "url-join": "5.0.0",
-        "use-debounce": "3.4.3"
-    },
-    "devDependencies": {
+        "use-debounce": "3.4.3",
         "@fontsource/open-sans": "4.5.13",
         "@testing-library/dom": "8.11.3",
         "@testing-library/react": "12.1.2",
