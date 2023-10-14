@@ -4,15 +4,7 @@
     "version": "0.0.0",
     "author": "",
     "contextPath": "legacy_scenarios",
-    "devDependencies": {
-        "@emotion/react": "11.11.1",
-        "@emotion/styled": "11.11.0",
-        "react": "17.0.2",
-        "react-dom": "17.0.2",
-        "@types/react": "17.0.62",
-        "@types/react-dom": "17.0.20",
-        "babel-plugin-istanbul": "6.1.1"
-    },
+    "devDependencies": {},
     "private": true,
     "scripts": {
         "start": "exit 0"
