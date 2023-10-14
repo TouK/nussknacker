@@ -11,6 +11,8 @@ import java.util.UUID
 
 trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { self: Suite =>
 
+  import RecordingExceptionConsumerProvider._
+
   /**
     * Used to check consumed errors: RecordingExceptionConsumer.dataFor(runId)
    */
@@ -24,13 +26,24 @@ trait FlinkSpec extends BeforeAndAfterAll with BeforeAndAfter with WithConfig { 
     flinkMiniCluster.start()
   }
 
-  override protected def resolveConfig(config: Config): Config =
-    RecordingExceptionConsumerProvider
-      .configWithProvider(super.resolveConfig(config), runId)
+  override protected def resolveConfig(config: Config): Config = {
+    val resolvedConfig = super.resolveConfig(config)
+
+    // We don't want to override the configured exception handler by the user
+    val configWithExceptionHandler =
+      if (resolvedConfig.hasPath(ExceptionHandlerTypePath)) {
+        resolvedConfig
+      } else {
+        RecordingExceptionConsumerProvider
+          .configWithProvider(resolvedConfig, runId)
+      }
+
+    configWithExceptionHandler
       .withValue(
         "checkpointConfig.checkpointInterval",
         fromAnyRef("1s")
       ) // avoid long waits for closing on test Flink minicluster, it's needed for proper testing
+  }
 
   /**
     * Override this when you use own Configuration implementation (e.g. Flink 1.9)

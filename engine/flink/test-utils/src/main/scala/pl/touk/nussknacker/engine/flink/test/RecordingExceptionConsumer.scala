@@ -29,13 +29,14 @@ class RecordingExceptionConsumer(id: String) extends FlinkEspExceptionConsumer {
 }
 
 object RecordingExceptionConsumerProvider {
-  final val providerName: String            = "RecordingException"
-  final val recordingConsumerIdPath: String = "recordingConsumerId"
+  final val ProviderName: String             = "RecordingException"
+  final val RecordingConsumerIdPath: String  = "recordingConsumerId"
+  final val ExceptionHandlerTypePath: String = "exceptionHandler.type"
 
   def configWithProvider(config: Config, consumerId: String): Config =
     config
-      .withValue("exceptionHandler.type", fromAnyRef(providerName))
-      .withValue(s"exceptionHandler.$recordingConsumerIdPath", fromAnyRef(consumerId))
+      .withValue(ExceptionHandlerTypePath, fromAnyRef(ProviderName))
+      .withValue(s"exceptionHandler.$RecordingConsumerIdPath", fromAnyRef(consumerId))
 
 }
 
@@ -43,10 +44,10 @@ class RecordingExceptionConsumerProvider extends FlinkEspExceptionConsumerProvid
   import RecordingExceptionConsumerProvider._
   import net.ceedubs.ficus.Ficus._
 
-  override val name: String = providerName
+  override val name: String = ProviderName
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
-    val id = exceptionHandlerConfig.getOrElse[String](recordingConsumerIdPath, UUID.randomUUID().toString)
+    val id = exceptionHandlerConfig.getOrElse[String](RecordingConsumerIdPath, UUID.randomUUID().toString)
     new RecordingExceptionConsumer(id)
   }
 

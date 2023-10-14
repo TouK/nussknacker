@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumerProvider.recordingConsumerIdPath
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumerProvider.RecordingConsumerIdPath
 import pl.touk.nussknacker.engine.flink.test.{
   RecordingExceptionConsumer,
   RecordingExceptionConsumerProvider,
@@ -31,7 +31,7 @@ class LifecycleRecordingExceptionConsumerProvider extends FlinkEspExceptionConsu
   override val name: String = providerName
 
   override def create(metaData: MetaData, exceptionHandlerConfig: Config): FlinkEspExceptionConsumer = {
-    val id = exceptionHandlerConfig.as[String](recordingConsumerIdPath)
+    val id = exceptionHandlerConfig.as[String](RecordingConsumerIdPath)
     new LifecycleRecordingExceptionConsumer(id)
   }
 
