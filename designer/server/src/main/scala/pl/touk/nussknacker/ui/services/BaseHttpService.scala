@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
     config: Config,
-    processCategoryService: ProcessCategoryService,
+    processCategoryService: => ProcessCategoryService,
     authenticator: AuthenticationResources
 )(implicit executionContext: ExecutionContext) {
 

@@ -627,18 +627,18 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"                 %% "cats-core"                        % catsV                % "provided",
-        "org.apache.flink"               % "flink-streaming-java"             % flinkV               % flinkScope
+        "org.typelevel"          %% "cats-core"                      % catsV                % "provided",
+        "org.apache.flink"        % "flink-streaming-java"           % flinkV               % flinkScope
           excludeAll (
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"               % "flink-statebackend-rocksdb"       % flinkV               % flinkScope,
-        "com.softwaremill.retry"        %% "retry"                            % "0.3.6",
-        "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"         % "wiremock-jre8"                    % wireMockV            % Test
+        "org.apache.flink"        % "flink-statebackend-rocksdb"     % flinkV               % flinkScope,
+        "com.softwaremill.retry" %% "retry"                          % "0.3.6",
+        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
+        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -1277,8 +1277,8 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       )
       .value,
     libraryDependencies ++= Seq(
-      "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it",
-      "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it"
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka"     % testContainersScalaV % "it"
     )
   )
   .dependsOn(
@@ -1448,16 +1448,16 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"          % "commons-text"            % flinkCommonsTextV,
-        "org.typelevel"              %% "cats-core"               % catsV,
-        "com.typesafe.scala-logging" %% "scala-logging"           % scalaLoggingV,
-        "com.typesafe"                % "config"                  % configV,
-        "com.vdurmont"                % "semver4j"                % "3.1.0",
-        "javax.validation"            % "validation-api"          % javaxValidationApiV,
-        "org.scala-lang.modules"     %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "com.iheart"                 %% "ficus"                   % ficusV,
-        "org.springframework"         % "spring-core"             % springV,
-        "com.google.code.findbugs"    % "jsr305"                  % findBugsV,
+        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                        % catsV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
+        "com.typesafe"                   % "config"                           % configV,
+        "com.vdurmont"                   % "semver4j"                         % "3.1.0",
+        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                            % ficusV,
+        "org.springframework"            % "spring-core"                      % springV,
+        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV
       )
     }
@@ -1530,10 +1530,10 @@ lazy val security = (project in file("security"))
       "com.typesafe.scala-logging" %% "scala-logging"     % scalaLoggingV,
       "com.auth0"                   % "jwks-rsa"          % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
 
-      "com.softwaremill.sttp.tapir"   %% "tapir-core"                       % tapirV,
-      "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                 % tapirV,
-      "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-      "com.github.dasniko"             % "testcontainers-keycloak"          % "2.5.0"              % "it,test" excludeAll (
+      "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
+      "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+      "com.github.dasniko"           % "testcontainers-keycloak"        % "2.5.0"              % "it,test" excludeAll (
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
       )
@@ -1574,9 +1574,9 @@ lazy val processReports = (project in file("designer/processReports"))
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
-        "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-influxdb"    % testContainersScalaV % "it,test",
-        "org.influxdb"                   % "influxdb-java"                    % "2.23"               % "it,test"
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb"  % testContainersScalaV % "it,test",
+        "org.influxdb"  % "influxdb-java"                  % "2.23"               % "it,test"
       )
     }
   )
@@ -1588,9 +1588,9 @@ lazy val httpUtils = (project in utils("http-utils"))
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
+        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
       )
     }
   )
@@ -1608,13 +1608,13 @@ lazy val openapiComponents = (project in component("openapi"))
   .settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3"             % "swagger-integration"              % swaggerIntegrationV excludeAll (
+      "io.swagger.core.v3" % "swagger-integration"          % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
-      "org.apache.flink"               % "flink-streaming-java"             % flinkV     % Provided,
-      "org.scalatest"                 %% "scalatest"                        % scalaTestV % "it,test"
+      "io.netty"           % "netty-transport-native-epoll" % nettyV,
+      "org.apache.flink"   % "flink-streaming-java"         % flinkV     % Provided,
+      "org.scalatest"     %% "scalatest"                    % scalaTestV % "it,test"
     ),
   )
   .dependsOn(

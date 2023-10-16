@@ -32,9 +32,8 @@ class ComponentResourcesSpec
 
   private lazy val componentService = DefaultComponentService(
     ComponentLinksConfigExtractor.extract(testDbConfig),
-    testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
+    testProcessingTypeDataProvider.mapCombined(_ => (defaultComponentIdProvider, processCategoryService)),
     processService,
-    processCategoryService,
     TestAdditionalUIConfigProvider
   )
 

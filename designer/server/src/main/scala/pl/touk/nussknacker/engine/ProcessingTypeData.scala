@@ -19,13 +19,28 @@ final case class ProcessingTypeData private (
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
-    usageStatistics: ProcessingTypeUsageStatistics
+    usageStatistics: ProcessingTypeUsageStatistics,
+    categoriesConfig: CategoriesConfig
 ) {
 
   def close(): Unit = {
     modelData.close()
     deploymentManager.close()
   }
+
+}
+
+// TODO: remove Option after fully switch to categories inside processing types configuration format -
+//       see ConfigProcessCategoryService for details
+case class CategoriesConfig(categories: Option[List[String]])
+
+object CategoriesConfig {
+
+  def apply(processTypeConfig: ProcessingTypeConfig): CategoriesConfig = new CategoriesConfig(
+    processTypeConfig.categories
+  )
+
+  def apply(categories: List[String]): CategoriesConfig = new CategoriesConfig(Some(categories))
 
 }
 
@@ -41,13 +56,19 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val managerConfig = processTypeConfig.deploymentConfig
-    createProcessingTypeData(deploymentManagerProvider, ModelData(processTypeConfig), managerConfig)
+    createProcessingTypeData(
+      deploymentManagerProvider,
+      ModelData(processTypeConfig),
+      managerConfig,
+      CategoriesConfig(processTypeConfig)
+    )
   }
 
   def createProcessingTypeData(
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
-      managerConfig: Config
+      managerConfig: Config,
+      categoriesConfig: CategoriesConfig
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -55,14 +76,15 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig)
+    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, categoriesConfig)
   }
 
   def createProcessingTypeData(
       deploymentManagerProvider: DeploymentManagerProvider,
       manager: DeploymentManager,
       modelData: ModelData,
-      managerConfig: Config
+      managerConfig: Config,
+      categoriesConfig: CategoriesConfig
   ): ProcessingTypeData = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
@@ -81,7 +103,8 @@ object ProcessingTypeData {
       metaDataInitializer,
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),
-      ProcessingTypeUsageStatistics(managerConfig)
+      ProcessingTypeUsageStatistics(managerConfig),
+      categoriesConfig
     )
   }
 

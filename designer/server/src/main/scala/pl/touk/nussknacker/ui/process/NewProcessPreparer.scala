@@ -12,10 +12,10 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 object NewProcessPreparer {
 
   def apply(
-      processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _],
+      processingTypesData: ProcessingTypeDataProvider[ProcessingTypeData, _],
       additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ): NewProcessPreparer =
-    new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
+    new NewProcessPreparer(processingTypesData.mapValues(_.metaDataInitializer), additionalFields)
 
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
     None,

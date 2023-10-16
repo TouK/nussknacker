@@ -13,7 +13,7 @@ trait ProcessToolbarService {
   def getProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings
 }
 
-class ConfigProcessToolbarService(config: Config, categories: List[String]) extends ProcessToolbarService {
+class ConfigProcessToolbarService(config: Config, categories: => List[String]) extends ProcessToolbarService {
 
   private val categoriesProcessToolbarConfig: Map[String, ProcessToolbarsConfig] =
     categories

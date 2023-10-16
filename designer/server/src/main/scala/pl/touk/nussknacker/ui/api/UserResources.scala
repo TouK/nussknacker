@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 import scala.concurrent.ExecutionContext
 
-class UserResources(processCategoryService: ProcessCategoryService)(implicit ec: ExecutionContext)
+class UserResources(processCategoryService: => ProcessCategoryService)(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
     with RouteWithUser {

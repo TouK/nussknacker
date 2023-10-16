@@ -18,12 +18,12 @@ object LocalNussknackerWithSingleModel {
 
   // default name in config
   val typeName = "streaming"
+  val category = "Default"
 
   def run(
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
-      managerConfig: Config,
-      categories: Set[String]
+      managerConfig: Config
   ): Resource[IO, Unit] = {
     for {
       appConfig <- Resource.eval(IO {
@@ -31,8 +31,7 @@ object LocalNussknackerWithSingleModel {
         ConfigFactory
           .parseMap(
             Map[String, Any](
-              "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString,
-              "categoriesConfig"         -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
+              "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString
             ).asJava
           )
       })

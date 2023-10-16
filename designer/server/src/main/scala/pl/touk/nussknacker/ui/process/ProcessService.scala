@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -19,6 +18,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -29,7 +29,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   UpdateProcessAction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
@@ -110,7 +109,7 @@ trait ProcessService {
 class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparer: NewProcessPreparer,
-    processCategoryService: ProcessCategoryService,
+    processCategoryService: => ProcessCategoryService,
     processResolving: UIProcessResolving,
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
@@ -434,8 +433,9 @@ class DBProcessService(
       isFragment: Option[Boolean],
       isArchived: Option[Boolean]
   ): Future[List[BaseProcessDetails[PS]]] = {
-    val userCategories = processCategoryService.getUserCategories(user)
-    val shapeStrategy  = implicitly[ProcessShapeFetchStrategy[PS]]
+    val userCategoryService = new UserCategoryService(processCategoryService)
+    val userCategories      = userCategoryService.getUserCategories(user)
+    val shapeStrategy       = implicitly[ProcessShapeFetchStrategy[PS]]
     fetchingProcessRepository.fetchProcessesDetails(
       FetchProcessesDetailsQuery(isFragment = isFragment, isArchived = isArchived, categories = Some(userCategories))
     )(shapeStrategy, user, ec)

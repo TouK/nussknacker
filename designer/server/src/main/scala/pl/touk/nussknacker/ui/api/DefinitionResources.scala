@@ -18,7 +18,7 @@ class DefinitionResources(
     modelDataProvider: ProcessingTypeDataProvider[ModelData, _],
     processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
     fragmentRepository: FragmentRepository,
-    processCategoryService: ProcessCategoryService,
+    processCategoryService: => ProcessCategoryService,
     additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends Directives
