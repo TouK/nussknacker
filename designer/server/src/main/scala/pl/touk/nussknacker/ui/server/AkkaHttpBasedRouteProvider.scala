@@ -10,8 +10,8 @@ import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component.{
-  AdditionalComponentsUIConfigProviderFactory,
-  EmptyAdditionalComponentsUIConfigProviderFactory
+  AdditionalUIConfigProviderFactory,
+  EmptyAdditionalUIConfigProviderFactory
 }
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -211,14 +211,14 @@ class AkkaHttpBasedRouteProvider(
         processCategoryService = processCategoryService
       )
 
-      val additionalComponentsUIConfigProvider = createAdditionalComponentsUIConfigProvider(resolvedConfig, sttpBackend)
+      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
 
       val componentService = DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig.mapCombined(_.componentIdProvider),
         processService,
         processCategoryService,
-        additionalComponentsUIConfigProvider
+        additionalUIConfigProvider
       )
 
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
@@ -262,7 +262,7 @@ class AkkaHttpBasedRouteProvider(
             typeToConfig,
             fragmentRepository,
             processCategoryService,
-            additionalComponentsUIConfigProvider
+            additionalUIConfigProvider
           ),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
@@ -452,23 +452,23 @@ class AkkaHttpBasedRouteProvider(
       )
   }
 
-  private def createAdditionalComponentsUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
+  private def createAdditionalUIConfigProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext
   ) = {
-    val additionalComponentsUIConfigProviderFactory: AdditionalComponentsUIConfigProviderFactory = {
+    val additionalUIConfigProviderFactory: AdditionalUIConfigProviderFactory = {
       Multiplicity(
-        ScalaServiceLoader.load[AdditionalComponentsUIConfigProviderFactory](getClass.getClassLoader)
+        ScalaServiceLoader.load[AdditionalUIConfigProviderFactory](getClass.getClassLoader)
       ) match {
-        case Empty()              => new EmptyAdditionalComponentsUIConfigProviderFactory
+        case Empty()              => new EmptyAdditionalUIConfigProviderFactory
         case One(providerFactory) => providerFactory
         case Many(moreThanOne) =>
           throw new IllegalArgumentException(
-            s"More than one AdditionalComponentsUIConfigProviderFactory instance found: $moreThanOne"
+            s"More than one AdditionalUIConfigProviderFactory instance found: $moreThanOne"
           )
       }
     }
 
-    additionalComponentsUIConfigProviderFactory.create(config, sttpBackend)
+    additionalUIConfigProviderFactory.create(config, sttpBackend)
   }
 
   private class DelayedInitDeploymentServiceSupplier extends Supplier[DeploymentService] {

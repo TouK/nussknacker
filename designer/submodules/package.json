@@ -88,7 +88,8 @@
         "prebuild": "npm run make-types",
         "prestart": "npm run make-types",
         "start": "ts-node runWorkspacesConcurrently start",
-        "start:core-dev": "NU_FE_CORE_URL=http://localhost:3000 npm start"
+        "start:core-dev": "NU_FE_CORE_URL=http://localhost:3000 npm start",
+        "start:core-staging": "NU_FE_CORE_URL=https://staging.nussknacker.io npm start"
     },
     "workspaces": [
         "./packages/*"
