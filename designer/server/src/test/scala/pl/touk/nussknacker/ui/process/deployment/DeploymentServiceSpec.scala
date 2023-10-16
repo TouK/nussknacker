@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -24,6 +25,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -31,6 +33,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider
 }
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -38,7 +41,7 @@ import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
@@ -577,6 +580,52 @@ class DeploymentServiceSpec
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
+  test("Should return during deploy for process in deploy in progress") {
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
+    val _ = actionRepository
+      .addInProgressAction(processId, ProcessActionType.Deploy, Some(VersionId(1)), None)
+      .dbioActionValues
+
+    val state = deploymentService.getProcessState(ProcessIdWithName(processId, processName)).futureValue
+    state.status shouldBe SimpleStateStatus.DuringDeploy
+  }
+
+  test("Should return valid process list") {
+    prepareProcessesInProgress
+
+    val processes = fetchingProcessRepository
+      .fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isFragment = Some(false)))
+      .dbioActionValues
+
+    val resultWithCachedInProgress = deploymentService.fetchProcessStatesForProcesses(processes).futureValue
+
+    val resultWithoutCachedInProgress = processes
+      .map(baseProcess => Future.successful(baseProcess.name) zip deploymentService.getProcessState(baseProcess))
+      .sequence
+      .futureValue
+      .toMap
+
+    resultWithCachedInProgress shouldBe resultWithoutCachedInProgress
+  }
+
+  test("Should enrich BaseProcessDetails") {
+    prepareProcessesInProgress
+
+    val processesDetails = fetchingProcessRepository
+      .fetchProcessesDetails[Unit](ProcessesQuery.empty.toRepositoryQuery)
+      .dbioActionValues
+
+    val processesDetailsWithState = deploymentService.enrichDetailsWithProcessState(processesDetails).futureValue
+
+    processesDetailsWithState.map(_.state.map(_.status.name)) shouldBe List(
+      Some("DURING_DEPLOY"),
+      Some("DURING_CANCEL"),
+      Some("RUNNING"),
+      None
+    )
+  }
+
   test(
     "Should return not deployed status for archived never deployed process with running state (it should never happen)"
   ) {
@@ -715,6 +764,25 @@ class DeploymentServiceSpec
     writeProcessRepository
       .archive(processId = processId, isArchived = true)
       .flatMap(_ => actionRepository.markProcessAsArchived(processId = processId, initialVersionId))
+  }
+
+  private def prepareProcessesInProgress = {
+    val duringDeployProcessName :: duringCancelProcessName :: otherProcess :: fragmentName :: Nil =
+      (1 to 4).map(_ => generateProcessName).toList
+
+    val processIdsInProgress = for {
+      (duringDeployProcessId, _) <- preparedUnArchivedProcess(duringDeployProcessName, None)
+      (duringCancelProcessId, _) <- prepareDeployedProcess(duringCancelProcessName)
+      _ <- actionRepository
+        .addInProgressAction(duringDeployProcessId, ProcessActionType.Deploy, Some(VersionId.initialVersionId), None)
+      _ <- actionRepository
+        .addInProgressAction(duringCancelProcessId, ProcessActionType.Cancel, Some(VersionId.initialVersionId), None)
+      _ <- prepareDeployedProcess(otherProcess)
+      _ <- prepareFragment(fragmentName)
+    } yield (duringDeployProcessId, duringCancelProcessId)
+
+    val (duringDeployProcessId, duringCancelProcessId) = processIdsInProgress.dbioActionValues
+    (duringDeployProcessId, duringCancelProcessId)
   }
 
   private def prepareProcessWithAction(
