@@ -7,11 +7,7 @@ import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/
 import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
-import { styled } from "@mui/material";
-
-const SCROLL_THUMB_SIZE = 8;
-const SIDEBAR_WIDTH = 290;
-const PANEL_WIDTH = SIDEBAR_WIDTH + SCROLL_THUMB_SIZE;
+import { StyledScrollToggle, StyledScrollToggleChild, StyledScrollTogglePanelWrapper } from "./StyledSidePanel";
 
 export enum PanelSide {
     Right = "RIGHT",
@@ -25,10 +21,6 @@ type Props = {
     side?: PanelSide;
     onScrollToggle?: (isEnabled: boolean) => void;
 };
-interface ScrollToggle {
-    side: PanelSide;
-    isOpened?: boolean;
-}
 
 type SidePanelProps = {
     side: PanelSide;
@@ -44,54 +36,18 @@ export function useSidePanelToggle(side: Side) {
     return { isOpened, onToggle };
 }
 
-function checkLeftSide(props: ScrollToggle) {
-    if (props.side === PanelSide.Left) {
-        return props.isOpened ? 0 : -PANEL_WIDTH;
-    }
-}
-
-function checkRightSide(props: ScrollToggle) {
-    if (props.side === PanelSide.Right) {
-        return props.isOpened ? 0 : -PANEL_WIDTH;
-    }
-}
-
-const ScrollToggleChild = styled("div")((props: ScrollToggle) => ({
-    width: PANEL_WIDTH,
-    boxSizing: "border-box",
-    minHeight: "100%",
-    display: "flex",
-    flexDirection: "column",
-    pointerEvents: "none",
-    alignItems: props.side === PanelSide.Left ? "flex-start" : "flex-end",
-}));
-
-const ScrollToggle = styled("div")((props: ScrollToggle) => ({
-    pointerEvents: "none",
-    userSelect: "none",
-    width: PANEL_WIDTH,
-    transition: "left 0.5s ease, right 0.5s ease",
-    position: "absolute",
-    zIndex: 1,
-    top: 0,
-    bottom: 0,
-    overflow: "hidden",
-    left: checkLeftSide(props),
-    right: checkRightSide(props),
-}));
-
 const ScrollTogglePanel = forwardRef<HTMLDivElement, PropsWithChildren<Props>>(function ScrollTogglePanel(props, ref) {
     const { children, innerClassName, side, isCollapsed, onScrollToggle } = props;
     return (
-        <ScrollToggle ref={ref} side={side} isOpened={isCollapsed}>
+        <StyledScrollToggle ref={ref} side={side} isOpened={isCollapsed}>
             <ScrollbarsExtended onScrollToggle={onScrollToggle} side={side}>
                 <ErrorBoundary>
-                    <ScrollToggleChild side={side} className={innerClassName}>
+                    <StyledScrollToggleChild side={side} className={innerClassName}>
                         {children}
-                    </ScrollToggleChild>
+                    </StyledScrollToggleChild>
                 </ErrorBoundary>
             </ScrollbarsExtended>
-        </ScrollToggle>
+        </StyledScrollToggle>
     );
 });
 
@@ -114,11 +70,11 @@ export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
 
     const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened && showToggle);
     return (
-        <>
+        <StyledScrollTogglePanelWrapper>
             {!isOpened || showToggle ? <TogglePanel type={side} isOpened={isOpened} onToggle={onToggle} /> : null}
             <ScrollTogglePanel ref={ref} onScrollToggle={setShowToggle} isCollapsed={isOpened} side={side} innerClassName={className}>
                 {children}
             </ScrollTogglePanel>
-        </>
+        </StyledScrollTogglePanelWrapper>
     );
 }
