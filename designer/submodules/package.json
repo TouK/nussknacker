@@ -22,6 +22,7 @@
         "@typescript-eslint/eslint-plugin": "5.40.0",
         "@typescript-eslint/parser": "5.40.0",
         "babel-loader": "8.2.3",
+        "babel-plugin-istanbul": "6.1.1",
         "chalk": "4.1.2",
         "clean-webpack-plugin": "4.0.0-alpha.0",
         "concurrently": "6.5.1",
