@@ -74,7 +74,11 @@ class DeploymentServiceImpl(
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
-            DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
+            DeployedScenarioData(
+              details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
+              deploymentData,
+              resolvedScenario
+            )
           }
         deployedScenarioDataTry match {
           case Failure(exception) =>
