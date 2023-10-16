@@ -84,7 +84,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithAdditionalProperties = wrapEmptyScenario {
+  private val legacyFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -105,7 +105,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithAdditionalProperties = wrapEmptyScenario {
+  private val updatedFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -204,8 +204,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
     migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties) shouldBe Right(
       updatedFlinkScenarioWithDescriptionNoProperties
     )
-    migrateMetaData(legacyFlinkScenarioWithAdditionalProperties) shouldBe Right(
-      updatedFlinkScenarioWithAdditionalProperties
+    migrateMetaData(legacyFlinkScenarioWithScenarioProperties) shouldBe Right(
+      updatedFlinkScenarioWithScenarioProperties
     )
   }
 

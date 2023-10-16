@@ -9,11 +9,13 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
+import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
+import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
 
 class ComponentResourcesSpec
     extends AnyFunSpec
@@ -32,7 +34,8 @@ class ComponentResourcesSpec
     ComponentLinksConfigExtractor.extract(testDbConfig),
     testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
     processService,
-    processCategoryService
+    processCategoryService,
+    TestAdditionalComponentsUIConfigProvider
   )
 
   private lazy val componentRoute = new ComponentResource(componentService)

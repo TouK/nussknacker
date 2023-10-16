@@ -71,13 +71,13 @@ object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None)
 }
 
-@JsonCodec case class AdditionalPropertyConfig(
+@JsonCodec case class ScenarioPropertyConfig(
     defaultValue: Option[String],
     editor: Option[SimpleParameterEditor],
     validators: Option[List[ParameterValidator]],
     label: Option[String]
 )
 
-object AdditionalPropertyConfig {
-  val empty: AdditionalPropertyConfig = AdditionalPropertyConfig(None, None, None, None)
+object ScenarioPropertyConfig {
+  val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None)
 }

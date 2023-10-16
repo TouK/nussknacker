@@ -3,7 +3,6 @@ import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { NodeResultsForContext } from "../../../../common/TestResultUtils";
-import { variables } from "../../../../stylesheets/variables";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 interface ExpressionTestResultsProps {
@@ -25,7 +24,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
                 <div className="node-label">
                     <NodeTip
                         title={"Value evaluated in test case"}
-                        icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
+                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
                     />
                     {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults((s) => !s)} /> : null}
                 </div>

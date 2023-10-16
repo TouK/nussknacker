@@ -6,7 +6,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import { errorValidator, PossibleValue } from "./editors/Validators";
 import { NodeValidationError } from "../../../types";
 
-export interface AdditionalPropertyConfig {
+export interface ScenarioPropertyConfig {
     editor: any;
     label: string;
     values: Array<PossibleValue>;
@@ -16,7 +16,7 @@ interface Props {
     showSwitch: boolean;
     showValidation: boolean;
     propertyName: string;
-    propertyConfig: AdditionalPropertyConfig;
+    propertyConfig: ScenarioPropertyConfig;
     propertyErrors: NodeValidationError[];
     editedNode: any;
     onChange: UnknownFunction;
@@ -24,7 +24,7 @@ interface Props {
     readOnly: boolean;
 }
 
-export default function AdditionalProperty(props: Props) {
+export default function ScenarioProperty(props: Props) {
     const { showSwitch, showValidation, propertyName, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel, readOnly } =
         props;
 
@@ -49,7 +49,7 @@ export default function AdditionalProperty(props: Props) {
             key={propertyName}
             showSwitch={showSwitch}
             showValidation={showValidation}
-            //AdditionalProperties do not use any variables
+            //ScenarioProperties do not use any variables
             variableTypes={{}}
             validators={validators}
         />

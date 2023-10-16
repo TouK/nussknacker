@@ -23,13 +23,15 @@ package object definition {
       componentGroups: List[ComponentGroup],
       processDefinition: UIProcessDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
-      additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
+      scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
       customActions: List[UICustomAction],
       defaultAsyncInterpretation: Boolean,
       fixedValuePresets: Map[String, List[FixedExpressionValue]]
   )
 
+  // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
+  // this would also make config merging logic in `UIProcessObjectsFactory.prepareUIProcessObjects` simpler
   @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
       services: Map[String, UIObjectDefinition],
       sourceFactories: Map[String, UIObjectDefinition],
@@ -85,7 +87,6 @@ package object definition {
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
-      componentConfig: SingleComponentConfig
   ) {
 
     def hasNoReturn: Boolean = returnType.isEmpty
@@ -96,11 +97,10 @@ package object definition {
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
-      categories: List[String],
-      componentConfig: SingleComponentConfig
+      categories: List[String]
   ) {
     def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories, componentConfig)
+      UIObjectDefinition(parameters, returnType, categories)
   }
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
@@ -141,7 +141,7 @@ package object definition {
       components: List[ComponentTemplate]
   )
 
-  @JsonCodec final case class UiAdditionalPropertyConfig(
+  @JsonCodec final case class UiScenarioPropertyConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
       validators: List[ParameterValidator],

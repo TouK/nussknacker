@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.definition.additionalproperty
+package pl.touk.nussknacker.ui.definition.scenarioproperty
 
 import pl.touk.nussknacker.engine.api.definition.{
   FixedValuesParameterEditor,
@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   SimpleParameterEditor
 }
 
-protected class AdditionalPropertyEditorValidatorDeterminer(editor: Option[SimpleParameterEditor])
-    extends AdditionalPropertyValidatorDeterminer {
+protected class ScenarioPropertyEditorValidatorDeterminer(editor: Option[SimpleParameterEditor])
+    extends ScenarioPropertyValidatorDeterminer {
 
   override def determine(): Option[List[ParameterValidator]] = {
     editor match {
