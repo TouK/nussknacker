@@ -88,21 +88,14 @@ class AkkaHttpBasedRouteProvider(
       _                    = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       deploymentServiceSupplier = new DelayedInitDeploymentServiceSupplier
-      processCategoryService    = new ConfigProcessCategoryService(resolvedConfig)
       typeToConfigAndReload <- prepareProcessingTypeData(
         config,
         deploymentServiceSupplier,
-        processCategoryService,
         processingTypeDataProviderFactory,
         sttpBackend
       )
       (typeToConfig, reload) = typeToConfigAndReload
     } yield {
-      val stateDefinitionService = new ProcessStateDefinitionService(
-        typeToConfig.mapCombined(_.statusNameToStateDefinitionsMapping),
-        processCategoryService
-      )
-
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
       val modelData = typeToConfig.mapValues(_.modelData)
@@ -173,11 +166,17 @@ class AkkaHttpBasedRouteProvider(
         dmDispatcher,
         deploymentService
       )
-      val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
+      val testExecutorService         = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
+      def getProcessCategoryService() = typeToConfig.combined.categoryService
+
+      val stateDefinitionService = new ProcessStateDefinitionService(
+        typeToConfig.mapCombined(combined => (combined.statusNameToStateDefinitionsMapping, combined.categoryService)),
+      )
+
       val processService = new DBProcessService(
         deploymentService,
         newProcessPreparer,
-        processCategoryService,
+        getProcessCategoryService,
         processResolving,
         dbioRunner,
         futureProcessRepository,
@@ -195,7 +194,7 @@ class AkkaHttpBasedRouteProvider(
 
       val configProcessToolbarService = new ConfigProcessToolbarService(
         resolvedConfig,
-        processCategoryService.getAllCategories
+        () => getProcessCategoryService().getAllCategories
       )
 
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
@@ -208,16 +207,15 @@ class AkkaHttpBasedRouteProvider(
         processValidation = processValidation,
         deploymentService = deploymentService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
-        processCategoryService = processCategoryService
+        getProcessCategoryService = getProcessCategoryService
       )
 
       val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
 
       val componentService = DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
-        typeToConfig.mapCombined(_.componentIdProvider),
+        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
         processService,
-        processCategoryService,
         additionalUIConfigProvider
       )
 
@@ -261,10 +259,10 @@ class AkkaHttpBasedRouteProvider(
             modelData,
             typeToConfig,
             fragmentRepository,
-            processCategoryService,
+            getProcessCategoryService,
             additionalUIConfigProvider
           ),
-          new UserResources(processCategoryService),
+          new UserResources(getProcessCategoryService),
           new NotificationResources(notificationService),
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
@@ -322,7 +320,7 @@ class AkkaHttpBasedRouteProvider(
         tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
-        processCategoryService = processCategoryService,
+        getProcessCategoryService = getProcessCategoryService,
         developmentMode = featureTogglesConfig.development
       )
     }
@@ -353,7 +351,7 @@ class AkkaHttpBasedRouteProvider(
       tapirRelatedRoutes: List[Route],
       apiResourcesWithAuthentication: List[RouteWithUser],
       apiResourcesWithoutAuthentication: List[Route],
-      processCategoryService: ProcessCategoryService,
+      getProcessCategoryService: () => ProcessCategoryService,
       developmentMode: Boolean
   )(implicit executionContext: ExecutionContext): Route = {
     // TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
@@ -370,7 +368,7 @@ class AkkaHttpBasedRouteProvider(
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
                 rules = AuthenticationConfiguration.getRules(resolvedConfig),
-                processCategories = processCategoryService.getAllCategories
+                processCategories = getProcessCategoryService().getAllCategories
               )
               apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
             }
@@ -425,7 +423,6 @@ class AkkaHttpBasedRouteProvider(
   private def prepareProcessingTypeData(
       designerConfig: ConfigWithUnresolvedVersion,
       deploymentServiceSupplier: Supplier[DeploymentService],
-      categoriesService: ProcessCategoryService,
       processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory,
       sttpBackend: SttpBackend[Future, Any]
   )(implicit executionContext: ExecutionContext): Resource[
@@ -440,7 +437,7 @@ class AkkaHttpBasedRouteProvider(
       .make(
         acquire = IO(
           BasicProcessingTypeDataReload.wrapWithReloader(() =>
-            processingTypeDataProviderFactory.create(designerConfig, deploymentServiceSupplier, categoriesService)
+            processingTypeDataProviderFactory.create(designerConfig, deploymentServiceSupplier)
           )
         )
       )(

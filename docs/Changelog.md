@@ -12,7 +12,8 @@
     * Add missing tests for passing global variables
     * Fix bug with passing components on RequestResponseTestScenarioRunner
     * Fix bug building source test context on LiteTestScenarioRunner
-  
+* [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
+
 1.12.0 (Not released yet)
 -------------------------
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.

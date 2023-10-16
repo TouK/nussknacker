@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
     config: Config,
-    processCategoryService: ProcessCategoryService,
+    getProcessCategoryService: () => ProcessCategoryService,
     authenticator: AuthenticationResources
 )(implicit executionContext: ExecutionContext) {
 
@@ -58,7 +58,7 @@ abstract class BaseHttpService(
             LoggedUser(
               authenticatedUser = user,
               rules = AuthenticationConfiguration.getRules(config),
-              processCategories = processCategoryService.getAllCategories
+              processCategories = getProcessCategoryService().getAllCategories
             )
           )
         case Some(_) =>
