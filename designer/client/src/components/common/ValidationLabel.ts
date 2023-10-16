@@ -1,9 +1,9 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
-export const ValidationLabel = styled.span<{ type?: "INFO" | "ERROR" }>(({ theme, type }) => ({
+export const ValidationLabel = styled("span")<{ type?: "INFO" | "ERROR" }>(({ theme, type }) => ({
     fontSize: "12px",
     marginTop: "3px",
-    color: type === "ERROR" ? theme.colors?.error : theme.colors?.sucess,
+    color: type === "ERROR" ? theme.custom.colors.error : theme.custom.colors.success,
 }));
 
 export const LimitedValidationLabel = styled(ValidationLabel)({

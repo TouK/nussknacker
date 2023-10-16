@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, CircularProgress, ThemeProvider, circularProgressClasses, createTheme } from "@mui/material";
+import { Box, CircularProgress, ThemeProvider, circularProgressClasses, useTheme } from "@mui/material";
 
 type Props = {
     show: boolean;
@@ -12,7 +12,8 @@ function LoaderSpinner(props: Props) {
 export default LoaderSpinner;
 
 function CircularProgressWrapper() {
-    const theme = createTheme({});
+    const theme = useTheme();
+
     return (
         <ThemeProvider theme={theme}>
             <Box sx={{ position: "absolute", left: "50%", top: "50% " }}>

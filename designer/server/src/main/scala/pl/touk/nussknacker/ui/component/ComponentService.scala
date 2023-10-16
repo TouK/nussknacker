@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
+import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -36,9 +37,16 @@ object DefaultComponentService {
       componentLinksConfig: ComponentLinksConfig,
       processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
       processService: ProcessService,
-      categoryService: ProcessCategoryService
+      categoryService: ProcessCategoryService,
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   )(implicit ec: ExecutionContext): DefaultComponentService = {
-    new DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+    new DefaultComponentService(
+      componentLinksConfig,
+      processingTypeDataProvider,
+      processService,
+      categoryService,
+      additionalUIConfigProvider
+    )
   }
 
   private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): String =
@@ -61,7 +69,8 @@ class DefaultComponentService private (
     componentLinksConfig: ComponentLinksConfig,
     processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
     processService: ProcessService,
-    categoryService: ProcessCategoryService
+    categoryService: ProcessCategoryService,
+    additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends ComponentService {
 
@@ -140,7 +149,13 @@ class DefaultComponentService private (
       .getFragmentsDetails(processingTypes = Some(List(processingType)))(user)
       .map { fragments =>
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
-        val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, fragments)
+        val componentObjects = componentObjectsService.prepare(
+          processingType,
+          processingTypeData,
+          user,
+          fragments,
+          additionalUIConfigProvider
+        )
         createComponents(componentObjects, processingType, componentIdProvider)
       }
   }

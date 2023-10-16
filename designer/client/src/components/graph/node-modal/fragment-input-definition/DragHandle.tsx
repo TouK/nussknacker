@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import React, { useCallback, useEffect, useState } from "react";
 import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
 import Handlebars from "../../../../assets/img/handlebars.svg";
-import { useNkTheme } from "../../../../containers/theme";
+import { useTheme } from "@mui/material";
 
 const grabbing = css({ "*": { cursor: "grabbing !important" } });
 
@@ -11,7 +11,7 @@ export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvide
     provided,
 }): JSX.Element => {
     const [isActive, setActive] = useState(false);
-    const { theme } = useNkTheme();
+    const theme = useTheme();
     useEffect(() => {
         setActive(active);
     }, [active]);
@@ -28,7 +28,7 @@ export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvide
             className={css({
                 outline: "none",
                 ":focus": {
-                    filter: `drop-shadow(0px 0px 3px ${theme.colors.accent})`,
+                    filter: `drop-shadow(0px 0px 3px ${theme.custom.colors.accent})`,
                 },
             })}
         >
@@ -38,7 +38,7 @@ export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvide
                 className={cx(
                     "handle-bars",
                     css({
-                        g: { fill: isActive ? theme.colors.accent : theme.colors.primary },
+                        g: { fill: isActive ? theme.custom.colors.accent : theme.custom.colors.primary },
                     }),
                 )}
             />

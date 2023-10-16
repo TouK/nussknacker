@@ -16,6 +16,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec
@@ -37,7 +38,8 @@ class DefinitionResourcesSpec
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    processCategoryService
+    processCategoryService,
+    TestAdditionalUIConfigProvider
   )
 
   it("should handle missing scenario type") {
@@ -104,12 +106,12 @@ class DefinitionResourcesSpec
     }
   }
 
-  it("return info about validator based on param fixed value editor for additional properties") {
+  it("return info about validator based on param fixed value editor for scenario properties") {
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
       val validators: Json = responseAs[Json].hcursor
-        .downField("additionalPropertiesConfig")
+        .downField("scenarioPropertiesConfig")
         .downField("numberOfThreads")
         .downField("validators")
         .focus

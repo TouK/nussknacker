@@ -7,6 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{
@@ -34,6 +35,7 @@ import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -539,14 +541,20 @@ class DefaultComponentServiceSpec
 
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(
     processingTypeDataMap,
-    DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService)
+    ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService)
   )
 
   it should "return components for each user" in {
     val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        categoryService,
+        TestAdditionalUIConfigProvider
+      )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -627,7 +635,8 @@ class DefaultComponentServiceSpec
       )
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap     = badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentObjectsMap =
+      badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragmentsAndAdditionalUIConfigs)
     val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
       case (_, componentsObjects) => componentsObjects.config
     })
@@ -700,7 +709,13 @@ class DefaultComponentServiceSpec
 
     val processService = createDbProcessService(categoryService, processes)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        categoryService,
+        TestAdditionalUIConfigProvider
+      )
 
     val testingData = Table(
       ("user", "componentId", "expected"),
@@ -764,7 +779,13 @@ class DefaultComponentServiceSpec
   it should "return return error when component doesn't exist" in {
     val processService = createDbProcessService(categoryService)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        categoryService,
+        TestAdditionalUIConfigProvider
+      )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))

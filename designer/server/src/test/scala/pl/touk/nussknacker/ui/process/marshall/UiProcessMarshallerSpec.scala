@@ -14,7 +14,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   val someProcessDescription = "scenario description"
   val someNodeDescription    = "single node description"
 
-  val processWithoutAdditionalProperties: Json = parse(s"""
+  val processWithoutScenarioProperties: Json = parse(s"""
        |{
        |    "metaData" : {
        |    "id" : "testId",
@@ -70,7 +70,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
   it should "unmarshall to displayable scenario properly" in {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(
-      ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalProperties),
+      ProcessMarshaller.fromJsonUnsafe(processWithoutScenarioProperties),
       TestProcessingTypes.Streaming,
       TestCategories.Category1
     )

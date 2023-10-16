@@ -1,8 +1,8 @@
 import { styled } from "@mui/material";
-import { variables } from "../../../../stylesheets/variables";
 import { customCheckbox } from "./CustomCheckbox";
 
-export const NodeTableStyled = styled("div")`
+export const NodeTableStyled = styled("div")(
+    ({ theme }) => `
     font-size: 11px;
     margin: 0 25px;
     .node-table-body {
@@ -15,7 +15,7 @@ export const NodeTableStyled = styled("div")`
         row-gap: 5px;
     }
     .node-label {
-        color: ${variables.modalLabelTextColor};
+        color: ${theme.custom.colors.canvasBackground};
         flex-basis: 20%;
         max-width: 20em;
         display: inline-block;
@@ -35,11 +35,11 @@ export const NodeTableStyled = styled("div")`
     }
     .node-block {
         &.removed {
-            border: 1px solid ${variables.errorColor};
+            border: 1px solid ${theme.custom.colors.error};
             padding: 5px;
         }
         &.added {
-            border: 1px solid ${variables.okColor};
+            border: 1px solid ${theme.custom.colors.ok};
             padding: 5px;
         }
     }
@@ -53,16 +53,16 @@ export const NodeTableStyled = styled("div")`
             height: auto;
         }
         textarea:-moz-read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         textarea:read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         input:-moz-read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${theme.custom.colors.tundora};
         }
         input:read-only {
-            background-color: ${variables.panelBkgColor} !important;
+            background-color: ${theme.custom.colors.tundora} !important;
         }
         ${customCheckbox("20px")};
         input[type="checkbox"] {
@@ -88,7 +88,7 @@ export const NodeTableStyled = styled("div")`
     }
     .node-error {
         width: 100%;
-        color: ${variables.errorColor};
+        color: ${theme.custom.colors.error};
         font-size: 14px;
         font-weight: 400;
     }
@@ -103,7 +103,7 @@ export const NodeTableStyled = styled("div")`
         }
     }
     .node-test-results {
-        border: 1px solid ${variables.okColor};
+        border: 1px solid ${theme.custom.colors.ok};
         padding: 5px;
     }
     .node-input {
@@ -111,21 +111,21 @@ export const NodeTableStyled = styled("div")`
         width: 100%;
         padding: 0 10px;
         border: none;
-        background-color: ${variables.commentBkgColor};
-        color: ${variables.defaultTextColor};
+        background-color: ${theme.custom.colors.secondaryBackground};
+        color: ${theme.custom.colors.secondaryColor};
         font-weight: 400;
         font-size: 14px;
         outline: 1px solid rgba(255, 255, 255, 0.075);
     }
 
     .node-input:-moz-disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     .node-input:disabled {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
     }
     .read-only {
-        background-color: ${variables.panelBkgColor};
+        background-color: ${theme.custom.colors.tundora};
         span {
             margin-top: 10px;
             font-size: 15px;
@@ -152,19 +152,20 @@ export const NodeTableStyled = styled("div")`
         height: 20px;
     }
     .node-input-with-error {
-        outline: 1px solid ${variables.errorColor} !important;
+        outline: 1px solid ${theme.custom.colors.error} !important;
         border-radius: 2px;
     }
     .testResultDownload {
         padding-left: 15px;
         font-size: 14px;
         a {
-            color: ${variables.modalLabelTextColor};
+            color: ${theme.custom.colors.canvasBackground};
             text-decoration: none;
 
             &:hover {
-                color: ${variables.infoColor};
+                color: ${theme.custom.colors.info};
             }
         }
     }
-`;
+`,
+);
