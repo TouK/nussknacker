@@ -615,10 +615,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Log disk usage
         run: df -h
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Setup buildx builder
         uses: docker/setup-buildx-action@v3
         with:
           platforms: linux/amd64
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Log disk usage
+        run: docker buildx prune -f
       - name: Log disk usage
         run: df -h
       - name: Publish with scaladocs
