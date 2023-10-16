@@ -617,6 +617,8 @@ jobs:
         run: df -h
       - name: Setup buildx builder
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
       - name: Log disk usage
         run: df -h
       - name: Publish with scaladocs
