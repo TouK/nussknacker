@@ -22,8 +22,9 @@ describe("Process mouse drag", () => {
             .within(() => {
                 cy.get("#nk-graph-main svg", { timeout: 20000 }).as("canvas");
             });
-        cy.layoutScenario();
         cy.get("[title='toggle left panel']").click();
+        cy.layoutScenario();
+        cy.wait(500);
     });
 
     it("should allow pan view", () => {
