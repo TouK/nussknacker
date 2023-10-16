@@ -624,8 +624,8 @@ jobs:
           config-inline: |
             [worker.oci]
               max-parallelism = 1
-      - name: Log disk usage
-        run: docker buildx prune -f
+      - name: Docker system prune
+        run: docker system prune -f
       - name: Log disk usage
         run: df -h
       - name: Publish with scaladocs
