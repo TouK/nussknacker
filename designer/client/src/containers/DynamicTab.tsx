@@ -52,11 +52,9 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
         <ErrorBoundary FallbackComponent={() => <NotFound />}>
-            <NuThemeProvider>
-                <ScopedCssBaseline style={{ flex: 1, overflow: "hidden" }}>
-                    <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
-                </ScopedCssBaseline>
-            </NuThemeProvider>
+            <ScopedCssBaseline style={{ flex: 1, overflow: "hidden" }}>
+                <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
+            </ScopedCssBaseline>
         </ErrorBoundary>
     );
 };

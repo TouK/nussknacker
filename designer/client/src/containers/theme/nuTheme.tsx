@@ -1,7 +1,5 @@
 import { tintPrimary } from "./helpers";
 import { createTheme } from "@mui/material";
-import { css } from "@emotion/css";
-import { buttonBase } from "../../stylesheets/styledGraphWrapper";
 
 declare module "@mui/material/styles" {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -88,6 +86,72 @@ const custom = {
     },
 };
 
+const globalStyles = {
+    "html, body": {
+        margin: 0,
+        padding: 0,
+        height: "100dvh",
+        background: "#b3b3b3",
+        color: "#ccc",
+        fontSize: "16px",
+        overflow: "hidden",
+        fontFamily: "Open Sans, Helvetica Neue ,Helvetica,Arial,sans-serif",
+        letterSpacing: "unset",
+        "-webkit-font-smoothing": "initial",
+        lineHeight: 1.428571429,
+    },
+    ".hide": {
+        display: "none",
+    },
+    ".details": {
+        display: "inline-block",
+    },
+    ".modalContentDark": {
+        "& h3": {
+            fontSize: "1.3em",
+        },
+    },
+    ".ace_hidden-cursors .ace_cursor": {
+        opacity: 0,
+    },
+    ".ace_editor.ace_autocomplete": {
+        width: "400px",
+    },
+    /* Without those settings below, type (meta) shade method/variable name (value)*/
+    ".ace_autocomplete .ace_line > *": {
+        flex: "0 0 auto",
+    },
+    ".ace_autocomplete .ace_line .ace_": {
+        flex: "0 0 auto",
+        overflow: "auto",
+    },
+    ".ace_defaultMethod & & + .ace_completion-meta": {
+        color: "#ffe1b9",
+    },
+    ".ace_classMethod &, & + .ace_completion-meta": {
+        color: "#708687",
+    },
+    ".ace_tooltip.ace_doc-tooltip": {
+        fontSize: "0.7em",
+        ".function-docs": {
+            whiteSpace: "pre-wrap",
+            "> hr": {
+                marginTop: 0,
+                marginBottom: 0,
+            },
+
+            "& p": {
+                marginTop: "5px",
+                marginBottom: "5px",
+            },
+        },
+    },
+    ".services": {
+        height: "100%",
+        overflowY: "auto",
+    },
+};
+
 export const nuTheme = createTheme({
     palette: {
         mode: "dark",
@@ -143,6 +207,9 @@ export const nuTheme = createTheme({
                     color: custom.colors.secondaryBackground,
                 },
             },
+        },
+        MuiCssBaseline: {
+            styleOverrides: globalStyles,
         },
     },
     custom,
