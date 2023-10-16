@@ -15,7 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
-import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 
 class ComponentResourcesSpec
     extends AnyFunSpec
@@ -35,7 +35,7 @@ class ComponentResourcesSpec
     testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
     processService,
     processCategoryService,
-    TestAdditionalComponentsUIConfigProvider
+    TestAdditionalUIConfigProvider
   )
 
   private lazy val componentRoute = new ComponentResource(componentService)
