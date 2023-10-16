@@ -3,7 +3,7 @@ import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../ty
 import { NodeRowFields } from "../../fragment-input-definition/NodeRowFields";
 import { Error, mandatoryValueValidator, uniqueListValueValidator } from "../Validators";
 import { useDiffMark } from "../../PathsToMark";
-import { DndItems } from "../../fragment-input-definition/DndItems";
+import { DndItems } from "../../../../common/dndItems/DndItems";
 import MapRow from "./MapRow";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 

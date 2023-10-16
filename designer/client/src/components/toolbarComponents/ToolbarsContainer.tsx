@@ -15,7 +15,7 @@ import { useSelector } from "react-redux";
 import { TOOLBAR_DRAGGABLE_TYPE } from "./ToolbarsLayer";
 import styles from "./ToolbarsLayer.styl";
 import cn from "classnames";
-import { DragHandlerContext } from "./DragHandle";
+import { DragHandlerContext } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 
