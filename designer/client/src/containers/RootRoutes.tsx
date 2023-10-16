@@ -30,7 +30,7 @@ export default createRoutesFromElements(
             {/* overrides scenarios custom tab */}
             <Route path={ScenariosBasePath} element={<ScenariosTab />} />
 
-            {/* overrides legacy scenarios custom tab */}
+            {/* for the backward compatibility we redirect old urls */}
             <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath} />} />
             <Route path="/processes/*" element={<StarRedirect to={RootPath} />} />
 
