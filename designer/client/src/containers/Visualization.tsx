@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph } from "../reducers/selectors/graph";
+import { getFetchedProcessDetails, getGraph, isProcessRenamed } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -115,6 +115,7 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
 function Visualization() {
     const { id: processId } = useDecodedParams<{ id: string }>();
     const dispatch = useDispatch();
+    const isRenamed = useSelector(isProcessRenamed);
 
     const graphRef = useRef<Graph>();
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
@@ -161,7 +162,7 @@ function Visualization() {
     }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded]);
 
     useUnmountCleanup();
-    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
+    useRouteLeavingGuard((capabilities.editFrontend && !nothingToSave) || isRenamed);
 
     return (
         <ErrorHandler>

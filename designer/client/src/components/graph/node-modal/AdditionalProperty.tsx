@@ -1,10 +1,9 @@
 import { get } from "lodash";
-import { UnknownFunction } from "../../../types/common";
 import EditableEditor from "./editors/EditableEditor";
 import React, { useCallback, useMemo } from "react";
 import { ExpressionLang } from "./editors/expression/types";
 import { errorValidator, PossibleValue } from "./editors/Validators";
-import { NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError } from "../../../types";
 
 export interface AdditionalPropertyConfig {
     editor: any;
@@ -18,9 +17,9 @@ interface Props {
     propertyName: string;
     propertyConfig: AdditionalPropertyConfig;
     propertyErrors: NodeValidationError[];
-    editedNode: any;
-    onChange: UnknownFunction;
-    renderFieldLabel: UnknownFunction;
+    editedNode: NodeType;
+    onChange: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    renderFieldLabel: (paramName: string) => JSX.Element;
     readOnly: boolean;
 }
 
