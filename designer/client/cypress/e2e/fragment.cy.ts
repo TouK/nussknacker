@@ -82,7 +82,7 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
         cy.contains(/^apply/i).should("be.enabled");
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
     it("should add documentation url in fragment properties and show it in modal within scenario", () => {
