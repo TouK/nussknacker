@@ -5,19 +5,18 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait AdditionalComponentsUIConfigProviderFactory {
+trait AdditionalUIConfigProviderFactory {
 
   def create(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext,
-  ): AdditionalComponentsUIConfigProvider
+  ): AdditionalUIConfigProvider
 
 }
 
-class EmptyAdditionalComponentsUIConfigProviderFactory extends AdditionalComponentsUIConfigProviderFactory {
+class EmptyAdditionalUIConfigProviderFactory extends AdditionalUIConfigProviderFactory {
 
   override def create(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext,
-  ): AdditionalComponentsUIConfigProvider =
-    AdditionalComponentsUIConfigProvider.empty
+  ): AdditionalUIConfigProvider = AdditionalUIConfigProvider.empty
 
 }

@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
-import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -553,7 +553,7 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalComponentsUIConfigProvider
+        TestAdditionalUIConfigProvider
       )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -714,7 +714,7 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalComponentsUIConfigProvider
+        TestAdditionalUIConfigProvider
       )
 
     val testingData = Table(
@@ -784,7 +784,7 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalComponentsUIConfigProvider
+        TestAdditionalUIConfigProvider
       )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
