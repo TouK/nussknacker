@@ -80,4 +80,22 @@ object ParameterConfig {
 
 object ScenarioPropertyConfig {
   val empty: ScenarioPropertyConfig = ScenarioPropertyConfig(None, None, None, None)
+
+  implicit val semigroup: Semigroup[ScenarioPropertyConfig] = {
+    implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
+      case (None, None)    => None
+      case (None, Some(x)) => Some(x)
+      case (Some(x), _)    => Some(x)
+    }
+
+    Semigroup.instance[ScenarioPropertyConfig] { (x, y) =>
+      ScenarioPropertyConfig(
+        x.defaultValue |+| y.defaultValue,
+        x.editor |+| y.editor,
+        x.validators |+| y.validators,
+        x.label |+| y.label
+      )
+    }
+  }
+
 }

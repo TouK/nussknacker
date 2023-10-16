@@ -66,9 +66,41 @@ const getPromiseScript = ([url, module]) => `new Promise((resolve, reject) => {
   document.head.appendChild(script);
 });`;
 
-const NO_HOST_RE = /@\/\w/;
-const hasFullUrl = (value: string) => !value.match(NO_HOST_RE);
-const getPromise = (value: string) => `promise ${getPromiseScript(extractUrlAndGlobal(value))}`;
+function resolveRemotes(
+    remotes: ModuleFederationParams["remotes"],
+): Record<`${"proxied" | "plain" | "promise"}Remotes`, ModuleFederationParams["remotes"]> {
+    const PROXY_PATH_RE = new RegExp(`@${process.env.PROXY_PATH}/?`);
+    const NO_HOST_RE = /@\/\w/;
+    const withHash = mapValues(remotes, (value) => `${value}?${hash}`);
+
+    // resolve proxy paths to full urls (used before proxy is available)
+    const resolvedRemotes = mapValues(withHash, (value) => {
+        if (value.match(PROXY_PATH_RE)) {
+            return value.replace(PROXY_PATH_RE, `@${process.env.NU_FE_CORE_URL}/static/`);
+        }
+        return value;
+    });
+
+    const plainRemotes = pickBy(resolvedRemotes, (value) => !value.match(NO_HOST_RE));
+
+    // handle remotes with relative paths.
+    // it's tricky to resolve right root origin and load script in right way.
+    const noHostRemotes = pickBy(resolvedRemotes, (value) => value.match(NO_HOST_RE)); // relative paths
+    const promiseRemotes = mapValues(noHostRemotes, (value) => {
+        return `promise ${getPromiseScript(extractUrlAndGlobal(value))}`;
+    });
+
+    // adding full proxy url to avoid requests relative to unknown root.
+    const proxiedRemotes = mapValues(withHash, (value) => {
+        if (value.match(PROXY_PATH_RE)) {
+            const [url, module] = extractUrlAndGlobal(value);
+            return `${module}@http://localhost:${process.env.PORT}${url}`;
+        }
+        return value;
+    });
+
+    return { proxiedRemotes, plainRemotes, promiseRemotes };
+}
 
 // TODO: consider creating webpack plugin
 export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg: Configuration) => [Configuration] {
@@ -77,10 +109,7 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
         ...require(path.join(process.cwd(), "federation.config.json")),
         ...cfg,
     };
-    const withHash = mapValues(remotes, (value) => `${value}?${hash}`);
-    const plainRemotes = pickBy(withHash, hasFullUrl);
-    const noHostRemotes = omitBy(withHash, hasFullUrl); // relative paths
-    const promiseRemotes = mapValues(noHostRemotes, getPromise);
+    const { promiseRemotes, proxiedRemotes, plainRemotes } = resolveRemotes(remotes);
     return (webpackConfig) => [
         {
             plugins: [
@@ -101,7 +130,7 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
                 ]),
                 new container.ModuleFederationPlugin({
                     filename: "remoteEntry.js",
-                    remotes: { ...plainRemotes, ...promiseRemotes },
+                    remotes: { ...proxiedRemotes, ...promiseRemotes },
                     ...federationConfig,
                 }),
                 new WebpackRemoteTypesPlugin({

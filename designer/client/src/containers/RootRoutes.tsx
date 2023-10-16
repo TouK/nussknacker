@@ -12,7 +12,6 @@ import { NussknackerApp } from "./NussknackerApp";
 import { ErrorBoundaryFallbackComponent } from "../components/common/ErrorBoundary";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
-const ProcessesTab = loadable(() => import("./ProcessesTab"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
 
 function DefaultRedirect() {
@@ -33,7 +32,7 @@ export default createRoutesFromElements(
 
             {/* overrides legacy scenarios custom tab */}
             <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath} />} />
-            <Route path="/processes/*" element={<ProcessesTab />} />
+            <Route path="/processes/*" element={<StarRedirect to={RootPath} />} />
 
             {/* overrides metrics custom tab */}
             <Route path={MetricsBasePath}>

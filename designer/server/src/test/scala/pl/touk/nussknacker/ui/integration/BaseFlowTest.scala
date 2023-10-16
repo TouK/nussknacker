@@ -26,7 +26,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -121,7 +121,7 @@ class BaseFlowTest
         ),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = Some(TestAdditionalComponentsUIConfigProvider.componentGroupName),
+        componentGroup = Some(TestAdditionalUIConfigProvider.componentGroupName),
         componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(
@@ -233,6 +233,11 @@ class BaseFlowTest
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         validators = List(FixedValuesValidator(fixedPossibleValues)),
         label = Some("Number of threads")
+      ),
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(
+        TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride(
+          TestAdditionalUIConfigProvider.scenarioPropertyName
+        )
       )
     ) ++ streamingDefaultPropertyConfig
 
