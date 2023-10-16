@@ -45,13 +45,14 @@ const colors = {
     cerulean: "#0E9AE0",
     doveGray: d4,
     charcoal: "#444444",
+    accent: "#668547",
 };
 
 const selectColors = {
     ...tintPrimary(colors.focusColor),
     neutral0: colors.secondaryBackground,
     neutral5: colors.secondaryColor,
-    neutral10: colors.cobalt,
+    neutral10: colors.accent,
     neutral20: colors.mutedColor,
     neutral30: colors.borderColor,
     neutral40: colors.secondaryColor,
@@ -75,7 +76,6 @@ const custom = {
     colors: {
         danger: "#DE350B",
         dangerLight: "#FFBDAD",
-        accent: "#668547",
         warning: "#FF9A4D",
         error: "#f25c6e",
         ok: "#8fad60",
