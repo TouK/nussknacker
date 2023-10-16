@@ -48,7 +48,7 @@ object UIProcessObjectsFactory {
       processCategoryService: ProcessCategoryService,
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType,
-      additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): UIProcessObjects = {
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
@@ -66,7 +66,7 @@ object UIProcessObjectsFactory {
     val finalProcessDefinition = finalizeProcessDefinition(
       processDefinition.withComponentIds(componentIdProvider, processingType),
       combinedComponentsConfig,
-      additionalComponentsUIConfigProvider
+      additionalUIConfigProvider
         .getAllForProcessingType(processingType)
         .mapValuesNow(_.toSingleComponentConfig)
     )
@@ -97,11 +97,12 @@ object UIProcessObjectsFactory {
         processCategoryService
       ),
       componentsConfig = finalComponentsConfig,
-      scenarioPropertiesConfig = scenarioPropertiesConfig
-        .filter(_ =>
-          !isFragment
-        ) // fixme: it should be introduced separate config for scenarioPropertiesConfig for fragments. For now we skip that
-        .mapValuesNow(createUIScenarioPropertyConfig),
+      scenarioPropertiesConfig =
+        if (!isFragment) {
+          (additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig)
+            .mapValuesNow(createUIScenarioPropertyConfig)
+        } else
+          Map.empty, // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = finalProcessDefinition,
         isFragment = isFragment,
