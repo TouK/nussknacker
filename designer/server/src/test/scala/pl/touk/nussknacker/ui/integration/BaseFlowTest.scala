@@ -19,14 +19,15 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
+import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
+import pl.touk.nussknacker.ui.definition.TestAdditionalComponentsUIConfigProvider
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
@@ -105,11 +106,22 @@ class BaseFlowTest
         componentId = None
       ),
       "enricher" -> SingleComponentConfig(
-        params =
-          Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
+        params = Some(
+          Map(
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "paramDualEditor" -> ParameterConfig(
+              None,
+              None,
+              Some(
+                List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
+              ),
+              None
+            )
+          )
+        ),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
-        componentGroup = None,
+        componentGroup = Some(TestAdditionalComponentsUIConfigProvider.componentGroupName),
         componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(
@@ -186,7 +198,7 @@ class BaseFlowTest
     settings.collect { case (k, v) if underTest.keySet contains k => (k, v) } shouldBe underTest
   }
 
-  test("ensure additional properties config is properly applied") {
+  test("ensure scenario properties config is properly applied") {
     val response = httpClient.send(
       quickRequest
         .get(uri"$nuDesignerHttpAddress/api/processDefinitionData/streaming?isFragment=false")
@@ -195,27 +207,27 @@ class BaseFlowTest
     )
     response.code shouldEqual StatusCode.Ok
 
-    val settingsJson        = response.extractFieldJsonValue("additionalPropertiesConfig")
+    val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).toOption.get
+    val settings = Decoder[Map[String, UiScenarioPropertyConfig]].decodeJson(settingsJson).toOption.get
     val streamingDefaultPropertyConfig =
-      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIAdditionalPropertyConfig(p._2))
+      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
 
     val underTest = Map(
-      "environment" -> UiAdditionalPropertyConfig(
+      "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
         validators = List(MandatoryParameterValidator),
         label = Some("Environment")
       ),
-      "maxEvents" -> UiAdditionalPropertyConfig(
+      "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
         validators = List(LiteralParameterValidator.integerValidator),
         label = Some("Max events")
       ),
-      "numberOfThreads" -> UiAdditionalPropertyConfig(
+      "numberOfThreads" -> UiScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         validators = List(FixedValuesValidator(fixedPossibleValues)),
@@ -226,8 +238,8 @@ class BaseFlowTest
     settings shouldBe underTest
   }
 
-  test("validate process additional properties") {
-    val scenario = ProcessTestData.processWithInvalidAdditionalProperties
+  test("validate process scenario properties") {
+    val scenario = ProcessTestData.processWithInvalidScenarioProperties
     val response1 = httpClient.send(
       quickRequest
         .post(

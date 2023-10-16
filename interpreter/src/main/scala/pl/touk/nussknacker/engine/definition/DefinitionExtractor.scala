@@ -212,7 +212,13 @@ object DefinitionExtractor {
       returnType: Option[TypingResult],
       categories: Option[List[String]],
       componentConfig: SingleComponentConfig
-  )
+  ) {
+
+    def withComponentConfig(componentConfig: SingleComponentConfig): ObjectDefinition =
+      copy(componentConfig = componentConfig)
+
+    val hasNoReturn: Boolean = returnType.isEmpty
+  }
 
   object ObjectWithMethodDef {
 

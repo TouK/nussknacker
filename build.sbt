@@ -636,7 +636,6 @@ lazy val flinkDeploymentManager = (project in flink("management"))
           ),
         "org.apache.flink"               % "flink-statebackend-rocksdb"       % flinkV               % flinkScope,
         "com.softwaremill.retry"        %% "retry"                            % "0.3.6",
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
         "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it,test",
         "com.github.tomakehurst"         % "wiremock-jre8"                    % wireMockV            % Test
@@ -1279,8 +1278,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       .value,
     libraryDependencies ++= Seq(
       "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it",
-      "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it",
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it"
+      "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it"
     )
   )
   .dependsOn(
@@ -1440,7 +1438,7 @@ lazy val liteDeploymentManager = (project in lite("deploymentManager"))
   )
   .dependsOn(
     liteEngineKafkaRuntime,       // for tests mechanism purpose
-    requestResponseComponentsApi, // for rr additional properties
+    requestResponseComponentsApi, // for rr scenario properties
     deploymentManagerApi % "provided"
   )
 
@@ -1460,6 +1458,7 @@ lazy val componentsApi = (project in file("components-api"))
         "com.iheart"                 %% "ficus"                   % ficusV,
         "org.springframework"         % "spring-core"             % springV,
         "com.google.code.findbugs"    % "jsr305"                  % findBugsV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV
       )
     }
   )
@@ -1533,7 +1532,6 @@ lazy val security = (project in file("security"))
 
       "com.softwaremill.sttp.tapir"   %% "tapir-core"                       % tapirV,
       "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                 % tapirV,
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
       "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
       "com.github.dasniko"             % "testcontainers-keycloak"          % "2.5.0"              % "it,test" excludeAll (
         // we're using testcontainers-scala which requires a proper junit4 dependency
@@ -1576,7 +1574,6 @@ lazy val processReports = (project in file("designer/processReports"))
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
         "com.dimafeng"                  %% "testcontainers-scala-influxdb"    % testContainersScalaV % "it,test",
         "org.influxdb"                   % "influxdb-java"                    % "2.23"               % "it,test"
@@ -1594,9 +1591,6 @@ lazy val httpUtils = (project in utils("http-utils"))
         "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
         "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
         "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
-          ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
-        ),
       )
     }
   )
@@ -1617,9 +1611,6 @@ lazy val openapiComponents = (project in component("openapi"))
       "io.swagger.core.v3"             % "swagger-integration"              % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
-      ),
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
-        ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
       ),
       "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
       "org.apache.flink"               % "flink-streaming-java"             % flinkV     % Provided,
