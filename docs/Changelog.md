@@ -2,8 +2,8 @@
 
 1.13.0 (Not released yet)
 -------------------------
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
-* [#4711](https://github.com/TouK/nussknacker/pull/4711) Added AdditionalComponentsUIConfigProviderFactory API that allows changing components' configs without model reload
 
 1.12.0 (Not released yet)
 -------------------------

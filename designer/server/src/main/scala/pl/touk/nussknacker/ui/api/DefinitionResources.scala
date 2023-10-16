@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.component.AdditionalComponentsUIConfigProvider
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
@@ -19,7 +19,7 @@ class DefinitionResources(
     processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
     fragmentRepository: FragmentRepository,
     processCategoryService: ProcessCategoryService,
-    additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
+    additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -56,7 +56,7 @@ class DefinitionResources(
                     processCategoryService,
                     processingTypeData.scenarioPropertiesConfig,
                     processingType,
-                    additionalComponentsUIConfigProvider
+                    additionalUIConfigProvider
                   )
                 )
               }

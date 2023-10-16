@@ -1,23 +1,25 @@
 package pl.touk.nussknacker.engine.api.component
 
-import pl.touk.nussknacker.engine.api.component.AdditionalComponentsUIConfigProvider.SingleComponentConfigWithoutId
+import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider.SingleComponentConfigWithoutId
 
 /**
- * Trait allowing the provision of UI configuration for components, without requiring a model reload.
+ * Trait allowing the provision of UI configuration for components and scenario properties, without requiring a model reload.
  *
  * TODO: The current implementation allows providing configs only for standard components - meaning that fragments and base components aren't handled.
  */
-trait AdditionalComponentsUIConfigProvider extends Serializable {
+trait AdditionalUIConfigProvider extends Serializable {
 
   def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentConfigWithoutId]
 
+  def getScenarioPropertiesUIConfigs(processingType: String): Map[String, ScenarioPropertyConfig]
+
 }
 
-object AdditionalComponentsUIConfigProvider {
-  val empty = new DefaultAdditionalComponentsUIConfigProvider(Map.empty)
+object AdditionalUIConfigProvider {
+  val empty = new DefaultAdditionalUIConfigProvider(Map.empty, Map.empty)
 
   case class SingleComponentConfigWithoutId(
-      params: Option[Map[String, ParameterConfig]],
+      params: Map[String, ParameterConfig],
       icon: Option[String],
       docsUrl: Option[String],
       componentGroup: Option[ComponentGroupName],
@@ -25,7 +27,7 @@ object AdditionalComponentsUIConfigProvider {
   ) {
 
     def toSingleComponentConfig: SingleComponentConfig = SingleComponentConfig(
-      params = params,
+      params = Some(params),
       icon = icon,
       docsUrl = docsUrl,
       disabled = disabled,
@@ -36,7 +38,7 @@ object AdditionalComponentsUIConfigProvider {
   }
 
   object SingleComponentConfigWithoutId {
-    val zero: SingleComponentConfigWithoutId = SingleComponentConfigWithoutId(None, None, None, None)
+    val zero: SingleComponentConfigWithoutId = SingleComponentConfigWithoutId(Map.empty, None, None, None)
   }
 
 }
