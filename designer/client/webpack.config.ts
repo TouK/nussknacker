@@ -125,18 +125,6 @@ const config: Configuration = {
                     res.redirect(url);
                 },
             },
-            "/submodules/legacy_scenarios": {
-                target: "http://localhost:5002",
-                changeOrigin: true,
-                pathRewrite: {
-                    "^/submodules/legacy_scenarios": "",
-                },
-                onError: (err, req, res) => {
-                    const url = `${process.env.BACKEND_DOMAIN}/submodules/legacy_scenarios${req.path}`;
-                    console.warn(`Submodules not available locally - falling back to ${url}`);
-                    res.redirect(url);
-                },
-            },
             "/static": {
                 target: "http://localhost:3000",
                 changeOrigin: true,
