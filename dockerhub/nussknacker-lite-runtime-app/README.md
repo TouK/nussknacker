@@ -22,7 +22,7 @@ where:
 ```
 tasksCount: 2
 ```
-- `--network host` - to be able to connect with Kafka and Schema Registry exposed on host machine
+- `--network host` - to be able to connect with Kafka and Schema Registry exposed on host machine. Note: It only works on linux and is used to connect to existing kafka/schema registry. In case of other OS you have to use different methods to make it accessible from Nussknacker container (e.g start Kafka/SR and Nussknacker in a single docker network)
 - `-e KAFKA_ADDRESS=localhost:3032` - Kafka address
 - `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - schema registry url
 
