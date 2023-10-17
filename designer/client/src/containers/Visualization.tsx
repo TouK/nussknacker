@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph, isProcessRenamed } from "../reducers/selectors/graph";
+import { getFetchedProcessDetails, getGraph } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -27,6 +27,7 @@ import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "..
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
+import { RootState } from "../reducers";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -115,7 +116,6 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
 function Visualization() {
     const { id: processId } = useDecodedParams<{ id: string }>();
     const dispatch = useDispatch();
-    const isRenamed = useSelector(isProcessRenamed);
 
     const graphRef = useRef<Graph>();
     const getGraphInstance = useCallback(() => graphRef.current, [graphRef]);
@@ -139,7 +139,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state));
+    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
@@ -162,7 +162,7 @@ function Visualization() {
     }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded]);
 
     useUnmountCleanup();
-    useRouteLeavingGuard((capabilities.editFrontend && !nothingToSave) || isRenamed);
+    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
     return (
         <ErrorHandler>
