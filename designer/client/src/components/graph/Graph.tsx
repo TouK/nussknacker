@@ -12,7 +12,6 @@ import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
-import "./svg-export/export.styl";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import * as GraphUtils from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
@@ -40,7 +39,6 @@ interface Props extends GraphProps {
     isPristine?: boolean;
 }
 
-console.log(styles);
 function handleActionOnLongPress<T extends dia.CellView>(
     shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
     longPressAction: (cellView: T, event: dia.Event) => void,
