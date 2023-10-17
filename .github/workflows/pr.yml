@@ -624,8 +624,13 @@ jobs:
           config-inline: |
             [worker.oci]
               max-parallelism = 1
-      - name: Docker system prune
-        run: docker system prune -f
+      - name: Try to free space
+        run: |
+          # Workaround to get more free disk space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Log disk usage
         run: df -h
       - name: Publish with scaladocs
