@@ -15,6 +15,7 @@ final case class CombinedProcessingTypeData(
     statusNameToStateDefinitionsMapping: StatusNameToStateDefinitionsMapping,
     componentIdProvider: ComponentIdProvider,
     categoryService: ProcessCategoryService,
+    processingTypeSetupService: ProcessingTypeSetupService
 )
 
 object CombinedProcessingTypeData {
@@ -25,13 +26,15 @@ object CombinedProcessingTypeData {
   ): CombinedProcessingTypeData = {
     val categoryService: ProcessCategoryService =
       ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoriesConfig))
+    val processingTypeSetupService = ProcessingTypeSetupService(processingTypes, categoryService)
     CombinedProcessingTypeData(
       statusNameToStateDefinitionsMapping =
         ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
       // While creation of component id provider, we validate all component ids but fragments.
       // We assume that fragments cannot have overridden component id thus are not merged/deduplicated across processing types.
       componentIdProvider = ComponentIdProviderFactory.createUnsafe(processingTypes, categoryService),
-      categoryService = categoryService
+      categoryService = categoryService,
+      processingTypeSetupService = processingTypeSetupService,
     )
   }
 

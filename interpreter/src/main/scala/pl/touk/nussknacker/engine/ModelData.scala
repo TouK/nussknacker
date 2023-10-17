@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefini
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -112,6 +113,9 @@ trait ModelData extends BaseModelData with AutoCloseable {
   def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
   }
+
+  // FIXME
+  def componentsProcessingModesInterception: Set[ProcessingMode] = Set(ProcessingMode.Streaming)
 
   def withThisAsContextClassLoader[T](block: => T): T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {

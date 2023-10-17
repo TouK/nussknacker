@@ -22,6 +22,7 @@ object ProcessCategoryService {
   class CategoryNotFoundError(category: Category) extends BadRequestError(s"Category: $category not found")
 }
 
+// TODO: Maybe we should merge this with ProcessingTypeSetupService?
 trait ProcessCategoryService {
   final def getTypeForCategoryUnsafe(category: Category): ProcessingType =
     getTypeForCategory(category).getOrElse(throw new CategoryNotFoundError(category))
@@ -83,8 +84,8 @@ object ConfigProcessCategoryService extends LazyLogging {
     service
   }
 
-  // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category
-  //       implies processing type with more lax restriction that category + paradigm + engine type
+  // TODO: this is temporary, after fully switch to processing modes we should replace restriction that category
+  //       implies processing type with more lax restriction that category + processing mode + engine setup
   //       implies processing type
   private def checkCategoryToProcessingTypeMappingAmbiguity(
       scenarioTypes: Iterable[ProcessingType],
