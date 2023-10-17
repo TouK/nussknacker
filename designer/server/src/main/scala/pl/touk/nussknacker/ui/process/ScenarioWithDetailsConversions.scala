@@ -1,65 +1,73 @@
 package pl.touk.nussknacker.ui.process
 
+import pl.touk.nussknacker.engine.ProcessingTypeSetup
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
 
-  def fromRepositoryDetails(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
-    fromRepositoryDetailsIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      details.json
-    )
-
-  def fromRepositoryDetailsWithScenarioGraph(
-      details: ScenarioWithDetailsEntity[DisplayableProcess]
+  def fromEntity(
+      entity: ScenarioWithDetailsEntity[ValidatedDisplayableProcess],
+      processingTypeSetup: ProcessingTypeSetup
   ): ScenarioWithDetails =
-    fromRepositoryDetailsIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
-      ValidatedDisplayableProcess.withEmptyValidationResult(details.json)
+    fromEntityIgnoringGraphAndValidationResult(entity, processingTypeSetup).withScenarioGraphAndValidationResult(
+      entity.json
     )
 
-  def fromRepositoryDetailsIgnoringGraphAndValidationResult(
-      details: ScenarioWithDetailsEntity[_]
+  def fromEntityWithScenarioGraph(
+      entity: ScenarioWithDetailsEntity[DisplayableProcess],
+      processingTypeSetup: ProcessingTypeSetup
+  ): ScenarioWithDetails =
+    fromEntityIgnoringGraphAndValidationResult(entity, processingTypeSetup).withScenarioGraphAndValidationResult(
+      ValidatedDisplayableProcess.withEmptyValidationResult(entity.json)
+    )
+
+  def fromEntityIgnoringGraphAndValidationResult(
+      entity: ScenarioWithDetailsEntity[_],
+      processingTypeSetup: ProcessingTypeSetup
   ): ScenarioWithDetails = {
     ScenarioWithDetails(
-      id = details.id,
-      name = details.name,
-      processId = details.processId,
-      processVersionId = details.processVersionId,
-      isLatestVersion = details.isLatestVersion,
-      description = details.description,
-      isArchived = details.isArchived,
-      isFragment = details.isFragment,
-      processingType = details.processingType,
-      processCategory = details.processCategory,
-      modificationDate = details.modificationDate,
-      modifiedAt = details.modifiedAt,
-      modifiedBy = details.modifiedBy,
-      createdAt = details.createdAt,
-      createdBy = details.createdBy,
-      tags = details.tags,
-      lastDeployedAction = details.lastDeployedAction,
-      lastStateAction = details.lastStateAction,
-      lastAction = details.lastAction,
+      id = entity.id,
+      name = entity.name,
+      processId = entity.processId,
+      processVersionId = entity.processVersionId,
+      isLatestVersion = entity.isLatestVersion,
+      description = entity.description,
+      isArchived = entity.isArchived,
+      isFragment = entity.isFragment,
+      processingType = entity.processingType,
+      processCategory = entity.processCategory,
+      modificationDate = entity.modificationDate,
+      modifiedAt = entity.modifiedAt,
+      modifiedBy = entity.modifiedBy,
+      createdAt = entity.createdAt,
+      createdBy = entity.createdBy,
+      tags = entity.tags,
+      lastDeployedAction = entity.lastDeployedAction,
+      lastStateAction = entity.lastStateAction,
+      lastAction = entity.lastAction,
       json = None,
-      history = details.history,
-      modelVersion = details.modelVersion,
-      state = None
+      history = entity.history,
+      modelVersion = entity.modelVersion,
+      state = None,
+      processingMode = processingTypeSetup.processingMode,
+      engineSetupName = processingTypeSetup.engineSetupName
     )
   }
 
   implicit class Ops(scenarioWithDetails: ScenarioWithDetails) {
 
     // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
-    def toRepositoryDetailsWithoutScenarioGraphAndValidationResult: ScenarioWithDetailsEntity[Unit] = {
-      toRepositoryDetails(())
+    def toEntityWithoutScenarioGraphAndValidationResult: ScenarioWithDetailsEntity[Unit] = {
+      toEntity(())
     }
 
-    def toRepositoryDetailsWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
-      toRepositoryDetails(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable)
+    def toEntityWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
+      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable)
     }
 
-    private def toRepositoryDetails[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {
+    private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {
       repository.ScenarioWithDetailsEntity(
         id = scenarioWithDetails.id,
         name = scenarioWithDetails.name,

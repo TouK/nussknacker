@@ -9,7 +9,9 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.restmodel.scenariodetails.EngineSetupName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -20,15 +22,14 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   GetScenarioWithDetailsOptions,
   UpdateProcessCommand
 }
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions.Ops
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.{ExecutionContext, Future}
-import ScenarioWithDetailsConversions._
 
 class ProcessesResources(
     protected val processService: ProcessService,
@@ -183,12 +184,23 @@ class ProcessesResources(
         authorize(user.can(category, Permission.Write)) {
           optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
             canOverrideUsername(category, remoteUserName)(user) {
-              parameters(Symbol("isFragment") ? false) { isFragment =>
+              parameters(
+                Symbol("isFragment") ? false,
+                Symbol("processingMode").optional,
+                Symbol("engineSetupName").optional
+              ) { (isFragment, processingMode, engineSetupName) =>
                 post {
                   complete {
                     processService
                       .createProcess(
-                        CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
+                        CreateProcessCommand(
+                          ProcessName(processName),
+                          category,
+                          processingMode.map(ProcessingMode(_)),
+                          engineSetupName.map(EngineSetupName(_)),
+                          isFragment,
+                          remoteUserName
+                        )
                       )
                       .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
                       .map(response =>
@@ -215,7 +227,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
-              .map(_.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
+              .map(_.toEntityWithoutScenarioGraphAndValidationResult)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }

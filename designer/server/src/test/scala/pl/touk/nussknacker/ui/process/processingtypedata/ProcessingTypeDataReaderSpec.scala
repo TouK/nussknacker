@@ -23,7 +23,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
   implicit val deploymentService: DeploymentService  = null
 
-  test("load only scenario types assigned to configured categories") {
+  test("load only selected scenario type if configured") {
     val config = ConfigFactory.parseString("""
         |selectedScenarioType: foo
         |scenarioTypes {
@@ -74,14 +74,16 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     }
 
     override protected def createCombinedData(
-        valueMap: Map[ProcessingType, ProcessingTypeData],
+        processingTypes: Map[ProcessingType, ProcessingTypeData],
         designerConfig: ConfigWithUnresolvedVersion
     ): CombinedProcessingTypeData = {
+      val categoryService =
+        ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoriesConfig))
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
         componentIdProvider = new DefaultComponentIdProvider(Map.empty),
-        categoryService =
-          ConfigProcessCategoryService(designerConfig.resolved, valueMap.mapValuesNow(_.categoriesConfig))
+        categoryService = categoryService,
+        processingTypeSetupService = ProcessingTypeSetupService(processingTypes, categoryService)
       )
     }
 

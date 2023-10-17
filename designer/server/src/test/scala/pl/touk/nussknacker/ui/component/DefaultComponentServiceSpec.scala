@@ -7,8 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData, ProcessingTypeSetup}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.scenariodetails.EngineSetupName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -800,6 +802,8 @@ class DefaultComponentServiceSpec
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
+      getProcessingTypeSetupProvider = () =>
+        _ => ProcessingTypeSetup(ProcessingMode.Streaming, EngineSetupName("Test")),
       getProcessCategoryService = () => processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),

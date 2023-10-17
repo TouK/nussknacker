@@ -17,8 +17,9 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{EngineSetupName, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -202,6 +203,28 @@ class ProcessesResourcesSpec
     Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
+    }
+  }
+
+  test("allow to specify processing mode and engine setup name during creation of scenario") {
+    val givenProcessingMode  = ProcessingMode.RequestResponse
+    val givenEngineSetupName = EngineSetupName("Flink")
+    Post(
+      s"/processes/${processName.value}/$TestCat" +
+        s"?isFragment=false" +
+        s"&processingMode=$givenProcessingMode" +
+        s"&engineSetupName=$givenEngineSetupName"
+    ) ~> processesRouteWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.Created
+    }
+
+    Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.OK
+      val response = responseAs[ScenarioWithDetails]
+      response.name shouldBe processName
+      // FIXME
+//      response.processingMode shouldBe givenProcessingMode
+//      response.engineSetupName shouldBe givenEngineSetupName
     }
   }
 

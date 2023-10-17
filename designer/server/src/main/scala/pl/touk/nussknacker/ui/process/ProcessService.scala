@@ -5,15 +5,19 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.ProcessingTypeSetup
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
+import pl.touk.nussknacker.restmodel.scenariodetails.{EngineSetupName, ScenarioWithDetails}
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService._
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -31,8 +35,6 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
-import ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,6 +45,9 @@ object ProcessService {
   @JsonCodec final case class CreateProcessCommand(
       processName: ProcessName,
       category: String,
+      // TODO: make processing mode and engine setup name mandatory after switching FE to the new API
+      processingMode: Option[ProcessingMode],
+      engineSetupName: Option[EngineSetupName],
       isFragment: Boolean,
       forwardedUserName: Option[RemoteUserName]
   )
@@ -136,6 +141,7 @@ trait ProcessService {
 class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparer: NewProcessPreparer,
+    getProcessingTypeSetupProvider: () => ProcessingType => ProcessingTypeSetup,
     getProcessCategoryService: () => ProcessCategoryService,
     processResolving: UIProcessResolving,
     dbioRunner: DBIOActionRunner,
@@ -212,13 +218,20 @@ class DBProcessService(
       implicit user: LoggedUser,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]] = {
+    val processingTypeSetupProvider = getProcessingTypeSetupProvider()
     (options.fetchGraphOptions match {
       case SkipScenarioGraph =>
         fetchScenario[Unit]
-          .map(_.map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult))
+          .map(_.map { entity =>
+            val processingTypeSetup = processingTypeSetupProvider(entity.processingType)
+            ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult(entity, processingTypeSetup)
+          })
       case FetchScenarioGraph(validateAndResolve) =>
         fetchScenario[CanonicalProcess]
-          .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
+          .map(_.map { entity =>
+            val processingTypeSetup = processingTypeSetupProvider(entity.processingType)
+            validateAndReverseResolve(entity, processingTypeSetup, validateAndResolve)
+          })
     }).flatMap { details =>
       if (options.fetchState)
         deploymentService.enrichDetailsWithProcessState(details)
@@ -234,43 +247,48 @@ class DBProcessService(
   }
 
   private def validateAndReverseResolve(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      entity: ScenarioWithDetailsEntity[CanonicalProcess],
+      processingTypeSetup: ProcessingTypeSetup,
       validateAndResolve: Boolean
   ): ScenarioWithDetails = {
     if (validateAndResolve) {
-      validateAndReverseResolve(processDetails)
+      validateAndReverseResolve(entity, processingTypeSetup)
     } else {
-      toDisplayableProcessDetailsWithoutValidation(processDetails)
+      toDisplayableProcessDetailsWithoutValidation(entity, processingTypeSetup)
     }
   }
 
   private def toDisplayableProcessDetailsWithoutValidation(
-      canonicalProcessDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+      entity: ScenarioWithDetailsEntity[CanonicalProcess],
+      processingTypeSetup: ProcessingTypeSetup,
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromRepositoryDetails(canonicalProcessDetails.mapScenario { canonical =>
+    val entityWithValidationResult = entity.mapScenario { canonical =>
       val displayableProcess = ProcessConverter.toDisplayable(
         canonical,
-        canonicalProcessDetails.processingType,
-        canonicalProcessDetails.processCategory
+        entity.processingType,
+        entity.processCategory
       )
       ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
-    })
+    }
+    ScenarioWithDetailsConversions.fromEntity(entityWithValidationResult, processingTypeSetup)
   }
 
   private def validateAndReverseResolve(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+      entity: ScenarioWithDetailsEntity[CanonicalProcess],
+      processingTypeSetup: ProcessingTypeSetup,
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromRepositoryDetails(processDetails.mapScenario { canonical: CanonicalProcess =>
-      val processingType = processDetails.processingType
+    val entityWithValidationResult = entity.mapScenario { canonical: CanonicalProcess =>
+      val processingType = entity.processingType
       val validationResult =
-        processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
+        processResolving.validateBeforeUiReverseResolving(canonical, processingType, entity.processCategory)
       processResolving.reverseResolveExpressions(
         canonical,
         processingType,
-        processDetails.processCategory,
+        entity.processCategory,
         validationResult
       )
-    })
+    }
+    ScenarioWithDetailsConversions.fromEntity(entityWithValidationResult, processingTypeSetup)
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
@@ -425,7 +443,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     deploymentService
-      .getProcessState(process.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
+      .getProcessState(process.toEntityWithoutScenarioGraphAndValidationResult)
       .flatMap(state => {
         if (state.allowedActions.contains(actionToCheck)) {
           callback

@@ -27,9 +27,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{EngineSetupName, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
@@ -128,14 +129,18 @@ trait NuResourcesTest
 
     }
 
-  protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
-    Streaming -> ModelData(processingTypeConfig)
-  )
-
-  protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
+  protected val testProcessingTypeDataProvider
+      : ProcessingTypeDataProvider[ProcessingTypeData, (ProcessCategoryService, ProcessingTypeSetupService)] = {
+    val streamingProcessingTypeData =
+      ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
     mapProcessingTypeDataProvider(
-      Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
-    )
+      Streaming -> streamingProcessingTypeData
+    ).mapCombined { _ =>
+      val processingTypeSetupService =
+        ProcessingTypeSetupService(Map(Streaming -> streamingProcessingTypeData), processCategoryService)
+      (processCategoryService, processingTypeSetupService)
+    }
+  }
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
 
@@ -152,7 +157,7 @@ trait NuResourcesTest
   protected val processService: DBProcessService = createDBProcessService(deploymentService)
 
   protected val scenarioTestService: ScenarioTestService = createScenarioTestService(
-    testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_))
+    testProcessingTypeDataProvider.mapValues(_.modelData).mapValues(new ModelDataTestInfoProvider(_))
   )
 
   protected val configProcessToolbarService =
@@ -179,6 +184,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparer,
+      () => _ => ProcessingTypeSetup(ProcessingMode.Streaming, EngineSetupName("Test")),
       () => processCategoryService,
       processResolving,
       dbioRunner,
