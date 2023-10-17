@@ -14,31 +14,35 @@ import {
     ValidationResult,
     VariableTypes,
 } from "../types";
+import { RootState } from "../reducers";
+import { isProcessRenamed } from "../reducers/selectors/graph";
 
 class ProcessUtils {
-    nothingToSave = (state): boolean => {
+    nothingToSave = (state: RootState): boolean => {
         const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
         const processToDisplay = state.graphReducer.processToDisplay;
         //TODO: validationResult should be removed from processToDisplay...
-        const omitValidation = (details) => omit(details, ["validationResult"]);
-        return !isEmpty(fetchedProcessDetails)
-            ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay))
-            : true;
+        const omitValidation = (details: Process) => omit(details, ["validationResult"]);
+        return (
+            (!isEmpty(fetchedProcessDetails)
+                ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay))
+                : true) && !isProcessRenamed(state)
+        );
     };
 
-    canExport = (state): boolean => {
+    canExport = (state: RootState): boolean => {
         const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
         return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (process) => {
+    hasNeitherErrorsNorWarnings = (process: Process) => {
         return this.hasNoErrors(process) && this.hasNoWarnings(process);
     };
 
-    extractInvalidNodes = (invalidNodes) => {
+    extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
         return flatten(
-            Object.keys(invalidNodes || {}).map((key, idx) =>
+            Object.keys(invalidNodes || {}).map((key, _) =>
                 invalidNodes[key].map((error) => {
                     return { error: error, key: key };
                 }),
@@ -46,7 +50,7 @@ class ProcessUtils {
         );
     };
 
-    hasNoErrors = (process) => {
+    hasNoErrors = (process: Process) => {
         const result = this.getValidationErrors(process);
         return (
             !result ||
@@ -59,26 +63,24 @@ class ProcessUtils {
     getValidationResult = (process: Process): ValidationResult =>
         process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
-    hasNoWarnings = (process) => {
+    hasNoWarnings = (process: Process) => {
         const warnings = this.getValidationResult(process).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
-    hasNoPropertiesErrors = (process) => {
+    hasNoPropertiesErrors = (process: Process) => {
         return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors);
     };
 
-    getValidationErrors(process) {
+    getValidationErrors(process: Process) {
         return this.getValidationResult(process).errors;
     }
 
-    //see BranchEndDefinition.artificialNodeId
-    findContextForBranch = (node, branchId) => {
+    findContextForBranch = (node: NodeType, branchId: string) => {
         return `$edge-${branchId}-${node.id}`;
     };
 
-    //see BranchEndDefinition.artificialNodeId
-    findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
+    findVariablesForBranches = (nodeResults: NodeResults) => (nodeId: NodeId) => {
         //we find all nodes matching pattern encoding branch and edge and extract branch id
         const escapedNodeId = this.escapeNodeIdForRegexp(nodeId);
         return transform(
@@ -96,7 +98,7 @@ class ProcessUtils {
     getNodeResults = (process: Process): NodeResults => this.getValidationResult(process).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-    escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+    escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     //It's not pretty but works.. This should be done at backend with properly category hierarchy
     _findGlobalVariablesWithMismatchCategory = (globalVariables: GlobalVariables, processCategory: string) => {
@@ -131,7 +133,7 @@ class ProcessUtils {
                 processDefinition.globalVariables,
                 processCategory,
             );
-            return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1);
+            return pickBy(variables, (_, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1);
         };
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
@@ -243,11 +245,11 @@ class ProcessUtils {
         }
     };
 
-    findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null;
+    findNodeDefinitionIdOrType = (node: NodeType) => this.findNodeDefinitionId(node) || node.type || null;
 
-    getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+    getNodeBaseTypeCamelCase = (node: NodeType) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
 
-    findNodeConfigName = (node): string => {
+    findNodeConfigName = (node: NodeType): string => {
         // First we try to find id of node (config for specific custom node by id).
         // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
         // If all above are falsy then it means that node is special process properties node without id and type.
@@ -266,6 +268,7 @@ class ProcessUtils {
         }
     };
 
+    //Remove if it doesn't use
     prepareFilterCategories = (categories, loggedUser) =>
         map(
             (categories || []).filter((c) => loggedUser.canRead(c)),
