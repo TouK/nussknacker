@@ -76,12 +76,10 @@ class ProcessUtils {
         return this.getValidationResult(process).errors;
     }
 
-    //see BranchEndDefinition.artificialNodeId
     findContextForBranch = (node: NodeType, branchId: string) => {
         return `$edge-${branchId}-${node.id}`;
     };
 
-    //see BranchEndDefinition.artificialNodeId
     findVariablesForBranches = (nodeResults: NodeResults) => (nodeId: NodeId) => {
         //we find all nodes matching pattern encoding branch and edge and extract branch id
         const escapedNodeId = this.escapeNodeIdForRegexp(nodeId);
