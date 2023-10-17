@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
+import pl.touk.nussknacker.engine.ProcessingTypeDetails
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -82,13 +83,16 @@ object TestProcessUtil {
     )
 
   def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
-    ScenarioWithDetailsConversions.fromRepositoryDetails(
+    ScenarioWithDetailsConversions.fromEntity(
       toDetails(
         displayable.id,
         processingType = displayable.processingType,
         category = displayable.category
-      ).copy(json = displayable)
+      ).copy(json = displayable),
+      streamingProcessingDetails
     )
+
+  val streamingProcessingDetails = ProcessingTypeDetails(ProcessingMode.Streaming, EngineSetupName("Test engine"))
 
   def toDetails(
       name: String,

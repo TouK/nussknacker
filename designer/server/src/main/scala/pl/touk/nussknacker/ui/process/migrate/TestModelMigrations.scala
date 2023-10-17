@@ -47,7 +47,7 @@ class TestModelMigrations(
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
-        process.toRepositoryDetailsWithScenarioGraphUnsafe,
+        process.toEntityWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)

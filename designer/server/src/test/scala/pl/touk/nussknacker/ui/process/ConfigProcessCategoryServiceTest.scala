@@ -118,8 +118,8 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
     categoryService.getTypeForCategoryUnsafe(categoryNewMixed) shouldEqual scenarioTypeMixed
   }
 
-  // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category
-  //       implies processing type with more lax restriction that category + paradigm + engine type
+  // TODO: this is temporary, after fully switch to processing modes we should replace restriction that category
+  //       implies processing type with more lax restriction that category + processing mode + engine setup
   //       implies processing type
   test("ambiguous category to processing type mapping") {
     val categoryUsedMoreThanOnce = "CategoryUsedMoreThanOnce"

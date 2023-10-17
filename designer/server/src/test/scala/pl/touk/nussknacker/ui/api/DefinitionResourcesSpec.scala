@@ -35,10 +35,8 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    () => processCategoryService,
     TestAdditionalUIConfigProvider
   )
 
@@ -239,30 +237,43 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getServices: Option[Iterable[String]] = {
-    responseAs[Json].hcursor.downField("streaming").keys
-  }
-
-  private def getParamEditor(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("editor")
-      .focus
-      .value
-  }
-
-  private def getParamValidator(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("validators")
-      .focus
-      .value
+  it("return available combinations of scenario type setups") {
+    Get(s"/scenarioTypeSetups") ~> withPermissions(
+      definitionResources,
+      testPermissionRead
+    ) ~> check {
+      status shouldBe StatusCodes.OK
+      val responseJson = responseAs[Json]
+      println(responseJson)
+      responseJson.spaces2 shouldEqual
+        """[
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "category" : "Category1",
+          |    "engineSetupName" : "Flink"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "category" : "Category2",
+          |    "engineSetupName" : "Flink"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "category" : "ReqRes",
+          |    "engineSetupName" : "Flink"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "category" : "TESTCAT",
+          |    "engineSetupName" : "Flink"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "category" : "TESTCAT2",
+          |    "engineSetupName" : "Flink"
+          |  }
+          |]""".stripMargin
+    }
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {

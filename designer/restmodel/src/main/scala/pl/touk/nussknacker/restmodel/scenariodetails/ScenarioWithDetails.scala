@@ -34,7 +34,9 @@ final case class ScenarioWithDetails(
     json: Option[ValidatedDisplayableProcess],
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int],
-    state: Option[ProcessState]
+    state: Option[ProcessState],
+    processingMode: ProcessingMode,
+    engineSetupName: EngineSetupName
 ) {
 
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)

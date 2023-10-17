@@ -4,7 +4,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{ProcessingTypeData, ProcessingTypeSetupService}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -15,10 +15,11 @@ import pl.touk.nussknacker.ui.util.EspPathMatchers
 import scala.concurrent.ExecutionContext
 
 class DefinitionResources(
-    modelDataProvider: ProcessingTypeDataProvider[ModelData, _],
-    processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
+    processingTypeDataProvider: ProcessingTypeDataProvider[
+      ProcessingTypeData,
+      (ProcessCategoryService, ProcessingTypeSetupService)
+    ],
     fragmentRepository: FragmentRepository,
-    getProcessCategoryService: () => ProcessCategoryService,
     additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends Directives
@@ -33,7 +34,10 @@ class DefinitionResources(
       get {
         complete {
           val fragmentIds = fragmentRepository.loadFragmentIds()
-          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.modelDefinition).toList, fragmentIds)
+          ProcessObjectsFinder.componentIds(
+            processingTypeDataProvider.all.values.map(_.modelData.modelDefinition).toList,
+            fragmentIds
+          )
         }
       }
     } ~ pathPrefix("processDefinitionData" / Segment) { processingType =>
@@ -53,7 +57,7 @@ class DefinitionResources(
                     user,
                     fragments,
                     isFragment,
-                    getProcessCategoryService(),
+                    processingTypeDataProvider.combined._1,
                     processingTypeData.scenarioPropertiesConfig,
                     processingType,
                     additionalUIConfigProvider
@@ -66,6 +70,12 @@ class DefinitionResources(
         .getOrElse {
           complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
         }
+    } ~ path("scenarioTypeSetups") {
+      get {
+        complete {
+          processingTypeDataProvider.combined._2.setups
+        }
+      }
     }
   }
 
