@@ -1,5 +1,4 @@
 import React from "react";
-import "./timeRange.styl";
 import classNames from "classnames";
 import { UnknownFunction } from "../../../../../../types/common";
 import { InputWithFocus } from "../../../../../withFocus";
