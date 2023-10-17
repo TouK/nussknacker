@@ -17,14 +17,16 @@ trait V1_041__RemoveTypeSpecificDataDefinition extends ProcessJsonMigration with
       case Right(updatedJson) => Some(updatedJson)
     }
   }
+
 }
 
 object V1_041__RemoveTypeSpecificDataDefinition {
 
   def migrateMetaData(json: Json): Either[DecodingFailure, Json] = {
     json.as[CanonicalProcess] match {
-      case Left(failure) => Left(failure)
+      case Left(failure)         => Left(failure)
       case Right(updatedProcess) => Right(updatedProcess.asJson)
     }
   }
+
 }

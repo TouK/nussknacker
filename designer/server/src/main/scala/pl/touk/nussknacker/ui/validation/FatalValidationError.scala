@@ -21,14 +21,14 @@ object FatalValidationError {
     }
   }
 
-
 }
 
-case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {
+final case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {
 
   override def getMessage: String = errors.map(formatError).mkString(",")
 
   private def formatError(e: NodeValidationError): String = {
     s"${e.message}:${e.description}"
   }
+
 }

@@ -13,7 +13,7 @@ import scala.util.Try
 trait DeploymentStrategy {
 
   protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
-  protected var modelData: ModelData = _
+  protected var modelData: ModelData                              = _
 
   def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     this.modelData = modelData
@@ -22,8 +22,9 @@ trait DeploymentStrategy {
 
   def close(): Unit
 
-  def onScenarioAdded(jobData: JobData,
-                      parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[Deployment]
+  def onScenarioAdded(jobData: JobData, parsedResolvedScenario: CanonicalProcess)(
+      implicit ec: ExecutionContext
+  ): Try[Deployment]
 
 }
 

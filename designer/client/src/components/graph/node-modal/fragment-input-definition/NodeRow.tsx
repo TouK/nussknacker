@@ -1,6 +1,6 @@
-import { cx } from "@emotion/css";
 import React, { forwardRef } from "react";
 import { NodeLabel } from "./NodeLabel";
+import { NodeRow as NodeRowStyled } from "../../node-modal/NodeDetailsContent/NodeStyled";
 
 interface Props extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     label?: string;
@@ -9,11 +9,11 @@ interface Props extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElem
 export const NodeRow = forwardRef<HTMLDivElement, Props>(function FieldRow(props, ref): JSX.Element {
     const { label, className, children, ...passProps } = props;
     return (
-        <div ref={ref} className={cx("node-row", className)} {...passProps}>
+        <NodeRowStyled ref={ref} className={className} {...passProps}>
             <>
                 {label && <NodeLabel label={label} />}
                 {children}
             </>
-        </div>
+        </NodeRowStyled>
     );
 });

@@ -6,7 +6,6 @@ import { useSelector } from "react-redux";
 import HttpService from "../../http/HttpService";
 import { getProcessId, getProcessToDisplay } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import "../../stylesheets/visualization.styl";
 import { PromptContent } from "../../windowManager";
 import {
     literalIntegerValueValidator,
@@ -14,7 +13,7 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { InputWithFocus } from "../withFocus";
+import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
@@ -48,7 +47,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
                 <h3>{t("test-generate.title", "Generate test data")}</h3>
-                <InputWithFocus
+                <NodeInput
                     value={testSampleSize}
                     onChange={(event) => setState({ testSampleSize: event.target.value })}
                     className={css({

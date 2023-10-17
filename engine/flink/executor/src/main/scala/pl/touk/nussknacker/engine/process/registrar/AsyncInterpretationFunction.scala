@@ -19,10 +19,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
-private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                     val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
-  extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
+private[registrar] class AsyncInterpretationFunction(
+    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val node: SplittedNode[_ <: NodeData],
+    validationContext: ValidationContext,
+    asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+    useIOMonad: Boolean
+) extends RichAsyncFunction[Context, InterpretationResult]
+    with LazyLogging
+    with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
@@ -32,8 +37,10 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    executionContext = asyncExecutionContextPreparer.prepareExecutionContext(compiledProcessWithDeps.metaData.id,
-      getRuntimeContext.getExecutionConfig.getParallelism)
+    executionContext = asyncExecutionContextPreparer.prepareExecutionContext(
+      compiledProcessWithDeps.metaData.id,
+      getRuntimeContext.getExecutionConfig.getParallelism
+    )
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -41,7 +48,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
       invokeInterpreter(input) {
         case Right(results) =>
           val exceptions = results.collect { case Right(exInfo) => exInfo }
-          val successes = results.collect { case Left(value) => value }
+          val successes  = results.collect { case Left(value) => value }
           handleResults(collector, successes, exceptions)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
@@ -53,13 +60,13 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
 
-
   }
 
-  private def invokeInterpreter(input: Context)
-                               (callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
+  private def invokeInterpreter(
+      input: Context
+  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
-    //we leave switch to be able to return to Future if IO has some flaws...
+    // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
@@ -73,10 +80,12 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     asyncExecutionContextPreparer.close()
   }
 
-  //This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
-  private def handleResults(collector: ResultFuture[InterpretationResult],
-                            results: List[InterpretationResult],
-                            exceptions: List[NuExceptionInfo[_ <: Throwable]]): Unit = {
+  // This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
+  private def handleResults(
+      collector: ResultFuture[InterpretationResult],
+      results: List[InterpretationResult],
+      exceptions: List[NuExceptionInfo[_ <: Throwable]]
+  ): Unit = {
     try {
       exceptions.foreach(exceptionHandler.handle)
       collector.complete(results.asJava)

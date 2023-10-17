@@ -5,7 +5,7 @@ import { NodeType, PropertiesType } from "./node";
 import { ValidationResult } from "./validation";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ProcessingType } from "../actions/nk";
-import { AdditionalPropertyConfig } from "../components/graph/node-modal/AdditionalProperty";
+import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
 
 export type Process = {
     id: string;
@@ -33,7 +33,7 @@ export type CustomActionParameter = {
     editor: EditorProps;
 };
 
-export type AdditionalPropertiesConfig = Record<string, AdditionalPropertyConfig>;
+export type ScenarioPropertiesConfig = Record<string, ScenarioPropertyConfig>;
 
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
@@ -44,8 +44,8 @@ export interface ReturnedType {
 }
 
 export interface NodeObjectTypeDefinition {
-    parameters: UIParameter[];
-    outputParameters?: string[];
+    parameters: UIParameter[] | null;
+    outputParameters?: string[] | null;
     returnType: ReturnedType | null;
 }
 
@@ -65,7 +65,7 @@ export interface ProcessDefinitionData {
     componentsConfig?: ComponentsConfig;
     processDefinition?: ProcessDefinition;
     componentGroups?: ComponentGroup[];
-    additionalPropertiesConfig?: AdditionalPropertiesConfig;
+    scenarioPropertiesConfig?: ScenarioPropertiesConfig;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
     defaultAsyncInterpretation?: boolean;

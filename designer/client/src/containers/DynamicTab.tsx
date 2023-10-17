@@ -1,26 +1,37 @@
 import * as queryString from "query-string";
 import React, { memo, useMemo } from "react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
-import { ExternalModule, splitUrl } from "./ExternalLib";
-import { ModuleString, ModuleUrl } from "./ExternalLib/types";
-import { MuiThemeProvider } from "./muiThemeProvider";
+import { splitUrl } from "./ExternalLib";
+import { ModuleUrl } from "./ExternalLib/types";
 import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
 import { RemoteComponent } from "./ExternalLib/RemoteComponent";
+import { NuThemeProvider } from "./theme/nuThemeProvider";
 
-export type DynamicTabData = {
-    title: string;
-    id: string;
+export type BaseTab = {
+    tab: BaseTabData;
+};
+
+export type BaseTabData = {
     // expected:
     //  * url of working app - to include in iframe
     //  * url ({module}/{path}@{host}/{remoteEntry}.js) of hosted remoteEntry js file (module federation) with default exported react component - included as component
     //  * url of internal route in NK
     url: string;
-    requiredPermission?: string;
     type: "Local" | "IFrame" | "Remote" | "Url";
     addAccessTokenInQueryParam?: boolean;
+    accessTokenInQuery?: {
+        enabled: boolean;
+        parameterName: string;
+    };
+};
+
+export type DynamicTabData = BaseTabData & {
+    title: string;
+    id: string;
+    requiredPermission?: string;
 };
 
 export interface RemoteComponentProps {
@@ -41,20 +52,31 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
         <ErrorBoundary FallbackComponent={() => <NotFound />}>
-            <MuiThemeProvider>
+            <NuThemeProvider>
                 <ScopedCssBaseline style={{ flex: 1, overflow: "hidden" }}>
                     <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
                 </ScopedCssBaseline>
-            </MuiThemeProvider>
+            </NuThemeProvider>
         </ErrorBoundary>
     );
 };
 
-export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url"> }) => {
-    const { addAccessTokenInQueryParam, url } = tab;
-    const accessToken = addAccessTokenInQueryParam && SystemUtils.getAccessToken();
+export const IframeTab = ({ tab }: BaseTab) => {
+    const { addAccessTokenInQueryParam, accessTokenInQuery, url } = tab;
+    const accessToken = (addAccessTokenInQueryParam || accessTokenInQuery?.enabled) && SystemUtils.getAccessToken();
+    const accessTokenParam = {};
+    if (accessToken != null) {
+        // accessToken name is for backward compatibility reasons
+        const accessTokenParamName = addAccessTokenInQueryParam ? "accessToken" : accessTokenInQuery.parameterName;
+        accessTokenParam[accessTokenParamName] = accessToken;
+    }
     return (
-        <iframe src={queryString.stringifyUrl({ url, query: { iframe: true, accessToken } })} width="100%" height="100%" frameBorder="0" />
+        <iframe
+            src={queryString.stringifyUrl({ url, query: { iframe: true, ...accessTokenParam } })}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+        />
     );
 };
 
@@ -71,15 +93,11 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
     );
 }
 
-export const DynamicTab = memo(function DynamicComponent<
-    P extends {
-        tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type">;
-    },
->({ tab, ...props }: P): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<P extends BaseTab>({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {
         case "Remote":
-            return <RemoteModuleTab url={tab.url} componentProps={componentProps} />;
+            return <RemoteModuleTab url={tab.url as ModuleUrl} componentProps={componentProps} />;
         case "IFrame":
             return <IframeTab tab={tab} />;
     }

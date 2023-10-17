@@ -13,20 +13,32 @@ import scala.util.{Failure, Success, Try}
 
 class JsonSchemaExtractor {
 
-  def getSchemaFromProperty(property: String, metaData: MetaData, nodeId: NodeId): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
-    def invalid(message: String): Invalid[NonEmptyList[CustomNodeError]] = Invalid(NonEmptyList.one(CustomNodeError(message, None)(nodeId)))
+  def getSchemaFromProperty(
+      property: String,
+      metaData: MetaData,
+      nodeId: NodeId
+  ): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
+    def invalid(message: String): Invalid[NonEmptyList[CustomNodeError]] = Invalid(
+      NonEmptyList.one(CustomNodeError(message, None)(nodeId))
+    )
 
-    metaData.additionalFields.properties.get(property)
-      .map(rawSchema => Try(JsonSchemaBuilder.parseSchema(rawSchema)) match {
-        case Success(schema) => Valid(schema)
-        case Failure(exc) => invalid(s"""Error at parsing \"$property\": ${exc.getMessage}.""")
-      })
+    metaData.additionalFields.properties
+      .get(property)
+      .map(rawSchema =>
+        Try(JsonSchemaBuilder.parseSchema(rawSchema)) match {
+          case Success(schema) => Valid(schema)
+          case Failure(exc)    => invalid(s"""Error at parsing \"$property\": ${exc.getMessage}.""")
+        }
+      )
       .getOrElse(invalid(s"""Missing \"$property\" property."""))
   }
 
-  def getSchemaFromProperty(property:String, dependencies: List[NodeDependencyValue]): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
+  def getSchemaFromProperty(
+      property: String,
+      dependencies: List[NodeDependencyValue]
+  ): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
     val metaData = TypedNodeDependency[MetaData].extract(dependencies)
-    val nodeId = TypedNodeDependency[NodeId].extract(dependencies)
+    val nodeId   = TypedNodeDependency[NodeId].extract(dependencies)
     getSchemaFromProperty(property, metaData, nodeId)
   }
 

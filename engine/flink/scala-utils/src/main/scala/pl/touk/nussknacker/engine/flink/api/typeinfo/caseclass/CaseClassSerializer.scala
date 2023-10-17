@@ -29,10 +29,8 @@ import org.apache.flink.types.NullFieldException
  */
 @Internal
 @SerialVersionUID(7341356073446263475L)
-abstract class CaseClassSerializer[T <: Product](
-                                                  clazz: Class[T],
-                                                  scalaFieldSerializers: Array[TypeSerializer[_]])
-  extends TupleSerializerBase[T](clazz, scalaFieldSerializers)
+abstract class CaseClassSerializer[T <: Product](clazz: Class[T], scalaFieldSerializers: Array[TypeSerializer[_]])
+    extends TupleSerializerBase[T](clazz, scalaFieldSerializers)
     with Cloneable {
 
   @transient var fields: Array[AnyRef] = _
@@ -101,7 +99,7 @@ abstract class CaseClassSerializer[T <: Product](
     var i = 0
     while (i < arity) {
       val serializer = fieldSerializers(i).asInstanceOf[TypeSerializer[Any]]
-      val o = value.productElement(i)
+      val o          = value.productElement(i)
       try
         serializer.serialize(o, target)
       catch {
@@ -131,4 +129,5 @@ abstract class CaseClassSerializer[T <: Product](
       fields = new Array[AnyRef](arity)
     }
   }
+
 }

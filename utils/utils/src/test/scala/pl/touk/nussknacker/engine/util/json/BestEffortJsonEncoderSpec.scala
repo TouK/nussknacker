@@ -28,18 +28,15 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
     encoder.encode("ala") shouldEqual fromString("ala")
     encoder.encode(true) shouldEqual fromBoolean(true)
     encoder.encode(java.lang.Boolean.TRUE) shouldEqual fromBoolean(true)
-    encoder.encode(LocalDateTime.of(2020, 9, 12,
-      11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
+    encoder.encode(LocalDateTime.of(2020, 9, 12, 11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
 
     encoder.encode(LocalDate.of(2020, 9, 12)) shouldEqual fromString("2020-09-12")
     encoder.encode(LocalTime.of(11, 55, 33)) shouldEqual fromString("11:55:33")
 
-
-    val zonedTime = ZonedDateTime.of(2020, 9, 12,
-          11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))
+    val zonedTime = ZonedDateTime.of(2020, 9, 12, 11, 55, 33, 0, ZoneId.of("Europe/Warsaw"))
     encoder.encode(zonedTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
     encoder.encode(zonedTime.toOffsetDateTime) shouldEqual fromString("2020-09-12T11:55:33+02:00")
-    //Default Instant encoding is in Z
+    // Default Instant encoding is in Z
     encoder.encode(zonedTime.toInstant) shouldEqual fromString("2020-09-12T09:55:33Z")
 
     val uuid = UUID.randomUUID()
@@ -56,7 +53,9 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
   it("should encode collections as a json") {
     encoder.encode(List(1, 2, "3")) shouldEqual fromValues(List(fromLong(1), fromLong(2), fromString("3")))
     encoder.encode(ListSet(2, 1, 3)) shouldEqual fromValues(List(fromLong(2), fromLong(1), fromLong(3)))
-    encoder.encode(util.Arrays.asList(1, 2, "3")) shouldEqual fromValues(List(fromLong(1), fromLong(2), fromString("3")))
+    encoder.encode(util.Arrays.asList(1, 2, "3")) shouldEqual fromValues(
+      List(fromLong(1), fromLong(2), fromString("3"))
+    )
     val set = new util.LinkedHashSet[Any]
     set.add(2)
     set.add(1)
@@ -81,13 +80,20 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
   it("should use custom encoders from classloader") {
 
-    ClassLoaderWithServices.withCustomServices(List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1],
-      classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])) { classLoader =>
+    ClassLoaderWithServices.withCustomServices(
+      List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1], classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])
+    ) { classLoader =>
       val encoder = BestEffortJsonEncoder(failOnUnknown = true, classLoader)
 
-      encoder.encode(Map("custom1" ->
-        CustomClassToEncode(Map("custom2" -> new NestedClassToEncode)))) shouldBe obj("custom1" ->
-          obj("customEncode" -> obj("custom2" -> fromString("value"))))
+      encoder.encode(
+        Map(
+          "custom1" ->
+            CustomClassToEncode(Map("custom2" -> new NestedClassToEncode))
+        )
+      ) shouldBe obj(
+        "custom1" ->
+          obj("customEncode" -> obj("custom2" -> fromString("value")))
+      )
     }
 
   }
@@ -96,16 +102,18 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
 class CustomJsonEncoder1 extends ToJsonEncoder {
 
-  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
-    case CustomClassToEncode(value) => obj("customEncode" -> encode(value))
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case CustomClassToEncode(value) =>
+    obj("customEncode" -> encode(value))
   }
+
 }
 
 class CustomJsonEncoder2 extends ToJsonEncoder {
 
-  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
-    case _: NestedClassToEncode => fromString("value")
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case _: NestedClassToEncode =>
+    fromString("value")
   }
+
 }
 
 case class CustomClassToEncode(value: Any)

@@ -17,42 +17,52 @@ case object EmptyService extends Service {
 }
 
 case object OneParamService extends Service {
+
   @MethodToInvoke
-  def invoke(@SimpleEditor(
-    `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-    possibleValues = Array(
-      new LabeledExpression(expression = "'a'", label = "a"),
-      new LabeledExpression(expression = "'b'", label = "b"),
-      new LabeledExpression(expression = "'c'", label = "c")
-    )
-  )
-             @ParamName("param") param: String): Future[String] =
+  def invoke(
+      @SimpleEditor(
+        `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+        possibleValues = Array(
+          new LabeledExpression(expression = "'a'", label = "a"),
+          new LabeledExpression(expression = "'b'", label = "b"),
+          new LabeledExpression(expression = "'c'", label = "c")
+        )
+      )
+      @ParamName("param") param: String
+  ): Future[String] =
     Future.successful(param)
+
 }
 
 case object ComplexReturnObjectService extends Service {
+
   @MethodToInvoke
   def invoke(): Future[ComplexObject] = {
     Future.successful(ComplexObject(Map("foo" -> 1, "bar" -> "baz").asJava))
   }
+
 }
 
 case object Enricher extends Service {
+
   @MethodToInvoke
   def invoke(@ParamName("param") param: String, @ParamName("tariffType") tariffType: TariffType): Future[RichObject] =
     Future.successful(RichObject(param, 123L, Optional.of("rrrr")))
+
 }
 
 case object EnricherNullResult extends Service {
+
   @MethodToInvoke
   def invoke(@ParamName("param") param: String): Future[RichObject] =
     Future.successful(null)
+
 }
 
 case object ListReturnObjectService extends Service {
 
   @MethodToInvoke
-  def invoke() : Future[java.util.List[RichObject]] = {
+  def invoke(): Future[java.util.List[RichObject]] = {
     Future.successful(util.Arrays.asList(RichObject("abcd1", 1234L, Optional.of("defg"))))
   }
 

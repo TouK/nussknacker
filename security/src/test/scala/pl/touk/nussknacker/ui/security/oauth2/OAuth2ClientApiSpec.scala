@@ -9,11 +9,12 @@ import sttp.client3.StringBody
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
 import org.scalatest.flatspec.AnyFlatSpec
+import pl.touk.nussknacker.ui.security.oidc.DefaultOidcAuthorizationData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
+class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite {
   import io.circe.syntax._
 
   val config = ExampleOAuth2ServiceFactory.testConfig
@@ -38,11 +39,11 @@ class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter 
     client.accessTokenRequest("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     val request = testingBackend.allInteractions.head._1
-    inside(request.body) {
-      case StringBody(s, _, _) => s should include (s"client_id=${config.clientId}")
+    inside(request.body) { case StringBody(s, _, _) =>
+      s should include(s"client_id=${config.clientId}")
     }
     request.headers should contain
-      (Header(HeaderNames.ContentType, MediaType.ApplicationXWwwFormUrlencoded.toString()))
+    (Header(HeaderNames.ContentType, MediaType.ApplicationXWwwFormUrlencoded.toString()))
   }
 
   it should ("send access token request as json") in {
@@ -53,11 +54,11 @@ class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter 
     client.accessTokenRequest("6V1reBXblpmfjRJP", "http://ignored").futureValue
 
     val request = testingBackend.allInteractions.head._1
-    inside(request.body) {
-      case StringBody(s, _, _) => s should include (s""""client_id":"${config.clientId}"""")
+    inside(request.body) { case StringBody(s, _, _) =>
+      s should include(s""""client_id":"${config.clientId}"""")
     }
     request.headers should contain
-      (Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString))
+    (Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString))
   }
 
 }

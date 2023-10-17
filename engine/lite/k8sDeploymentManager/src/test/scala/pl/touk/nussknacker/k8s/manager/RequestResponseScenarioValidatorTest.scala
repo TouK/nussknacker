@@ -10,24 +10,37 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 class RequestResponseScenarioValidatorTest extends AnyFunSuite with Matchers {
 
   private val notImportantScenarioName = ProcessName("fooScenario")
-  private val validSlug = "asdf"
-  private val invalidK8sServiceName = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
-  private val noInstanceNameValidator = new RequestResponseScenarioValidator(None)
+  private val validSlug                = "asdf"
+  private val invalidK8sServiceName    = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
+  private val noInstanceNameValidator  = new RequestResponseScenarioValidator(None)
 
   test("validate against service name for not defined instance name") {
-    val scenarioWithLongName = ScenarioBuilder.requestResponse(notImportantScenarioName.value, invalidK8sServiceName)
+    val scenarioWithLongName = ScenarioBuilder
+      .requestResponse(notImportantScenarioName.value, invalidK8sServiceName)
       .source("source", "dumb")
       .emptySink("sink", "dumb")
     noInstanceNameValidator.validate(scenarioWithLongName) shouldBe Symbol("invalid")
-    noInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some(validSlug))) shouldBe Symbol("valid")
-    noInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some(invalidK8sServiceName))) shouldBe Symbol("invalid")
+    noInstanceNameValidator.validateRequestResponse(
+      notImportantScenarioName,
+      RequestResponseMetaData(Some(validSlug))
+    ) shouldBe Symbol("valid")
+    noInstanceNameValidator.validateRequestResponse(
+      notImportantScenarioName,
+      RequestResponseMetaData(Some(invalidK8sServiceName))
+    ) shouldBe Symbol("invalid")
   }
 
   test("validate against service name for defined instance name") {
-    val nussknackerInstanceName = (1 to (K8sUtils.maxObjectNameLength - 3)).map(_ => "a").mkString
+    val nussknackerInstanceName   = (1 to (K8sUtils.maxObjectNameLength - 3)).map(_ => "a").mkString
     val longInstanceNameValidator = new RequestResponseScenarioValidator(Some(nussknackerInstanceName))
-    longInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some("a"))) shouldBe Symbol("valid")
-    longInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some("aaaa"))) shouldBe Symbol("invalid")
+    longInstanceNameValidator.validateRequestResponse(
+      notImportantScenarioName,
+      RequestResponseMetaData(Some("a"))
+    ) shouldBe Symbol("valid")
+    longInstanceNameValidator.validateRequestResponse(
+      notImportantScenarioName,
+      RequestResponseMetaData(Some("aaaa"))
+    ) shouldBe Symbol("invalid")
   }
 
   test("validates fragment") {

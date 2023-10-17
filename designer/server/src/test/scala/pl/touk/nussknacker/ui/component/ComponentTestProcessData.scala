@@ -19,27 +19,27 @@ object ComponentTestProcessData {
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val DefaultSourceName = "source"
-  val SecondSourceName = "secondSource"
+  val SecondSourceName  = "secondSource"
 
   val DefaultSinkName = "sink"
 
-  val DefaultFilterName = "someFilter"
-  val SecondFilterName = "someFilter2"
+  val DefaultFilterName  = "someFilter"
+  val SecondFilterName   = "someFilter2"
   val FragmentFilterName = "fragmentFilter"
 
   val DefaultCustomName = "customEnricher"
-  val SecondCustomName = "secondCustomEnricher"
+  val SecondCustomName  = "secondCustomEnricher"
 
   val SecondSharedSourceConf: NodeConf = NodeConf(SecondSourceName, SharedSourceName)
-  val SharedSourceConf: NodeConf = NodeConf(DefaultSourceName, SharedSourceName)
-  val NotSharedSourceConf: NodeConf = NodeConf(DefaultSourceName, NotSharedSourceName)
-  val SharedSinkConf: NodeConf = NodeConf(DefaultSinkName, SharedSinkName)
+  val SharedSourceConf: NodeConf       = NodeConf(DefaultSourceName, SharedSourceName)
+  val NotSharedSourceConf: NodeConf    = NodeConf(DefaultSourceName, NotSharedSourceName)
+  val SharedSinkConf: NodeConf         = NodeConf(DefaultSinkName, SharedSinkName)
 
   val DeployedMarketingProcessName = "deployedMarketingProcess"
 
-  val FraudFragmentName = "fraudFragmentName"
-  val DeployedFraudProcessName = "deployedFraudProcess"
-  val CanceledFraudProcessName = "canceledFraudProcessName"
+  val FraudFragmentName            = "fraudFragmentName"
+  val DeployedFraudProcessName     = "deployedFraudProcess"
+  val CanceledFraudProcessName     = "canceledFraudProcessName"
   val FraudProcessWithFragmentName = "fraudProcessWithFragment"
 
   private val deployedAction = prepareTestAction(ProcessActionType.Deploy)
@@ -59,7 +59,8 @@ object ComponentTestProcessData {
       failureMessage = Option.empty,
       commentId = Option.empty,
       comment = Option.empty,
-      buildInfo = Map.empty)
+      buildInfo = Map.empty
+    )
 
   val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),
@@ -72,7 +73,8 @@ object ComponentTestProcessData {
   )
 
   val FraudProcessWithNotSharedSource: ProcessDetails = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
+    displayable =
+      createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
     category = CategoryFraud
   )
 
@@ -94,7 +96,6 @@ object ComponentTestProcessData {
     },
     category = CategoryFraud
   ).copy(lastAction = Some(deployedAction))
-
 
   val CanceledFraudProcessWith2Enrichers: ProcessDetails = displayableToProcess(
     displayable = {
@@ -134,10 +135,18 @@ object ComponentTestProcessData {
         .streaming(FraudProcessWithFragmentName)
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
-        .fragment(FraudFragment.id, FraudFragment.id, Nil, Map.empty, Map(
-          "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
-        ))
-      , Fraud), category = CategoryFraud
+        .fragment(
+          FraudFragment.id,
+          FraudFragment.id,
+          Nil,
+          Map.empty,
+          Map(
+            "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
+          )
+        ),
+      Fraud
+    ),
+    category = CategoryFraud
   )
 
   val WrongCategoryProcess: ProcessDetails = displayableToProcess(
@@ -145,7 +154,12 @@ object ComponentTestProcessData {
     category = "wrongCategory"
   )
 
-  private def createSimpleDisplayableProcess(id: String, processingType: String, source: NodeConf, sink: NodeConf): DisplayableProcess = toDisplayable(
+  private def createSimpleDisplayableProcess(
+      id: String,
+      processingType: String,
+      source: NodeConf,
+      sink: NodeConf
+  ): DisplayableProcess = toDisplayable(
     espProcess = {
       ScenarioBuilder
         .streaming(id)
@@ -159,5 +173,5 @@ object ComponentTestProcessData {
    * @param name - created by user on GUI
    * @param id   - id placed in ProcessConfigCreator
    */
-  case class NodeConf(name: String, id: String)
+  final case class NodeConf(name: String, id: String)
 }

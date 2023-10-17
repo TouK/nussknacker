@@ -22,7 +22,7 @@ class InvocationMetrics(context: EngineRuntimeContext) {
   private lazy val successTimer = espTimer(Map(), NonEmptyList.of("invocation", "success"))
 
   def measureTime[T, Effect[_]: Monad](
-    invocation: => Effect[ValidatedNel[ErrorType, T]]
+      invocation: => Effect[ValidatedNel[ErrorType, T]]
   ): Effect[ValidatedNel[ErrorType, T]] = {
     val start = System.nanoTime()
     try {

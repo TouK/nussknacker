@@ -9,9 +9,10 @@ import java.time.LocalDateTime
 class AvroUtilsTest extends AnyFunSuite with Matchers {
 
   test("testCreateRecord") {
-    val recordUserSchema = AvroUtils.parseSchema("""{"name": "UserRecord","type":"record","fields":[{"name":"user","type":["null","string"]}]}""")
-    val schema = AvroUtils.parseSchema(
-      s"""
+    val recordUserSchema = AvroUtils.parseSchema(
+      """{"name": "UserRecord","type":"record","fields":[{"name":"user","type":["null","string"]}]}"""
+    )
+    val schema = AvroUtils.parseSchema(s"""
         |{
         |  "type": "record",
         |  "name": "Record",
@@ -28,16 +29,16 @@ class AvroUtilsTest extends AnyFunSuite with Matchers {
         |""".stripMargin)
 
     val company = "Touk"
-    val name = "lcl"
-    val year = LocalDateTime.now().getYear
+    val name    = "lcl"
+    val year    = LocalDateTime.now().getYear
 
     val data = Map(
-      "year" -> year,
+      "year"       -> year,
       "recordUser" -> Map("user" -> name),
-      "array" -> List(List(company)),
+      "array"      -> List(List(company)),
       "arrayOfMap" -> List(Map("company" -> company)),
-      "map" -> Map("key" -> Map("company" -> company)),
-      "mapOfArray"-> Map("key" -> List(company))
+      "map"        -> Map("key" -> Map("company" -> company)),
+      "mapOfArray" -> Map("key" -> List(company))
     )
 
     val recordWithUser = new LogicalTypesGenericRecordBuilder(recordUserSchema).set("user", name).build()

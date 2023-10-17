@@ -11,11 +11,15 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class TypedMapRequestResponseSourceFactory extends RequestResponseSourceFactory {
 
   @MethodToInvoke
-  def create(@ParamName("type") definition: java.util.Map[String, _])(implicit nodeIdPassed: NodeId): RequestResponseGetSource[TypedMap] = new RequestResponseGetSource[TypedMap] with ReturningType with SourceTestSupport[TypedMap] {
+  def create(
+      @ParamName("type") definition: java.util.Map[String, _]
+  )(implicit nodeIdPassed: NodeId): RequestResponseGetSource[TypedMap] = new RequestResponseGetSource[TypedMap]
+    with ReturningType
+    with SourceTestSupport[TypedMap] {
 
     override val nodeId: NodeId = nodeIdPassed
 
-    //TODO: type conversions??
+    // TODO: type conversions??
     override def parse(parameters: Map[String, List[String]]): TypedMap = TypedMap(parameters.mapValuesNow(_.head))
 
     override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
@@ -24,4 +28,3 @@ class TypedMapRequestResponseSourceFactory extends RequestResponseSourceFactory 
   }
 
 }
-

@@ -1,6 +1,6 @@
 import { ScriptUrl } from "../types";
 
-export function createScript(url: ScriptUrl): Promise<void> {
+export function createScript(url: `${ScriptUrl}?${string}`): Promise<void> {
     const element = document.createElement(`script`);
 
     return new Promise<void>((resolve, reject) => {

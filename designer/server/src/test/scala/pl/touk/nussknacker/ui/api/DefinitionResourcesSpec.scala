@@ -16,19 +16,30 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll
-  with NuResourcesTest with OptionValues {
+class DefinitionResourcesSpec
+    extends AnyFunSpec
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with EitherValuesDetailedMessage
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest
+    with OptionValues {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    processCategoryService
+    processCategoryService,
+    TestAdditionalUIConfigProvider
   )
 
   it("should handle missing scenario type") {
@@ -66,9 +77,13 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   }
 
   it("should return info about editor based on fragment node configuration") {
-    val processName = ProcessName(SampleProcess.process.id)
+    val processName         = ProcessName(SampleProcess.process.id)
     val processWithfragment = ProcessTestData.validProcessWithFragment(processName)
-    val displayablefragment = ProcessConverter.toDisplayable(processWithfragment.fragment, TestProcessingTypes.Streaming, TestCategories.TestCat)
+    val displayablefragment = ProcessConverter.toDisplayable(
+      processWithfragment.fragment,
+      TestProcessingTypes.Streaming,
+      TestCategories.TestCat
+    )
     savefragment(displayablefragment)(succeed)
     saveProcess(processName, processWithfragment.process, TestCat)(succeed)
 
@@ -84,21 +99,23 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
-        .focus.value
+        .focus
+        .value
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
   }
 
-  it("return info about validator based on param fixed value editor for additional properties") {
+  it("return info about validator based on param fixed value editor for scenario properties") {
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
 
       val validators: Json = responseAs[Json].hcursor
-        .downField("additionalPropertiesConfig")
+        .downField("scenarioPropertiesConfig")
         .downField("numberOfThreads")
         .downField("validators")
-        .focus.value
+        .focus
+        .value
 
       validators shouldBe
         Json.arr(
@@ -106,11 +123,11 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
             "possibleValues" -> Json.arr(
               Json.obj(
                 "expression" -> Json.fromString("1"),
-                "label" -> Json.fromString("1")
+                "label"      -> Json.fromString("1")
               ),
               Json.obj(
                 "expression" -> Json.fromString("2"),
-                "label" -> Json.fromString("2")
+                "label"      -> Json.fromString("2")
               )
             ),
             "type" -> Json.fromString("FixedValuesValidator")
@@ -134,7 +151,8 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downAt(_.hcursor.get[String]("name").rightValue == "id")
         .downField("expression")
         .downField("expression")
-        .focus.value
+        .focus
+        .value
 
       defaultExpression shouldBe Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE")
     }
@@ -155,7 +173,8 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downAt(_.hcursor.get[String]("name").rightValue == "role")
         .downField("expression")
         .downField("expression")
-        .focus.value
+        .focus
+        .value
 
       defaultExpression shouldBe Json.fromString("'Events'")
     }
@@ -174,11 +193,18 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("node")
         .downField("ref")
         .downField("parameters")
-        .focus.value.asArray.value
+        .focus
+        .value
+        .asArray
+        .value
 
       val initialParamNames = parameters.map(_.hcursor.downField("name").focus.value.asString.value)
-      initialParamNames shouldEqual List(KafkaUniversalComponentTransformer.TopicParamName, KafkaUniversalComponentTransformer.SchemaVersionParamName)
-      val initialExpressions = parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
+      initialParamNames shouldEqual List(
+        KafkaUniversalComponentTransformer.TopicParamName,
+        KafkaUniversalComponentTransformer.SchemaVersionParamName
+      )
+      val initialExpressions =
+        parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
       initialExpressions shouldEqual List("", s"'${SchemaVersionOption.LatestOptionName}'")
     }
   }
@@ -196,14 +222,23 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("node")
         .downField("service")
         .downField("parameters")
-        .focus.value.asArray.value
+        .focus
+        .value
+        .asArray
+        .value
 
       val initialParamNames = parameters.map(_.hcursor.downField("name").focus.value.asString.value)
       initialParamNames shouldEqual List("foo", "bar", "baz")
-      val initialExpressions = parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
-      initialExpressions shouldEqual List("'fooValueFromConfig'", "'barValueFromProviderCode'", "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'")
+      val initialExpressions =
+        parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
+      initialExpressions shouldEqual List(
+        "'fooValueFromConfig'",
+        "'barValueFromProviderCode'",
+        "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
+      )
     }
   }
+
   private def getServices: Option[Iterable[String]] = {
     responseAs[Json].hcursor.downField("streaming").keys
   }
@@ -215,7 +250,8 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
       .downField("parameters")
       .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("editor")
-      .focus.value
+      .focus
+      .value
   }
 
   private def getParamValidator(serviceName: String, paramName: String) = {
@@ -225,10 +261,15 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
       .downField("parameters")
       .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("validators")
-      .focus.value
+      .focus
+      .value
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {
-    Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(definitionResources, testPermissionRead)
+    Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(
+      definitionResources,
+      testPermissionRead
+    )
   }
+
 }

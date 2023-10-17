@@ -48,11 +48,23 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
     Table(
       ("expression", "expected"),
-      ("#COLLECTION.merge({a:4,c:2,b:3,d:1},{f:'rr',e:'5'})", "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5), f: String(rr)}"),
+      (
+        "#COLLECTION.merge({a:4,c:2,b:3,d:1},{f:'rr',e:'5'})",
+        "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5), f: String(rr)}"
+      ),
       ("#COLLECTION.merge({a:4},{e:'5',f:'rr'})", "Record{a: Integer(4), e: String(5), f: String(rr)}"),
-      ("#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5'})", "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5)}"),
-      ("#COLLECTION.merge({a:{innerA:10}},{b:{innerB:10}})", "Record{a: Record{innerA: Integer(10)}, b: Record{innerB: Integer(10)}}"),
-      ("#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})", "Record{a: Record{innerA: List[Integer]}, b: Record{innerB: List[Integer(20)]}}"),
+      (
+        "#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5'})",
+        "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5)}"
+      ),
+      (
+        "#COLLECTION.merge({a:{innerA:10}},{b:{innerB:10}})",
+        "Record{a: Record{innerA: Integer(10)}, b: Record{innerB: Integer(10)}}"
+      ),
+      (
+        "#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})",
+        "Record{a: Record{innerA: List[Integer]}, b: Record{innerB: List[Integer(20)]}}"
+      ),
       ("#COLLECTION.merge({a:4,b:3},{a:'5'})", "Record{a: String(5), b: Integer(3)}"),
       ("#COLLECTION.merge(#unknownMap,{a:'5'})", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge(#unknownMap,#unknownMap)", "Map[Unknown,Unknown]"),
@@ -95,14 +107,16 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#COLLECTION.slice({{a: 1}}, -2, 1)") shouldBe "List[Record{a: Integer}]".valid
   }
 
-  test("sum for given empty list should return 0.0 (Double) - we are not able to determine the expected type for an empty list") {
+  test(
+    "sum for given empty list should return 0.0 (Double) - we are not able to determine the expected type for an empty list"
+  ) {
     val lists = Map(
-      "byte" -> List.empty[java.lang.Byte].asJava,
-      "short" -> List.empty[java.lang.Short].asJava,
-      "int" -> List.empty[java.lang.Integer].asJava,
-      "long" -> List.empty[java.lang.Long].asJava,
+      "byte"   -> List.empty[java.lang.Byte].asJava,
+      "short"  -> List.empty[java.lang.Short].asJava,
+      "int"    -> List.empty[java.lang.Integer].asJava,
+      "long"   -> List.empty[java.lang.Long].asJava,
       "bigInt" -> List.empty[java.math.BigInteger].asJava,
-      "float" -> List.empty[java.lang.Float].asJava,
+      "float"  -> List.empty[java.lang.Float].asJava,
       "double" -> List.empty[java.lang.Double].asJava,
       "bigDec" -> List.empty[java.math.BigDecimal].asJava,
     )
@@ -120,12 +134,12 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   test("sum should coerce to a compatible type of highest precision") {
     val variables = Map(
-      "byte" -> 1.byteValue(),
-      "short" -> 1.shortValue(),
-      "int" -> 1,
-      "long" -> 1L,
+      "byte"   -> 1.byteValue(),
+      "short"  -> 1.shortValue(),
+      "int"    -> 1,
+      "long"   -> 1L,
       "bigInt" -> java.math.BigInteger.valueOf(1),
-      "float" -> 1.0f,
+      "float"  -> 1.0f,
       "double" -> 1.0,
       "bigDec" -> java.math.BigDecimal.valueOf(1),
     )
@@ -159,10 +173,12 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateAny("#COLLECTION.sum({#byte})", variables) shouldBe 1.byteValue()
 
     evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long, #bigInt, #float, #double, #bigDec})", variables)
-      .asInstanceOf[java.math.BigDecimal].compareTo(java.math.BigDecimal.valueOf(8.0)) shouldBe 0
+      .asInstanceOf[java.math.BigDecimal]
+      .compareTo(java.math.BigDecimal.valueOf(8.0)) shouldBe 0
     evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long, #bigInt, #float, #double})", variables) shouldBe 7.0
     evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long, #bigInt, #float})", variables) shouldBe 6.0
-    evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long, #bigInt})", variables) shouldBe java.math.BigInteger.valueOf(5)
+    evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long, #bigInt})", variables) shouldBe java.math.BigInteger
+      .valueOf(5)
     evaluateAny("#COLLECTION.sum({#byte, #short, #int, #long})", variables) shouldBe 4L
     evaluateAny("#COLLECTION.sum({#byte, #short, #int})", variables) shouldBe 3L
     evaluateAny("#COLLECTION.sum({#byte, #short})", variables) shouldBe 2L
@@ -218,7 +234,9 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       Map("b" -> "b", "d" -> "d").asJava,
     ).asJava
 
-    evaluateType("#COLLECTION.product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}})") shouldBe "List[Map[Unknown,Unknown]]".valid
+    evaluateType(
+      "#COLLECTION.product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}})"
+    ) shouldBe "List[Map[Unknown,Unknown]]".valid
   }
 
   test("diff") {
@@ -262,7 +280,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
   test("should throw if elements are not comparable") {
     val variables = Map(
       "list" -> List(new NonComparable).asJava,
-      "map" -> Map("key" -> new NonComparable).asJava,
+      "map"  -> Map("key" -> new NonComparable).asJava,
     )
 
     // For `min` and `max` it can be validated at compilation stage
@@ -274,7 +292,9 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       val caught = intercept[SpelCompilationException] {
         evaluateType(expression, variables)
       }
-      caught.getMessage should include("NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable])")
+      caught.getMessage should include(
+        "NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable])"
+      )
     }
 
     // For other methods it is validated at runtime
@@ -293,7 +313,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
   test("should throw if elements are not mutually comparable") {
     val variables = Map(
       "list" -> List("a", 1).asJava,
-      "map" -> Map("k1" -> "a", "k2" -> 1).asJava,
+      "map"  -> Map("k1" -> "a", "k2" -> 1).asJava,
     )
     Table(
       "expression",
@@ -311,8 +331,8 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   private val types = Map(
     "unknownMap" -> Typed.fromDetailedType[java.util.Map[Any, Any]],
-    "stringMap" -> Typed.fromDetailedType[java.util.Map[String, Any]],
-    "typedMap" -> Typed.fromInstance(Map("key".asInstanceOf[Any] -> 20.asInstanceOf[Any]).asJava)
+    "stringMap"  -> Typed.fromDetailedType[java.util.Map[String, Any]],
+    "typedMap"   -> Typed.fromInstance(Map("key".asInstanceOf[Any] -> 20.asInstanceOf[Any]).asJava)
   )
 
   private class NonComparable {}
@@ -326,4 +346,5 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
     override def doubleValue(): Double = 4.0
   }
+
 }

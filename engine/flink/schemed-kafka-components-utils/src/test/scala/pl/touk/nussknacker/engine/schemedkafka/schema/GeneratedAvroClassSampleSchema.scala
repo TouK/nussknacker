@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
+
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
 
@@ -23,11 +24,11 @@ object GeneratedAvroClassSampleSchema extends TestSchemaWithSpecificRecord {
   )
 
   override def exampleData: Map[String, Any] = Map(
-    "id" -> 123L,
+    "id"    -> 123L,
     "title" -> "The Catcher in the Rye",
     "ratio" -> 12.34f,
     "description" -> "16-year-old Holden's experiences in New York City after his fourth expulsion and departure from an elite college preparatory school.",
-    "status" -> SampleStatus.OK,
+    "status"   -> SampleStatus.OK,
     "location" -> new SampleLocation(234L, 345L),
     "customers" -> util.Arrays.asList(
       new SampleCustomer("John", "Smith"),

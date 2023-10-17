@@ -11,8 +11,7 @@ import scala.jdk.CollectionConverters._
 class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
 
   test("reporter should be created for correct format") {
-    val config = ConfigFactory.parseString(
-      """influx {
+    val config = ConfigFactory.parseString("""influx {
         |  url: "http://localhost",
         |  database: "fooDb"
         |}""".stripMargin)
@@ -22,8 +21,7 @@ class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
   test("reporter shouldn't be created if config has illegal format") {
     createAndRunReporterIfConfigured(ConfigFactory.empty()) shouldBe empty
 
-    val configWithInvalidUrl = ConfigFactory.parseString(
-      """influx {
+    val configWithInvalidUrl = ConfigFactory.parseString("""influx {
         |  url: "/urlWithMissingScheme",
         |  database: "fooDb"
         |}""".stripMargin)
@@ -36,8 +34,13 @@ class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
   }
 
   object StubbedLiteEngineInfluxDbReporter extends LiteEngineInfluxDbReporter {
-    override protected def createAndRunReporter(metricRegistry: MetricRegistry, prefix: MetricName,
-                                                influxSenderConfig: InfluxSenderConfig): InfluxDbReporter = null
+
+    override protected def createAndRunReporter(
+        metricRegistry: MetricRegistry,
+        prefix: MetricName,
+        influxSenderConfig: InfluxSenderConfig
+    ): InfluxDbReporter = null
+
   }
 
 }

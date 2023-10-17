@@ -21,8 +21,8 @@ object ConfluentUtils extends LazyLogging {
   private final val ValueSubjectPattern = "(.*)-value".r
 
   final val SchemaProvider = new AvroSchemaProvider()
-  final val MagicByte = 0
-  final val IdSize = 4
+  final val MagicByte      = 0
+  final val IdSize         = 4
 
   final val HeaderSize = 1 + IdSize // magic byte + schemaId (4 bytes int)
 
@@ -35,12 +35,16 @@ object ConfluentUtils extends LazyLogging {
   def valueSubject(topic: String): String =
     topic + "-value"
 
-  def topicFromSubject: PartialFunction[String, String] = {
-    case ValueSubjectPattern(value) => value
+  def topicFromSubject: PartialFunction[String, String] = { case ValueSubjectPattern(value) =>
+    value
   }
 
   def toSchemaWithMetadata(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
-    SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
+    SchemaWithMetadata.fromRawSchema(
+      schemaMetadata.getSchemaType,
+      schemaMetadata.getSchema,
+      SchemaId.fromInt(schemaMetadata.getId)
+    )
   }
 
   def loadAvroSchemaFromResource(path: String): AvroSchema =
@@ -67,9 +71,10 @@ object ConfluentUtils extends LazyLogging {
       Validated.valid(buffer)
   }
 
-  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (SchemaId, ByteBuffer)] = ConfluentUtils
-    .parsePayloadToByteBuffer(bytes)
-    .map(b => (SchemaId.fromInt(b.getInt()), b))
+  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (SchemaId, ByteBuffer)] =
+    ConfluentUtils
+      .parsePayloadToByteBuffer(bytes)
+      .map(b => (SchemaId.fromInt(b.getInt()), b))
 
   def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (SchemaId, ByteBuffer) = readIdAndGetBuffer(bytes)
     .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
@@ -98,7 +103,7 @@ object ConfluentUtils extends LazyLogging {
 
   def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (SchemaId, T) = {
     val schemaId = ConfluentUtils.readId(payload)
-    val data = AvroUtils.deserialize[T](payload, readerWriterSchema, HeaderSize)
+    val data     = AvroUtils.deserialize[T](payload, readerWriterSchema, HeaderSize)
     (schemaId, data)
   }
 

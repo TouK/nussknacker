@@ -6,6 +6,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
+import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
@@ -16,13 +18,18 @@ import sttp.model.{Method, Uri}
 import java.net.URI
 import scala.concurrent.Future
 
-class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
+class OpaqueTokenAuthenticationSpec
+    extends AnyFunSpec
+    with Matchers
+    with ScalatestRouteTest
+    with Directives
+    with FailFastCirceSupport
+    with EitherValues {
 
-  private val tokenUri = Uri(URI.create("http://authorization.server/token"))
+  private val tokenUri    = Uri(URI.create("http://authorization.server/token"))
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
 
-  private val config = ConfigFactory.parseString(
-    s"""authentication: {
+  private val config = ConfigFactory.parseString(s"""authentication: {
        |  method: "OAuth2"
        |  usersFile: "classpath:oauth2-users.conf"
        |  authorizeUri: "http://ignored"
@@ -34,11 +41,14 @@ class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalat
        |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
-  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
-    .whenRequestMatches(_.uri.equals(tokenUri))
-    .thenRespond(s""" { "access_token": "${validAccessToken}", "token_type": "Bearer" } """)
-    .whenRequestMatches(_.uri.equals(userinfoUri))
-    .thenRespond(s""" { "sub": "admin" } """))
+
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(
+    SttpBackendStub.asynchronousFuture
+      .whenRequestMatches(_.uri.equals(tokenUri))
+      .thenRespond(s""" { "access_token": "${validAccessToken}", "token_type": "Bearer" } """)
+      .whenRequestMatches(_.uri.equals(userinfoUri))
+      .thenRespond(s""" { "sub": "admin" } """)
+  )
 
   private val classLoader = getClass.getClassLoader
 
@@ -64,9 +74,11 @@ class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalat
   }
 
   it("should permit an authorized user to a restricted resource") {
-    Get("/authentication/oauth2?code=test&redirect_uri=http://ignored/") ~> authenticationResources.routeWithPathPrefix ~> check {
+    Get(
+      "/authentication/oauth2?code=test&redirect_uri=http://ignored/"
+    ) ~> authenticationResources.routeWithPathPrefix ~> check {
       status shouldEqual StatusCodes.OK
-      val accessToken = responseAs[Oauth2AuthenticationResponse].accessToken
+      val accessToken = responseAs[Json].hcursor.downField("accessToken").as[String].value
       Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken)) ~> testRoute ~> check {
         status shouldEqual StatusCodes.OK
       }
@@ -79,7 +91,8 @@ class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalat
       status shouldEqual StatusCodes.Unauthorized
     }
     // We should deny a token even if it is valid and permit retrieving user info if it has not been obtained before and stored in the cache.
-    testingBackend.allInteractions.map { case (request, _) => (request.method, request.uri) } should not contain ((Method.GET, userinfoUri))
+    testingBackend.allInteractions
+      .map { case (request, _) => (request.method, request.uri) } should not contain ((Method.GET, userinfoUri))
   }
 
 }

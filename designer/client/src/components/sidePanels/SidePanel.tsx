@@ -4,10 +4,10 @@ import { ScrollbarsExtended } from "./ScrollbarsExtended";
 import TogglePanel from "../TogglePanel";
 import { useDispatch, useSelector } from "react-redux";
 import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/toolbars";
-import { togglePanel } from "../../actions/nk/ui/layout";
+import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
 const SCROLL_THUMB_SIZE = 8;
 const SIDEBAR_WIDTH = 290;
@@ -56,7 +56,7 @@ function checkRightSide(props: ScrollToggle) {
     }
 }
 
-const ScrollToggleChild = styled.div((props: ScrollToggle) => ({
+const ScrollToggleChild = styled("div")((props: ScrollToggle) => ({
     width: PANEL_WIDTH,
     boxSizing: "border-box",
     minHeight: "100%",
@@ -66,7 +66,7 @@ const ScrollToggleChild = styled.div((props: ScrollToggle) => ({
     alignItems: props.side === PanelSide.Left ? "flex-start" : "flex-end",
 }));
 
-const ScrollToggle = styled.div((props: ScrollToggle) => ({
+const ScrollToggle = styled("div")((props: ScrollToggle) => ({
     pointerEvents: "none",
     userSelect: "none",
     width: PANEL_WIDTH,
@@ -100,8 +100,8 @@ function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], isO
     const ref = useRef<HTMLDivElement>();
     const getGraph = useGraph();
     useEffect(() => {
-        getGraph().adjustViewport({
-            [side]: isOccupied ? ref.current.getBoundingClientRect().width : 0,
+        getGraph?.()?.adjustViewport({
+            [side]: isOccupied ? ref.current?.getBoundingClientRect().width : 0,
         });
     }, [getGraph, isOccupied, side]);
     return ref;

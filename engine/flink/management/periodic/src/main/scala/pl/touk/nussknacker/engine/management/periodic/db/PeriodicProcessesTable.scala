@@ -39,13 +39,48 @@ trait PeriodicProcessesTableFactory {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
-    override def * : ProvenShape[PeriodicProcessEntity] = (id, processName, processVersionId, processingType, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) <> (
+    override def * : ProvenShape[PeriodicProcessEntity] = (
+      id,
+      processName,
+      processVersionId,
+      processingType,
+      processJson,
+      inputConfigDuringExecutionJson,
+      jarFileName,
+      scheduleProperty,
+      active,
+      createdAt
+    ) <> (
       (PeriodicProcessEntity.create _).tupled,
-      (e: PeriodicProcessEntity) => PeriodicProcessEntity.unapply(e).map {
-        case (id, processName, versionId, processingType, processJson, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt) =>
-          (id, processName.value, versionId.value, processingType, processJson.asJson.noSpaces, inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt)
-      }
+      (e: PeriodicProcessEntity) =>
+        PeriodicProcessEntity.unapply(e).map {
+          case (
+                id,
+                processName,
+                versionId,
+                processingType,
+                processJson,
+                inputConfigDuringExecutionJson,
+                jarFileName,
+                scheduleProperty,
+                active,
+                createdAt
+              ) =>
+            (
+              id,
+              processName.value,
+              versionId.value,
+              processingType,
+              processJson.asJson.noSpaces,
+              inputConfigDuringExecutionJson,
+              jarFileName,
+              scheduleProperty,
+              active,
+              createdAt
+            )
+        }
     )
+
   }
 
   object PeriodicProcesses extends TableQuery(new PeriodicProcessesTable(_))
@@ -53,18 +88,43 @@ trait PeriodicProcessesTableFactory {
 }
 
 object PeriodicProcessEntity {
-  def create(id: PeriodicProcessId, processName: String, processVersionId: Long, processingType: String, processJson: String, inputConfigDuringExecutionJson: String,
-             jarFileName: String, scheduleProperty: String, active: Boolean, createdAt: LocalDateTime): PeriodicProcessEntity =
-    PeriodicProcessEntity(id, ProcessName(processName), VersionId(processVersionId), processingType, ProcessMarshaller.fromJsonUnsafe(processJson), inputConfigDuringExecutionJson, jarFileName, scheduleProperty, active, createdAt)
+
+  def create(
+      id: PeriodicProcessId,
+      processName: String,
+      processVersionId: Long,
+      processingType: String,
+      processJson: String,
+      inputConfigDuringExecutionJson: String,
+      jarFileName: String,
+      scheduleProperty: String,
+      active: Boolean,
+      createdAt: LocalDateTime
+  ): PeriodicProcessEntity =
+    PeriodicProcessEntity(
+      id,
+      ProcessName(processName),
+      VersionId(processVersionId),
+      processingType,
+      ProcessMarshaller.fromJsonUnsafe(processJson),
+      inputConfigDuringExecutionJson,
+      jarFileName,
+      scheduleProperty,
+      active,
+      createdAt
+    )
+
 }
 
-case class PeriodicProcessEntity(id: PeriodicProcessId,
-                                 processName: ProcessName,
-                                 processVersionId: VersionId,
-                                 processingType: String,
-                                 processJson: CanonicalProcess,
-                                 inputConfigDuringExecutionJson: String,
-                                 jarFileName: String,
-                                 scheduleProperty: String,
-                                 active: Boolean,
-                                 createdAt: LocalDateTime)
+case class PeriodicProcessEntity(
+    id: PeriodicProcessId,
+    processName: ProcessName,
+    processVersionId: VersionId,
+    processingType: String,
+    processJson: CanonicalProcess,
+    inputConfigDuringExecutionJson: String,
+    jarFileName: String,
+    scheduleProperty: String,
+    active: Boolean,
+    createdAt: LocalDateTime
+)

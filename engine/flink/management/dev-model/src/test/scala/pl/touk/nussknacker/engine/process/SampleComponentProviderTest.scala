@@ -32,20 +32,22 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
         .processor("service2", "providedComponent-component-v2", "fromConfig-v2" -> "''")
         .emptySink("end", "monitor")
 
-
     run(process) {
-      //should not fail
+      // should not fail
     }
   }
-
 
   private var registrar: FlinkProcessRegistrar = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(config), getClass.getClassLoader)
+    val loadedConfig = new SampleModelConfigLoader()
+      .resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(config), getClass.getClassLoader)
     val modelData = LocalModelData(loadedConfig.config, configCreator)
-    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = process.registrar.FlinkProcessRegistrar(
+      new FlinkProcessCompiler(modelData),
+      ExecutionConfigPreparer.unOptimizedChain(modelData)
+    )
   }
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {

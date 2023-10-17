@@ -22,14 +22,16 @@ import scala.collection.immutable.ListMap
   * @param leaderEpoch - number of leaders previously assigned by the controller (> 0 indicates leader failure)
   * @tparam K - type of event key
   */
-case class InputMeta[K](key: K,
-                        topic: String,
-                        partition: Integer,
-                        offset: java.lang.Long,
-                        timestamp: java.lang.Long,
-                        timestampType: TimestampType,
-                        headers: java.util.Map[String, String],
-                        leaderEpoch: Integer)
+case class InputMeta[K](
+    key: K,
+    topic: String,
+    partition: Integer,
+    offset: java.lang.Long,
+    timestamp: java.lang.Long,
+    timestampType: TimestampType,
+    headers: java.util.Map[String, String],
+    leaderEpoch: Integer
+)
 
 object InputMeta {
 
@@ -43,13 +45,13 @@ object InputMeta {
     new TypedObjectTypingResult(
       ListMap(
         keyParameterName -> keyTypingResult,
-        "topic" -> Typed[String],
-        "partition" -> Typed[Integer],
-        "offset" -> Typed[java.lang.Long],
-        "timestamp" -> Typed[java.lang.Long],
-        "timestampType" -> Typed[TimestampType],
-        "headers" -> Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
-        "leaderEpoch" -> Typed[Integer]
+        "topic"          -> Typed[String],
+        "partition"      -> Typed[Integer],
+        "offset"         -> Typed[java.lang.Long],
+        "timestamp"      -> Typed[java.lang.Long],
+        "timestampType"  -> Typed[TimestampType],
+        "headers"        -> Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[String])),
+        "leaderEpoch"    -> Typed[Integer]
       ),
       Typed.typedClass[InputMeta[AnyRef]]
     ) {
@@ -68,7 +70,8 @@ class InputMetaToJson extends ToJsonEncoder {
 
   private val forJsonKey: Encoder[InputMeta[Json]] = deriveConfiguredEncoder
 
-  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = {
-    case a: InputMeta[_] => forJsonKey(a.copy(key = encode(a.key)))
+  override def encoder(encode: Any => Json): PartialFunction[Any, Json] = { case a: InputMeta[_] =>
+    forJsonKey(a.copy(key = encode(a.key)))
   }
+
 }

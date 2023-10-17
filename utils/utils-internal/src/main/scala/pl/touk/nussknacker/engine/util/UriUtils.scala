@@ -24,11 +24,13 @@ object UriUtils {
     * <code>null</code> if the String is <code>null</code>.
     */
   def encodeURIComponent(value: String): String =
-    URLEncoder.encode(value, StandardCharsets.UTF_8)
+    URLEncoder
+      .encode(value, StandardCharsets.UTF_8)
       .replaceAll("\\+", "%20")
       .replaceAll("\\!", "%21")
       .replaceAll("\\'", "%27")
       .replaceAll("\\(", "%28")
       .replaceAll("\\)", "%29")
       .replaceAll("\\~", "%7E")
+
 }

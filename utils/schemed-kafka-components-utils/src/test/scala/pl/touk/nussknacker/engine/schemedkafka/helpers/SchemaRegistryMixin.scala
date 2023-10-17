@@ -11,7 +11,8 @@ import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
 trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations with WithConfig {
 
   override protected def resolveConfig(config: Config): Config = {
-    super.resolveConfig(config)
+    super
+      .resolveConfig(config)
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient
       .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("not_used"))
@@ -19,7 +20,8 @@ trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchem
       .withValue(s"kafka.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization", fromAnyRef(false))
   }
 
-  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies =
+    ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 

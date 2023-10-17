@@ -5,9 +5,9 @@ import customAttrs from "../../../assets/json/nodeAttributes.json";
 import { ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
-import { setLinksHovered } from "../dragHelpers";
+import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
-import { Events } from "../joint-events";
+import { Events } from "../types";
 import NodeUtils from "../NodeUtils";
 import { EspNodeShape } from "./esp";
 import millify from "millify";
@@ -122,6 +122,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                 content: {
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.65 : 1,
+                    disabled: node.isDisabled,
                 },
             },
             rankDir: "R",

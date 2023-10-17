@@ -1,0 +1,361 @@
+openapi: 3.1.0
+info:
+  title: Nussknacker Designer API
+  version: ''
+paths:
+  /api/app/healthCheck:
+    get:
+      tags:
+      - App
+      summary: Application health check service
+      operationId: getApiAppHealthcheck
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+              examples:
+                Example:
+                  summary: Application is healthy
+                  value:
+                    status: OK
+  /api/app/buildInfo:
+    get:
+      tags:
+      - App
+      summary: Application info service
+      operationId: getApiAppBuildinfo
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildInfoDto'
+              examples:
+                Example:
+                  summary: Application build info response
+                  value:
+                    name: nussknacker
+                    version: 1.234.0
+                    buildTime: '2023-09-25T09:26:30.402299'
+                    gitCommit: d4e42ee5c594ffe70a37faca3579eb535dac9820
+                    processingType:
+                      streaming:
+                        process-version: '0.1'
+                        engine-version: '0.2'
+                        generation-time: '2023-09-25T09:26:30.402299'
+  /api/app/healthCheck/process/deployment:
+    get:
+      tags:
+      - App
+      summary: Deployed processes health check service
+      operationId: getApiAppHealthcheckProcessDeployment
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+              examples:
+                Example:
+                  summary: All deployed processes are healthy
+                  value:
+                    status: OK
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '500':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+              examples:
+                Example:
+                  summary: Some processes are unhealthy
+                  value:
+                    status: ERROR
+                    message: Scenarios with status PROBLEM
+                    processes:
+                    - process1
+                    - process2
+      security:
+      - httpAuth: []
+  /api/app/healthCheck/process/validation:
+    get:
+      tags:
+      - App
+      summary: Deployed processes validation service
+      operationId: getApiAppHealthcheckProcessValidation
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+              examples:
+                Example:
+                  summary: There are no validation errors among the processes
+                  value:
+                    status: OK
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '500':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+              examples:
+                Example:
+                  summary: Some processes have validation errors
+                  value:
+                    status: ERROR
+                    message: Scenarios with validation errors
+                    processes:
+                    - process2
+                    - process3
+      security:
+      - httpAuth: []
+  /api/app/processingtype/reload:
+    post:
+      tags:
+      - App
+      summary: Processing type data reload service
+      operationId: postApiAppProcessingtypeReload
+      responses:
+        '204':
+          description: ''
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/app/config:
+    get:
+      tags:
+      - App
+      summary: Server configuration viewer service
+      operationId: getApiAppConfig
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Example:
+                  summary: Server configuration response
+                  value:
+                    environment: local
+                    scenarioTypes:
+                      development-tests:
+                        type: development-tests
+                      modelConfig:
+                        classPath:
+                        - model/devModel.jar
+                        - model/flinkExecutor.jar
+                        - components/flink
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+  /api/app/config/categoriesWithProcessingType:
+    get:
+      tags:
+      - App
+      summary: Configured categories with their processing types service
+      operationId: getApiAppConfigCategorieswithprocessingtype
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Map_String'
+              examples:
+                Example:
+                  summary: Configured categories and their processing types
+                  value:
+                    Category1: streaming
+                    Category2: streaming
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
+components:
+  schemas:
+    BuildInfoDto:
+      required:
+      - name
+      - gitCommit
+      - buildTime
+      - version
+      - processingType
+      type: object
+      properties:
+        name:
+          type: string
+        gitCommit:
+          type: string
+        buildTime:
+          type: string
+        version:
+          type: string
+        processingType:
+          $ref: '#/components/schemas/Map_Map_String_String'
+        globalBuildInfo:
+          $ref: '#/components/schemas/Map_String'
+    HealthCheckProcessErrorResponseDto:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status1'
+        message:
+          type:
+          - string
+          - 'null'
+        processes:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+    HealthCheckProcessSuccessResponseDto:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        message:
+          type:
+          - string
+          - 'null'
+        processes:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+    Map_Map_String_String:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String'
+    Map_String:
+      type: object
+      additionalProperties:
+        type: string
+    Status:
+      type: string
+      enum:
+      - OK
+    Status1:
+      type: string
+      enum:
+      - ERROR
+  securitySchemes:
+    httpAuth:
+      type: http
+      scheme: basic

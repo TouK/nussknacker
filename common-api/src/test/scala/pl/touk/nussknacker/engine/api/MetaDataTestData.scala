@@ -7,57 +7,61 @@ object MetaDataTestData {
 
   // flink
   val flinkEmptyTypeData: StreamMetaData = StreamMetaData(None, None, None, None)
+
   val flinkFullTypeData: StreamMetaData = StreamMetaData(
     parallelism = Some(5),
     spillStateToDisk = Some(false),
     useAsyncInterpretation = Some(true),
     checkpointIntervalInSeconds = Some(1000L)
   )
+
   val flinkEmptyProperties: Map[String, String] = Map(
-    "parallelism" -> "",
-    "spillStateToDisk" -> "",
-    "useAsyncInterpretation" -> "",
+    "parallelism"                 -> "",
+    "spillStateToDisk"            -> "",
+    "useAsyncInterpretation"      -> "",
     "checkpointIntervalInSeconds" -> ""
   )
+
   val flinkFullProperties: Map[String, String] = Map(
-    "parallelism" -> "5",
-    "spillStateToDisk" -> "false",
-    "useAsyncInterpretation" -> "true",
+    "parallelism"                 -> "5",
+    "spillStateToDisk"            -> "false",
+    "useAsyncInterpretation"      -> "true",
     "checkpointIntervalInSeconds" -> "1000"
   )
+
   val flinkInvalidTypeProperties: Map[String, String] = Map(
-    "parallelism" -> "non-int",
-    "spillStateToDisk" -> "non-boolean",
-    "useAsyncInterpretation" -> "non-boolean",
+    "parallelism"                 -> "non-int",
+    "spillStateToDisk"            -> "non-boolean",
+    "useAsyncInterpretation"      -> "non-boolean",
     "checkpointIntervalInSeconds" -> "non-long"
   )
 
   // lite stream
-  val liteStreamEmptyTypeData: LiteStreamMetaData = LiteStreamMetaData(None)
-  val liteStreamFullTypeData: LiteStreamMetaData = LiteStreamMetaData(parallelism = Some(5))
-  val liteStreamEmptyProperties: Map[String, String] = Map("parallelism" -> "")
-  val liteStreamFullProperties: Map[String, String] = Map("parallelism" -> "5")
+  val liteStreamEmptyTypeData: LiteStreamMetaData          = LiteStreamMetaData(None)
+  val liteStreamFullTypeData: LiteStreamMetaData           = LiteStreamMetaData(parallelism = Some(5))
+  val liteStreamEmptyProperties: Map[String, String]       = Map("parallelism" -> "")
+  val liteStreamFullProperties: Map[String, String]        = Map("parallelism" -> "5")
   val liteStreamInvalidTypeProperties: Map[String, String] = Map("parallelism" -> "non-int")
 
   // lite request-response
   val requestResponseEmptyTypeData: RequestResponseMetaData = RequestResponseMetaData(None)
-  val requestResponseFullTypeData: RequestResponseMetaData = RequestResponseMetaData(slug = Some("exampleSlug"))
-  val requestResponseEmptyProperties: Map[String, String] = Map("slug" -> "")
-  val requestResponseFullProperties: Map[String, String] = Map("slug" -> "exampleSlug")
+  val requestResponseFullTypeData: RequestResponseMetaData  = RequestResponseMetaData(slug = Some("exampleSlug"))
+  val requestResponseEmptyProperties: Map[String, String]   = Map("slug" -> "")
+  val requestResponseFullProperties: Map[String, String]    = Map("slug" -> "exampleSlug")
 
   // fragment
-  val fragmentEmptyTypeData: FragmentSpecificData = FragmentSpecificData(None)
-  val fragmentFullTypeData: FragmentSpecificData = FragmentSpecificData(docsUrl = Some("exampleUrl"))
+  val fragmentEmptyTypeData: FragmentSpecificData  = FragmentSpecificData(None)
+  val fragmentFullTypeData: FragmentSpecificData   = FragmentSpecificData(docsUrl = Some("exampleUrl"))
   val fragmentEmptyProperties: Map[String, String] = Map("docsUrl" -> "")
-  val fragmentFullProperties: Map[String, String] = Map("docsUrl" -> "exampleUrl")
+  val fragmentFullProperties: Map[String, String]  = Map("docsUrl" -> "exampleUrl")
 
-  val flinkMetaDataName = "StreamMetaData"
-  val liteStreamMetaDataName = "LiteStreamMetaData"
+  val flinkMetaDataName           = "StreamMetaData"
+  val liteStreamMetaDataName      = "LiteStreamMetaData"
   val requestResponseMetaDataName = "RequestResponseMetaData"
-  val fragmentMetaDataName = "FragmentSpecificData"
+  val fragmentMetaDataName        = "FragmentSpecificData"
 
   val nonTypeSpecificProperties: Map[String, String] = Map(
-    "aProperty" -> "aValue",
+    "aProperty"     -> "aValue",
     "emptyProperty" -> ""
   )
 

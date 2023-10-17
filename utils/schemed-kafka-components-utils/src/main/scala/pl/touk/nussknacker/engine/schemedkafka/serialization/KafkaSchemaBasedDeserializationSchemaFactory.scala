@@ -25,9 +25,10 @@ trait KafkaSchemaBasedDeserializationSchemaFactory extends Serializable {
     *           use other deserialization strategy base on it or provide different TypeInformation
     * @return KafkaDeserializationSchema
     */
-  def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                       keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                       valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
-                                      ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
+  def create[K: ClassTag, V: ClassTag](
+      kafkaConfig: KafkaConfig,
+      keySchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      valueSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]]
+  ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
 
 }

@@ -26,13 +26,14 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
   import spel.Implicits._
   import KafkaFactory._
 
-  override lazy val config = ConfigFactory.load()
+  override lazy val config = ConfigFactory
+    .load()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
     .withValue("namespace", fromAnyRef(namespaceName))
 
-  private val namespaceName: String = "ns"
-  private val inputTopic: String = "input"
-  private val outputTopic: String = "output"
+  private val namespaceName: String                      = "ns"
+  private val inputTopic: String                         = "input"
+  private val outputTopic: String                        = "output"
   private def namespacedTopic(topicName: String): String = s"${namespaceName}_$topicName"
 
   test("should send message to topic with appended namespace") {
@@ -46,7 +47,8 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
       .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#input")
 
     run(process) {
-      val processed = kafkaClient.createConsumer().consumeWithJson[String](s"ns_$outputTopic").take(1).map(_.message()).toList
+      val processed =
+        kafkaClient.createConsumer().consumeWithJson[String](s"ns_$outputTopic").take(1).map(_.message()).toList
       processed shouldEqual List(message)
     }
   }
@@ -58,7 +60,10 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, configCreator)
-    registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = process.registrar.FlinkProcessRegistrar(
+      new FlinkProcessCompiler(modelData),
+      ExecutionConfigPreparer.unOptimizedChain(modelData)
+    )
   }
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
@@ -66,4 +71,5 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
+
 }

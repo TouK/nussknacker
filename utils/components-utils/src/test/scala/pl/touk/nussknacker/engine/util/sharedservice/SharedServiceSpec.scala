@@ -24,17 +24,20 @@ class SharedServiceSpec extends AnyFunSuite with Matchers {
   }
 
   object TestSharedServiceHolder extends SharedServiceHolder[String, TestSharedService] {
-    override protected def createService(config: String, metaData: MetaData): TestSharedService = new TestSharedService(config)
+
+    override protected def createService(config: String, metaData: MetaData): TestSharedService = new TestSharedService(
+      config
+    )
+
   }
 
   test("should returned cached instance") {
-    val first::others = (1 to 10).par.map(_ => TestSharedServiceHolder.retrieveService("test1")).toList
+    val first :: others = (1 to 10).par.map(_ => TestSharedServiceHolder.retrieveService("test1")).toList
     others.foreach { service =>
-      //we test reference equality here!
+      // we test reference equality here!
       first eq service shouldBe true
     }
   }
-
 
   test("should returned different instance for different creation data") {
 
@@ -66,6 +69,7 @@ class SharedServiceSpec extends AnyFunSuite with Matchers {
 // https://github.com/scala/scala-parallel-collections/issues/22#issuecomment-288389306
 // this little hack is needed because `scala-parallel-collections` does not publish build for scala 2.12
 private[sharedservice] object CompatParColls {
+
   val Converters = {
     import Compat._
     {
@@ -73,7 +77,9 @@ private[sharedservice] object CompatParColls {
       CollectionConverters
     }
   }
+
   object Compat {
     object CollectionConverters
   }
+
 }

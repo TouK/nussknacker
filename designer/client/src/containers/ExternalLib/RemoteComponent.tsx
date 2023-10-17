@@ -3,10 +3,9 @@ import { useExternalLib } from "./hooks";
 import React from "react";
 import { splitUrl } from "./tools";
 import ReactDOM from "react-dom";
-import { NkThemeProvider } from "../theme";
-import { MuiThemeProvider } from "../muiThemeProvider";
 import { ExternalModule } from "./ExternalModule";
 import SystemUtils from "../../common/SystemUtils";
+import { NuThemeProvider } from "../theme/nuThemeProvider";
 
 function Component<P>({ scope, ...props }: { scope: ModuleString } & P) {
     const {
@@ -28,17 +27,15 @@ export const loadExternalReactModule = (url, props) => {
     document.body.appendChild(rootContainer);
     const [urlValue, scopeValue, scriptValue] = splitUrl(url);
     ReactDOM.render(
-        <NkThemeProvider>
-            <MuiThemeProvider>
-                <RemoteComponent url={urlValue} scope={scopeValue} scriptOrigin={scriptValue} {...props} />
-            </MuiThemeProvider>
-        </NkThemeProvider>,
+        <NuThemeProvider>
+            <RemoteComponent url={urlValue} scope={scopeValue} scriptOrigin={scriptValue} {...props} />
+        </NuThemeProvider>,
         rootContainer,
     );
 };
 
 export const loadExternalReactModuleWithAuth = (url, props) => {
-    const getAuthToken = () => Promise.resolve(SystemUtils.authorizationToken());
+    const getAuthToken: () => Promise<string> = () => SystemUtils.asyncAuthorizationToken();
     loadExternalReactModule(url, { getAuthToken, ...props });
 };
 

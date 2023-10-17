@@ -41,8 +41,10 @@ object DictRegistry {
 
   case class DictNotDeclared(dictId: String) extends DictLookupError
 
-  case class DictEntryWithLabelNotExists(dictId: String, label: String, possibleLabels: Option[List[String]]) extends DictLookupError
+  case class DictEntryWithLabelNotExists(dictId: String, label: String, possibleLabels: Option[List[String]])
+      extends DictLookupError
 
-  case class DictEntryWithKeyNotExists(dictId: String, key: String, possibleKeys: Option[List[String]]) extends DictLookupError
+  case class DictEntryWithKeyNotExists(dictId: String, key: String, possibleKeys: Option[List[String]])
+      extends DictLookupError
 
 }

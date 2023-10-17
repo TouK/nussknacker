@@ -18,12 +18,13 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
 
-  override val service = new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+  override val service =
+    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
 
   test("DatabaseQueryEnricher#implementation with cache") {
     val query = "select * from persons where id = ?"
-    val st = conn.prepareStatement(query)
-    val meta = st.getMetaData
+    val st    = conn.prepareStatement(query)
+    val meta  = st.getMetaData
     st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
@@ -38,23 +39,25 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
     )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map("arg1" -> 1))
-    val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = invoker.invokeService(Map("arg1" -> 1))
-    val result2 = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
 
-    service.close() // it's not production behaviour - we only close service to make sure DB connection is closed, and prove that value is populated from cache.
+    service
+      .close() // it's not production behaviour - we only close service to make sure DB connection is closed, and prove that value is populated from cache.
     val resultF3 = invoker.invokeService(Map("arg1" -> 1))
-    val result3 = Await.result(resultF3, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val result3  = Await.result(resultF3, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result3 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
   }
+
 }

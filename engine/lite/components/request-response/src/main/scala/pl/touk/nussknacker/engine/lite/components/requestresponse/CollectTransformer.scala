@@ -15,27 +15,35 @@ import scala.language.higherKinds
 object CollectTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("Input expression") inputExpression: LazyParameter[AnyRef],
-             @OutputVariableName outputVariable: String)
-            (implicit nodeId: NodeId): ContextTransformation = {
+  def invoke(
+      @ParamName("Input expression") inputExpression: LazyParameter[AnyRef],
+      @OutputVariableName outputVariable: String
+  )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy { context =>
         val outputType = Typed.genericTypeClass(classOf[java.util.List[_]], inputExpression.returnType :: Nil)
         context.withVariable(OutputVar.variable(outputVariable), outputType)
-      }.implementedBy(
-      new CollectTransformer(outputVariable, inputExpression)
-    )
+      }
+      .implementedBy(
+        new CollectTransformer(outputVariable, inputExpression)
+      )
   }
+
 }
 
-class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId) extends LiteCustomComponent with Lifecycle with LazyLogging {
+class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[AnyRef])(implicit nodeId: NodeId)
+    extends LiteCustomComponent
+    with Lifecycle
+    with LazyLogging {
 
   private var runtimeContext: EngineRuntimeContext = _
 
   override def open(context: EngineRuntimeContext): Unit = runtimeContext = context
 
-  override def createTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]],
-                                                        context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
+  override def createTransformation[F[_]: Monad, Result](
+      continuation: DataBatch => F[ResultType[Result]],
+      context: CustomComponentContext[F]
+  ): DataBatch => F[ResultType[Result]] = {
 
     val outputInterpreter = context.interpreter.syncInterpretationFunction(inputExpression)
 
@@ -43,7 +51,9 @@ class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[
     lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
     (inputCtx: DataBatch) =>
       val outputList = inputCtx.map(outputInterpreter(_)).asJava
-      continuation(DataBatch(Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil))
+      continuation(
+        DataBatch(Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil)
+      )
   }
 
 }

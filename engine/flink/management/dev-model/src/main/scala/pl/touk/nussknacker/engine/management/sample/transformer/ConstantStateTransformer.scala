@@ -31,6 +31,8 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
           constantState.update(defaultValue)
           ValueWithContext[AnyRef]("", value)
         }
-      }).uid("customStateId")
+      })
+      .uid("customStateId")
   })
+
 }

@@ -29,7 +29,10 @@ trait ExplicitUidInOperatorsSupport {
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
     ExplicitUidInOperatorsSupport.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
-  protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] =
+  protected def setUidToNodeIdIfNeed[T](
+      nodeCtx: FlinkCustomNodeContext,
+      stream: SingleOutputStreamOperator[T]
+  ): SingleOutputStreamOperator[T] =
     ExplicitUidInOperatorsSupport.setUidIfNeedJava(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   /**
@@ -43,8 +46,9 @@ trait ExplicitUidInOperatorsSupport {
 
 object ExplicitUidInOperatorsSupport {
 
-  def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
-                     (stream: DataStream[T]): DataStream[T] = {
+  def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)(
+      stream: DataStream[T]
+  ): DataStream[T] = {
     if (explicitUidInStatefulOperators) {
       stream match {
         case operator: SingleOutputStreamOperator[T] => operator.uid(uidValue)
@@ -54,16 +58,18 @@ object ExplicitUidInOperatorsSupport {
       stream
   }
 
-  def setUidIfNeedSink[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
-                         (stream: DataStreamSink[T]): DataStreamSink[T] = {
+  def setUidIfNeedSink[T](explicitUidInStatefulOperators: Boolean, uidValue: String)(
+      stream: DataStreamSink[T]
+  ): DataStreamSink[T] = {
     if (explicitUidInStatefulOperators)
       stream.uid(uidValue)
     else
       stream
   }
 
-  def setUidIfNeedJava[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
-                         (stream: SingleOutputStreamOperator[T]): SingleOutputStreamOperator[T] = {
+  def setUidIfNeedJava[T](explicitUidInStatefulOperators: Boolean, uidValue: String)(
+      stream: SingleOutputStreamOperator[T]
+  ): SingleOutputStreamOperator[T] = {
     if (explicitUidInStatefulOperators)
       stream.uid(uidValue)
     else

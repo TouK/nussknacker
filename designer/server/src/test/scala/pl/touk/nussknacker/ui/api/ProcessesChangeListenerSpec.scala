@@ -15,14 +15,22 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds
 
-class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class ProcessesChangeListenerSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with Inside
+    with FailFastCirceSupport
+    with PatientScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
   import TestCategories._
 
-  private val routeWithAllPermissions = withAllPermissions(processesRoute)
+  private val routeWithAllPermissions   = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
+  implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
 
@@ -30,12 +38,16 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
     val processId = createEmptyProcess(processName, TestCat, false)
 
     Post(s"/processes/category/${processName.value}/$TestCat2") ~> routeWithAdminPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnCategoryChanged(`processId`, TestCat, TestCat2) => }
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnCategoryChanged(`processId`, TestCat, TestCat2) =>
+      }
     }
   }
 
   test("listen to process create") {
-    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> checkEventually {
+    Post(
+      s"/processes/${processName.value}/$TestCat?isFragment=false"
+    ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
   }
@@ -63,10 +75,12 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
   test("listen to process rename") {
     val processId = createEmptyProcess(processName, TestCat, false)
-    val newName = ProcessName("new_name")
+    val newName   = ProcessName("new_name")
 
     Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnRenamed(`processId`, `processName`, `newName`) => }
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnRenamed(`processId`, `processName`, `newName`) =>
+      }
     }
   }
 
@@ -80,10 +94,16 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
   test("listen to deployment success") {
     val processId = createValidProcess(processName, TestCat, false)
-    val comment = Some("deployComment")
+    val comment   = Some("deployComment")
 
-    deployProcess(processName.value, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Deploy) => }
+    deployProcess(
+      processName.value,
+      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
+      comment
+    ) ~> checkEventually {
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Deploy) =>
+      }
     }
   }
 
@@ -99,11 +119,17 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
   test("listen to deployment cancel") {
     val processId = createDeployedProcess(processName)
-    val comment = Some("cancelComment")
+    val comment   = Some("cancelComment")
 
-    cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
+    cancelProcess(
+      SampleProcess.process.id,
+      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
+      comment
+    ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
-      head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
+      head should matchPattern {
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) =>
+      }
     }
   }
 

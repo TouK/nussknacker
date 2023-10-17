@@ -4,13 +4,28 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, MethodTypeInfo, Parameter, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{
+  GenericFunctionTypingError,
+  GenericType,
+  MethodTypeInfo,
+  Parameter,
+  Signature,
+  TypingFunction
+}
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
+  AddPropertyNextToGetter,
+  DoNothing,
+  ReplaceGetterWithProperty
+}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{
+  CommonSupertypeFinder,
+  NumberTypesPromotionStrategy,
+  SupertypeClassResolutionStrategy
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
@@ -30,8 +45,8 @@ import scala.reflect.runtime.universe._
 class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface {
-    def returnContext: Context = null
-    def decoder: Decoder[SampleClass] = null
+    def returnContext: Context                  = null
+    def decoder: Decoder[SampleClass]           = null
     def classParam(parameter: Class[_]): String = null
 
   }
@@ -46,8 +61,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
   case class Bottom(someInt: Int)
 
-  case class ClassWithOptions(longJavaOption: Option[java.lang.Long],
-                              longScalaOption: Option[Long])
+  case class ClassWithOptions(longJavaOption: Option[java.lang.Long], longScalaOption: Option[Long])
 
   test("should extract generic return type parameters") {
 
@@ -62,9 +76,9 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
-      "bar" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
-      "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
+      "foo"           -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None)),
+      "bar"           -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
+      "toString"      -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
       "returnContext" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Context]), "returnContext", None))
     )
   }
@@ -76,56 +90,91 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
       "longJavaOption" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Long]), "longJavaOption", None)),
       // generic type of Scala type is erased - this case documents that behavior
       "longScalaOption" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, typing.Unknown), "longScalaOption", None)),
-      "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
+      "toString"        -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
     )
   }
 
   test("should extract generic field") {
     val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
 
-    sampleClassInfo.value.methods("list").head.signatures.head.result shouldEqual Typed.fromDetailedType[java.util.List[String]]
+    sampleClassInfo.value.methods("list").head.signatures.head.result shouldEqual Typed
+      .fromDetailedType[java.util.List[String]]
   }
 
   test("should detect java beans and fields in java class") {
     def methods(strategy: PropertyFromGetterExtractionStrategy) =
-      singleClassDefinition[JavaSampleClass](ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)).value.methods.keys.toSet
+      singleClassDefinition[JavaSampleClass](
+        ClassExtractionSettings.Default.copy(propertyExtractionStrategy = strategy)
+      ).value.methods.keys.toSet
 
     val methodsForAddPropertyNextToGetter = methods(AddPropertyNextToGetter)
-    methodsForAddPropertyNextToGetter   shouldEqual Set("foo", "bar", "getBeanProperty", "isBooleanProperty", "getNotProperty", "toString", "beanProperty", "booleanProperty")
+    methodsForAddPropertyNextToGetter shouldEqual Set(
+      "foo",
+      "bar",
+      "getBeanProperty",
+      "isBooleanProperty",
+      "getNotProperty",
+      "toString",
+      "beanProperty",
+      "booleanProperty"
+    )
 
     val methodsForReplaceGetterWithProperty = methods(ReplaceGetterWithProperty)
-    methodsForReplaceGetterWithProperty shouldEqual Set("foo", "bar", "beanProperty", "booleanProperty", "getNotProperty", "toString")
+    methodsForReplaceGetterWithProperty shouldEqual Set(
+      "foo",
+      "bar",
+      "beanProperty",
+      "booleanProperty",
+      "getNotProperty",
+      "toString"
+    )
 
     val methodsForDoNothing = methods(DoNothing)
-    methodsForDoNothing shouldEqual Set("foo", "bar", "getBeanProperty", "isBooleanProperty", "getNotProperty", "toString")
+    methodsForDoNothing shouldEqual Set(
+      "foo",
+      "bar",
+      "getBeanProperty",
+      "isBooleanProperty",
+      "getNotProperty",
+      "toString"
+    )
   }
 
   test("should skip hidden properties") {
-    val testTypes = Table(("type", "className"),
-      (Typed[SampleClass], "SampleClass"),
-      (Typed[JavaSampleClass], "JavaSampleClass")
-    )
+    val testTypes =
+      Table(("type", "className"), (Typed[SampleClass], "SampleClass"), (Typed[JavaSampleClass], "JavaSampleClass"))
 
-    val testClassPatterns = Table("classPattern",
-      ".*SampleClass",
-      ".*SampleAbstractClass",
-      ".*SampleInterface"
-    )
+    val testClassPatterns = Table("classPattern", ".*SampleClass", ".*SampleAbstractClass", ".*SampleInterface")
 
     forAll(testTypes) { (clazz, clazzName) =>
       forAll(testClassPatterns) { classPattern =>
-        val infos = clazzAndItsChildrenDefinition(List(clazz))(ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
-          ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
-          MemberNamePatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("ba.*")),
-          MemberNamePatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("get.*")),
-          MemberNamePatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("is.*")),
-          ReturnMemberPredicate(ExactClassPredicate[Context], BasePackagePredicate("pl.touk.nussknacker.engine.types"))
-        )))
+        val infos = clazzAndItsChildrenDefinition(List(clazz))(
+          ClassExtractionSettings.Default.copy(excludeClassMemberPredicates =
+            ClassExtractionSettings.DefaultExcludedMembers ++ Seq(
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("ba.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("get.*")
+              ),
+              MemberNamePatternPredicate(
+                SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))),
+                Pattern.compile("is.*")
+              ),
+              ReturnMemberPredicate(
+                ExactClassPredicate[Context],
+                BasePackagePredicate("pl.touk.nussknacker.engine.types")
+              )
+            )
+          )
+        )
         val sampleClassInfo = infos.find(_.getClazz.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
           "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
-          "foo" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None))
+          "foo"      -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed(Integer.TYPE)), "foo", None))
         )
       }
     }
@@ -135,37 +184,63 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
-    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
-      "string" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "string", None)),
-      "javaList" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed.fromDetailedType[java.util.List[String]]), "javaList", None)),
-      "javaMap" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed.fromDetailedType[java.util.Map[String, String]]), "javaMap", None)),
-      "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None))
-    ), Map.empty))
+    typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(
+      ClazzDefinition(
+        Typed.typedClass[TestEmbedded],
+        Map(
+          "string" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "string", None)),
+          "javaList" -> List(
+            StaticMethodInfo(
+              MethodTypeInfo(Nil, None, Typed.fromDetailedType[java.util.List[String]]),
+              "javaList",
+              None
+            )
+          ),
+          "javaMap" -> List(
+            StaticMethodInfo(
+              MethodTypeInfo(Nil, None, Typed.fromDetailedType[java.util.Map[String, String]]),
+              "javaMap",
+              None
+            )
+          ),
+          "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None))
+        ),
+        Map.empty
+      )
+    )
 
   }
 
   test("should not discover hidden fields") {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
-    typeUtils shouldBe Some(ClazzDefinition(Typed.typedClass[ClassWithHiddenFields], Map(
-      "normalField" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "normalField", None)),
-      "normalParam" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "normalParam", None)),
-      "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None))
-    ), Map.empty))
+    typeUtils shouldBe Some(
+      ClazzDefinition(
+        Typed.typedClass[ClassWithHiddenFields],
+        Map(
+          "normalField" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "normalField", None)),
+          "normalParam" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "normalParam", None)),
+          "toString"    -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None))
+        ),
+        Map.empty
+      )
+    )
   }
 
   test("should skip toString method when HideToString implemented") {
     val hiddenToStringClasses = Table("class", classOf[JavaBannedToStringClass], classOf[BannedToStringClass])
-    forAll(hiddenToStringClasses) { EspTypeUtils.clazzDefinition(_)(ClassExtractionSettings.Default)
-      .methods.keys shouldNot contain("toString")
+    forAll(hiddenToStringClasses) {
+      EspTypeUtils.clazzDefinition(_)(ClassExtractionSettings.Default).methods.keys shouldNot contain("toString")
     }
   }
 
   test("should break recursive discovery if hidden class found") {
 
-    val extracted = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Top]))(ClassExtractionSettings.Default.copy(
-      excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
-    ))
+    val extracted = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Top]))(
+      ClassExtractionSettings.Default.copy(
+        excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
+      )
+    )
     extracted.find(_.clazzName == Typed[Top]) shouldBe Symbol("defined")
     extracted.find(_.clazzName == Typed[Middle]) shouldBe Symbol("empty")
     extracted.find(_.clazzName == Typed[Bottom]) shouldBe Symbol("empty")
@@ -177,9 +252,9 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
     val field1: Long = 123L
 
-    //we use this @getter annotation here, because vals in case classes are translated by default to private field and public getter method for that field
-    //we just annotate public getter method (that will be created by scalac) for field2
-    //more here: https://www.scala-lang.org/api/current/scala/annotation/meta/index.html
+    // we use this @getter annotation here, because vals in case classes are translated by default to private field and public getter method for that field
+    // we just annotate public getter method (that will be created by scalac) for field2
+    // more here: https://www.scala-lang.org/api/current/scala/annotation/meta/index.html
     @(Documentation @getter)(description = ScalaSampleDocumentedClass.field2Docs)
     val field2: Long = 234L
 
@@ -190,6 +265,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     def bar(@ParamName("barparam1") barparam1: Long): String = {
       ""
     }
+
     @Documentation(description = ScalaSampleDocumentedClass.bazDocs)
     def baz(@ParamName("bazparam1") bazparam1: String, @ParamName("bazparam2") bazparam2: Int): Long = {
       0L
@@ -210,9 +286,15 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     @varargs
     def max[T <: Number](args: T*): T =
       args.maxBy(_.doubleValue())
+
   }
 
-  case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String], javaMap: java.util.Map[String, String])
+  case class TestEmbedded(
+      string: String,
+      javaList: java.util.List[String],
+      scalaList: List[String],
+      javaMap: java.util.Map[String, String]
+  )
 
   class Embeddable {
 
@@ -220,7 +302,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
   }
 
-  case class ClassWithHiddenFields(@(Hidden @getter)imnothereCaseClassParam: String, normalParam: String) {
+  case class ClassWithHiddenFields(@(Hidden @getter) imnothereCaseClassParam: String, normalParam: String) {
 
     @Hidden
     def imnothereMethod(par: String): String = par
@@ -233,10 +315,10 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
   object ScalaSampleDocumentedClass {
     final val field2Docs = "This is sample documentation for field2 field"
-    final val bazDocs = "This is sample documentation for baz method"
-    final val quxDocs = "This is sample documentation for qux method"
-    final val headDocs = "This is sample documentation for head method"
-    final val maxDocs = "This is sample documentation for max method"
+    final val bazDocs    = "This is sample documentation for baz method"
+    final val quxDocs    = "This is sample documentation for qux method"
+    final val headDocs   = "This is sample documentation for head method"
+    final val maxDocs    = "This is sample documentation for max method"
   }
 
   test("should extract description and params from method") {
@@ -244,26 +326,33 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
     val javaClazzInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
 
-    def checkMethodInfo(name: String,
-                        params: List[Parameter],
-                        result: TypingResult,
-                        desc: Option[String],
-                        varArgs: Boolean): Unit = {
+    def checkMethodInfo(
+        name: String,
+        params: List[Parameter],
+        result: TypingResult,
+        desc: Option[String],
+        varArgs: Boolean
+    ): Unit = {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
-      val javaInfo :: Nil = javaClazzInfo.methods(name)
+      val javaInfo :: Nil  = javaClazzInfo.methods(name)
       List(scalaInfo, javaInfo).foreach(info => {
-          info.signatures.head shouldBe MethodTypeInfo.fromList(params, varArgs, result)
-          info.description shouldBe desc
-          info.signatures.head.varArg.isDefined shouldBe varArgs
-        }
-      )
+        info.signatures.head shouldBe MethodTypeInfo.fromList(params, varArgs, result)
+        info.description shouldBe desc
+        info.signatures.head.varArg.isDefined shouldBe varArgs
+      })
     }
 
     val table = Table(
       ("methodName", "params", "result", "desc", "varArgs"),
       ("foo", List(param[String]("fooParam1")), Typed[Long], None, false),
       ("bar", List(param[Long]("barparam1")), Typed[String], None, false),
-      ("baz", List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], Some(ScalaSampleDocumentedClass.bazDocs), false),
+      (
+        "baz",
+        List(param[String]("bazparam1"), param[Int]("bazparam2")),
+        Typed[Long],
+        Some(ScalaSampleDocumentedClass.bazDocs),
+        false
+      ),
       ("qux", List(param[String]("quxParam1")), Typed[Long], Some(ScalaSampleDocumentedClass.quxDocs), false),
       ("field1", List.empty, Typed[Long], None, false),
       ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false),
@@ -282,10 +371,14 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
   }
 
   test("extract overloaded methods") {
-    val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
+    val cl      = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.signatures.head.noVarArgs.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.signatures.head.noVarArgs.head.refClazz).toSet shouldEqual Set(
+      Typed[Int],
+      Typed[Boolean],
+      Typed[String]
+    )
   }
 
   test("hidden by default classes") {
@@ -294,8 +387,8 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     metaSpelDef.exists(_.clazzName == Typed[SpelExpressionRepr]) shouldBe false
   }
 
-  val listMethods = Table("methodName", "indexOf", "contains", "isEmpty", "size")
-  val mapMethods = Table("methodName", "get", "isEmpty", "size", "values")
+  val listMethods   = Table("methodName", "indexOf", "contains", "isEmpty", "size")
+  val mapMethods    = Table("methodName", "get", "isEmpty", "size", "values")
   val optionMethods = Table("methodName", "get", "contains", "isEmpty")
 
   test("should extract basic methods from standard collection types") {
@@ -318,31 +411,33 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
   }
 
   test("should extract varargs") {
-    val classDef = singleClassDefinition[JavaClassWithVarargs](ClassExtractionSettings.Default).value
+    val classDef  = singleClassDefinition[JavaClassWithVarargs](ClassExtractionSettings.Default).value
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
     method.signatures.head.varArg shouldBe Some(Parameter("values", Unknown))
   }
 
-  private def checkApplyFunction(classes: List[ClazzDefinition],
-                                 name: String,
-                                 arguments: List[TypingResult],
-                                 expected: ValidatedNel[String, TypingResult]): Unit =
+  private def checkApplyFunction(
+      classes: List[ClazzDefinition],
+      name: String,
+      arguments: List[TypingResult],
+      expected: ValidatedNel[String, TypingResult]
+  ): Unit =
     classes.map(clazz => {
       val info :: Nil = clazz.methods(name)
       info.computeResultType(arguments).leftMap(_.map(_.message)) shouldBe expected
     })
 
   test("should correctly calculate result types on correct inputs") {
-    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val javaClassInfo  = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
     def checkApplyFunctionValid(name: String, arguments: List[TypingResult], result: TypingResult): Unit =
       checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, result.validNel)
 
     val typedList = Typed.genericTypeClass[java.util.List[_]](List(Typed[String]))
-    val typedMap = TypedObjectTypingResult(Map("a" -> Typed[Int], "b" -> Typed[String]))
+    val typedMap  = TypedObjectTypingResult(Map("a" -> Typed[Int], "b" -> Typed[String]))
 
     val table = Table(
       ("name", "arguments", "result"),
@@ -364,13 +459,15 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
   }
 
   test("should correctly handle illegal input types in generic functions") {
-    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val javaClassInfo  = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
-    def checkApplyFunctionInvalid(name: String,
-                                  arguments: List[TypingResult],
-                                  expected: List[TypingResult],
-                                  expectedVarArg: Option[TypingResult]): Unit =
+    def checkApplyFunctionInvalid(
+        name: String,
+        arguments: List[TypingResult],
+        expected: List[TypingResult],
+        expectedVarArg: Option[TypingResult]
+    ): Unit =
       checkApplyFunction(
         List(scalaClassInfo, javaClassInfo),
         name,
@@ -405,7 +502,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
   }
 
   test("should correctly handle custom errors from generic functions") {
-    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val javaClassInfo  = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
     checkApplyFunction(
@@ -427,13 +524,13 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 
   class ClassWithWeirdTypesInMethods {
     def methodReturningArray: Array[Int] = ???
-    def methodWithDollar$: String = ???
-    def normalMethod: String = ???
+    def methodWithDollar$ : String       = ???
+    def normalMethod: String             = ???
   }
 
   class ClassWithOverloadedMethods {
-    def method(i: Int): String = ???
-    def method(i: String): String = ???
+    def method(i: Int): String     = ???
+    def method(i: String): String  = ???
     def method(i: Boolean): String = ???
   }
 
@@ -445,13 +542,17 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     Parameter(name, Typed.fromDetailedType[T])
   }
 
-  private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
+  private def singleClassDefinition[T: TypeTag](
+      settings: ClassExtractionSettings = ClassExtractionSettings.Default
+  ): Option[ClazzDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
     clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
-  private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {
+  private def singleClassAndItsChildrenDefinition[T: TypeTag](
+      settings: ClassExtractionSettings = ClassExtractionSettings.Default
+  ) = {
     val ref = Typed.fromDetailedType[T]
     clazzAndItsChildrenDefinition(List(Typed(ref)))(settings)
   }
@@ -463,18 +564,26 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
 private class HeadHelper extends TypingFunction {
   private val listClass = classOf[java.util.List[_]]
 
-  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
+  override def computeResultType(
+      arguments: List[TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
-    case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-    case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+    case TypedClass(`listClass`, _) :: Nil        => throw new AssertionError("Lists must have one parameter")
+    case _                                        => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
+
 }
 
 private class MaxHelper extends TypingFunction {
-  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-    if (arguments.isEmpty) return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
+
+  override def computeResultType(
+      arguments: List[TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
+    if (arguments.isEmpty)
+      return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
 
     val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }
+
 }

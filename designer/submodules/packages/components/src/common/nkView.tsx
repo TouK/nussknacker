@@ -1,7 +1,7 @@
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import React, { PropsWithChildren, useEffect, useMemo } from "react";
 import { RootProviders } from "../settings";
-import { useTheme } from "@emotion/react";
+import { useTheme } from "@mui/material";
 import { useDefaultTheme } from "./defaultTheme";
 import { NavigationProvider } from "./parentNavigationProvider";
 import { RemoteComponentProps } from "nussknackerUi/containers/DynamicTab";

@@ -17,10 +17,9 @@ object DesignerConfigLoader {
   private val defaultConfigResource = "defaultDesignerConfig.conf"
 
   def load(baseUnresolvedConfig: Config, classLoader: ClassLoader): ConfigWithUnresolvedVersion = {
-    val parsedDefaultUiConfig = ConfigFactory.parseResources(defaultConfigResource)
+    val parsedDefaultUiConfig                  = ConfigFactory.parseResources(defaultConfigResource)
     val unresolvedConfigWithFallbackToDefaults = baseUnresolvedConfig.withFallback(parsedDefaultUiConfig)
     ConfigWithUnresolvedVersion(classLoader, unresolvedConfigWithFallbackToDefaults)
   }
 
 }
-

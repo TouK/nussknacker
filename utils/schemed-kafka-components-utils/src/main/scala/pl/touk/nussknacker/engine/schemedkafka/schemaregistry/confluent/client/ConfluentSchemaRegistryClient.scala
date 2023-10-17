@@ -5,7 +5,10 @@ import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{
+  CachedSchemaRegistryClient => CCachedSchemaRegistryClient,
+  SchemaRegistryClient => CSchemaRegistryClient
+}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.schemaregistry.{ParsedSchema, SchemaProvider}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
@@ -35,6 +38,7 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
+
 }
 
 object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
@@ -49,13 +53,14 @@ object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientF
   }
 
   def createConfluentClient(c: SchemaRegistryClientKafkaConfig): CCachedSchemaRegistryClient = {
-    val config = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)
-    val urls = config.getSchemaRegistryUrls
-    val maxSchemaObject = config.getMaxSchemasPerSubject
-    val originals = config.originalsWithPrefix("")
+    val config                                = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)
+    val urls                                  = config.getSchemaRegistryUrls
+    val maxSchemaObject                       = config.getMaxSchemasPerSubject
+    val originals                             = config.originalsWithPrefix("")
     val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
     new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
   }
+
 }
 
 class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient)
@@ -64,14 +69,18 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
-      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      val subject        = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
       ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
-  override def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getByTopicAndVersion(
+      topic: String,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
-      val subject = ConfluentUtils.topicSubject(topic, isKey)
+      val subject        = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
       ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
@@ -103,5 +112,5 @@ object ConfluentSchemaRegistryClient {
   // The most common codes from https://docs.confluent.io/current/schema-registry/develop/api.html
   val subjectNotFoundCode = 40401
   val versionNotFoundCode = 40402
-  val schemaNotFoundCode = 40403
+  val schemaNotFoundCode  = 40403
 }

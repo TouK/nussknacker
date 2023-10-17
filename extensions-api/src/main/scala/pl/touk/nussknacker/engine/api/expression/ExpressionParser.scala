@@ -9,8 +9,15 @@ trait ExpressionParser {
 
   def languageId: String
 
-  def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): ValidatedNel[ExpressionParseError, TypedExpression]
+  def parse(
+      original: String,
+      ctx: ValidationContext,
+      expectedType: TypingResult
+  ): ValidatedNel[ExpressionParseError, TypedExpression]
 
-  def parseWithoutContextValidation(original: String, expectedType: TypingResult): ValidatedNel[ExpressionParseError, Expression]
+  def parseWithoutContextValidation(
+      original: String,
+      expectedType: TypingResult
+  ): ValidatedNel[ExpressionParseError, Expression]
 
 }

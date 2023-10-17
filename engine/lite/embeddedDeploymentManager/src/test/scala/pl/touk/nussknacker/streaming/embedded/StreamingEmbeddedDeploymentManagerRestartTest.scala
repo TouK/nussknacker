@@ -13,14 +13,22 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
 
   // This test is in separate suite to make sure that restarting of kafka server have no influence on other test case scenarios
   test("Set status to restarting when scenario fails and back to running when the problems are fixed") {
-    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
+    val fixture @ FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
       .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
-      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
-        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
+      .emptySink(
+        "sink",
+        "kafka",
+        TopicParamName                  -> s"'$outputTopic'",
+        SchemaVersionParamName          -> "'latest'",
+        "Key"                           -> "null",
+        SinkRawEditorParamName          -> "true",
+        SinkValidationModeParameterName -> "'strict'",
+        SinkValueParamName              -> "#input"
+      )
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)

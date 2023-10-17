@@ -1,25 +1,22 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { InputWithFocus } from "../../withFocus";
+import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
 import { Icon, Label } from "./ToolbarButtonStyled";
+import { useTheme } from "@mui/material";
 
-const {
-    buttonSize,
-    rightPanelButtonFontSize,
-    buttonTextColor,
-    buttonBkgColor,
-    buttonBkgHover,
-    focusColor,
-    errorColor,
-    okColor,
-    buttonSmallSize,
-} = variables;
+const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
 
-export function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasError, isActive, ...props }: ToolbarButtonProps) {
+export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
+    { onDrop, title, className, disabled, name, icon, hasError, isActive, ...props },
+    ref,
+) {
     const { variant } = useContext(ToolbarButtonsContext);
+    const {
+        custom: { colors },
+    } = useTheme();
 
     const margin = 2;
     const width = parseFloat(variant === ButtonsVariant.small ? buttonSmallSize : buttonSize) - 2 * margin;
@@ -40,16 +37,16 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
         height: width,
         outline: "none",
 
-        borderColor: hasError ? errorColor : "transparent",
+        borderColor: hasError ? colors.error : "transparent",
         ":focus": {
-            borderColor: focusColor,
+            borderColor: colors.cobalt,
         },
 
-        color: hasError ? errorColor : isActive ? okColor : buttonTextColor,
+        color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
 
-        backgroundColor: buttonBkgColor,
+        backgroundColor: colors.primaryBackground,
         ":hover": {
-            backgroundColor: disabled ? buttonBkgColor : buttonBkgHover,
+            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
         },
     });
 
@@ -71,12 +68,12 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
                 {({ getRootProps, getInputProps }) => (
                     <>
                         <div {...getRootProps(buttonProps)} />
-                        <InputWithFocus {...getInputProps()} />
+                        <NodeInput {...getInputProps()} />
                     </>
                 )}
             </Dropzone>
         );
     }
 
-    return <button type="button" {...buttonProps} disabled={disabled} />;
-}
+    return <button ref={ref} type="button" {...buttonProps} disabled={disabled} />;
+});

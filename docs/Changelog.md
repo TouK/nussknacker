@@ -1,7 +1,17 @@
 # Changelog
 
+1.13.0 (Not released yet)
+-------------------------
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
+* [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
+* [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available
+
 1.12.0 (Not released yet)
 -------------------------
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
 * [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SpEL string literal conversions (allow only constant that convert successfully)
 * [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
 * [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
@@ -15,6 +25,15 @@
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
+* [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
+* [#4762](https://github.com/TouK/nussknacker/pull/4762) Fix: RegExpParameterValidator, trimming SPeL comprehension
+* [#4744](https://github.com/TouK/nussknacker/pull/4744) Fix for OIDC: support for simultaneously Machine-2-Machine and Basic flow handling: 
+  * Skip user profile call based on the fact that access token is JWT with subject and user has username configured. 
+  * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
+* [#4797](https://github.com/TouK/nussknacker/pull/4797) Ability to define the name of query parameter with access token that will be passed into tabs url
+* [#4804](https://github.com/TouK/nussknacker/pull/4804) Improvement: Allow passing globalVariables on TestRunner
 
 1.11.3 (11 Sep 2023)
 -------------------------

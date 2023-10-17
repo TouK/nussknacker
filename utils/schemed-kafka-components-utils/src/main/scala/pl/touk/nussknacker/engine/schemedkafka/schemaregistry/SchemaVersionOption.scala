@@ -11,8 +11,8 @@ object SchemaVersionOption {
   def byName(name: String): SchemaVersionOption = {
     name match {
       case `LatestOptionName` => LatestSchemaVersion
-      case IntValue(version) => ExistingSchemaVersion(version)
-      case _ => throw new IllegalArgumentException(s"Unexpected schema version option: $name")
+      case IntValue(version)  => ExistingSchemaVersion(version)
+      case _                  => throw new IllegalArgumentException(s"Unexpected schema version option: $name")
     }
   }
 
@@ -20,4 +20,4 @@ object SchemaVersionOption {
 
 case class ExistingSchemaVersion(version: Int) extends SchemaVersionOption
 
-case object LatestSchemaVersion  extends SchemaVersionOption
+case object LatestSchemaVersion extends SchemaVersionOption

@@ -19,6 +19,7 @@ class DelegatingKafkaSerializer[T](delegate: Serializer[T]) extends Serializer[T
     val preprocessedData = preprocessData(data, topic, headers)
     delegate.serialize(topic, headers, preprocessedData)
   }
+
   protected def preprocessData(data: T, topic: String, headers: Headers): T = data
 
   override def close(): Unit = delegate.close()

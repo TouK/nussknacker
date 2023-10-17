@@ -36,10 +36,12 @@ import java.util.{Calendar, Date, Optional, UUID}
   *                                     It can be: added 'field' property next to 'getField', replaced 'getField' with
   *                                     'field' or leaved as it is.
   */
-case class ClassExtractionSettings(excludeClassPredicates: Seq[ClassPredicate],
-                                   excludeClassMemberPredicates: Seq[ClassMemberPredicate],
-                                   includeClassMemberPredicates: Seq[ClassMemberPredicate],
-                                   propertyExtractionStrategy: PropertyFromGetterExtractionStrategy) {
+case class ClassExtractionSettings(
+    excludeClassPredicates: Seq[ClassPredicate],
+    excludeClassMemberPredicates: Seq[ClassMemberPredicate],
+    includeClassMemberPredicates: Seq[ClassMemberPredicate],
+    propertyExtractionStrategy: PropertyFromGetterExtractionStrategy
+) {
 
   def isHidden(clazz: Class[_]): Boolean =
     excludeClassPredicates.exists(_.matches(clazz))
@@ -47,12 +49,16 @@ case class ClassExtractionSettings(excludeClassPredicates: Seq[ClassPredicate],
   def visibleMembersPredicate(clazz: Class[_]): VisibleMembersPredicate = {
     VisibleMembersPredicate(
       excludeClassMemberPredicates.filter(p => p.matchesClass(clazz)),
-      NonEmptyList.fromList(includeClassMemberPredicates.filter(p => p.matchesClass(clazz)).toList))
+      NonEmptyList.fromList(includeClassMemberPredicates.filter(p => p.matchesClass(clazz)).toList)
+    )
   }
 
 }
 
-case class VisibleMembersPredicate(excludePredicates: Seq[ClassMemberPredicate], includePredicates: Option[NonEmptyList[ClassMemberPredicate]]) {
+case class VisibleMembersPredicate(
+    excludePredicates: Seq[ClassMemberPredicate],
+    includePredicates: Option[NonEmptyList[ClassMemberPredicate]]
+) {
 
   def shouldBeVisible(member: Member): Boolean =
     !excludePredicates.exists(_.matchesMember(member)) && includePredicates.forall(_.exists(_.matchesMember(member)))
@@ -71,35 +77,38 @@ object PropertyFromGetterExtractionStrategy {
 
 }
 
-
 object ClassExtractionSettings {
 
   val ToStringMethod: String = "toString"
 
-  val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers,
-    PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter)
+  val Default: ClassExtractionSettings = ClassExtractionSettings(
+    DefaultExcludedClasses,
+    DefaultExcludedMembers,
+    DefaultIncludedMembers,
+    PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter
+  )
 
   lazy val DefaultExcludedClasses: List[ClassPredicate] = ExcludedStdClasses ++ ExcludedExtraClasses
 
-  lazy val ExcludedStdClasses: List[ClassPredicate] = ExcludedVoidClasses ++ ExcludedCollectionFunctionalClasses ++ ExcludedTimeClasses ++
-    List(
-      // In case if someone use it for kind of meta programming
-      ExactClassPredicate[Class[_]],
+  lazy val ExcludedStdClasses: List[ClassPredicate] =
+    ExcludedVoidClasses ++ ExcludedCollectionFunctionalClasses ++ ExcludedTimeClasses ++
+      List(
+        // In case if someone use it for kind of meta programming
+        ExactClassPredicate[Class[_]],
 
-      //we want only boxed types
-      ClassPredicate { case cl => cl.isPrimitive },
-
-      ExactClassPredicate[ReturningSingleClassPromotionStrategy],
-      // We use this type only programmable
-      ClassNamePredicate("pl.touk.nussknacker.engine.spel.SpelExpressionRepr"),
-    )
+        // we want only boxed types
+        ClassPredicate { case cl => cl.isPrimitive },
+        ExactClassPredicate[ReturningSingleClassPromotionStrategy],
+        // We use this type only programmable
+        ClassNamePredicate("pl.touk.nussknacker.engine.spel.SpelExpressionRepr"),
+      )
 
   lazy val ExcludedCollectionFunctionalClasses: List[ClassPredicate] = List(
     // In case if someone return function for lazy evaluation purpose
     BasePackagePredicate("java.util.function"),
     ClassNamePrefixPredicate("scala.Function"),
     BasePackagePredicate("java.util.stream"),
-    //Scala collections are cumbersome to use with Spel
+    // Scala collections are cumbersome to use with Spel
     BasePackagePredicate("scala.collection"),
     ClassNamePrefixPredicate("scala.Tuple"),
     ExactClassPredicate[Option[_]],
@@ -112,10 +121,15 @@ object ClassExtractionSettings {
   )
 
   lazy val ExcludedTimeClasses: List[ClassPredicate] = List(
-    //we want to have Chrono*Time classes, as many parameters/return types of Local/ZonedDate(Time) use them
-    ExceptOfClassesPredicate(BasePackagePredicate("java.time.chrono"),
-      ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])),
-    ExceptOfClassesPredicate(BasePackagePredicate("java.time.temporal"), ExactClassPredicate(classOf[ChronoUnit], classOf[Temporal], classOf[TemporalAccessor])),
+    // we want to have Chrono*Time classes, as many parameters/return types of Local/ZonedDate(Time) use them
+    ExceptOfClassesPredicate(
+      BasePackagePredicate("java.time.chrono"),
+      ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])
+    ),
+    ExceptOfClassesPredicate(
+      BasePackagePredicate("java.time.temporal"),
+      ExactClassPredicate(classOf[ChronoUnit], classOf[Temporal], classOf[TemporalAccessor])
+    ),
     ExactClassPredicate(classOf[Clock]),
     BasePackagePredicate("java.time.zone"),
   )
@@ -130,66 +144,87 @@ object ClassExtractionSettings {
       BasePackagePredicate("dispatch"),
       BasePackagePredicate("cats"),
       ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]),
-      //If cronutils are included to use Cron editor, we don't want quite a lot of unnecessary classes
+      // If cronutils are included to use Cron editor, we don't want quite a lot of unnecessary classes
       BasePackagePredicate("com.cronutils.model.field")
     )
 
-  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
-    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate(
-      classOf[Decoder[_]], classOf[Encoder[_]], classOf[ParameterEditor]
-    )))
+  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] =
+    CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
+      ReturnMemberPredicate(
+        SuperClassPredicate(
+          ExactClassPredicate(
+            classOf[Decoder[_]],
+            classOf[Encoder[_]],
+            classOf[ParameterEditor]
+          )
+        )
+      )
 
   lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
       AllMembersPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
-      ClassMemberPredicate(ClassPredicate { case _ => true }, {
-        case m => m.getName.contains("$")
-      }),
-      ClassMemberPredicate(ClassPredicate { case _ => true }, {
-        case m: Member with AccessibleObject => m.getAnnotation(classOf[Hidden]) != null
-      }),
-      ClassMemberPredicate(ClassPredicate { case cl => classOf[HideToString].isAssignableFrom(cl) }, {
-        case m: Method => m.getName == ToStringMethod && m.getParameterCount == 0
-      }),
-      ClassMemberPredicate(ClassPredicate { case cl => cl.isEnum }, {
-        case m: Method => List("declaringClass", "getDeclaringClass").contains(m.getName)
-      })
+      ClassMemberPredicate(
+        ClassPredicate { case _ => true },
+        { case m =>
+          m.getName.contains("$")
+        }
+      ),
+      ClassMemberPredicate(
+        ClassPredicate { case _ => true },
+        { case m: Member with AccessibleObject =>
+          m.getAnnotation(classOf[Hidden]) != null
+        }
+      ),
+      ClassMemberPredicate(
+        ClassPredicate { case cl => classOf[HideToString].isAssignableFrom(cl) },
+        { case m: Method =>
+          m.getName == ToStringMethod && m.getParameterCount == 0
+        }
+      ),
+      ClassMemberPredicate(
+        ClassPredicate { case cl => cl.isEnum },
+        { case m: Method =>
+          List("declaringClass", "getDeclaringClass").contains(m.getName)
+        }
+      )
     )
 
   lazy val KafkaExcludedMembers: List[ClassMemberPredicate] = List(
     MemberNamePredicate(
       SuperClassPredicate(ClassNamePredicate("pl.touk.nussknacker.engine.kafka.source.InputMeta")),
-      Set("withType", "apply", "keyParameterName"))
+      Set("withType", "apply", "keyParameterName")
+    )
   )
 
   lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
     List(
       MemberNamePredicate(
         SuperClassPredicate(ClassNamePredicate("org.apache.avro.generic.IndexedRecord")),
-        Set("get", "getSchema", "compareTo", "put")),
+        Set("get", "getSchema", "compareTo", "put")
+      ),
       MemberNamePatternPredicate(
         SuperClassPredicate(ClassNamePredicate("org.apache.avro.specific.SpecificRecordBase")),
-        Pattern.compile("(getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
+        Pattern.compile("(getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)")
+      )
     )
 
   lazy val JavaTimeExcludeMembers: List[ClassMemberPredicate] =
     List(
       MemberNamePredicate(
         SuperClassPredicate(ClassNamePredicate("java.time.temporal.TemporalAccessor")),
-        Set("adjustInto", "from")))
+        Set("adjustInto", "from")
+      )
+    )
 
-  lazy val DefaultIncludedMembers: List[ClassMemberPredicate] = IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
+  lazy val DefaultIncludedMembers: List[ClassMemberPredicate] =
+    IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 
   lazy val IncludedStdMembers: List[ClassMemberPredicate] =
     List(
       // For other std types we don't want to see anything but toString method
-      MemberNamePredicate(
-        ClassNamePrefixPredicate("java."),
-        Set(ToStringMethod)),
-      MemberNamePredicate(
-        ClassNamePrefixPredicate("scala."),
-        Set(ToStringMethod))
+      MemberNamePredicate(ClassNamePrefixPredicate("java."), Set(ToStringMethod)),
+      MemberNamePredicate(ClassNamePrefixPredicate("scala."), Set(ToStringMethod))
     )
 
   lazy val IncludedUtilsMembers: List[ClassMemberPredicate] =
@@ -197,46 +232,87 @@ object ClassExtractionSettings {
       // For numeric types, strings an collections, date types we want to see all useful methods - we need this explicitly define here because
       // we have another, more general rule: IncludedStdMembers and both predicates are composed
       ClassMemberPredicate(
-        SuperClassPredicate(ExactClassPredicate(classOf[java.lang.Boolean], classOf[Number], classOf[Date], classOf[Calendar], classOf[TimeUnit])),
-        { case _ => true }),
-      ClassMemberPredicate(
-        ClassNamePrefixPredicate("java.time."),
-        { case _ => true }),
-      ClassMemberPredicate(
-        ClassNamePrefixPredicate("scala.concurrent.duration."),
-        { case _ => true }),
+        SuperClassPredicate(
+          ExactClassPredicate(
+            classOf[java.lang.Boolean],
+            classOf[Number],
+            classOf[Date],
+            classOf[Calendar],
+            classOf[TimeUnit]
+          )
+        ),
+        { case _ => true }
+      ),
+      ClassMemberPredicate(ClassNamePrefixPredicate("java.time."), { case _ => true }),
+      ClassMemberPredicate(ClassNamePrefixPredicate("scala.concurrent.duration."), { case _ => true }),
       MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
-        Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
-          s"replace|replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+        Pattern.compile(
+          s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
+            s"replace|replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod"
+        )
+      ),
       MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[NumberFormat]),
-        Pattern.compile(s"get.*Instance|format|parse")),
+        Pattern.compile(s"get.*Instance|format|parse")
+      ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Collection[_]]),
-        Set("contains", "containsAll", "get", "getOrDefault", "indexOf", "isEmpty", "lastIndexOf", "size")),
+        Set("contains", "containsAll", "get", "getOrDefault", "indexOf", "isEmpty", "lastIndexOf", "size")
+      ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Map[_, _]]),
-        Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")),
+        Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")
+      ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[Optional[_]]),
-        Set("get", "isEmpty", "isPresent", "orElse")),
+        Set("get", "isEmpty", "isPresent", "orElse")
+      ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[UUID]),
-        Set("clockSequence", "randomUUID", "fromString", "getLeastSignificantBits", "getMostSignificantBits", "node", "timestamp", ToStringMethod, "variant", "version")),
+        Set(
+          "clockSequence",
+          "randomUUID",
+          "fromString",
+          "getLeastSignificantBits",
+          "getMostSignificantBits",
+          "node",
+          "timestamp",
+          ToStringMethod,
+          "variant",
+          "version"
+        )
+      ),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]])),
-        Set("apply", "applyOrElse", "contains", "get", "getOrDefault", "head", "indexOf", "isDefined", "isEmpty", "nonEmpty", "orNull", "size", "tail", "values", "keys", "diff"))
+        Set(
+          "apply",
+          "applyOrElse",
+          "contains",
+          "get",
+          "getOrDefault",
+          "head",
+          "indexOf",
+          "isDefined",
+          "isEmpty",
+          "nonEmpty",
+          "orNull",
+          "size",
+          "tail",
+          "values",
+          "keys",
+          "diff"
+        )
+      )
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =
     List(
-      MemberNamePredicate(
-        ClassNamePrefixPredicate("scala.xml."),
-        Set(ToStringMethod)),
+      MemberNamePredicate(ClassNamePrefixPredicate("scala.xml."), Set(ToStringMethod)),
       MemberNamePredicate(
         ClassNamePrefixPredicate("io.circe."),
-        Set("noSpaces", "noSpacesSortKeys", "spaces2", "spaces2SortKeys", "spaces4", "spaces4SortKeys", ToStringMethod)),
+        Set("noSpaces", "noSpacesSortKeys", "spaces2", "spaces2SortKeys", "spaces4", "spaces4SortKeys", ToStringMethod)
+      ),
     )
 
   private case class DumpCaseClass()

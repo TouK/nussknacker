@@ -6,14 +6,19 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer, FlinkEspExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumerProvider.recordingConsumerIdPath
-import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider, RunIdDataRecorder}
+import pl.touk.nussknacker.engine.flink.test.{
+  RecordingExceptionConsumer,
+  RecordingExceptionConsumerProvider,
+  RunIdDataRecorder
+}
 
 object LifecycleRecordingExceptionConsumerProvider {
 
   val providerName = "LifecycleRecordingException"
 
   def configWithProvider(config: Config, consumerId: String): Config =
-    RecordingExceptionConsumerProvider.configWithProvider(config, consumerId)
+    RecordingExceptionConsumerProvider
+      .configWithProvider(config, consumerId)
       .withValue("exceptionHandler.type", fromAnyRef(providerName))
 
 }
@@ -29,6 +34,7 @@ class LifecycleRecordingExceptionConsumerProvider extends FlinkEspExceptionConsu
     val id = exceptionHandlerConfig.as[String](recordingConsumerIdPath)
     new LifecycleRecordingExceptionConsumer(id)
   }
+
 }
 
 private[helpers] case class LifecycleRecord(opened: Boolean = false, closed: Boolean = false)

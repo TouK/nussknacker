@@ -20,7 +20,9 @@ trait AvroSchemaDeterminer {
    * - I want to to typed filtering on #input.field1
    * - I want to pass #input to sink, with all (possibly unknown at deployment time) fields
    */
-  def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData[AvroSchema]): Option[RuntimeSchemaData[AvroSchema]] = Some(schemaUsedInTyping)
+  def toRuntimeSchema(schemaUsedInTyping: RuntimeSchemaData[AvroSchema]): Option[RuntimeSchemaData[AvroSchema]] = Some(
+    schemaUsedInTyping
+  )
 
 }
 
@@ -29,7 +31,10 @@ trait AvroSchemaDeterminer {
  * @param serializableSchema Serializable Avro schema
  * @param schemaIdOpt optional schema id fetched from schema registry - for further optimizations of record processing in runtime
  */
-case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializableParsedSchema[T], schemaIdOpt: Option[SchemaId]) {
+case class RuntimeSchemaData[T <: ParsedSchema](
+    serializableSchema: NkSerializableParsedSchema[T],
+    schemaIdOpt: Option[SchemaId]
+) {
   def schema: T = serializableSchema.getParsedSchema
 
   // Will be better to make T covariant but NkSerializableParsedSchema is java class and it is not supported there

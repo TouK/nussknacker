@@ -8,10 +8,14 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 object TypeDefinitionSet {
 
   def forClasses(classes: Class[_]*): TypeDefinitionSet = TypeDefinitionSet(
-    TypesInformation.extractFromClassList(classes ++ ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default))
+    TypesInformation.extractFromClassList(classes ++ ExpressionConfig.defaultAdditionalClasses)(
+      ClassExtractionSettings.Default
+    )
+  )
 
   def forDefaultAdditionalClasses: TypeDefinitionSet = TypeDefinitionSet(
-    TypesInformation.extractFromClassList(ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default))
+    TypesInformation.extractFromClassList(ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default)
+  )
 
   def apply(typeDefinitions: Set[ClazzDefinition]): TypeDefinitionSet = {
     new TypeDefinitionSet(typeDefinitions.toList.map(classDef => classDef.getClazz -> classDef).toMap)
@@ -27,4 +31,3 @@ case class TypeDefinitionSet(typeDefinitions: Map[Class[_], ClazzDefinition]) {
     typeDefinitions.get(clazz)
 
 }
-

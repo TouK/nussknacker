@@ -1,7 +1,10 @@
 import { BASE_ORIGIN, BASE_PATH } from "nussknackerUi/config";
 import urljoin from "url-join";
 
-export const BASE_HREF = urljoin(BASE_ORIGIN, BASE_PATH);
+export const BASE_HREF =
+    process.env.NODE_ENV !== "production" && BASE_PATH.startsWith(process.env.PROXY_PATH)
+        ? process.env.NU_FE_CORE_URL
+        : urljoin(BASE_ORIGIN, BASE_PATH);
 
 export function makeRelative(href: string): string {
     return href.replace(BASE_HREF, (match, offset) => (offset > 0 ? match : "/"));

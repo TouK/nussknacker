@@ -26,17 +26,26 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
   import actorSystem.dispatcher
-  implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  implicit val backend: SttpBackend[Future, Any] =
+    AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
-  private val config = ConfigWithUnresolvedVersion(ConfigFactory.load()
-    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), ConfigValueFactory.fromAnyRef("kafka:1234"))
-    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava)))
+  private val config = ConfigWithUnresolvedVersion(
+    ConfigFactory
+      .load()
+      .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
+      .withValue(
+        KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"),
+        ConfigValueFactory.fromAnyRef("kafka:1234")
+      )
+      .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+  )
 
-  private val scenarioTestData = ScenarioTestData(List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere"))))
+  private val scenarioTestData = ScenarioTestData(
+    List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere")))
+  )
 
   it should "run scenario in test mode" in {
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
@@ -48,8 +57,8 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
     whenReady(deploymentManager.test(ProcessName(processId), process, scenarioTestData, identity)) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
-        "nightFilter" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
-        "endSend" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere"))))
+        "nightFilter"  -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
+        "endSend"      -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere"))))
       )
     }
   }
@@ -65,7 +74,10 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
 
     val caught = intercept[IllegalArgumentException] {
-      Await.result(deploymentManager.test(ProcessName(processId), process, scenarioTestData, _ => null), patienceConfig.timeout)
+      Await.result(
+        deploymentManager.test(ProcessName(processId), process, scenarioTestData, _ => null),
+        patienceConfig.timeout
+      )
     }
     caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }

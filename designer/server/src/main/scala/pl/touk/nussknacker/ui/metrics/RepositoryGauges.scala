@@ -12,9 +12,11 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
-class RepositoryGauges(metricRegistry: MetricRegistry,
-                       repositoryGaugesCacheDuration: Duration,
-                       processRepository: DBFetchingProcessRepository[Future]) {
+class RepositoryGauges(
+    metricRegistry: MetricRegistry,
+    repositoryGaugesCacheDuration: Duration,
+    processRepository: DBFetchingProcessRepository[Future]
+) {
 
   private val awaitTime = 5 seconds
 
@@ -27,20 +29,23 @@ class RepositoryGauges(metricRegistry: MetricRegistry,
   }
 
   private class GlobalGauge extends CachedGauge[Values](repositoryGaugesCacheDuration.toSeconds, TimeUnit.SECONDS) {
+
     override def loadValue(): Values = {
-      implicit val user: LoggedUser = NussknackerInternalUser
-      val result = processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map { scenarios =>
-        val all = scenarios.size
-        val deployed = scenarios.count(_.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)))
-        val fragments = scenarios.count(_.isFragment)
-        Values(all, deployed, fragments)
-      }
+      implicit val user: LoggedUser = NussknackerInternalUser.instance
+      val result =
+        processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map {
+          scenarios =>
+            val all       = scenarios.size
+            val deployed  = scenarios.count(_.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)))
+            val fragments = scenarios.count(_.isFragment)
+            Values(all, deployed, fragments)
+        }
       Await.result(result, awaitTime)
     }
 
     def derivative(transform: Values => Long): Gauge[Long] = () => transform(getValue)
   }
 
-  private case class Values(scenarios: Long, deployedScenarios: Long, fragments: Long)
+  private sealed case class Values(scenarios: Long, deployedScenarios: Long, fragments: Long)
 
 }

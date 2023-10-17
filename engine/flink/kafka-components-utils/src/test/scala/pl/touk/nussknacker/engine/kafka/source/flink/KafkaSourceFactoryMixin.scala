@@ -14,11 +14,14 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.consumerrecord.{
+  ConsumerRecordDeserializationSchemaFactory,
+  ConsumerRecordToJsonFormatterFactory
+}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaConfig, KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -28,32 +31,49 @@ import scala.reflect.ClassTag
 
 trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec with PatientScalaFutures {
 
-  val sampleValue: SampleValue = SampleValue("first", "last")
-  val sampleKey: SampleKey = SampleKey("one", 2L)
+  val sampleValue: SampleValue              = SampleValue("first", "last")
+  val sampleKey: SampleKey                  = SampleKey("one", 2L)
   val sampleHeadersMap: Map[String, String] = Map("headerOne" -> "valueOfHeaderOne", "headerTwo" -> null)
-  val sampleHeaders: Headers = KafkaRecordUtils.toHeaders(sampleHeadersMap)
+  val sampleHeaders: Headers                = KafkaRecordUtils.toHeaders(sampleHeadersMap)
 
-  val sampleTopic = "topic"
-  val constTimestamp: Long = 123L
+  val sampleTopic                   = "topic"
+  val constTimestamp: Long          = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+  lazy val processObjectDependencies: ProcessObjectDependencies =
+    ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
 
-  protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] = new BaseSimpleSerializationSchema[ObjToSerialize](
-    topic,
-    (obj: ObjToSerialize) => Option(obj.value).map(v => implicitly[Encoder[SampleValue]].apply(v).noSpaces).orNull,
-    (obj: ObjToSerialize) => Option(obj.key).map(k => implicitly[Encoder[SampleKey]].apply(k).noSpaces).orNull,
-    (obj: ObjToSerialize) => KafkaRecordUtils.toHeaders(obj.headers)
-  ).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
+  protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] =
+    new BaseSimpleSerializationSchema[ObjToSerialize](
+      topic,
+      (obj: ObjToSerialize) => Option(obj.value).map(v => implicitly[Encoder[SampleValue]].apply(v).noSpaces).orNull,
+      (obj: ObjToSerialize) => Option(obj.key).map(k => implicitly[Encoder[SampleKey]].apply(k).noSpaces).orNull,
+      (obj: ObjToSerialize) => KafkaRecordUtils.toHeaders(obj.headers)
+    ).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
   protected def createTopic(name: String, partitions: Int = 1): String = {
     kafkaClient.createTopic(name, partitions = partitions)
     name
   }
 
-  protected def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[Any], obj: AnyRef, topic: String, partition: Option[Int] = None, timestamp: Long = 0L): RecordMetadata = {
+  protected def pushMessage(
+      kafkaSerializer: serialization.KafkaSerializationSchema[Any],
+      obj: AnyRef,
+      topic: String,
+      partition: Option[Int] = None,
+      timestamp: Long = 0L
+  ): RecordMetadata = {
     val record: ProducerRecord[Array[Byte], Array[Byte]] = kafkaSerializer.serialize(obj, timestamp)
-    kafkaClient.sendRawMessage(topic = record.topic(), key = record.key(), content = record.value(), partition = partition, timestamp = record.timestamp(), headers = record.headers()).futureValue
+    kafkaClient
+      .sendRawMessage(
+        topic = record.topic(),
+        key = record.key(),
+        content = record.value(),
+        partition = partition,
+        timestamp = record.timestamp(),
+        headers = record.headers()
+      )
+      .futureValue
   }
 
   protected def checkResult[K, V](a: ConsumerRecord[K, V], b: ConsumerRecord[K, V]): Assertion = {
@@ -72,7 +92,10 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   }
 
   protected lazy val StringSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, new StringDeserializer with Serializable)
+    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(
+      new StringDeserializer with Serializable,
+      new StringDeserializer with Serializable
+    )
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, String]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
@@ -84,7 +107,10 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   }
 
   protected lazy val SampleEventSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
+    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(
+      new StringDeserializer with Serializable,
+      sampleValueJsonDeserializer
+    )
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
@@ -96,7 +122,10 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   }
 
   protected lazy val ConsumerRecordValueSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(new StringDeserializer with Serializable, sampleValueJsonDeserializer)
+    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(
+      new StringDeserializer with Serializable,
+      sampleValueJsonDeserializer
+    )
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[String, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
@@ -108,7 +137,8 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   }
 
   protected lazy val ConsumerRecordKeyValueSourceFactory: KafkaSourceFactory[Any, Any] = {
-    val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
+    val deserializationSchemaFactory =
+      new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)
     val formatterFactory = new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue]
     val sourceFactory = new KafkaSourceFactory(
       deserializationSchemaFactory,
@@ -118,44 +148,67 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     )
     sourceFactory.asInstanceOf[KafkaSourceFactory[Any, Any]]
   }
+
 }
 
 object KafkaSourceFactoryMixin {
 
   @JsonCodec case class SampleKey(partOne: String, partTwo: Long) extends DisplayJsonWithEncoder[SampleKey]
-  @JsonCodec case class SampleValue(id: String, field: String) extends DisplayJsonWithEncoder[SampleValue]
+  @JsonCodec case class SampleValue(id: String, field: String)    extends DisplayJsonWithEncoder[SampleValue]
   @JsonCodec case class ObjToSerialize(value: SampleValue, key: SampleKey, headers: Map[String, String])
 
-  implicit val sampleKeyTypeInformation: TypeInformation[SampleKey] = TypeInformation.of(classOf[SampleKey])
+  implicit val sampleKeyTypeInformation: TypeInformation[SampleKey]     = TypeInformation.of(classOf[SampleKey])
   implicit val sampleValueTypeInformation: TypeInformation[SampleValue] = TypeInformation.of(classOf[SampleValue])
-  implicit val stringTypeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
+  implicit val stringTypeInformation: TypeInformation[String]           = TypeInformation.of(classOf[String])
 
-  val sampleKeyJsonDeserializer: Deserializer[SampleKey] = createDeserializer[SampleKey]
+  val sampleKeyJsonDeserializer: Deserializer[SampleKey]     = createDeserializer[SampleKey]
   val sampleValueJsonDeserializer: Deserializer[SampleValue] = createDeserializer[SampleValue]
 
   def createDeserializer[T: Decoder]: Deserializer[T] = new Deserializer[T] with Serializable {
     override def deserialize(topic: String, data: Array[Byte]): T = decodeJsonUnsafe[T](data)
   }
 
-  def createConsumerRecord[Key, Value](topic: String, partition: Int, offset: Long, timestamp: Long, timestampType: TimestampType, key: Key, value: Value, headers: Headers, leaderEpoch: Optional[Integer]): ConsumerRecord[Key, Value] = {
-    new ConsumerRecord(topic, partition, offset,
-      timestamp, timestampType,
-      ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
-      key, value, headers,
+  def createConsumerRecord[Key, Value](
+      topic: String,
+      partition: Int,
+      offset: Long,
+      timestamp: Long,
+      timestampType: TimestampType,
+      key: Key,
+      value: Value,
+      headers: Headers,
+      leaderEpoch: Optional[Integer]
+  ): ConsumerRecord[Key, Value] = {
+    new ConsumerRecord(
+      topic,
+      partition,
+      offset,
+      timestamp,
+      timestampType,
+      ConsumerRecord.NULL_SIZE,
+      ConsumerRecord.NULL_SIZE,
+      key,
+      value,
+      headers,
       leaderEpoch
     )
   }
 
   def serialize[T: Encoder](data: T): Array[Byte] = Encoder[T].apply(data).noSpaces.getBytes(StandardCharsets.UTF_8)
 
-  def serializeKeyValue(key: Option[String], value: String): (Array[Byte], Array[Byte]) = (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
-  def serializeKeyValue[V:Encoder](key: Option[String], value: V): (Array[Byte], Array[Byte]) = (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, serialize[V](value))
-  def serializeKeyValue[K:Encoder, V:Encoder](key: Option[K], value: V): (Array[Byte], Array[Byte]) = (key.map(serialize[K]).orNull, serialize[V](value))
+  def serializeKeyValue(key: Option[String], value: String): (Array[Byte], Array[Byte]) =
+    (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, value.getBytes(StandardCharsets.UTF_8))
+  def serializeKeyValue[V: Encoder](key: Option[String], value: V): (Array[Byte], Array[Byte]) =
+    (key.map(_.getBytes(StandardCharsets.UTF_8)).orNull, serialize[V](value))
+  def serializeKeyValue[K: Encoder, V: Encoder](key: Option[K], value: V): (Array[Byte], Array[Byte]) =
+    (key.map(serialize[K]).orNull, serialize[V](value))
 
 }
 
-class SampleConsumerRecordDeserializationSchemaFactory[K: ClassTag, V: ClassTag](keyDeserializer: Deserializer[K], valueDeserializer: Deserializer[V])
-  extends ConsumerRecordDeserializationSchemaFactory[K, V] {
-  override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K] = keyDeserializer
+class SampleConsumerRecordDeserializationSchemaFactory[K: ClassTag, V: ClassTag](
+    keyDeserializer: Deserializer[K],
+    valueDeserializer: Deserializer[V]
+) extends ConsumerRecordDeserializationSchemaFactory[K, V] {
+  override protected def createKeyDeserializer(kafkaConfig: KafkaConfig): Deserializer[K]   = keyDeserializer
   override protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V] = valueDeserializer
 }

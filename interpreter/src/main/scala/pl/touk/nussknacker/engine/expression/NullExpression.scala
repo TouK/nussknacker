@@ -5,8 +5,7 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 
-case class NullExpression(original: String,
-                          flavour: Flavour) extends api.expression.Expression with LazyLogging {
+case class NullExpression(original: String, flavour: Flavour) extends api.expression.Expression with LazyLogging {
   override def language: String = flavour.languageId
 
   override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = null.asInstanceOf[T]

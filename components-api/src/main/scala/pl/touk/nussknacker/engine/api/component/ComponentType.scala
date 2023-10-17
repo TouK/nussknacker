@@ -10,27 +10,33 @@ object ComponentType extends Enumeration {
 
   type ComponentType = Value
 
-  //Basic's component types
-  val Filter: Value = Value("filter")
-  val Split: Value = Value("split")
-  val Switch: Value = Value("switch")
-  val Variable: Value = Value("variable")
+  // Basic's component types
+  val Filter: Value      = Value("filter")
+  val Split: Value       = Value("split")
+  val Switch: Value      = Value("switch")
+  val Variable: Value    = Value("variable")
   val MapVariable: Value = Value("mapVariable")
 
-  //Generic's component types
-  val Processor: Value = Value("processor")
-  val Enricher: Value = Value("enricher")
-  val Sink: Value = Value("sink")
-  val Source: Value = Value("source")
-  val Fragments: Value = Value("fragments")
+  // Generic's component types
+  val Processor: Value  = Value("processor")
+  val Enricher: Value   = Value("enricher")
+  val Sink: Value       = Value("sink")
+  val Source: Value     = Value("source")
+  val Fragments: Value  = Value("fragments")
   val CustomNode: Value = Value("customNode")
 
-  //Fragment's component types
-  val FragmentInput: Value = Value("input")
+  // Fragment's component types
+  val FragmentInput: Value  = Value("input")
   val FragmentOutput: Value = Value("output")
 
   private val BaseComponents: Set[ComponentType] = Set(
-    Filter, Split, Switch, Variable, MapVariable, FragmentInput, FragmentOutput
+    Filter,
+    Split,
+    Switch,
+    Variable,
+    MapVariable,
+    FragmentInput,
+    FragmentOutput
   )
 
   def isBaseComponent(componentType: ComponentType): Boolean =

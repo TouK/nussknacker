@@ -5,4 +5,4 @@ import pl.touk.nussknacker.openapi.ServiceName
 
 trait ParseError
 
-case class ServiceParseError(name: ServiceName, errors: NonEmptyList[String]) extends ParseError
+final case class ServiceParseError(name: ServiceName, errors: NonEmptyList[String]) extends ParseError

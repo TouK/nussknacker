@@ -84,7 +84,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val legacyFlinkScenarioWithAdditionalProperties = wrapEmptyScenario {
+  private val legacyFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
       |  "typeSpecificData": {
@@ -105,7 +105,7 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-  private val updatedFlinkScenarioWithAdditionalProperties = wrapEmptyScenario {
+  private val updatedFlinkScenarioWithScenarioProperties = wrapEmptyScenario {
     """{
       |  "id": "testId",
       |  "additionalFields": {
@@ -199,18 +199,21 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   }
 
-
   test("migrate flink scenario") {
     migrateMetaData(legacyFlinkScenarioNoFields) shouldBe Right(updatedFlinkScenarioNoFields)
-    migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties) shouldBe Right(updatedFlinkScenarioWithDescriptionNoProperties)
-    migrateMetaData(legacyFlinkScenarioWithAdditionalProperties) shouldBe Right(updatedFlinkScenarioWithAdditionalProperties)
+    migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties) shouldBe Right(
+      updatedFlinkScenarioWithDescriptionNoProperties
+    )
+    migrateMetaData(legacyFlinkScenarioWithScenarioProperties) shouldBe Right(
+      updatedFlinkScenarioWithScenarioProperties
+    )
   }
 
   test("migrate lite stream scenario") {
     migrateMetaData(legacyLiteStreamScenario) shouldBe Right(updatedLiteStreamScenario)
   }
 
-  test ("migrate lite request response scenario") {
+  test("migrate lite request response scenario") {
     migrateMetaData(legacyLiteRequestResponseScenario) shouldBe Right(updatedLiteRequestResponseScenario)
   }
 

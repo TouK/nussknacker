@@ -13,7 +13,7 @@ object ConfigFactoryExt extends URIExtensions {
       // When we migrate to Java 9+ we can use SPI to load a URLStreamHandlerProvider
       // instance to handle the classpath scheme.
       case "classpath" => ConfigFactory.parseResources(classLoader, uri.getSchemeSpecificPart)
-      case _ => ConfigFactory.parseURL(uri.withFileSchemeDefault.toURL)
+      case _           => ConfigFactory.parseURL(uri.withFileSchemeDefault.toURL)
     }
   }
 
@@ -25,9 +25,12 @@ object ConfigFactoryExt extends URIExtensions {
 
   private val configLocationProperty: String = "nussknacker.config.locations"
 
-  def parseUnresolved(locationString: String = System.getProperty(configLocationProperty), classLoader: ClassLoader): Config = {
+  def parseUnresolved(
+      locationString: String = System.getProperty(configLocationProperty),
+      classLoader: ClassLoader
+  ): Config = {
     val locations = for {
-      property <- Option(locationString).toList
+      property      <- Option(locationString).toList
       singleElement <- property.split(",")
       trimmed = singleElement.trim
     } yield Try(URI.create(trimmed)).filter(_.getScheme.nonEmpty).getOrElse(new File(trimmed).toURI)

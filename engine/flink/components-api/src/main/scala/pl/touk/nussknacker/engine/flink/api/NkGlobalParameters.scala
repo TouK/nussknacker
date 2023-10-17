@@ -12,47 +12,52 @@ import scala.jdk.CollectionConverters._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
 //Also, those configuration properties will be exposed via Flink REST API/webconsole
-case class NkGlobalParameters(buildInfo: String,
-                              processVersion: ProcessVersion,
-                              configParameters: Option[ConfigGlobalParameters],
-                              namingParameters: Option[NamingParameters],
-                              additionalInformation: Map[String, String]) extends GlobalJobParameters {
+case class NkGlobalParameters(
+    buildInfo: String,
+    processVersion: ProcessVersion,
+    configParameters: Option[ConfigGlobalParameters],
+    namingParameters: Option[NamingParameters],
+    additionalInformation: Map[String, String]
+) extends GlobalJobParameters {
 
-  //here we decide which configuration properties should be shown in REST API etc.
-  //NOTE: some of the information is used in FlinkRestManager - any changes here should be reflected there
+  // here we decide which configuration properties should be shown in REST API etc.
+  // NOTE: some of the information is used in FlinkRestManager - any changes here should be reflected there
   override def toMap: util.Map[String, String] = {
 
     val baseProperties = Map[String, String](
-      "buildInfo" -> buildInfo,
-      "versionId" -> processVersion.versionId.value.toString,
-      "processId" -> processVersion.processId.value.toString,
+      "buildInfo"    -> buildInfo,
+      "versionId"    -> processVersion.versionId.value.toString,
+      "processId"    -> processVersion.processId.value.toString,
       "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-      "user" -> processVersion.user
+      "user"         -> processVersion.user
     )
     val configMap = baseProperties ++ additionalInformation
-    //we wrap in HashMap because .asJava creates not-serializable map in 2.11
+    // we wrap in HashMap because .asJava creates not-serializable map in 2.11
     new util.HashMap(configMap.filterNot(_._2 == null).asJava)
   }
 
 }
 
 //this is part of global parameters that is parsed with typesafe Config (e.g. from application.conf/model.conf)
-case class ConfigGlobalParameters(explicitUidInStatefulOperators: Option[Boolean],
-                                  useTypingResultTypeInformation: Option[Boolean],
-                                  //TODO: temporary, until we confirm that IOMonad is not causing problems
-                                  useIOMonadInInterpreter: Option[Boolean],
-                                  forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
-                                 )
+case class ConfigGlobalParameters(
+    explicitUidInStatefulOperators: Option[Boolean],
+    useTypingResultTypeInformation: Option[Boolean],
+    // TODO: temporary, until we confirm that IOMonad is not causing problems
+    useIOMonadInInterpreter: Option[Boolean],
+    forceSyncInterpretationForSyncScenarioPart: Option[Boolean],
+)
 
 case class NamingParameters(tags: Map[String, String])
 
 object NkGlobalParameters {
 
-  def create(buildInfo: String,
-             processVersion: ProcessVersion,
-             modelConfig: Config,
-             namingParameters: Option[NamingParameters],
-             additionalInformation: Map[String, String]): NkGlobalParameters = {
+  def create(
+      buildInfo: String,
+      processVersion: ProcessVersion,
+      modelConfig: Config,
+      namingParameters: Option[NamingParameters],
+      additionalInformation: Map[String, String]
+  ): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
     NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters, additionalInformation)
   }

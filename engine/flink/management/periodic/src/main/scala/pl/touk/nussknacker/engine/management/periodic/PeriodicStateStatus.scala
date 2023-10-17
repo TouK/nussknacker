@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter
 
 object PeriodicStateStatus {
 
-  //without seconds because we do not deploy with that precision
+  // without seconds because we do not deploy with that precision
   val Format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   implicit class RichLocalDateTime(ldt: LocalDateTime) {
@@ -29,23 +29,24 @@ object PeriodicStateStatus {
     def isScheduledStatus(status: StateStatus): Boolean = {
       status.name == name
     }
+
   }
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case SimpleStateStatus.Running => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
-    case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
-    case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
-    case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
+    case SimpleStateStatus.Running => List(ProcessActionType.Cancel) // periodic processes cannot be redeployed from GUI
+    case _: ScheduledStatus        => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    case WaitingForScheduleStatus  => List(ProcessActionType.Cancel) // or maybe should it be empty??
+    case _: ProblemStateStatus     => List(ProcessActionType.Cancel) // redeploy is not allowed
   }
 
-  val statusTooltipsPF: PartialFunction[StateStatus, String] = {
-    case ScheduledStatus(nextRunAt) => s"Scheduled at ${nextRunAt.pretty}"
+  val statusTooltipsPF: PartialFunction[StateStatus, String] = { case ScheduledStatus(nextRunAt) =>
+    s"Scheduled at ${nextRunAt.pretty}"
   }
 
-  val statusDescriptionsPF: PartialFunction[StateStatus, String] = {
-    case ScheduledStatus(nextRunAt) => s"Scheduled at ${nextRunAt.pretty}"
+  val statusDescriptionsPF: PartialFunction[StateStatus, String] = { case ScheduledStatus(nextRunAt) =>
+    s"Scheduled at ${nextRunAt.pretty}"
   }
 
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(

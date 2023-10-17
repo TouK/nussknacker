@@ -16,14 +16,31 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.util.Optional
 
-class ConsumerRecordDeserializationSpec extends AnyFunSuite with Matchers with KafkaSpec with KafkaSourceFactoryMixin with FlinkTypeInformationSerializationMixin {
+class ConsumerRecordDeserializationSpec
+    extends AnyFunSuite
+    with Matchers
+    with KafkaSpec
+    with KafkaSourceFactoryMixin
+    with FlinkTypeInformationSerializationMixin {
 
   private val emptyModel = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
+
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {
-    val givenObj: TestConsumerRecord = new TestConsumerRecord("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME,
-      44, 55, sampleKey, sampleValue, sampleHeaders, Optional.empty[Integer])
+    val givenObj: TestConsumerRecord = new TestConsumerRecord(
+      "loremIpsum",
+      11,
+      22L,
+      constTimestamp,
+      TimestampType.CREATE_TIME,
+      44,
+      55,
+      sampleKey,
+      sampleValue,
+      sampleHeaders,
+      Optional.empty[Integer]
+    )
 
     val typeInformation: TypeInformation[TestConsumerRecord] = TypeInformation.of(classOf[TestConsumerRecord])
 
@@ -31,9 +48,10 @@ class ConsumerRecordDeserializationSpec extends AnyFunSuite with Matchers with K
     intercept[Exception] {
       getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)
     }
-    
+
     Serializers.registerSerializers(emptyModel, executionConfigWithKryo)
     val out = getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)
     checkResult(out, givenObj)
   }
+
 }

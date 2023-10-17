@@ -9,7 +9,12 @@ import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}
+import pl.touk.nussknacker.engine.requestresponse.{
+  FutureBasedRequestResponseScenarioInterpreter,
+  Request1,
+  RequestResponseConfigCreator,
+  Response
+}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 
@@ -39,15 +44,16 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity)
+      variableEncoder = identity
+    )
 
     val contextIds = firstIdForFirstSource(process)
-    val firstId = contextIds.nextContextId()
-    val secondId = contextIds.nextContextId()
-    
+    val firstId    = contextIds.nextContextId()
+    val secondId   = contextIds.nextContextId()
+
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b")))),
-      NodeResult(ResultContext(secondId, Map("input" -> Request1("c","d"))))
+      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b")))),
+      NodeResult(ResultContext(secondId, Map("input" -> Request1("c", "d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -55,10 +61,16 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExpressionInvocationResult(secondId, "expression", false)
     )
 
-    results.externalInvocationResults("processor").toSet shouldBe Set(ExternalInvocationResult(firstId, "processorService", "processor service invoked"))
-    results.externalInvocationResults("eagerProcessor").toSet shouldBe Set(ExternalInvocationResult(firstId, "collectingEager", "static-s-dynamic-a"))
+    results.externalInvocationResults("processor").toSet shouldBe Set(
+      ExternalInvocationResult(firstId, "processorService", "processor service invoked")
+    )
+    results.externalInvocationResults("eagerProcessor").toSet shouldBe Set(
+      ExternalInvocationResult(firstId, "collectingEager", "static-s-dynamic-a")
+    )
 
-    results.externalInvocationResults("endNodeIID").toSet shouldBe Set(ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId")))
+    results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
+      ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId"))
+    )
 
     RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -77,22 +89,24 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d'")))
 
     val contextIds = firstIdForFirstSource(process)
-    val firstId = contextIds.nextContextId()
-    val secondId = contextIds.nextContextId()
+    val firstId    = contextIds.nextContextId()
+    val secondId   = contextIds.nextContextId()
 
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity)
+      variableEncoder = identity
+    )
 
-    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(secondId, "expression", true))
+    results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(
+      ExpressionInvocationResult(secondId, "expression", true)
+    )
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe ResultContext(firstId, Map("input" -> Request1("a","b")))
+    results.exceptions.head.context shouldBe ResultContext(firstId, Map("input" -> Request1("a", "b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
   }
-
 
   test("get results on parameter sinks") {
     val process = ScenarioBuilder
@@ -103,16 +117,17 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
 
     val contextIds = firstIdForFirstSource(process)
-    val firstId = contextIds.nextContextId()
-    
+    val firstId    = contextIds.nextContextId()
+
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity)
+      variableEncoder = identity
+    )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b"))))
+      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b"))))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
@@ -126,6 +141,6 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =
-     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id)
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id)
 
 }

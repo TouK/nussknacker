@@ -6,7 +6,14 @@ import org.apache.avro.generic.GenericRecord
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
+  SchemaVersionParamName,
+  SinkKeyParamName,
+  SinkRawEditorParamName,
+  SinkValidationModeParameterName,
+  SinkValueParamName,
+  TopicParamName
+}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 object NuKafkaRuntimeTestSamples {
@@ -18,14 +25,15 @@ object NuKafkaRuntimeTestSamples {
   def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
     .streamingLite(pingPongScenarioId)
     .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-    .emptySink("sink",
+    .emptySink(
+      "sink",
       "kafka",
-      TopicParamName -> s"'$outputTopic'",
-      SchemaVersionParamName -> "'latest'",
-      SinkRawEditorParamName -> s"true",
+      TopicParamName                  -> s"'$outputTopic'",
+      SchemaVersionParamName          -> "'latest'",
+      SinkRawEditorParamName          -> s"true",
       SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-      SinkKeyParamName -> "",
-      SinkValueParamName -> "#input"
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> "#input"
     )
 
   val jsonPingMessage: String =
@@ -40,8 +48,7 @@ object NuKafkaRuntimeTestSamples {
       |   ]
       |}""".stripMargin
 
-  val jsonPingSchema: JsonSchema = new JsonSchema(
-    """{
+  val jsonPingSchema: JsonSchema = new JsonSchema("""{
       |   "type" : "object",
       |   "name" : "Ping",
       |   "properties" : {

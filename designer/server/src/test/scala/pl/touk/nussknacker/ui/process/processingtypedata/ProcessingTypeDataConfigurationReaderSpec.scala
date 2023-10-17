@@ -29,20 +29,26 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
   import scala.jdk.CollectionConverters._
 
   test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(oldConfiguration))
+    val processTypes =
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(oldConfiguration))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("streaming")
   }
 
   test("should optionally load scenarioTypes configuration") {
-    val configuration = ConfigFactory.parseMap(Map[String, Any](
-      "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(oldConfiguration.getConfig("processTypes.streaming").root())
-    ).asJava)
+    val configuration = ConfigFactory.parseMap(
+      Map[String, Any](
+        "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(
+          oldConfiguration.getConfig("processTypes.streaming").root()
+        )
+      ).asJava
+    )
 
     val config = oldConfiguration.withFallback(configuration).resolve()
 
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
+    val processTypes =
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("newStreamingScenario")

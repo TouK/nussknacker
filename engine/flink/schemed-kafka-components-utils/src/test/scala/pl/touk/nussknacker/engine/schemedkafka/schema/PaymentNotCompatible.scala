@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schema
 import org.apache.avro.generic.GenericData
 
 object PaymentNotCompatible extends TestSchemaWithRecord {
+
   val stringSchema: String =
     s"""
        |{

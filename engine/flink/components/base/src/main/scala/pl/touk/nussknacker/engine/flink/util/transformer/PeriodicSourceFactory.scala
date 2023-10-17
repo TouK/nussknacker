@@ -10,8 +10,15 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkContextInitializingFunction,
+  FlinkCustomNodeContext,
+  FlinkSource
+}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
+  StandardTimestampWatermarkHandler,
+  TimestampWatermarkHandler
+}
 import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
 import java.time.Duration
@@ -21,22 +28,34 @@ import javax.validation.constraints.Min
 import scala.jdk.CollectionConverters._
 
 // TODO: add testing capabilities
-object PeriodicSourceFactory extends PeriodicSourceFactory(
-  new StandardTimestampWatermarkHandler[AnyRef](WatermarkStrategy.forMonotonousTimestamps()
-    .withTimestampAssigner(new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField))))
+object PeriodicSourceFactory
+    extends PeriodicSourceFactory(
+      new StandardTimestampWatermarkHandler[AnyRef](
+        WatermarkStrategy
+          .forMonotonousTimestamps()
+          .withTimestampAssigner(
+            new MapAscendingTimestampExtractor(MapAscendingTimestampExtractor.DefaultTimestampField)
+          )
+      )
+    )
 
-class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory  {
+class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory {
 
   @MethodToInvoke
-  def create(@ParamName("period") period: Duration,
-             // TODO: @DefaultValue(1) instead of nullable
-             @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
-             @ParamName("value") value: LazyParameter[AnyRef]): Source = {
+  def create(
+      @ParamName("period") period: Duration,
+      // TODO: @DefaultValue(1) instead of nullable
+      @ParamName("count") @Nullable @Min(1) nullableCount: Integer,
+      @ParamName("value") value: LazyParameter[AnyRef]
+  ): Source = {
     new FlinkSource with ReturningType {
 
-      override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
+      override def sourceStream(
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStream[Context] = {
 
-        val count = Option(nullableCount).map(_.toInt).getOrElse(1)
+        val count     = Option(nullableCount).map(_.toInt).getOrElse(1)
         val processId = flinkNodeContext.metaData.id
         val stream = env
           .addSource(new PeriodicFunction(period))
@@ -44,15 +63,18 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .flatMap { (v: ValueWithContext[AnyRef], c: Collector[AnyRef]) =>
             1.to(count).map(_ => v.value).foreach(c.collect)
-          }.returns(TypeInformation.of(classOf[AnyRef]))
+          }
+          .returns(TypeInformation.of(classOf[AnyRef]))
 
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 
         rawSourceWithTimestamp
           .map(
             new FlinkContextInitializingFunction[AnyRef](
-              new BasicContextInitializer[AnyRef](Unknown), flinkNodeContext.nodeId,
-              flinkNodeContext.convertToEngineRuntimeContext),
+              new BasicContextInitializer[AnyRef](Unknown),
+              flinkNodeContext.nodeId,
+              flinkNodeContext.convertToEngineRuntimeContext
+            ),
             flinkNodeContext.contextTypeInfo
           )
       }
@@ -85,14 +107,16 @@ class MapAscendingTimestampExtractor(timestampField: String) extends Serializabl
 
   override def extractTimestamp(element: scala.AnyRef, recordTimestamp: Long): Long = {
     element match {
-      case m: jul.Map[String@unchecked, AnyRef@unchecked] =>
+      case m: jul.Map[String @unchecked, AnyRef @unchecked] =>
         m.asScala
-          .get(timestampField).map(value => supportedTypeToMillis(value, timestampField))
+          .get(timestampField)
+          .map(value => supportedTypeToMillis(value, timestampField))
           .getOrElse(System.currentTimeMillis())
       case _ =>
         System.currentTimeMillis()
     }
   }
+
 }
 
 object MapAscendingTimestampExtractor {

@@ -10,42 +10,41 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessCo
 
 import scala.jdk.CollectionConverters._
 
-class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  {
+class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
 
-  private val TestSampleValue = SampleValue("some id", "some field")
-  private val TestSampleKey = SampleKey("some key", 123L)
+  private val TestSampleValue   = SampleValue("some id", "some field")
+  private val TestSampleKey     = SampleKey("some key", 123L)
   private val TestSampleHeaders = Map("first" -> "header value", "second" -> null)
 
-
   test("should handle input variable with key and metadata provided by consumer record") {
-    val topic = "kafka-key-value-meta"
+    val topic    = "kafka-key-value-meta"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
     runAndVerifyResult(topic, process, givenObj)
   }
 
   test("should handle invalid expression type for topic") {
-    val topic = "kafka-bad-expression-type"
+    val topic    = "kafka-bad-expression-type"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"123L" )
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"123L")
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should include ("Bad expression type, expected: String, found: Long")
+    }.getMessage should include("Bad expression type, expected: String, found: Long")
   }
 
   test("should handle null value for mandatory parameter") {
-    val topic = "kafka-empty-mandatory-field"
+    val topic    = "kafka-empty-mandatory-field"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"" )
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, topicParamValue = _ => s"")
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should include ("EmptyMandatoryParameter(This field is mandatory and can not be empty")
+    }.getMessage should include("EmptyMandatoryParameter(This field is mandatory and can not be empty")
   }
 
   test("should raise exception when we provide wrong input variable") {
-    val topic = "kafka-key-value-wrong-input-variable"
+    val topic    = "kafka-key-value-wrong-input-variable"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#input.invalid"))
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#input.invalid"))
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
@@ -53,9 +52,9 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
   }
 
   test("should raise exception when we provide wrong meta variable") {
-    val topic = "kafka-key-value-wrong-meta-variable"
+    val topic    = "kafka-key-value-wrong-meta-variable"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#inputMeta.invalid"))
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#inputMeta.invalid"))
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
@@ -63,9 +62,9 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
   }
 
   test("should raise exception when we provide wrong key variable") {
-    val topic = "kafka-key-value-wrong-key-variable"
+    val topic    = "kafka-key-value-wrong-key-variable"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#inputMeta.key.invalid"))
+    val process  = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta, Map("invalid" -> "#inputMeta.key.invalid"))
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
@@ -76,7 +75,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
     val topic = "kafka-key-value-key-null"
     createTopic(topic)
     val objWithoutKey = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
-    val correctObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
+    val correctObj    = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
     pushMessage(objToSerializeSerializationSchema(topic), objWithoutKey, topic, timestamp = constTimestamp)
     pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
     val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
@@ -89,21 +88,32 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
   }
 
   test("source with value only should accept null key") {
-    val topic = "kafka-value-with-meta"
+    val topic    = "kafka-value-with-meta"
     val givenObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonValueWithMeta)
-    val result = runAndVerifyResult(topic, process, givenObj)
+    val process  = createProcess(topic, SourceType.jsonValueWithMeta)
+    val result   = runAndVerifyResult(topic, process, givenObj)
   }
 
   test("source with value only should accept given key, fallback to String deserialization") {
-    val topic = "kafka-value-with-ignored-key"
+    val topic    = "kafka-value-with-ignored-key"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonValueWithMeta)
+    val process  = createProcess(topic, SourceType.jsonValueWithMeta)
     createTopic(topic)
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
     run(process) {
       eventually {
-        SinkForInputMeta.data shouldBe List(InputMeta("""{"partOne":"some key","partTwo":123}""", topic, 0, 0L, constTimestamp, TimestampType.CREATE_TIME, givenObj.headers.asJava, 0))
+        SinkForInputMeta.data shouldBe List(
+          InputMeta(
+            """{"partOne":"some key","partTwo":123}""",
+            topic,
+            0,
+            0L,
+            constTimestamp,
+            TimestampType.CREATE_TIME,
+            givenObj.headers.asJava,
+            0
+          )
+        )
       }
     }
   }
@@ -111,9 +121,9 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
   test("source with two input topics") {
     val topicOne = "kafka-multitopic-one"
     val topicTwo = "kafka-multitopic-two"
-    val topic = s"$topicOne, $topicTwo"
+    val topic    = s"$topicOne, $topicTwo"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonValueWithMeta)
+    val process  = createProcess(topic, SourceType.jsonValueWithMeta)
     createTopic(topicOne)
     createTopic(topicTwo)
     pushMessage(objToSerializeSerializationSchema(topicOne), givenObj, topicOne, timestamp = constTimestamp)
@@ -126,21 +136,26 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
   }
 
   test("source with exception within prepareInitialParameters") {
-    val topic = "kafka-source-with-exception"
+    val topic    = "kafka-source-with-exception"
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    val process = createProcess(topic, SourceType.jsonValueWithMetaWithException)
+    val process  = createProcess(topic, SourceType.jsonValueWithMetaWithException)
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should include ("Checking scenario: fetch topics from external source")
+    }.getMessage should include("Checking scenario: fetch topics from external source")
   }
 
   test("error during deserialization") {
-    val topic = "kafka-invalid-value"
+    val topic       = "kafka-invalid-value"
     val invalidJson = "{asdf@#$"
-    val process = createProcess(topic, SourceType.jsonValueWithMeta)
+    val process     = createProcess(topic, SourceType.jsonValueWithMeta)
     createTopic(topic)
-    pushMessage(new SimpleSerializationSchema[String](topic, identity).asInstanceOf[serialization.KafkaSerializationSchema[Any]], invalidJson, topic, timestamp = constTimestamp)
+    pushMessage(
+      new SimpleSerializationSchema[String](topic, identity).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
+      invalidJson,
+      topic,
+      timestamp = constTimestamp
+    )
     val correctObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
     pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
     run(process) {

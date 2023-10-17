@@ -16,22 +16,35 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
-class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
-                                                 parsedResolvedScenario: CanonicalProcess,
-                                                 modelData: ModelData,
-                                                 contextPreparer: LiteEngineRuntimeContextPreparer,
-                                                 requestResponseConfig: RequestResponseConfig)
-                                                (implicit ec: ExecutionContext) extends RunnableScenarioInterpreter with LazyLogging with Directives {
+class RequestResponseRunnableScenarioInterpreter(
+    jobData: JobData,
+    parsedResolvedScenario: CanonicalProcess,
+    modelData: ModelData,
+    contextPreparer: LiteEngineRuntimeContextPreparer,
+    requestResponseConfig: RequestResponseConfig
+)(implicit ec: ExecutionContext)
+    extends RunnableScenarioInterpreter
+    with LazyLogging
+    with Directives {
 
   import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
   private var closed: Boolean = false
 
-  private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
+  private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](
+    parsedResolvedScenario,
+    jobData.processVersion,
+    contextPreparer,
+    modelData,
+    Nil,
+    ProductionServiceInvocationCollector,
+    ComponentUseCase.EngineRuntime
+  )
     .map { i =>
       i.open()
       i
-    }.valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    }
+    .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   override def run(): Future[Unit] = {
     val threadFactory = new BasicThreadFactory.Builder()
@@ -65,7 +78,13 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
   }
 
   override val routes: Option[Route] = {
-    Some(new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, jobData.processVersion.processName).combinedRoute)
+    Some(
+      new ScenarioRoute(
+        new RequestResponseHttpHandler(interpreter),
+        requestResponseConfig,
+        jobData.processVersion.processName
+      ).combinedRoute
+    )
   }
 
 }

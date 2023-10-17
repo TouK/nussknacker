@@ -22,13 +22,11 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
     schedules.groupBy(_._2.process.processVersion.processName).mapValuesNow(SchedulesState)
 
   lazy val groupedByPeriodicProcess: List[PeriodicProcessScheduleData] =
-    schedules.toList.groupBy(_._2.process).toList.map {
-      case (periodicProcess, groupedSchedules) =>
-        val deploymentsForSchedules = groupedSchedules.flatMap {
-          case (scheduleId, scheduleData) =>
-            scheduleData.latestDeployments.map(_.toFullDeploymentData(periodicProcess, scheduleId.scheduleName))
-        }
-        PeriodicProcessScheduleData(periodicProcess, deploymentsForSchedules)
+    schedules.toList.groupBy(_._2.process).toList.map { case (periodicProcess, groupedSchedules) =>
+      val deploymentsForSchedules = groupedSchedules.flatMap { case (scheduleId, scheduleData) =>
+        scheduleData.latestDeployments.map(_.toFullDeploymentData(periodicProcess, scheduleId.scheduleName))
+      }
+      PeriodicProcessScheduleData(periodicProcess, deploymentsForSchedules)
     }
 
 }
@@ -44,11 +42,13 @@ case class ScheduleData(process: PeriodicProcess, latestDeployments: List[Schedu
 // Warning: PeriodicProcessId is not the same as ProcessId - we match processes with schedules by process_name
 case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 
-case class ScheduleDeploymentData(id: PeriodicProcessDeploymentId,
-                                  runAt: LocalDateTime,
-                                  retriesLeft: Int,
-                                  nextRetryAt: Option[LocalDateTime],
-                                  state: PeriodicProcessDeploymentState) {
+case class ScheduleDeploymentData(
+    id: PeriodicProcessDeploymentId,
+    runAt: LocalDateTime,
+    retriesLeft: Int,
+    nextRetryAt: Option[LocalDateTime],
+    state: PeriodicProcessDeploymentState
+) {
   def toFullDeploymentData(process: PeriodicProcess, scheduleName: ScheduleName): PeriodicProcessDeployment =
     PeriodicProcessDeployment(id, process, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
@@ -64,7 +64,8 @@ object ScheduleDeploymentData {
       deployment.runAt,
       deployment.retriesLeft,
       deployment.nextRetryAt,
-      PeriodicProcessesRepository.createPeriodicDeploymentState(deployment))
+      PeriodicProcessesRepository.createPeriodicDeploymentState(deployment)
+    )
   }
 
 }
@@ -77,4 +78,5 @@ case class PeriodicProcessScheduleData(process: PeriodicProcess, deployments: Li
     val deploymentsForSchedules = deployments.map(_.display)
     s"processName=${process.processVersion.processName}, deploymentsForSchedules=$deploymentsForSchedules"
   }
+
 }

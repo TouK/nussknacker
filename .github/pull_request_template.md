@@ -3,7 +3,6 @@
 ## Checklist before merge
 - [ ] Related issue ID is placed at the beginning of PR title in \[brackets\] (can be GH issue or Nu Jira issue)
 - [ ] Code is cleaned from temporary changes and commented out lines
-- [ ] Code formatting checked
 - [ ] Parts of the code that are not easy to understand are documented in the code
 - [ ] Changes are covered by automated tests
 - [ ] Showcase in dev-application.conf added to demonstrate the feature

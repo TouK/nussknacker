@@ -7,8 +7,9 @@ import { variables } from "../../../stylesheets/variables";
 import { useDragHandler } from "../DragHandle";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon, Title } from "./ToolbarStyled";
+import { useTheme } from "@mui/material";
 
-const { panelBackground, sidebarWidth } = variables;
+const { sidebarWidth } = variables;
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id?: string;
@@ -18,7 +19,8 @@ export type ToolbarWrapperProps = PropsWithChildren<{
 }>;
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
-    const { title, children, id, onClose, color = panelBackground } = props;
+    const theme = useTheme();
+    const { title, children, id, onClose, color = theme.custom.colors.primaryBackground } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();

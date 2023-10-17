@@ -4,6 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Fragments}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -17,25 +18,36 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val componentNameToOverride = "componentNameToOverride"
-  private val processingType = "testProcessingType"
-  private val componentName = "testComponentName"
+  private val processingType          = "testProcessingType"
+  private val componentName           = "testComponentName"
 
   private val overriddenId = ComponentId("overriddenId")
 
-  private val componentIdProvider = new DefaultComponentIdProvider(Map(
-    processingType -> Map(
-      componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
+  private val componentIdProvider = new DefaultComponentIdProvider(
+    Map(
+      processingType -> Map(
+        componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
+      )
     )
-  ))
+  )
 
   private val baseComponentsType = List(
-    ComponentType.Filter, ComponentType.Split, ComponentType.Switch, ComponentType.Variable,
-    ComponentType.MapVariable, ComponentType.FragmentInput, ComponentType.FragmentOutput
+    ComponentType.Filter,
+    ComponentType.Split,
+    ComponentType.Switch,
+    ComponentType.Variable,
+    ComponentType.MapVariable,
+    ComponentType.FragmentInput,
+    ComponentType.FragmentOutput
   )
 
   private val componentsType = List(
-    ComponentType.Processor, ComponentType.Enricher, ComponentType.Sink, ComponentType.Source,
-    ComponentType.CustomNode, ComponentType.Fragments,
+    ComponentType.Processor,
+    ComponentType.Enricher,
+    ComponentType.Sink,
+    ComponentType.Source,
+    ComponentType.CustomNode,
+    ComponentType.Fragments,
   )
 
   it should "create ComponentId" in {
@@ -43,7 +55,11 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
       ("componentsType", "name", "expected"),
       (baseComponentsType, componentName, baseComponentsType.map(cid)),
       (componentsType, componentName, componentsType.map(cid)),
-      (componentsType.filter(_ != ComponentType.Fragments), componentNameToOverride, componentsType.filter(_ != ComponentType.Fragments).map(_ => overriddenId)),
+      (
+        componentsType.filter(_ != ComponentType.Fragments),
+        componentNameToOverride,
+        componentsType.filter(_ != ComponentType.Fragments).map(_ => overriddenId)
+      ),
     )
 
     forAll(testingData) { (componentsType: List[ComponentType], name: String, expected: List[ComponentId]) =>
@@ -55,9 +71,13 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
   it should "throw exception when forbidden overriding is detected" in {
     val badComponentsType = baseComponentsType ++ List(Fragments)
 
-    val provider = new DefaultComponentIdProvider(Map(
-      processingType -> badComponentsType.map(_.toString -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))).toMap
-    ))
+    val provider = new DefaultComponentIdProvider(
+      Map(
+        processingType -> badComponentsType
+          .map(_.toString -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
+          .toMap
+      )
+    )
 
     badComponentsType.foreach(componentType => {
       val name = componentType.toString
@@ -77,17 +97,14 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
       (Split(componentName), Some(cid(ComponentType.Split))),
       (FragmentInputDefinition(componentName, Nil), Some(cid(ComponentType.FragmentInput))),
       (FragmentOutputDefinition(componentName, ""), Some(cid(ComponentType.FragmentOutput))),
-
       (Source("source", SourceRef(componentName, Nil)), Some(cid(ComponentType.Source))),
       (Sink("sink", SinkRef(componentName, Nil)), Some(cid(ComponentType.Sink))),
       (Enricher("enricher", ServiceRef(componentName, Nil), "out"), Some(cid(ComponentType.Enricher))),
       (Processor("processor", ServiceRef(componentName, Nil)), Some(cid(ComponentType.Processor))),
       (CustomNode("custom", None, componentName, Nil), Some(cid(ComponentType.CustomNode))),
       (FragmentInput("fragment", FragmentRef(componentName, Nil)), Some(cid(ComponentType.Fragments))),
-
       (FragmentUsageOutput("output", componentName, None), None),
       (BranchEndData(BranchEndDefinition("", "")), None),
-
       (Source("source", SourceRef(componentNameToOverride, Nil)), Some(overriddenId)),
     )
 

@@ -14,11 +14,12 @@ trait V1_046__RenameSubprocessToFragmentDefinition extends ProcessJsonMigration 
 object V1_046__RenameSubprocessToFragmentDefinition {
 
   private val legacyProperty = "subprocessParams"
-  private val newProperty = "fragmentParams"
+  private val newProperty    = "fragmentParams"
 
   private[migration] def updateProcessJson(jsonProcess: Json): Option[Json] = {
     val updatedNodes = updateField(jsonProcess, "nodes", updateCanonicalNodes)
-    val updateAdditionalBranches = updateField(updatedNodes, "additionalBranches", array => updateNodes(array, updateCanonicalNodes))
+    val updateAdditionalBranches =
+      updateField(updatedNodes, "additionalBranches", array => updateNodes(array, updateCanonicalNodes))
     Option(updateAdditionalBranches)
   }
 
@@ -37,29 +38,37 @@ object V1_046__RenameSubprocessToFragmentDefinition {
       case "SubprocessInput" =>
         val updateType = updateField(node, "type", _ => Json.fromString("FragmentInput"))
         updateField(updateType, "outputs", outputs => outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes)))
-      case "FragmentInput" => updateField(node, "outputs", outputs => outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes)))
-      case "SubprocessOutput" => updateField(node, "type", _ => Json.fromString("FragmentOutput"))
+      case "FragmentInput" =>
+        updateField(node, "outputs", outputs => outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes)))
+      case "SubprocessOutput"           => updateField(node, "type", _ => Json.fromString("FragmentOutput"))
       case "SubprocessOutputDefinition" => updateField(node, "type", _ => Json.fromString("FragmentOutputDefinition"))
-      case "SubprocessInputDefinition" => updateField(node, "type", _ => Json.fromString("FragmentInputDefinition"))
+      case "SubprocessInputDefinition"  => updateField(node, "type", _ => Json.fromString("FragmentInputDefinition"))
       case "Switch" =>
         val updatedDefault = updateField(node, "defaultNext", updateCanonicalNodes)
         updateField(updatedDefault, "nexts", updateNodes(_, updateField(_, "nodes", updateCanonicalNodes)))
       case "Filter" => updateField(node, "nextFalse", updateCanonicalNodes)
-      case "Split" => updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
-      case _ => node
+      case "Split"  => updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
+      case _        => node
     }
   }
 
   private def updatePropertyKey(node: Json): Json = {
-    node.hcursor.withFocus(json => {
-      json.asObject.map {
-        case obj if obj.contains(legacyProperty) =>
-          Json.fromJsonObject(obj
-            .add(newProperty, obj(legacyProperty).get)
-            .filterKeys(_ != legacyProperty))
-        case _ => json
-      }.getOrElse(json)
-    }).top.getOrElse(node)
+    node.hcursor
+      .withFocus(json => {
+        json.asObject
+          .map {
+            case obj if obj.contains(legacyProperty) =>
+              Json.fromJsonObject(
+                obj
+                  .add(newProperty, obj(legacyProperty).get)
+                  .filterKeys(_ != legacyProperty)
+              )
+            case _ => json
+          }
+          .getOrElse(json)
+      })
+      .top
+      .getOrElse(node)
   }
 
 }

@@ -4,7 +4,10 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.SchemaProvider
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{
+  CachedSchemaRegistryClient => CCachedSchemaRegistryClient,
+  SchemaRegistryClient => CSchemaRegistryClient
+}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
@@ -17,7 +20,8 @@ import scala.jdk.CollectionConverters._
  * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
  */
 class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches)
-  extends ConfluentSchemaRegistryClient with LazyLogging {
+    extends ConfluentSchemaRegistryClient
+    with LazyLogging {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
@@ -25,7 +29,11 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       latestSchemaRequest(subject)
     }
 
-  override def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getByTopicAndVersion(
+      topic: String,
+      version: Int,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.schemaCache.getOrCreate(s"$subject-$version") {
@@ -34,7 +42,6 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
         ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
       }
     }
-
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
     handleClientError {
@@ -61,7 +68,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   }
 
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
-    //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
+    // Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
     caches.schemaByIdCache.getOrCreate(id) {
       val schema = client.getSchemaById(id.asInt)
       SchemaWithMetadata(schema, id)
@@ -69,4 +76,3 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   }
 
 }
-

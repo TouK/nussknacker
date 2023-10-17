@@ -8,6 +8,7 @@ import {
     getTestCapabilities,
     getTestParameters,
     isLatestProcessVersion,
+    isProcessRenamed,
 } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButtonProps } from "../../types";
@@ -29,8 +30,9 @@ function TestWithFormButton(props: Props) {
     const { open, inform } = useWindows();
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testCapabilities = useSelector(getTestCapabilities);
+    const isRenamed = useSelector(isProcessRenamed);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
-    const processId = useSelector(getProcessId);
+    const scenarioName = useSelector(getProcessId);
     const processToDisplay = useSelector(getProcessToDisplay);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
@@ -93,18 +95,18 @@ function TestWithFormButton(props: Props) {
                 sourceId: selectedSource as string,
                 parameterExpressions: parameters,
             };
-            dispatch(testProcessWithParameters(processId, request, processToDisplay));
+            dispatch(testProcessWithParameters(scenarioName, request, processToDisplay));
         },
         [sourceParameters, selectedSource],
     );
 
     useEffect(() => {
         setAvailable(isAvailable());
-        if (isAvailable()) dispatch(fetchTestFormParameters(processToDisplay));
+        if (isAvailable() && !isRenamed) dispatch(fetchTestFormParameters(processToDisplay));
     }, [testCapabilities]);
 
     useEffect(() => {
-        dispatch(displayTestCapabilities(processToDisplay));
+        if (!isRenamed) dispatch(displayTestCapabilities(processToDisplay));
     }, [processToDisplay, processIsLatestVersion]);
 
     //For now, we select first source and don't provide way to change it
@@ -117,12 +119,14 @@ function TestWithFormButton(props: Props) {
     useEffect(() => {
         setAction({
             variableTypes: variableTypes,
+            processingType: processToDisplay.processingType,
             layout: {
                 name: "Test",
                 confirmText: "Test",
             },
             ...sourceParameters[selectedSource],
             onConfirmAction,
+            scenarioName,
         });
     }, [testFormParameters, sourceParameters, selectedSource]);
 
