@@ -47,13 +47,14 @@ val nexusUrlFromProps  = propOrEnv("nexusUrl")
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
-val dockerTagName          = propOrEnv("dockerTagName")
-val dockerPort             = propOrEnv("dockerPort", "8080").toInt
-val dockerUserName         = Option(propOrEnv("dockerUserName", "touk"))
-val dockerPackageName      = propOrEnv("dockerPackageName", "nussknacker")
-val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val addDevArtifacts        = propOrEnv("addDevArtifacts", "false").toBoolean
-val addManagerArtifacts    = propOrEnv("addManagerArtifacts", "false").toBoolean
+val dockerTagName                = propOrEnv("dockerTagName")
+val dockerPort                   = propOrEnv("dockerPort", "8080").toInt
+val dockerUserName               = Option(propOrEnv("dockerUserName", "touk"))
+val dockerPackageName            = propOrEnv("dockerPackageName", "nussknacker")
+val dockerUpLatestFromProp       = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
+val dockerUpBranchLatestFromProp = propOrEnv("dockerUpBranchLatest", "true").toBoolean
+val addDevArtifacts              = propOrEnv("addDevArtifacts", "false").toBoolean
+val addManagerArtifacts          = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort  = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -407,14 +408,18 @@ lazy val commonDockerSettings = {
 
       val alias = dockerAlias.value
 
-      val updateLatest  = if (dockerUpdateLatest.value) Some("latest") else None
-      val dockerVersion = Some(version.value)
-      // TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
-      // other option would be to reset source branch to checkout out commit
-      val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
-      val latestBranch  = Some(currentBranch + "-latest")
+      val updateLatest       = if (dockerUpdateLatest.value) Some("latest") else None
+      val updateBranchLatest = if (dockerUpBranchLatestFromProp) {
+        // TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
+        // other option would be to reset source branch to checkout out commit
+        val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
+        Some(currentBranch + "-latest")
+      } else {
+        None
+      }
+      val dockerVersion      = Some(version.value)
 
-      val tags                = List(dockerVersion, updateLatest, latestBranch, dockerTagName).flatten
+      val tags                = List(dockerVersion, updateLatest, updateBranchLatest, dockerTagName).flatten
       val scalaSuffix         = s"_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}"
       val tagsWithScalaSuffix = tags.map(t => s"$t$scalaSuffix")
 
