@@ -160,7 +160,7 @@ object UnionTransformersTestModeSpec {
 
       Map(
         "start" -> WithCategories(
-          SourceFactory.noParam[String](
+          SourceFactory.noParamStreamingFactory[String](
             CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])
           )
         )

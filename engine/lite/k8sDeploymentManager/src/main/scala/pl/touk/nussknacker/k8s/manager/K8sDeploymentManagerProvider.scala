@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
@@ -16,6 +17,9 @@ import scala.concurrent.{ExecutionContext, Future}
 /*
   Each scenario is deployed as Deployment+ConfigMap
   ConfigMap contains: model config with overrides for execution and scenario
+
+  Currently this DM uses the default engineSetupIdentity. It is done this way because we use
+  the default K8s context.
  */
 class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
@@ -42,5 +46,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   )
 
   override def name: String = "lite-k8s"
+
+  override def defaultEngineSetupName: EngineSetupName = EngineSetupName("K8s")
 
 }

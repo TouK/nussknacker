@@ -16,6 +16,8 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.management.FlinkConfig.RestUrlPath
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,6 +47,15 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
     FlinkStreamingPropertiesConfig.properties
+
+  override def defaultEngineSetupName: EngineSetupName = EngineSetupName("Flink")
+
+  override def engineSetupIdentity(config: Config): Any = {
+    // We don't parse the whole config because some other properties can be unspecified and it would
+    // cause generation of wrong identity.
+    config.getString(RestUrlPath)
+  }
+
 }
 
 object FlinkStreamingDeploymentManagerProvider {

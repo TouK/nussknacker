@@ -5,6 +5,7 @@ import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.component.StreamingComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -51,7 +52,8 @@ class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](
     protected val implProvider: KafkaSourceImplFactory[K, V]
 ) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]
-    with WithExplicitTypesToExtract {
+    with WithExplicitTypesToExtract
+    with StreamingComponent {
 
   override type State = KafkaAvroSourceFactoryState[K, V]
 

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.util
 
+import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.Using.Releasable
@@ -16,20 +18,27 @@ object Implicits {
 
   implicit class RichTupleList[K, V](seq: List[(K, V)]) {
 
-    def toGroupedMap: Map[K, List[V]] =
-      seq.groupBy(_._1).mapValuesNow(_.map(_._2))
+    def toGroupedMap: ListMap[K, List[V]] =
+      ListMap(
+        seq.orderedGroupBy(_._1).map { case (k, vList) =>
+          k -> vList.map(_._2)
+        }: _*
+      )
 
   }
 
-  implicit class RichMapIterable[K, V](m: Map[K, Iterable[V]]) {
+  implicit class RichList[T](list: List[T]) {
 
-    def sequenceMap: Map[V, Iterable[K]] = {
-      m.map { case (k, values) =>
-        values.map(v => v -> k)
-      }.toList
-        .flatten
-        .groupBy(_._1)
-        .mapValuesNow(_.map(_._2))
+    def orderedGroupBy[P](f: T => P): List[(P, List[T])] = {
+      @tailrec
+      def accumulator(seq: List[T], f: T => P, res: List[(P, List[T])]): List[(P, List[T])] = seq.headOption match {
+        case None => res.reverse
+        case Some(h) =>
+          val key                         = f(h)
+          val (withSameKey, withOtherKey) = seq.partition(f(_) == key)
+          accumulator(withOtherKey, f, (key -> withSameKey) :: res)
+      }
+      accumulator(list, f, Nil)
     }
 
   }
@@ -57,28 +66,6 @@ object Implicits {
         case Failure(_)      => // ignoring - side effect should be applied only when success
       }
       future
-    }
-
-  }
-
-  implicit class SafeString(s: String) {
-
-    def safeValue: Option[String] = {
-      if (s == null || s == "") None else Some(s)
-    }
-
-  }
-
-  implicit class RichIterableMap[T](list: Iterable[Map[String, T]]) {
-
-    def reduceUnique: Map[String, T] = list.foldLeft(Map.empty[String, T]) { case (acc, element) =>
-      val duplicates = acc.keySet.intersect(element.keySet)
-      if (duplicates.isEmpty) {
-        acc ++ element
-      } else
-        throw new IllegalArgumentException(
-          s"Found duplicate keys: ${duplicates.mkString(", ")}, please correct configuration"
-        )
     }
 
   }

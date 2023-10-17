@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.StreamingComponent
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
@@ -129,7 +130,8 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
       generate: Int => T,
       timestamp: SimpleSerializableTimestampAssigner[T],
       parser: Json => T
-  ) extends SourceFactory {
+  ) extends SourceFactory
+      with StreamingComponent {
 
     @MethodToInvoke
     def create(@ParamName("ratePerMinute") rate: Int) = {

@@ -12,12 +12,14 @@ import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest._
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,6 +35,8 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ScenarioQuery, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -202,6 +206,29 @@ class ProcessesResourcesSpec
     Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
+    }
+  }
+
+  // FIXME: make this test less trivial. Currently category ambiguity determine processing types so additional
+  //        query params (processingMode and engineSetupName) give nothing
+  test("allow to specify processing mode and engine setup name during creation of scenario") {
+    val givenProcessingMode  = ProcessingMode.Streaming
+    val givenEngineSetupName = EngineSetupName("Test engine")
+    Post(
+      s"/processes/${processName.value}/$TestCat" +
+        s"?isFragment=false" +
+        s"&processingMode=$givenProcessingMode" +
+        s"&engineSetupName=${URLEncoder.encode(givenEngineSetupName.value, StandardCharsets.UTF_8)}"
+    ) ~> processesRouteWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.Created
+    }
+
+    Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
+      status shouldEqual StatusCodes.OK
+      val response = responseAs[ScenarioWithDetails]
+      response.name shouldBe processName
+      response.processingMode shouldBe givenProcessingMode
+      response.engineSetupName shouldBe givenEngineSetupName
     }
   }
 

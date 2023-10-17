@@ -2,31 +2,53 @@ package pl.touk.nussknacker.engine
 
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
+import cats.data.ValidatedNel
+import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
 
 final case class ProcessingTypeData private (
-    deploymentManager: DeploymentManager,
+    deploymentData: DeploymentData,
     modelData: ModelData,
-    staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
-    metaDataInitializer: MetaDataInitializer,
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
-    additionalValidators: List[CustomProcessValidator],
-    usageStatistics: ProcessingTypeUsageStatistics,
-    categoriesConfig: CategoriesConfig
+    categoriesConfig: CategoriesConfig,
+    usageStatistics: ProcessingTypeUsageStatistics
 ) {
+
+  val staticObjectsDefinition: ProcessDefinition[ObjectDefinition] =
+    ToStaticObjectDefinitionTransformer.transformModel(
+      modelData,
+      deploymentData.metaDataInitializer.create(_, Map.empty)
+    )
 
   def close(): Unit = {
     modelData.close()
-    deploymentManager.close()
+    deploymentData.deploymentManager.close()
   }
+
+}
+
+final case class DeploymentData(
+    validDeploymentManager: ValidatedNel[String, DeploymentManager],
+    metaDataInitializer: MetaDataInitializer,
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    additionalValidators: List[CustomProcessValidator],
+    defaultEngineSetupName: EngineSetupName,
+    engineSetupIdentity: Any
+) {
+
+  def deploymentManager: DeploymentManager = validDeploymentManager.valueOr(err =>
+    // TODO: Instead of throwing this exception we should follow Null object design pattern and return some
+    //       stubbed DeploymentManager which will always return some meaningful status and not allow to run actions on scenario
+    throw new IllegalStateException("Deployment Manager not available because of errors: " + err.toList.mkString(", "))
+  )
 
 }
 
@@ -75,13 +97,15 @@ object ProcessingTypeData {
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
-    val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, categoriesConfig)
+    // TODO: We should catch exceptions and translate them to list of errors. But before that
+    //       we should resolve comment next to DeploymentData.deploymentManager
+    val validManager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig).validNel[String]
+    createProcessingTypeData(deploymentManagerProvider, validManager, modelData, managerConfig, categoriesConfig)
   }
 
   def createProcessingTypeData(
       deploymentManagerProvider: DeploymentManagerProvider,
-      manager: DeploymentManager,
+      validManager: ValidatedNel[String, DeploymentManager],
       modelData: ModelData,
       managerConfig: Config,
       categoriesConfig: CategoriesConfig
@@ -93,18 +117,20 @@ object ProcessingTypeData {
         .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
 
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
-    val staticObjectsDefinition =
-      ToStaticObjectDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
 
     ProcessingTypeData(
-      manager,
+      DeploymentData(
+        validManager,
+        metaDataInitializer,
+        scenarioProperties,
+        deploymentManagerProvider.additionalValidators(managerConfig),
+        deploymentManagerProvider.defaultEngineSetupName,
+        // TODO: We should have fallback to some identity (e.g. Unit) in case if this method fail
+        deploymentManagerProvider.engineSetupIdentity(managerConfig)
+      ),
       modelData,
-      staticObjectsDefinition,
-      metaDataInitializer,
-      scenarioProperties,
-      deploymentManagerProvider.additionalValidators(managerConfig),
-      ProcessingTypeUsageStatistics(managerConfig),
-      categoriesConfig
+      categoriesConfig,
+      ProcessingTypeUsageStatistics(managerConfig)
     )
   }
 

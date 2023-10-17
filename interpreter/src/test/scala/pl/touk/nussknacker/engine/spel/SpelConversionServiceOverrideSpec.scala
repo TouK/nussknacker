@@ -47,7 +47,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
         "stringSource" -> WithCategories(
-          SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
+          SourceFactory.noParamStreamingFactory[String](new pl.touk.nussknacker.engine.api.process.Source {})
         )
       )
 

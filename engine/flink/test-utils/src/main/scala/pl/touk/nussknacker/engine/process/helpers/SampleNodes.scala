@@ -16,6 +16,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.StreamingComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -80,7 +81,7 @@ object SampleNodes {
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
-  class IntParamSourceFactory extends SourceFactory {
+  class IntParamSourceFactory extends SourceFactory with StreamingComponent {
 
     @MethodToInvoke
     def create(@ParamName("param") param: Int) =
@@ -696,7 +697,10 @@ object SampleNodes {
 
   }
 
-  object GenericParametersSource extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+  object GenericParametersSource
+      extends SourceFactory
+      with SingleInputGenericNodeTransformation[Source]
+      with StreamingComponent {
 
     override type State = Nothing
 
@@ -753,7 +757,10 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericSourceWithCustomVariables extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+  object GenericSourceWithCustomVariables
+      extends SourceFactory
+      with SingleInputGenericNodeTransformation[Source]
+      with StreamingComponent {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -944,7 +951,7 @@ object SampleNodes {
 
   }
 
-  def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParam[SimpleRecord](
+  def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParamStreamingFactory[SimpleRecord](
     new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord])
       with FlinkSourceTestSupport[SimpleRecord] {
       override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
@@ -953,7 +960,7 @@ object SampleNodes {
     }
   )
 
-  val jsonSource: SourceFactory = SourceFactory.noParam[SimpleJsonRecord](
+  val jsonSource: SourceFactory = SourceFactory.noParamStreamingFactory[SimpleJsonRecord](
     new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord])
       with FlinkSourceTestSupport[SimpleJsonRecord] {
 
@@ -965,7 +972,7 @@ object SampleNodes {
     }
   )
 
-  object TypedJsonSource extends SourceFactory with ReturningType {
+  object TypedJsonSource extends SourceFactory with ReturningType with StreamingComponent {
 
     @MethodToInvoke
     def create(

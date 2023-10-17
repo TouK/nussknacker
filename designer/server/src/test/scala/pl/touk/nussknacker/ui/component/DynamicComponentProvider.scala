@@ -27,7 +27,10 @@ class DynamicComponentProvider extends ComponentProvider {
       ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
       ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
-      ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {}, Unknown)),
+      ComponentDefinition(
+        KafkaAvroProvidedComponentName,
+        SourceFactory.noParamStreamingFactory(new Source {}, Unknown)
+      ),
     )
   }
 

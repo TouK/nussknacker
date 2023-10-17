@@ -56,8 +56,8 @@ class NodeResourcesSpec
 
   private val validation = ProcessValidation(
     typeToConfig.mapValues(_.modelData),
-    typeToConfig.mapValues(_.scenarioPropertiesConfig),
-    typeToConfig.mapValues(_.additionalValidators),
+    typeToConfig.mapValues(_.deploymentData.scenarioPropertiesConfig),
+    typeToConfig.mapValues(_.deploymentData.additionalValidators),
     new FragmentResolver(fragmentRepository)
   )
 

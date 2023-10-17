@@ -38,11 +38,7 @@ package object definition {
       globalVariables: Map[String, UIObjectDefinition],
       typesInformation: Set[UIClazzDefinition],
       fragmentInputs: Map[String, UIFragmentObjectDefinition]
-  ) {
-    // skipping exceptionHandlerFactory
-    val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
-      customStreamTransformers ++ globalVariables ++ fragmentInputs.mapValuesNow(_.toUIObjectDefinition)
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UIClazzDefinition(
       clazzName: TypingResult

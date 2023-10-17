@@ -115,7 +115,9 @@ object UIProcessObjectsFactory {
   private def toComponentsUiConfig(
       processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition]
   ): ComponentsUiConfig =
-    processDefinition.allDefinitions.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+    processDefinition.allComponentsDefinitions.map { case (idWithName, value) =>
+      idWithName.name -> value.componentConfig
+    }.toMap
 
   private def finalizeProcessDefinition(
       processDefinitionWithIds: ProcessDefinitionWithComponentIds[ObjectDefinition],
@@ -150,8 +152,9 @@ object UIProcessObjectsFactory {
       fragmentInputs: Map[String, FragmentObjectDefinition],
       processDefinition: ProcessDefinition[ObjectDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig         = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
-    val processDefinitionComponentsConfig = processDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
+    val processDefinitionComponentsConfig =
+      processDefinition.allComponentsDefinitions.toMap.mapValuesNow(_.componentConfig)
 
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in processDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?

@@ -69,12 +69,12 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
       processDefinition = processingTypeData.staticObjectsDefinition,
-      deploymentManager = processingTypeData.deploymentManager,
+      deploymentManager = processingTypeData.deploymentData.deploymentManager,
       user = user,
       fragmentsDetails = fragments,
       isFragment = false, // It excludes fragment's components: input / output
       processCategoryService = categoryService,
-      scenarioPropertiesConfig = processingTypeData.scenarioPropertiesConfig,
+      scenarioPropertiesConfig = processingTypeData.deploymentData.scenarioPropertiesConfig,
       processingType = processingType,
       additionalUIConfigProvider = additionalUIConfigProvider
     )

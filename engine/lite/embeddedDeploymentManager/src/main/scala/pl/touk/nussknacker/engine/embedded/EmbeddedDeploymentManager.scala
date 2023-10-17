@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import sttp.client3.SttpBackend
@@ -51,6 +52,8 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   )
 
   override def name: String = "lite-embedded"
+
+  override def defaultEngineSetupName: EngineSetupName = EngineSetupName("Embedded")
 
 }
 

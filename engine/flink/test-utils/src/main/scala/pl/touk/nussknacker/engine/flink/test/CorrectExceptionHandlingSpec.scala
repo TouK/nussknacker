@@ -79,7 +79,7 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) 
     val inputType  = Typed.fromDetailedType[java.util.List[Int]]
     Map(
       "source" -> WithCategories(
-        SourceFactory.noParam(
+        SourceFactory.noParamStreamingFactory(
           CollectionSource(
             samples,
             Some(timestamps),

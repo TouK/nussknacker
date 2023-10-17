@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.requestresponse.api
 
+import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, SourceFactory}
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
@@ -10,7 +11,7 @@ import scala.language.higherKinds
 //TODO: this is a bit clumsy, we should think about:
 //- responseEncoder in sourceFactory
 //- passing path in request-response parameters and not through source
-trait RequestResponseSourceFactory extends SourceFactory
+trait RequestResponseSourceFactory extends SourceFactory with RequestResponseComponent
 
 trait RequestResponseGetSource[T] extends RequestResponseSource[T] {
 

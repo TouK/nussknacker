@@ -607,8 +607,8 @@ object FullOuterJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-main"   -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories(SourceFactory.noParam[OneRecord](joinedRecordsSource))
+        "start-main"   -> WithCategories(SourceFactory.noParamStreamingFactory[OneRecord](mainRecordsSource)),
+        "start-joined" -> WithCategories(SourceFactory.noParamStreamingFactory[OneRecord](joinedRecordsSource))
       )
 
     override def sinkFactories(

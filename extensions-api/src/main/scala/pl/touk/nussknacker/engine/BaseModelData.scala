@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
 import java.net.URL
 
 // TODO: Replace ModelData -> BasedModelData inheritance with composition. Thanks to that it won't be needed to downcast
-//       to ModelData in case of interpreter invocation and designer -> interpreter dependency will disappear
+//       to ModelData in case of interpreter invocation
 trait BaseModelData {
 
   def objectNaming: ObjectNaming

@@ -18,6 +18,9 @@ object ComponentType extends Enumeration {
   val MapVariable: Value = Value("mapVariable")
 
   // Generic's component types
+  // TODO: we should have only Service ComponentType instead of both Processor and Enricher. We don't need to support
+  //       both processor and enricher with the same name and current state causes a lot of problems
+  //       (See e.g ProcessDefinitionExtractor.serviceComponentType and dumbComponentIdProvider inside AllowedProcessingModesExtractor)
   val Processor: Value  = Value("processor")
   val Enricher: Value   = Value("enricher")
   val Sink: Value       = Value("sink")

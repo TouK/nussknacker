@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,6 +16,10 @@ import scala.concurrent.{ExecutionContext, Future}
 // to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
+  // Exceptions returned by this method won't cause designer's exit. Instead, they will be catched and messages will
+  // be shown to the user.
+  // Normally, we would probably have a ValidateNel in the method return type, but for the backward compatibility
+  // reasons we decided to pass these errors without changing method's return type
   def createDeploymentManager(modelData: BaseModelData, config: Config)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -27,6 +32,19 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] = Map.empty
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
+
+  // It is the default name in case if user not specified it in the configuration
+  // For backward compatibility it already has an implementation, but you should consider to override it with your own
+  def defaultEngineSetupName: EngineSetupName =
+    EngineSetupName(name.substring(0, 1).toUpperCase() + name.substring(1))
+
+  // This identity is required because we have a simple, linear configuration of scenario types that combines
+  // deployment with model and we don't use references to deployment setups.
+  // So when smb want to have two the same engines used with two variants of model, he/she have to duplicate deployment
+  // configuration.
+  // For backward compatibility it returns unit, but in the real implementation you should
+  // rather return here things like url of your execution engine next to it.
+  def engineSetupIdentity(config: Config): Any = ()
 
 }
 

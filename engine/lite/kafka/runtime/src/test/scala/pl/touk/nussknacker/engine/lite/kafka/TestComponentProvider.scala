@@ -4,7 +4,12 @@ import com.typesafe.config.Config
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentProvider,
+  NussknackerVersion,
+  StreamingComponent
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
@@ -35,7 +40,7 @@ class TestComponentProvider extends ComponentProvider {
 
   override def isAutoLoaded: Boolean = false
 
-  object KafkaSource extends SourceFactory {
+  object KafkaSource extends SourceFactory with StreamingComponent {
 
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName(`TopicParamName`) topicName: String)(implicit nodeIdPassed: NodeId): LiteKafkaSource =
