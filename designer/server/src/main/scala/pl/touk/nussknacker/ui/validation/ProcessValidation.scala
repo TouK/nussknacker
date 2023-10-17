@@ -108,7 +108,7 @@ class ProcessValidation(
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
-      .add(validateEmptyScenarioId(displayable))
+      .add(validateScenarioId(displayable))
       .add(validateScenarioProperties(displayable))
       .add(warningValidation(displayable))
   }
@@ -179,26 +179,8 @@ class ProcessValidation(
     )
   }
 
-  private def validateEmptyScenarioId(displayable: DisplayableProcess): ValidationResult = {
-    if (displayable.metaData.id.nonEmpty) {
-      ValidationResult.success
-    } else {
-      val processType  = if (displayable.metaData.isFragment) "Fragment" else "Scenario"
-      val errorMessage = s"$processType name is mandatory and cannot be empty"
-      ValidationResult.errors(
-        Map.empty,
-        List(
-          PrettyValidationErrors.formatErrorMessage(
-            ScenarioNameValidationError(
-              errorMessage,
-              errorMessage
-            )
-          )
-        ),
-        Nil
-      )
-    }
-  }
+  private def validateScenarioId(displayable: DisplayableProcess): ValidationResult =
+    ScenarioIdValidator.validate(displayable)
 
   private def validateScenarioProperties(displayable: DisplayableProcess): ValidationResult = {
     if (displayable.metaData.isFragment) {
