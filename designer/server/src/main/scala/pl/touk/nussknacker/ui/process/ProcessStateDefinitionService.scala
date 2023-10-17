@@ -83,7 +83,7 @@ object ProcessStateDefinitionService {
       processingTypes: Map[ProcessingType, ProcessingTypeData]
   ): List[(ProcessingType, StatusName, StateDefinitionDetails)] = {
     processingTypes.toList.flatMap { case (processingType, processingTypeData) =>
-      processingTypeData.deploymentManager.processStateDefinitionManager.stateDefinitions
+      processingTypeData.deploymentData.deploymentManager.processStateDefinitionManager.stateDefinitions
         .map { case (name, sd) => (processingType, name, sd) }
     }
   }

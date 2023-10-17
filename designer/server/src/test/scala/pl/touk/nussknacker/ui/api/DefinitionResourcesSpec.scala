@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{withAdminPermissions, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -35,10 +35,8 @@ class DefinitionResourcesSpec
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val definitionResources = new DefinitionResources(
-    modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    () => processCategoryService,
     TestAdditionalUIConfigProvider
   )
 
@@ -239,30 +237,60 @@ class DefinitionResourcesSpec
     }
   }
 
-  private def getServices: Option[Iterable[String]] = {
-    responseAs[Json].hcursor.downField("streaming").keys
-  }
-
-  private def getParamEditor(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("editor")
-      .focus
-      .value
-  }
-
-  private def getParamValidator(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("validators")
-      .focus
-      .value
+  it("return available combinations of scenario type parameters") {
+    Get(s"/scenarioTypeParametersCombinations") ~> withAdminPermissions(definitionResources) ~> check {
+      status shouldBe StatusCodes.OK
+      val responseJson = responseAs[Json]
+      println(responseJson)
+      responseJson.spaces2 shouldEqual
+        """[
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "engineSetup" : {
+          |      "name" : "Test engine",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "Category1"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "engineSetup" : {
+          |      "name" : "Test engine",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "Category2"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "engineSetup" : {
+          |      "name" : "Test engine",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "ReqRes"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "engineSetup" : {
+          |      "name" : "Test engine",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "TESTCAT"
+          |  },
+          |  {
+          |    "processingMode" : "Streaming",
+          |    "engineSetup" : {
+          |      "name" : "Test engine",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "TESTCAT2"
+          |  }
+          |]""".stripMargin
+    }
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {

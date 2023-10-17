@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.si
 
 import cats.data.Validated.valid
 import org.everit.json.schema.Schema
+import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -29,7 +30,8 @@ object JsonRequestResponseSink {
 
 class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactory)
     extends SingleInputGenericNodeTransformation[Sink]
-    with SinkFactory {
+    with SinkFactory
+    with RequestResponseComponent {
   import JsonRequestResponseSink._
   override type State = EditorTransformationState
   private val jsonSchemaExtractor = new JsonSchemaExtractor()

@@ -250,8 +250,8 @@ object UnionWithMemoTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-foo" -> WithCategories(SourceFactory.noParam[OneRecord](sourceFoo)),
-        "start-bar" -> WithCategories(SourceFactory.noParam[OneRecord](sourceBar))
+        "start-foo" -> WithCategories(SourceFactory.noParamStreamingFactory[OneRecord](sourceFoo)),
+        "start-bar" -> WithCategories(SourceFactory.noParamStreamingFactory[OneRecord](sourceBar))
       )
 
     override def sinkFactories(

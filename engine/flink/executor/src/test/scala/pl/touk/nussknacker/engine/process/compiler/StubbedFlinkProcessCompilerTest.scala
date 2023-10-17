@@ -167,12 +167,14 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] = {
       super.sourceFactories(processObjectDependencies) ++ Map(
-        "test-source"  -> WithCategories(SourceFactory.noParam[Int](SampleTestSupportSource)),
-        "test-source2" -> WithCategories(SourceFactory.noParam[Int](SampleTestSupportSource)),
+        "test-source"  -> WithCategories(SourceFactory.noParamStreamingFactory[Int](SampleTestSupportSource)),
+        "test-source2" -> WithCategories(SourceFactory.noParamStreamingFactory[Int](SampleTestSupportSource)),
         "test-source-with-parameters-test" -> WithCategories(
-          SourceFactory.noParam[Int](SampleTestSupportParametersSource)
+          SourceFactory.noParamStreamingFactory[Int](SampleTestSupportParametersSource)
         ),
-        "source-no-test-support" -> WithCategories(SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int])))
+        "source-no-test-support" -> WithCategories(
+          SourceFactory.noParamStreamingFactory[Int](EmptySource(Typed.fromDetailedType[Int]))
+        )
       )
     }
 

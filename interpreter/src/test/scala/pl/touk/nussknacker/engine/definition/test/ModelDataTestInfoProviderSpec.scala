@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.component.StreamingComponent
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
@@ -50,7 +51,7 @@ class ModelDataTestInfoProviderSpec
     }
   )
 
-  object SourceGeneratingEmptyTimestamp extends GenericParametersSource {
+  object SourceGeneratingEmptyTimestamp extends GenericParametersSource with StreamingComponent {
 
     override def implementation(
         params: Map[String, Any],

@@ -24,16 +24,16 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.streamingSetupService
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
@@ -126,16 +126,19 @@ trait NuResourcesTest
           deploymentService: ProcessingTypeDeploymentService
       ): DeploymentManager = deploymentManager
 
+      override def engineSetupIdentity(config: Config): Any = ()
     }
 
-  protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
-    Streaming -> ModelData(processingTypeConfig)
-  )
-
-  protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
+  protected val testProcessingTypeDataProvider
+      : ProcessingTypeDataProvider[ProcessingTypeData, (ProcessCategoryService, ProcessingTypeSetupService)] = {
+    val streamingProcessingTypeData =
+      ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
     mapProcessingTypeDataProvider(
-      Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
-    )
+      Streaming -> streamingProcessingTypeData
+    ).mapCombined { _ =>
+      (processCategoryService, streamingSetupService)
+    }
+  }
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
 
@@ -152,7 +155,7 @@ trait NuResourcesTest
   protected val processService: DBProcessService = createDBProcessService(deploymentService)
 
   protected val scenarioTestService: ScenarioTestService = createScenarioTestService(
-    testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_))
+    testProcessingTypeDataProvider.mapValues(_.modelData).mapValues(new ModelDataTestInfoProvider(_))
   )
 
   protected val configProcessToolbarService =
@@ -179,6 +182,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparer,
+      () => streamingSetupService,
       () => processCategoryService,
       processResolving,
       dbioRunner,

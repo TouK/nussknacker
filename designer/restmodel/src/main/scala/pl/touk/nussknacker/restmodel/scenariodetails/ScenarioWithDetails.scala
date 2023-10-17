@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ScenarioVersion,
   VersionId
 }
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.restmodel.validation.{ValidatedDisplayableProcess, ValidationResults}
 
 import java.time.Instant
@@ -40,7 +42,9 @@ final case class ScenarioWithDetails(
     json: Option[ValidatedDisplayableProcess],
     history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int],
-    state: Option[ProcessState]
+    state: Option[ProcessState],
+    processingMode: ProcessingMode,
+    engineSetupName: EngineSetupName
 ) {
 
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)

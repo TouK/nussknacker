@@ -82,7 +82,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def categories[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2")
 
   private def all[T](value: T): WithCategories[T] =
-    WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT", "DevelopmentTests", "Periodic")
+    WithCategories.anyCategory(value)
 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
@@ -151,14 +151,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           )(TypeInformation.of(classOf[SampleProduct]))
         )
       ),
-      "real-kafka-avro"                  -> all(avroSourceFactory),
-      "kafka"                            -> all(universalSourceFactory),
-      "kafka-transaction"                -> all(SourceFactory.noParam[String](new NoEndingSource)),
-      "boundedSource"                    -> all(BoundedSource),
-      "oneSource"                        -> categories(SourceFactory.noParam[String](new OneSource)),
-      "communicationSource"              -> categories(DynamicParametersSource),
-      "csv-source"                       -> categories(SourceFactory.noParam[CsvRecord](new CsvSource)),
-      "csv-source-lite"                  -> categories(SourceFactory.noParam[CsvRecord](new LiteCsvSource(_))),
+      "real-kafka-avro"     -> all(avroSourceFactory),
+      "kafka"               -> all(universalSourceFactory),
+      "kafka-transaction"   -> all(SourceFactory.noParamStreamingFactory[String](new NoEndingSource)),
+      "boundedSource"       -> all(BoundedSource),
+      "oneSource"           -> categories(SourceFactory.noParamStreamingFactory[String](new OneSource)),
+      "communicationSource" -> categories(DynamicParametersSource),
+      "csv-source"          -> categories(SourceFactory.noParamStreamingFactory[CsvRecord](new CsvSource)),
+      "csv-source-lite"     -> categories(SourceFactory.noParamStreamingFactory[CsvRecord](new LiteCsvSource(_))),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source"                       -> categories(SqlSource),
       "classInstanceSource"              -> all(new ReturningClassInstanceSource)

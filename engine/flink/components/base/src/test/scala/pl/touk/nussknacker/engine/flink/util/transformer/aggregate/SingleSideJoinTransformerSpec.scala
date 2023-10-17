@@ -190,9 +190,9 @@ object SingleSideJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-main" -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
+        "start-main" -> WithCategories(SourceFactory.noParamStreamingFactory[OneRecord](mainRecordsSource)),
         "start-joined" -> WithCategories(
-          SourceFactory.noParam[OneRecord](
+          SourceFactory.noParamStreamingFactory[OneRecord](
             EmitWatermarkAfterEachElementCollectionSource
               .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
           )

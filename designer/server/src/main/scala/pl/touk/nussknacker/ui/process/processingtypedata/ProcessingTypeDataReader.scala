@@ -46,7 +46,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
   }
 
   // TODO Replace selectedScenarioType property by mechanism allowing to configure multiple scenario types with
-  //      different paradigms and engine configurations. This mechanism should also allow to have some scenario types
+  //      different processing mode and engine configurations. This mechanism should also allow to have some scenario types
   //      configurations that are invalid (e.g. some mandatory field is not configured)
   private def createSelectedScenarioTypeFilter(
       config: ConfigWithUnresolvedVersion

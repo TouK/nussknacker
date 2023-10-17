@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import pl.touk.nussknacker.engine.ProcessingTypeCategory
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{
@@ -46,6 +47,8 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
     modelVersion: Option[Int]
 ) extends ListenerScenarioWithDetails {
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
+
+  def processingTypeCategory: ProcessingTypeCategory = ProcessingTypeCategory(processingType, processCategory)
 
   def mapScenario[NewShape](action: ScenarioShape => NewShape): ScenarioWithDetailsEntity[NewShape] =
     copy(json = action(json))

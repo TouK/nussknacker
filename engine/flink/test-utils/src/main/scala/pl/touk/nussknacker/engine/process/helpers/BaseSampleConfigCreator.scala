@@ -24,10 +24,10 @@ class BaseSampleConfigCreator[T: ClassTag: TypeTag: TypeInformation](sourceList:
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
     "source" -> WithCategories(
-      SourceFactory.noParam[T](new CollectionSource[T](sourceList, None, Typed.fromDetailedType[T]))
+      SourceFactory.noParamStreamingFactory[T](new CollectionSource[T](sourceList, None, Typed.fromDetailedType[T]))
     ),
     "noopSource" -> WithCategories(
-      SourceFactory.noParam[T](new CollectionSource[T](List.empty, None, Typed.fromDetailedType[T]))
+      SourceFactory.noParamStreamingFactory[T](new CollectionSource[T](List.empty, None, Typed.fromDetailedType[T]))
     )
   )
 

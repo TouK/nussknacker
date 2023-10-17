@@ -9,7 +9,29 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 /*
   Service, SourceFactory, SinkFactory, CustomStreamTransformer
  */
-trait Component
+trait Component {
+  // Returns allowed processing modes. In some case we can determine this set based on implementing classes
+  // like in Service case, but in other cases, Component class is only a factory that returns some other class
+  // and we don't know if this class allow given processing mode or not so the developer have to specify this
+  // by his/her own
+  def allowedProcessingModes: Option[Set[ProcessingMode]]
+}
+
+trait StreamingComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.Streaming))
+}
+
+trait BatchComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.Batch))
+}
+
+trait RequestResponseComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.RequestResponse))
+}
+
+trait AllProcessingModesComponent { self: Component =>
+  override def allowedProcessingModes: Option[Set[ProcessingMode]] = None
+}
 
 object ComponentProviderConfig {
 

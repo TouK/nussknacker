@@ -253,4 +253,6 @@ object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
   ): DeploymentManager =
     new MockDeploymentManager
 
+  override def engineSetupIdentity(config: Config): Any = ()
+
 }

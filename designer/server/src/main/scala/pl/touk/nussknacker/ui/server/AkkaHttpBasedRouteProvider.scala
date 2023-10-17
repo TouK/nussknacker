@@ -100,16 +100,16 @@ class AkkaHttpBasedRouteProvider(
 
       val modelData = typeToConfig.mapValues(_.modelData)
 
-      val managers = typeToConfig.mapValues(_.deploymentManager)
+      val managers = typeToConfig.mapValues(_.deploymentData.deploymentManager)
 
       val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val scenarioProperties = typeToConfig.mapValues(_.scenarioPropertiesConfig)
+      val scenarioProperties = typeToConfig.mapValues(_.deploymentData.scenarioPropertiesConfig)
       val processValidation = ProcessValidation(
         modelData,
         scenarioProperties,
-        typeToConfig.mapValues(_.additionalValidators),
+        typeToConfig.mapValues(_.deploymentData.additionalValidators),
         fragmentResolver
       )
 
@@ -166,8 +166,9 @@ class AkkaHttpBasedRouteProvider(
         dmDispatcher,
         deploymentService
       )
-      val testExecutorService         = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
-      def getProcessCategoryService() = typeToConfig.combined.categoryService
+      val testExecutorService             = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
+      def getProcessCategoryService()     = typeToConfig.combined.categoryService
+      def getProcessingTypeSetupService() = typeToConfig.combined.processingTypeSetupService
 
       val stateDefinitionService = new ProcessStateDefinitionService(
         typeToConfig.mapCombined(combined => (combined.statusNameToStateDefinitionsMapping, combined.categoryService)),
@@ -176,6 +177,7 @@ class AkkaHttpBasedRouteProvider(
       val processService = new DBProcessService(
         deploymentService,
         newProcessPreparer,
+        () => getProcessingTypeSetupService(),
         getProcessCategoryService,
         processResolving,
         dbioRunner,
@@ -257,10 +259,8 @@ class AkkaHttpBasedRouteProvider(
           ),
           new ValidationResources(processService, processResolving),
           new DefinitionResources(
-            modelData,
-            typeToConfig,
+            typeToConfig.mapCombined(combined => (combined.categoryService, combined.processingTypeSetupService)),
             fragmentRepository,
-            getProcessCategoryService,
             additionalUIConfigProvider
           ),
           new UserResources(getProcessCategoryService),

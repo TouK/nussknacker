@@ -12,7 +12,7 @@ object ProcessDefinitionExtractor {
 
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
   // We don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
-  def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
+  private def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
     TypesInformation.extract(
       definition.services.values ++
         definition.sourceFactories.values ++
@@ -69,7 +69,7 @@ object ProcessDefinitionExtractor {
     )
   }
 
-  private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
+  def toExpressionDefinition(expressionConfig: ExpressionConfig): ExpressionDefinition[ObjectWithMethodDef] =
     ExpressionDefinition(
       GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables),
       expressionConfig.globalImports.map(_.value),
@@ -129,29 +129,15 @@ object ProcessDefinitionExtractor {
 
     import pl.touk.nussknacker.engine.util.Implicits._
 
-    val componentNames: List[String] = {
-      val names = services.keys ++
-        sourceFactories.keys ++
-        sinkFactories.keys ++
-        customStreamTransformers.keys
-
-      names.toList
-    }
-
     private def servicesWithIds(
         componentIdProvider: ComponentIdProvider,
         processingType: String
     ): List[(ComponentIdWithName, T)] =
       services.map { case (name, obj) =>
-        val hasNoReturn = obj match {
-          case objDef: ObjectDefinition              => objDef.returnType.isEmpty
-          case objWithMethodDef: ObjectWithMethodDef => objWithMethodDef.returnType.isEmpty
-        }
-
         val id = componentIdProvider.createComponentId(
           processingType,
           Some(name),
-          if (hasNoReturn) ComponentType.Processor else ComponentType.Enricher
+          serviceComponentType(obj)
         )
         ComponentIdWithName(id, name) -> obj
       }.toList
@@ -196,8 +182,14 @@ object ProcessDefinitionExtractor {
         settings
       )
 
-    val allDefinitions: Map[String, T] =
-      services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.mapValuesNow(_._1)
+    // TODO: This method is unsecure because it loses component type information and component names can overlap between
+    //       different component types (e.g. kafka source and kafka sink). After removal of ProcessConfigCreator
+    //       and WithCategories, it should be removed
+    val allComponentsDefinitions: List[(String, T)] =
+      services.toList ++ sourceFactories.toList ++ sinkFactories.toList ++
+        customStreamTransformers
+          .mapValuesNow(_._1)
+          .toList
 
     def filter(predicate: T => Boolean): ProcessDefinition[T] = copy(
       services.filter(kv => predicate(kv._2)),
@@ -215,6 +207,15 @@ object ProcessDefinitionExtractor {
       expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
     )
 
+  }
+
+  // TODO: This is an ugly hack, we shouldn't check T class. We could avoid that after merging Processor and Enricher ComponentType
+  private def serviceComponentType[T](obj: T) = {
+    val hasNoReturn = obj match {
+      case objDef: ObjectDefinition              => objDef.returnType.isEmpty
+      case objWithMethodDef: ObjectWithMethodDef => objWithMethodDef.returnType.isEmpty
+    }
+    if (hasNoReturn) ComponentType.Processor else ComponentType.Enricher
   }
 
   case class ExpressionDefinition[T](
@@ -249,7 +250,7 @@ object ProcessDefinitionExtractor {
       settings: ClassExtractionSettings
   ) {
 
-    val allDefinitions: List[(ComponentIdWithName, T)] =
+    val allComponentsDefinitions: List[(ComponentIdWithName, T)] =
       services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.map { case (idWithName, (value, _)) =>
         (idWithName, value)
       }

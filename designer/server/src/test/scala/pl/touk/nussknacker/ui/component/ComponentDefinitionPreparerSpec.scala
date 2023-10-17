@@ -247,7 +247,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentObjectDefinition]()
-    val dynamicComponentsConfig = processDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
+    val dynamicComponentsConfig = processDefinition.allComponentsDefinitions.toMap.map { case (idWithName, value) =>
       idWithName.name -> value.componentConfig
     }
     val fixedComponentsConfig =

@@ -205,6 +205,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
+      getProcessingTypeSetupService = () => streamingSetupService,
       getProcessCategoryService = () => processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),

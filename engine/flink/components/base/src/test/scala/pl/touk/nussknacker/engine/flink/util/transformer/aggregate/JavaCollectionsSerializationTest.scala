@@ -106,7 +106,7 @@ class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
     val inputType = Typed.fromDetailedType[List[Record]]
     Map(
       "start" -> WithCategories(
-        SourceFactory.noParam[Record](
+        SourceFactory.noParamStreamingFactory[Record](
           CollectionSource[Record](input, None, inputType)(TypeInformation.of(classOf[Record]))
         )
       )

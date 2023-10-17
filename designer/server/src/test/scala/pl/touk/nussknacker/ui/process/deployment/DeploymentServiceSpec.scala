@@ -21,10 +21,9 @@ import pl.touk.nussknacker.engine.api.deployment.{
   StateStatus,
   StatusDetails
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
@@ -602,7 +601,10 @@ class DeploymentServiceSpec
     val processesDetailsWithState = deploymentService
       .enrichDetailsWithProcessState(
         processesDetails
-          .map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult)
+          .map(
+            ScenarioWithDetailsConversions
+              .fromEntityIgnoringGraphAndValidationResult(_, TestProcessUtil.streamingSetup)
+          )
       )
       .futureValue
 
