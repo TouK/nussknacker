@@ -131,6 +131,9 @@ const globalStyles = {
         color: "inherit",
     },
 
+    "small, .small": {
+        fontSize: "85%",
+    },
     ".hide": {
         display: "none",
     },
@@ -180,6 +183,13 @@ const globalStyles = {
     ".services": {
         height: "100%",
         overflowY: "auto",
+    },
+
+    ".notifications-wrapper": {
+        position: "absolute",
+        bottom: "25px",
+        right: "25px",
+        zIndex: 10000,
     },
 };
 

@@ -5,6 +5,7 @@ import { NodeType, UIParameter } from "../../../types";
 import { Error } from "./editors/Validators";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
+import { BranchParameterRowStyled } from "../../../stylesheets/styledGraphWrapper";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -60,7 +61,7 @@ export default function BranchParameters({
                                     }
 
                                     return (
-                                        <div className="branch-parameter-row" key={`${paramName}-${branchId}`}>
+                                        <BranchParameterRowStyled key={`${paramName}-${branchId}`}>
                                             <div className={"branch-param-label"}>{branchId}</div>
                                             <div className={"branch-parameter-expr-container"}>
                                                 <ExpressionField
@@ -79,7 +80,7 @@ export default function BranchParameters({
                                                     errors={errors}
                                                 />
                                             </div>
-                                        </div>
+                                        </BranchParameterRowStyled>
                                     );
                                 })}
                             </div>

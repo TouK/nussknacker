@@ -1,8 +1,9 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import Date from "../common/Date";
 import { ActionType, ProcessVersionType } from "../Process/types";
 import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
+import WarningAmber from "@mui/icons-material/WarningAmber";
+import { Box } from "@mui/material";
 
 type HistoryItemProps = {
     isLatest?: boolean;
@@ -38,7 +39,6 @@ const HDate = ({ date }: { date: string }) => (
 );
 
 export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: HistoryItemProps): JSX.Element {
-    const { t } = useTranslation();
     const { user, createDate, processVersionId, actions } = version;
 
     return (
@@ -46,13 +46,9 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
             <div>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
-                    <small>
-                        <span
-                            style={{ margin: "0 3px" }}
-                            title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
-                            className="glyphicon glyphicon-warning-sign"
-                        />
-                    </small>
+                    <Box sx={{ display: "inline-flex", verticalAlign: "middle" }}>
+                        <WarningAmber sx={{ margin: "0 3px", fontSize: "small" }} />
+                    </Box>
                 )}
                 <br />
                 <HDate date={createDate} />

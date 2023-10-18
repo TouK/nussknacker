@@ -311,23 +311,6 @@ export const StyledGraphWrapper = styled("div")(
             background-image: -ms-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
         }
 
-        .branch-parameter-row {
-            margin-top: 0;
-            margin-bottom: 0;
-            display: flex;
-            & .branch-param-label {
-                color: #ccc;
-                font-weight: 400;
-                font-size: 14px;
-                padding: 8px 10px 8px 10px;
-                width: 30%;
-            }
-        }
-
-        .branch-parameter-expr-container {
-            width: 100%;
-        }
-
         .branch-parameter-expr {
             display: inline-flex;
             width: 100%;
@@ -356,3 +339,19 @@ export const StyledGraphWrapper = styled("div")(
         }
     `,
 );
+
+export const BranchParameterRowStyled = styled("div")`
+    margin-top: 0;
+    margin-bottom: 0;
+    display: flex;
+    .branch-param-label {
+        color: #ccc;
+        font-weight: 400;
+        font-size: 14px;
+        padding: 8px 10px 8px 10px;
+        width: 30%;
+    }
+    .branch-parameter-expr-container {
+        width: 100%;
+    }
+`;
