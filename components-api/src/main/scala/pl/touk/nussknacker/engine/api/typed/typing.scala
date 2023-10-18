@@ -126,7 +126,8 @@ object typing {
   case object TypedNull extends TypingResult {
     override def withoutValue: TypedNull.type = TypedNull
 
-    override val valueOpt: None.type = None
+    // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
+    override val valueOpt: Some[Null] = Some(null)
 
     override val display = "Null"
   }
