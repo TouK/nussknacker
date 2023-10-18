@@ -4,25 +4,28 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
+import java.io.Closeable
 import scala.reflect.ClassTag
 
 /**
-  * This is entrypoint for all available test runners. Use:
-  *
-  * import SomeSpecificTestRunner._
-  * TestScenarioRunner.specific()
-  *
-  * to run tests. For example for kafka-lite it will be:
-  *
-  * import LiteKafkaTestScenarioRunner._
-  * TestScenarioRunner.kafkaLiteBased()
-  *
-  */
+ * This is entrypoint for all available test runners. Use:
+ *
+ * import SomeSpecificTestRunner._
+ * TestScenarioRunner.specific()
+ *
+ * to run tests. For example for kafka-lite it will be:
+ *
+ * import LiteKafkaTestScenarioRunner._
+ * TestScenarioRunner.kafkaLiteBased()
+ *
+ */
 object TestScenarioRunner {
 
   type RunnerResult[R] = ValidatedNel[ProcessCompilationError, RunResult[R]]
@@ -39,11 +42,11 @@ object TestScenarioRunner {
 }
 
 /**
-  * This is *experimental* API
-  *
-  * This is common trait for all various engines - where each engine can have different entry method provided by convention runWith***Data.
-  * For example see implementation on LiteKafkaTestScenarioRunner and LiteTestScenarioRunner
-  */
+ * This is *experimental* API
+ *
+ * This is common trait for all various engines - where each engine can have different entry method provided by convention runWith***Data.
+ * For example see implementation on LiteKafkaTestScenarioRunner and LiteTestScenarioRunner
+ */
 trait TestScenarioRunner
 
 trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunnerBuilder[R, _]] {
@@ -58,9 +61,28 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 }
 
+object TestScenarioCollectorHandler {
+  def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
+    val (resultCollector, resultsCollectingHolder) = if (ComponentUseCase.TestRuntime == componentUseCase) {
+      val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+      (new TestServiceInvocationCollector(collectingListener.runId), Some(collectingListener))
+    } else {
+      (ProductionServiceInvocationCollector, None)
+    }
+
+    TestScenarioCollectorHandler(resultCollector, resultsCollectingHolder)
+  }
+
+  case class TestScenarioCollectorHandler(resultCollector: ResultCollector, resultsCollectingListener: Option[ResultsCollectingListener]) extends AutoCloseable {
+    def testRunId(): Option[TestRunId] = resultsCollectingListener.map(_.runId)
+
+    def close(): Unit = resultsCollectingListener.foreach(_.clean())
+  }
+}
+
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
   //todo add generate test data support
-  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
+  def runWithData[T: ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
 }
 
 object RunResult {
@@ -75,6 +97,7 @@ object RunResult {
 
 sealed trait RunResult[T] {
   def errors: List[NuExceptionInfo[_]]
+
   def success: T
 }
 

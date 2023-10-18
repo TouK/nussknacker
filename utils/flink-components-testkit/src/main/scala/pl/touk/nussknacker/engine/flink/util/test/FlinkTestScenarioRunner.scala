@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import cats.effect.Resource
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -15,12 +16,12 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.testComponents.{noopSourceComponent, testDataSourceComponent, testResultServiceComponent}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
+import scala.util.Using
 
 private object testComponents {
 
@@ -97,14 +98,18 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
     //It's copied from registrar.register only for handling compilation errors..
     //TODO: figure how to get compilation result on highest level - registrar.register?
     val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData, componentUseCase)
-    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
 
-    compileProcessData.compileProcess().map { _ =>
-      val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
-      registrar.register(env, scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = None)
-      env.executeAndWaitForFinished(scenario.id)()
-      RunUnitResult(errors = Nil)
+    Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
+      val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, testScenarioCollectorHandler.resultCollector, getClass.getClassLoader)
+
+      compileProcessData.compileProcess().map { _ =>
+        val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+        registrar.register(env, scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = testScenarioCollectorHandler.testRunId())
+        env.executeAndWaitForFinished(scenario.id)()
+        RunUnitResult(errors = Nil)
+      }
     }
+
   }
 
   private def collectResults[R](testComponentHolder: TestComponentsHolder): RunListResult[R] = {
