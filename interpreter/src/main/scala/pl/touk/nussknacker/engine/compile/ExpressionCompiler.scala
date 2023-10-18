@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -102,23 +102,30 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, List[(compiledgraph.evaluatedparam.TypedParameter, Parameter)]] = {
 
-    val allParameters = parameters ++ branchParameters.flatMap(_.parameters)
-    Validations.validateParameters(parameterDefinitions, allParameters).andThen { _ =>
-      val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
+    val redundantMissingValidation = Validations.validateRedundantAndMissingParameters(
+      parameterDefinitions,
+      parameters ++ branchParameters.flatMap(_.parameters)
+    )
+    val paramDefMap = parameterDefinitions.map(p => p.name -> p).toMap
 
-      val compiledParams = parameters.map { p =>
-        compileParam(p, ctx, paramDefMap(p.name), eager)
+    val compiledParams = parameters
+      .flatMap { p =>
+        val paramDef = paramDefMap.get(p.name)
+        paramDef.map(pd => compileParam(p, ctx, pd, eager))
       }
-      val compiledBranchParams = (for {
-        branchParams <- branchParameters
-        p            <- branchParams.parameters
-      } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.map {
-        case (paramName, branchIdAndExpressions) =>
-          compileBranchParam(branchIdAndExpressions, branchContexts, paramDefMap(paramName))
-      }
-      (compiledParams ++ compiledBranchParams).sequence
-        .map(typed => typed.map(t => (t, paramDefMap(t.name))))
+    val compiledBranchParams = (for {
+      branchParams <- branchParameters
+      p            <- branchParams.parameters
+    } yield p.name -> (branchParams.branchId, p.expression)).toGroupedMap.toList.flatMap {
+      case (paramName, branchIdAndExpressions) =>
+        val paramDef = paramDefMap.get(paramName)
+        paramDef.map(pd => compileBranchParam(branchIdAndExpressions, branchContexts, pd))
     }
+    val allCompiledParams = (compiledParams ++ compiledBranchParams).sequence
+      .map(typed => typed.map(t => (t, paramDefMap(t.name))))
+    allCompiledParams
+      .andThen(allParams => Validations.validateWithCustomValidators(parameterDefinitions, allParams))
+      .combine(redundantMissingValidation.map(_ => List()))
   }
 
   def compileParam(param: evaluatedparam.Parameter, ctx: ValidationContext, definition: Parameter, eager: Boolean)(
@@ -140,7 +147,12 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .map { case (branchId, expression) =>
         enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
           // TODO JOIN: branch id on error field level
-          compile(expression, Some(s"${definition.name} for branch $branchId"), finalCtx, definition.typ).map(
+          compile(
+            expression,
+            Some(ParameterNaming.getNameForBranchParameter(definition, branchId)),
+            finalCtx,
+            definition.typ
+          ).map(
             branchId -> _
           )
         }

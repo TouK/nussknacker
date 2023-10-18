@@ -21,7 +21,7 @@ object CronParameterValidator extends CronParameterValidator {
 // Valid expression is e.g.: 0 * * * * ? * which means run every minute at 0 second
 class CronParameterValidator extends CustomParameterValidator {
 
-  override def isValid(paramName: String, value: String, label: Option[String])(
+  override def isValid(paramName: String, value: Any, label: Option[String])(
       implicit nodeId: api.NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     def createValidationError: CustomParameterValidationError = {
@@ -32,8 +32,12 @@ class CronParameterValidator extends CustomParameterValidator {
         nodeId = nodeId.id
       )
     }
+    value match {
+      case s: String =>
+        SchedulePropertyExtractor.parseAndValidateProperty(s).fold(_ => invalid(createValidationError), _ => valid(()))
+      case _ => invalid(createValidationError)
+    }
 
-    SchedulePropertyExtractor.parseAndValidateProperty(value).fold(_ => invalid(createValidationError), _ => valid(()))
   }
 
   override def name: String = "cron_validator"

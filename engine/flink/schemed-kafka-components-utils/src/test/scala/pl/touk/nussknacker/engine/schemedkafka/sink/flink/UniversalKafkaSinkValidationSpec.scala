@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CustomNodeError,
+  EmptyMandatoryParameter,
+  InvalidPropertyFixedValue
+}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -92,8 +96,13 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       "'tereferer'",
       List("", "'fullname'", "'generated-avro'"),
       "id"
-    ) ::
-      InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
+    ) :: InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") ::
+      EmptyMandatoryParameter(
+        "This field is mandatory and can not be empty",
+        "Please fill field for this parameter",
+        "Value",
+        "id"
+      ) :: Nil
   }
 
   test("should return sane error on invalid version") {
@@ -111,6 +120,11 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       None,
       "'343543'",
       List("'latest'", "'1'", "'2'", "'3'"),
+      "id"
+    ) :: EmptyMandatoryParameter(
+      "This field is mandatory and can not be empty",
+      "Please fill field for this parameter",
+      "Value",
       "id"
     ) :: Nil
   }

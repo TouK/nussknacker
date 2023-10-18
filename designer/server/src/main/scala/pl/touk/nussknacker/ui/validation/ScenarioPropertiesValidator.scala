@@ -13,6 +13,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
+import scala.util.Try
+
 class ScenarioPropertiesValidator(
     scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
 ) {
@@ -60,7 +62,17 @@ class ScenarioPropertiesValidator(
 
     propertiesWithConfiguredValidator
       .collect { case (property, Some(config), validator: ParameterValidator) =>
-        validator.isValid(property._1, property._2, config.label).toValidatedNel
+        val expression = property._2
+        val value = if (expression.isBlank) {
+          null
+        } else {
+          // FIXME: scenario properties does not have TypingResult hence this little hack to convert them to proper values
+          Try[Any] { expression.toBoolean }
+            .orElse(Try { expression.toInt })
+            .orElse(Try { expression.toDouble })
+            .getOrElse(expression)
+        }
+        validator.isValid(property._1, value, config.label).toValidatedNel
       }
       .sequence
       .map(_ => ())

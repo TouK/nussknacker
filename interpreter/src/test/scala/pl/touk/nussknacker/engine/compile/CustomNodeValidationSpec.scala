@@ -488,7 +488,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
               Some("outPutVar"),
               List(
                 "branch1" -> List("key" -> "''", "value" -> "'ala'"),
-                "branch2" -> List("key" -> "'key2'", "value" -> "")
+                "branch2" -> List("key" -> "'key2'", "value" -> "null")
               )
             )
             .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
@@ -506,7 +506,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         List(
           EmptyMandatoryParameter(
             "This field is mandatory and can not be empty",
-            "Please fill field value for this parameter",
+            "Please fill field for this parameter",
             "value for branch branch2",
             "join1"
           )

@@ -572,10 +572,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
-              List(
-                InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
-              )
+              ExpressionParserCompilationError(_, "customNodeId", Some("nullableLiteralIntegerParam"), "as"),
+              List(ExpressionParserCompilationError(_, "customNodeId2", Some("nullableLiteralIntegerParam"), "1.23"))
             )
           ) =>
     }
@@ -593,7 +591,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              MismatchParameter(_, _, "regExpParam", "customNodeId"),
+              ExpressionParserCompilationError(_, "customNodeId", Some("regExpParam"), "as"),
               _
             )
           ) =>
@@ -1767,18 +1765,21 @@ class StartingWithACustomValidator extends CustomParameterValidator {
 
   import cats.data.Validated.{invalid, valid}
 
-  override def isValid(paramName: String, value: String, label: Option[String])(
+  override def isValid(paramName: String, value: Any, label: Option[String])(
       implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
-    if (value.stripPrefix("'").startsWith("A")) valid(())
-    else
-      invalid(
-        CustomParameterValidationError(
-          s"Value $value does not starts with 'A'",
-          "Value does not starts with 'A'",
-          paramName,
-          nodeId.id
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    value match {
+      case s: String if s.startsWith("A") => valid(())
+      case _ =>
+        invalid(
+          CustomParameterValidationError(
+            s"Value $value does not starts with 'A'",
+            "Value does not starts with 'A'",
+            paramName,
+            nodeId.id
+          )
         )
-      )
+    }
+  }
 
 }

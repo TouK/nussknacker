@@ -112,7 +112,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(ProcessTestData.invalidProcessWithWrongFixedExpressionValue) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("Property expression has invalid value")
+      entity should include("Failed to parse expression")
     }
   }
 
