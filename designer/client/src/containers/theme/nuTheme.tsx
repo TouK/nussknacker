@@ -46,6 +46,14 @@ const colors = {
     doveGray: d4,
     charcoal: "#444444",
     accent: "#668547",
+    eclipse: "#393939",
+    nightRider: "#2d2d2d",
+    revolver: "#333344",
+    curiousBlue: "#337AB7",
+    abbey: "#4A4A4A",
+    dustyGray: l4,
+    gallery: "#eeeeee",
+    boulder: "#777777",
 };
 
 const selectColors = {
@@ -95,7 +103,7 @@ const globalStyles = {
         padding: 0,
         height: "100dvh",
         background: "#b3b3b3",
-        color: "#ccc",
+        color: custom.colors.secondaryColor,
         fontSize: "16px",
         overflow: "hidden",
         letterSpacing: "unset",
@@ -114,7 +122,7 @@ const globalStyles = {
     },
 
     button: {
-        color: "#ccc",
+        color: custom.colors.secondaryColor,
         lineHeight: 1.428571429,
         ":hover": {
             cursor: "pointer",

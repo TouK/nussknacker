@@ -74,7 +74,7 @@ export default function CronEditor(props: Props) {
     };
 
     return (
-        <CronEditorStyled ref={node} className={"cron-editor-container"}>
+        <CronEditorStyled ref={node}>
             <Input
                 value={value}
                 formattedValue={expressionObj.expression}
