@@ -103,18 +103,8 @@ object ProcessDBQueryRepository {
       actions = actions
     )
 
-  final case class ProcessNotFoundError(id: String) extends Exception(s"No scenario $id found") with NotFoundError
+  final case class ProcessNotFoundError(id: String) extends NotFoundError(s"No scenario $id found")
 
-  final case class ProcessAlreadyExists(id: String) extends BadRequestError {
-    def getMessage = s"Scenario $id already exists"
-  }
-
-  final case class ProcessAlreadyDeployed(id: String) extends BadRequestError {
-    def getMessage = s"Scenario $id is already deployed"
-  }
-
-  final case class InvalidProcessJson(rawJson: String) extends BadRequestError {
-    def getMessage = s"Invalid raw json string: $rawJson"
-  }
+  final case class ProcessAlreadyExists(id: String) extends BadRequestError(s"Scenario $id already exists")
 
 }

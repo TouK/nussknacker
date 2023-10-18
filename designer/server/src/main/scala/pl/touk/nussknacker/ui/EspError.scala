@@ -6,16 +6,22 @@ object EspError {
 
 }
 
-trait EspError {
-
-  def getMessage: String
-
+abstract class EspError(message: String, cause: Throwable) extends Exception(message, cause) {
+  def this(message: String) = this(message, null)
 }
 
-trait FatalError extends EspError
+abstract class FatalError(message: String, cause: Throwable) extends EspError(message, cause) {
+  def this(message: String) = this(message, null)
+}
 
-trait NotFoundError extends EspError
+abstract class NotFoundError(message: String, cause: Throwable) extends EspError(message, cause) {
+  def this(message: String) = this(message, null)
+}
 
-trait BadRequestError extends EspError
+abstract class BadRequestError(message: String, cause: Throwable) extends EspError(message, cause) {
+  def this(message: String) = this(message, null)
+}
 
-trait IllegalOperationError extends EspError
+abstract class IllegalOperationError(message: String, cause: Throwable) extends EspError(message, cause) {
+  def this(message: String) = this(message, null)
+}

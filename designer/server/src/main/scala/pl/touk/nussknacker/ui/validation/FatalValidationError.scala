@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.ui.{BadRequestError, EspError}
+import pl.touk.nussknacker.ui.validation.FatalValidationError.formatError
 
 object FatalValidationError {
 
@@ -21,14 +22,9 @@ object FatalValidationError {
     }
   }
 
-}
-
-final case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {
-
-  override def getMessage: String = errors.map(formatError).mkString(",")
-
-  private def formatError(e: NodeValidationError): String = {
-    s"${e.message}:${e.description}"
-  }
+  private def formatError(e: NodeValidationError) = s"${e.message}:${e.description}"
 
 }
+
+final case class FatalValidationError(errors: List[NodeValidationError])
+    extends BadRequestError(errors.map(formatError).mkString(",")) {}

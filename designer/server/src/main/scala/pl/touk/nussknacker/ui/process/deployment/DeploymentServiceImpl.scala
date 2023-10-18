@@ -586,4 +586,4 @@ class DeploymentServiceImpl(
 
 }
 
-private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
+private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")

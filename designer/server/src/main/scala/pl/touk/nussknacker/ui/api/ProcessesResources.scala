@@ -394,7 +394,7 @@ class ProcessesResources(
 }
 
 object ProcessesResources {
-  final case class UnmarshallError(message: String) extends Exception(message) with FatalError
+  final case class UnmarshallError(message: String) extends FatalError(message)
 
   final case class ProcessesQuery(
       isFragment: Option[Boolean],

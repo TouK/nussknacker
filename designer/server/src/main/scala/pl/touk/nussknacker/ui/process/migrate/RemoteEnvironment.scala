@@ -55,24 +55,21 @@ trait RemoteEnvironment {
 
 }
 
-final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
+final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String) extends EspError(message)
 
-final case class MigrationValidationError(errors: ValidationErrors) extends EspError {
+final case class MigrationValidationError(errors: ValidationErrors)
+    extends EspError({
+      val messages = errors.globalErrors.map(_.message) ++
+        errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
+          s"$node - ${nerror.map(_.message).mkString(", ")}"
+        }
+      s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
+    })
 
-  override def getMessage: String = {
-    val messages = errors.globalErrors.map(_.message) ++
-      errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
-        s"$node - ${nerror.map(_.message).mkString(", ")}"
-      }
-    s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
-  }
-
-}
-
-final case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
-  def getMessage =
-    s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
-}
+final case class MigrationToArchivedError(processName: ProcessName, environment: String)
+    extends EspError(
+      s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
+    )
 
 final case class HttpRemoteEnvironmentConfig(
     user: String,

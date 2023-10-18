@@ -20,7 +20,6 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
       case e: NotFoundError         => StatusCodes.NotFound
       case e: FatalError            => StatusCodes.InternalServerError
       case e: BadRequestError       => StatusCodes.BadRequest
-      case e: FatalValidationError  => StatusCodes.BadRequest
       case e: IllegalOperationError => StatusCodes.Conflict
       // unknown?
       case _ =>
