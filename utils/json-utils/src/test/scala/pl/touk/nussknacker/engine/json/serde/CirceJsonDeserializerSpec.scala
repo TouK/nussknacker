@@ -4,8 +4,9 @@ import org.everit.json.schema.NumberSchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, TypedMap}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.json.swagger.extractor.ShallowTypedMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.time.LocalDate
@@ -189,7 +190,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize("""{
+    val result = new CirceJsonDeserializer(schema)
+      .deserialize("""{
         |  "someDefinedProp": true,
         |  "someAdditionalProp": "string",
         |  "somePatternProp_int": 1234
@@ -213,7 +215,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize("""{
+    val result = new CirceJsonDeserializer(schema)
+      .deserialize("""{
         |  "somePatternProp_int": 1234
         |}""".stripMargin)
 

@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.json.swagger.extractor
 
-import io.circe.Json
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import io.circe._
 import io.circe.Json.{fromBoolean, fromInt, fromLong, fromString, fromValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,10 +13,13 @@ import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToOb
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
+import java.{util => ju}
 
-class JsonToNuStructTest extends AnyFunSuite with Matchers {
+class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
-  private val json = Json.obj(
+  import scala.jdk.CollectionConverters._
+
+  private val jsonObject = JsonObject(
     "field1"       -> fromString("value"),
     "field2"       -> Json.fromInt(1),
     "field4"       -> fromString("2020-07-10T12:12:30+02:00"),
@@ -46,25 +52,72 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       AdditionalPropertiesDisabled
     )
 
-    val value = JsonToNuStruct(json, definition)
+    val value = ShallowTypedMap(jsonObject, definition)
 
     value shouldBe a[TypedMap]
-    val fields = value.asInstanceOf[TypedMap]
-    fields.get("field1") shouldBe "value"
-    fields.get("field2") shouldBe 1L
-    Option(fields.get("field3")) shouldBe Symbol("empty")
-    fields.get("field4") shouldBe ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
-    Option(fields.get("field5")) shouldBe Symbol("empty")
-    fields.get("field6") shouldBe OffsetTime.of(12, 12, 35, 0, ZoneOffset.ofHours(2))
-    fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
-    fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
-    fields.get("doubleField") shouldBe 1.55
-    fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
-    val mapField = fields.get("mapField").asInstanceOf[TypedMap]
+
+    value.get("nullField").asInstanceOf[AnyRef] shouldBe null
+
+    value.keySet().asScala shouldBe Set(
+      "field5",
+      "doubleField",
+      "field1",
+      "field4",
+      "mapField",
+      "field2",
+      "field7",
+      "field6",
+      "decimalField",
+      "nullField",
+      "mapOfStringsField"
+    )
+
+    Set(
+      "field5",
+      "doubleField",
+      "field1",
+      "field4",
+      "mapField",
+      "field2",
+      "field7",
+      "field6",
+      "decimalField",
+      "nullField",
+      "mapOfStringsField"
+    ) -- value.entrySet().asScala.map(_.getKey) shouldBe Set()
+
+    value.entrySet().asScala.map(_.getKey) shouldBe Set(
+      "field5",
+      "doubleField",
+      "field1",
+      "field4",
+      "mapField",
+      "field2",
+      "field7",
+      "field6",
+      "decimalField",
+      "nullField",
+      "mapOfStringsField"
+    )
+
+    value.containsKey("field1") shouldBe true
+    value.size() shouldBe 11
+    value.isEmpty shouldBe false
+    value.get("field1") shouldBe "value"
+    value.get("field2") shouldBe 1L
+    Option(value.get("field3")) shouldBe Symbol("empty")
+    value.get("field4") shouldBe ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
+    Option(value.get("field5")) shouldBe Symbol("empty")
+    value.get("field6") shouldBe OffsetTime.of(12, 12, 35, 0, ZoneOffset.ofHours(2))
+    value.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
+    value.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
+    value.get("doubleField") shouldBe 1.55
+    value.get("nullField").asInstanceOf[AnyRef] shouldBe null
+    val mapField = value.get("mapField").asInstanceOf[TypedMap]
     mapField.get("a") shouldBe "1"
     mapField.get("b") shouldBe java.math.BigDecimal.valueOf(2)
     mapField.get("c") shouldBe a[java.util.List[_]]
-    fields.get("mapOfStringsField") shouldBe a[TypedMap]
+    value.get("mapOfStringsField") shouldBe a[TypedMap]
   }
 
   test("should reject map with incorrect values types") {
@@ -72,7 +125,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))),
       AdditionalPropertiesDisabled
     )
-    val result = JsonToNuStruct(json, definition).asInstanceOf[TypedMap]
+    val result = ShallowTypedMap(jsonObject, definition)
 
     val mapField = result.get("mapField").asInstanceOf[TypedMap]
 
@@ -85,114 +138,50 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
-    extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
+    val result = ShallowTypedMap(jsonObject, definitionWithoutFields)
+
+    result.size() shouldBe 0
+    Option(result.get("field3")) shouldBe Symbol("empty")
+    result.isEmpty shouldBe true
+
+    result shouldBe TypedMap(Map.empty)
+    result shouldBe a[ju.Map[_, _]]
 
     val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
-    extractor.JsonToNuStruct(json, definitionWithOneField) shouldBe TypedMap(Map("field2" -> 1L))
+    val result2                = ShallowTypedMap(jsonObject, definitionWithOneField)
+    result2 shouldEqual TypedMap(Map("field2" -> 1L)).asInstanceOf[ju.Map[String, Any]]
 
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
-    val json       = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = JsonObject("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(
+    val result     = ShallowTypedMap(json, definition)
+    result.asScala shouldBe
       Map(
         "field1" -> "value",
         "field2" -> java.math.BigDecimal.valueOf(1)
       )
-    )
 
-    val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
+    val jsonIntegers = JsonObject("field1" -> fromInt(2), "field2" -> fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(
+    ShallowTypedMap(jsonIntegers, definition2).asScala shouldBe
       Map(
         "field1" -> 2L,
         "field2" -> 1L
       )
-    )
   }
 
   test("should throw exception on trying convert string to integer") {
-    val json       = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = JsonObject("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      extractor.JsonToNuStruct(json, definition).asInstanceOf[java.util.Map[String, Any]].get("field1")
+      ShallowTypedMap(json, definition).extractValue("field1")
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
-  }
-
-  test("should parse union") {
-    val definition =
-      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))))
-
-    val value = JsonToNuStruct(json, definition)
-
-    value shouldBe a[TypedMap]
-    val fields = value.asInstanceOf[TypedMap]
-    fields.get("field2") shouldBe 1L
-  }
-
-  test("should handle arrays") {
-
-    import scala.jdk.CollectionConverters._
-    val definition =
-      SwaggerObject(elementType = Map("array" -> SwaggerArray(SwaggerString)))
-
-    val json = Json.obj(
-      "array" -> fromValues(List(fromString("string1"), fromString("string2")))
-    )
-
-    val value = JsonToNuStruct(json, definition)
-
-    value shouldBe a[TypedMap]
-    val fields = value.asInstanceOf[TypedMap]
-    fields.get("array") shouldBe List("string1", "string2").asJava
-  }
-
-  test("should handle display path in error") {
-    val definition = SwaggerObject(
-      elementType = Map(
-        "string" -> SwaggerString,
-        "long"   -> SwaggerLong,
-        "array"  -> SwaggerArray(SwaggerBool),
-        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString))
-      )
-    )
-
-    def assertPath(json: Json, path: String, fields: String*) =
-      intercept[JsonToObjectError] {
-        var result = JsonToNuStruct(json, definition).asInstanceOf[java.util.Map[_, _]]
-
-        fields.init.foreach { field =>
-          result = result.get(field).asInstanceOf[java.util.Map[_, _]]
-        }
-        result.get(fields.last)
-      }.path shouldBe path
-
-    assertPath(Json.obj("string" -> fromLong(1)), "string", "string")
-    assertPath(
-      Json.obj(
-        "string" -> fromString(""),
-        "long"   -> fromLong(1),
-        "array"  -> fromValues(List(fromBoolean(false), fromString("string")))
-      ),
-      "array[1]",
-      "array"
-    )
-    assertPath(
-      Json.obj(
-        "string" -> fromString(""),
-        "long"   -> fromLong(1),
-        "array"  -> fromValues(Nil),
-        "nested" -> Json.obj("string" -> fromLong(1))
-      ),
-      "nested.string",
-      "nested",
-      "string"
-    )
   }
 
 }

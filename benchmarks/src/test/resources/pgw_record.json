@@ -1,0 +1,199 @@
+{
+  "pgwRecord": {
+    "recordType": 85,
+    "servedIMSI": {
+      "servedIMSI": "260060038119383"
+    },
+    "p_GWAddress": {
+      "iPBinaryAddress": {
+        "iPBinV4Address": [
+          89,
+          108,
+          -64,
+          20
+        ]
+      }
+    },
+    "chargingID": "1210022852",
+    "servingNodeAddress": [
+      {
+        "iPBinaryAddress": {
+          "iPBinV4Address": [
+            89,
+            108,
+            -64,
+            19
+          ]
+        }
+      }
+    ],
+    "accessPointNameNI": "ims.mnc006.mcc260.gprs",
+    "pdpPDNType": {
+      "organization": "1",
+      "number": "02"
+    },
+    "servedPDPPDNAddress": {
+      "iPAddress": {
+        "iPBinaryAddress": {
+          "iPBinV6Address": [
+            42,
+            0,
+            25,
+            -127,
+            48,
+            69,
+            61,
+            -93,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "dynamicAddressFlag": true,
+    "recordOpeningTime": [
+      35,
+      16,
+      17,
+      17,
+      70,
+      24,
+      43,
+      2,
+      0
+    ],
+    "duration": 571,
+    "causeForRecClosing": 0,
+    "nodeID": "ogwc_a_c1.1.32",
+    "localSequenceNumber": "1060166004",
+    "apnSelectionMode": 0,
+    "servedMSISDN": {
+      "prefix": "48",
+      "address": "607884843"
+    },
+    "chargingCharacteristics": [
+      8,
+      0
+    ],
+    "chChSelectionMode": 3,
+    "servingNodePLMNIdentifier": {
+      "mcc": "260",
+      "mnc": "06"
+    },
+    "servedIMEISV": {
+      "servedIMEI": "3525995061469001"
+    },
+    "rATType": 1,
+    "mSTimeZone": [
+      -128,
+      1
+    ],
+    "userLocationInformation": {
+      "nonuse_flag": 0,
+      "ecgi_flag": 0,
+      "tai_flag": 0,
+      "rai_flag": 0,
+      "sai_flag": 1,
+      "cgi_flag": 0,
+      "sai_data": {
+        "mcc": "260",
+        "mnc": "06",
+        "lac": "0071",
+        "sac": "CAC0"
+      }
+    },
+    "listOfServiceData": [
+      {
+        "ratingGroup": 0,
+        "chargingRuleBaseName": "IMS",
+        "localSequenceNumber": "1",
+        "timeOfFirstUsage": [
+          35,
+          16,
+          17,
+          17,
+          70,
+          24,
+          43,
+          2,
+          0
+        ],
+        "timeOfLastUsage": [
+          35,
+          16,
+          17,
+          17,
+          80,
+          19,
+          43,
+          2,
+          0
+        ],
+        "timeUsage": 235,
+        "serviceConditionChange": "0000000000000000000000001",
+        "servingNodeAddress": {
+          "iPBinaryAddress": {
+            "iPBinV4Address": [
+              89,
+              108,
+              -64,
+              19
+            ]
+          }
+        },
+        "datavolumeFBCUplink": "8123",
+        "datavolumeFBCDownlink": "5911",
+        "timeOfReport": [
+          35,
+          16,
+          17,
+          17,
+          85,
+          80,
+          43,
+          2,
+          0
+        ]
+      }
+    ],
+    "servingNodeType": [
+      2
+    ],
+    "p_GWPLMNIdentifier": {
+      "mcc": "260",
+      "mnc": "06"
+    },
+    "startTime": [
+      35,
+      16,
+      17,
+      17,
+      70,
+      24,
+      43,
+      2,
+      0
+    ],
+    "stopTime": [
+      35,
+      16,
+      17,
+      17,
+      85,
+      80,
+      43,
+      2,
+      0
+    ],
+    "pDNConnectionID": "1210022852",
+    "lineNumber": 53050,
+    "fileName": "CDR_PGWO11_0136538_20231011115447.asn",
+    "timeStamp": "1697018627136"
+  }
+}

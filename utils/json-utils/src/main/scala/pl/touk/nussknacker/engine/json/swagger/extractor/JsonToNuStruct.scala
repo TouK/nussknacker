@@ -90,7 +90,9 @@ object JsonToNuStruct {
             _.asArray,
             _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava
           )
-        case obj: SwaggerObject => extractObject(obj)
+        case obj: SwaggerObject =>
+          // extractObject(obj)
+          ShallowTypedMap(json.asObject.get, obj) //
         case u @ SwaggerUnion(types) =>
           types.view
             .flatMap(aType => Try(apply(json, aType)).toOption)

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.json.serde
 
+import io.circe.Json
 import org.everit.json.schema.Schema
 import org.json.JSONTokener
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
@@ -34,6 +35,19 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
     val struct    = JsonToNuStruct(circeJson, swaggerTyped)
     struct
+  }
+
+  def deserialize2(string: String): Json = {
+    // we do parsing for:
+    // 1. for schema validation
+    // 2. for typing purposes which is based on Circe
+    val inputJson = new JSONTokener(string).nextValue()
+
+    val validatedJson = jsonSchema
+      .validateData(inputJson)
+      .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
+
+    JsonSchemaUtils.jsonToCirce(validatedJson)
   }
 
 }
