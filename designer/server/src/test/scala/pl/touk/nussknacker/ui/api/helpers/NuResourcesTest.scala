@@ -167,7 +167,7 @@ trait NuResourcesTest
   )
 
   protected val processActivityRoute =
-    new ProcessActivityResource(processActivityRepository, futureFetchingProcessRepository, processAuthorizer)
+    new ProcessActivityResource(processActivityRepository, processService, processAuthorizer)
 
   protected val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
 
@@ -203,7 +203,7 @@ trait NuResourcesTest
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) =
     new ManagementResources(
       processAuthorizer = processAuthorizer,
-      processRepository = futureFetchingProcessRepository,
+      processService = processService,
       deploymentCommentSettings = deploymentCommentSettings,
       deploymentService = deploymentService,
       dispatcher = dmDispatcher,

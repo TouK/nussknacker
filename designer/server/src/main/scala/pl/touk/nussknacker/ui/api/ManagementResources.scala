@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment.{
   CustomActionInvokerService,
@@ -30,7 +31,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DeploymentService
 }
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -86,7 +87,7 @@ object ManagementResources {
 
 class ManagementResources(
     val processAuthorizer: AuthorizeProcess,
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     deploymentService: DeploymentService,
     dispatcher: DeploymentManagerDispatcher,
@@ -256,7 +257,7 @@ class ManagementResources(
           } ~
           path("testWithParameters" / Segment) { processName =>
             {
-              (post & processDetailsForName[Unit](processName)) { process =>
+              (post & processDetailsForName(processName)) { process =>
                 val modelData = typeToConfig.forTypeUnsafe(process.processingType)
                 implicit val requestDecoder: Decoder[TestFromParametersRequest] =
                   prepareTestFromParametersDecoder(modelData)

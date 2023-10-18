@@ -57,6 +57,7 @@ object ProcessService {
 }
 
 trait ProcessService {
+  def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[XError[ProcessId]]
 
   def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(
       implicit user: LoggedUser
@@ -101,6 +102,7 @@ trait ProcessService {
   ): Future[XError[ValidatedDisplayableProcess]]
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
+
 }
 
 /**
@@ -265,6 +267,15 @@ class DBProcessService(
       case None =>
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
+
+  override def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[XError[ProcessId]] = {
+    fetchingProcessRepository.fetchProcessId(processName).flatMap {
+      case Some(process) =>
+        Future(Right(process))
+      case None =>
+        Future(Left(ProcessNotFoundError(processName.toString)))
+    }
+  }
 
   override def getProcesses[PS: ProcessShapeFetchStrategy](
       implicit user: LoggedUser

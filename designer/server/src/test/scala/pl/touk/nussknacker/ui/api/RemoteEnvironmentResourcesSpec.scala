@@ -54,7 +54,12 @@ class RemoteEnvironmentResourcesSpec
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
     val route = withPermissions(
-      new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer),
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        futureFetchingProcessRepository,
+        processService,
+        processAuthorizer
+      ),
       readWritePermissions
     )
 
@@ -79,7 +84,12 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(
-      new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer),
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        futureFetchingProcessRepository,
+        processService,
+        processAuthorizer
+      ),
       readWritePermissions
     )
     val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = category)
@@ -116,6 +126,7 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         futureFetchingProcessRepository,
+        processService,
         processAuthorizer
       ),
       testPermissionRead
@@ -149,6 +160,7 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         futureFetchingProcessRepository,
+        processService,
         processAuthorizer
       ),
       readWritePermissions

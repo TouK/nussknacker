@@ -237,17 +237,22 @@ class AkkaHttpBasedRouteProvider(
             processChangeListener = processChangeListener
           ),
           new NodesResources(
-            futureProcessRepository,
+            processService,
             fragmentRepository,
             typeToConfig.mapValues(_.modelData),
             processValidation,
             typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
           ),
-          new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
-          new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
+          new ProcessesExportResources(
+            futureProcessRepository,
+            processService,
+            processActivityRepository,
+            processResolving
+          ),
+          new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
           new ManagementResources(
             processAuthorizer,
-            futureProcessRepository,
+            processService,
             featureTogglesConfig.deploymentCommentSettings,
             deploymentService,
             dmDispatcher,
@@ -256,7 +261,7 @@ class AkkaHttpBasedRouteProvider(
             scenarioTestService,
             typeToConfig.mapValues(_.modelData)
           ),
-          new ValidationResources(futureProcessRepository, processResolving),
+          new ValidationResources(processService, processResolving),
           new DefinitionResources(
             modelData,
             typeToConfig,
@@ -266,14 +271,14 @@ class AkkaHttpBasedRouteProvider(
           ),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
-          new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
+          new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new ComponentResource(componentService),
           new AttachmentResources(
             new ProcessAttachmentService(
               AttachmentsConfig.create(resolvedConfig),
               processActivityRepository
             ),
-            futureProcessRepository,
+            processService,
             processAuthorizer
           ),
           new StatusResources(stateDefinitionService),
@@ -289,9 +294,16 @@ class AkkaHttpBasedRouteProvider(
               )
             )
             .map { remoteEnvironment =>
-              new RemoteEnvironmentResources(remoteEnvironment, futureProcessRepository, processAuthorizer)
+              new RemoteEnvironmentResources(
+                remoteEnvironment,
+                futureProcessRepository,
+                processService,
+                processAuthorizer
+              )
             },
-          countsReporter.map(reporter => new ProcessReportResources(reporter, counter, futureProcessRepository)),
+          countsReporter.map(reporter =>
+            new ProcessReportResources(reporter, counter, futureProcessRepository, processService)
+          ),
         ).flatten
         routes ++ optionalRoutes
       }

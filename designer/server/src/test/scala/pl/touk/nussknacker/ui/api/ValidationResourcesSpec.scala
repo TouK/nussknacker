@@ -67,7 +67,7 @@ class ValidationResourcesSpec
 
   private val route: Route = withPermissions(
     new ValidationResources(
-      futureFetchingProcessRepository,
+      processService,
       new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
     ),
     testPermissionRead

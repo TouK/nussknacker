@@ -46,8 +46,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
-    val processRepository: FetchingProcessRepository[Future],
-    processService: ProcessService,
+    processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     deploymentService: DeploymentService,
     processToolbarService: ProcessToolbarService,
     processResolving: UIProcessResolving,

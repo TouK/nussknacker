@@ -2,37 +2,34 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Directive1
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 trait ProcessDirectives {
   import akka.http.scaladsl.server.Directives._
 
-  val processRepository: FetchingProcessRepository[Future]
+  protected val processService: ProcessService
   implicit val ec: ExecutionContext
 
-  def processId(processName: String): Directive1[ProcessIdWithName] = {
-    handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
-      onSuccess(processRepository.fetchProcessId(ProcessName(processName))).flatMap {
-        case Some(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
-        case None            => failWith(ProcessNotFoundError(processName))
+  def processDetailsForName(
+      processName: String
+  )(implicit loggedUser: LoggedUser): Directive1[BaseProcessDetails[Unit]] = {
+    processId(processName).flatMap { processIdWithName =>
+      onSuccess(processService.getProcess[Unit](processIdWithName)).flatMap {
+        case Right(process) => provide(process)
+        case Left(err)      => failWith(err)
       }
     }
   }
 
-  def processDetailsForName[PS: ProcessShapeFetchStrategy](
-      processName: String
-  )(implicit loggedUser: LoggedUser): Directive1[BaseProcessDetails[PS]] = {
-    processId(processName).tflatMap { processId =>
-      handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
-        onSuccess(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId._1.id)).flatMap {
-          case Some(process) => provide(process)
-          case None          => failWith(ProcessNotFoundError(processName))
-        }
+  def processId(processName: String): Directive1[ProcessIdWithName] = {
+    handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
+      onSuccess(processService.getProcessId(ProcessName(processName))).flatMap {
+        case Right(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
+        case Left(err)        => failWith(err)
       }
     }
   }

@@ -23,12 +23,14 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class RemoteEnvironmentResources(
     remoteEnvironment: RemoteEnvironment,
-    val processRepository: FetchingProcessRepository[Future],
+    processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     val processAuthorizer: AuthorizeProcess
 )(implicit val ec: ExecutionContext)
     extends Directives
