@@ -22,9 +22,9 @@ object EmbeddedKafkaServer {
 
   // In Kafka 3.2.0 doesn't work create topic and describe topic instantly after it - it doesn't return newly created topic
   // Also there is erro "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException" in log
-  val kRaftEnabled = false
+  val kRaftEnabled: Boolean = false
 
-  val localhost = "127.0.0.1"
+  val localhost: String = "127.0.0.1"
 
   def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServer = {
     val logDir      = tempDir()
@@ -63,11 +63,13 @@ object EmbeddedKafkaServer {
       properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort")
     }
     properties.setProperty("num.partitions", "1")
+    properties.setProperty("offsets.topic.num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty(
       "log.cleaner.dedupe.buffer.size",
       (2 * 1024 * 1024L).toString
     ) // 2MB should be enough for tests
+    properties.setProperty("transaction.state.log.num.partitions", "1")
     properties.setProperty("transaction.state.log.replication.factor", "1")
     properties.setProperty("transaction.state.log.min.isr", "1")
     properties.setProperty("log.dir", logDir.getAbsolutePath)
