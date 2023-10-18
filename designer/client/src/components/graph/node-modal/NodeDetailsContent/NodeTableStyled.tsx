@@ -85,6 +85,16 @@ export const NodeTableStyled = styled("div")(
             &.switchable {
                 width: 70%;
             }
+            .fadeout {
+                position: relative;
+                bottom: 4em;
+                height: 4em;
+                background: -webkit-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
+                background-image: -moz-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
+                background-image: -o-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
+                background-image: linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
+                background-image: -ms-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
+            }
         }
         .node-error {
             width: 100%;
