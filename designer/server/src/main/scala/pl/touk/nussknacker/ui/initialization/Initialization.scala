@@ -108,11 +108,7 @@ class AutomaticMigration(
       .migrateProcess(processDetails, skipEmptyMigrations = true)
       .map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
       case Some(action) =>
-        processRepository.updateProcess(action).flatMap {
-          case Left(error) =>
-            DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))
-          case Right(_) => DBIOAction.successful(())
-        }
+        processRepository.updateProcess(action).map(_ => ())
       case None => DBIOAction.successful(())
     }
   }

@@ -35,7 +35,7 @@ class TestModelMigrations(
       val validationResult = validation.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
-        new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
+        ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
         newErrors,
         migrationDetails.shouldFail
       )
@@ -53,7 +53,11 @@ class TestModelMigrations(
     } yield {
       MigratedProcessDetails(
         displayable,
-        process.json.validationResult,
+        process.json.validationResult.getOrElse(
+          throw new IllegalStateException(
+            "Empty validation result. Migrated process should contain validationResult. It suppose to by empty only if validation is skipped"
+          )
+        ),
         migrations.exists(_.failOnNewValidationError),
         process.processCategory
       )

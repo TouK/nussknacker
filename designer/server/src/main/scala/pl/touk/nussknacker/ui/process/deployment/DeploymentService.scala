@@ -64,11 +64,11 @@ trait ProcessStateService {
       freshnessPolicy: DataFreshnessPolicy
   ): Future[Map[String, ProcessState]]
 
-  def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
+  def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[_]]]
+  ): Future[List[BaseProcessDetails[T]]]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName

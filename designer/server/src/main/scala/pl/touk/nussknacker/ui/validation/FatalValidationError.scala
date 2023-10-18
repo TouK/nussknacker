@@ -1,34 +1,30 @@
 package pl.touk.nussknacker.ui.validation
 
-import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.ui.{BadRequestError, NuDesignerError}
+import pl.touk.nussknacker.ui.validation.FatalValidationError.formatError
 
 object FatalValidationError {
 
-  def renderNotAllowedAsError(validationResult: ValidationResult): Either[EspError, ValidationResult] = {
+  def renderNotAllowedAsError(validationResult: ValidationResult): Either[NuDesignerError, ValidationResult] = {
     if (validationResult.renderNotAllowedErrors.isEmpty) {
       Right(validationResult)
     } else {
-      Left[EspError, ValidationResult](FatalValidationError(validationResult.renderNotAllowedErrors))
+      Left[NuDesignerError, ValidationResult](FatalValidationError(validationResult.renderNotAllowedErrors))
     }
   }
 
-  def saveNotAllowedAsError(validationResult: ValidationResult): Either[EspError, ValidationResult] = {
+  def saveNotAllowedAsError(validationResult: ValidationResult): ValidationResult = {
     if (validationResult.saveNotAllowedErrors.isEmpty) {
-      Right(validationResult)
+      validationResult
     } else {
-      Left[EspError, ValidationResult](FatalValidationError(validationResult.saveNotAllowedErrors))
+      throw FatalValidationError(validationResult.saveNotAllowedErrors)
     }
   }
 
-}
-
-final case class FatalValidationError(errors: List[NodeValidationError]) extends EspError {
-
-  override def getMessage: String = errors.map(formatError).mkString(",")
-
-  private def formatError(e: NodeValidationError): String = {
-    s"${e.message}:${e.description}"
-  }
+  private def formatError(e: NodeValidationError) = s"${e.message}:${e.description}"
 
 }
+
+final case class FatalValidationError(errors: List[NodeValidationError])
+    extends BadRequestError(errors.map(formatError).mkString(",")) {}
