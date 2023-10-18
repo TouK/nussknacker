@@ -894,7 +894,7 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-components-testkit",
-  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, liteKafkaComponents, liteRequestResponseComponents)
+  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, liteKafkaComponents, liteRequestResponseComponents, interpreter)
 
 lazy val commonUtils = (project in utils("utils")).
   settings(commonSettings).

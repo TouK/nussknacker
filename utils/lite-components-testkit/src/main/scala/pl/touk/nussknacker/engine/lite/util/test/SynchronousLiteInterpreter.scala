@@ -16,7 +16,9 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListenerHolder, TestRunId, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -46,15 +48,17 @@ object SynchronousLiteInterpreter {
           data: ScenarioInputBatch[Any],
           componentUseCase: ComponentUseCase,
           runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): SynchronousResult = {
+    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
 
     ScenarioInterpreterFactory
-      .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
+      .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, testScenarioCollectorHandler.resultCollector, componentUseCase)
       .map { interpreter =>
         interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
         try {
           val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
           value.run
         } finally {
+          testScenarioCollectorHandler.close()
           interpreter.close()
         }
       }

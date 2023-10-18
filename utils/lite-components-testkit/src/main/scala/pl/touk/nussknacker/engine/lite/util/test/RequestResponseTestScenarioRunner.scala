@@ -8,14 +8,13 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ExpressionConfig, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.{ModelWithTestComponents, TestScenarioRunner, TestScenarioRunnerBuilder, TestScenarioCollectorHandler}
 
 import scala.reflect.ClassTag
 
@@ -45,6 +44,8 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], g
   def runWithRequests[T](
     scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
+    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
+
     ModelWithTestComponents.withTestComponents(config, components, globalProcessVariables) { modelData =>
       RequestResponseInterpreter[Id](
         scenario,
@@ -52,7 +53,7 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], g
         LiteEngineRuntimeContextPreparer.noOp,
         modelData,
         additionalListeners = Nil,
-        resultCollector = ProductionServiceInvocationCollector,
+        resultCollector = testScenarioCollectorHandler.resultCollector,
         componentUseCase = componentUseCase
       ).map { interpreter =>
         interpreter.open()
@@ -63,6 +64,7 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], g
             handler.invoke(req, entity)
           })
         } finally {
+          testScenarioCollectorHandler.close()
           interpreter.close()
         }
       }
