@@ -15,20 +15,22 @@ const baseEspGraph = () => css`
 `;
 
 export const buttonBase = css`
-  border: 1px solid #666666;
-  border-radius: 0;
-  background-color: #4d4d4d;
-  color: #cccccc;
-  transition: background-color 0.2s;
-  user-select: none;
-  &:disabled,&.disabled {
-    opacity: 0.3;
-    cursor: not-allowed !important;
-  }
+    border: 1px solid #666666;
+    border-radius: 0;
+    background-color: #4d4d4d;
+    color: #cccccc;
+    transition: background-color 0.2s;
+    user-select: none;
+    &:disabled,
+    &.disabled {
+        opacity: 0.3;
+        cursor: not-allowed !important;
+    }
 
-  &:not(:disabled):hover,&:not(.disabled):hover {
-    background-color: #444444;
-  }
+    &:not(:disabled):hover,
+    &:not(.disabled):hover {
+        background-color: #444444;
+    }
 `;
 
 const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties["color"]) => css`
@@ -309,9 +311,6 @@ export const StyledGraphWrapper = styled("div")(
             background-image: -ms-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
         }
 
-        .marked {
-            border: 2px solid #8fad60 !important; // TODO: change me to MUI color
-        }
         .branch-parameter-row {
             margin-top: 0;
             margin-bottom: 0;

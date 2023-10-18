@@ -5,4 +5,7 @@ export const NodeRow = styled("div")`
     margin-top: 14px;
     display: flex;
     flex-wrap: wrap;
+    .marked {
+        border: 2px solid #8fad60 !important; // TODO: change me to MUI color
+    }
 `;

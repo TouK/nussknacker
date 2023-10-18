@@ -107,6 +107,12 @@ const globalStyles = {
         fontSize: "inherit",
         lineHeight: "inherit",
     },
+    " button,input,optgroup,select,textarea": {
+        color: "inherit",
+        font: "inherit",
+        margin: 0,
+    },
+
     button: {
         color: "#ccc",
         lineHeight: 1.428571429,
@@ -114,6 +120,17 @@ const globalStyles = {
             cursor: "pointer",
         },
     },
+    p: {
+        margin: "0 0 10px",
+    },
+
+    "h1, h1, h3, h4, h5, h6": {
+        fontFamily: "inherit",
+        fontWeight: 500,
+        lineHeight: 1.1,
+        color: "inherit",
+    },
+
     ".hide": {
         display: "none",
     },
