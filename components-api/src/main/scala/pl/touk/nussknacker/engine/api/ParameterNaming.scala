@@ -8,4 +8,8 @@ object ParameterNaming {
     s"${parameter.name} for branch $branchId"
   }
 
+  def getNameForBranchParameter(parameterName: String, branchId: String): String = {
+    s"$parameterName for branch $branchId"
+  }
+
 }

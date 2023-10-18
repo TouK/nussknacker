@@ -155,7 +155,13 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-            NodeValidationError("MismatchParameter", _, _, Some("propRegExp"), NodeValidationErrorType.SaveAllowed)
+            NodeValidationError(
+              "InvalidIntegerLiteralParameter",
+              _,
+              _,
+              Some("propRegExp"),
+              NodeValidationErrorType.SaveAllowed
+            )
           ) =>
     }
   }
