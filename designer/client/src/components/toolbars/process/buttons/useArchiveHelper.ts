@@ -7,6 +7,7 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import { unsavedProcessChanges } from "../../../../common/DialogMessages";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
+import { useCallback } from "react";
 
 export const useArchiveHelper = (processId: string) => {
     const dispatch = useDispatch();
@@ -15,15 +16,9 @@ export const useArchiveHelper = (processId: string) => {
     const nothingToSave = useSelector(ProcessUtils.nothingToSave);
     const { redirectAfterArchive } = useSelector(getFeatureSettings);
 
-    const changeRestoreHistoryStatus = () => {
-        dispatch({
-            type: "RESTORE_HISTORY",
-            restoreHistory: true,
-        });
-    };
-
-    const archive = async () => {
+    const archive = useCallback(async () => {
         return HttpService.archiveProcess(processId).then(() => {
+            dispatch({ type: "ARCHIVED" });
             if (redirectAfterArchive) {
                 navigate(ArchivedPath);
             } else {
@@ -31,25 +26,31 @@ export const useArchiveHelper = (processId: string) => {
                 dispatch(displayCurrentProcessVersion(processId));
             }
         });
-    };
+    }, [dispatch, navigate, processId, redirectAfterArchive]);
 
-    const confirmArchiveCallback = async (confirmed: boolean) => {
-        if (confirmed && !nothingToSave) {
-            await confirm({
+    const confirmArchiveCallback = useCallback(
+        async (archiveConfirmed: boolean) => {
+            if (!archiveConfirmed) {
+                return;
+            }
+
+            if (nothingToSave) {
+                return archive();
+            }
+
+            return confirm({
                 text: unsavedProcessChanges(),
-                onConfirmCallback: async (confirmed) => {
-                    if (confirmed) {
-                        changeRestoreHistoryStatus();
-                        return await archive();
+                onConfirmCallback: async (discardChangesConfirmed) => {
+                    if (discardChangesConfirmed) {
+                        return archive();
                     }
                 },
                 confirmText: "DISCARD",
                 denyText: "CANCEL",
             });
-        } else if (confirmed) {
-            await archive();
-        }
-    };
+        },
+        [archive, confirm, nothingToSave],
+    );
 
     return { confirmArchiveCallback };
 };

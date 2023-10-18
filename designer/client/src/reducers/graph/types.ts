@@ -1,7 +1,7 @@
 import { Layout } from "../../actions/nk";
 import { ProcessType } from "../../components/Process/types";
 import { Process } from "../../types";
-import { TestCapabilities, TestResults, TestFormParameters } from "../../common/TestResultUtils";
+import { TestCapabilities, TestFormParameters, TestResults } from "../../common/TestResultUtils";
 
 export interface NodeCounts {
     errors?: number;
@@ -22,5 +22,4 @@ export type GraphState = {
     testResults: TestResults;
     processCounts: ProcessCounts;
     unsavedNewName: string | null;
-    restoreHistory?: boolean;
 };

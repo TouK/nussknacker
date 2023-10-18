@@ -35,7 +35,6 @@ const emptyGraphState: GraphState = {
     processCounts: {},
     testResults: null,
     unsavedNewName: null,
-    restoreHistory: undefined,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -76,12 +75,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 testCapabilities: action.capabilities,
             };
         }
-        case "RESTORE_HISTORY": {
-            return {
-                ...state,
-                restoreHistory: action.restoreHistory,
-            };
-        }
         case "UPDATE_TEST_FORM_PARAMETERS": {
             return {
                 ...state,
@@ -97,6 +90,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 fetchedProcessDetails,
                 graphLoading: false,
                 layout: LayoutUtils.fromMeta(processToDisplay),
+            };
+        }
+        case "ARCHIVED": {
+            return {
+                ...state,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    isArchived: true,
+                },
             };
         }
         case "PROCESS_VERSIONS_LOADED": {

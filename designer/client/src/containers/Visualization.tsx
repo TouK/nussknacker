@@ -23,7 +23,7 @@ import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { Process } from "../types";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "../actions/nk";
+import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
@@ -140,7 +140,6 @@ function Visualization() {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
     const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
-    const restoreHistoryStatus = useSelector((state: RootState) => state.graphReducer.restoreHistory);
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
@@ -163,7 +162,7 @@ function Visualization() {
     }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded]);
 
     useUnmountCleanup();
-    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave && !restoreHistoryStatus);
+    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
     return (
         <ErrorHandler>
