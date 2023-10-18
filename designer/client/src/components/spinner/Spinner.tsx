@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, CircularProgress, ThemeProvider, circularProgressClasses, createTheme } from "@mui/material";
+import { Box, CircularProgress, createTheme, ThemeProvider, circularProgressClasses } from "@mui/material";
 
 type Props = {
     show: boolean;
@@ -15,7 +15,7 @@ function CircularProgressWrapper() {
     const theme = createTheme({});
     return (
         <ThemeProvider theme={theme}>
-            <Box sx={{ position: "absolute", left: "50%", top: "50% " }}>
+            <Box sx={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
                 <CircularProgress
                     variant="determinate"
                     sx={{ color: (theme) => theme.palette.grey[200] }}
