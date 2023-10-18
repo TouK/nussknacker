@@ -87,6 +87,9 @@ const custom = {
 };
 
 const globalStyles = {
+    body: {
+        fontFamily: "Open Sans, Helvetica Neue ,Helvetica,Arial,sans-serif",
+    },
     "html, body": {
         margin: 0,
         padding: 0,
@@ -95,10 +98,24 @@ const globalStyles = {
         color: "#ccc",
         fontSize: "16px",
         overflow: "hidden",
-        fontFamily: "Open Sans, Helvetica Neue ,Helvetica,Arial,sans-serif",
         letterSpacing: "unset",
         "-webkit-font-smoothing": "initial",
         lineHeight: 1.428571429,
+    },
+    "input, button, select, textarea": {
+        fontFamily: "inherit",
+        fontSize: "inherit",
+        lineHeight: "inherit",
+    },
+    button: {
+        color: "#ccc",
+        lineHeight: 1.428571429,
+        ":hover": {
+            cursor: "pointer",
+        },
+    },
+    input: {
+        fontSize: "11px",
     },
     ".hide": {
         display: "none",

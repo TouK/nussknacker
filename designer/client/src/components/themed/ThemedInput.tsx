@@ -1,6 +1,5 @@
 import { css, cx } from "@emotion/css";
 import React, { forwardRef, Ref } from "react";
-import { bootstrapStyles } from "../../styles";
 import { ValueFieldProps } from "../valueField";
 import { NodeInput } from "../withFocus";
 import { useTheme } from "@mui/material";
@@ -21,6 +20,15 @@ export const ThemedInput = forwardRef(function ThemedInput(
         color: theme.custom.colors?.primaryColor,
         borderColor: theme.custom.colors.borderColor,
         backgroundColor: theme.custom.colors.secondaryBackground,
+        fontFamily: "inherit",
+        "::placeholder": {
+            color: "#999",
+            opacity: 1 /* Firefox */,
+            fontFamily: "inherit",
+        },
+        "::-ms-input-placeholder": {
+            /* Edge 12 -18 */ color: "#999",
+        },
     });
 
     return (
@@ -28,7 +36,7 @@ export const ThemedInput = forwardRef(function ThemedInput(
             ref={ref}
             type="text"
             placeholder={placeholder}
-            className={cx(bootstrapStyles.formControl, styles, className)}
+            className={cx(styles, className)}
             value={value || ""}
             onChange={(e) => onChange(`${e.target.value}`)}
         />
