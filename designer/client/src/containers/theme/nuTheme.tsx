@@ -114,9 +114,6 @@ const globalStyles = {
             cursor: "pointer",
         },
     },
-    input: {
-        fontSize: "11px",
-    },
     ".hide": {
         display: "none",
     },

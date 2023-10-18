@@ -2,7 +2,6 @@ import { styled } from "@mui/material";
 
 export const CronEditorStyled = styled("div")`
     width: 70%;
-
     * {
         color: #ccc !important;
     }
@@ -40,8 +39,43 @@ export const CronEditorStyled = styled("div")`
         margin-right: auto !important;
     }
 
-    .nav-tabs {
-        border-bottom: 1px solid #666 !important;
+    .nav {
+        padding-left: 0;
+        margin-bottom: 0;
+        list-style: none;
+        display: flex;
+        margin-top: 0;
+        column-gap: 2px;
+        li {
+            flex: 1 !important;
+        }
+        > li {
+            position: relative;
+            display: block;
+            > a {
+                position: relative;
+                display: block;
+                padding: 10px 15px;
+                &:hover,
+                &:focus {
+                    text-decoration: none;
+                    background-color: #eeeeee;
+                }
+            }
+
+            // Disabled state sets text to gray and nukes hover/tab effects
+            &.disabled > a {
+                color: #777777;
+
+                &:hover,
+                &:focus {
+                    color: #777777;
+                    text-decoration: none;
+                    cursor: not-allowed;
+                    background-color: transparent;
+                }
+            }
+        }
     }
 
     .cron_builder_bordering input {
@@ -61,6 +95,7 @@ export const CronEditorStyled = styled("div")`
     }
 
     .span6 {
+        width: 50%;
         align-self: flex-start;
         padding: 0;
     }
