@@ -140,6 +140,7 @@ function Visualization() {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
     const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
+    const restoreHistoryStatus = useSelector((state: RootState) => state.graphReducer.restoreHistory);
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
@@ -162,7 +163,7 @@ function Visualization() {
     }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded]);
 
     useUnmountCleanup();
-    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
+    useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave && !restoreHistoryStatus);
 
     return (
         <ErrorHandler>

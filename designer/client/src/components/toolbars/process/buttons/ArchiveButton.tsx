@@ -3,18 +3,17 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/archive.svg";
 import * as DialogMessages from "../../../../common/DialogMessages";
-import HttpService from "../../../../http/HttpService";
 import { getProcessId, isArchivePossible } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
-import { ArchivedPath } from "../../../../containers/paths";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 import { useNavigate } from "react-router-dom";
+import { useArchiveHelper } from "./useArchiveHelper";
 
 function ArchiveButton({ disabled }: ToolbarButtonProps): JSX.Element {
     const processId = useSelector(getProcessId);
+    const { confirmArchiveCallback } = useArchiveHelper(processId);
     const archivePossible = useSelector(isArchivePossible);
     const { redirectAfterArchive } = useSelector(getFeatureSettings);
     const available = !disabled && archivePossible;
@@ -28,15 +27,7 @@ function ArchiveButton({ disabled }: ToolbarButtonProps): JSX.Element {
             available &&
             confirm({
                 text: DialogMessages.archiveProcess(processId),
-                onConfirmCallback: (confirmed) =>
-                    confirmed &&
-                    HttpService.archiveProcess(processId).then(() => {
-                        if (redirectAfterArchive) navigate(ArchivedPath);
-                        else {
-                            dispatch(loadProcessToolbarsConfiguration(processId));
-                            dispatch(displayCurrentProcessVersion(processId));
-                        }
-                    }),
+                onConfirmCallback: confirmArchiveCallback,
                 confirmText: t("panels.actions.process-archive.yes", "Yes"),
                 denyText: t("panels.actions.process-archive.no", "No"),
             }),

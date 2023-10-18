@@ -35,6 +35,7 @@ const emptyGraphState: GraphState = {
     processCounts: {},
     testResults: null,
     unsavedNewName: null,
+    restoreHistory: undefined,
 };
 
 export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
@@ -73,6 +74,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 testCapabilities: action.capabilities,
+            };
+        }
+        case "RESTORE_HISTORY": {
+            return {
+                ...state,
+                restoreHistory: action.restoreHistory,
             };
         }
         case "UPDATE_TEST_FORM_PARAMETERS": {
