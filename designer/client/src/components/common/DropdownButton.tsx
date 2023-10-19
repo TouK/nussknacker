@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 
 import Select from "react-select";
 import { ButtonProps, ButtonWithFocus } from "../withFocus";
-import { styledSelect } from "../../stylesheets/styledSelect";
+import { selectStyled } from "../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 
 interface Option<T> {
@@ -23,7 +23,7 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
     const { options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps } = props;
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = styledSelect(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
 
     const toggleOpen = useCallback(
         (e) => {

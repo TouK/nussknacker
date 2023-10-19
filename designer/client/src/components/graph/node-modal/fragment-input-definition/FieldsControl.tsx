@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { AddButton } from "./AddButton";
 import { css, styled } from "@mui/material";
-import { buttonBase } from "../../../../stylesheets/styledGraphWrapper";
+import { buttonBase } from "../../focusableStyled";
 
 interface FieldsControlProps {
     readOnly?: boolean;

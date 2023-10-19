@@ -1,37 +1,38 @@
 import { css, darken, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
+import { alpha } from "../containers/theme/helpers";
 
-export const styledSelect = (theme: Theme) => {
+export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
         width: 100%;
         padding: 0 ${padding};
         border: none;
-        background-color: #333333;
-        color: #cccccc;
+        background-color: ${theme.custom.colors.secondaryBackground};
+        color: ${theme.custom.colors.secondaryColor};
         font-weight: 400;
         font-size: 14px;
-        outline: 1px solid rgba(255, 255, 255, 0.075);
+        outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
     `;
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
         ${base};
-        background-color: #333333; //TODO: change me
+        background-color: ${theme.custom.colors.secondaryBackground};
         max-height: 35px;
         min-height: 35px;
         border: 0;
         border-radius: 0;
-        color: #cccccc; //TODO: change me
+        color: ${theme.custom.colors.secondaryColor};
         box-shadow: 0;
 
         ${isFocused &&
         css`
-            outline: 2px solid #0058a9 !important; //TODO: change me
+            outline: 2px solid ${theme.custom.colors.cobalt} !important;
             outline-offset: -1px !important;
         `}
         ${isDisabled &&
         css`
-            background-color: #444444 !important;
+            background-color: ${theme.custom.colors.charcoal} !important;
         `}
     `;
 
@@ -45,15 +46,15 @@ export const styledSelect = (theme: Theme) => {
 
         ${isSelected &&
         css`
-            background-color: #0058a9;
+            background-color: ${theme.custom.colors.cobalt};
         `}
 
         ${isFocused &&
         css`
-            background-color: ${darken("#0058a9", 0.5)};
+            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
         `}
     &:hover {
-            background-color: ${darken("#0058a9", 0.5)};
+            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
         }
     `;
 
@@ -70,7 +71,7 @@ export const styledSelect = (theme: Theme) => {
         outline: none;
         ${isDisabled &&
         css`
-            background-color: #444444 !important;
+            background-color: ${theme.custom.colors.charcoal} !important;
         `}
     `;
 
@@ -85,15 +86,15 @@ export const styledSelect = (theme: Theme) => {
         }
 
         ::-webkit-scrollbar-track {
-            background: #666666; //TODO: change me;
+            background: ${theme.custom.colors.doveGray};
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #888888;
+            background: ${theme.custom.colors.gray};
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #555555;
+            background: ${theme.custom.colors.emperor};
         }
     `;
 
@@ -112,8 +113,8 @@ export const styledSelect = (theme: Theme) => {
         ${base};
         ${hasValue &&
         css`
-            background-color: #333333; //TODO: change me;
-            color: #cccccc; //TODO: change me;
+            background-color: ${theme.custom.colors.secondaryBackground}
+            color: ${theme.custom.colors.secondaryColor}
         `}
     `;
 

@@ -73,6 +73,8 @@ const colors = {
     yellowOrange: "#fbb03b",
     scooter: "#46bfdb",
     nobel: "#b5b5b5",
+    gray: "#888888",
+    emperor: "#555555",
 };
 
 const selectColors = {

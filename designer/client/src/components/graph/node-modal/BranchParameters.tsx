@@ -5,7 +5,7 @@ import { NodeType, UIParameter } from "../../../types";
 import { Error } from "./editors/Validators";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
-import { BranchParameterRowStyled } from "../../../stylesheets/styledGraphWrapper";
+import { BranchParameterRowStyled } from "../focusableStyled";
 
 export interface BranchParametersProps {
     node: NodeType;

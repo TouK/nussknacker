@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
-import { alpha } from "../containers/theme/helpers";
+import { alpha } from "../../containers/theme/helpers";
 
 const baseEspGraph = (theme: Theme) => css`
     overflow-y: auto;
@@ -332,19 +332,19 @@ export const FocusableStyled = styled("div")(
 );
 
 export const BranchParameterRowStyled = styled("div")(
-    ({ theme }) => `
-    margin-top: 0;
-    margin-bottom: 0;
-    display: flex;
-    .branch-param-label {
-        color:  ${theme.custom.colors.secondaryColor};
-        font-weight: 400;
-        font-size: 14px;
-        padding: 8px 10px 8px 10px;
-        width: 30%;
-    }
-    .branch-parameter-expr-container {
-        width: 100%;
-    }
-`,
+    ({ theme }) => css`
+        margin-top: 0;
+        margin-bottom: 0;
+        display: flex;
+        .branch-param-label {
+            color: ${theme.custom.colors.secondaryColor};
+            font-weight: 400;
+            font-size: 14px;
+            padding: 8px 10px 8px 10px;
+            width: 30%;
+        }
+        .branch-parameter-expr-container {
+            width: 100%;
+        }
+    `,
 );

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import Select from "react-select";
 import { NodeValue } from "./NodeValue";
-import { styledSelect } from "../../../../stylesheets/styledSelect";
+import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 
 export interface Option {
@@ -37,7 +37,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = styledSelect(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
