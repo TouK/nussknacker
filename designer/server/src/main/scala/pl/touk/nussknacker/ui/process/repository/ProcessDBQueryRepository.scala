@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import java.sql.Timestamp
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, ProcessVersion}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.app.BuildInfo
@@ -104,6 +104,9 @@ object ProcessDBQueryRepository {
     )
 
   final case class ProcessNotFoundError(id: String) extends NotFoundError(s"No scenario $id found")
+
+  final case class ProcessVersionNotFoundError(processId: ProcessId, version: VersionId)
+      extends NotFoundError(s"Scenario $processId in version $version not found")
 
   final case class ProcessAlreadyExists(id: String) extends BadRequestError(s"Scenario $id already exists")
 

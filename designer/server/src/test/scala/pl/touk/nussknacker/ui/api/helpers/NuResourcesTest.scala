@@ -31,7 +31,6 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -157,11 +156,9 @@ trait NuResourcesTest
     new ConfigProcessToolbarService(testConfig, processCategoryService.getAllCategories)
 
   protected val processesRoute = new ProcessesResources(
-    processRepository = futureFetchingProcessRepository,
     processService = processService,
     deploymentService = deploymentService,
     processToolbarService = configProcessToolbarService,
-    processResolving = processResolving,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
   )

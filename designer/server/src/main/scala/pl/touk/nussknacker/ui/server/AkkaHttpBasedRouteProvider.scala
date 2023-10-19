@@ -228,11 +228,9 @@ class AkkaHttpBasedRouteProvider(
       val apiResourcesWithAuthentication: List[RouteWithUser] = {
         val routes = List(
           new ProcessesResources(
-            processRepository = futureProcessRepository,
             processService = processService,
             deploymentService = deploymentService,
             processToolbarService = configProcessToolbarService,
-            processResolving = processResolving,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
           ),

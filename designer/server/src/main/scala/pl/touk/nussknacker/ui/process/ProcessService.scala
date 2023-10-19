@@ -1,27 +1,37 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import cats.data.EitherT
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, ProcessState}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{
+  BaseProcessDetails,
+  ProcessShapeFetchStrategy,
+  ValidatedProcessDetails
+}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.{
+  ProcessNotFoundError,
+  ProcessVersionNotFoundError
+}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
   ProcessCreated,
@@ -29,7 +39,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   UpdateProcessAction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
@@ -102,6 +111,24 @@ trait ProcessService {
   ): Future[XError[ValidatedDisplayableProcess]]
 
   def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
+
+  def getProcesses(query: ProcessesQuery)(implicit user: LoggedUser): Future[List[BaseProcessDetails[_]]]
+
+  def getProcessDetails(processId: ProcessIdWithName, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[ValidatedProcessDetails]
+
+  def getProcessDetails(processId: ProcessIdWithName, versionId: VersionId, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[ValidatedProcessDetails]
+
+  def getRawProcessDetails(processId: ProcessIdWithName, versionId: VersionId)(
+      implicit user: LoggedUser
+  ): Future[BaseProcessDetails[DisplayableProcess]]
+
+  def getProcessesDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[List[ValidatedProcessDetails]]
 
 }
 
@@ -450,6 +477,114 @@ class DBProcessService(
     fetchingProcessRepository.fetchProcessesDetails(
       FetchProcessesDetailsQuery(isFragment = isFragment, isArchived = isArchived, categories = Some(userCategories))
     )(shapeStrategy, user, ec)
+  }
+
+  override def getProcesses(query: ProcessesQuery)(implicit user: LoggedUser): Future[List[BaseProcessDetails[_]]] = {
+    // To not overload engine, for list of processes we provide statuses that can be cached
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
+    fetchingProcessRepository
+      .fetchProcessesDetails[Unit](query.toRepositoryQuery)
+      .flatMap(deploymentService.enrichDetailsWithProcessState)
+  }
+
+  override def getProcessDetails(processId: ProcessIdWithName, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[ValidatedProcessDetails] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    fetchingProcessRepository
+      .fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id)
+      .flatMap(enrichWithStateAndThenValidateAndReverseResolve(processId, _, skipValidateAndResolve))
+  }
+
+  override def getProcessDetails(processId: ProcessIdWithName, versionId: VersionId, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[ValidatedProcessDetails] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    fetchingProcessRepository
+      .fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId)
+      .flatMap(enrichWithStateAndThenValidateAndReverseResolve(processId, _, skipValidateAndResolve))
+  }
+
+  def getRawProcessDetails(processId: ProcessIdWithName, versionId: VersionId)(
+      implicit user: LoggedUser
+  ): Future[BaseProcessDetails[DisplayableProcess]] = {
+    fetchingProcessRepository
+      .fetchProcessDetailsForId[DisplayableProcess](processId.id, versionId)
+      .map(_.getOrElse(throw ProcessVersionNotFoundError(processId.id, versionId)))
+  }
+
+  override def getProcessesDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
+      implicit user: LoggedUser
+  ): Future[List[ValidatedProcessDetails]] = {
+    fetchingProcessRepository.fetchProcessesDetails[CanonicalProcess](query.toRepositoryQuery).map { processes =>
+      // In contrary method version with processId, here we skip enrichDetailsWithProcessState stage. Is it ok?
+      processes.map(validateAndReverseResolve(_, skipValidateAndResolve))
+    }
+  }
+
+  private def enrichWithStateAndThenValidateAndReverseResolve(
+      processId: ProcessIdWithName,
+      canonicalProcessOpt: Option[BaseProcessDetails[CanonicalProcess]],
+      skipValidateAndResolve: Boolean
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy) = {
+    canonicalProcessOpt
+      .map(enrichDetailsWithProcessState)
+      .sequence
+      .map(
+        _.map(validateAndReverseResolve(_, skipValidateAndResolve))
+          .getOrElse(throw ProcessNotFoundError(processId.id.toString))
+      )
+  }
+
+  private def toDisplayableProcessDetailsWithoutValidation(
+      canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]
+  ): ValidatedProcessDetails = {
+    canonicalProcessDetails.mapProcess { canonical =>
+      val displayableProcess = ProcessConverter.toDisplayable(
+        canonical,
+        canonicalProcessDetails.processingType,
+        canonicalProcessDetails.processCategory
+      )
+      new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success)
+    }
+  }
+
+  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](
+      process: BaseProcessDetails[PS]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
+    if (process.isFragment)
+      Future.successful(process)
+    else
+      deploymentService
+        .getProcessState(process)
+        .map(state => process.copy(state = Some(state)))
+  }
+
+  private def validateAndReverseResolve(
+      processDetails: BaseProcessDetails[CanonicalProcess],
+      skipValidateAndResolve: Boolean
+  ) = {
+    if (skipValidateAndResolve) {
+      toDisplayableProcessDetailsWithoutValidation(processDetails)
+    } else {
+      validateAndReverseResolve(processDetails)
+    }
+  }
+
+  private def validateAndReverseResolve(
+      processDetails: BaseProcessDetails[CanonicalProcess]
+  ): ValidatedProcessDetails = {
+    processDetails.mapProcess { canonical: CanonicalProcess =>
+      val processingType = processDetails.processingType
+      val validationResult =
+        processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
+      processResolving.reverseResolveExpressions(
+        canonical,
+        processingType,
+        processDetails.processCategory,
+        validationResult
+      )
+    }
   }
 
 }

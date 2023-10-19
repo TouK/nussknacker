@@ -26,6 +26,7 @@ trait ProcessDirectives {
   }
 
   def processId(processName: String): Directive1[ProcessIdWithName] = {
+    // TODO: We should handle exceptions explicitly instead of relying on the processId directive to do it implicitly
     handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
       onSuccess(processService.getProcessId(ProcessName(processName))).flatMap {
         case Right(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
