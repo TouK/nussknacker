@@ -22,12 +22,12 @@ export const ThemedInput = forwardRef(function ThemedInput(
         backgroundColor: theme.custom.colors.secondaryBackground,
         fontFamily: "inherit",
         "::placeholder": {
-            color: "#999",
+            color: theme.custom.colors.dustyGray,
             opacity: 1 /* Firefox */,
             fontFamily: "inherit",
         },
         "::-ms-input-placeholder": {
-            /* Edge 12 -18 */ color: "#999",
+            /* Edge 12 -18 */ color: theme.custom.colors.dustyGray,
         },
     });
 
