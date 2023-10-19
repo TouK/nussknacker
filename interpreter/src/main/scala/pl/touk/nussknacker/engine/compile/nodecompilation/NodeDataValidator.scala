@@ -5,11 +5,7 @@ import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  EmptyNodeId,
-  FragmentOutputNotDefined,
-  UnknownFragmentOutput
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
@@ -19,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, Output}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
@@ -112,7 +108,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = if (nodeData.id.isEmpty) List(EmptyNodeId) else Nil
+      val nodeIdErrors = IdValidator.validate(nodeData) match {
+        case Validated.Valid(_)   => List.empty
+        case Validated.Invalid(e) => e.toList
+      }
 
       compilationErrors match {
         case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeIdErrors)

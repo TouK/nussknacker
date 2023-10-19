@@ -54,6 +54,7 @@ export interface Error {
     typ: string;
 }
 
+// TODO: after removing FE validators we can simply pass filtered errors instead of a filtering validator
 export const errorValidator = (errors: Error[], fieldName: string): Validator => {
     const error = errors?.find((error) => error.fieldName === fieldName || error.fieldName === `$${fieldName}`);
     return {
