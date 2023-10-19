@@ -27,6 +27,7 @@
   * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
 * [#4797](https://github.com/TouK/nussknacker/pull/4797) Ability to define the name of query parameter with access token that will be passed into tabs url
 * [#4804](https://github.com/TouK/nussknacker/pull/4804) Improvement: Allow passing globalVariables on TestRunner
+* [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
 
 1.11.3 (11 Sep 2023)
 -------------------------
