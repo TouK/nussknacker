@@ -61,6 +61,8 @@ const colors = {
     red: "#FF0000",
     yellow: "#ffff00",
     deepskyblue: "#00bfff",
+    lime: "#00ff00",
+    orangered: "#FF4500",
 };
 
 const selectColors = {

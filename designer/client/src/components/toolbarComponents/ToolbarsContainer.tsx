@@ -17,55 +17,57 @@ import { DragHandlerContext } from "./DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 import { cx } from "@emotion/css";
-import { styled } from "@mui/material";
+import { css, styled } from "@mui/material";
 import { alpha } from "../../containers/theme/helpers";
 
-export const StyledDraggableItem = styled("div")`
-    .is-dragging-over {
-        opacity: 1;
-        ::after {
-            transition: all 0.3s;
-            content: "";
-            line-height: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            backdrop-filter: none;
-            background: ${alpha("lime", 0.05)};
-            outline: 2px solid lime;
-            outline-offset: -2.5px;
-        }
-    }
-
-    .is-dragging {
-        backdrop-filter: blur(8px);
-        background: ${alpha("black", 0.25)};
-        transition: all 0.3s;
-        opacity: 0.75;
-        ::after {
-            transition: all 0.3s;
-            content: "";
-            line-height: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            backdrop-filter: blur(0.5px);
-            outline: 2px dashed orangered;
-            background: ${alpha("orangered", 0.2)};
-            outline-offset: -3px;
-        }
-    }
-
-    .is-animating {
-        .content {
+export const StyledDraggableItem = styled("div")(
+    ({ theme }) => css`
+        .is-dragging-over {
             opacity: 1;
+            ::after {
+                transition: all 0.3s;
+                content: "";
+                line-height: 0;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                backdrop-filter: none;
+                background: ${alpha(theme.custom.colors.lime, 0.05)};
+                outline: 2px solid ${theme.custom.colors.lime};
+                outline-offset: -2.5px;
+            }
         }
-    }
-`;
+
+        .is-dragging {
+            backdrop-filter: blur(8px);
+            background: ${alpha(theme.custom.colors.borderColor, 0.25)};
+            transition: all 0.3s;
+            opacity: 0.75;
+            ::after {
+                transition: all 0.3s;
+                content: "";
+                line-height: 0;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                backdrop-filter: blur(0.5px);
+                outline: 2px dashed ${theme.custom.colors.orangered};
+                background: ${alpha(theme.custom.colors.orangered, 0.2)};
+                outline-offset: -3px;
+            }
+        }
+
+        .is-animating {
+            .content {
+                opacity: 1;
+            }
+        }
+    `,
+);
 
 interface Rubric extends DraggableRubric {
     source: DraggableLocation;
