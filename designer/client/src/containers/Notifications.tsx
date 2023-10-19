@@ -112,8 +112,6 @@ export function Notifications(): JSX.Element {
                 } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error?.response?.status)) {
                     handleChangeConnectionError("NO_BACKEND_ACCESS");
                 } else {
-                    const errorResponseData = error?.response?.data || error.message;
-                    console.error(`Error: ${errorResponseData}`);
                     dispatch(
                         NotificationActions.error(
                             i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"),
