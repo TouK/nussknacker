@@ -1,5 +1,6 @@
 import { css } from "@mui/material";
 
+//TODO: Pass theme here and use colors from MUI theme
 export const exportStyled = css`
     .graph-export {
         color: white;

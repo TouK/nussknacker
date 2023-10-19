@@ -54,6 +54,11 @@ const colors = {
     dustyGray: l4,
     gallery: "#eeeeee",
     boulder: "#777777",
+    dimGray: "#686868",
+    eucalyptus: "#33A369",
+    seaGarden: "#2D8E54",
+    lawnGreen: "#7EDB0D",
+    red: "#FF0000",
 };
 
 const selectColors = {

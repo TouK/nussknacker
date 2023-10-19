@@ -1,12 +1,12 @@
 import { styled, css } from "@mui/material";
 
-export const GraphTheme = styled("div")(
+export const GraphStyled = styled("div")(
     ({ theme }) => css`
         min-height: 300px;
         min-width: 300px;
-        color: white; //TODO: Move me to  MUI Theme
+        color: ${theme.custom.colors.primaryColor};
         .arrow-marker path {
-            fill: white; //TODO: Move me to  MUI Theme
+            fill: ${theme.custom.colors.primaryColor};
         }
 
         @media (hover: none) {
@@ -24,12 +24,12 @@ export const GraphTheme = styled("div")(
                 /*small element with big stroke allows arrow to overflow link path*/
                 transform: scale(0.1);
                 stroke-width: 140;
-                fill: #33a369; //TODO: Move me to  MUI Theme
-                stroke: #2d8e54; //TODO: Move me to  MUI Theme
+                fill: ${theme.custom.colors.eucalyptus}
+                stroke: ${theme.custom.colors.seaGarden}
                 transition: all 0.25s ease-in-out;
                 &:hover {
-                    fill: #7edb0d; //TODO: Move me to  MUI Theme
-                    stroke: #2d8e54; //TODO: Move me to  MUI Theme
+                    fill: ${theme.custom.colors.lawnGreen}
+                    stroke: ${theme.custom.colors.seaGarden}
                 }
             }
 
@@ -39,7 +39,7 @@ export const GraphTheme = styled("div")(
 
             .connection-wrap {
                 cursor: pointer;
-                stroke: #33a369; //TODO: Move me to  MUI Theme
+                stroke: ${theme.custom.colors.eucalyptus}
             }
             &:hover .connection-wrap {
                 opacity: 0.5;
@@ -55,12 +55,12 @@ export const GraphTheme = styled("div")(
                     stroke-opacity: 0.5;
                     stroke-width: 24;
                     stroke-linecap: square;
-                    stroke: red;
+                    stroke: ${theme.custom.colors.red};
                 }
             }
 
             .connection {
-                stroke: white; //TODO: Move me to  MUI Theme
+                stroke: ${theme.custom.colors.primaryColor};
                 stroke-width: 2;
             }
 

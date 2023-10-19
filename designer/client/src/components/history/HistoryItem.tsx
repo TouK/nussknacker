@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import Date from "../common/Date";
 import { ActionType, ProcessVersionType } from "../Process/types";
 import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
@@ -39,6 +40,7 @@ const HDate = ({ date }: { date: string }) => (
 );
 
 export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: HistoryItemProps): JSX.Element {
+    const { t } = useTranslation();
     const { user, createDate, processVersionId, actions } = version;
 
     return (
@@ -46,8 +48,11 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
             <div>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
-                    <Box sx={{ display: "inline-flex", verticalAlign: "middle" }}>
-                        <WarningAmber sx={{ margin: "0 3px", fontSize: "small" }} />
+                    <Box
+                        title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
+                        sx={{ display: "inline-flex", verticalAlign: "middle" }}
+                    >
+                        <WarningAmber sx={{ margin: "0 2px 1px", fontSize: "small" }} />
                     </Box>
                 )}
                 <br />

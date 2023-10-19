@@ -47,7 +47,7 @@ export const NodeTableStyled = styled("div")(
             flex: 1;
             flex-basis: 60%;
             display: inline-block;
-            color: #686868;
+            color: ${theme.custom.colors.dimGray};
             textarea {
                 overflow: hidden;
                 height: auto;
@@ -129,16 +129,16 @@ export const NodeTableStyled = styled("div")(
         }
 
         .row-ace-editor {
-            color: #686868;
+            color: ${theme.custom.colors.dimGray};
             padding-top: 8px;
             padding-bottom: 8px;
             padding-left: 5px;
             padding-right: 5px;
-            background-color: #333;
+            background-color: ${theme.custom.colors.secondaryBackground};
             min-height: 35px;
             outline: 1px solid rgba(255, 255, 255, 0.075);
             &.focused {
-                outline: 2px solid #0058a9 !important;
+                outline: 2px solid ${theme.custom.colors.cobalt} !important;
                 outline-offset: -1px !important;
             }
         }
@@ -190,6 +190,9 @@ export const NodeTableStyled = styled("div")(
                     color: ${theme.custom.colors.info};
                 }
             }
+        }
+        .marked {
+            border: 2px solid ${theme.custom.colors.ok} !important;
         }
     `,
 );

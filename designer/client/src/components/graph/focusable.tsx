@@ -2,7 +2,7 @@ import { useTheme } from "@mui/material";
 import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
-import { GraphTheme } from "./GraphTheme";
+import { GraphStyled } from "./GraphStyled";
 import { StyledGraphWrapper } from "../../stylesheets/styledGraphWrapper";
 
 interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
@@ -34,7 +34,7 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
 
     return (
         <StyledGraphWrapper>
-            <GraphTheme className={className} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
+            <GraphStyled className={className} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
         </StyledGraphWrapper>
     );
 });
