@@ -1,4 +1,3 @@
-import cn from "classnames";
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import ExpressionSuggest from "./ExpressionSuggest";
@@ -7,6 +6,7 @@ import { EditorMode, ExpressionObj } from "./types";
 import { Validator } from "../Validators";
 import { NodeInputCss } from "../../../../NodeInput";
 import { useTheme } from "@mui/material";
+import { cx } from "@emotion/css";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -42,7 +42,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
     const theme = useTheme();
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
-    const className1 = useMemo(() => cn("node-input"), []);
+    const className1 = useMemo(() => cx("node-input"), []);
 
     const inputProps = useMemo(
         () => ({
