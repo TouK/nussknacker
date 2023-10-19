@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph } from "../reducers/selectors/graph";
+import { getFetchedProcessDetails, getGraph, getProcessToDisplay } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -68,6 +68,7 @@ function useProcessState(time = 10000) {
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
     const id = useSelector(getFetchedProcessDetails)?.id;
+    const processToDisplay = useSelector(getProcessToDisplay);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
@@ -75,9 +76,9 @@ function useCountsIfNeeded() {
     useEffect(() => {
         const countParams = VisualizationUrl.extractCountParams({ from, to });
         if (id && countParams) {
-            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to));
+            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to, processToDisplay));
         }
-    }, [dispatch, from, id, to]);
+    }, [dispatch, from, id, to, processToDisplay]);
 }
 
 function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
