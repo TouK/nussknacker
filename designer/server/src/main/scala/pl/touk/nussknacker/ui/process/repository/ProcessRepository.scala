@@ -210,10 +210,6 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
     )
   }
 
-  private def logDebug(s: String) = {
-    dbMonad.pure(()).map(_ => logger.debug(s))
-  }
-
   def deleteProcess(processId: ProcessId): DB[Unit] =
     processesTable.filter(_.id === processId).delete.map {
       case 0 => throw ProcessNotFoundError(processId.value.toString)

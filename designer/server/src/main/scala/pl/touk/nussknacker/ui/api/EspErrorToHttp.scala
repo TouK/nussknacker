@@ -6,12 +6,11 @@ import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
-import pl.touk.nussknacker.ui.validation.FatalValidationError
 import pl.touk.nussknacker.ui._
 
 import scala.language.implicitConversions
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 

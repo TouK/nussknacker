@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.Directive1
+import akka.http.scaladsl.server.{Directive0, Directive1}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -23,12 +23,9 @@ trait ProcessDirectives {
   }
 
   def processId(processName: String): Directive1[ProcessIdWithName] = {
-    // TODO: We should handle exceptions explicitly instead of relying on the processId directive to do it implicitly
-    handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
-      onSuccess(processService.getProcessId(ProcessName(processName)))
-        .map(ProcessIdWithName(_, ProcessName(processName)))
-        .flatMap(provide)
-    }
+    onSuccess(processService.getProcessId(ProcessName(processName)))
+      .map(ProcessIdWithName(_, ProcessName(processName)))
+      .flatMap(provide)
   }
 
 }

@@ -123,7 +123,7 @@ object TestFactory extends TestPermissions {
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
 
   def asAdmin(route: RouteWithUser): Route =
-    route.securedRoute(adminUser())
+    route.securedRouteWithErrorHandling(adminUser())
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -131,14 +131,14 @@ object TestFactory extends TestPermissions {
   )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
-    route.securedRoute(user(permissions = permissions))
+    route.securedRouteWithErrorHandling(user(permissions = permissions))
 
   // FIXME: update
   def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser())
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRouteWithErrorHandling(adminUser())
 
-  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
+  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRouteWithErrorHandling()
 
   def userWithCategoriesReadPermission(
       id: String = "1",

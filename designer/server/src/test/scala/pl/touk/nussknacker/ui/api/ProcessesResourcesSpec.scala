@@ -124,18 +124,20 @@ class ProcessesResourcesSpec
   }
 
   test("return validated and non-validated process") {
-    createDeployedProcess(processName)
+    createEmptyProcess(processName)
 
     Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[ValidatedProcessDetails].name shouldBe processName.value
+      val validated = responseAs[ValidatedProcessDetails]
+      validated.name shouldBe processName.value
+      validated.json.validationResult.errors should not be empty
     }
 
     Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[ProcessDetails].name shouldBe processName.value
-      responseAs[String] should not include "validationResult"
-      Unmarshal(response).to[ValidatedProcessDetails].failed.futureValue shouldBe a[DecodingFailure]
+      val validated = responseAs[ValidatedProcessDetails]
+      validated.name shouldBe processName.value
+      validated.json.validationResult.errors shouldBe empty
     }
   }
 
@@ -697,15 +699,12 @@ class ProcessesResourcesSpec
   }
 
   test("return non-validated process version") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
-      status shouldEqual StatusCodes.OK
-    }
+    createEmptyProcess(processName)
 
-    Get(s"/processes/${SampleProcess.process.id}/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ProcessDetails]
+    Get(s"/processes/$processName/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
+      val processDetails = responseAs[ValidatedProcessDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
-      responseAs[String] should not include "validationResult"
-      Unmarshal(response).to[ValidatedProcessDetails].failed.futureValue shouldBe a[DecodingFailure]
+      processDetails.json.validationResult.errors shouldBe empty
     }
   }
 
@@ -862,11 +861,10 @@ class ProcessesResourcesSpec
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), TestCat) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
-          val processes = responseAs[List[ProcessDetails]]
+          val processes = responseAs[List[ValidatedProcessDetails]]
           processes should have size 2
           processes.map(_.name) should contain only (firstProcessName.value, secondProcessName.value)
-          responseAs[String] should not include "validationResult"
-          Unmarshal(response).to[List[ValidatedProcessDetails]].failed.futureValue shouldBe a[DecodingFailure]
+          every(processes.map(_.json.validationResult.errors)) shouldBe empty
         }
       }
     }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
-import cats.syntax.either._
+import org.scalatest.OptionValues
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -23,9 +23,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Try}
 
-class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
+class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with OptionValues {
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -166,16 +165,14 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
     forAll(testingData) {
       (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
-        def doImport() = Try(dBProcessService.importProcess(idWithName, data)(adminUser).futureValue).recoverWith {
-          case e: TestFailedException => Failure(e.cause.getOrElse(e))
-        }.get
+        def doImport() = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
 
         expected match {
           case Right(expectedValue) => doImport() shouldEqual expectedValue
           case Left(expectedError) =>
-            the[EspError] thrownBy {
+            (the[TestFailedException] thrownBy {
               doImport()
-            } shouldEqual expectedError
+            }).cause.value shouldEqual expectedError
         }
     }
   }

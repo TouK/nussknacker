@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives.handleExceptions
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
@@ -57,7 +58,7 @@ class ProcessesResources(
             complete {
               processService
                 .unArchiveProcess(processId)
-                .withSideEffect(_ => sideEffectAction(OnUnarchived(processId.id)))
+                .withListenerNotifySideEffect(_ => OnUnarchived(processId.id))
             }
           }
         }
@@ -67,7 +68,7 @@ class ProcessesResources(
             complete {
               processService
                 .archiveProcess(processId)
-                .withSideEffect(_ => sideEffectAction(OnArchived(processId.id)))
+                .withListenerNotifySideEffect(_ => OnArchived(processId.id))
             }
           }
         }
@@ -119,7 +120,7 @@ class ProcessesResources(
             complete {
               processService
                 .deleteProcess(processId)
-                .withSideEffect(_ => OnDeleted(processId.id))
+                .withListenerNotifySideEffect(_ => OnDeleted(processId.id))
             }
           } ~ (put & canWrite(processId)) {
             entity(as[UpdateProcessCommand]) { updateCommand =>
@@ -128,9 +129,7 @@ class ProcessesResources(
                   processService
                     .updateProcess(processId, updateCommand)
                     .withSideEffect(response =>
-                      sideEffectAction(response.processResponse) { resp =>
-                        OnSaved(resp.id, resp.versionId)
-                      }
+                      response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
                     )
                     .map(_.validationResult)
                 }
@@ -148,7 +147,7 @@ class ProcessesResources(
             complete {
               processService
                 .renameProcess(processId, ProcessName(newName))
-                .withSideEffect(response => OnRenamed(processId.id, response.oldName, response.newName))
+                .withListenerNotifySideEffect(response => OnRenamed(processId.id, response.oldName, response.newName))
             }
           }
         }
@@ -169,7 +168,7 @@ class ProcessesResources(
                       .createProcess(
                         CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
                       )
-                      .withSideEffect(response => OnSaved(response.id, response.versionId))
+                      .withListenerNotifySideEffect(response => OnSaved(response.id, response.versionId))
                       .map(toJsonWithStatus(_, StatusCodes.Created))
                   }
                 }
@@ -198,7 +197,9 @@ class ProcessesResources(
             complete {
               processService
                 .updateCategory(processId, category)
-                .withSideEffect(response => OnCategoryChanged(processId.id, response.oldCategory, response.newCategory))
+                .withListenerNotifySideEffect(response =>
+                  OnCategoryChanged(processId.id, response.oldCategory, response.newCategory)
+                )
             }
           }
         }
@@ -216,16 +217,19 @@ class ProcessesResources(
     }
   }
 
-  private def sideEffectAction(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
-    implicit val listenerUser: User = ListenerApiUser(user)
-    processChangeListener.handle(event)
+  private implicit class ListenerNotifyingFuture[T](future: Future[T]) {
+
+    def withListenerNotifySideEffect(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Future[T] = {
+      future.withSideEffect { value =>
+        notifyListener(eventAction(value))
+      }
+    }
+
   }
 
-  private def sideEffectAction[T](
-      response: Option[T]
-  )(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
+  private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     implicit val listenerUser: User = ListenerApiUser(user)
-    response.foreach(resp => processChangeListener.handle(eventAction(resp)))
+    processChangeListener.handle(event)
   }
 
   private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {

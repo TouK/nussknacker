@@ -133,7 +133,7 @@ class ValidationResourcesSpec
     }
 
     val duplicateIds = newDisplayableProcess(
-      "p1",
+      "p2",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
