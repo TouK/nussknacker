@@ -7,7 +7,7 @@ import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/
 import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
-import { StyledScrollToggle, StyledScrollToggleChild, StyledScrollTogglePanelWrapper } from "./StyledSidePanel";
+import { StyledScrollToggle, StyledScrollToggleChild, StyledScrollTogglePanelWrapper } from "./SidePanelStyled";
 
 export enum PanelSide {
     Right = "RIGHT",

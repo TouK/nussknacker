@@ -59,6 +59,8 @@ const colors = {
     seaGarden: "#2D8E54",
     lawnGreen: "#7EDB0D",
     red: "#FF0000",
+    yellow: "#ffff00",
+    deepskyblue: "#00bfff",
 };
 
 const selectColors = {
