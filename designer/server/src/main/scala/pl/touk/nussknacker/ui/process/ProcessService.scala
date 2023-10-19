@@ -199,7 +199,6 @@ class DBProcessService(
     withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") { _ =>
       dbioRunner
         .runInTransaction(processRepository.deleteProcess(processIdWithName.id))
-        .map(_.valueOr(err => throw err))
     }
 
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(
@@ -210,10 +209,7 @@ class DBProcessService(
         dbioRunner.runInTransaction(
           processRepository
             .updateCategory(processIdWithName.id, category)
-            .map {
-              case Right(_)    => UpdateProcessCategoryResponse(process.processCategory, category)
-              case Left(value) => throw value
-            }
+            .map(_ => UpdateProcessCategoryResponse(process.processCategory, category))
         )
       }
     }
@@ -241,13 +237,10 @@ class DBProcessService(
       } else {
         dbioRunner
           .runInTransaction(processRepository.saveNewProcess(action))
-          .map {
-            case Right(maybemaybeCreated) =>
-              maybemaybeCreated
-                .map(created => toProcessResponse(command.processName, created))
-                .getOrElse(throw ProcessValidationError("Unknown error on creating scenario."))
-            case Left(value) =>
-              throw value
+          .map { maybeCreated =>
+            maybeCreated
+              .map(created => toProcessResponse(command.processName, created))
+              .getOrElse(throw ProcessValidationError("Unknown error on creating scenario."))
           }
       }
     }
@@ -269,16 +262,14 @@ class DBProcessService(
       )
       dbioRunner
         .runInTransaction(processRepository.updateProcess(updateProcessAction))
-        .map(
-          _.map(processUpdated =>
-            UpdateProcessResponse(
-              processUpdated.newVersion
-                .map(ProcessCreated(processIdWithName.id, _))
-                .map(toProcessResponse(processIdWithName.name, _)),
-              validation
-            )
-          ).valueOr(err => throw err)
-        )
+        .map { processUpdated =>
+          UpdateProcessResponse(
+            processUpdated.newVersion
+              .map(ProcessCreated(processIdWithName.id, _))
+              .map(toProcessResponse(processIdWithName.name, _)),
+            validation
+          )
+        }
     }
 
   override def getProcessDetailsOnly(
@@ -363,10 +354,7 @@ class DBProcessService(
     dbioRunner.runInTransaction(
       processRepository
         .renameProcess(processIdWithName, name)
-        .map {
-          case Right(_)    => UpdateProcessNameResponse.create(processIdWithName.name.value, name.value)
-          case Left(value) => throw value
-        }
+        .map(_ => UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
     )
   }
 

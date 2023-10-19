@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 
-class ComponentResource(componentService: ComponentService)(implicit val ec: ExecutionContext, mat: Materializer)
+class ComponentResource(componentService: ComponentService)(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
     with RouteWithUser {

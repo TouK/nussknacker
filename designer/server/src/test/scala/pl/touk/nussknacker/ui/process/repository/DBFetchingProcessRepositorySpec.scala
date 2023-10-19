@@ -114,7 +114,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -141,7 +141,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     val comments = fetching
       .fetchProcessId(newName)
@@ -292,9 +292,7 @@ class DBFetchingProcessRepositorySpec
       forwardedUserName = None
     )
 
-    val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processUpdated shouldBe Symbol("right")
-    processUpdated.toOption.get
+    dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
   }
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {

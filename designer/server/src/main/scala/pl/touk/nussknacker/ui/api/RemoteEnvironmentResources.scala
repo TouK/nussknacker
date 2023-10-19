@@ -109,7 +109,7 @@ class RemoteEnvironmentResources(
 
   private def compareOneProcess(
       process: DisplayableProcess
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[EspError, ProcessDifference]] = {
+  )(implicit ec: ExecutionContext): Future[XError[ProcessDifference]] = {
     remoteEnvironment.compare(process, None).map {
       case Right(differences) => Right(ProcessDifference(process.id, presentOnOther = true, differences))
       case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>

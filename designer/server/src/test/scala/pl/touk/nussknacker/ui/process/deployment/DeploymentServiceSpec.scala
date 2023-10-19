@@ -816,7 +816,7 @@ class DeploymentServiceSpec
       isFragment = false,
       forwardedUserName = None
     )
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def prepareFragment(processName: ProcessName): DB[ProcessId] = {
@@ -833,7 +833,7 @@ class DeploymentServiceSpec
       forwardedUserName = None
     )
 
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def generateProcessName = {
