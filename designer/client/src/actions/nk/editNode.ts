@@ -2,6 +2,7 @@ import HttpService from "../../http/HttpService";
 import { Edge, NodeType, Process, ValidationResult } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { calculateProcessAfterChange } from "./calculateProcessAfterChange";
+import { displayProcessCounts } from "./displayProcessCounts";
 
 export type EditNodeAction = {
     type: "EDIT_NODE";
@@ -19,6 +20,7 @@ export function editNode(processBefore: Process, before: NodeType, after: NodeTy
     return async (dispatch) => {
         const process = await dispatch(calculateProcessAfterChange(processBefore, before, after, outputEdges));
         const response = await HttpService.validateProcess(process);
+        dispatch(displayProcessCounts({}));
 
         return dispatch({
             type: "EDIT_NODE",
