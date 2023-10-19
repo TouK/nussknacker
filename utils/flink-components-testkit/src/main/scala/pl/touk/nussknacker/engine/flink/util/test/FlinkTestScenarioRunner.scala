@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
+import scala.util.Using
 
 private object testComponents {
 
@@ -121,18 +122,27 @@ class FlinkTestScenarioRunner(
     // It's copied from registrar.register only for handling compilation errors..
     // TODO: figure how to get compilation result on highest level - registrar.register?
     val compiler = new FlinkProcessCompilerWithTestComponents(testExtensionsHolder, modelData, componentUseCase)
-    val compileProcessData = compiler.compileProcess(
-      scenario,
-      ProcessVersion.empty,
-      ProductionServiceInvocationCollector,
-      getClass.getClassLoader
-    )
 
-    compileProcessData.compileProcess().map { _ =>
-      val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
-      registrar.register(env, scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = None)
-      env.executeAndWaitForFinished(scenario.id)()
-      RunUnitResult(errors = Nil)
+    Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
+      val compileProcessData = compiler.compileProcess(
+        scenario,
+        ProcessVersion.empty,
+        testScenarioCollectorHandler.resultCollector,
+        getClass.getClassLoader
+      )
+
+      compileProcessData.compileProcess().map { _ =>
+        val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+        registrar.register(
+          env,
+          scenario,
+          ProcessVersion.empty,
+          DeploymentData.empty,
+          testRunId = testScenarioCollectorHandler.testRunId()
+        )
+        env.executeAndWaitForFinished(scenario.id)()
+        RunUnitResult(errors = Nil)
+      }
     }
   }
 

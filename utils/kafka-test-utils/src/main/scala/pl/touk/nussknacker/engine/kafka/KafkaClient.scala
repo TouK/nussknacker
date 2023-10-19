@@ -11,6 +11,7 @@ import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
@@ -51,10 +52,10 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     promise.future
   }
 
-  def sendMessage[T: Encoder](topic: String, content: T): Future[RecordMetadata] =
+  def sendMessage[T: Encoder: ClassTag](topic: String, content: T): Future[RecordMetadata] =
     sendMessage(topic, null, content)
 
-  def sendMessage[T: Encoder](
+  def sendMessage[T: Encoder: ClassTag](
       topic: String,
       key: String,
       content: T,
@@ -62,13 +63,9 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
       timestamp: java.lang.Long = null,
       headers: Headers = KafkaRecordUtils.emptyHeaders
   ): Future[RecordMetadata] = {
-    val strContent = content match {
-      case str: String => str
-      case _           => implicitly[Encoder[T]].apply(content).noSpaces
-    }
-
-    val promise = Promise[RecordMetadata]()
-    val record  = createRecord(topic, key, strContent, partition, timestamp, headers)
+    val strContent = ConsumerRecordHelper.asString(content)
+    val promise    = Promise[RecordMetadata]()
+    val record     = createRecord(topic, key, strContent, partition, timestamp, headers)
     producer.send(record, producerCallback(promise))
     promise.future
   }
