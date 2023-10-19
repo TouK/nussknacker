@@ -97,8 +97,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     runResults.validValue.successes shouldBe List(TestService.MockedValued)
   }
 
-  // TODO: Missing implementation for withExtraGlobalVariables
-  ignore("should allowing use global variable - date helper") {
+  test("should allowing use global variable - date helper") {
     val now        = Instant.now()
     val dateHelper = new DateUtils(Clock.fixed(now, ZoneId.systemDefault()))
 

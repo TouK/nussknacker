@@ -117,8 +117,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
     runResults.isValid shouldBe true // verify false positives
   }
 
-  // TODO: Missing implementation for withExtraGlobalVariables
-  ignore("should allowing use global variable - date helper") {
+  test("should allowing use global variable - date helper") {
     val now        = Instant.now()
     val dateHelper = new DateUtils(Clock.fixed(now, ZoneId.systemDefault()))
 
