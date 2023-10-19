@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentUsagesInScenario

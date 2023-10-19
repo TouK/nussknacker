@@ -51,7 +51,13 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     case Left(err) => espErrorToHttp(err)
   }
 
-  def toResponseEither[T: Encoder](either: Either[EspError, T], okStatus: StatusCode): HttpResponse = {
+  def toJsonWithStatus[T: Encoder](response: T, okStatus: StatusCode): HttpResponse = {
+    import io.circe.syntax._
+
+    HttpResponse(status = okStatus, entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces))
+  }
+
+  def toJsonWithStatus[T: Encoder](either: Either[EspError, T], okStatus: StatusCode): HttpResponse = {
     import io.circe.syntax._
 
     either match {

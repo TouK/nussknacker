@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
@@ -11,6 +12,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.EspErrorToHttp.toJsonWithStatus
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
@@ -168,6 +170,7 @@ class ProcessesResources(
                         CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
                       )
                       .withSideEffect(response => OnSaved(response.id, response.versionId))
+                      .map(toJsonWithStatus(_, StatusCodes.Created))
                   }
                 }
               }

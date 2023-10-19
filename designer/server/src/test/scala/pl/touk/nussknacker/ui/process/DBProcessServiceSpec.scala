@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.process
 
+import cats.syntax.either._
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
@@ -16,12 +17,13 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Try}
 
 class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
@@ -164,9 +166,17 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
     forAll(testingData) {
       (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
-        val result = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
+        def doImport() = Try(dBProcessService.importProcess(idWithName, data)(adminUser).futureValue).recoverWith {
+          case e: TestFailedException => Failure(e.cause.getOrElse(e))
+        }.get
 
-        result shouldBe expected
+        expected match {
+          case Right(expectedValue) => doImport() shouldEqual expectedValue
+          case Left(expectedError) =>
+            the[EspError] thrownBy {
+              doImport()
+            } shouldEqual expectedError
+        }
     }
   }
 

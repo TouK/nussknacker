@@ -31,6 +31,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -58,6 +59,8 @@ import scala.concurrent.{ExecutionContext, Future}
 // TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
     extends WithHsqlDbTesting
+    with EitherValuesDetailedMessage
+    with OptionValues
     with TestPermissions
     with NuScenarioConfigurationHelper
     with BeforeAndAfterEach
@@ -232,7 +235,7 @@ trait NuResourcesTest
       testCode: => Assertion
   ): Assertion =
     createProcessRequest(processName, category) { _ =>
-      val json = parser.decode[Json](responseAs[String]).toOption.get
+      val json = parser.decode[Json](responseAs[String]).rightValue
       val resp = CreateProcessResponse(json)
 
       resp.processName shouldBe processName
@@ -487,20 +490,20 @@ trait NuResourcesTest
   }
 
   protected def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
-    parser.decode[List[Json]](response).toOption.get.map(j => ProcessJson(j))
+    parser.decode[List[Json]](response).toOption.value.map(j => ProcessJson(j))
   }
 
   private def decodeJsonProcess(response: String): ProcessJson =
-    ProcessJson(parser.decode[Json](response).toOption.get)
+    ProcessJson(parser.decode[Json](response).rightValue)
 
 }
 
 final case class ProcessVersionJson(id: Long)
 
-object ProcessVersionJson {
+object ProcessVersionJson extends OptionValues {
 
   def apply(process: Json): ProcessVersionJson = ProcessVersionJson(
-    process.hcursor.downField("processVersionId").as[Long].toOption.get
+    process.hcursor.downField("processVersionId").as[Long].toOption.value
   )
 
 }
@@ -557,12 +560,12 @@ object StateJson extends OptionValues {
 
 }
 
-object CreateProcessResponse {
+object CreateProcessResponse extends OptionValues {
 
   def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
-    data.hcursor.downField("id").as[Long].map(ProcessId(_)).toOption.get,
-    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).toOption.get,
-    data.hcursor.downField("processName").as[String].map(ProcessName(_)).toOption.get
+    data.hcursor.downField("id").as[Long].map(ProcessId(_)).toOption.value,
+    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).toOption.value,
+    data.hcursor.downField("processName").as[String].map(ProcessName(_)).toOption.value
   )
 
 }
