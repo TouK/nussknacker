@@ -99,7 +99,7 @@ class DefaultComponentService private (
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcessesAndFragments[ScenarioComponentsUsages]
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -136,7 +136,7 @@ class DefaultComponentService private (
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcessesAndFragments[ScenarioComponentsUsages]
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 

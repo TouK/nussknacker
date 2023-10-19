@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
@@ -83,7 +84,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(false))
+        .futureValue
       result shouldBe expected
     }
   }
@@ -102,7 +105,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getArchivedProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(true))
+        .futureValue
       result shouldBe expected
     }
   }

@@ -349,11 +349,11 @@ class DeploymentServiceImpl(
         .sequence
     } yield processStatus.toMap
 
-  override def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
+  override def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[_]]] =
+  ): Future[List[BaseProcessDetails[T]]] =
     for {
       actionsInProgress <- getInProgressActionTypesForAllProcesses
       processesWithState <- processList.map {

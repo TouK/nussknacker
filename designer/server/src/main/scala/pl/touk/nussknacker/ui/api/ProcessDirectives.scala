@@ -18,20 +18,16 @@ trait ProcessDirectives {
       processName: String
   )(implicit loggedUser: LoggedUser): Directive1[BaseProcessDetails[Unit]] = {
     processId(processName).flatMap { processIdWithName =>
-      onSuccess(processService.getProcess[Unit](processIdWithName)).flatMap {
-        case Right(process) => provide(process)
-        case Left(err)      => failWith(err)
-      }
+      onSuccess(processService.getProcessDetailsOnly(processIdWithName)).flatMap(provide)
     }
   }
 
   def processId(processName: String): Directive1[ProcessIdWithName] = {
     // TODO: We should handle exceptions explicitly instead of relying on the processId directive to do it implicitly
     handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
-      onSuccess(processService.getProcessId(ProcessName(processName))).flatMap {
-        case Right(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
-        case Left(err)        => failWith(err)
-      }
+      onSuccess(processService.getProcessId(ProcessName(processName)))
+        .map(ProcessIdWithName(_, ProcessName(processName)))
+        .flatMap(provide)
     }
   }
 

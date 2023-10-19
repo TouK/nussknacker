@@ -53,7 +53,7 @@ class ProcessesResources(
       path("archive") {
         get {
           complete {
-            processService.getArchivedProcessesAndFragments[Unit].toBasicProcess
+            processService.getRawProcessesWithDetails[Unit](isFragment = None, isArchived = Some(true)).toBasicProcess
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -62,7 +62,6 @@ class ProcessesResources(
             complete {
               processService
                 .unArchiveProcess(processId)
-                .map(toResponse(StatusCodes.OK))
                 .withSideEffect(_ => sideEffectAction(OnUnarchived(processId.id)))
             }
           }
@@ -82,14 +81,14 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcesses(query).toBasicProcess
+              processService.getProcessDetailsWithStateOnly(query).toBasicProcess
             }
           }
         }
       } ~ path("processesDetails") {
         (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
           complete {
-            processService.getProcessesDetails(query, skipValidateAndResolve)
+            processService.getProcessesWithDetails(query, skipValidateAndResolve)
           }
         }
       } ~ path("processes" / "status") {
@@ -97,7 +96,7 @@ class ProcessesResources(
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
             processService
-              .getProcesses[Unit]
+              .getRawProcessesWithDetails[Unit](isFragment = Some(false), isArchived = Some(false))
               .flatMap(deploymentService.fetchProcessStatesForProcesses)
           }
         }
@@ -148,7 +147,7 @@ class ProcessesResources(
             }
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
-              processService.getProcessDetails(processId, skipValidateAndResolve)
+              processService.getProcessWithDetails(processId, skipValidateAndResolve)
             }
           }
         }
@@ -170,7 +169,7 @@ class ProcessesResources(
       } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
         (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
           complete {
-            processService.getProcessDetails(processId, versionId, skipValidateAndResolve)
+            processService.getProcessWithDetails(processId, versionId, skipValidateAndResolve)
           }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
@@ -207,9 +206,8 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             processService
-              .getProcess[Unit](processId)
-              .map(resp => resp.map(processToolbarService.getProcessToolbarSettings))
-              .map(toResponseEither[ProcessToolbarSettings])
+              .getProcessDetailsOnly(processId)
+              .map(processToolbarService.getProcessToolbarSettings)
           }
         }
       } ~ path("processes" / "category" / Segment / Segment) { (processName, category) =>
@@ -232,8 +230,8 @@ class ProcessesResources(
           (get & processId(processName)) { processId =>
             complete {
               for {
-                thisVersion  <- processService.getRawProcessDetails(processId, thisVersion)
-                otherVersion <- processService.getRawProcessDetails(processId, otherVersion)
+                thisVersion  <- processService.getRawProcessWithDetails(processId, thisVersion)
+                otherVersion <- processService.getRawProcessWithDetails(processId, otherVersion)
               } yield ProcessComparator.compare(thisVersion.json, otherVersion.json)
             }
           }
