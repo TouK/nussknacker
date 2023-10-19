@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationNotPerformed,
   ValidationPerformed
 }
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -348,6 +349,8 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     variableTypes: Map[String, TypingResult],
     branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
     // TODO: remove Option when FE is ready
+    // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
+    // when renaming node, it contains node's id before the rename.
     outgoingEdges: Option[List[Edge]]
 )
 

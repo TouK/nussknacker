@@ -68,6 +68,12 @@ object ProcessCompilationError {
 
   case class InvalidCharacters(nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class BlankNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class LeadingSpacesNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class TrailingSpacesNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+
   object EmptyNodeId extends ProcessCompilationError {
     override def nodeIds = Set()
   }

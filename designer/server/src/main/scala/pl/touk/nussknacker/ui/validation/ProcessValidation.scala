@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
@@ -19,9 +19,9 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 
 object ProcessValidation {
 
@@ -103,12 +103,10 @@ class ProcessValidation(
   }
 
   def uiValidation(displayable: DisplayableProcess): ValidationResult = {
-    validateIds(displayable)
-      .add(validateEmptyId(displayable))
+    validateNodesId(displayable)
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
-      .add(validateScenarioId(displayable))
       .add(validateScenarioProperties(displayable))
       .add(warningValidation(displayable))
   }
@@ -165,22 +163,21 @@ class ProcessValidation(
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
-  private def validateIds(displayable: DisplayableProcess): ValidationResult = {
-    val invalidCharsRegexp = "[\"'\\.]".r
+  private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
+    val nodeIdErrors = displayable.nodes
+      .map(n => n.id -> IdValidator.validate(n))
+      .filter(n => n._2.isInvalid)
+      .collect { case (key, Invalid(errors)) =>
+        key -> errors.map(PrettyValidationErrors.formatErrorMessage).toList
+      }
+      .toMap
 
     ValidationResult.errors(
-      displayable.nodes
-        .map(_.id)
-        .filter(n => invalidCharsRegexp.findFirstIn(n).isDefined)
-        .map(n => n -> List(PrettyValidationErrors.formatErrorMessage(InvalidCharacters(n))))
-        .toMap,
+      nodeIdErrors,
       List(),
       List()
     )
   }
-
-  private def validateScenarioId(displayable: DisplayableProcess): ValidationResult =
-    ScenarioIdValidator.validate(displayable)
 
   private def validateScenarioProperties(displayable: DisplayableProcess): ValidationResult = {
     if (displayable.metaData.isFragment) {
@@ -232,14 +229,6 @@ class ProcessValidation(
         List(),
         List(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet)))
       )
-    }
-  }
-
-  private def validateEmptyId(displayableProcess: DisplayableProcess): ValidationResult = {
-    if (displayableProcess.nodes.exists(_.id.isEmpty)) {
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.formatErrorMessage(EmptyNodeId)))
-    } else {
-      ValidationResult.success
     }
   }
 

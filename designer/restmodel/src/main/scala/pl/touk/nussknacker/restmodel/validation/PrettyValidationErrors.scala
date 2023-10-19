@@ -46,7 +46,7 @@ object PrettyValidationErrors {
         node(
           message,
           description,
-          fieldName = Some("id")
+          fieldName = Some("$id")
         )
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
@@ -58,10 +58,39 @@ object PrettyValidationErrors {
         )
       case EmptyNodeId =>
         node(
+          // TODO: change id to name - user sees node name as a readable name, not as an id
           "Nodes cannot have empty id",
           "Nodes cannot have empty id",
           errorType = NodeValidationErrorType.RenderNotAllowed,
-          fieldName = Some("id")
+          fieldName = Some("$id")
+        )
+      case BlankNodeId(_) =>
+        node(
+          "Node name cannot be blank",
+          "Node name cannot be blank",
+          RenderNotAllowed,
+          Some("$id")
+        )
+      case LeadingSpacesNodeId(_) =>
+        node(
+          "Node name cannot have leading spaces",
+          "Node name cannot have leading spaces",
+          RenderNotAllowed,
+          Some("$id")
+        )
+      case TrailingSpacesNodeId(_) =>
+        node(
+          "Node name cannot have trailing spaces",
+          "Node name cannot have trailing spaces",
+          RenderNotAllowed,
+          Some("$id")
+        )
+      case InvalidCharacters(nodeId) =>
+        node(
+          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
+          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
+          RenderNotAllowed,
+          Some("$id")
         )
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
@@ -80,12 +109,6 @@ object PrettyValidationErrors {
           "Loose node",
           s"Node $nodeId is not connected to source, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
-        )
-      case InvalidCharacters(nodeId) =>
-        node(
-          "Invalid characters",
-          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
-          RenderNotAllowed
         )
       case DisabledNode(nodeId) =>
         node(
