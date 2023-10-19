@@ -76,7 +76,13 @@ export const updateNodeCounts =
         const count = processCounts[node.id];
         const hasCounts = !isEmpty(count);
         const hasErrors = hasCounts && count?.errors > 0;
-        const testCounts = hasCounts ? (shortCounts ? millify(count.all) : count.all.toLocaleString() || "0") : "";
+        const testCounts = hasCounts
+            ? shortCounts
+                ? millify(count.all)
+                : count?.all?.toLocaleString()
+                ? count.all.toLocaleString() || "0"
+                : "?"
+            : "";
         const testResultsWidth = getStringWidth(testCounts);
 
         const testResultsSummary: attributes.SVGTextAttributes = {

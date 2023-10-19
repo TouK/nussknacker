@@ -33,7 +33,7 @@ export function fetchAndDisplayProcessCounts(
             if (unusedProcessCounts.length !== 0 && processCountsName.length !== 0) {
                 for (let i = 0; i < unusedProcessCounts.length; i++) {
                     newProcessCounts[unusedProcessCounts[i].id] = {
-                        all: "?" as unknown as number,
+                        all: undefined,
                         errors: 0,
                         fragmentCounts: {},
                     };
