@@ -1,9 +1,8 @@
-import { useTheme } from "@mui/material";
 import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
 import { GraphStyled } from "./GraphStyled";
-import { StyledGraphWrapper } from "../../stylesheets/styledGraphWrapper";
+import { FocusableStyled } from "./focusableStyled";
 
 interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     onResize?: (current: DOMRectReadOnly) => void;
@@ -33,8 +32,8 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
     const { observe } = useSizeWithRef(forwardedRef, options);
 
     return (
-        <StyledGraphWrapper>
+        <FocusableStyled>
             <GraphStyled className={className} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
-        </StyledGraphWrapper>
+        </FocusableStyled>
     );
 });

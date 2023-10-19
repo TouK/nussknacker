@@ -63,6 +63,16 @@ const colors = {
     deepskyblue: "#00bfff",
     lime: "#00ff00",
     orangered: "#FF4500",
+    cinderella: "#fbd2d6",
+    bizarre: "#f2dede",
+    apple: "#5BA935",
+    blueRomance: "#caf2d6",
+    zumthor: "#E6ECFF",
+    nero: "#222222",
+    blackMarlin: "#3a3a3a",
+    yellowOrange: "#fbb03b",
+    scooter: "#46bfdb",
+    nobel: "#b5b5b5",
 };
 
 const selectColors = {
