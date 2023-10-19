@@ -1,28 +1,21 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails._
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui._
-import pl.touk.nussknacker.ui.api.EspErrorToHttp._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -72,7 +65,6 @@ class ProcessesResources(
             complete {
               processService
                 .archiveProcess(processId)
-                .map(toResponse(StatusCodes.OK))
                 .withSideEffect(_ => sideEffectAction(OnArchived(processId.id)))
             }
           }
@@ -108,7 +100,6 @@ class ProcessesResources(
                 MultipartUtils
                   .readFile(byteSource)
                   .flatMap(processService.importProcess(processId, _))
-                  .map(toResponseEither[ValidatedDisplayableProcess])
               }
             }
           }
@@ -126,8 +117,7 @@ class ProcessesResources(
             complete {
               processService
                 .deleteProcess(processId)
-                .map(toResponse(StatusCodes.OK))
-                .withSideEffect(_ => sideEffectAction(OnDeleted(processId.id)))
+                .withSideEffect(_ => OnDeleted(processId.id))
             }
           } ~ (put & canWrite(processId)) {
             entity(as[UpdateProcessCommand]) { updateCommand =>
@@ -136,12 +126,11 @@ class ProcessesResources(
                   processService
                     .updateProcess(processId, updateCommand)
                     .withSideEffect(response =>
-                      sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
+                      sideEffectAction(response.processResponse) { resp =>
                         OnSaved(resp.id, resp.versionId)
                       }
                     )
-                    .map(_.map(_.validationResult))
-                    .map(toResponseEither[ValidationResult])
+                    .map(_.validationResult)
                 }
               }
             }
@@ -157,12 +146,7 @@ class ProcessesResources(
             complete {
               processService
                 .renameProcess(processId, ProcessName(newName))
-                .withSideEffect(response =>
-                  sideEffectAction(response) { resp =>
-                    OnRenamed(processId.id, resp.oldName, resp.newName)
-                  }
-                )
-                .map(toResponseEither[UpdateProcessNameResponse])
+                .withSideEffect(response => OnRenamed(processId.id, response.oldName, response.newName))
             }
           }
         }
@@ -183,12 +167,7 @@ class ProcessesResources(
                       .createProcess(
                         CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName)
                       )
-                      .withSideEffect(response =>
-                        sideEffectAction(response) { process =>
-                          OnSaved(process.id, process.versionId)
-                        }
-                      )
-                      .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+                      .withSideEffect(response => OnSaved(response.id, response.versionId))
                   }
                 }
               }
@@ -216,12 +195,7 @@ class ProcessesResources(
             complete {
               processService
                 .updateCategory(processId, category)
-                .withSideEffect(response =>
-                  sideEffectAction(response) { resp =>
-                    OnCategoryChanged(processId.id, resp.oldCategory, resp.newCategory)
-                  }
-                )
-                .map(toResponseEither[UpdateProcessCategoryResponse])
+                .withSideEffect(response => OnCategoryChanged(processId.id, response.oldCategory, response.newCategory))
             }
           }
         }
@@ -242,12 +216,6 @@ class ProcessesResources(
   private def sideEffectAction(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     implicit val listenerUser: User = ListenerApiUser(user)
     processChangeListener.handle(event)
-  }
-
-  private def sideEffectAction[T](
-      response: XError[T]
-  )(eventAction: T => ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
-    sideEffectAction(response.toOption)(eventAction)
   }
 
   private def sideEffectAction[T](

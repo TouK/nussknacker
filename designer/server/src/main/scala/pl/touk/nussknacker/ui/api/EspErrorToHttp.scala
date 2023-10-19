@@ -62,11 +62,6 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     }
   }
 
-  def toResponse(okStatus: StatusCode)(xor: Either[EspError, Unit]): HttpResponse = xor match {
-    case Left(error) => espErrorToHttp(error)
-    case Right(_)    => HttpResponse(status = okStatus)
-  }
-
   def toResponseTryPF(okStatus: StatusCode): PartialFunction[Try[Unit], HttpResponse] = {
     case Failure(ex) => errorToHttp(ex)
     case Success(_)  => HttpResponse(status = okStatus)

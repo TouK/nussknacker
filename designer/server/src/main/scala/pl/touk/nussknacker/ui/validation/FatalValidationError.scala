@@ -14,11 +14,11 @@ object FatalValidationError {
     }
   }
 
-  def saveNotAllowedAsError(validationResult: ValidationResult): Either[EspError, ValidationResult] = {
+  def saveNotAllowedAsError(validationResult: ValidationResult): ValidationResult = {
     if (validationResult.saveNotAllowedErrors.isEmpty) {
-      Right(validationResult)
+      validationResult
     } else {
-      Left[EspError, ValidationResult](FatalValidationError(validationResult.saveNotAllowedErrors))
+      throw FatalValidationError(validationResult.saveNotAllowedErrors)
     }
   }
 
