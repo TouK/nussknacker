@@ -23,11 +23,17 @@ class ProcessUtils {
         const processToDisplay = state.graphReducer.processToDisplay;
         //TODO: validationResult should be removed from processToDisplay...
         const omitValidation = (details: Process) => omit(details, ["validationResult"]);
-        return (
-            (!isEmpty(fetchedProcessDetails)
-                ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay))
-                : true) && !isProcessRenamed(state)
-        );
+        const processRenamed = isProcessRenamed(state);
+
+        if (processRenamed) {
+            return false;
+        }
+
+        if (isEmpty(fetchedProcessDetails)) {
+            return true;
+        }
+
+        return isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay));
     };
 
     canExport = (state: RootState): boolean => {

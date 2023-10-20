@@ -523,9 +523,11 @@ class HttpService {
     }
 
     archiveProcess(processId) {
-        return api
-            .post(`/archive/${encodeURIComponent(processId)}`)
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true));
+        const promise = api.post(`/archive/${encodeURIComponent(processId)}`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true),
+        );
+        return promise;
     }
 
     unArchiveProcess(processId) {
