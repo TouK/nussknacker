@@ -5,6 +5,7 @@ import cats.Id
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
+import org.everit.json.schema.TrueSchema
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -15,7 +16,12 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.test.{ModelWithTestExtensions, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.{
+  ModelWithTestExtensions,
+  TestScenarioCollectorHandler,
+  TestScenarioRunner,
+  TestScenarioRunnerBuilder
+}
 
 import scala.reflect.ClassTag
 
@@ -37,6 +43,8 @@ object RequestResponseTestScenarioRunner {
                                |}
                                |""".stripMargin
 
+  val trueFieldSchema: String = TrueSchema.builder().build().toString
+
   val sampleSchemas: Map[String, String] = Map("inputSchema" -> stringFieldSchema, "outputSchema" -> stringFieldSchema)
 
 }
@@ -51,6 +59,7 @@ class RequestResponseTestScenarioRunner(
   def runWithRequests[T](
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
+    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
     ModelWithTestExtensions.withExtensions(config, components, globalVariables) { modelData =>
       RequestResponseInterpreter[Id](
         scenario,
@@ -58,7 +67,7 @@ class RequestResponseTestScenarioRunner(
         LiteEngineRuntimeContextPreparer.noOp,
         modelData,
         additionalListeners = Nil,
-        resultCollector = ProductionServiceInvocationCollector,
+        resultCollector = testScenarioCollectorHandler.resultCollector,
         componentUseCase = componentUseCase
       ).map { interpreter =>
         interpreter.open()
@@ -69,6 +78,7 @@ class RequestResponseTestScenarioRunner(
             handler.invoke(req, entity)
           })
         } finally {
+          testScenarioCollectorHandler.close()
           interpreter.close()
         }
       }
@@ -87,7 +97,7 @@ case class RequestResponseTestScenarioRunnerBuilder(
   import TestScenarioRunner._
 
   override def withExtraComponents(
-      extraComponents: List[ComponentDefinition]
+      components: List[ComponentDefinition]
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(components = components)
 

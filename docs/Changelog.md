@@ -17,6 +17,12 @@
 
 1.12.0 (6 Oct 2023)
 -------------------------
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+    * Run runner with proper prepared invocation collector for test mode
+    * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
+    * Add missing tests for passing global variables
+    * Fix bug with passing components on RequestResponseTestScenarioRunner
+    * Fix bug building source test context on LiteTestScenarioRunner
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
   * Use `processingType` instead of `processName`
   * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`

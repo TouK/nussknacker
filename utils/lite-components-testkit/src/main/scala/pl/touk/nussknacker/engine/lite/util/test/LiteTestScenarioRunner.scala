@@ -6,7 +6,14 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SinkFactory, Source, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{
+  BasicContextInitializer,
+  ComponentUseCase,
+  SinkFactory,
+  Source,
+  SourceFactory,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -40,8 +47,8 @@ case class LiteTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
-    copy(components = extraComponents)
+  override def withExtraComponents(components: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
+    copy(components = components)
 
   override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
@@ -104,7 +111,8 @@ private[test] class SimpleSourceFactory(result: TypingResult)
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
-    FinalResults(ValidationContext(Map(VariableConstants.InputVariableName -> result)))
+    val finalInitializer = new BasicContextInitializer(result)
+    FinalResults.forValidation(context, Nil, None)(finalInitializer.validationContext)
   }
 
   override def implementation(
