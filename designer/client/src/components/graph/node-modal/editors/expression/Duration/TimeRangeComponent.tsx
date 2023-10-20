@@ -1,5 +1,5 @@
 import React from "react";
-import classNames from "classnames";
+import { cx } from "@emotion/css";
 import { UnknownFunction } from "../../../../../../types/common";
 import { InputWithFocus } from "../../../../../withFocus";
 import { Duration } from "./DurationEditor";
@@ -61,7 +61,7 @@ export default function TimeRangeComponent(props: Props) {
                 readOnly={readOnly}
                 value={value[component.fieldName] || ""}
                 onChange={(event) => onChange(component.fieldName, parseInt(event.target.value))}
-                className={classNames([
+                className={cx([
                     "time-range-input",
                     showValidation && !isValid && "node-input-with-error",
                     isMarked && "marked",

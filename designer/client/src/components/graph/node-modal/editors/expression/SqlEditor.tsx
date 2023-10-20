@@ -1,4 +1,4 @@
-import classnames from "classnames/dedupe";
+import { cx } from "@emotion/css";
 import i18next from "i18next";
 import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -52,7 +52,7 @@ function useAliasUsageHighlight(token = "alias") {
             (classname: string, enabled: boolean): void => {
                 const el = ref.current?.refEditor;
                 if (el) {
-                    el.className = classnames(el.className, { [classname]: enabled });
+                    el.className = cx(el.className, { [classname]: enabled && !el.className.includes(classname) });
                 }
             },
             1000,
