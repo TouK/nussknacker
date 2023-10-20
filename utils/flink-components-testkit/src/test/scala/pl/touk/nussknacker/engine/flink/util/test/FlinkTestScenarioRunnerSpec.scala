@@ -4,11 +4,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.util.functions._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -80,6 +82,28 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .runWithData[String, String](scenario, List("lcl"))
 
     runResults.validValue.successes shouldBe List(now.toString)
+  }
+
+  // TODO: FlinkTestScenarioRunner doesn't collect errors, see FlinkTestScenarioRunner.collectResults
+  ignore("should catch exception during compilation in test run mode") {
+    val scenario =
+      ScenarioBuilder
+        .streaming(getClass.getName)
+        .source("start", TestScenarioRunner.testDataSource)
+        .filter("filter", "#input / 0 != 0") // intentional throwing of an exception
+        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input")
+
+    val runResults =
+      TestScenarioRunner
+        .flinkBased(config, flinkMiniCluster)
+        .build()
+        .runWithData[Int, Int](scenario, List(10))
+
+    runResults.validValue.errors.collect { case NuExceptionInfo(_, e: SpelExpressionEvaluationException, _) =>
+      e.getMessage
+    } shouldBe List(
+      "Expression [#input / 0 != 0] evaluation failed, message: divide by zero"
+    )
   }
 
   object TestService extends EagerService {

@@ -1,10 +1,14 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
+import cats.data.NonEmptyList
+import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
@@ -13,12 +17,13 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.functions.DateUtils
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 
 import java.time.{Clock, Instant, ZoneId}
 import java.util
 import scala.concurrent.Future
 
-class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with Inside {
 
   import LiteTestScenarioRunner._
 
@@ -115,6 +120,28 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
         .runWithData[String, String](scenario, List("input"))
 
     runResults.validValue.successes shouldBe List(now.toString)
+  }
+
+  test("should catch exception during compilation in test run mode") {
+    val scenario =
+      ScenarioBuilder
+        .streaming(getClass.getName)
+        .source("start", TestScenarioRunner.testDataSource)
+        .filter("filter", "#input / 0 != 0") // intentional throwing of an exception
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input")
+
+    val runResults =
+      TestScenarioRunner
+        .liteBased(ConfigFactory.empty())
+        .inTestRuntimeMode
+        .build()
+        .runWithData[Int, Int](scenario, List(10))
+
+    runResults.validValue.errors.collect { case NuExceptionInfo(_, e: SpelExpressionEvaluationException, _) =>
+      e.getMessage
+    } shouldBe List(
+      "Expression [#input / 0 != 0] evaluation failed, message: divide by zero"
+    )
   }
 
 }

@@ -52,10 +52,10 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     promise.future
   }
 
-  def sendMessage[T: Encoder: ClassTag](topic: String, content: T): Future[RecordMetadata] =
+  def sendMessage[T: Encoder](topic: String, content: T): Future[RecordMetadata] =
     sendMessage(topic, null, content)
 
-  def sendMessage[T: Encoder: ClassTag](
+  def sendMessage[T: Encoder](
       topic: String,
       key: String,
       content: T,

@@ -39,7 +39,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
       )
     }
 
-    runResults.isValid shouldBe true // verify false positives
+    runResults.isValid shouldBe true // FIXME: verify false positives
   }
 
   test("runs failure handling") {
@@ -63,7 +63,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
 
     }
 
-    runResults.isValid shouldBe true // verify false positives
+    runResults.isValid shouldBe true // FIXME: verify false positives
   }
 
   test("should return service invoke value") {
@@ -88,7 +88,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
           )
         }
 
-    runResults.isValid shouldBe true // verify false positives
+    runResults.isValid shouldBe true // FIXME: verify false positives
   }
 
   test("should return service invoke mocked value for test runtime mode") {
@@ -114,7 +114,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
           )
         }
 
-    runResults.isValid shouldBe true // verify false positives
+    runResults.isValid shouldBe true // FIXME: verify false positives
   }
 
   test("should allowing use global variable - date helper") {
@@ -140,7 +140,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
           )
         }
 
-    runResults.isValid shouldBe true // verify false positives
+    runResults.isValid shouldBe true // FIXME: verify false positives
   }
 
 }

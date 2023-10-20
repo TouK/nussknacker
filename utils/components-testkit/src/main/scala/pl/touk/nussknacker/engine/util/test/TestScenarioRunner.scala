@@ -4,14 +4,13 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
-  TestRunId,
   TestServiceInvocationCollector
 }
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
@@ -75,15 +74,13 @@ object TestScenarioCollectorHandler {
       (ProductionServiceInvocationCollector, None)
     }
 
-    TestScenarioCollectorHandler(resultCollector, resultsCollectingHolder)
+    new TestScenarioCollectorHandler(resultCollector, resultsCollectingHolder)
   }
 
-  case class TestScenarioCollectorHandler(
-      resultCollector: ResultCollector,
-      resultsCollectingListener: Option[ResultsCollectingListener]
+  final class TestScenarioCollectorHandler(
+      val resultCollector: ResultCollector,
+      private val resultsCollectingListener: Option[ResultsCollectingListener]
   ) extends AutoCloseable {
-    def testRunId(): Option[TestRunId] = resultsCollectingListener.map(_.runId)
-
     def close(): Unit = resultsCollectingListener.foreach(_.clean())
   }
 

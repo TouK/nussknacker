@@ -9,13 +9,13 @@ import scala.reflect.{ClassTag, classTag}
 object ConsumerRecordHelper {
 
   // General helper's method - don't remove it
-  def asBytes[T: Encoder: ClassTag](value: T): Array[Byte] =
+  def asBytes[T: Encoder](value: T): Array[Byte] =
     value match {
       case null => null
       case _    => asString(value).getBytes(StandardCharsets.UTF_8)
     }
 
-  def asString[T: Encoder: ClassTag](value: T): String =
+  def asString[T: Encoder](value: T): String =
     value match {
       case null        => null
       case str: String => str

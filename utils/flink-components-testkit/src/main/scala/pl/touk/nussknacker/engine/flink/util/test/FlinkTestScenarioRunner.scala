@@ -138,7 +138,7 @@ class FlinkTestScenarioRunner(
           scenario,
           ProcessVersion.empty,
           DeploymentData.empty,
-          testRunId = testScenarioCollectorHandler.testRunId()
+          testScenarioCollectorHandler.resultCollector
         )
         env.executeAndWaitForFinished(scenario.id)()
         RunUnitResult(errors = Nil)
