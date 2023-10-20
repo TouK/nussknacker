@@ -545,6 +545,7 @@ jobs:
           title: Update Cypress snapshots in ${{ env.BRANCH }}
           commit-message: Updated snapshots
           body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
+          labels: cypress
         uses: peter-evans/create-pull-request@v4
       - name: Comment PR
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
