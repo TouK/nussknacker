@@ -4,7 +4,12 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.{
+  EmptyProcessConfigCreator,
+  ExpressionConfig,
+  ProcessObjectDependencies,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 object ModelWithTestExtensions {
@@ -21,7 +26,18 @@ object ModelWithTestExtensions {
       s"components.${TestComponentsProvider.name}.${TestComponentsProvider.testRunIdConfig}",
       fromAnyRef(testExtensionsHolder.runId.id)
     )
-    val model = LocalModelData(configWithRunId, new EmptyProcessConfigCreator)
+
+    val configCreator = new EmptyProcessConfigCreator {
+      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
+        val globalProcessVariables = globalVariables.map { case (key, value) =>
+          key -> WithCategories.anyCategory(value)
+        }
+
+        ExpressionConfig(globalProcessVariables, List.empty)
+      }
+    }
+
+    val model = LocalModelData(configWithRunId, configCreator)
     try {
       action(model)
     } finally {

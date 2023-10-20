@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.testmode
 
 import cats.Monad
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
+import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.language.higherKinds
@@ -39,10 +38,13 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
     }
   }
 
+  def createSinkInvocationCollector(nodeId: String, ref: String): SinkInvocationCollector =
+    new SinkInvocationCollector(testRunId, nodeId, ref)
+
 }
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
-case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) {
+final class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) extends Serializable {
 
   def collect(context: Context, result: Any): Unit = {
     ResultsCollectingListenerHolder.updateResults(

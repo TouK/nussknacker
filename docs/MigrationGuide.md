@@ -10,6 +10,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+  * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
 
 ## In version 1.12.x
 
