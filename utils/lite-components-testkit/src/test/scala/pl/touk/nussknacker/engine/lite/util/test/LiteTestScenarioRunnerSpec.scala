@@ -138,7 +138,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     runResults.validValue.errors.map(_.throwable).map { exc =>
       exc.asInstanceOf[SpelExpressionEvaluationException].getMessage
     } shouldBe List(
-      "Expression [#input / 0 != 0] evaluation failed, message: divide by zero"
+      "Expression [#input / 0 != 0] evaluation failed, message: / by zero",
     )
   }
 
