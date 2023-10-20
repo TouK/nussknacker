@@ -99,8 +99,8 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .build()
         .runWithData[Int, Int](scenario, List(10))
 
-    runResults.validValue.errors.collect { case exc: NuExceptionInfo[_] =>
-      exc.throwable.asInstanceOf[SpelExpressionEvaluationException].getMessage
+    runResults.validValue.errors.map(_.throwable).map { exc =>
+      exc.asInstanceOf[SpelExpressionEvaluationException].getMessage
     } shouldBe List(
       "Expression [#input / 0 != 0] evaluation failed, message: divide by zero"
     )
