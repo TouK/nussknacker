@@ -6,7 +6,13 @@
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
 * [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
 * [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available
-
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+    * Run runner with proper prepared invocation collector for test mode
+    * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
+    * Add missing tests for passing global variables
+    * Fix bug with passing components on RequestResponseTestScenarioRunner
+    * Fix bug building source test context on LiteTestScenarioRunner
+  
 1.12.0 (Not released yet)
 -------------------------
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
