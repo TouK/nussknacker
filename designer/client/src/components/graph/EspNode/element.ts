@@ -70,19 +70,19 @@ export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
 }
 
 function getTestCounts(hasCounts: boolean, shortCounts: boolean, count: NodeCounts): string {
-    if (hasCounts) {
-        if (shortCounts) {
-            if (count && millify(count?.all)) {
-                return count?.all?.toLocaleString();
-            }
-        } else if (count?.all?.toLocaleString()) {
-            return count.all.toLocaleString() || "0";
-        } else {
-            return "?";
-        }
-    } else {
+    if (!hasCounts) {
         return "";
     }
+
+    if (shortCounts) {
+        if (count && millify(count?.all)) {
+            return count?.all?.toLocaleString();
+        }
+    } else if (count?.all?.toLocaleString()) {
+        return count.all.toLocaleString() || "0";
+    }
+
+    return "?";
 }
 
 export const updateNodeCounts =

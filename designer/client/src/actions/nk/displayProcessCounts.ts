@@ -16,15 +16,15 @@ export function displayProcessCounts(processCounts: ProcessCounts): DisplayProce
     };
 }
 
-const checkActualCounts = (processCounts: ProcessCounts, processToDisplay: Process) => {
+const checkPossibleCountsToCalculate = (processCounts: ProcessCounts, processToDisplay: Process) => {
     const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
-    const nodes = processToDisplay.nodes
+    const uncountableNodes = processToDisplay.nodes
         .sort((a, b) => a.id.localeCompare(b.id))
         .filter((node, index) => node.id !== processCountsName[index]);
     const newProcessCounts = { ...processCounts };
-    if (nodes.length !== 0 && processCountsName.length !== 0) {
-        for (let i = 0; i < nodes.length; i++) {
-            newProcessCounts[nodes[i].id] = {
+    if (uncountableNodes.length !== 0 && processCountsName.length !== 0) {
+        for (let i = 0; i < uncountableNodes.length; i++) {
+            newProcessCounts[uncountableNodes[i].id] = {
                 all: undefined,
                 errors: 0,
                 fragmentCounts: {},
@@ -42,7 +42,7 @@ export function fetchAndDisplayProcessCounts(
 ): ThunkAction<Promise<DisplayProcessCountsAction>> {
     return (dispatch) => {
         return HttpService.fetchProcessCounts(processName, from, to).then((response) => {
-            const newProcessCounts = checkActualCounts(response.data, processToDisplay);
+            const newProcessCounts = checkPossibleCountsToCalculate(response.data, processToDisplay);
             return dispatch(displayProcessCounts(newProcessCounts));
         });
     };
