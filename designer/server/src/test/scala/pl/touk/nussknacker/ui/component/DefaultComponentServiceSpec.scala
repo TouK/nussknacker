@@ -544,7 +544,7 @@ class DefaultComponentServiceSpec
   )
 
   it should "return components for each user" in {
-    val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
+    val processes      = List(MarketingProcess, FraudProcess, FraudTestProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService =
       DefaultComponentService(

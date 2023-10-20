@@ -149,11 +149,6 @@ object ComponentTestProcessData {
     category = CategoryFraud
   )
 
-  val WrongCategoryProcess: ProcessDetails = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("wrongCategory", Fraud, SharedSourceConf, SharedSinkConf),
-    category = "wrongCategory"
-  )
-
   private def createSimpleDisplayableProcess(
       id: String,
       processingType: String,

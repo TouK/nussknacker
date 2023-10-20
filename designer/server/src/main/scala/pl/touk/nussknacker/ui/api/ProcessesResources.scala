@@ -47,7 +47,9 @@ class ProcessesResources(
       path("archive") {
         get {
           complete {
-            processService.getRawProcessesWithDetails[Unit](isFragment = None, isArchived = Some(true)).toBasicProcess
+            processService
+              .getRawProcessesWithDetails[Unit](ProcessesQuery.empty.copy(isArchived = Some(true)))
+              .toBasicProcess
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -89,7 +91,9 @@ class ProcessesResources(
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
             processService
-              .getRawProcessesWithDetails[Unit](isFragment = Some(false), isArchived = Some(false))
+              .getRawProcessesWithDetails[Unit](
+                ProcessesQuery.empty.copy(isFragment = Some(false), isArchived = Some(false))
+              )
               .flatMap(deploymentService.fetchProcessStatesForProcesses)
           }
         }
@@ -211,9 +215,17 @@ class ProcessesResources(
           (get & processId(processName)) { processId =>
             complete {
               for {
-                thisVersion  <- processService.getRawProcessWithDetails(processId, thisVersion)
-                otherVersion <- processService.getRawProcessWithDetails(processId, otherVersion)
-              } yield ProcessComparator.compare(thisVersion.json, otherVersion.json)
+                thisVersion <- processService.getProcessWithDetails(
+                  processId,
+                  thisVersion,
+                  skipValidateAndResolve = true
+                )
+                otherVersion <- processService.getProcessWithDetails(
+                  processId,
+                  otherVersion,
+                  skipValidateAndResolve = true
+                )
+              } yield ProcessComparator.compare(thisVersion.json.toDisplayable, otherVersion.json.toDisplayable)
             }
           }
       }

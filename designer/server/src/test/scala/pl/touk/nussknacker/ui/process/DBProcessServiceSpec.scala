@@ -14,10 +14,10 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -62,7 +62,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val fragmentTest      = createFragment("fragmentTest", category = TestCat)
   private val fragmentReqResp   = createFragment("fragmentReqResp", category = ReqRes)
 
-  private val fragments = Set(
+  private val fragments = List(
     fragmentCategory1,
     fragmentCategory2,
     fragmentTest,
@@ -86,7 +86,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(false))
+        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery.empty.copy(isArchived = Some(false)))
         .futureValue
       result shouldBe expected
     }
@@ -107,27 +107,31 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(true))
+        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery.empty.copy(isArchived = Some(true)))
         .futureValue
       result shouldBe expected
     }
   }
 
   it should "return user fragments" in {
-    val dBProcessService = createDbProcessService(fragments.toList)
+    val dBProcessService = createDbProcessService(fragments)
 
     val testingData = Table(
       ("user", "fragments"),
       (adminUser, fragments),
-      (categoriesUser, Set(fragmentCategory1, fragmentCategory2)),
-      (testUser, Set(fragmentTest)),
-      (testReqRespUser, Set(fragmentTest, fragmentReqResp)),
+      (categoriesUser, List(fragmentCategory1, fragmentCategory2)),
+      (testUser, List(fragmentTest)),
+      (testReqRespUser, List(fragmentTest, fragmentReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails]) =>
-      val result          = dBProcessService.getFragmentsDetails(None)(user).futureValue
-      val fragmentDetails = expected.map(convertBasicProcessToFragmentDetails)
-      result shouldBe fragmentDetails
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+      implicit val implicitUser: LoggedUser = user
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](
+          ProcessesQuery.empty.copy(isFragment = Some(true), isArchived = Some(false))
+        )
+        .futureValue
+      result shouldBe expected
     }
   }
 
@@ -176,9 +180,6 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
         }
     }
   }
-
-  private def convertBasicProcessToFragmentDetails(process: ProcessDetails) =
-    FragmentDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
   private def importSuccess(
       displayableProcess: DisplayableProcess
