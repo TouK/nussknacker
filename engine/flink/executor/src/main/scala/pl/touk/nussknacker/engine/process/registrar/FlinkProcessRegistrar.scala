@@ -32,14 +32,14 @@ import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPrep
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
-import pl.touk.nussknacker.engine.testmode.{SinkInvocationCollector, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is main class where we translate Nussknacker model to Flink job.
@@ -63,22 +63,26 @@ class FlinkProcessRegistrar(
       env: StreamExecutionEnvironment,
       process: CanonicalProcess,
       processVersion: ProcessVersion,
+      deploymentData: DeploymentData
+  ): Unit =
+    register(env, process, processVersion, deploymentData, ProductionServiceInvocationCollector)
+
+  def register(
+      env: StreamExecutionEnvironment,
+      process: CanonicalProcess,
+      processVersion: ProcessVersion,
       deploymentData: DeploymentData,
-      testRunId: Option[TestRunId] = None
+      resultCollector: ResultCollector
   ): Unit = {
     usingRightClassloader(env) { userClassLoader =>
-      // TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
-      val collector =
-        testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
-
-      val processCompilation = compileProcess(process, processVersion, collector)
+      val processCompilation = compileProcess(process, processVersion, resultCollector)
       val processWithDeps    = processCompilation(UsedNodes.empty, userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
 
       val partCompilation = FlinkProcessRegistrar.partCompilation[FlinkProcessCompilerData](processCompilation) _
-      register(env, partCompilation, processWithDeps, testRunId, typeInformationDetection)
+      register(env, partCompilation, processWithDeps, resultCollector, typeInformationDetection)
       streamExecutionEnvPreparer.postRegistration(env, processWithDeps, deploymentData)
     }
   }
@@ -111,7 +115,7 @@ class FlinkProcessRegistrar(
       env: StreamExecutionEnvironment,
       compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
       processWithDeps: FlinkProcessCompilerData,
-      testRunId: Option[TestRunId],
+      resultCollector: ResultCollector,
       typeInformationDetection: TypeInformationDetection
   ): Unit = {
 
@@ -265,12 +269,10 @@ class FlinkProcessRegistrar(
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
       // TODO: maybe this logic should be moved to compiler instead?
-      val withSinkAdded = testRunId match {
-        case None =>
-          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
-        case Some(runId) =>
+      val withSinkAdded = resultCollector match {
+        case testResultCollector: TestServiceInvocationCollector =>
           val typ            = part.node.data.ref.typ
-          val collectingSink = SinkInvocationCollector(runId, part.id, typ)
+          val collectingSink = testResultCollector.createSinkInvocationCollector(part.id, typ)
           withValuePrepared
             .map(
               (ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue),
@@ -278,6 +280,8 @@ class FlinkProcessRegistrar(
             )
             // FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
+        case _ =>
+          sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
 
       withSinkAdded.name(operatorName(metaData, part.node, "sink"))
