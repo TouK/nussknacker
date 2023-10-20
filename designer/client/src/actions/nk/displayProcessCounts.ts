@@ -16,6 +16,24 @@ export function displayProcessCounts(processCounts: ProcessCounts): DisplayProce
     };
 }
 
+const checkActualCounts = (processCounts: ProcessCounts, processToDisplay: Process) => {
+    const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
+    const nodes = processToDisplay.nodes
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .filter((node, index) => node.id !== processCountsName[index]);
+    const newProcessCounts = { ...processCounts };
+    if (nodes.length !== 0 && processCountsName.length !== 0) {
+        for (let i = 0; i < nodes.length; i++) {
+            newProcessCounts[nodes[i].id] = {
+                all: undefined,
+                errors: 0,
+                fragmentCounts: {},
+            };
+        }
+    }
+    return newProcessCounts;
+};
+
 export function fetchAndDisplayProcessCounts(
     processName: string,
     from: Moment,
@@ -24,21 +42,7 @@ export function fetchAndDisplayProcessCounts(
 ): ThunkAction<Promise<DisplayProcessCountsAction>> {
     return (dispatch) => {
         return HttpService.fetchProcessCounts(processName, from, to).then((response) => {
-            const processCounts = response.data;
-            const processCountsName = Object.keys(processCounts).sort((a, b) => a.localeCompare(b));
-            const unusedProcessCounts = processToDisplay.nodes
-                .sort((a, b) => a.id.localeCompare(b.id))
-                .filter((node, index) => node.id !== processCountsName[index]);
-            const newProcessCounts = { ...processCounts };
-            if (unusedProcessCounts.length !== 0 && processCountsName.length !== 0) {
-                for (let i = 0; i < unusedProcessCounts.length; i++) {
-                    newProcessCounts[unusedProcessCounts[i].id] = {
-                        all: undefined,
-                        errors: 0,
-                        fragmentCounts: {},
-                    };
-                }
-            }
+            const newProcessCounts = checkActualCounts(response.data, processToDisplay);
             return dispatch(displayProcessCounts(newProcessCounts));
         });
     };
