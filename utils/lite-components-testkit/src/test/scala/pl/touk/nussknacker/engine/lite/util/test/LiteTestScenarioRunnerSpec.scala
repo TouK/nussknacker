@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import cats.data.NonEmptyList
-import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside
@@ -14,10 +12,10 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.util.functions.DateUtils
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 
 import java.time.{Clock, Instant, ZoneId}
 import java.util
@@ -137,8 +135,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
         .build()
         .runWithData[Int, Int](scenario, List(10))
 
-    runResults.validValue.errors.collect { case NuExceptionInfo(_, e: SpelExpressionEvaluationException, _) =>
-      e.getMessage
+    runResults.validValue.errors.collect { case exc: NuExceptionInfo[_] =>
+      exc.throwable.asInstanceOf[SpelExpressionEvaluationException].getMessage
     } shouldBe List(
       "Expression [#input / 0 != 0] evaluation failed, message: divide by zero"
     )

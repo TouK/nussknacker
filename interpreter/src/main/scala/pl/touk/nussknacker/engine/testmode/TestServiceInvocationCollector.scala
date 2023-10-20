@@ -44,7 +44,7 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
 }
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
-final class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) {
+final class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) extends Serializable {
 
   def collect(context: Context, result: Any): Unit = {
     ResultsCollectingListenerHolder.updateResults(
