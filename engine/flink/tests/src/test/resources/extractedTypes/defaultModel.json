@@ -12194,7 +12194,7 @@
           "type": "Unknown"
         }
       ],
-      "refClazzName": "java.util.HashMap"
+      "refClazzName": "java.util.Map"
     },
     "methods": {
       "containsKey": [
@@ -14792,7 +14792,7 @@
                   "type": "Unknown"
                 }
               ],
-              "refClazzName": "java.util.HashMap"
+              "refClazzName": "java.util.Map"
             }
           }
         }
@@ -14831,7 +14831,7 @@
                       "type": "Unknown"
                     }
                   ],
-                  "refClazzName": "java.util.HashMap"
+                  "refClazzName": "java.util.Map"
                 }
               }
             ],

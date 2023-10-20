@@ -13013,7 +13013,7 @@
                   "type": "Unknown"
                 }
               ],
-              "refClazzName": "java.util.HashMap"
+              "refClazzName": "java.util.Map"
             }
           }
         }
@@ -13052,7 +13052,7 @@
                       "type": "Unknown"
                     }
                   ],
-                  "refClazzName": "java.util.HashMap"
+                  "refClazzName": "java.util.Map"
                 }
               }
             ],
@@ -13176,146 +13176,5 @@
         }
       ]
     }
-  },
-  {
-    "clazzName": {
-      "params": [
-        {
-          "display": "Unknown",
-          "params": [],
-          "refClazzName": "java.lang.Object",
-          "type": "Unknown"
-        },
-        {
-          "display": "Unknown",
-          "params": [],
-          "refClazzName": "java.lang.Object",
-          "type": "Unknown"
-        }
-      ],
-      "refClazzName": "java.util.HashMap"
-    },
-    "methods": {
-      "containsKey": [
-        {
-          "name": "containsKey",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "containsValue": [
-        {
-          "name": "containsValue",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "empty": [
-        {
-          "name": "empty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "get": [
-        {
-          "name": "get",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
-        }
-      ],
-      "getOrDefault": [
-        {
-          "name": "getOrDefault",
-          "signature": {
-            "noVarArgs": [
-              {"name": "arg0", "refClazz": {"type": "Unknown"}},
-              {"name": "arg1", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"type": "Unknown"}
-          }
-        }
-      ],
-      "isEmpty": [
-        {
-          "name": "isEmpty",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "keySet": [
-        {
-          "name": "keySet",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Set"
-            }
-          }
-        }
-      ],
-      "size": [
-        {
-          "name": "size",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Integer"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
-      "values": [
-        {
-          "name": "values",
-          "signature": {
-            "noVarArgs": [],
-            "result": {
-              "params": [
-                {
-                  "display": "Unknown",
-                  "params": [],
-                  "refClazzName": "java.lang.Object",
-                  "type": "Unknown"
-                }
-              ],
-              "refClazzName": "java.util.Collection"
-            }
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
   }
 ]
