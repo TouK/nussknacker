@@ -368,6 +368,9 @@ class ProcessesResourcesSpec
     forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
       processes.isEmpty shouldBe true
     }
+    forScenariosDetailsReturned(ProcessesQuery.empty.copy(categories = Some(List(Category1)))) { processes =>
+      processes.isEmpty shouldBe true
+    }
   }
 
   test("return all processes for admin user") {
