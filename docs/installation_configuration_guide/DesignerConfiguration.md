@@ -741,19 +741,30 @@ You can configure `secondaryEnvironment` to allow for
 
 ## Scenario type, categories
 
-Every scenario has to belong to a group called `category`. For example, in one Nussknacker installation you can have
-scenarios detecting frauds, and those implementing marketing campaigns. Category configuration looks like this:
+Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
+[users permissions](/installation_configuration_guide/DesignerConfiguration/#users-roles-and-permissions).
+You can also [configure](/installation_configuration_guide/model/ModelConfiguration/#configuration-of-component-providers) in which category given components will be visible
+
+For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 
 ```
-categoriesConfig: {
-  "marketing": "streaming",
-  "fraud": "streaming",
+scenarioTypes {
+  streaming {
+    deploymentConfig { 
+      (...) 
+    }
+    modelConfig {
+      (...)
+    }
+    categories: ["Marketing", "Fraud Detection"]
+  }
 }
 ```
 
-For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
+Scenario type configuration consists of parts:
 - `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
+- `categories` - list of categories handled by given scenario type
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components

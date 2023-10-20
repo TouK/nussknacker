@@ -11,22 +11,22 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
-import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
+import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.immutable.ListMap
 
@@ -48,7 +48,8 @@ object ComponentDefinitionPreparer {
       customTransformerAdditionalData: Map[ComponentId, CustomTransformerAdditionalData],
       processingType: ProcessingType
   ): List[ComponentGroup] = {
-    val userCategories               = processCategoryService.getUserCategories(user)
+    val userCategoryService          = new UserCategoryService(processCategoryService)
+    val userCategories               = userCategoryService.getUserCategories(user)
     val processingTypeCategories     = processCategoryService.getProcessingTypeCategories(processingType)
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 

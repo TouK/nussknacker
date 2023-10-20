@@ -13,13 +13,17 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.net.URI
 
 class ProcessStateDefinitionService(
-    processingTypeDataProvider: ProcessingTypeDataProvider[_, StatusNameToStateDefinitionsMapping],
-    categoryService: ProcessCategoryService
+    processingTypeDataProvider: ProcessingTypeDataProvider[
+      _,
+      (StatusNameToStateDefinitionsMapping, ProcessCategoryService)
+    ],
 ) {
 
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val userAccessibleCategories = categoryService.getUserCategories(user)
-    processingTypeDataProvider.combined
+    val (stateDefinitionsMapping, categoryService) = processingTypeDataProvider.combined
+    val userCategoryService                        = new UserCategoryService(categoryService)
+    val userAccessibleCategories                   = userCategoryService.getUserCategories(user)
+    stateDefinitionsMapping
       .map { case (statusName, (stateDefinition, processingTypes)) =>
         val categoriesWhereStateAppears = processingTypes.flatMap { processingType =>
           categoryService

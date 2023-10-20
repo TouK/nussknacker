@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -224,7 +223,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       TestFactory.user("userId"),
       fragmentDetails,
       isFragment = false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
+      TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming,
       TestAdditionalUIConfigProvider

@@ -29,7 +29,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
-  // These users were created based on categoriesConfig at designer.conf
+  // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
   private val categoriesUser =
     TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
@@ -67,7 +67,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     fragmentReqResp
   )
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)
@@ -183,7 +183,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
-      processCategoryService = processCategoryService,
+      getProcessCategoryService = () => processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),

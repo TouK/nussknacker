@@ -78,7 +78,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   )
 
   private val categories = List("Category1", "Category2", "Category3")
-  private val service    = new ConfigProcessToolbarService(config, categories)
+  private val service    = new ConfigProcessToolbarService(config, () => categories)
 
   it should "verify all toolbar condition cases" in {
     val process          = createProcess("process", "Category1", isFragment = false, isArchived = false)

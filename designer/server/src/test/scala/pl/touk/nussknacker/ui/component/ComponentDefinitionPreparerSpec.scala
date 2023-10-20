@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SimpleTestComponentIdP
 
 class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
     val groups = prepareGroups(

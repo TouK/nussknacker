@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,16 +35,17 @@ object DefaultComponentService {
 
   def apply(
       componentLinksConfig: ComponentLinksConfig,
-      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
+      processingTypeDataProvider: ProcessingTypeDataProvider[
+        ProcessingTypeData,
+        (ComponentIdProvider, ProcessCategoryService)
+      ],
       processService: ProcessService,
-      categoryService: ProcessCategoryService,
       additionalUIConfigProvider: AdditionalUIConfigProvider
   )(implicit ec: ExecutionContext): DefaultComponentService = {
     new DefaultComponentService(
       componentLinksConfig,
       processingTypeDataProvider,
       processService,
-      categoryService,
       additionalUIConfigProvider
     )
   }
@@ -67,18 +68,19 @@ object DefaultComponentService {
 
 class DefaultComponentService private (
     componentLinksConfig: ComponentLinksConfig,
-    processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
+    processingTypeDataProvider: ProcessingTypeDataProvider[
+      ProcessingTypeData,
+      (ComponentIdProvider, ProcessCategoryService)
+    ],
     processService: ProcessService,
-    categoryService: ProcessCategoryService,
     additionalUIConfigProvider: AdditionalUIConfigProvider
 )(implicit ec: ExecutionContext)
     extends ComponentService {
 
   import cats.syntax.traverse._
 
-  private val componentObjectsService = new ComponentObjectsService(categoryService)
-
-  private def componentIdProvider: ComponentIdProvider = processingTypeDataProvider.combined
+  private def componentIdProvider = processingTypeDataProvider.combined._1
+  private def categoryService     = processingTypeDataProvider.combined._2
 
   override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     for {
@@ -120,7 +122,8 @@ class DefaultComponentService private (
       processingType: ProcessingType,
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
-    val userCategories               = categoryService.getUserCategories(user)
+    val userCategoryService          = new UserCategoryService(categoryService)
+    val userCategories               = userCategoryService.getUserCategories(user)
     val processingTypeCategories     = categoryService.getProcessingTypeCategories(processingType)
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
@@ -148,6 +151,7 @@ class DefaultComponentService private (
     processService
       .getFragmentsDetails(processingTypes = Some(List(processingType)))(user)
       .map { fragments =>
+        val componentObjectsService = new ComponentObjectsService(categoryService)
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
         val componentObjects = componentObjectsService.prepare(
           processingType,
