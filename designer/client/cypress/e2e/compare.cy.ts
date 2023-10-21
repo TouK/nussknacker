@@ -6,7 +6,7 @@ describe("Compare", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     beforeEach(() => {
