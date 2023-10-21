@@ -45,7 +45,7 @@
         "@loadable/component": "5.15.2",
         "@mui/icons-material": "5.6.2",
         "@mui/material": "5.10.17",
-        "@touk/window-manager": "1.7.0-beta.1",
+        "@touk/window-manager": "1.7.0",
         "ace-builds": "1.28.0",
         "axios": "0.25.0",
         "bootstrap": "npm:bootstrap-styl@5.0.9",
