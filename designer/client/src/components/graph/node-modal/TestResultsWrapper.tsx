@@ -17,7 +17,7 @@ export function useTestResults(): StateForSelectTestResults {
     return context;
 }
 
-export function TestResultsWrapper({ children, nodeId }: PropsWithChildren<{ nodeId: NodeId }>): JSX.Element {
+function TestResultsSelectWrapper({ children, nodeId }: PropsWithChildren<{ nodeId: NodeId }>): JSX.Element {
     const results = useSelector(getTestResults);
     const nodeResults = useMemo(() => TestResultUtils.resultsForNode(results, nodeId), [nodeId, results]);
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
@@ -34,3 +34,10 @@ export function TestResultsWrapper({ children, nodeId }: PropsWithChildren<{ nod
         </>
     );
 }
+
+export const TestResultsWrapper = ({
+    children,
+    nodeId,
+    showTestResults,
+}: PropsWithChildren<{ nodeId: NodeId; showTestResults?: boolean }>): JSX.Element =>
+    showTestResults ? <TestResultsSelectWrapper nodeId={nodeId}>{children}</TestResultsSelectWrapper> : <>{children}</>;
