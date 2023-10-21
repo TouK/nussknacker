@@ -84,8 +84,8 @@ class FlinkTestScenarioRunner(
   ): RunnerListResult[R] = {
     val testComponents      = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runnerResult =>
-      collectResults(testComponentHolder, runnerResult)
+    run(scenario, testComponentHolder).map { runResult =>
+      collectResults(testComponentHolder, runResult)
     }
   }
 
@@ -95,8 +95,8 @@ class FlinkTestScenarioRunner(
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runnerResult =>
-      collectResults(testComponentHolder, runnerResult)
+    run(scenario, testComponentHolder).map { runResult =>
+      collectResults(testComponentHolder, runResult)
     }
   }
 
@@ -160,10 +160,10 @@ class FlinkTestScenarioRunner(
 
   private def collectResults[R](
       testExtensionsHolder: TestExtensionsHolder,
-      runnerResult: RunResult[Unit]
+      runResult: RunResult[Unit]
   ): RunListResult[R] = {
     val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
-    RunListResult(success = results, errors = runnerResult.errors)
+    RunListResult(success = results, errors = runResult.errors)
   }
 
 }
