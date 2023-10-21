@@ -13,6 +13,7 @@
     * Fix bug with passing components on RequestResponseTestScenarioRunner
     * Fix bug building source test context on LiteTestScenarioRunner
 * [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
+* [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 
 1.12.0 (Not released yet)
 -------------------------
