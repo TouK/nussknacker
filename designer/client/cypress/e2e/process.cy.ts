@@ -348,4 +348,38 @@ describe("Process", () => {
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
+
+    it("should zoom/restore node window with test data", () => {
+        cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
+        cy.viewport(1500, 800);
+        cy.layoutScenario();
+
+        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.get("[data-testid=window]").should("be.visible").find(".ace_editor").type("10");
+        cy.get("[data-testid=window]")
+            .contains(/^test$/i)
+            .should("be.enabled")
+            .click();
+        cy.getNode("request").dblclick();
+
+        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]")
+            .should("contain.text", "Test case")
+            .then(($win) => {
+                const width = $win.width();
+                const height = $win.height();
+
+                // maximize (one way)
+                cy.wrap($win)
+                    .contains(/^source$/i)
+                    .dblclick();
+                // restore (second way)
+                cy.wrap($win).get("button[name=zoom]").click();
+
+                cy.wrap($win).should(($current) => {
+                    expect($current.width()).to.equal(width);
+                    expect($current.height()).to.equal(height);
+                });
+            });
+    });
 });

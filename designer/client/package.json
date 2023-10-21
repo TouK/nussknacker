@@ -96,7 +96,6 @@
         "react-redux": "7.2.6",
         "react-router-dom": "6.8.1",
         "react-select": "5.2.2",
-        "react-textarea-autosize": "8.3.3",
         "react-transition-group": "4.4.5",
         "react-treeview": "0.4.7",
         "react-truncate-list": "1.0.1",
