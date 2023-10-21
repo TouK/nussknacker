@@ -1,0 +1,49 @@
+{
+    "metaData": {
+        "id": "asdas",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "inputSchema": "{}",
+                "outputSchema": "{}",
+                "slug": "asdas"
+            },
+            "metaDataType": "RequestResponseMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "request",
+            "ref": {
+                "typ": "request",
+                "parameters": []
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "dead-end",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}
