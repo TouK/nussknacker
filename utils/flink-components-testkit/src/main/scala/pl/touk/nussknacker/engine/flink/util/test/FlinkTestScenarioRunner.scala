@@ -19,13 +19,11 @@ import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
 }
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
-import scala.util.Using
 
 private object testComponents {
 
@@ -86,8 +84,8 @@ class FlinkTestScenarioRunner(
   ): RunnerListResult[R] = {
     val testComponents      = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { _ =>
-      collectResults(testComponentHolder)
+    run(scenario, testComponentHolder).map { runnerResult =>
+      collectResults(testComponentHolder, runnerResult)
     }
   }
 
@@ -97,8 +95,8 @@ class FlinkTestScenarioRunner(
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
     val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { _ =>
-      collectResults(testComponentHolder)
+    run(scenario, testComponentHolder).map { runnerResult =>
+      collectResults(testComponentHolder, runnerResult)
     }
   }
 
@@ -117,39 +115,55 @@ class FlinkTestScenarioRunner(
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
     // TODO: get flink mini cluster through composition
-    val env = flinkMiniCluster.createExecutionEnvironment()
+    val env              = flinkMiniCluster.createExecutionEnvironment()
+    val exceptionHolder  = FlinkTestExceptionHolder.register()
+    val collectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
 
     // It's copied from registrar.register only for handling compilation errors..
     // TODO: figure how to get compilation result on highest level - registrar.register?
-    val compiler = new FlinkProcessCompilerWithTestComponents(testExtensionsHolder, modelData, componentUseCase)
-
-    Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
-      val compileProcessData = compiler.compileProcess(
-        scenario,
-        ProcessVersion.empty,
-        testScenarioCollectorHandler.resultCollector,
-        getClass.getClassLoader
+    val compiler =
+      new FlinkProcessCompilerWithTestComponents(
+        testExtensionsHolder,
+        exceptionHolder,
+        modelData,
+        componentUseCase
       )
 
+    val compileProcessData = compiler.compileProcess(
+      scenario,
+      ProcessVersion.empty,
+      collectorHandler.resultCollector,
+      getClass.getClassLoader
+    )
+
+    try {
       compileProcessData.compileProcess().map { _ =>
         val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+
         registrar.register(
           env,
           scenario,
           ProcessVersion.empty,
           DeploymentData.empty,
-          testScenarioCollectorHandler.resultCollector
+          collectorHandler.resultCollector
         )
+
         env.executeAndWaitForFinished(scenario.id)()
-        RunUnitResult(errors = Nil)
+
+        RunUnitResult(errors = exceptionHolder.getExceptions)
       }
+    } finally {
+      exceptionHolder.close()
+      collectorHandler.close()
     }
   }
 
-  private def collectResults[R](testExtensionsHolder: TestExtensionsHolder): RunListResult[R] = {
+  private def collectResults[R](
+      testExtensionsHolder: TestExtensionsHolder,
+      runnerResult: RunResult[Unit]
+  ): RunListResult[R] = {
     val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
-    // TODO: add runtime errors handling
-    RunResult.successes(results)
+    RunListResult(success = results, errors = runnerResult.errors)
   }
 
 }

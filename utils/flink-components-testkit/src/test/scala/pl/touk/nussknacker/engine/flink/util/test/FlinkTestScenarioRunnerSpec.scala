@@ -84,8 +84,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     runResults.validValue.successes shouldBe List(now.toString)
   }
 
-  // TODO: FlinkTestScenarioRunner doesn't collect errors, see FlinkTestScenarioRunner.collectResults
-  ignore("should catch exception during compilation in test run mode") {
+  test("should catch exception during compilation in test run mode") {
     val scenario =
       ScenarioBuilder
         .streaming(getClass.getName)
@@ -96,6 +95,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val runResults =
       TestScenarioRunner
         .flinkBased(config, flinkMiniCluster)
+        .inTestRuntimeMode
         .build()
         .runWithData[Int, Int](scenario, List(10))
 
