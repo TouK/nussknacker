@@ -4,12 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
-  RenderNotAllowed,
-  SaveAllowed
-}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
@@ -56,42 +51,47 @@ object PrettyValidationErrors {
           "Scenario must end with a sink, processor or fragment",
           "Scenario must end with a sink, processor or fragment"
         )
-      case EmptyNodeId =>
-        node(
-          // TODO: change id to name - user sees node name as a readable name, not as an id
-          "Nodes cannot have empty id",
-          "Nodes cannot have empty id",
-          errorType = NodeValidationErrorType.RenderNotAllowed,
-          fieldName = Some("$id")
-        )
-      case BlankNodeId(_) =>
-        node(
-          "Node name cannot be blank",
-          "Node name cannot be blank",
-          RenderNotAllowed,
-          Some("$id")
-        )
-      case LeadingSpacesNodeId(_) =>
-        node(
-          "Node name cannot have leading spaces",
-          "Node name cannot have leading spaces",
-          RenderNotAllowed,
-          Some("$id")
-        )
-      case TrailingSpacesNodeId(_) =>
-        node(
-          "Node name cannot have trailing spaces",
-          "Node name cannot have trailing spaces",
-          RenderNotAllowed,
-          Some("$id")
-        )
-      case InvalidCharacters(nodeId) =>
-        node(
-          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
-          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
-          RenderNotAllowed,
-          Some("$id")
-        )
+      case nodeIdError: NodeIdError =>
+        nodeIdError match {
+          // We disallow rendering of empty and blank node ids because FE doesn't handle references to nodes with these
+          // names in the tips panel
+          case EmptyNodeId =>
+            node(
+              // TODO: change id to name - user sees node name as a readable name, not as an id
+              "Nodes cannot have empty id",
+              "Nodes cannot have empty id",
+              errorType = NodeValidationErrorType.RenderNotAllowed,
+              fieldName = Some("$id")
+            )
+          case BlankNodeId(_) =>
+            node(
+              "Node name cannot be blank",
+              "Node name cannot be blank",
+              NodeValidationErrorType.RenderNotAllowed,
+              Some("$id")
+            )
+          case InvalidCharacters(nodeId) =>
+            node(
+              s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
+              s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
+              NodeValidationErrorType.RenderNotAllowed,
+              Some("$id")
+            )
+          case LeadingSpacesNodeId(_) =>
+            node(
+              "Node name cannot have leading spaces",
+              "Node name cannot have leading spaces",
+              NodeValidationErrorType.SaveNotAllowed,
+              Some("$id")
+            )
+          case TrailingSpacesNodeId(_) =>
+            node(
+              "Node name cannot have trailing spaces",
+              "Node name cannot have trailing spaces",
+              NodeValidationErrorType.SaveNotAllowed,
+              Some("$id")
+            )
+        }
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
           "Edges are not unique",
@@ -114,7 +114,7 @@ object PrettyValidationErrors {
         node(
           s"Node $nodeId is disabled",
           "Deploying scenario with disabled node can have unexpected consequences",
-          SaveAllowed
+          NodeValidationErrorType.SaveAllowed
         )
 
       case MissingParameters(params, _) =>

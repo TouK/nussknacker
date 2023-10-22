@@ -29,7 +29,7 @@ object ProcessCompilationError {
   val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
     Applicative[ValidatedNelCompilationError]
 
-  trait InASingleNode {
+  sealed trait InASingleNode {
     self: ProcessCompilationError =>
 
     override def nodeIds: Set[String] = Set(nodeId)
@@ -39,9 +39,13 @@ object ProcessCompilationError {
   }
 
   // All errors which we want to be seen in process as properties errors should extend this trait
-  trait ScenarioPropertiesError {
+  sealed trait ScenarioPropertiesError {
     self: ProcessCompilationError =>
     override def nodeIds: Set[String] = Set()
+  }
+
+  sealed trait NodeIdError extends ProcessCompilationError {
+    self: ProcessCompilationError =>
   }
 
   case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
@@ -66,15 +70,15 @@ object ProcessCompilationError {
 
   case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class InvalidCharacters(nodeId: String) extends ProcessCompilationError with InASingleNode
+  case class InvalidCharacters(nodeId: String) extends NodeIdError with InASingleNode
 
-  case class BlankNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+  case class BlankNodeId(nodeId: String) extends NodeIdError with InASingleNode
 
-  case class LeadingSpacesNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+  case class LeadingSpacesNodeId(nodeId: String) extends NodeIdError with InASingleNode
 
-  case class TrailingSpacesNodeId(nodeId: String) extends ProcessCompilationError with InASingleNode
+  case class TrailingSpacesNodeId(nodeId: String) extends NodeIdError with InASingleNode
 
-  object EmptyNodeId extends ProcessCompilationError {
+  object EmptyNodeId extends NodeIdError {
     override def nodeIds = Set()
   }
 
