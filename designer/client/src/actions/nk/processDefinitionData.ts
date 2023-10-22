@@ -7,22 +7,14 @@ export type ProcessDefinitionDataAction = {
     processDefinitionData: ProcessDefinitionData;
 };
 
-export function processDefinitionData(data: ProcessDefinitionData): ProcessDefinitionDataAction {
-    return {
-        type: "PROCESS_DEFINITION_DATA",
-        processDefinitionData: data,
-    };
-}
-
 export type ProcessingType = string;
 
-export function fetchProcessDefinition(
-    processingType: ProcessingType,
-    isFragment?: boolean,
-): ThunkAction<Promise<ProcessDefinitionDataAction>> {
-    return (dispatch) => {
-        return HttpService.fetchProcessDefinitionData(processingType, isFragment).then((response) =>
-            dispatch(processDefinitionData(response.data)),
-        );
+export function fetchProcessDefinition(processingType: ProcessingType, isFragment?: boolean): ThunkAction<Promise<ProcessDefinitionData>> {
+    return async (dispatch) => {
+        const { data: processDefinitionData } = await HttpService.fetchProcessDefinitionData(processingType, isFragment);
+
+        dispatch({ type: "PROCESS_DEFINITION_DATA", processDefinitionData });
+
+        return processDefinitionData;
     };
 }
