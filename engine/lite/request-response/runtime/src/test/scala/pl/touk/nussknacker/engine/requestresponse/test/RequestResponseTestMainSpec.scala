@@ -128,6 +128,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   test("should assign unique context ids for scenario with union") {
+    val branch1NodeId = "branch1"
+    val branch2NodeId = "branch2"
     val process = ScenarioBuilder
       .streaming("proc1")
       .sources(
@@ -135,8 +137,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
           .source(sourceId, "request1-post-source")
           .split(
             "spl",
-            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "union1"),
-            GraphBuilder.buildSimpleVariable("v2", "v2", "'bb'").branchEnd("branch2", "union1")
+            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd(branch1NodeId, "union1"),
+            GraphBuilder.buildSimpleVariable("v2", "v2", "'bb'").branchEnd(branch2NodeId, "union1")
           ),
         GraphBuilder
           .join(
@@ -144,8 +146,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
             "union",
             Some("unionOutput"),
             List(
-              "branch1" -> List("Output expression" -> "{a: #v1}"),
-              "branch2" -> List("Output expression" -> "{a: #v2}")
+              branch1NodeId -> List("Output expression" -> "{a: #v1}"),
+              branch2NodeId -> List("Output expression" -> "{a: #v2}")
             )
           )
           .customNode("collect1", "outCollector", "collect", "Input expression" -> "#unionOutput")
@@ -157,13 +159,9 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
-    results.nodeResults("collect1") should have size 2
-    results
-      .nodeResults("union1")
-      .map(_.context.id) should contain only (s"$sourceContextId-branch1", s"$sourceContextId-branch2")
-    results
-      .nodeResults("collect1")
-      .map(_.context.id) should contain only (s"$sourceContextId-branch1", s"$sourceContextId-branch2")
+    val unionContextIds = results.nodeResults("union1").map(_.context.id)
+    unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
+    unionContextIds should contain theSameElementsAs unionContextIds.toSet
     results.nodeResults("union1") shouldBe results.nodeResults("collect1")
     val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
