@@ -93,8 +93,6 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
   override def canHaveManyInputs: Boolean = true
 
-  val outputExpressionParameterName = "Output expression"
-
   @MethodToInvoke
   def execute(
       @BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
@@ -111,7 +109,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
           ): DataStream[ValueWithContext[AnyRef]] = {
             val valuesWithContexts = inputs.map { case (branchId, stream) =>
               val valueParam = outputExpressionByBranchId(branchId)
-              stream.flatMap(new UnionMapFunction(valueParam, context))
+              stream.flatMap(new UnionMapFunction(valueParam, context, branchId))
             }
             val connectedStream = valuesWithContexts.reduce(
               _.connect(_).map(
@@ -135,15 +133,16 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
 }
 
-class UnionMapFunction(valueParam: LazyParameter[AnyRef], customNodeContext: FlinkCustomNodeContext)
+class UnionMapFunction(valueParam: LazyParameter[AnyRef], customNodeContext: FlinkCustomNodeContext, branchId: String)
     extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
     with FlatMapFunction[Context, ValueWithContext[AnyRef]] {
 
   private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
   override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    collectHandlingErrors(context, out) {
-      ValueWithContext[AnyRef](evaluateValue(context), context)
+    val unionContext = context // .appendIdSuffix(branchId)
+    collectHandlingErrors(unionContext, out) {
+      ValueWithContext[AnyRef](evaluateValue(unionContext), unionContext)
     }
   }
 
