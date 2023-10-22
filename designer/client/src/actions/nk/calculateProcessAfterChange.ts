@@ -23,8 +23,8 @@ export function calculateProcessAfterChange(
 ): ThunkAction<Promise<Process>> {
     return async (dispatch, getState) => {
         if (NodeUtils.nodeIsProperties(after)) {
-            const processDef = await dispatch(fetchProcessDefinition(process.processingType, process.properties.isFragment));
-            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(process, processDef.processDefinitionData);
+            const processDefinitionData = await dispatch(fetchProcessDefinition(process.processingType, process.properties.isFragment));
+            const processWithNewFragmentSchema = alignFragmentsNodeWithSchema(process, processDefinitionData);
             const { id, ...properties } = after;
             if (id?.length && id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: id });
