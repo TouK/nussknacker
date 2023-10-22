@@ -103,7 +103,7 @@ When writing documentation please follow these instructions:
 
 ### Setup
 
-- JDK >= 9 is needed - we have specified target Java version to Java 8, but using some compiler flags available only on JDK >= 9 (--release flag)
+- JDK >= 11 is needed
 - For building backend - standard `sbt` setup should be enough
 - For building of frontend `node` and `npm` will be needed - see [client README](designer/client/README.md) for detailed instruction
 - Some tests require `docker`
