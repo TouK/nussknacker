@@ -13,6 +13,7 @@
     * Fix bug with passing components on RequestResponseTestScenarioRunner
     * Fix bug building source test context on LiteTestScenarioRunner
 * [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
+* [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
 
 1.12.0 (Not released yet)
 -------------------------
