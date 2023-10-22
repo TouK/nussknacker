@@ -82,11 +82,14 @@ class UnionWithMemoTransformer(
               val keyParam   = keyByBranchId(branchId)
               val valueParam = valueByBranchId(branchId)
               stream
+                .map(ctx => ctx.appendIdSuffix(branchId))
                 .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
-                .map(
-                  _.map(
-                    _.mapValue(v => Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v))
-                  )
+                .map(valueWithCtx =>
+                  valueWithCtx
+                    .map(keyedValue =>
+                      keyedValue
+                        .mapValue(v => Collections.singletonMap(ContextTransformation.sanitizeBranchName(branchId), v))
+                    )
                 )
                 .returns(processedTypeInfo)
             }

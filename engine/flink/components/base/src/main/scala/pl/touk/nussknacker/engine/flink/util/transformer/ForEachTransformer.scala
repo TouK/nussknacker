@@ -29,10 +29,7 @@ object ForEachTransformer extends CustomStreamTransformer {
             (valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
               valueWithContext.value.asScala.zipWithIndex
                 .map { case (partToRun, index) =>
-                  new ValueWithContext[AnyRef](
-                    partToRun,
-                    valueWithContext.context.copy(id = s"${valueWithContext.context.id}-$index")
-                  )
+                  new ValueWithContext[AnyRef](partToRun, valueWithContext.context.appendIdSuffix(index.toString))
                 }
                 .foreach(c.collect)
             },

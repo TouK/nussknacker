@@ -100,15 +100,19 @@ object SampleNodes {
     @transient lazy val end2Interpreter: Context => AnyRef =
       lazyParameterInterpreter.syncInterpretationFunction(valueByBranchId("end2"))
 
-    override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit =
-      collectHandlingErrors(ctx, out) {
-        ValueWithContext(end1Interpreter(ctx), ctx)
+    override def flatMap1(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+      val joinContext = ctx.appendIdSuffix("end1")
+      collectHandlingErrors(joinContext, out) {
+        ValueWithContext(end1Interpreter(joinContext), joinContext)
       }
+    }
 
-    override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit =
-      collectHandlingErrors(ctx, out) {
-        ValueWithContext(end2Interpreter(ctx), ctx)
+    override def flatMap2(ctx: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+      val joinContext = ctx.appendIdSuffix("end2")
+      collectHandlingErrors(joinContext, out) {
+        ValueWithContext(end2Interpreter(joinContext), joinContext)
       }
+    }
 
   }
 

@@ -33,6 +33,8 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
   import scala.jdk.CollectionConverters._
 
+  private val firstSubtaskIndex = 0
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     MonitorEmptySink.clear()
@@ -454,7 +456,13 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
     val results = runFlinkTest(process, ScenarioTestData(List(recA, recB, recC)))
 
-    // TODO: currently e.g. invocation results will behave strangely in this test, because we duplicate inputs and this results in duplicate context ids...
+    def contextIdAfterJoin(count: Int, branchId: String): String = s"proc1-id-$firstSubtaskIndex-$count-$branchId"
+    results.invocationResults("proc2").map(_.contextId) should contain only (
+      contextIdAfterJoin(1, "end1"),
+      contextIdAfterJoin(2, "end1"),
+      contextIdAfterJoin(0, "end2"),
+      contextIdAfterJoin(2, "end2")
+    )
     results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List(
       "a",
       "b",
@@ -520,20 +528,17 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       nodeResult(0, "source2", "input" -> recordA),
       nodeResult(2, "source2", "input" -> recordC)
     )
-    nodeResults("join") should contain only (nodeResult(1, "source1", "input" -> recordD, "joinInput" -> recordD),
-    nodeResult(0, "source2", "input" -> recordA, "joinInput" -> recordA), nodeResult(
-      2,
-      "source2",
-      "input"     -> recordC,
-      "joinInput" -> recordC
-    ))
+    nodeResults("join") should contain only (
+      nodeResult(1, "source1", "end1", "input" -> recordD, "joinInput" -> recordD),
+      nodeResult(0, "source2", "end2", "input" -> recordA, "joinInput" -> recordA),
+      nodeResult(2, "source2", "end2", "input" -> recordC, "joinInput" -> recordC)
+    )
 
-    results.invocationResults("proc2") should contain only (ExpressionInvocationResult("proc1-source1-0-1", "all", "d"),
-    ExpressionInvocationResult("proc1-source2-0-0", "all", "a"), ExpressionInvocationResult(
-      "proc1-source2-0-2",
-      "all",
-      "c"
-    ))
+    results.invocationResults("proc2") should contain only (
+      ExpressionInvocationResult("proc1-source1-0-1-end1", "all", "d"),
+      ExpressionInvocationResult("proc1-source2-0-0-end2", "all", "a"),
+      ExpressionInvocationResult("proc1-source2-0-2-end2", "all", "c")
+    )
 
     results
       .externalInvocationResults("proc2")
@@ -575,6 +580,9 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     nodeResult(count, "id", vars: _*)
 
   private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): NodeResult[Any] =
-    NodeResult(ResultContext[Any](s"proc1-$sourceId-0-$count", Map(vars: _*)))
+    NodeResult(ResultContext[Any](s"proc1-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*)))
+
+  private def nodeResult(count: Int, sourceId: String, branchId: String, vars: (String, Any)*): NodeResult[Any] =
+    NodeResult(ResultContext[Any](s"proc1-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*)))
 
 }
