@@ -552,7 +552,6 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        categoryService,
         TestAdditionalUIConfigProvider,
         TestFixedValuesPresetProvider
       )
@@ -715,7 +714,6 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        categoryService,
         TestAdditionalUIConfigProvider,
         TestFixedValuesPresetProvider
       )
@@ -786,7 +784,6 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        categoryService,
         TestAdditionalUIConfigProvider,
         TestFixedValuesPresetProvider
       )

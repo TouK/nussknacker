@@ -35,7 +35,6 @@ class ComponentResourcesSpec
     ComponentLinksConfigExtractor.extract(testDbConfig),
     testProcessingTypeDataProvider.mapCombined(_ => (defaultComponentIdProvider, processCategoryService)),
     processService,
-    processCategoryService,
     TestAdditionalUIConfigProvider,
     TestFixedValuesPresetProvider
   )
