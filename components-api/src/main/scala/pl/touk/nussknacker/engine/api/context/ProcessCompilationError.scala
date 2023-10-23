@@ -82,6 +82,18 @@ object ProcessCompilationError {
     override def nodeIds = Set()
   }
 
+  final case class EmptyScenarioId(isFragment: Boolean) extends ProcessCompilationError with ScenarioPropertiesError
+
+  final case class BlankScenarioId(isFragment: Boolean) extends ProcessCompilationError with ScenarioPropertiesError
+
+  final case class LeadingSpacesScenarioId(isFragment: Boolean)
+      extends ProcessCompilationError
+      with ScenarioPropertiesError
+
+  final case class TrailingSpacesScenarioId(isFragment: Boolean)
+      extends ProcessCompilationError
+      with ScenarioPropertiesError
+
   case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode

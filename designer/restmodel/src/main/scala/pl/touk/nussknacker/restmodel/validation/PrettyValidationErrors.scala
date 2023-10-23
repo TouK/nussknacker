@@ -37,13 +37,6 @@ object PrettyValidationErrors {
           s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
-      case ScenarioNameValidationError(message, description) =>
-        node(
-          message,
-          description,
-          fieldName = Some("$id"),
-        )
-      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) =>
@@ -51,6 +44,40 @@ object PrettyValidationErrors {
           "Scenario must end with a sink, processor or fragment",
           "Scenario must end with a sink, processor or fragment"
         )
+      case propertiesError: ScenarioPropertiesError =>
+        propertiesError match {
+          case EmptyScenarioId(isFragment) =>
+            node(
+              s"${if (isFragment) "Fragment" else "Scenario"} name is mandatory and cannot be empty",
+              s"${if (isFragment) "Fragment" else "Scenario"} name is mandatory and cannot be empty",
+              fieldName = Some("$id")
+            )
+          case BlankScenarioId(isFragment) =>
+            node(
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot be blank",
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot be blank",
+              fieldName = Some("$id")
+            )
+          case LeadingSpacesScenarioId(isFragment) =>
+            node(
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have leading spaces",
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have leading spaces",
+              fieldName = Some("$id")
+            )
+          case TrailingSpacesScenarioId(isFragment) =>
+            node(
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have trailing spaces",
+              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have trailing spaces",
+              fieldName = Some("$id")
+            )
+          case ScenarioNameValidationError(message, description) =>
+            node(
+              message,
+              description,
+              fieldName = Some("$id"),
+            )
+          case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
+        }
       case nodeIdError: NodeIdError =>
         nodeIdError match {
           case EmptyNodeId =>
