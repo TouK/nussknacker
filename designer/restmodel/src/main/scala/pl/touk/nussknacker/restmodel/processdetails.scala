@@ -100,6 +100,7 @@ object processdetails {
       json: ProcessShape,
       history: List[ProcessVersion],
       modelVersion: Option[Int],
+      // TODO: move state to ValidatedProcessDetails
       // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
       // After that it remains always defined.
       state: Option[ProcessState] = Option.empty

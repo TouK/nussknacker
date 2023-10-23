@@ -68,7 +68,7 @@ trait ProcessService {
 
   def getProcessDetailsOnly(processIdWithName: ProcessIdWithName)(
       implicit user: LoggedUser
-  ): Future[BaseProcessDetails[Unit]]
+  ): Future[ValidatedProcessDetails]
 
   def getProcessWithDetails(processId: ProcessIdWithName, versionId: VersionId, skipValidateAndResolve: Boolean)(
       implicit user: LoggedUser
@@ -76,7 +76,7 @@ trait ProcessService {
 
   def getProcessDetailsWithStateOnly(query: ProcessesQuery)(
       implicit user: LoggedUser
-  ): Future[List[BaseProcessDetails[Unit]]]
+  ): Future[List[ValidatedProcessDetails]]
 
   def getProcessesWithDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
       implicit user: LoggedUser
@@ -151,10 +151,12 @@ class DBProcessService(
 
   override def getProcessDetailsOnly(
       processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser): Future[BaseProcessDetails[Unit]] =
+  )(implicit user: LoggedUser): Future[ValidatedProcessDetails] = {
     fetchingProcessRepository
       .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.id.value.toString)))
+      .map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult)
+  }
 
   override def getProcessWithDetails(
       processId: ProcessIdWithName,
@@ -171,11 +173,12 @@ class DBProcessService(
 
   override def getProcessDetailsWithStateOnly(
       query: ProcessesQuery
-  )(implicit user: LoggedUser): Future[List[BaseProcessDetails[Unit]]] = {
+  )(implicit user: LoggedUser): Future[List[ValidatedProcessDetails]] = {
     // To not overload engine, for list of processes we provide statuses that can be cached
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
     getRawProcessesWithDetails[Unit](query)
       .flatMap(deploymentService.enrichDetailsWithProcessState)
+      .map(_.map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult))
   }
 
   override def getProcessesWithDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
@@ -295,7 +298,7 @@ class DBProcessService(
     }
 
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
-    withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") { _ =>
+    withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") {
       dbioRunner
         .runInTransaction(processRepository.deleteProcess(processIdWithName.id))
     }
@@ -401,12 +404,12 @@ class DBProcessService(
 
   }
 
-  private def doOnProcessStateVerification[T](process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(
+  private def doOnProcessStateVerification[T](process: ValidatedProcessDetails, actionToCheck: ProcessActionType)(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     deploymentService
-      .getProcessState(process)
+      .getProcessState(process.toProcessDetailsWithoutScenarioGraphAndValidationResult)
       .flatMap(state => {
         if (state.allowedActions.contains(actionToCheck)) {
           callback
@@ -416,7 +419,7 @@ class DBProcessService(
       })
   }
 
-  private def doArchive(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[Unit] =
+  private def doArchive(process: ValidatedProcessDetails)(implicit user: LoggedUser): Future[Unit] =
     dbioRunner
       .runInTransaction(
         DBIOAction.seq(
@@ -441,11 +444,11 @@ class DBProcessService(
     ProcessResponse(created.processId, created.processVersionId, processName)
 
   private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
-      callback: BaseProcessDetails[_] => Future[T]
+      callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     getProcessDetailsOnly(processIdWithName).flatMap { process =>
       if (process.isArchived) {
-        callback(process)
+        callback
       } else {
         throw ProcessIllegalAction(errorMessage)
       }
@@ -453,7 +456,7 @@ class DBProcessService(
   }
 
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
-      callback: BaseProcessDetails[_] => Future[T]
+      callback: ValidatedProcessDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     getProcessDetailsOnly(processIdWithName).flatMap { process =>
       if (process.isArchived) {
@@ -465,7 +468,7 @@ class DBProcessService(
   }
 
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
-      callback: BaseProcessDetails[_] => Future[T]
+      callback: ValidatedProcessDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] =
     getProcessDetailsOnly(processIdWithName).flatMap { process =>
       if (process.isArchived) {
