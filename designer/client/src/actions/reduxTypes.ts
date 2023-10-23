@@ -2,7 +2,14 @@ import { AnyAction, Reducer as ReduxReducer } from "redux";
 import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 
 import { ActionTypes } from "./actionTypes";
-import { DisplayProcessActivityAction, DisplayProcessCountsAction, HandleHTTPErrorAction, NodeActions, SelectionActions } from "./nk";
+import {
+    DisplayProcessActivityAction,
+    DisplayProcessCountsAction,
+    HandleHTTPErrorAction,
+    NodeActions,
+    ScenarioActions,
+    SelectionActions,
+} from "./nk";
 import { UserSettingsActions } from "./nk/userSettings";
 import { UiActions } from "./nk/ui/uiActions";
 import { SettingsActions } from "./settingsActions";
@@ -28,7 +35,8 @@ type TypedAction =
     | DisplayTestResultsDetailsAction
     | DisplayProcessCountsAction
     | LoadProcessVersionsAction
-    | GenericActionActions;
+    | GenericActionActions
+    | ScenarioActions;
 
 interface UntypedAction extends AnyAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;
