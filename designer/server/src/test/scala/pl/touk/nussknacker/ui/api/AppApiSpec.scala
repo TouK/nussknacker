@@ -151,7 +151,6 @@ class AppApiSpec
         given()
           .applicationConfiguration {
             createDeployedProcess(ProcessName("id1"))
-            createDeployedCanceledProcess(ProcessName("id1"))
 
             MockableDeploymentManager.configure(
               Map(

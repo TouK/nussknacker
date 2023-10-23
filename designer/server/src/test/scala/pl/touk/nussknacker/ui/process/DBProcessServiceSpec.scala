@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
+import org.scalatest.OptionValues
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
@@ -10,19 +12,19 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
+class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with OptionValues {
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -83,7 +85,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(false))
+        .futureValue
       result shouldBe expected
     }
   }
@@ -102,7 +106,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getArchivedProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](isFragment = None, isArchived = Some(true))
+        .futureValue
       result shouldBe expected
     }
   }
@@ -159,16 +165,24 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
     forAll(testingData) {
       (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
-        val result = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
+        def doImport() = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
 
-        result shouldBe expected
+        expected match {
+          case Right(expectedValue) => doImport() shouldEqual expectedValue
+          case Left(expectedError) =>
+            (the[TestFailedException] thrownBy {
+              doImport()
+            }).cause.value shouldEqual expectedError
+        }
     }
   }
 
   private def convertBasicProcessToFragmentDetails(process: ProcessDetails) =
     FragmentDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
-  private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
+  private def importSuccess(
+      displayableProcess: DisplayableProcess
+  ): Right[NuDesignerError, ValidatedDisplayableProcess] = {
     val meta = MetaVariables.typingResult(displayableProcess.metaData)
 
     val nodeResults = Map(
@@ -176,7 +190,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       "sourceId" -> NodeTypingData(Map("meta" -> meta), Some(List.empty), Map.empty)
     )
 
-    Right(new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
+    Right(ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
   }
 
   private def createDbProcessService(processes: List[ProcessDetails] = Nil): DBProcessService =

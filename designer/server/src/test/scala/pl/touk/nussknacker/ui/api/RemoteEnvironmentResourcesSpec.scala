@@ -17,7 +17,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -54,7 +54,12 @@ class RemoteEnvironmentResourcesSpec
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
     val route = withPermissions(
-      new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer),
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        futureFetchingProcessRepository,
+        processService,
+        processAuthorizer
+      ),
       readWritePermissions
     )
 
@@ -79,7 +84,12 @@ class RemoteEnvironmentResourcesSpec
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(
-      new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer),
+      new RemoteEnvironmentResources(
+        remoteEnvironment,
+        futureFetchingProcessRepository,
+        processService,
+        processAuthorizer
+      ),
       readWritePermissions
     )
     val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = category)
@@ -116,6 +126,7 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         futureFetchingProcessRepository,
+        processService,
         processAuthorizer
       ),
       testPermissionRead
@@ -149,6 +160,7 @@ class RemoteEnvironmentResourcesSpec
           )
         ),
         futureFetchingProcessRepository,
+        processService,
         processAuthorizer
       ),
       readWritePermissions
@@ -171,11 +183,12 @@ class RemoteEnvironmentResourcesSpec
 
   // we replace Types with Unkown because this is how types from RemoteEnvironment are decoded (to avoid classloading issues...)
   private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
-    val validationResult = process.validationResult
     process.copy(validationResult =
-      validationResult.copy(nodeResults =
-        validationResult.nodeResults.mapValuesNow(v =>
-          v.copy(variableTypes = v.variableTypes.mapValuesNow(_ => Unknown))
+      process.validationResult.map(validationResult =>
+        validationResult.copy(nodeResults =
+          validationResult.nodeResults.mapValuesNow(v =>
+            v.copy(variableTypes = v.variableTypes.mapValuesNow(_ => Unknown))
+          )
         )
       )
     )
@@ -192,19 +205,19 @@ class RemoteEnvironmentResourcesSpec
     override def migrate(
         localProcess: DisplayableProcess,
         category: String
-    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[EspError, Unit]] = {
+    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }
 
     override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(
         implicit ec: ExecutionContext
-    ): Future[Either[EspError, Map[String, ProcessComparator.Difference]]] = {
+    ): Future[Either[NuDesignerError, Map[String, ProcessComparator.Difference]]] = {
       compareInvocations = localProcess :: compareInvocations
       Future.successful(
         mockDifferences
           .get(localProcess.id)
-          .fold[Either[EspError, Map[String, ProcessComparator.Difference]]](
+          .fold[Either[NuDesignerError, Map[String, ProcessComparator.Difference]]](
             Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, ""))
           )(diffs => Right(diffs))
       )
@@ -216,7 +229,7 @@ class RemoteEnvironmentResourcesSpec
 
     override def testMigration(
         processToInclude: processdetails.BasicProcess => Boolean
-    )(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
+    )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
 

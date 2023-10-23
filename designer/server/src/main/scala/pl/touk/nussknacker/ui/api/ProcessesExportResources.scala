@@ -16,11 +16,13 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
 import io.circe.syntax._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.ProcessService
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesExportResources(
-    val processRepository: FetchingProcessRepository[Future],
+    processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     processActivityRepository: ProcessActivityRepository,
     processResolving: UIProcessResolving
 )(implicit val ec: ExecutionContext, mat: Materializer)

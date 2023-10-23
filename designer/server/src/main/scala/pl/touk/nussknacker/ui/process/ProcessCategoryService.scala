@@ -19,10 +19,7 @@ object ProcessCategoryService {
   // TODO: Replace it by VO
   type Category = String
 
-  class CategoryNotFoundError(category: Category)
-      extends Exception(s"Category: $category not found")
-      with BadRequestError
-
+  class CategoryNotFoundError(category: Category) extends BadRequestError(s"Category: $category not found")
 }
 
 trait ProcessCategoryService {
