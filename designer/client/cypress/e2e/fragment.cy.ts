@@ -157,6 +157,7 @@ describe("Fragment", () => {
         cy.getNode("output").click().type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
+        cy.contains(/^save$/i).should("be.disabled");
 
         cy.viewport(2000, 800);
         cy.get<string>("@scenarioName").then((name) => cy.visitProcess(name));
