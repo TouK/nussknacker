@@ -10,7 +10,7 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -49,7 +49,7 @@ class ProcessesResources(
           complete {
             processService
               .getRawProcessesWithDetails[Unit](ProcessesQuery.empty.copy(isArchived = Some(true)))
-              .toBasicProcess
+              .map(_.map(BasicProcess(_)))
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -76,7 +76,7 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcessDetailsWithStateOnly(query).toBasicProcess
+              processService.getProcessDetailsWithStateOnly(query).map(_.map(_.toBasicProcess))
             }
           }
         }
@@ -195,6 +195,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessDetailsOnly(processId)
+              .map(_.toProcessDetailsWithoutScenarioGraphAndValidationResult)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }
@@ -225,7 +226,7 @@ class ProcessesResources(
                   otherVersion,
                   skipValidateAndResolve = true
                 )
-              } yield ProcessComparator.compare(thisVersion.json.toDisplayable, otherVersion.json.toDisplayable)
+              } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
       }
@@ -245,10 +246,6 @@ class ProcessesResources(
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
     implicit val listenerUser: User = ListenerApiUser(user)
     processChangeListener.handle(event)
-  }
-
-  private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {
-    def toBasicProcess: Future[List[BasicProcess]] = self.map(f => f.map(bpd => BasicProcess(bpd)))
   }
 
   private def processesQuery: Directive1[ProcessesQuery] = {

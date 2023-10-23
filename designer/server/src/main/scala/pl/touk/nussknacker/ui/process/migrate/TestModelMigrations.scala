@@ -46,18 +46,14 @@ class TestModelMigrations(
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
-        process.toDisplayableProcessDetails,
+        process.toProcessDetailsWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
       MigratedProcessDetails(
         displayable,
-        process.json.validationResult.getOrElse(
-          throw new IllegalStateException(
-            "Empty validation result. Migrated process should contain validationResult. It suppose to by empty only if validation is skipped"
-          )
-        ),
+        process.validationResultUnsafe,
         migrations.exists(_.failOnNewValidationError),
         process.processCategory
       )

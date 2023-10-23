@@ -131,14 +131,14 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ValidatedProcessDetails]
       validated.name shouldBe processName.value
-      validated.json.validationResult.value.errors should not be empty
+      validated.validationResult.value.errors should not be empty
     }
 
     Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ValidatedProcessDetails]
       validated.name shouldBe processName.value
-      validated.json.validationResult shouldBe empty
+      validated.validationResult shouldBe empty
     }
   }
 
@@ -708,7 +708,7 @@ class ProcessesResourcesSpec
     Get(s"/processes/$processName/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ValidatedProcessDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
-      processDetails.json.validationResult shouldBe empty
+      processDetails.validationResult shouldBe empty
     }
   }
 
@@ -868,7 +868,7 @@ class ProcessesResourcesSpec
           val processes = responseAs[List[ValidatedProcessDetails]]
           processes should have size 2
           processes.map(_.name) should contain only (firstProcessName.value, secondProcessName.value)
-          every(processes.map(_.json.validationResult)) shouldBe empty
+          every(processes.map(_.validationResult)) shouldBe empty
         }
       }
     }
