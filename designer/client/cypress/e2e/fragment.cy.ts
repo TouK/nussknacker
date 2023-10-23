@@ -86,9 +86,6 @@ describe("Fragment", () => {
         cy.contains(/^apply/i).should("be.enabled");
         cy.get("[data-testid=window]").matchImage({
             maxDiffThreshold: 0.01,
-            screenshotConfig: {
-                blackout: ["[title=Name] + * input"],
-            },
         });
     });
 

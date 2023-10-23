@@ -1,4 +1,5 @@
 import Chainable = Cypress.Chainable;
+import { padStart } from "lodash";
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -24,8 +25,11 @@ declare global {
     }
 }
 
+const processIndexes = {};
 function createTestProcessName(name?: string) {
-    return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`);
+    processIndexes[name] = ++processIndexes[name] || 1;
+    const index = padStart(processIndexes[name].toString(), 3, "0");
+    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
 
 function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
