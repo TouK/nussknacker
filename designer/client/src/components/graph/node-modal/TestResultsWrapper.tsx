@@ -17,12 +17,25 @@ export function useTestResults(): StateForSelectTestResults {
     return context;
 }
 
-function TestResultsSelectWrapper({ children, nodeId }: PropsWithChildren<{ nodeId: NodeId }>): JSX.Element {
+export function TestResultsWrapper({
+    children,
+    nodeId,
+    showTestResults,
+}: PropsWithChildren<{
+    nodeId: NodeId;
+    showTestResults?: boolean;
+}>): JSX.Element {
     const results = useSelector(getTestResults);
-    const nodeResults = useMemo(() => TestResultUtils.resultsForNode(results, nodeId), [nodeId, results]);
+    const nodeResults = useMemo(() => {
+        if (showTestResults) {
+            return TestResultUtils.resultsForNode(results, nodeId);
+        }
+        return null;
+    }, [nodeId, results, showTestResults]);
     const [testResultsState, setTestResultsState] = useState<StateForSelectTestResults>(
         TestResultUtils.stateForSelectTestResults(nodeResults),
     );
+
     return (
         <>
             <TestResultsSelect results={nodeResults} value={testResultsState.testResultsIdToShow} onChange={setTestResultsState} />
@@ -34,10 +47,3 @@ function TestResultsSelectWrapper({ children, nodeId }: PropsWithChildren<{ node
         </>
     );
 }
-
-export const TestResultsWrapper = ({
-    children,
-    nodeId,
-    showTestResults,
-}: PropsWithChildren<{ nodeId: NodeId; showTestResults?: boolean }>): JSX.Element =>
-    showTestResults ? <TestResultsSelectWrapper nodeId={nodeId}>{children}</TestResultsSelectWrapper> : <>{children}</>;
