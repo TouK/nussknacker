@@ -82,6 +82,7 @@ class ProcessValidation(
     // displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
+      // TODO: remove duplicate errors that were validated in both DP and CP level
       uiValidationResult
         .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
     } else {
@@ -103,6 +104,7 @@ class ProcessValidation(
   }
 
   def uiValidation(displayable: DisplayableProcess): ValidationResult = {
+    // TODO: also validate scenario Id
     validateNodesId(displayable)
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
@@ -165,7 +167,7 @@ class ProcessValidation(
 
   private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
     val nodeIdErrors = displayable.nodes
-      .map(n => n.id -> IdValidator.validate(n))
+      .map(n => n.id -> IdValidator.validateNodeId(n))
       .filter(n => n._2.isInvalid)
       .collect { case (key, Invalid(errors)) =>
         key -> errors.map(PrettyValidationErrors.formatErrorMessage).toList
