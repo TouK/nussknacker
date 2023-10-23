@@ -42,8 +42,6 @@ object PrettyValidationErrors {
           message,
           description,
           fieldName = Some("$id"),
-          // TODO: should we allow this?
-          errorType = NodeValidationErrorType.SaveAllowed
         )
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
@@ -55,25 +53,14 @@ object PrettyValidationErrors {
         )
       case nodeIdError: NodeIdError =>
         nodeIdError match {
-          // We disallow rendering of empty and blank node ids because FE doesn't handle references to nodes with these
-          // names in the tips panel
           case EmptyNodeId =>
             node(
               // TODO: change id to name - user sees node name as a readable name, not as an id
-              // TODO: what errors should we allow to save? All node id errors should be not renderable / not saveable?
-              //        what about scenario id?
               // TODO: what to do about errors like this that have to be displayed in toast message and in editor?
               "Nodes cannot have empty id",
               "Nodes cannot have empty id",
               errorType = NodeValidationErrorType.RenderNotAllowed,
               fieldName = Some("$id")
-            )
-          case BlankNodeId(_) =>
-            node(
-              "Node name cannot be blank",
-              "Node name cannot be blank",
-              NodeValidationErrorType.RenderNotAllowed,
-              Some("$id")
             )
           case InvalidCharacters(nodeId) =>
             node(
@@ -82,19 +69,23 @@ object PrettyValidationErrors {
               NodeValidationErrorType.RenderNotAllowed,
               Some("$id")
             )
+          case BlankNodeId(_) =>
+            node(
+              "Node name cannot be blank",
+              "Node name cannot be blank",
+              fieldName = Some("$id")
+            )
           case LeadingSpacesNodeId(_) =>
             node(
               "Node name cannot have leading spaces",
               "Node name cannot have leading spaces",
-              NodeValidationErrorType.SaveNotAllowed,
-              Some("$id")
+              fieldName = Some("$id")
             )
           case TrailingSpacesNodeId(_) =>
             node(
               "Node name cannot have trailing spaces",
               "Node name cannot have trailing spaces",
-              NodeValidationErrorType.SaveNotAllowed,
-              Some("$id")
+              fieldName = Some("$id")
             )
         }
       case NonUniqueEdgeType(etype, nodeId) =>
