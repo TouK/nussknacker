@@ -25,13 +25,9 @@ export const useParametersList = (
             return savedParameters;
         }
 
-        const params = nodeDefinition?.ref.parameters.map(
+        return nodeDefinition?.ref.parameters.map(
             (definition) => savedParameters.find(({ name }) => name === definition.name) || definition,
         );
-
-        setNodeState(params);
-
-        return params;
     });
 
     // Don't return parameters until node state updated
