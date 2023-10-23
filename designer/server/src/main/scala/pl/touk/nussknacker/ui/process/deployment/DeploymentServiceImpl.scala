@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -378,6 +379,45 @@ class DeploymentServiceImpl(
       result                <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
+
+  override def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[Map[String, ProcessState]] =
+    for {
+      processesInProgress <- getInProgressActionTypesForAllProcesses
+      processStatus <- processes
+        .map(process => Future.successful(process.name) zip getProcessState(process, processesInProgress))
+        .sequence
+    } yield processStatus.toMap
+
+  override def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
+      implicit user: LoggedUser,
+      ec: ExecutionContext,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[List[BaseProcessDetails[_]]] =
+    for {
+      actionsInProgress <- getInProgressActionTypesForAllProcesses
+      processesWithState <- processList.map {
+        case process if process.isFragment => Future.successful((process, None))
+        case process => Future.successful(process) zip getProcessState(process, actionsInProgress).map(Option(_))
+      }.sequence
+    } yield processesWithState.map { case (process, state) => process.copy(state = state) }
+
+  // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
+  private def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
+    dbioRunner.run(
+      actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+    )
+
+  private def getProcessState(
+      processDetails: BaseProcessDetails[_],
+      processesInProgress: Map[ProcessId, Set[ProcessActionType]]
+  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
+    dbioRunner.run(
+      getProcessState(processDetails, processesInProgress.getOrElse(processDetails.processId, Set.empty))
+    )
 
   private def getProcessState(
       processDetails: BaseProcessDetails[_],

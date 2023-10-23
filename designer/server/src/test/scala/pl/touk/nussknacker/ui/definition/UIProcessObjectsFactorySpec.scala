@@ -236,7 +236,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       TestFactory.user("userId"),
       fragmentDetails,
       isFragment = false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
+      TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming,
       TestAdditionalUIConfigProvider,

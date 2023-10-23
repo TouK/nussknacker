@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -32,10 +32,10 @@ class AppApiHttpService(
     processRepository: FetchingProcessRepository[Future],
     processValidation: ProcessValidation,
     deploymentService: DeploymentService,
-    processCategoryService: ProcessCategoryService,
+    getProcessCategoryService: () => ProcessCategoryService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, processCategoryService, authenticator)
+    extends BaseHttpService(config, getProcessCategoryService, authenticator)
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
@@ -139,7 +139,8 @@ class AppApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { loggedUser => _ =>
         Future {
-          UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(loggedUser))
+          val userCategoryService = new UserCategoryService(getProcessCategoryService())
+          UserCategoriesWithProcessingTypesDto(userCategoryService.getUserCategoriesWithType(loggedUser))
         }
       }
   }

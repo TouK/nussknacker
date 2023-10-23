@@ -39,7 +39,7 @@ class DefinitionResourcesSpec
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
-    processCategoryService,
+    () => processCategoryService,
     TestAdditionalUIConfigProvider,
     TestFixedValuesPresetProvider
   )

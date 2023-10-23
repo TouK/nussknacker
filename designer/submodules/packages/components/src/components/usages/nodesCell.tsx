@@ -29,7 +29,7 @@ export const NodesCell = ({
         value,
         row: { id },
     } = props;
-    const filterSegments = useMemo(() => filterText?.toString().trim().split(/\s/) || [], [filterText]);
+    const filterSegments = useMemo(() => filterText?.toLowerCase().toString().trim().split(/\s/) || [], [filterText]);
 
     const countMatches = useCallback(
         (node: NodeUsageData) => filterSegments.filter((segment) => getNodeName(node).includes(segment)).length,

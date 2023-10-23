@@ -37,7 +37,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
     newFutureFetchingProcessRepository(testDbRef)
 
   protected implicit val processCategoryService: ProcessCategoryService =
-    new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+    TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {

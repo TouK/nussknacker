@@ -19,7 +19,7 @@ class DefinitionResources(
     modelDataProvider: ProcessingTypeDataProvider[ModelData, _],
     processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
     fragmentRepository: FragmentRepository,
-    processCategoryService: ProcessCategoryService,
+    getProcessCategoryService: () => ProcessCategoryService,
     additionalUIConfigProvider: AdditionalUIConfigProvider,
     fixedValuesPresetProvider: FixedValuesPresetProvider
 )(implicit ec: ExecutionContext)
@@ -55,7 +55,7 @@ class DefinitionResources(
                     user,
                     fragments,
                     isFragment,
-                    processCategoryService,
+                    getProcessCategoryService(),
                     processingTypeData.scenarioPropertiesConfig,
                     processingType,
                     additionalUIConfigProvider,

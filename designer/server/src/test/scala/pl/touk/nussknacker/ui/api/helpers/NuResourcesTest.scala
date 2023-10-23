@@ -156,7 +156,7 @@ trait NuResourcesTest
   )
 
   protected val configProcessToolbarService =
-    new ConfigProcessToolbarService(testConfig, processCategoryService.getAllCategories)
+    new ConfigProcessToolbarService(testConfig, () => processCategoryService.getAllCategories)
 
   protected val processesRoute = new ProcessesResources(
     processRepository = futureFetchingProcessRepository,
@@ -181,7 +181,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparer,
-      processCategoryService,
+      () => processCategoryService,
       processResolving,
       dbioRunner,
       futureFetchingProcessRepository,

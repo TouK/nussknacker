@@ -21,6 +21,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 * Scenario Types configuration, comprising of:
   * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
   * [Model](/about/GLOSSARY#model) configuration.
+  * [Categories](/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) configuration
 
 The Scenario Type is a convenient umbrella term for a particular Deployment Manager configuration and the associated model configuration. Diagram below presents main relationships between configuration areas.
 
@@ -48,6 +49,7 @@ scenarioTypes {
         ...
       }
     }
+    categories: ["Default"]
   }
 }
 ```

@@ -122,6 +122,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                 content: {
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.65 : 1,
+                    disabled: node.isDisabled,
                 },
             },
             rankDir: "R",
