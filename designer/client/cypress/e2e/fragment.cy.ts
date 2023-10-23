@@ -103,6 +103,7 @@ describe("Fragment", () => {
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").contains("xxxx").parent().find(".ace_editor").type("test");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
+
     });
 
     it("should open properties", () => {
