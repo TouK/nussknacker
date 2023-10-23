@@ -146,14 +146,14 @@ describe("Fragment", () => {
         cy.contains(`${fragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 450, position: "right", force: true });
+            .drag("#nk-graph-main", { x: 800, y: 550, position: "right", force: true });
         cy.layoutScenario();
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("be.visible").click();
-        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 520, position: "right", force: true });
+        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 660, position: "right", force: true });
         cy.getNode("output").click().type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
@@ -164,7 +164,7 @@ describe("Fragment", () => {
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 800, position: "right", force: true });
+            .drag("#nk-graph-main", { x: 900, y: 650, position: "right", force: true });
         cy.layoutScenario();
 
         cy.getNode("sendSms")
