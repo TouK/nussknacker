@@ -74,6 +74,35 @@ describe("Fragment", () => {
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
+
+        // Save scenario
+        cy.contains(/^apply/i)
+            .should("be.enabled")
+            .click();
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        // Go back to the fragment
+        cy.go(-1);
+
+        // Provide new parameter to the fragment input
+        cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").should("be.visible").as("window");
+        cy.get("@window").contains("+").click();
+        cy.get("[data-testid='fieldsRow:4']").find(".fieldName input").type("test5");
+        cy.get("@window")
+            .contains(/^apply$/i)
+            .click();
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        // Go back to the Scenario
+        cy.go(1);
+
+        // Verify existing fragment after properties change
+        cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").contains("xxxx").parent().find(".ace_editor").type("test");
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
     it("should open properties", () => {
