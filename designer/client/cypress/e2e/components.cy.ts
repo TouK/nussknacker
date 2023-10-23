@@ -181,7 +181,7 @@ describe("Components list", () => {
     it("should filter usage types", () => {
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
-        cy.contains("fragments").should("be.visible").click();
+        cy.get("#toolbox").contains("fragments").should("be.visible").click();
         cy.contains(`${seed}_xxx`).last().should("be.visible").drag("#nk-graph-main", {
             x: 800,
             y: 600,
