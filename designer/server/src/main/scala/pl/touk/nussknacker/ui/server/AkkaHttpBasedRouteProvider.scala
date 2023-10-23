@@ -224,7 +224,6 @@ class AkkaHttpBasedRouteProvider(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
         typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
         processService,
-        processCategoryService,
         additionalUIConfigProvider,
         fixedValuesPresetProvider
       )
@@ -270,7 +269,7 @@ class AkkaHttpBasedRouteProvider(
             modelData,
             typeToConfig,
             fragmentRepository,
-            processCategoryService,
+            getProcessCategoryService,
             additionalUIConfigProvider,
             fixedValuesPresetProvider
           ),

@@ -41,7 +41,6 @@ object DefaultComponentService {
         (ComponentIdProvider, ProcessCategoryService)
       ],
       processService: ProcessService,
-      categoryService: ProcessCategoryService,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
       fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit ec: ExecutionContext): DefaultComponentService = {
@@ -49,7 +48,6 @@ object DefaultComponentService {
       componentLinksConfig,
       processingTypeDataProvider,
       processService,
-      categoryService,
       additionalUIConfigProvider,
       fixedValuesPresetProvider
     )
@@ -78,7 +76,6 @@ class DefaultComponentService private (
       (ComponentIdProvider, ProcessCategoryService)
     ],
     processService: ProcessService,
-    categoryService: ProcessCategoryService,
     additionalUIConfigProvider: AdditionalUIConfigProvider,
     fixedValuesPresetProvider: FixedValuesPresetProvider
 )(implicit ec: ExecutionContext)

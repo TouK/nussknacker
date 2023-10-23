@@ -300,15 +300,6 @@ object node {
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
-//    case class FixedValuesPresetId(value: String) {
-//      override def toString: String = value
-//    }
-//
-//    object FixedValuesPresetId {
-//      implicit val encoder: Encoder[FixedValuesPresetId] = Encoder.encodeString.contramap(_.value)
-//      implicit val decoder: Decoder[FixedValuesPresetId] = Decoder.decodeString.map(FixedValuesPresetId(_))
-//    }
-
     @JsonCodec case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
