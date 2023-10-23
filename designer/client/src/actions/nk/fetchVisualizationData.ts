@@ -9,11 +9,12 @@ import { ProcessId } from "../../types";
 export function fetchVisualizationData(processName: ProcessId): ThunkAction {
     return async (dispatch) => {
         try {
-            const { fetchedProcessDetails } = await dispatch(displayCurrentProcessVersion(processName));
+            const fetchedProcessDetails = await dispatch(displayCurrentProcessVersion(processName));
             const { name, json, processingType } = fetchedProcessDetails;
             await dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayProcessActivity(name));
-            await dispatch(fetchProcessDefinition(processingType, json.properties?.isFragment));
+            const processDefinitionData = await dispatch(fetchProcessDefinition(processingType, json.properties?.isFragment));
+            dispatch({ type: "CORRECT_INVALID_SCENARIO", processDefinitionData });
             return fetchedProcessDetails;
         } catch (error) {
             dispatch(handleHTTPError(error));

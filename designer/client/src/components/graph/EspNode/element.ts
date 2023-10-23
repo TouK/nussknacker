@@ -104,7 +104,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         const attributes: shapes.devs.ModelAttributes = {
             id: node.id,
             inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
-            outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
+            outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
                 background: {
                     opacity: node.isDisabled ? 0.4 : 1,
