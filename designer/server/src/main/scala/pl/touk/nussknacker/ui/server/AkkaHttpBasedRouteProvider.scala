@@ -13,6 +13,10 @@ import pl.touk.nussknacker.engine.api.component.{
   AdditionalUIConfigProviderFactory,
   EmptyAdditionalUIConfigProviderFactory
 }
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.{
+  DefaultFixedValuesPresetProviderFactory,
+  FixedValuesPresetProviderFactory
+}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -141,6 +145,8 @@ class AkkaHttpBasedRouteProvider(
       val scenarioResolver = new ScenarioResolver(fragmentResolver)
       val dmDispatcher     = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
+      val fixedValuesPresetProvider = createFixedValuePresetProvider(resolvedConfig, sttpBackend)
+
       val deploymentService = new DeploymentServiceImpl(
         dmDispatcher,
         processRepository,
@@ -149,7 +155,8 @@ class AkkaHttpBasedRouteProvider(
         processValidation,
         scenarioResolver,
         processChangeListener,
-        featureTogglesConfig.scenarioStateTimeout
+        featureTogglesConfig.scenarioStateTimeout,
+        fixedValuesPresetProvider
       )
       deploymentService.invalidateInProgressActions()
 
@@ -183,7 +190,8 @@ class AkkaHttpBasedRouteProvider(
         futureProcessRepository,
         actionRepository,
         writeProcessRepository,
-        processValidation
+        processValidation,
+        fixedValuesPresetProvider
       )
       val scenarioTestService = ScenarioTestService(
         modelData,
@@ -218,7 +226,8 @@ class AkkaHttpBasedRouteProvider(
         typeToConfig.mapCombined(_.componentIdProvider),
         processService,
         processCategoryService,
-        additionalUIConfigProvider
+        additionalUIConfigProvider,
+        fixedValuesPresetProvider
       )
 
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
@@ -241,7 +250,8 @@ class AkkaHttpBasedRouteProvider(
             fragmentRepository,
             typeToConfig.mapValues(_.modelData),
             processValidation,
-            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
+            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData)),
+            fixedValuesPresetProvider
           ),
           new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
           new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
@@ -262,7 +272,8 @@ class AkkaHttpBasedRouteProvider(
             typeToConfig,
             fragmentRepository,
             processCategoryService,
-            additionalUIConfigProvider
+            additionalUIConfigProvider,
+            fixedValuesPresetProvider
           ),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
@@ -469,6 +480,25 @@ class AkkaHttpBasedRouteProvider(
     }
 
     additionalUIConfigProviderFactory.create(config, sttpBackend)
+  }
+
+  private def createFixedValuePresetProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
+      implicit ec: ExecutionContext
+  ) = {
+    val fixedValuesPresetProviderFactory: FixedValuesPresetProviderFactory = {
+      Multiplicity(
+        ScalaServiceLoader.load[FixedValuesPresetProviderFactory](getClass.getClassLoader)
+      ) match {
+        case Empty()              => new DefaultFixedValuesPresetProviderFactory
+        case One(providerFactory) => providerFactory
+        case Many(moreThanOne) =>
+          throw new IllegalArgumentException(
+            s"More than one FixedValuesPresetProviderFactory instance found: $moreThanOne"
+          )
+      }
+    }
+
+    fixedValuesPresetProviderFactory.create(config, sttpBackend)
   }
 
   private class DelayedInitDeploymentServiceSupplier extends Supplier[DeploymentService] {

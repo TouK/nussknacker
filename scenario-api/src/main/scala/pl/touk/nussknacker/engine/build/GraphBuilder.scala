@@ -82,10 +82,18 @@ trait GraphBuilder[R] {
       fragmentId: String,
       params: List[(String, Expression)],
       outputParameters: Map[String, String],
-      outputs: Map[String, SubsequentNode]
+      outputs: Map[String, SubsequentNode],
+      fragmentParams: Option[List[FragmentParameter]] = None
   ): R =
     creator(
-      FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled), outputParameters)), outputs)
+      FragmentNode(
+        FragmentInput(
+          id,
+          FragmentRef(fragmentId, params.map(Parameter.tupled), outputParameters),
+          fragmentParams = fragmentParams
+        ),
+        outputs
+      )
     )
 
   def fragmentEnd(id: String, fragmentId: String, params: (String, Expression)*): R =

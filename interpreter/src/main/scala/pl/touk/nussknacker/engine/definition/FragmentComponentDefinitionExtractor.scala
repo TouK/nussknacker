@@ -33,6 +33,7 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{
 }
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 
@@ -126,25 +127,19 @@ class FragmentComponentDefinitionExtractor(
       typ: typing.TypingResult,
       fragmentParameter: FragmentParameter
   ) = {
-    assert(FragmentParameterValidator.isValid(fragmentParameter /*, typ*/ )) // TODO
-
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor =
-      if (fragmentParameter.fixedValueList.nonEmpty || fragmentParameter.fixedValueListPresetId.nonEmpty) {
-        val fixedValuesEditor = if (fragmentParameter.fixedValueList.nonEmpty) {
-          FixedValuesParameterEditor(fragmentParameter.fixedValueList.map(s => FixedExpressionValue("'" + s + "'", s)))
-        } else {
-          val fixedValueList = ??? // PresetProvider.get(fragmentParameter. fixedValueListPresetId.get)
-          FixedValuesPresetParameterEditor(fragmentParameter.fixedValueListPresetId.get, fixedValueList)
-        }
+    val extractedEditor = if (fragmentParameter.fixedValueList.nonEmpty) {
+      val fixedValuesEditor = FixedValuesParameterEditor(
+        fragmentParameter.fixedValueList.map(v => FixedExpressionValue(v.expression, v.label))
+      )
 
-        if (fragmentParameter.allowOnlyValuesFromFixedValuesList)
-          Some(fixedValuesEditor)
-        else
-          Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
-      } else
-        EditorExtractor.extract(parameterData, config)
+      if (fragmentParameter.allowOnlyValuesFromFixedValuesList)
+        Some(fixedValuesEditor)
+      else
+        Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
+    } else
+      EditorExtractor.extract(parameterData, config)
 
     val isOptional = !fragmentParameter.required
     Parameter
@@ -153,11 +148,13 @@ class FragmentComponentDefinitionExtractor(
         editor = extractedEditor,
         validators = ValidatorsExtractor
           .extract(ValidatorExtractorParameters(parameterData, isOptional = isOptional, config, extractedEditor)),
-        defaultValue = fragmentParameter.initialValue.orElse(
-          DefaultValueDeterminerChain.determineParameterDefaultValue(
-            DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor)
-          )
-        ),
+        defaultValue = fragmentParameter.initialValue
+          .map(i => Expression.spel(i.expression))
+          .orElse(
+            DefaultValueDeterminerChain.determineParameterDefaultValue(
+              DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor)
+            )
+          ),
         hintText = fragmentParameter.hintText
       )
   }

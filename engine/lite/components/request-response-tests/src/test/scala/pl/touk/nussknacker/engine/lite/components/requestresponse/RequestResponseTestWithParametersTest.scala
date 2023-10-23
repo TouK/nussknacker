@@ -185,7 +185,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           FragmentClazzRef[String],
           required = true,
           fixedValueList = List(),
-          initialValue = Some(Expression.spel("'Tomasz'")),
+          initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text")
         )
       )
@@ -249,7 +249,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           fixedValueList = fixedValueList,
           allowOnlyValuesFromFixedValuesList = true,
-          initialValue = Some(Expression.spel("'bbb'")),
+          initialValue = Some(FragmentFixedExpressionValue("'bbb'", "bbb")),
           hintText = Some("some hint text")
         )
       )

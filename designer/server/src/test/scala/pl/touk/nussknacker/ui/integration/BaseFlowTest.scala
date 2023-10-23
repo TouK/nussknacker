@@ -46,7 +46,7 @@ class BaseFlowTest
     with WithTestHttpClient
     with Matchers
     with OptionValues
-    with EitherValuesDetailedMessage {
+    with EitherValuesDetailedMessage { // todo test fixed value presets here
 
   import BaseFlowTest._
 

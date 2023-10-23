@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec
@@ -39,7 +40,8 @@ class DefinitionResourcesSpec
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
     processCategoryService,
-    TestAdditionalUIConfigProvider
+    TestAdditionalUIConfigProvider,
+    TestFixedValuesPresetProvider
   )
 
   it("should handle missing scenario type") {

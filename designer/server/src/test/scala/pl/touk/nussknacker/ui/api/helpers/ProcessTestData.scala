@@ -26,6 +26,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -374,6 +375,15 @@ object ProcessTestData {
           Map.empty,
           Map(
             "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+          ),
+          Some(
+            List(
+              FragmentParameter(
+                "param",
+                FragmentClazzRef[String],
+                fixedValueListPresetId = Some("presetString")
+              )
+            )
           )
         ),
       fragment = fragment

@@ -1,22 +1,33 @@
 package pl.touk.nussknacker.engine.definition
 
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  InitialValueNotPresentInPossibleValues,
+  RequireValueFromUndefinedFixedList
+}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 
 object FragmentParameterValidator {
 
-  def isValid(fragmentParameter: FragmentParameter): Boolean = {
+  def validate(
+      fragmentParameterWithSubstitutedPresets: FragmentParameter,
+      fragmentInputId: String
+  ): List[ProcessCompilationError] = {
+    import fragmentParameterWithSubstitutedPresets._
 
-    val fixedValuesDefined =
-      fragmentParameter.fixedValueList.nonEmpty || fragmentParameter.fixedValueListPresetId.nonEmpty
-    val fixedValuesConflict =
-      fragmentParameter.fixedValueList.nonEmpty && fragmentParameter.fixedValueListPresetId.nonEmpty
+    List(
+      (allowOnlyValuesFromFixedValuesList && fixedValueList.isEmpty)
+        -> RequireValueFromUndefinedFixedList(name, Set(fragmentInputId)),
+      (initialValue.isDefined && allowOnlyValuesFromFixedValuesList && !fixedValueList.contains(initialValue))
+        -> InitialValueNotPresentInPossibleValues(name, Set(fragmentInputId))
 
-    //    initialValue, if allowOnlyValuesFromFixedValuesList=true has to be in the list
-    //    (harder) initialValue (and fixedValues?) have to be of proper type
-
-    !(fragmentParameter.allowOnlyValuesFromFixedValuesList && !fixedValuesDefined) &&
-    !fixedValuesConflict &&
-    !(fixedValuesDefined && !List("java.lang.String", "java.lang.Boolean").contains(fragmentParameter.typ.refClazzName))
+      // TODO ? fixedValuesList defined and fixedValuesPresetId undefined -> `typ` must be string or boolean ???
+      // TODO ? (harder) initialValue (and fixedValues?) have to be of proper type (subclass/castable to `typ`) ?
+    ).collect {
+      case (condition, error) if condition => error
+    }
   }
 
 }

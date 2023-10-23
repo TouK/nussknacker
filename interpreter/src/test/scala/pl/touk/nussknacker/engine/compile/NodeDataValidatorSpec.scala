@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.DefaultFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -44,6 +45,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val defaultFragmentId: String = "fragment1"
 
+  // todo use preset and test it's validation
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
     List(
@@ -566,7 +568,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       aModelData: LocalModelData = modelData
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
-    new NodeDataValidator(aModelData, fragmentResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(
+    new NodeDataValidator(aModelData, fragmentResolver).validate(
+      nodeData,
+      ctx,
+      branchCtxs,
+      outgoingEdges,
+      new DefaultFixedValuesPresetProvider(Map.empty) // TODO not empty + test it
+    )(
       MetaData("id", StreamMetaData())
     )
   }

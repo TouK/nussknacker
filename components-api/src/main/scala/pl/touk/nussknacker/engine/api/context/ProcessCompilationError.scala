@@ -241,6 +241,13 @@ object ProcessCompilationError {
 
   case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
+  case class PresetIdNotFoundInProvidedPresets(presetId: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  case class RequireValueFromUndefinedFixedList(paramName: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
   case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError

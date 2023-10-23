@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.node.FragmentInput
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -607,6 +609,33 @@ class ProcessesResourcesSpec
     getActivity(processName) ~> check {
       val comments = responseAs[ProcessActivity].comments
       comments.loneElement.content shouldBe comment
+    }
+  }
+
+  test("update process with fragment that uses fixed value preset should fill fixedValuesList") {
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
+    val displayableFragment =
+      ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
+    savefragment(displayableFragment)(succeed)
+    saveProcess(processName, processWithFragment.process, TestCat)(succeed)
+
+    Get(s"/processes/${processWithFragment.process.id}/2") ~> routeWithAllPermissions ~> check {
+      val processDetails = responseAs[ValidatedProcessDetails]
+
+      val fragmentInputParamsUsingPreset: List[FragmentParameter] = processDetails.json.nodes.flatMap {
+        case fragmentInput: FragmentInput =>
+          fragmentInput.fragmentParams match {
+            case Some(params) =>
+              params.flatMap { param =>
+                if (param.fixedValueListPresetId.isDefined) Some(param) else None
+              }
+            case None => List.empty
+          }
+        case _ => List.empty
+      }
+
+      assert(fragmentInputParamsUsingPreset.nonEmpty)
+      fragmentInputParamsUsingPreset.foreach { param => assert(param.fixedValueList.nonEmpty) }
     }
   }
 

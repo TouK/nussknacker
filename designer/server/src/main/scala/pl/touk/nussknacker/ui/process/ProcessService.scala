@@ -7,12 +7,20 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationResult
+}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -35,6 +43,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import slick.dbio.DBIOAction
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -116,7 +125,8 @@ class DBProcessService(
     fetchingProcessRepository: FetchingProcessRepository[Future],
     processActionRepository: ProcessActionRepository[DB],
     processRepository: ProcessRepository[DB],
-    processValidation: ProcessValidation
+    processValidation: ProcessValidation,
+    fixedValuesPresetProvider: FixedValuesPresetProvider
 )(implicit ec: ExecutionContext)
     extends ProcessService
     with LazyLogging {
@@ -228,15 +238,18 @@ class DBProcessService(
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(
       implicit user: LoggedUser
   ): Future[XError[UpdateProcessResponse]] =
-    withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
+    withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
+      val (processWithFixedValuePresets, presetValidation) =
+        substituteFixedValuesPresets(action.process, fixedValuesPresetProvider)
+
       val result = for {
         validation <- EitherT.fromEither[Future](
           FatalValidationError.saveNotAllowedAsError(
-            processResolving.validateBeforeUiResolving(action.process)
+            presetValidation.add(processResolving.validateBeforeUiResolving(processWithFixedValuePresets))
           )
         )
         substituted = {
-          processResolving.resolveExpressions(action.process, validation.typingInfo)
+          processResolving.resolveExpressions(processWithFixedValuePresets, validation.typingInfo)
         }
         updateProcessAction = UpdateProcessAction(
           processIdWithName.id,
@@ -319,6 +332,70 @@ class DBProcessService(
 
       Future.successful(result)
     }
+  }
+
+  private def substituteFixedValuesPresets(
+      process: DisplayableProcess,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
+  ): (DisplayableProcess, ValidationResult) = {
+    val fixedValuePresets =
+      try {
+        fixedValuesPresetProvider.getAll
+      } catch {
+        case e: Throwable =>
+          logger.warn(s"FixedValuePresetsProvider failed to provide presets ", e)
+          return (
+            process,
+            ValidationResult.globalErrors(
+              List(
+                NodeValidationError(
+                  "FixedValuePresetsProviderFailure",
+                  "FixedValuePresetsProvider failed to provide presets",
+                  "FixedValuePresetsProvider failed to provide presets",
+                  None,
+                  NodeValidationErrorType.SaveAllowed
+                )
+              )
+            )
+          )
+      }
+
+    val nodeErrors = mutable.Map[String, List[NodeValidationError]]()
+    val substituted = process.copy(
+      nodes = process.nodes.map {
+        case fragmentInput: FragmentInput =>
+          fragmentInput.copy(
+            fragmentParams = fragmentInput.fragmentParams.map(_.map { param =>
+              param.fixedValueListPresetId match {
+                case Some(presetId) =>
+                  fixedValuePresets.get(presetId) match {
+                    case Some(preset) =>
+                      param.copy(fixedValueList =
+                        preset.map(v => node.FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+                      )
+                    case None =>
+                      nodeErrors(fragmentInput.id) = NodeValidationError(
+                        "FixedValuePresetNotFound",
+                        s"Preset with id='$presetId' not found",
+                        s"Preset with id='$presetId' not found",
+                        Some(param.name),
+                        NodeValidationErrorType.SaveAllowed
+                      ) :: nodeErrors.getOrElse(fragmentInput.id, List[NodeValidationError]())
+
+                      param.copy(fixedValueList =
+                        List.empty
+                      ) // clear fixedValueList instead of possibly using outdated presets
+                  }
+                case None => param
+              }
+
+            })
+          )
+        case node => node
+      }
+    )
+
+    (substituted, ValidationResult.errors(nodeErrors.toMap, List.empty, List.empty))
   }
 
   private def validateInitialScenarioProperties(

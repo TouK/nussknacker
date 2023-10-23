@@ -35,6 +35,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -105,7 +106,8 @@ trait NuResourcesTest
       processValidation,
       scenarioResolver,
       processChangeListener,
-      None
+      None,
+      TestFixedValuesPresetProvider
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
@@ -185,7 +187,8 @@ trait NuResourcesTest
       futureFetchingProcessRepository,
       actionRepository,
       writeProcessRepository,
-      processValidation
+      processValidation,
+      TestFixedValuesPresetProvider
     )
 
   protected def createScenarioTestService(

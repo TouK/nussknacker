@@ -313,10 +313,10 @@ object node {
         name: String,
         typ: FragmentClazzRef,
         required: Boolean = false,
-        fixedValueList: List[String] = List.empty,
+        fixedValueList: List[FixedExpressionValue] = List.empty,
         fixedValueListPresetId: Option[String] = None,
         allowOnlyValuesFromFixedValuesList: Boolean = false,
-        initialValue: Option[Expression] = None,
+        initialValue: Option[FixedExpressionValue] = None,
         hintText: Option[String] = None
     )
 

@@ -159,6 +159,21 @@ object PrettyValidationErrors {
           s"There is more than one output with '$name' name defined in the fragment, currently this is not allowed",
           "Please check fragment definition"
         )
+      case InitialValueNotPresentInPossibleValues(paramName, _) =>
+        node(
+          s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
+          "Please check fragment definition"
+        )
+      case PresetIdNotFoundInProvidedPresets(presetId, _) =>
+        node(
+          s"The specified preset id '$presetId' is not defined",
+          "Please check fragment definition"
+        )
+      case RequireValueFromUndefinedFixedList(paramName, _) =>
+        node(
+          s"Cannot required parameter '$paramName' to be a member of a fixed list if the fixed list is undefined",
+          "Please check fragment definition"
+        )
     }
   }
 

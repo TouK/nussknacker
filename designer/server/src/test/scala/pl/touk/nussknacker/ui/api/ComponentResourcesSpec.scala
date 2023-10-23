@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, TestCategories, Test
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 
 class ComponentResourcesSpec
     extends AnyFunSpec
@@ -35,7 +36,8 @@ class ComponentResourcesSpec
     testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
     processService,
     processCategoryService,
-    TestAdditionalUIConfigProvider
+    TestAdditionalUIConfigProvider,
+    TestFixedValuesPresetProvider
   )
 
   private lazy val componentRoute = new ComponentResource(componentService)

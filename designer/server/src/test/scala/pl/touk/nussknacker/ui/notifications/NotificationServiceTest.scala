@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, 
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
@@ -162,6 +163,7 @@ class NotificationServiceTest
       mock[ScenarioResolver],
       mock[ProcessChangeListener],
       None,
+      TestFixedValuesPresetProvider,
       clock
     ) {
       override protected def validateBeforeDeploy(

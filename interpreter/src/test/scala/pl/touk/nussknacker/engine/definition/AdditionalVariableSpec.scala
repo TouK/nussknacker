@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.DefaultFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
@@ -48,7 +49,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
       ValidationContext.empty,
       Map.empty,
-      Nil
+      Nil,
+      new DefaultFixedValuesPresetProvider(Map.empty)
     )(MetaData("scenario", StreamMetaData()))
     result.asInstanceOf[ValidationPerformed].errors.distinct shouldBe CannotCreateObjectError(
       "AdditionalVariableWithFixedValue should not be used with LazyParameters",

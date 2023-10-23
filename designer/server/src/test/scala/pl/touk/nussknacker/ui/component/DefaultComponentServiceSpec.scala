@@ -36,6 +36,7 @@ import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -553,7 +554,8 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -714,7 +716,8 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
 
     val testingData = Table(
@@ -784,7 +787,8 @@ class DefaultComponentServiceSpec
         processingTypeDataProvider,
         processService,
         categoryService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
@@ -804,7 +808,8 @@ class DefaultComponentServiceSpec
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processValidation = TestFactory.processValidation,
+      fixedValuesPresetProvider = TestFixedValuesPresetProvider
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

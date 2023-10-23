@@ -26,6 +26,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
@@ -101,7 +102,8 @@ class DeploymentServiceSpec
       processValidation,
       TestFactory.scenarioResolver,
       listener,
-      scenarioStateTimeout = scenarioStateTimeout
+      scenarioStateTimeout,
+      TestFixedValuesPresetProvider
     )
   }
 

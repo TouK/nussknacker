@@ -76,9 +76,18 @@ case object CronParameterEditor extends SimpleParameterEditor
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
 
-// we keep both presetId and possibleValues in the editor, so in various places we can rely on possibleValues, and just update them on save/deploy based on presetId
-@JsonCodec case class FixedValuesPresetParameterEditor(presetId: String, possibleValues: List[FixedExpressionValue])
+// we keep both presetId and possibleValues, so in various places in BE (determining validators and default values for example) we can rely on possibleValues
+// we don't encode/decode possibleValues, it's for BE convenience only (to avoid passing FixedValuesPresetProvider in too many places)
+case class FixedValuesPresetParameterEditor(presetId: String, possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
+
+object FixedValuesPresetParameterEditor {
+  implicit val encoder: Encoder[FixedValuesPresetParameterEditor] =
+    (editor: FixedValuesPresetParameterEditor) => Encoder.encodeString(editor.presetId)
+
+  implicit val decoder: Decoder[FixedValuesPresetParameterEditor] =
+    Decoder.decodeString.map(presetId => new FixedValuesPresetParameterEditor(presetId, List.empty))
+}
 
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 

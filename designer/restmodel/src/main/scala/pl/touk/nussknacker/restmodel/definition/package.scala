@@ -27,7 +27,7 @@ package object definition {
       edgesForNodes: List[NodeEdges],
       customActions: List[UICustomAction],
       defaultAsyncInterpretation: Boolean,
-      fixedValuePresets: Map[String, List[FixedExpressionValue]]
+      fixedValuesPresets: Map[String, List[FixedExpressionValue]]
   )
 
   // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
