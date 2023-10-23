@@ -29,9 +29,9 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, ValidatedProcessDetails, processdetails}
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig

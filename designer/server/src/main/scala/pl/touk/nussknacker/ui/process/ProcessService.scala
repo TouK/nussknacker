@@ -8,13 +8,10 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{
-  BaseProcessDetails,
-  ProcessShapeFetchStrategy,
-  ValidatedProcessDetails
-}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
@@ -209,14 +206,14 @@ class DBProcessService(
   private def toDisplayableProcessDetailsWithoutValidation(
       canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]
   ): ValidatedProcessDetails = {
-    canonicalProcessDetails.mapProcess { canonical =>
+    ValidatedProcessDetails(canonicalProcessDetails.mapProcess { canonical =>
       val displayableProcess = ProcessConverter.toDisplayable(
         canonical,
         canonicalProcessDetails.processingType,
         canonicalProcessDetails.processCategory
       )
       ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
-    }
+    })
   }
 
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](
@@ -244,7 +241,7 @@ class DBProcessService(
   private def validateAndReverseResolve(
       processDetails: BaseProcessDetails[CanonicalProcess]
   ): ValidatedProcessDetails = {
-    processDetails.mapProcess { canonical: CanonicalProcess =>
+    ValidatedProcessDetails(processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult =
         processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
@@ -254,7 +251,7 @@ class DBProcessService(
         processDetails.processCategory,
         validationResult
       )
-    }
+    })
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =

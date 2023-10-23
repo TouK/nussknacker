@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -16,23 +16,17 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptyFragment, toValidatedDisplayable, validProcess}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{toValidatedDisplayable, validProcess}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{
-  ProcessTestData,
-  TestCategories,
-  TestFactory,
-  TestProcessUtil,
-  TestProcessingTypes
-}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -170,7 +164,7 @@ class StandardRemoteEnvironmentSpec
       fragments: List[ValidatedProcessDetails]
   ) = new MockRemoteEnvironment {
 
-    private def basicProcesses: List[BasicProcess] = (processes ++ fragments).map(BasicProcess.apply(_))
+    private def basicProcesses: List[BasicProcess] = (processes ++ fragments).map(_.toBasicProcess)
 
     private def allProcesses: List[ValidatedProcessDetails] = processes ++ fragments
 
