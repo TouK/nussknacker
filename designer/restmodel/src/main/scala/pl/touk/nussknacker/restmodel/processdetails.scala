@@ -2,20 +2,21 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{ACursor, Decoder, Encoder, Json, JsonObject}
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId => ApiProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 import java.time.Instant
 
 object processdetails {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
@@ -134,8 +135,6 @@ object processdetails {
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]
-
-  type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
   @JsonCodec final case class ProcessVersion(
       processVersionId: VersionId,
