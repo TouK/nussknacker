@@ -167,7 +167,10 @@ class NodeUtils {
     canHaveMoreOutputs = (node: NodeType, nodeOutputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
         const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, false);
         const maxEdgesForNode = edgesForNode.edges.length;
-        return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.filter((e) => e.to).length < maxEdgesForNode);
+        return (
+            this.hasOutputs(node, processDefinitionData) &&
+            (edgesForNode.canChooseNodes || nodeOutputs.filter((e) => e.to).length < maxEdgesForNode)
+        );
     };
 
     getFirstUnconnectedOutputEdge = (currentEdges: Edge[], availableEdges: EdgeType[], edgeType: EdgeType) => {
@@ -217,9 +220,23 @@ class NodeUtils {
     noOutputNodeTypes = ["Sink", "FragmentOutputDefinition"];
 
     //TODO: methods below should be based on backend data, e.g. Fragment can have outputs or not - based on individual fragment...
-    hasInputs = (node: NodeType) => !this.noInputNodeTypes.some((nodeType) => isEqual(nodeType, node?.type));
+    hasInputs = (node: NodeType): boolean => {
+        return !this.noInputNodeTypes.includes(node?.type);
+    };
 
-    hasOutputs = (node: NodeType) => !this.noOutputNodeTypes.some((nodeType) => isEqual(nodeType, node?.type));
+    hasOutputs = (node: NodeType, processDefinitionData?: ProcessDefinitionData): boolean => {
+        switch (node?.type) {
+            case "FragmentInput": {
+                const outputParameters =
+                    processDefinitionData?.processDefinition?.fragmentInputs[node.ref.id]?.outputParameters ||
+                    Object.keys(node.ref.outputVariableNames);
+                return outputParameters.length > 0;
+            }
+            default: {
+                return !this.noOutputNodeTypes.includes(node?.type);
+            }
+        }
+    };
 }
 
 //TODO this pattern is not necessary, just export every public function as in actions.js
