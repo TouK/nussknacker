@@ -148,7 +148,7 @@ describe("Fragment", () => {
 
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("be.visible").click();
-        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 550, position: "right", force: true });
+        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 620, position: "right", force: true });
         cy.getNode("output").click().type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
