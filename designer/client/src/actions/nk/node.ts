@@ -4,6 +4,8 @@ import { layoutChanged, Position } from "./ui/layout";
 import { EditNodeAction, RenameProcessAction } from "./editNode";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
+import NodeUtils from "../../components/graph/NodeUtils";
+import { getProcessToDisplay } from "../../reducers/selectors/graph";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -77,26 +79,38 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
 
 export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edgeType }: Edge): ThunkAction {
     return (dispatch, getState) => {
-        const processDefinitionData = getProcessDefinitionData(getState());
+        const state = getState();
+        const processDefinitionData = getProcessDefinitionData(state);
+        const processToDisplay = getProcessToDisplay(state);
+
         batchGroupBy.startOrContinue();
         dispatch({
             type: "NODES_DISCONNECTED",
             from: from.id,
             to: to.id,
         });
-        dispatch({
-            type: "NODES_CONNECTED",
-            fromNode: from,
-            toNode: middle,
-            processDefinitionData,
-            edgeType,
-        });
-        dispatch({
-            type: "NODES_CONNECTED",
-            fromNode: middle,
-            toNode: to,
-            processDefinitionData,
-        });
+
+        const inputs = NodeUtils.nodeInputs(middle.id, processToDisplay);
+        if (NodeUtils.canHaveMoreInputs(middle, inputs, processDefinitionData)) {
+            dispatch({
+                type: "NODES_CONNECTED",
+                fromNode: from,
+                toNode: middle,
+                processDefinitionData,
+                edgeType,
+            });
+        }
+
+        const outputs = NodeUtils.nodeOutputs(middle.id, processToDisplay);
+        if (NodeUtils.canHaveMoreOutputs(middle, outputs, processDefinitionData)) {
+            dispatch({
+                type: "NODES_CONNECTED",
+                fromNode: middle,
+                toNode: to,
+                processDefinitionData,
+            });
+        }
+
         dispatch(layoutChanged());
         batchGroupBy.end();
     };
