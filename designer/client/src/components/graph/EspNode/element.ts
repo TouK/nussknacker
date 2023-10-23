@@ -158,7 +158,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             // add event listeners after element setup
             setTimeout(() => {
                 e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-                    if (isModelElement(el) && !isConnected(el) && el.hasPort("In") && el.hasPort("Out")) {
+                    if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
                         setLinksHovered(el.graph, el.getBBox());
                     }
                 });

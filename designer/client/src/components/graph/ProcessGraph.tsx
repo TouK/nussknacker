@@ -39,7 +39,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
-            const canInjectNode = NodeUtils.hasInputs(node) && NodeUtils.hasOutputs(node);
+            const canInjectNode = NodeUtils.hasInputs(node) || NodeUtils.hasOutputs(node);
 
             if (canInjectNode) {
                 const clientOffset = monitor.getClientOffset();
