@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
 import pl.touk.nussknacker.engine.definition.{GlobalVariableDefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
+import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
 
 import scala.reflect.ClassTag
@@ -29,7 +30,7 @@ class FlinkProcessCompilerWithTestComponents(
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
     testExtensionsHolder: TestExtensionsHolder,
-    testExceptionHolder: FlinkTestExceptionHolder,
+    resultsCollectingListener: ResultsCollectingListener,
 ) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   override protected def definitions(
@@ -93,6 +94,11 @@ class FlinkProcessCompilerWithTestComponents(
     (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)
   }
 
+  override protected def adjustListeners(
+      defaults: List[ProcessListener],
+      processObjectDependencies: ProcessObjectDependencies
+  ): List[ProcessListener] = defaults :+ resultsCollectingListener
+
   override protected def exceptionHandler(
       metaData: MetaData,
       processObjectDependencies: ProcessObjectDependencies,
@@ -105,19 +111,17 @@ class FlinkProcessCompilerWithTestComponents(
           RestartStrategies.noRestart()
 
         override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
-          testExceptionHolder.addException(exceptionInfo)
+          resultsCollectingListener.exceptionThrown(exceptionInfo)
         }
 
       }
     case _ =>
-      // additionally we forward errors to FlinkTestExceptionHolder
-      val testExceptionListener = new EmptyProcessListener {
-        override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
-          testExceptionHolder.addException(exceptionInfo)
-        }
-      }
-
-      new FlinkExceptionHandler(metaData, processObjectDependencies, listeners :+ testExceptionListener, classLoader)
+      new FlinkExceptionHandler(
+        metaData,
+        processObjectDependencies,
+        listeners,
+        classLoader
+      )
   }
 
   private def testComponentsWithCategories[T <: Component: ClassTag] =
@@ -125,7 +129,7 @@ class FlinkProcessCompilerWithTestComponents(
 
   def this(
       testExtensionsHolder: TestExtensionsHolder,
-      testExceptionHolder: FlinkTestExceptionHolder,
+      resultsCollectingListener: ResultsCollectingListener,
       modelData: ModelData,
       componentUseCase: ComponentUseCase
   ) = this(
@@ -135,7 +139,7 @@ class FlinkProcessCompilerWithTestComponents(
     modelData.objectNaming,
     componentUseCase,
     testExtensionsHolder,
-    testExceptionHolder
+    resultsCollectingListener
   )
 
 }

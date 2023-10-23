@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -116,7 +117,6 @@ class FlinkTestScenarioRunner(
 
     // TODO: get flink mini cluster through composition
     val env              = flinkMiniCluster.createExecutionEnvironment()
-    val exceptionHolder  = FlinkTestExceptionHolder.register()
     val collectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
 
     // It's copied from registrar.register only for handling compilation errors..
@@ -124,7 +124,7 @@ class FlinkTestScenarioRunner(
     val compiler =
       new FlinkProcessCompilerWithTestComponents(
         testExtensionsHolder,
-        exceptionHolder,
+        collectorHandler.resultsCollectingListener,
         modelData,
         componentUseCase
       )
@@ -150,10 +150,9 @@ class FlinkTestScenarioRunner(
 
         env.executeAndWaitForFinished(scenario.id)()
 
-        RunUnitResult(errors = exceptionHolder.getExceptions)
+        RunUnitResult(errors = collectorHandler.resultsCollectingListener.results.exceptions)
       }
     } finally {
-      exceptionHolder.close()
       collectorHandler.close()
     }
   }
