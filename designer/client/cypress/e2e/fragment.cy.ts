@@ -133,4 +133,41 @@ describe("Fragment", () => {
 
         cy.deleteAllTestProcesses({ filter: seed2 });
     });
+
+    it("should display dead-ended fragment correct", () => {
+        const fragmentName = "fragmentOutput";
+        const deadEndFragmentName = "fragmentDeadEnd";
+        cy.createTestFragment(fragmentName, "fragment").as("fragmentName");
+        cy.visitNewProcess(seed, "testProcess").as("scenarioName");
+        cy.createTestFragment(deadEndFragmentName, "deadEndFragment");
+        cy.layoutScenario();
+
+        cy.contains("fragments").should("be.visible").click();
+        cy.contains(`${fragmentName}-test`)
+            .last()
+            .should("be.visible")
+            .drag("#nk-graph-main", { x: 800, y: 450, position: "right", force: true });
+        cy.layoutScenario();
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
+        cy.contains("sinks").should("be.visible").click();
+        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 520, position: "right", force: true });
+        cy.getNode("output").click().type("{backspace}");
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        cy.viewport(2000, 800);
+        cy.get<string>("@scenarioName").then((name) => cy.visitProcess(name));
+        cy.contains(`${deadEndFragmentName}-test`)
+            .last()
+            .should("be.visible")
+            .drag("#nk-graph-main", { x: 800, y: 800, position: "right", force: true });
+        cy.layoutScenario();
+
+        cy.getNode("sendSms")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+    });
 });
