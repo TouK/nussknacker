@@ -56,6 +56,7 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                 autoFocus
                 backspaceRemovesValue={false}
                 components={{ IndicatorsContainer: EmptyContainer }}
+                classNamePrefix={"nodeValueSelect"}
                 controlShouldRenderValue={false}
                 isClearable={false}
                 menuPortalTarget={document.body}
