@@ -10,6 +10,14 @@ import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
+
+sealed trait Mode
+
+object Mode {
+  object LazyTypedMap extends Mode
+  object TypedMap     extends Mode
+}
+
 object JsonToNuStruct {
 
   import scala.jdk.CollectionConverters._
@@ -20,7 +28,9 @@ object JsonToNuStruct {
       )
 
   // TODO: remove flow control using exceptions
-  def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
+  def apply(json: Json, definition: SwaggerTyped, path: String = "")(
+      implicit mode: Mode = Mode.LazyTypedMap
+  ): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
       fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition, path))
@@ -90,8 +100,9 @@ object JsonToNuStruct {
             _.asArray,
             _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava
           )
+        case obj: SwaggerObject if mode == Mode.TypedMap =>
+          extractObject(obj)
         case obj: SwaggerObject =>
-          // extractObject(obj)
           LazyJsonTypedMap(json.asObject.get, obj, path)
         case u @ SwaggerUnion(types) =>
           types.view

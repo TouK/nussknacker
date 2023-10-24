@@ -19,4 +19,5 @@ Running in sbt:
 ```
 benchmarks/Jmh/run -i 8 -wi 3 -f1 -t2 .*SampleSpelBenchmark.*
 benchmarks/Jmh/run -i 8 -wi 3 -f1 -t2 -prof jfr:stackDepth=512 .*SampleSpelBenchmark.*
+benchmarks/Jmh/run -i 8 -wi 3 -f1 -t2 -prof async:output=flamegraph .*NuStructBenchmark.*
 ```

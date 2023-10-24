@@ -12,7 +12,13 @@ class NuStructBenchmark {
 
   val schema       = JsonSchemaBuilder.parseSchema(Source.fromResource("pgw.jsc").getLines().mkString)
   val deserializer = new CirceJsonDeserializer(schema)
-  val json         = Source.fromResource("pgw_record_null.json").getLines().mkString
+  val json         = Source.fromResource("pgw_record.json").getLines().mkString
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.Throughput))
+  @OutputTimeUnit(TimeUnit.MILLISECONDS)
+  def deserializeWithoutNuStruct(): AnyRef =
+    deserializer.deserializeWithoutNuStruct(json)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
@@ -23,7 +29,7 @@ class NuStructBenchmark {
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  def deserializeWithNewDeserializer(): AnyRef =
-    deserializer.deserialize2(json)
+  def deserializeWithLazyMap(): AnyRef =
+    deserializer.deserializeWithLazyMap(json)
 
 }
