@@ -7,7 +7,8 @@ import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/
 import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
-import { StyledScrollToggle, StyledScrollToggleChild, StyledScrollTogglePanelWrapper } from "./SidePanelStyled";
+import { StyledScrollToggle, StyledScrollToggleChild, styledScrollTogglePanelWrapper } from "./SidePanelStyled";
+import { useTheme } from "@mui/material";
 
 export enum PanelSide {
     Right = "RIGHT",
@@ -37,9 +38,9 @@ export function useSidePanelToggle(side: Side) {
 }
 
 const ScrollTogglePanel = forwardRef<HTMLDivElement, PropsWithChildren<Props>>(function ScrollTogglePanel(props, ref) {
-    const { children, innerClassName, side, isCollapsed, onScrollToggle } = props;
+    const { children, innerClassName, side, isCollapsed, onScrollToggle, className } = props;
     return (
-        <StyledScrollToggle ref={ref} side={side} isOpened={isCollapsed}>
+        <StyledScrollToggle ref={ref} side={side} isOpened={isCollapsed} className={className}>
             <ScrollbarsExtended onScrollToggle={onScrollToggle} side={side}>
                 <ErrorBoundary>
                     <StyledScrollToggleChild side={side} className={innerClassName}>
@@ -67,14 +68,22 @@ export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
     const { children, side, className } = props;
     const { isOpened, onToggle } = useSidePanelToggle(side);
     const [showToggle, setShowToggle] = useState(true);
+    const theme = useTheme();
 
     const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened && showToggle);
     return (
-        <StyledScrollTogglePanelWrapper>
+        <>
             {!isOpened || showToggle ? <TogglePanel type={side} isOpened={isOpened} onToggle={onToggle} /> : null}
-            <ScrollTogglePanel ref={ref} onScrollToggle={setShowToggle} isCollapsed={isOpened} side={side} innerClassName={className}>
+            <ScrollTogglePanel
+                className={styledScrollTogglePanelWrapper(theme)}
+                ref={ref}
+                onScrollToggle={setShowToggle}
+                isCollapsed={isOpened}
+                side={side}
+                innerClassName={className}
+            >
                 {children}
             </ScrollTogglePanel>
-        </StyledScrollTogglePanelWrapper>
+        </>
     );
 }

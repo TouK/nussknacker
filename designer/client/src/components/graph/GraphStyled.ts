@@ -1,6 +1,7 @@
 import { styled, css } from "@mui/material";
+import { FocusableStyled } from "./focusableStyled";
 
-export const GraphStyled = styled("div")(
+export const GraphStyled = styled(FocusableStyled)(
     ({ theme }) => css`
         min-height: 300px;
         min-width: 300px;

@@ -31,9 +31,5 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
 
     const { observe } = useSizeWithRef(forwardedRef, options);
 
-    return (
-        <FocusableStyled>
-            <GraphStyled className={className} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
-        </FocusableStyled>
-    );
+    return <GraphStyled className={className} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />;
 });
