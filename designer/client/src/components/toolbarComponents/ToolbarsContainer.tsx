@@ -13,7 +13,7 @@ import {
 import React, { CSSProperties, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { TOOLBAR_DRAGGABLE_TYPE } from "./ToolbarsLayer";
-import { DragHandlerContext } from "./DragHandle";
+import { DragHandlerContext } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 import { cx } from "@emotion/css";
