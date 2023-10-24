@@ -113,7 +113,7 @@
         "uuid": "8.3.2"
     },
     "devDependencies": {
-        "@4tw/cypress-drag-drop": "1.8.1",
+        "@4tw/cypress-drag-drop": "2.2.5",
         "@babel/cli": "7.20.7",
         "@babel/core": "7.18.5",
         "@babel/plugin-proposal-class-properties": "7.16.7",

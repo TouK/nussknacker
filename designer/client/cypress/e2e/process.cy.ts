@@ -132,7 +132,13 @@ describe("Process", () => {
             cy.layoutScenario();
             cy.get("[data-testid='component:customFilter']")
                 .should("be.visible")
-                .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
+                .drag("#nk-graph-main", {
+                    target: {
+                        x: 580,
+                        y: 450,
+                    },
+                    force: true,
+                });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
             cy.contains(/^save\*$/i).click();
@@ -239,9 +245,10 @@ describe("Process", () => {
         const x = 900;
         const y = 630;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 
@@ -293,9 +300,10 @@ describe("Process", () => {
         const x = 700;
         const y = 600;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 

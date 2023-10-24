@@ -19,17 +19,19 @@ export default defineConfig({
         // You may want to clean this up later by importing these.
         setupNodeEvents(on, config) {
             on("before:browser:launch", (browser, launchOptions) => {
+                const width = 1400;
+                const height = 1200;
                 if (browser.isHeadless) {
                     if (browser.name === "chrome") {
-                        launchOptions.args.push("--window-size=1400,1200");
+                        launchOptions.args.push(`--window-size=${width},${height}`);
                     }
                     if (browser.name === "electron") {
-                        launchOptions.preferences.width = 1400;
-                        launchOptions.preferences.height = 1200;
+                        launchOptions.preferences.width = width;
+                        launchOptions.preferences.height = height;
                     }
                     if (browser.name === "firefox") {
-                        launchOptions.args.push("--width=1400");
-                        launchOptions.args.push("--height=1200");
+                        launchOptions.args.push(`--width=${width}`);
+                        launchOptions.args.push(`--height=${height}`);
                     }
                 } else {
                     if (browser.name === "electron") {

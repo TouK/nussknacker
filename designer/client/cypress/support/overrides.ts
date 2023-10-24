@@ -5,13 +5,6 @@ import { recurse } from "cypress-recurse";
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
-        //looks like it should be available
-        //used in with drag from @4tw/cypress-drag-drop to force drop position
-        interface ClickOptions {
-            x: number;
-            y: number;
-        }
-
         interface TriggerOptions {
             moveThreshold?: number;
         }
