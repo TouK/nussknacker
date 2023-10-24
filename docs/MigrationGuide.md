@@ -19,9 +19,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
   * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
   * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add method `ScenarioBuilder` to create fragments with specified
+  input node id instead of taking a default from fragment id
 
 ### REST API changes
-* Change `api/properties/*/validation` endpoint request type
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
     * Replace `processProperties` with `additionalFields`
     * Add `id` field for scenario or fragment id
 
