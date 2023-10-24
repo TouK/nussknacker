@@ -159,7 +159,7 @@ describe("Fragment", () => {
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 650, position: "right", force: true });
+            .drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
         cy.layoutScenario();
 
         cy.getNode("sendSms")
