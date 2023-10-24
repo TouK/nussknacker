@@ -153,6 +153,12 @@ const globalStyles = {
         margin: "0 0 10px",
     },
 
+    hr: {
+        marginTop: "20px",
+        marginBottom: "20px",
+        border: 0,
+        borderTop: `1px solid ${custom.colors.gallery}`,
+    },
     "h1, h1, h3, h4, h5, h6": {
         fontFamily: "inherit",
         fontWeight: 500,
@@ -188,10 +194,10 @@ const globalStyles = {
         flex: "0 0 auto",
         overflow: "auto",
     },
-    ".ace_defaultMethod & & + .ace_completion-meta": {
+    ".ace_defaultMethod, .ace_defaultMethod + .ace_completion-meta": {
         color: "#ffe1b9",
     },
-    ".ace_classMethod &, & + .ace_completion-meta": {
+    ".ace_classMethod, .ace_classMethod + .ace_completion-meta": {
         color: "#708687",
     },
     ".ace_tooltip.ace_doc-tooltip": {
