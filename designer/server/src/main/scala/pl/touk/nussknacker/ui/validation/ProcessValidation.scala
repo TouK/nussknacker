@@ -16,7 +16,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -83,8 +83,10 @@ class ProcessValidation(
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
       // TODO: remove duplicate errors that were validated in both DP and CP level
-      uiValidationResult
-        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
+      deduplicateErrors(
+        uiValidationResult
+          .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
+      )
     } else {
       uiValidationResult
     }
@@ -243,6 +245,20 @@ class ProcessValidation(
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
       processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
       globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
+    )
+  }
+
+  private def deduplicateErrors(result: ValidationResult): ValidationResult = {
+    val deduplicatedInvalidNodes = result.errors.invalidNodes.map { case (key, value) => key -> value.distinct }
+    val deduplicatedProcessPropertiesErrors = result.errors.processPropertiesErrors.distinct
+    val deduplicatedGlobalErrors            = result.errors.globalErrors.distinct
+
+    result.copy(errors =
+      ValidationErrors(
+        invalidNodes = deduplicatedInvalidNodes,
+        processPropertiesErrors = deduplicatedProcessPropertiesErrors,
+        globalErrors = deduplicatedGlobalErrors
+      )
     )
   }
 

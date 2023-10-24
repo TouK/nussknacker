@@ -78,8 +78,8 @@ object ProcessCompilationError {
 
   case class TrailingSpacesNodeId(nodeId: String) extends NodeIdError with InASingleNode
 
-  object EmptyNodeId extends NodeIdError {
-    override def nodeIds = Set()
+  final case class EmptyNodeId() extends NodeIdError with InASingleNode {
+    override val nodeId = ""
   }
 
   final case class EmptyScenarioId(isFragment: Boolean) extends ProcessCompilationError with ScenarioPropertiesError

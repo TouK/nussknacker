@@ -57,7 +57,7 @@ object IdValidator {
     applySingleErrorValidation[CanonicalProcess](_.id.isEmpty, process => EmptyScenarioId(process.metaData.isFragment))
 
   private def validateIdIsNotEmpty(implicit nodeId: NodeData) =
-    applySingleErrorValidation[NodeData](_.id.isEmpty, _ => EmptyNodeId)
+    applySingleErrorValidation[NodeData](_.id.isEmpty, _ => EmptyNodeId())
 
   private def validateIdIsNotBlank(implicit process: CanonicalProcess) =
     applySingleErrorValidation[CanonicalProcess](_.id.isBlank, process => BlankScenarioId(process.metaData.isFragment))

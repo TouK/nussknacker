@@ -80,7 +80,7 @@ object PrettyValidationErrors {
         }
       case nodeIdError: NodeIdError =>
         nodeIdError match {
-          case EmptyNodeId =>
+          case EmptyNodeId() =>
             node(
               // TODO: change id to name - user sees node name as a readable name, not as an id
               // TODO: what to do about errors like this that have to be displayed in toast message and in editor?

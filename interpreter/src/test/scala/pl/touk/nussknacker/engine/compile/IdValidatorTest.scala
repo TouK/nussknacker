@@ -8,16 +8,17 @@ import org.scalatest.prop.TableFor2
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 class IdValidatorTest extends AnyFunSuite with Matchers {
 
   test("should handle all cases of scenario id validation") {
-    forAll(IdValidationTestCases.scenarioIdErrorCases) {
+    forAll(IdValidationTestData.scenarioIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
           IdValidator.validate(validScenario(scenarioId)) match {
             case Validated.Invalid(errors) =>
-              errors.toList should contain theSameElementsAs expectedErrors
+              errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
               expectedErrors shouldBe empty
           }
@@ -26,12 +27,12 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("should handle all cases of fragment id validation") {
-    forAll(IdValidationTestCases.fragmentIdErrorCases) {
+    forAll(IdValidationTestData.fragmentIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
         {
           IdValidator.validate(validFragment(scenarioId)) match {
             case Validated.Invalid(errors) =>
-              errors.toList should contain theSameElementsAs expectedErrors
+              errors.toList shouldBe expectedErrors
             case Validated.Valid(_) =>
               expectedErrors shouldBe empty
           }
@@ -40,11 +41,11 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("should handle all cases of node id validation") {
-    forAll(IdValidationTestCases.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
+    forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       {
         IdValidator.validate(validScenario(nodeId = nodeId)) match {
           case Validated.Invalid(errors) =>
-            errors.toList should contain theSameElementsAs expectedErrors
+            errors.toList shouldBe expectedErrors
           case Validated.Valid(_) =>
             expectedErrors shouldBe empty
         }
@@ -56,24 +57,37 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     val scenarioWithEmptyIds = validScenario("", "")
     IdValidator.validate(scenarioWithEmptyIds) match {
       case Validated.Invalid(errors) =>
-        errors.toList should contain theSameElementsAs List(EmptyScenarioId(false), EmptyNodeId)
+        errors.toList shouldBe List(EmptyScenarioId(false), EmptyNodeId)
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
     }
   }
 
-  private def validScenario(id: String = "id", nodeId: String = "nodeId") =
+  private def validScenario(id: String = "id", nodeId: String = "nodeId"): CanonicalProcess =
     ScenarioBuilder
       .streaming(id)
-      .source(nodeId, "test")
-      .emptySink("sinkId", "test")
+      .source(nodeId, "source")
+      .emptySink("sinkId", "sink")
 
-  private def validFragment(id: String) =
+  private def validFragment(id: String): CanonicalProcess =
     ScenarioBuilder.fragmentWithInputNodeId(id, "input").emptySink("sinkId", "test")
 
 }
 
-object IdValidationTestCases {
+object IdValidationTestData {
+
+  val nodeIdErrorCases: TableFor2[String, List[NodeIdError]] = Table(
+    ("nodeId", "errors"),
+    ("validId", List.empty),
+    ("", List(EmptyNodeId())),
+    ("  ", List(BlankNodeId("  "))),
+    ("trailingSpace ", List(TrailingSpacesNodeId("trailingSpace "))),
+    (" leadingSpace", List(LeadingSpacesNodeId(" leadingSpace"))),
+    (
+      " leadingAndTrailingSpace ",
+      List(LeadingSpacesNodeId(" leadingAndTrailingSpace "), TrailingSpacesNodeId(" leadingAndTrailingSpace "))
+    ),
+  )
 
   val scenarioIdErrorCases: TableFor2[String, List[ProcessCompilationError]] = buildProcessIdErrorCases(false)
   val fragmentIdErrorCases: TableFor2[String, List[ProcessCompilationError]] = buildProcessIdErrorCases(true)
@@ -92,18 +106,5 @@ object IdValidationTestCases {
       ),
     )
   }
-
-  val nodeIdErrorCases: TableFor2[String, List[ProcessCompilationError]] = Table(
-    ("nodeId", "errors"),
-    ("validId", List.empty),
-    ("", List(EmptyNodeId)),
-    ("  ", List(BlankNodeId("  "))),
-    ("trailingSpace ", List(TrailingSpacesNodeId("trailingSpace "))),
-    (" leadingSpace", List(LeadingSpacesNodeId(" leadingSpace"))),
-    (
-      " leadingAndTrailingSpace ",
-      List(LeadingSpacesNodeId(" leadingAndTrailingSpace "), TrailingSpacesNodeId(" leadingAndTrailingSpace "))
-    ),
-  )
 
 }
