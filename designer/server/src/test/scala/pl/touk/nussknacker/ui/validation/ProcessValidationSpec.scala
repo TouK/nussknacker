@@ -218,6 +218,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
   }
 
+  // TODO: add other test cases for properties and node ids validation
+  // TDOO: add test for not duplicating errors for node and scenario id validation
   test("check for empty ids") {
     val process = createProcess(
       List(
@@ -233,7 +235,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         "EmptyNodeId",
         "Nodes cannot have empty id",
         "Nodes cannot have empty id",
-        Some("id"),
+        Some("$id"),
         RenderNotAllowed
       )
     )
@@ -360,10 +362,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     flinkProcessValidation.validate(scenarioWithEmptyId).errors.processPropertiesErrors should matchPattern {
       case List(
             NodeValidationError(
-              "ScenarioNameValidationError",
+              "EmptyScenarioId",
               "Scenario name is mandatory and cannot be empty",
               "Scenario name is mandatory and cannot be empty",
-              Some("id"),
+              Some("$id"),
               ValidationResults.NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -375,10 +377,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     TestFactory.processValidation.validate(scenarioWithEmptyId).errors.processPropertiesErrors should matchPattern {
       case List(
             NodeValidationError(
-              "ScenarioNameValidationError",
+              "EmptyScenarioId",
               "Fragment name is mandatory and cannot be empty",
               "Fragment name is mandatory and cannot be empty",
-              Some("id"),
+              Some("$id"),
               ValidationResults.NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -859,9 +861,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       "in\"'." -> List(
         NodeValidationError(
           "InvalidCharacters",
-          "Invalid characters",
           "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id",
-          None,
+          "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id",
+          Some("$id"),
           RenderNotAllowed
         )
       )
