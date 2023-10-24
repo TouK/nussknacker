@@ -523,9 +523,11 @@ class HttpService {
     }
 
     archiveProcess(processId) {
-        return api
-            .post(`/archive/${encodeURIComponent(processId)}`)
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true));
+        const promise = api.post(`/archive/${encodeURIComponent(processId)}`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true),
+        );
+        return promise;
     }
 
     unArchiveProcess(processId) {
@@ -656,13 +658,18 @@ class HttpService {
             return;
         }
 
-        const errorResponseData = error?.response?.data || error.message;
+        const errorResponseData = error?.response?.data;
         const errorMessage =
             errorResponseData instanceof Blob
                 ? await errorResponseData.text()
                 : typeof errorResponseData === "string"
                 ? errorResponseData
                 : JSON.stringify(errorResponseData);
+
+        console.error(
+            `Error with --> \n StatusText: ${error.response.statusText} \n Status: ${error.response.status}  \n Message: ${error.message} \n Server: ${error.response.headers.server}`,
+        );
+
         this.#addErrorMessage(message, errorMessage, showErrorText);
         return Promise.resolve(error);
     }

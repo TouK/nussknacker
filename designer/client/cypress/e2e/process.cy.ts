@@ -159,6 +159,37 @@ describe("Process", () => {
             cy.deployScenario(undefined, true);
         });
 
+        it("should display '?' when renaming a node and updating the count", () => {
+            cy.intercept("GET", "/api/processCounts/*", {
+                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
+                enricher: { all: 120, errors: 10, fragmentCounts: {} },
+                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
+                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
+            });
+
+            cy.contains(/^counts$/i).click();
+            cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+            cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
+            cy.get("[model-id=dynamicService]").contains("dynamicService").should("be.visible");
+            cy.get("[data-testid=window]").find("input[type=text]").type("12").click();
+            cy.get("[data-testid=window]")
+                .contains(/^apply$/i)
+                .click();
+
+            cy.intercept("GET", "/api/processCounts/*", {
+                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
+                enricher: { all: 120, errors: 10, fragmentCounts: {} },
+                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
+                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
+            });
+
+            cy.contains(/^counts$/i).click();
+
+            cy.get("[data-testid=window]").contains(/^ok$/i).click();
+            cy.get("#app-container>main").matchImage();
+        });
+
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
 
