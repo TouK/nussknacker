@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, TypedMap}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.json.swagger.extractor.ShallowTypedMap
+import pl.touk.nussknacker.engine.json.swagger.extractor.LazyJsonTypedMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.time.LocalDate

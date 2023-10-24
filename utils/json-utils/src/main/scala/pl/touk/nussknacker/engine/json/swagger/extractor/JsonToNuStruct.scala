@@ -92,7 +92,7 @@ object JsonToNuStruct {
           )
         case obj: SwaggerObject =>
           // extractObject(obj)
-          ShallowTypedMap(json.asObject.get, obj) //
+          LazyJsonTypedMap(json.asObject.get, obj, path)
         case u @ SwaggerUnion(types) =>
           types.view
             .flatMap(aType => Try(apply(json, aType)).toOption)

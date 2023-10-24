@@ -4,9 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import io.circe._
-import io.circe.Json.{fromBoolean, fromInt, fromLong, fromString, fromValues}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
+import io.circe.Json.{fromInt, fromString, fromValues}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToObjectError
@@ -15,7 +13,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 import java.{util => ju}
 
-class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
+class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
   import scala.jdk.CollectionConverters._
 
@@ -52,7 +50,7 @@ class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessag
       AdditionalPropertiesDisabled
     )
 
-    val value = ShallowTypedMap(jsonObject, definition)
+    val value = LazyJsonTypedMap(jsonObject, definition)
 
     value shouldBe a[TypedMap]
 
@@ -125,7 +123,7 @@ class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessag
       elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))),
       AdditionalPropertiesDisabled
     )
-    val result = ShallowTypedMap(jsonObject, definition)
+    val result = LazyJsonTypedMap(jsonObject, definition)
 
     val mapField = result.get("mapField").asInstanceOf[TypedMap]
 
@@ -138,7 +136,7 @@ class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessag
   test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
-    val result = ShallowTypedMap(jsonObject, definitionWithoutFields)
+    val result = LazyJsonTypedMap(jsonObject, definitionWithoutFields)
 
     result.size() shouldBe 0
     Option(result.get("field3")) shouldBe Symbol("empty")
@@ -148,28 +146,32 @@ class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessag
     result shouldBe a[ju.Map[_, _]]
 
     val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
-    val result2                = ShallowTypedMap(jsonObject, definitionWithOneField)
-    result2 shouldEqual TypedMap(Map("field2" -> 1L)).asInstanceOf[ju.Map[String, Any]]
+    val result2                = LazyJsonTypedMap(jsonObject, definitionWithOneField)
+    result2 shouldEqual TypedMap(Map("field2" -> 1L))
 
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
     val json       = JsonObject("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    val result     = ShallowTypedMap(json, definition)
-    result.asScala shouldBe
-      Map(
-        "field1" -> "value",
-        "field2" -> java.math.BigDecimal.valueOf(1)
+    val result     = LazyJsonTypedMap(json, definition)
+    result shouldBe
+      TypedMap(
+        Map(
+          "field1" -> "value",
+          "field2" -> java.math.BigDecimal.valueOf(1)
+        )
       )
 
     val jsonIntegers = JsonObject("field1" -> fromInt(2), "field2" -> fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    ShallowTypedMap(jsonIntegers, definition2).asScala shouldBe
-      Map(
-        "field1" -> 2L,
-        "field2" -> 1L
+    LazyJsonTypedMap(jsonIntegers, definition2) shouldBe
+      TypedMap(
+        Map(
+          "field1" -> 2L,
+          "field2" -> 1L
+        )
       )
   }
 
@@ -178,7 +180,7 @@ class ShallowTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessag
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      ShallowTypedMap(json, definition).extractValue("field1")
+      LazyJsonTypedMap(json, definition).get("field1")
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
