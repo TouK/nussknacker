@@ -53,11 +53,14 @@ describe("Fragment", () => {
             .click();
 
         cy.wait(750);
-        cy.get("[data-testid=graphPage]").matchImage({
-            screenshotConfig: {
-                blackout: ["> :not(#nk-graph-main) > div"],
-            },
-        });
+        cy.getNode("sendSms")
+            .parent()
+            .matchImage({
+                screenshotConfig: {
+                    padding: 16,
+                    blackout: ["> :not(#nk-graph-main) > div"],
+                },
+            });
 
         cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
@@ -172,31 +175,37 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.contains("fragments").should("be.visible").click();
+        cy.getNode("enricher").as("enricher");
         cy.contains(`${fragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 450, position: "right", force: true });
+            .drag("@enricher", { target: { x: 250, y: -20 }, force: true });
         cy.layoutScenario();
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("be.visible").click();
-        cy.contains("dead-end").first().should("be.visible").drag("#nk-graph-main", { x: 800, y: 520, position: "right", force: true });
-        cy.getNode("output").click().type("{backspace}");
+        cy.getNode("output").as("output");
+        cy.contains("dead-end")
+            .first()
+            .should("be.visible")
+            .drag("@output", { target: { x: 0, y: 0 }, force: true });
+        cy.get("@output").click().type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
         cy.contains(/^save$/i).should("be.disabled");
 
         cy.viewport(2000, 800);
         cy.get<string>("@scenarioName").then((name) => cy.visitProcess(name));
+        cy.getNode("sendSms").as("sendSms");
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 800, position: "right", force: true });
+            .drag("@sendSms", { target: { x: 250, y: -20 }, force: true });
         cy.layoutScenario();
 
-        cy.getNode("sendSms")
+        cy.get("@sendSms")
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
