@@ -3,7 +3,7 @@ import React, { useCallback, useMemo } from "react";
 import { Parameter } from "../../../../types";
 import MapKey from "../editors/map/MapKey";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
-import { DndItems } from "./DndItems";
+import { DndItems } from "../../../common/dndItems/DndItems";
 import { FieldsRow } from "./FieldsRow";
 import { NodeRowFields } from "./NodeRowFields";
 import { TypeSelect } from "./TypeSelect";
