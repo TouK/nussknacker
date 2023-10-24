@@ -164,8 +164,16 @@ const globalStyles = {
         fontWeight: 500,
         lineHeight: 1.1,
         color: "inherit",
+        marginTop: "20px",
+        marginBottom: "10px",
     },
 
+    a: {
+        textDecoration: "none",
+        ":hover": {
+            textDecoration: "underline",
+        },
+    },
     "small, .small": {
         fontSize: "85%",
     },
@@ -225,6 +233,9 @@ const globalStyles = {
         bottom: "25px",
         right: "25px",
         zIndex: 10000,
+    },
+    ".notification-dismiss": {
+        display: "none",
     },
 };
 
