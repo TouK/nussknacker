@@ -42,7 +42,13 @@ class ProcessesExportImportResourcesSpec
   private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
   private val processesExportResources =
-    new ProcessesExportResources(futureFetchingProcessRepository, processActivityRepository, processResolving)
+    new ProcessesExportResources(
+      futureFetchingProcessRepository,
+      processService,
+      processActivityRepository,
+      processResolving
+    )
+
   private val routeWithAllPermissions =
     withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)

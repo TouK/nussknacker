@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
@@ -85,10 +86,13 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to delete process") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createArchivedProcess(processName, false)
 
-    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnDeleted(`processId`) => }
+    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+      status shouldBe StatusCodes.OK
+      eventually {
+        processChangeListener.events.toArray.last should matchPattern { case OnDeleted(`processId`) => }
+      }
     }
   }
 

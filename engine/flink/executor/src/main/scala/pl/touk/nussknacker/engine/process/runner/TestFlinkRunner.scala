@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object TestFlinkRunner {
 
@@ -20,11 +20,11 @@ object TestFlinkRunner {
       scenario: CanonicalProcess,
       deploymentData: DeploymentData = DeploymentData.empty,
       version: ProcessVersion = ProcessVersion.empty,
-      testRunId: Option[TestRunId] = None
+      resultCollector: ResultCollector = ProductionServiceInvocationCollector
   ): Unit = {
     val registrar =
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-    registrar.register(env, scenario, version, deploymentData, testRunId)
+    registrar.register(env, scenario, version, deploymentData, resultCollector)
   }
 
   def registerInEnvironment(
@@ -35,10 +35,10 @@ object TestFlinkRunner {
       scenario: CanonicalProcess,
       deploymentData: DeploymentData = DeploymentData.empty,
       version: ProcessVersion = ProcessVersion.empty,
-      testRunId: Option[TestRunId] = None
+      resultCollector: ResultCollector = ProductionServiceInvocationCollector
   ): Unit = {
     val modelData = LocalModelData(config, configCreator)
-    registerInEnvironmentWithModel(env, modelData)(scenario, deploymentData, version, testRunId)
+    registerInEnvironmentWithModel(env, modelData)(scenario, deploymentData, version, resultCollector)
   }
 
 }

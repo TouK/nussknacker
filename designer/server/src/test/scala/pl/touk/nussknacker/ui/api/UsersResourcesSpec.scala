@@ -18,7 +18,7 @@ class UsersResourcesSpec
     with NuResourcesTest
     with PatientScalaFutures {
 
-  private val usersRoute = new UserResources(processCategoryService)
+  private val usersRoute = new UserResources(() => processCategoryService)
 
   test("fetch user info") {
     getUser(isAdmin = false) ~> check {
