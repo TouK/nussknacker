@@ -167,18 +167,16 @@ class ProcessValidation(
 
   private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
     val nodeIdErrors = displayable.nodes
-      .map(n => n.id -> IdValidator.validateNodeId(n))
-      .filter(n => n._2.isInvalid)
-      .collect { case (key, Invalid(errors)) =>
-        key -> errors.map(PrettyValidationErrors.formatErrorMessage).toList
+      .map(n => IdValidator.validateNodeId(n))
+      .collect { case Invalid(e) =>
+        e
       }
-      .toMap
+      .reduceOption(_ concatNel _)
 
-    ValidationResult.errors(
-      nodeIdErrors,
-      List(),
-      List()
-    )
+    nodeIdErrors match {
+      case Some(value) => formatErrors(value)
+      case None        => ValidationResult.success
+    }
   }
 
   private def validateScenarioProperties(displayable: DisplayableProcess): ValidationResult = {
