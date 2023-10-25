@@ -299,4 +299,18 @@ object SwaggerObject {
     SwaggerObject(properties, additionalProperties, patternProperties)
   }
 
+  def fieldSwaggerTypeByKey(definition: SwaggerObject, key: String): Option[SwaggerTyped] =
+    definition.elementType.get(key) orElse patternPropertyOption(definition, key).map(
+      _.propertyType
+    ) orElse additionalPropertyOption(definition.additionalProperties)
+
+  private def patternPropertyOption(definition: SwaggerObject, key: String) = definition.patternProperties
+    .find(_.testPropertyName(key))
+
+  private def additionalPropertyOption(additionalProperties: AdditionalProperties): Option[SwaggerTyped] =
+    additionalProperties match {
+      case AdditionalPropertiesEnabled(swaggerType) => Some(swaggerType)
+      case _                                        => None
+    }
+
 }

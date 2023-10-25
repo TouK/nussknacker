@@ -23,39 +23,34 @@ final case class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObj
 
   private val loader: CacheLoader[String, Option[Any]] = key => Some(extractValue(key))
   private val cache: LoadingCache[String, Option[Any]] = Caffeine.newBuilder.build(loader)
-  private val definedFields: List[String] = jsonObject.keys.filter(keyStringSwaggerType(_).isDefined).toList
+  private val definedFields: List[String] =
+    jsonObject.keys.filter(SwaggerObject.fieldSwaggerTypeByKey(definition, _).isDefined).toList
 
-  override def remove(key: Any): Any                   = ???
-  override def putAll(m: ju.Map[_ <: String, _]): Unit = ???
-  override def clear(): Unit                           = ???
-  override def put(key: String, value: Any): Any       = ???
+  override def remove(key: Any): Any                   = immutableException
+  override def putAll(m: ju.Map[_ <: String, _]): Unit = immutableException
+  override def clear(): Unit                           = immutableException
+  override def put(key: String, value: Any): Any       = immutableException
 
-  override def size(): Int = extractException {
-    jsonObject.keys.count(keyStringSwaggerType(_).isDefined)
-  }
+  override def size(): Int = definedFields.size
 
-  override def isEmpty: Boolean = extractException {
+  override def isEmpty(): Boolean =
     definedFields.isEmpty
-  }
 
   override def containsKey(key: Any): Boolean =
-    extractException {
-      definedFields.contains(key)
-    }
+    definedFields.contains(key)
 
-  override def containsValue(value: Any): Boolean = extractException {
+  override def containsValue(value: Any): Boolean = withCauseExtraction {
     entrySet().stream().anyMatch(_.getValue == value)
   }
 
-  override def keySet(): ju.Set[String] = extractException {
+  override def keySet(): ju.Set[String] =
     jsonObject.filterKeys(definedFields.contains).keys.toSet.asJava
-  }
 
-  override def values(): ju.Collection[Any] = extractException {
+  override def values(): ju.Collection[Any] = withCauseExtraction {
     entrySet().stream().map[Any](_.getValue).collect(toList())
   }
 
-  override def entrySet(): ju.Set[ju.Map.Entry[String, Any]] = extractException {
+  override def entrySet(): ju.Set[ju.Map.Entry[String, Any]] = withCauseExtraction {
     cache
       .getAll(definedFields.asJava)
       .entrySet()
@@ -66,35 +61,22 @@ final case class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObj
       .collect(Collectors.toSet[ju.Map.Entry[String, Any]])
   }
 
-  override def get(key: Any): Any = extractException {
+  override def get(key: Any): Any = withCauseExtraction {
     cache.get(key.asInstanceOf[String]).orNull
   }
 
   override def toString: String = cache.getAll(definedFields.asJava).asScala.toString()
 
   private def extractValue(keyString: String): Any =
-    keyStringSwaggerType(keyString) match {
+    SwaggerObject.fieldSwaggerTypeByKey(definition, keyString) match {
       case Some(swaggerType) =>
         JsonToNuStruct(jsonObject(keyString).getOrElse(Json.Null), swaggerType, addPath(keyString))
       case None => JsonToObjectError(jsonObject.asJson, definition, path)
     }
 
-  private def keyStringSwaggerType(keyString: String): Option[SwaggerTyped] =
-    definition.elementType.get(keyString) orElse patternPropertyOption(keyString).map(
-      _.propertyType
-    ) orElse additionalPropertyOption(definition.additionalProperties)
-
-  private def patternPropertyOption(keyString: String) = definition.patternProperties
-    .find(_.testPropertyName(keyString))
-
-  private def additionalPropertyOption(additionalProperties: AdditionalProperties): Option[SwaggerTyped] =
-    additionalProperties match {
-      case AdditionalPropertiesEnabled(swaggerType) => Some(swaggerType)
-      case _                                        => None
-    }
-
   private def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
+  private def immutableException = throw new UnsupportedOperationException("LazyJsonTypedMap is immutable")
 }
 
 object LazyJsonTypedMap {
@@ -103,7 +85,7 @@ object LazyJsonTypedMap {
     new LazyJsonTypedMap(jsonObject, definition, path)
   }
 
-  private def extractException[A](expression: => A) = Try(expression).adaptErr { case ex: CompletionException =>
+  private def withCauseExtraction[A](expression: => A) = Try(expression).adaptErr { case ex: CompletionException =>
     ex.getCause
   }.get
 

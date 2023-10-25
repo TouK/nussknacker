@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToOb
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
+import scala.annotation.tailrec
 
 class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
@@ -162,15 +163,20 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       )
     )
 
-    def assertPath(json: Json, path: String, fields: String*) =
-      intercept[JsonToObjectError] {
-        var result = JsonToNuStruct(json, definition).asInstanceOf[java.util.Map[_, _]]
+    def assertPath(json: Json, path: String, fields: String*) = {
+      def toMap: PartialFunction[Any, LazyJsonTypedMap] = { case map: LazyJsonTypedMap => map }
 
-        fields.init.foreach { field =>
-          result = result.get(field).asInstanceOf[java.util.Map[_, _]]
+      @tailrec def extractField(obj: Any, fields: List[String]): Any =
+        fields match {
+          case Nil          => obj
+          case last :: Nil  => toMap(obj).get(last)
+          case head :: rest => extractField(toMap(obj).get(head), rest)
         }
-        result.get(fields.last)
+
+      intercept[JsonToObjectError] {
+        extractField(JsonToNuStruct(json, definition), fields.toList)
       }.path shouldBe path
+    }
 
     assertPath(Json.obj("string" -> fromLong(1)), "string", "string")
     assertPath(
