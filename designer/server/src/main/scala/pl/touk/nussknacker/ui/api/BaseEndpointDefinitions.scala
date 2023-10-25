@@ -4,8 +4,7 @@ import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir.EndpointInput.Auth
-import sttp.tapir._
+import sttp.tapir.{EndpointInput, _}
 
 import scala.language.implicitConversions
 
@@ -32,7 +31,7 @@ object BaseEndpointDefinitions {
 
     import Codecs._
 
-    def withSecurity(auth: Auth[AuthCredentials, _]): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
+    def withSecurity(auth: EndpointInput[AuthCredentials]): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
       endpoint
         .securityIn(auth)
         .errorOutEither(

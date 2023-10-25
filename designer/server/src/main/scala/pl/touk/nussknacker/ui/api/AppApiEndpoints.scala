@@ -17,7 +17,7 @@ import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
-class AppApiEndpoints(auth: Auth[AuthCredentials, _]) extends BaseEndpointDefinitions {
+class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos._
 

@@ -27,7 +27,7 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
       realm = realm
     )
 
-  override def authenticationMethod(): Auth[AuthCredentials, _] = {
+  override def authenticationMethod(): EndpointInput[AuthCredentials] = {
     auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm))
   }
 
