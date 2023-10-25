@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   BlankNodeId,
+  BlankScenarioId,
   ExpressionParserCompilationError,
   InvalidPropertyFixedValue,
   ScenarioNameValidationError
@@ -323,9 +324,12 @@ class NodeResourcesSpec
         ),
         PrettyValidationErrors.formatErrorMessage(
           ScenarioNameValidationError(
-            s"Invalid scenario name \"$blankValue\". Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
+            s"Invalid scenario name $blankValue. Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
             "Provided scenario name is invalid for this category. Please enter valid name using only specified characters."
           )
+        ),
+        PrettyValidationErrors.formatErrorMessage(
+          BlankScenarioId(isFragment = false)
         )
       )
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
