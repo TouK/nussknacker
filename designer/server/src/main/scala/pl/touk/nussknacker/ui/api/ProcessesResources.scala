@@ -10,7 +10,6 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
@@ -49,7 +48,6 @@ class ProcessesResources(
           complete {
             processService
               .getRawProcessesWithDetails[Unit](ProcessesQuery.empty.copy(isArchived = Some(true)))
-              .map(_.map(BasicProcess(_)))
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -76,7 +74,8 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcessDetailsWithStateOnly(query).map(_.map(_.toBasicProcess))
+              // TODO: consider not returning versions as it was before clean-ups
+              processService.getProcessDetailsWithStateOnly(query)
             }
           }
         }

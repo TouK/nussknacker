@@ -6,6 +6,7 @@ import io.circe.parser
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -61,7 +62,7 @@ class AppApiHttpService(
               businessError(
                 HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
-                  processes = Some(set.keys.toSet)
+                  processes = Some(set.keys.map(_.value).toSet)
                 )
               )
             }
@@ -155,7 +156,7 @@ class AppApiHttpService(
       }
   }
 
-  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
     for {
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
       statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)
@@ -168,7 +169,7 @@ class AppApiHttpService(
 
   private def mapNameToProcessState(
       processes: Seq[BaseProcessDetails[_]]
-  )(implicit user: LoggedUser): Seq[Future[(String, ProcessState)]] = {
+  )(implicit user: LoggedUser): Seq[Future[(ProcessName, ProcessState)]] = {
     // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))

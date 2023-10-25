@@ -62,7 +62,7 @@ trait ProcessStateService {
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[String, ProcessState]]
+  ): Future[Map[ProcessName, ProcessState]]
 
   def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
       implicit user: LoggedUser,

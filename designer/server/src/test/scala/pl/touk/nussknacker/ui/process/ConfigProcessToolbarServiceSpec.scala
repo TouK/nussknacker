@@ -207,7 +207,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
     val processToolbarConfig = ProcessToolbarsConfigProvider.create(config, Some(process.processCategory))
     val id                   = ToolbarHelper.createProcessToolbarId(processToolbarConfig, process)
 
-    def processName(process: BaseProcessDetails[_]) = UriUtils.encodeURIComponent(process.name)
+    def processName(process: BaseProcessDetails[_]) = UriUtils.encodeURIComponent(process.name.value)
 
     (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") =>

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -47,7 +48,7 @@ object ComponentsUsageHelper {
           val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] =
             fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
           val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] =
-            groupedFragmentsComponentUsages.get(fragmentName).toList.flatten.map {
+            groupedFragmentsComponentUsages.get(ProcessName(fragmentName)).toList.flatten.map {
               case u @ ScenarioComponentsUsage(_, _, _, _, nodeId) =>
                 val refinedUsage: ScenarioComponentsUsage[NodeUsageData] =
                   u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))

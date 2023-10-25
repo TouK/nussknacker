@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId => ApiProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessVersion}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 
 import java.time.Instant
@@ -14,7 +14,7 @@ import java.time.Instant
 @JsonCodec
 final case class ValidatedProcessDetails(
     id: String,
-    name: String,
+    name: ProcessName,
     processId: ApiProcessId,
     processVersionId: VersionId,
     isLatestVersion: Boolean,
@@ -39,7 +39,7 @@ final case class ValidatedProcessDetails(
     state: Option[ProcessState]
 ) {
 
-  lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
+  lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
 
   def withScenarioGraphAndValidationResult(
       scenarioWithValidationResult: ValidatedDisplayableProcess
@@ -48,8 +48,6 @@ final case class ValidatedProcessDetails(
   }
 
   // TODO: Instead of doing these conversions below, pass around ValidatedProcessDetails
-  def toBasicProcess: BasicProcess = BasicProcess(toProcessDetailsWithoutScenarioGraphAndValidationResult)
-
   def toProcessDetailsWithoutScenarioGraphAndValidationResult: BaseProcessDetails[Unit] = {
     toBaseProcessDetails(())
   }
@@ -58,7 +56,6 @@ final case class ValidatedProcessDetails(
     toBaseProcessDetails(scenarioGraphAndValidationResultUnsafe.toDisplayable)
   }
 
-  // TODO: replace by toProcessDetailsWithoutScenarioGraphAndValidationResult?
   private def toBaseProcessDetails[T](prepareJson: => T): BaseProcessDetails[T] = {
     BaseProcessDetails(
       id = id,

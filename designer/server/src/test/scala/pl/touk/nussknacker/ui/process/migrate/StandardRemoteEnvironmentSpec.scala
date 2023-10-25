@@ -8,7 +8,6 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -164,8 +163,6 @@ class StandardRemoteEnvironmentSpec
       fragments: List[ValidatedProcessDetails]
   ) = new MockRemoteEnvironment {
 
-    private def basicProcesses: List[BasicProcess] = (processes ++ fragments).map(_.toBasicProcess)
-
     private def allProcesses: List[ValidatedProcessDetails] = processes ++ fragments
 
     override protected def request(
@@ -174,20 +171,20 @@ class StandardRemoteEnvironmentSpec
         request: MessageEntity,
         header: Seq[HttpHeader]
     ): Future[HttpResponse] = {
-      object GetBasicProcesses {
+      object GetProcessesDetailsWithoutScenarioGraph {
         def unapply(arg: (Uri, HttpMethod)): Boolean = {
           arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
         }
       }
 
       object GetProcessesDetails {
-        def unapply(arg: (Uri, HttpMethod)): Option[Set[String]] = {
+        def unapply(arg: (Uri, HttpMethod)): Option[Set[ProcessName]] = {
           val uri = arg._1
           if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri
               .query()
               .get("isArchived")
               .contains("false") && arg._2 == HttpMethods.GET) {
-            uri.query().get("names").map(_.split(",").toSet)
+            uri.query().get("names").map(_.split(",").map(ProcessName(_)).toSet)
           } else {
             None
           }
@@ -195,8 +192,10 @@ class StandardRemoteEnvironmentSpec
       }
 
       (uri, method) match {
-        case GetBasicProcesses() =>
-          Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+        case GetProcessesDetailsWithoutScenarioGraph() =>
+          Marshal(allProcesses.map(_.copy(json = None))).to[ResponseEntity].map { entity =>
+            HttpResponse(entity = entity)
+          }
         case GetProcessesDetails(names) =>
           Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity =>
             HttpResponse(entity = entity)
@@ -413,7 +412,7 @@ class StandardRemoteEnvironmentSpec
     migrationResult should have size 2
     migrationResult.map(
       _.converted.id
-    ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.id)
+    ) should contain only (ProcessTestData.validProcessDetails.name.value, ProcessTestData.sampleFragment.id)
   }
 
 }

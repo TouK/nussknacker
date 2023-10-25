@@ -17,7 +17,7 @@ import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ProcessVersion}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessVersion}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
@@ -45,7 +45,7 @@ trait RemoteEnvironment {
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
-  def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(
+  def testMigration(processToInclude: ValidatedProcessDetails => Boolean = _ => true)(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
@@ -196,7 +196,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def testMigration(
-      processToInclude: BasicProcess => Boolean = _ => true
+      processToInclude: ValidatedProcessDetails => Boolean = _ => true
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
@@ -208,7 +208,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchGroupByGroup[T](
-      basicProcesses: List[BasicProcess]
+      basicProcesses: List[ValidatedProcessDetails]
   )(implicit ec: ExecutionContext): FutureE[List[ValidatedProcessDetails]] = {
     basicProcesses
       .map(_.name)
@@ -222,8 +222,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       }
   }
 
-  private def fetchProcesses(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[BasicProcess]]] = {
-    invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
+  private def fetchProcesses(
+      implicit ec: ExecutionContext
+  ): Future[Either[NuDesignerError, List[ValidatedProcessDetails]]] = {
+    invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
   }
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])(

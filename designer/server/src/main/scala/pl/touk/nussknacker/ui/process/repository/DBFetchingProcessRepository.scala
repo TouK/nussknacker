@@ -205,7 +205,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     BaseProcessDetails[PS](
       id = process.name.value, // TODO: replace by Long / ProcessId
       processId = process.id,  // TODO: Remove it weh we will support Long / ProcessId
-      name = process.name.value,
+      name = process.name,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,

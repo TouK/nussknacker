@@ -341,7 +341,7 @@ class DeploymentServiceImpl(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[String, ProcessState]] =
+  ): Future[Map[ProcessName, ProcessState]] =
     for {
       processesInProgress <- getInProgressActionTypesForAllProcesses
       processStatus <- processes

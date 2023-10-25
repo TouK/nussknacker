@@ -61,7 +61,7 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessingType, ProcessState]] =
+  ): Future[Map[ProcessName, ProcessState]] =
     Future.successful(Map.empty)
 
   override def enrichDetailsWithProcessState[T](

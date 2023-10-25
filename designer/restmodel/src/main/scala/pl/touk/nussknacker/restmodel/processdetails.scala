@@ -20,52 +20,6 @@ object processdetails {
 
   val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
-  object BasicProcess {
-
-    def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
-      id = baseProcessDetails.id,
-      name = ProcessName(baseProcessDetails.name),
-      processId = baseProcessDetails.processId,
-      processVersionId = baseProcessDetails.processVersionId,
-      isFragment = baseProcessDetails.isFragment,
-      isArchived = baseProcessDetails.isArchived,
-      processCategory = baseProcessDetails.processCategory,
-      processingType = baseProcessDetails.processingType,
-      modificationDate = baseProcessDetails.modificationDate,
-      modifiedAt = baseProcessDetails.modifiedAt,
-      modifiedBy = baseProcessDetails.modifiedBy,
-      createdAt = baseProcessDetails.createdAt,
-      createdBy = baseProcessDetails.createdBy,
-      lastAction = baseProcessDetails.lastAction,
-      lastStateAction = baseProcessDetails.lastStateAction,
-      lastDeployedAction = baseProcessDetails.lastDeployedAction,
-      state = baseProcessDetails.state
-    )
-
-  }
-
-  @JsonCodec final case class BasicProcess(
-      id: String,
-      name: ProcessName,
-      processId: ApiProcessId,
-      processVersionId: VersionId,
-      isArchived: Boolean,
-      isFragment: Boolean,
-      processCategory: String,
-      processingType: ProcessingType,
-      modificationDate: Instant,
-      modifiedAt: Instant,
-      modifiedBy: String,
-      createdAt: Instant,
-      createdBy: String,
-      lastAction: Option[ProcessAction],
-      lastStateAction: Option[ProcessAction],
-      lastDeployedAction: Option[ProcessAction],
-      // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
-      // After that it remains always defined.
-      state: Option[ProcessState] = Option.empty
-  )
-
   object BaseProcessDetails {
     // It's necessary to encode / decode ProcessState
     implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder
@@ -75,7 +29,7 @@ object processdetails {
 
   final case class BaseProcessDetails[ProcessShape](
       id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
-      name: String,
+      name: ProcessName,
       processId: ApiProcessId, // TODO: Remove it when we will support Long / ProcessId
       processVersionId: VersionId,
       isLatestVersion: Boolean,
@@ -105,7 +59,7 @@ object processdetails {
       // After that it remains always defined.
       state: Option[ProcessState] = Option.empty
   ) {
-    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
+    lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
 
     def mapProcess[NewShape](action: ProcessShape => NewShape): BaseProcessDetails[NewShape] = copy(json = action(json))
 

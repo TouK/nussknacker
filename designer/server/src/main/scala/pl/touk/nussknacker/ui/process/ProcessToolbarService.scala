@@ -134,7 +134,7 @@ private[process] object ToolbarHelper {
       else "scenario"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
-    val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name
+    val processName = if (urlOption) UriUtils.encodeURIComponent(process.name.value) else process.name.value
 
     text
       .replace("$processName", processName)

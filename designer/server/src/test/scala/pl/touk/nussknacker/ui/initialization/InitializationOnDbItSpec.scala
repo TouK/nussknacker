@@ -50,7 +50,7 @@ abstract class InitializationOnDbItSpec
         repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
       )
       .futureValue
-      .map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+      .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when fragments present" in {
@@ -69,7 +69,7 @@ abstract class InitializationOnDbItSpec
         repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
       )
       .futureValue
-      .map(d => (d.name, d.modelVersion))
+      .map(d => (d.name.value, d.modelVersion))
       .toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
   }
 
@@ -92,7 +92,7 @@ abstract class InitializationOnDbItSpec
         repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
       )
       .futureValue
-      .map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+      .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
   private def saveSampleProcess(processName: String = processId, fragment: Boolean = false): Unit = {

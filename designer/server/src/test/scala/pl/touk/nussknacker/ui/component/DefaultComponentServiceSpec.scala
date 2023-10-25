@@ -755,7 +755,7 @@ class DefaultComponentServiceSpec
           (FraudFragment, List(ScenarioUsageData(FragmentFilterName))),
           (
             FraudProcessWithFragment,
-            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))
+            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name.value, FragmentFilterName))
           ),
         )
       ),

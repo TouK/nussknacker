@@ -87,7 +87,7 @@ class DBFetchingProcessRepositorySpec
       )
       .futureValue
 
-    processes.map(_.name) shouldEqual "categorized-c1" :: Nil
+    processes.map(_.name.value) shouldEqual "categorized-c1" :: Nil
   }
 
   test("should rename process") {

@@ -130,14 +130,14 @@ class ProcessesResourcesSpec
     Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ValidatedProcessDetails]
-      validated.name shouldBe processName.value
+      validated.name shouldBe processName
       validated.validationResult.value.errors should not be empty
     }
 
     Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       val validated = responseAs[ValidatedProcessDetails]
-      validated.name shouldBe processName.value
+      validated.name shouldBe processName
       validated.validationResult shouldBe empty
     }
   }
@@ -407,14 +407,14 @@ class ProcessesResourcesSpec
       processes.loneElement.name shouldBe "proc1"
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.categories(List(TestCat))) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+      processes.loneElement.name.value shouldBe "proc1"
     }
 
     forScenariosReturned(ProcessesQuery.empty.categories(List(TestCat2))) { processes =>
       processes.loneElement.name shouldBe "proc2"
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.categories(List(TestCat2))) { processes =>
-      processes.loneElement.name shouldBe "proc2"
+      processes.loneElement.name.value shouldBe "proc2"
     }
 
     forScenariosReturned(ProcessesQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
@@ -450,7 +450,7 @@ class ProcessesResourcesSpec
       processes.loneElement.name shouldBe "proc1"
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1"))) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+      processes.loneElement.name.value shouldBe "proc1"
     }
     forScenariosReturned(ProcessesQuery.empty.names(List("proc3"))) { processes =>
       processes.size shouldBe 0
@@ -481,7 +481,7 @@ class ProcessesResourcesSpec
         .processingTypes(List(Streaming))
         .unarchived()
     ) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+      processes.loneElement.name.value shouldBe "proc1"
     }
     forScenariosReturned(
       ProcessesQuery.empty
@@ -499,7 +499,7 @@ class ProcessesResourcesSpec
         .processingTypes(List(Streaming))
         .archived()
     ) { processes =>
-      processes.loneElement.name shouldBe "proc3"
+      processes.loneElement.name.value shouldBe "proc3"
     }
     forScenariosReturned(ProcessesQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
       processes.size shouldBe 0
@@ -649,7 +649,7 @@ class ProcessesResourcesSpec
       }
     }
     forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.name == SampleProcess.process.id) shouldBe true
+      processes.exists(_.name.value == SampleProcess.process.id) shouldBe true
     }
   }
 
@@ -668,7 +668,7 @@ class ProcessesResourcesSpec
 
     getProcess(processName) ~> check {
       val processDetails = responseAs[ProcessDetails]
-      processDetails.name shouldBe SampleProcess.process.id
+      processDetails.name.value shouldBe SampleProcess.process.id
       processDetails.history.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
@@ -867,7 +867,7 @@ class ProcessesResourcesSpec
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ValidatedProcessDetails]]
           processes should have size 2
-          processes.map(_.name) should contain only (firstProcessName.value, secondProcessName.value)
+          processes.map(_.name) should contain only (firstProcessName, secondProcessName)
           every(processes.map(_.validationResult)) shouldBe empty
         }
       }
@@ -974,7 +974,7 @@ class ProcessesResourcesSpec
       }
 
       forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-        val process = processes.find(_.name == expectedName.value).value
+        val process = processes.find(_.name.value == expectedName.value).value
         process.state shouldBe None
       }
     }
@@ -991,7 +991,7 @@ class ProcessesResourcesSpec
     forScenariosDetailsReturned(query) { processes =>
       processes.size shouldBe expectedNames.size
       expectedNames.foreach { name =>
-        assert(processes.exists(_.name == name.value), s"Missing name: ${name.value} for query: $query.")
+        assert(processes.exists(_.name.value == name.value), s"Missing name: ${name.value} for query: $query.")
       }
     }
   }

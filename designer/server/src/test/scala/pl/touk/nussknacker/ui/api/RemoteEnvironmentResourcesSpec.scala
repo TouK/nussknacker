@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.{ValidatedProcessDetails, processdetails}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
@@ -181,19 +181,6 @@ class RemoteEnvironmentResourcesSpec
     }
   }
 
-  // we replace Types with Unkown because this is how types from RemoteEnvironment are decoded (to avoid classloading issues...)
-  private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
-    process.copy(validationResult =
-      process.validationResult.map(validationResult =>
-        validationResult.copy(nodeResults =
-          validationResult.nodeResults.mapValuesNow(v =>
-            v.copy(variableTypes = v.variableTypes.mapValuesNow(_ => Unknown))
-          )
-        )
-      )
-    )
-  }
-
   class MockRemoteEnvironment(
       testMigrationResults: List[TestMigrationResult] = List(),
       val mockDifferences: Map[String, Map[String, ProcessComparator.Difference]] = Map()
@@ -228,7 +215,7 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ProcessVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: processdetails.BasicProcess => Boolean
+        processToInclude: ValidatedProcessDetails => Boolean
     )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

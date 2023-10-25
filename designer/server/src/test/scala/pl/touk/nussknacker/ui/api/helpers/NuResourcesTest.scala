@@ -29,7 +29,6 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.BasicProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, ValidatedProcessDetails, processdetails}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
@@ -375,14 +374,14 @@ trait NuResourcesTest
   protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
       callback: List[ProcessJson] => Unit
   ): Unit = {
-    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[BasicProcess]] =
-      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[BasicProcess]]])
+    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ValidatedProcessDetails]] =
+      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ValidatedProcessDetails]]])
     val url = query.createQueryParamsUrl("/processes")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
-      responseAs[List[BasicProcess]] // just to test if decoder succeds
+      responseAs[List[ValidatedProcessDetails]] // just to test if decoder succeds
       callback(processes)
     }
   }
