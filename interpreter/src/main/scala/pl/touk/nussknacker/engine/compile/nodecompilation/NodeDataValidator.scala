@@ -32,6 +32,7 @@ case class ValidationPerformed(
     expressionType: Option[TypingResult]
 ) extends ValidationResponse
 
+// TODO: Remove ValidationNotPerformed
 case object ValidationNotPerformed extends ValidationResponse
 
 object NodeDataValidator {

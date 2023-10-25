@@ -49,25 +49,25 @@ object PrettyValidationErrors {
           case EmptyScenarioId(isFragment) =>
             node(
               s"${if (isFragment) "Fragment" else "Scenario"} name is mandatory and cannot be empty",
-              s"${if (isFragment) "Fragment" else "Scenario"} name is mandatory and cannot be empty",
+              s"Empty ${if (isFragment) "fragment" else "scenario"}",
               fieldName = Some("$id")
             )
           case BlankScenarioId(isFragment) =>
             node(
               s"${if (isFragment) "Fragment" else "Scenario"} name cannot be blank",
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot be blank",
+              s"Blank ${if (isFragment) "fragment" else "scenario"} name",
               fieldName = Some("$id")
             )
           case LeadingSpacesScenarioId(isFragment) =>
             node(
               s"${if (isFragment) "Fragment" else "Scenario"} name cannot have leading spaces",
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have leading spaces",
+              s"Leading spaces in ${if (isFragment) "fragment" else "scenario"} name",
               fieldName = Some("$id")
             )
           case TrailingSpacesScenarioId(isFragment) =>
             node(
               s"${if (isFragment) "Fragment" else "Scenario"} name cannot have trailing spaces",
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have trailing spaces",
+              s"Trailing spaces in ${if (isFragment) "fragment" else "scenario"} name",
               fieldName = Some("$id")
             )
           case ScenarioNameValidationError(message, description) =>
@@ -82,36 +82,34 @@ object PrettyValidationErrors {
         nodeIdError match {
           case EmptyNodeId() =>
             node(
-              // TODO: change id to name - user sees node name as a readable name, not as an id
-              // TODO: what to do about errors like this that have to be displayed in toast message and in editor?
-              "Nodes cannot have empty id",
-              "Nodes cannot have empty id",
+              "Node name cannot be empty",
+              "Empty node name",
               errorType = NodeValidationErrorType.RenderNotAllowed,
               fieldName = Some("$id")
             )
-          case InvalidCharacters(nodeId) =>
+          case InvalidCharactersNodeId(_) =>
             node(
-              s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
-              s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
+              "Node name contains invalid characters. Quotation mark (\"), comma (,) and apostrophe (') are not allowed",
+              "Invalid characters in node name",
               NodeValidationErrorType.RenderNotAllowed,
               Some("$id")
             )
           case BlankNodeId(_) =>
             node(
               "Node name cannot be blank",
-              "Node name cannot be blank",
+              "Blank node name",
               fieldName = Some("$id")
             )
           case LeadingSpacesNodeId(_) =>
             node(
               "Node name cannot have leading spaces",
-              "Node name cannot have leading spaces",
+              "Leading spaces in node name",
               fieldName = Some("$id")
             )
           case TrailingSpacesNodeId(_) =>
             node(
               "Node name cannot have trailing spaces",
-              "Node name cannot have trailing spaces",
+              "Trailing spaces in node name",
               fieldName = Some("$id")
             )
         }

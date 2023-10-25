@@ -83,7 +83,6 @@ class ProcessValidation(
     // displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      // TODO: remove duplicate errors that were validated in both DP and CP level
       deduplicateErrors(
         uiValidationResult
           .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))

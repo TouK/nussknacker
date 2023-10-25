@@ -19,13 +19,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
   * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
   * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
-* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add method `ScenarioBuilder` to create fragments with specified
-  input node id instead of taking a default from fragment id
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
+  from fragment id
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
-    * Replace `processProperties` with `additionalFields`
-    * Add `id` field for scenario or fragment id
+  * Replace `processProperties` with `additionalFields`
+  * Add `id` field for scenario or fragment id
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

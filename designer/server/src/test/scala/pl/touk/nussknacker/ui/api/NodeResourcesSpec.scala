@@ -323,7 +323,7 @@ class NodeResourcesSpec
         ),
         PrettyValidationErrors.formatErrorMessage(
           ScenarioNameValidationError(
-            s"Invalid scenario name $blankValue. Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
+            s"Invalid scenario name \"$blankValue\". Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
             "Provided scenario name is invalid for this category. Please enter valid name using only specified characters."
           )
         )

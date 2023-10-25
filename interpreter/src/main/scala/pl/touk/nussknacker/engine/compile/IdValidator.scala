@@ -83,7 +83,10 @@ object IdValidator {
     applySingleErrorValidation[NodeData](_.id.endsWith(" "), n => TrailingSpacesNodeId(n.id))
 
   private def validateNodeHasNoIllegalCharacters(implicit node: NodeData) = {
-    applySingleErrorValidation[NodeData](_.id.exists(nodeIdIllegalCharacters.contains), n => InvalidCharacters(n.id))
+    applySingleErrorValidation[NodeData](
+      _.id.exists(nodeIdIllegalCharacters.contains),
+      n => InvalidCharactersNodeId(n.id)
+    )
   }
 
 }
