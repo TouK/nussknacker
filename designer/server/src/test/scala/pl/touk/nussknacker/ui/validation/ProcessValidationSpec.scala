@@ -3,18 +3,14 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  MissingSourceFactory,
-  NodeIdError,
-  ScenarioNameValidationError,
-  UnknownFragment
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -793,29 +789,6 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("check for invalid characters") {
-    val process = createProcess(
-      List(
-        Source("in\"'.", SourceRef(existingSourceFactory, List())),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("in\"'.", "out", None))
-    )
-    val result = configuredValidator.validate(process)
-
-    result.errors.invalidNodes shouldBe Map(
-      "in\"'." -> List(
-        NodeValidationError(
-          "InvalidCharacters",
-          "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id",
-          "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id",
-          Some("$id"),
-          RenderNotAllowed
-        )
-      )
-    )
-  }
-
   test("should validate scenario id") {
     forAll(IdValidationTestData.scenarioIdErrorCases) {
       (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
@@ -842,6 +815,29 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
           .flatMap(n => n.nodeIds.map(id => id -> PrettyValidationErrors.formatErrorMessage(n)))
           .groupMap(_._1)(_._2)
         result shouldBe nodeErrors
+      }
+    }
+  }
+
+  test("should validate scenario id with error preventing canonized form") {
+    val incompleteScenarioWithBlankIds = createProcess(
+      List(
+        Variable(id = " ", varName = "var", value = "")
+      ),
+      List.empty
+    ).copy(id = " ")
+    val result = TestFactory.flinkProcessValidation.validate(incompleteScenarioWithBlankIds)
+    inside(result) {
+      case ValidationResult(errors, _, _) => {
+        inside(errors) {
+          case ValidationErrors(nodeErrors, propertiesErrors, _) => {
+            nodeErrors should contain key " "
+            nodeErrors(" ") should contain(PrettyValidationErrors.formatErrorMessage(BlankNodeId(" ")))
+            propertiesErrors shouldBe List(
+              PrettyValidationErrors.formatErrorMessage(BlankScenarioId(isFragment = false))
+            )
+          }
+        }
       }
     }
   }

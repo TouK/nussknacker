@@ -30,7 +30,6 @@ object IdValidator {
     scenarioIdValidationResult.combine(nodesIdValidationResult)
   }
 
-  // TODO: add method to validate scenario id separately for uiValidation
   def validateNodeId(node: NodeData): ValidatedNel[ProcessCompilationError, Unit] = {
     (
       validateIdIsNotEmpty(node).andThen { _ =>

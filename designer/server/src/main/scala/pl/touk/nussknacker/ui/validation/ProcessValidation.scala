@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
@@ -106,8 +107,8 @@ class ProcessValidation(
   }
 
   def uiValidation(displayable: DisplayableProcess): ValidationResult = {
-    // TODO: also validate scenario Id
-    validateNodesId(displayable)
+    validateScenarioId(displayable)
+      .add(validateNodesId(displayable))
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
@@ -165,6 +166,19 @@ class ProcessValidation(
     val disabledNodesWarnings =
       disabledNodes.map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id))))).toMap
     ValidationResult.warnings(disabledNodesWarnings)
+  }
+
+  private def validateScenarioId(displayable: DisplayableProcess): ValidationResult = {
+    val fakeCanonicalProcess =
+      if (displayable.metaData.isFragment) {
+        ScenarioBuilder.fragmentWithInputNodeId(displayable.id, "inputId").emptySink("sinkId", "stub")
+      } else {
+        ScenarioBuilder.streaming(displayable.id).source("sourceId", "stub").emptySink("sinkId", "stub")
+      }
+    IdValidator.validate(fakeCanonicalProcess) match {
+      case Valid(_)   => ValidationResult.success
+      case Invalid(e) => formatErrors(e)
+    }
   }
 
   private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
