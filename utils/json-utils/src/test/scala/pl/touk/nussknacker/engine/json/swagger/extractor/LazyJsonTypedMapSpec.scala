@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import io.circe._
-import io.circe.Json.{fromInt, fromString, fromValues}
+import io.circe.{Json, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToObjectError
@@ -18,17 +17,19 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
   import scala.jdk.CollectionConverters._
 
   private val jsonObject = JsonObject(
-    "field1"       -> fromString("value"),
+    "field1"       -> Json.fromString("value"),
     "field2"       -> Json.fromInt(1),
-    "field4"       -> fromString("2020-07-10T12:12:30+02:00"),
-    "field5"       -> fromString(""),
-    "field6"       -> fromString("12:12:35+02:00"),
-    "field7"       -> fromString("2020-07-10"),
+    "field4"       -> Json.fromString("2020-07-10T12:12:30+02:00"),
+    "field5"       -> Json.fromString(""),
+    "field6"       -> Json.fromString("12:12:35+02:00"),
+    "field7"       -> Json.fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
     "doubleField"  -> Json.fromDoubleOrNull(1.55),
     "nullField"    -> Json.Null,
-    "mapField"     -> Json.obj(("a", fromString("1")), ("b", fromInt(2)), ("c", fromValues(List(fromString("d"))))),
-    "mapOfStringsField" -> Json.obj(("a", fromString("b")), ("c", fromString("d")), ("e", fromString("f"))),
+    "mapField" -> Json
+      .obj(("a", Json.fromString("1")), ("b", Json.fromInt(2)), ("c", Json.fromValues(List(Json.fromString("d"))))),
+    "mapOfStringsField" -> Json
+      .obj(("a", Json.fromString("b")), ("c", Json.fromString("d")), ("e", Json.fromString("f"))),
   )
 
   test("should parse object with all required fields present") {
@@ -152,7 +153,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
-    val json       = JsonObject("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = JsonObject("field1" -> Json.fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
     val result     = LazyJsonTypedMap(json, definition)
     result shouldBe
@@ -163,7 +164,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
         )
       )
 
-    val jsonIntegers = JsonObject("field1" -> fromInt(2), "field2" -> fromInt(1))
+    val jsonIntegers = JsonObject("field1" -> Json.fromInt(2), "field2" -> Json.fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
     LazyJsonTypedMap(jsonIntegers, definition2) shouldBe
@@ -176,7 +177,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
   }
 
   test("should throw exception on trying convert string to integer") {
-    val json       = JsonObject("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = JsonObject("field1" -> Json.fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
@@ -184,6 +185,48 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
+  }
+
+  test("equals tests") {
+    val definition = SwaggerObject(
+      elementType = Map(
+        "field1"            -> SwaggerString,
+        "field2"            -> SwaggerLong,
+        "field3"            -> SwaggerLong,
+        "field4"            -> SwaggerDateTime,
+        "field5"            -> SwaggerDateTime,
+        "field6"            -> SwaggerTime,
+        "field7"            -> SwaggerDate,
+        "decimalField"      -> SwaggerBigDecimal,
+        "doubleField"       -> SwaggerDouble,
+        "nullField"         -> SwaggerNull,
+        "mapField"          -> SwaggerObject(Map.empty),
+        "mapOfStringsField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))
+      ),
+      AdditionalPropertiesDisabled
+    )
+
+    val map1 = LazyJsonTypedMap(jsonObject, definition)
+    val map2 = LazyJsonTypedMap(jsonObject, definition)
+
+    map1.equals(map2) shouldBe true
+    map1 == map2 shouldBe true
+
+    val jsonIntegers = JsonObject("field1" -> Json.fromInt(2), "field2" -> Json.fromInt(1))
+    val definition2 =
+      SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
+    val map3 = LazyJsonTypedMap(jsonIntegers, definition2)
+    val map4 = TypedMap(
+      Map(
+        "field1" -> 2L,
+        "field2" -> 1L
+      )
+    )
+
+    map3.equals(map4) shouldBe true
+    map4.equals(map3) shouldBe true
+    map3 == map4 shouldBe true
+    map4 == map3 shouldBe true
   }
 
 }

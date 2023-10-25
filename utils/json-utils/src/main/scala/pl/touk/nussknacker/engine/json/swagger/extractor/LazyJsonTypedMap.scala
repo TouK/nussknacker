@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.{CacheLoader, Caffeine, LoadingCache}
 import io.circe.syntax.EncoderOps
 import io.circe.{Json, JsonObject}
 import pl.touk.nussknacker.engine.json.swagger._
-
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToObjectError
 
 import java.{util => ju}
@@ -13,11 +12,11 @@ import scala.util.Try
 import cats.implicits._
 
 import java.util.concurrent.CompletionException
+import java.util.stream.Collectors
 
-class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: String = "")
-    extends java.util.Map[String, Any] {
-
-  def this() = this(JsonObject.empty, SwaggerObject(Map.empty, AdditionalPropertiesDisabled, List.empty))
+final case class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: String = "")
+    extends java.util.AbstractMap[String, Any]
+    with java.util.Map[String, Any] {
 
   import LazyJsonTypedMap._
   import scala.jdk.CollectionConverters._
@@ -29,7 +28,7 @@ class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: 
   override def remove(key: Any): Any                   = ???
   override def putAll(m: ju.Map[_ <: String, _]): Unit = ???
   override def clear(): Unit                           = ???
-  override def put(key: String, value: Any): Any       = cache.put(key, Option(value))
+  override def put(key: String, value: Any): Any       = ???
 
   override def size(): Int = extractException {
     jsonObject.keys.count(keyStringSwaggerType(_).isDefined)
@@ -45,7 +44,7 @@ class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: 
     }
 
   override def containsValue(value: Any): Boolean = extractException {
-    entrySet().stream().anyMatch { x => x.getValue == value }
+    entrySet().stream().anyMatch(_.getValue == value)
   }
 
   override def keySet(): ju.Set[String] = extractException {
@@ -53,18 +52,18 @@ class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: 
   }
 
   override def values(): ju.Collection[Any] = extractException {
-    entrySet().stream().map { x => x.getValue }.collect(toList())
+    entrySet().stream().map[Any](_.getValue).collect(toList())
   }
 
   override def entrySet(): ju.Set[ju.Map.Entry[String, Any]] = extractException {
     cache
       .getAll(definedFields.asJava)
-      .asScala
-      .map { case (key, value) =>
-        new ju.AbstractMap.SimpleEntry[String, Any](key, value.orNull): ju.Map.Entry[String, Any]
+      .entrySet()
+      .stream
+      .map[ju.Map.Entry[String, Any]] { entry =>
+        new ju.AbstractMap.SimpleEntry(entry.getKey, entry.getValue.orNull)
       }
-      .toSet
-      .asJava
+      .collect(Collectors.toSet[ju.Map.Entry[String, Any]])
   }
 
   override def get(key: Any): Any = extractException {
@@ -72,12 +71,6 @@ class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: 
   }
 
   override def toString: String = cache.getAll(definedFields.asJava).asScala.toString()
-
-  override def equals(obj: Any): Boolean =
-    obj match {
-      case x: ju.Map[_, _] => x.equals(this)
-      case _               => super.equals(obj)
-    }
 
   private def extractValue(keyString: String): Any =
     keyStringSwaggerType(keyString) match {
