@@ -12,7 +12,7 @@ function LoaderSpinner(props: Props) {
 export default LoaderSpinner;
 
 function CircularProgressWrapper() {
-    const theme = useTheme({});
+    const theme = useTheme();
     return (
         <ThemeProvider theme={theme}>
             <Box sx={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
