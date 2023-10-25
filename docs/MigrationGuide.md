@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.12.0
+## In version 1.12.x
 
 ### Code API changes
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
