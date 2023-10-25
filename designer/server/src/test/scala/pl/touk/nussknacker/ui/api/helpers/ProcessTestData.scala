@@ -148,6 +148,11 @@ object ProcessTestData {
     .customNode("custom", "out1", existingStreamTransformer)
     .emptySink("sink", existingSinkFactory)
 
+  def validProcessWithNodeId(nodeId: String): CanonicalProcess = ScenarioBuilder
+    .streaming("fooProcess")
+    .source(nodeId, existingSourceFactory)
+    .emptySink("sink", existingSinkFactory)
+
   def validProcessWithParam(id: String, param: (String, Expression)): CanonicalProcess = ScenarioBuilder
     .streaming(id)
     .source("source", existingSourceFactory)

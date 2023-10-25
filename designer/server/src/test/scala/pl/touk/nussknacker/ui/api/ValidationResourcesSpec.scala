@@ -116,6 +116,22 @@ class ValidationResourcesSpec
     }
   }
 
+  it should "find errors in scenario id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Scenario name cannot be blank")
+    }
+  }
+
+  it should "find errors in node id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithNodeId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Node name cannot be blank")
+    }
+  }
+
   it should "return fatal error for bad ids" in {
     val invalidCharacters = newDisplayableProcess(
       "p1",

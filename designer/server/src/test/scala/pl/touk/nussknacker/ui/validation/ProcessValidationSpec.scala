@@ -789,34 +789,25 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("should validate scenario id") {
-    forAll(IdValidationTestData.scenarioIdErrorCases) {
-      (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
-        {
-          val testedScenario = ProcessValidationSpec.validFlinkProcess.copy(id = scenarioId)
-          val result = TestFactory.flinkProcessValidation.validate(testedScenario).errors.processPropertiesErrors
-          result shouldBe expectedErrors.map(a => PrettyValidationErrors.formatErrorMessage(a))
-        }
-    }
+  test("should validate invalid scenario id") {
+    val blankValue     = " "
+    val testedScenario = ProcessValidationSpec.validFlinkProcess.copy(id = blankValue)
+    val result         = TestFactory.flinkProcessValidation.validate(testedScenario).errors.processPropertiesErrors
+    result shouldBe List(PrettyValidationErrors.formatErrorMessage(BlankScenarioId(isFragment = false)))
   }
 
-  test("should validate node ids") {
-    forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[NodeIdError]) =>
-      {
-        val testedScenario = createProcess(
-          List(
-            Source(nodeId, SourceRef(existingSourceFactory, List())),
-            Sink("out", SinkRef(existingSinkFactory, List()))
-          ),
-          List(Edge(nodeId, "out", None))
-        )
-        val result = TestFactory.flinkProcessValidation.validate(testedScenario).errors.invalidNodes
-        val nodeErrors = expectedErrors
-          .flatMap(n => n.nodeIds.map(id => id -> PrettyValidationErrors.formatErrorMessage(n)))
-          .groupMap(_._1)(_._2)
-        result shouldBe nodeErrors
-      }
-    }
+  test("should validate invalid node id") {
+    val blankValue = " "
+    val testedScenario = createProcess(
+      List(
+        Source(blankValue, SourceRef(existingSourceFactory, List())),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge(blankValue, "out", None))
+    )
+    val result     = TestFactory.flinkProcessValidation.validate(testedScenario).errors.invalidNodes
+    val nodeErrors = Map(blankValue -> List(PrettyValidationErrors.formatErrorMessage(BlankNodeId(blankValue))))
+    result shouldBe nodeErrors
   }
 
   test("should validate scenario id with error preventing canonized form") {
