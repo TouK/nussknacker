@@ -89,93 +89,8 @@ export const FocusableStyled = styled("div")(
                 }
             }
 
-            .espModal {
-                max-height: fit-content;
-                max-height: -moz-max-content;
-                height: -moz-max-content;
-                height: -webkit-max-content;
-                max-width: 800px;
-                width: 800px;
-                position: relative;
-                background-color: ${theme.custom.colors.charcoal};
-                outline: none;
-                border-radius: 0;
-                padding: 0;
-                border: 2px solid ${theme.custom.colors.nero}
-                box-shadow: 0 0 8px 0 ${alpha(theme.custom.colors.borderColor, 0.2)};
-            }
-
-            .draggable-container {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                display: flex;
-                justify-content: center;
-            }
-
             .modalContentDark {
                 ${modalContent(theme.custom.colors.error, theme.custom.colors.boulder)}
-            }
-
-            .modalFooter {
-                margin-top: 5px;
-                border-top: 2px solid ${theme.custom.colors.nero}; 
-                height: 51px;
-                background-color: ${theme.custom.colors.blackMarlin};
-                .footerButtons {
-                    text-align: right;
-                    & button {
-                        margin-right: 20px;
-                        text-transform: uppercase;
-                    }
-
-                    .modalConfirmButton {
-                        color: ${theme.custom.colors.ok}
-                    }
-                }
-            }
-
-            .esp-button-error {
-                &.right-panel {
-                    border-color: ${theme.custom.colors.error};
-                }
-                &.add-comment {
-                    border-color: ${theme.custom.colors.error}
-                }
-                &.download-button {
-                    border-color: ${theme.custom.colors.error}
-                }
-                &.attachment-button {
-                    border-color: ${theme.custom.colors.error}
-                }
-                :first-child {
-                    & svg {
-                        & g {
-                            .a {
-                                fill:${theme.custom.colors.error}
-                            }
-                        }
-                    }
-                }
-
-                :nth-of-type(2) {
-                    color: ${theme.custom.colors.error}
-                }
-            }
-
-            body .modalButton {
-                ${buttonBase(theme)};
-                width: 120px;
-                height: 30px;
-                font-size: 18px;
-                margin-top: 10px;
-                font-weight: 600;
-                margin-left: 10px;
-                &:disabled {
-                    background:${theme.custom.colors.secondaryBackground}
-                }
             }
 
             .error {
@@ -200,24 +115,6 @@ export const FocusableStyled = styled("div")(
                     }
                 }
 
-                .esp-label {
-                    & rect {
-                        transform: translateY(0.1em) scale(1.2, 1.4);
-                        &:hover {
-                            cursor: zoom-in;
-                            display: table;
-                            & rect {
-                                transform: translateY(0.8em) scale(2.5, 3.5);
-                            }
-
-                            & text {
-                                font-size: 16px;
-                                display: table-cell;
-                            }
-                        }
-                    }
-                }
-
                 &:hover {
                     .connection {
                         stroke: ${theme.custom.colors.scooter};
@@ -231,13 +128,6 @@ export const FocusableStyled = styled("div")(
                         r: 6px;
                     }
                 }
-            }
-
-            .code-completion {
-                color: ${theme.custom.colors.dimGray};
-                position: relative;
-                top: -25px;
-                float: right;
             }
 
             .row-ace-editor {

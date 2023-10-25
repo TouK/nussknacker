@@ -75,6 +75,8 @@ const colors = {
     nobel: "#b5b5b5",
     gray: "#888888",
     emperor: "#555555",
+    arsenic: "#434343",
+    woodCharcoal: "#464646",
 };
 
 const selectColors = {

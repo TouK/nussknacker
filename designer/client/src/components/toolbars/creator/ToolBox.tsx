@@ -8,89 +8,91 @@ import { ComponentGroup } from "../../../types";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
 import { useTranslation } from "react-i18next";
-import { styled } from "@mui/material";
+import { css, darken, styled } from "@mui/material";
 import { alpha } from "../../../containers/theme/helpers";
 
-const StyledToolbox = styled("div")`
-    font-size: 14px;
-    font-weight: 600;
-    padding: 0;
-    padding-bottom: 0.5em;
-    min-height: 2.5em;
+const StyledToolbox = styled("div")(
+    ({ theme }) => css`
+        font-size: 14px;
+        font-weight: 600;
+        padding: 0;
+        padding-bottom: 0.5em;
+        min-height: 2.5em;
 
-    .tree-view {
-        background-color: #3e3e3e;
-    }
-
-    .tree-view_item {
-        background-color: #4d4d4d; //TODO: change me to MUI theme
-        border: 1px solid ${alpha("#434343", 50)}; //TODO: change me to MUI theme
-        cursor: pointer;
-        display: flex;
-        padding: 0 5px;
-        height: 28px;
-        line-height: 28px;
-
-        &:hover {
-            background-color: #444444; //TODO: change me to MUI theme
-            color: #ccc; //TODO: change me to MUI theme
-        }
-    }
-
-    .tree-view_arrow {
-        cursor: inherit;
-    }
-
-    .toolWrapper {
-        background-color: #464646;
-        font-weight: 400;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .tool {
-        margin-bottom: -1px;
-        height: 28px;
-        padding: 0 5px;
-        line-height: 28px;
-        border: 1px solid #434343; //TODO: change me to MUI theme
-
-        &.disabled {
-            opacity: 0.4;
-            cursor: not-allowed !important;
+        .tree-view {
+            background-color: ${theme.custom.colors.mineShaft};
         }
 
-        &:not(.disabled) {
-            cursor: -moz-grab;
-            cursor: -webkit-grab;
-            cursor: grab;
-            &:active {
-                cursor: -moz-grabbing;
-                cursor: -webkit-grabbing;
-                cursor: grabbing;
-            }
-            color: #b3b3b3;
+        .tree-view_item {
+            background-color: ${theme.custom.colors.primaryBackground};
+            border: 1px solid ${alpha(theme.custom.colors.arsenic, 50)};
+            cursor: pointer;
+            display: flex;
+            padding: 0 5px;
+            height: 28px;
+            line-height: 28px;
 
             &:hover {
-                background-color: darken(toolHoverBkgColor, 7%);
-                color: #ccc; //TODO: change me to MUI theme
+                background-color: ${theme.custom.colors.arsenic};
+                color: ${theme.custom.colors.secondaryColor};
             }
         }
-    }
-    .toolIcon {
-        height: 16px;
-        width: 16px;
-        display: inline-flex;
-        vertical-align: middle;
-        margin-right: 5px;
-        margin-bottom: 2px;
-    }
 
-    .group-label {
-        width: 95%;
-    }
-`;
+        .tree-view_arrow {
+            cursor: inherit;
+        }
+
+        .toolWrapper {
+            background-color: ${theme.custom.colors.woodCharcoal};
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tool {
+            margin-bottom: -1px;
+            height: 28px;
+            padding: 0 5px;
+            line-height: 28px;
+            border: 1px solid ${theme.custom.colors.arsenic};
+            &.disabled {
+                opacity: 0.4;
+                cursor: not-allowed !important;
+            }
+
+            &:not(.disabled) {
+                cursor: -moz-grab;
+                cursor: -webkit-grab;
+                cursor: grab;
+                &:active {
+                    cursor: -moz-grabbing;
+                    cursor: -webkit-grabbing;
+                    cursor: grabbing;
+                }
+                color: ${theme.custom.colors.canvasBackground};
+
+                &:hover {
+                    background-color: ${darken(theme.custom.colors.charcoal, 0.07)};
+                    color: ${theme.custom.colors.secondaryColor};
+                }
+            }
+        }
+        .toolIcon {
+            height: 16px;
+            width: 16px;
+            display: inline-flex;
+            vertical-align: middle;
+            margin-right: 5px;
+            margin-bottom: 2px;
+        }
+
+        .group-label {
+            width: 95%;
+        }
+    `,
+);
+
 export default function ToolBox(props: { filter: string }): JSX.Element {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const processCategory = useSelector(getProcessCategory);
