@@ -51,8 +51,15 @@ function useAliasUsageHighlight(token = "alias") {
         debounce(
             (classname: string, enabled: boolean): void => {
                 const el = ref.current?.refEditor;
+
                 if (el) {
-                    el.className = cx(el.className, { [classname]: enabled && !el.className.includes(classname) });
+                    if (!enabled) {
+                        el.className = el.className.replace(classname, "");
+                    }
+
+                    if (!el.className.includes(classname)) {
+                        el.className = cx(el.className, { [classname]: enabled });
+                    }
                 }
             },
             1000,
