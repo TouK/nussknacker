@@ -33,7 +33,7 @@ class OAuth2AuthenticationResources(
 
   private val authenticator = OAuth2Authenticator(service)
 
-  override def authenticationMethod(): Auth[AuthCredentials, _] =
+  override def authenticationMethod(): EndpointInput[AuthCredentials] =
     auth.oauth2
       .authorizationCode(
         authorizationUrl = configuration.authorizeUrl.map(_.toString),

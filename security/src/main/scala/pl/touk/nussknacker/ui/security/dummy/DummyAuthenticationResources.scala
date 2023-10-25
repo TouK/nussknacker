@@ -32,7 +32,7 @@ class DummyAuthenticationResources(override val name: String, configuration: Dum
     ]
   }
 
-  override def authenticationMethod(): Auth[AuthCredentials, _] =
+  override def authenticationMethod(): EndpointInput[AuthCredentials] =
     auth.basic(new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
 
   override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
