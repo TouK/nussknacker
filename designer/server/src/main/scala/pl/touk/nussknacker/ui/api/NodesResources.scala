@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationNotPerformed,
   ValidationPerformed
 }
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData

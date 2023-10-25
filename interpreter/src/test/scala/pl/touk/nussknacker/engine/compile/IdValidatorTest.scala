@@ -57,7 +57,7 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     val scenarioWithEmptyIds = validScenario("", "")
     IdValidator.validate(scenarioWithEmptyIds) match {
       case Validated.Invalid(errors) =>
-        errors.toList shouldBe List(EmptyScenarioId(false), EmptyNodeId)
+        errors.toList shouldBe List(EmptyScenarioId(false), EmptyNodeId())
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
     }
