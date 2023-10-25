@@ -145,7 +145,7 @@ class ValidationResourcesSpec
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Node f1\"' contains invalid characters")
+      entity should include("Node name contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess(
