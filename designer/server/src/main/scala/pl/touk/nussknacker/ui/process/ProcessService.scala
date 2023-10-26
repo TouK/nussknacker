@@ -4,13 +4,15 @@ import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInput
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterFixedListPreset
+import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
@@ -238,17 +240,17 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
-      val (processWithFixedValuesPresets, presetValidation) =
-        substituteFixedValuesPresets(action.process, fixedValuesPresetProvider)
+      val (processWithEffectiveFixedValuesPresets, presetValidation) =
+        fillEffectiveFixedValuesPresets(action.process, fixedValuesPresetProvider)
 
       val result = for {
         validation <- EitherT.fromEither[Future](
           FatalValidationError.saveNotAllowedAsError(
-            presetValidation.add(processResolving.validateBeforeUiResolving(processWithFixedValuesPresets))
+            presetValidation.add(processResolving.validateBeforeUiResolving(processWithEffectiveFixedValuesPresets))
           )
         )
         substituted = {
-          processResolving.resolveExpressions(processWithFixedValuesPresets, validation.typingInfo)
+          processResolving.resolveExpressions(processWithEffectiveFixedValuesPresets, validation.typingInfo)
         }
         updateProcessAction = UpdateProcessAction(
           processIdWithName.id,
@@ -333,7 +335,7 @@ class DBProcessService(
     }
   }
 
-  private def substituteFixedValuesPresets(
+  private def fillEffectiveFixedValuesPresets(
       process: DisplayableProcess,
       fixedValuesPresetProvider: FixedValuesPresetProvider
   ): (DisplayableProcess, ValidationResult) = {
@@ -360,42 +362,50 @@ class DBProcessService(
       }
 
     val nodeErrors = mutable.Map[String, List[NodeValidationError]]()
-    val substituted = process.copy(
+    val processWithEffectivePresets = process.copy(
       nodes = process.nodes.map {
         case fragmentInput: FragmentInput =>
-          fragmentInput.copy(
-            fragmentParams = fragmentInput.fragmentParams.map(_.map { param =>
-              param.fixedValueListPresetId match {
-                case Some(presetId) =>
-                  fixedValuesPresets.get(presetId) match {
-                    case Some(preset) =>
-                      param.copy(fixedValueList =
-                        preset.map(v => node.FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
-                      )
-                    case None =>
-                      nodeErrors(fragmentInput.id) = NodeValidationError(
-                        "FixedValuePresetNotFound",
-                        s"Preset with id='$presetId' not found",
-                        s"Preset with id='$presetId' not found",
-                        Some(param.name),
-                        NodeValidationErrorType.SaveAllowed
-                      ) :: nodeErrors.getOrElse(fragmentInput.id, List[NodeValidationError]())
-
-                      param.copy(fixedValueList =
-                        List.empty
-                      ) // clear fixedValueList instead of possibly using outdated presets
-                  }
-                case None => param
-              }
-
-            })
+          fragmentInput.copy(fragmentParams =
+            fillEffectivePresetsInFragmentInput(fragmentInput, fixedValuesPresets, nodeErrors)
           )
+//        case fragmentInputDefinition: FragmentInputDefinition =>
+//          // TODO here it should be enough to just check whether the presets exists, but filling effectiveFixedValuesList won't hurt
+//          ???
         case node => node
       }
     )
 
-    (substituted, ValidationResult.errors(nodeErrors.toMap, List.empty, List.empty))
+    (processWithEffectivePresets, ValidationResult.errors(nodeErrors.toMap, List.empty, List.empty))
   }
+
+  private def fillEffectivePresetsInFragmentInput(
+      fragmentInput: FragmentInput,
+      fixedValuesPresets: Map[String, List[FixedExpressionValue]],
+      nodeErrors: mutable.Map[String, List[NodeValidationError]]
+  ) =
+    fragmentInput.fragmentParams.map(_.map {
+      case paramWithPreset: FragmentParameterFixedListPreset =>
+        fixedValuesPresets.get(paramWithPreset.fixedValuesListPresetId) match {
+          case Some(preset) =>
+            paramWithPreset.copy(effectiveFixedValuesList =
+              preset.map(v => node.FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+            )
+          case None =>
+            nodeErrors(fragmentInput.id) = NodeValidationError(
+              "FixedValuesPresetNotFound",
+              s"Preset with id='${paramWithPreset.fixedValuesListPresetId}' not found",
+              s"Preset with id='${paramWithPreset.fixedValuesListPresetId}' not found",
+              Some(paramWithPreset.name),
+              NodeValidationErrorType.SaveAllowed
+            ) :: nodeErrors.getOrElse(fragmentInput.id, List.empty)
+
+            paramWithPreset.copy(effectiveFixedValuesList =
+              List.empty // clear effectiveFixedValuesList instead of possibly using outdated presets
+            )
+        }
+
+      case p => p
+    })
 
   private def validateInitialScenarioProperties(
       canonicalProcess: CanonicalProcess,

@@ -138,7 +138,7 @@ class AkkaHttpBasedRouteProvider(
       val scenarioResolver = new ScenarioResolver(fragmentResolver)
       val dmDispatcher     = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
-      val fixedValuesPresetProvider = createFixedValuePresetProvider(resolvedConfig, sttpBackend)
+      val fixedValuesPresetProvider = createFixedValuesPresetProvider(resolvedConfig, sttpBackend)
 
       val deploymentService = new DeploymentServiceImpl(
         dmDispatcher,
@@ -479,7 +479,7 @@ class AkkaHttpBasedRouteProvider(
     additionalUIConfigProviderFactory.create(config, sttpBackend)
   }
 
-  private def createFixedValuePresetProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
+  private def createFixedValuesPresetProvider(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext
   ) = {
     val fixedValuesPresetProviderFactory: FixedValuesPresetProviderFactory = {

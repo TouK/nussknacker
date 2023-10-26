@@ -18,13 +18,17 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentParameter,
+  FragmentParameterFixedListPreset
+}
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.sampleFragmentOneOutWithPreset
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
@@ -613,7 +617,7 @@ class ProcessesResourcesSpec
   }
 
   test("update process with fragment that uses fixed value preset should fill fixedValuesList") {
-    val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName, sampleFragmentOneOutWithPreset)
     val displayableFragment =
       ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
     savefragment(displayableFragment)(succeed)
@@ -626,8 +630,9 @@ class ProcessesResourcesSpec
         case fragmentInput: FragmentInput =>
           fragmentInput.fragmentParams match {
             case Some(params) =>
-              params.flatMap { param =>
-                if (param.fixedValueListPresetId.isDefined) Some(param) else None
+              params.flatMap {
+                case paramWithPreset: FragmentParameterFixedListPreset => Some(paramWithPreset)
+                case _                                                 => None
               }
             case None => List.empty
           }
@@ -635,9 +640,11 @@ class ProcessesResourcesSpec
       }
 
       assert(fragmentInputParamsUsingPreset.nonEmpty)
-      fragmentInputParamsUsingPreset.foreach { param => assert(param.fixedValueList.nonEmpty) }
+      fragmentInputParamsUsingPreset.foreach { param => assert(param.effectiveFixedValuesList.nonEmpty) }
     }
   }
+
+  // todo add test for failing provider/missing presets
 
   test("return details of process with empty expression") {
     saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, TestCat) {

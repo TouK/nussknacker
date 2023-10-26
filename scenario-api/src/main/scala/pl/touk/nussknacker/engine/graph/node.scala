@@ -358,9 +358,9 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         inputMode: InputModeWithFixedList,
-        fixedValueList: List[FixedExpressionValue],
+        fixedValuesList: List[FixedExpressionValue],
     ) extends FragmentParameter {
-      override val effectiveFixedValuesList: List[FixedExpressionValue] = fixedValueList
+      override val effectiveFixedValuesList: List[FixedExpressionValue] = fixedValuesList
     }
 
     case class FragmentParameterFixedListPreset(
@@ -370,7 +370,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         inputMode: InputModeWithFixedList,
-        fixedValueListPresetId: String,
+        fixedValuesListPresetId: String,
         effectiveFixedValuesList: List[
           FixedExpressionValue
         ] // filled by BE and used only by BE, to not require Preset provider at process compilation

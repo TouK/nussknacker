@@ -64,11 +64,11 @@ object SingleComponentConfig {
     editor: Option[ParameterEditor],
     validators: Option[List[ParameterValidator]],
     label: Option[String],
-    hintText: Option[String] = None
+    hintText: Option[String]
 )
 
 object ParameterConfig {
-  val empty: ParameterConfig = ParameterConfig(None, None, None, None)
+  val empty: ParameterConfig = ParameterConfig(None, None, None, None, None)
 }
 
 @JsonCodec case class ScenarioPropertyConfig(

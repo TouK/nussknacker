@@ -4,6 +4,11 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentParameterFixedListPreset,
+  FragmentParameterFixedValuesDirectInput,
+  FragmentParameterNoFixedValues
+}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Processor, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -110,7 +115,18 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case sub @ FragmentInputDefinition(_, subParams, _)
           if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
-        sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
+        sub.copy(parameters =
+          sub.parameters.map(p =>
+            if (p.name == "param1") {
+              val paramName = "param42"
+              p match {
+                case f: FragmentParameterNoFixedValues          => f.copy(name = paramName)
+                case f: FragmentParameterFixedValuesDirectInput => f.copy(name = paramName)
+                case f: FragmentParameterFixedListPreset        => f.copy(name = paramName)
+              }
+            } else p
+          )
+        )
 
       case sub @ FragmentInput(_, ref, _, _, _)
           if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>

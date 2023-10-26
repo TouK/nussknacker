@@ -11,10 +11,15 @@ import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  FragmentParameterFixedListPreset
+}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -25,6 +30,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, sampleFragmentOneOut}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
@@ -46,7 +52,7 @@ class BaseFlowTest
     with WithTestHttpClient
     with Matchers
     with OptionValues
-    with EitherValuesDetailedMessage { // todo test fixed value presets here
+    with EitherValuesDetailedMessage {
 
   import BaseFlowTest._
 
@@ -108,13 +114,14 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
             "paramDualEditor" -> ParameterConfig(
               None,
               None,
               Some(
                 List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
               ),
+              None,
               None
             )
           )
@@ -131,9 +138,10 @@ class BaseFlowTest
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
               None,
+              None,
               None
             ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "baz" -> ParameterConfig(
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
@@ -158,7 +166,7 @@ class BaseFlowTest
       "sub1" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
           )
         ),
         icon = None,
@@ -169,8 +177,14 @@ class BaseFlowTest
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
-            "overriddenByDevConfigParam"  -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None, None),
+            "overriddenByDevConfigParam" -> ParameterConfig(
+              None,
+              None,
+              Some(List(MandatoryParameterValidator)),
+              None,
+              None
+            )
           )
         ),
         icon = None,

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.Fragment
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterFixedListPreset
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
 import pl.touk.nussknacker.ui.BadRequestError
@@ -131,9 +132,9 @@ class DeploymentServiceImpl(
       d => Some(d.processVersionId),
       d => Some(d.processingType)
     ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      val processDetailsWithFixedValuesPresets = substituteFixedValuesPresets(processDetails)
+      val processDetailsWithEffectiveFixedValuesPresets = fillEffectiveFixedValuesPresets(processDetails)
 
-      validateBeforeDeploy(processDetailsWithFixedValuesPresets, actionId).transformWith {
+      validateBeforeDeploy(processDetailsWithEffectiveFixedValuesPresets, actionId).transformWith {
         case Failure(ex) =>
           dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
         case Success(validationResult) =>
@@ -176,21 +177,21 @@ class DeploymentServiceImpl(
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
 
-  private def substituteFixedValuesPresets(
+  private def fillEffectiveFixedValuesPresets(
       processDetails: BaseProcessDetails[CanonicalProcess]
   ): BaseProcessDetails[CanonicalProcess] = {
-    def replaceFixedValueList(replacement: String => List[FragmentInputDefinition.FixedExpressionValue]) =
+    def fillEffectivePresets(getEffectivePreset: String => List[FragmentInputDefinition.FixedExpressionValue]) =
       processDetails.mapProcess(_.mapAllNodes { nodes =>
         nodes.map {
           case fragment: Fragment =>
             fragment.copy(
               data = fragment.data.copy(
-                fragmentParams = fragment.data.fragmentParams.map(_.map { param =>
-                  param.fixedValueListPresetId match {
-                    case Some(presetId) =>
-                      param.copy(fixedValueList = replacement(presetId))
-                    case None => param
-                  }
+                fragmentParams = fragment.data.fragmentParams.map(_.map {
+                  case paramWithPreset: FragmentParameterFixedListPreset =>
+                    paramWithPreset.copy(effectiveFixedValuesList =
+                      getEffectivePreset(paramWithPreset.fixedValuesListPresetId)
+                    )
+                  case p => p
                 })
               )
             )
@@ -201,15 +202,17 @@ class DeploymentServiceImpl(
     try {
       val fixedValuesPresets = fixedValuesPresetProvider.getAll
 
-      replaceFixedValueList(
+      fillEffectivePresets(
         fixedValuesPresets(_).map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
       )
     } catch {
       case e: Throwable =>
-        logger.warn(s"Failed to substitute fixed value presets during deployment ", e)
-        // we skip substitution instead of throwing, because missing presets (which are an UI functionality) shouldn't block deployment
-        // the only impact of this skip is that the process can pass validation it otherwise wouldn't, if allowOnlyValuesFromFixedValuesList=true but the provided value is no longer in the used preset
-        replaceFixedValueList(_ => List.empty) // clear fixedValueList instead of possibly using outdated presets
+        logger.warn(s"Failed to fill effective fixed value presets during deployment ", e)
+        // we skip filling effective presets instead of throwing, because missing presets (which are an UI functionality) shouldn't block deployment
+        // the only impact of this skip is that the process can pass validation it otherwise wouldn't, if inputMode=FixedList but the provided value is no longer in the used preset
+        fillEffectivePresets(_ =>
+          List.empty
+        ) // clear effectiveFixedValuesList instead of possibly using outdated presets
     }
   }
 

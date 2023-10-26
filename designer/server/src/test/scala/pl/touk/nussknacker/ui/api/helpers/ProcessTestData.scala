@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTr
 import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  FragmentParameterFixedListPreset
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -22,6 +26,7 @@ import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
@@ -309,6 +314,33 @@ object ProcessTestData {
     )
   }
 
+  val sampleFragmentOneOutWithPreset = {
+    CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameterFixedListPreset(
+                "param1",
+                FragmentClazzRef[String],
+                required = false,
+                None,
+                None,
+                inputMode = InputModeFixedList,
+                fixedValuesListPresetId = "presetString",
+                effectiveFixedValuesList = List.empty
+              )
+            )
+          )
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
+  }
+
   val sampleFragment = {
     CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
@@ -376,15 +408,12 @@ object ProcessTestData {
           Map(
             "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
           ),
-          Some(
-            List(
-              FragmentParameter(
-                "param",
-                FragmentClazzRef[String],
-                fixedValueListPresetId = Some("presetString")
-              )
-            )
-          )
+          fragment.nodes
+            .flatMap(_.data match {
+              case fragmentInput: FragmentInputDefinition => List(Some(fragmentInput.parameters))
+              case _                                      => List.empty
+            })
+            .head
         ),
       fragment = fragment
     )

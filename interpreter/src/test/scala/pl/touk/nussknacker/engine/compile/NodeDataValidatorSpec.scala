@@ -31,9 +31,11 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterFixedListPreset
+  FragmentParameterFixedListPreset,
+  FragmentParameterFixedValuesDirectInput
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -53,7 +55,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val defaultFragmentId: String = "fragment1"
 
-  private val fixedValuePresetId = "presetString"
+  private val fixedValuesPresetId = "presetString"
 
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
@@ -70,7 +72,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               None,
               None,
               inputMode = InputModeFixedList,
-              fixedValueListPresetId = fixedValuePresetId,
+              fixedValuesListPresetId = fixedValuesPresetId,
               effectiveFixedValuesList = List.empty
             )
           )
@@ -595,10 +597,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate missing fragment preset ids") {
+  test("should validate missing fragment preset ids in FragmentInput") {
     val nodeId: String = "in"
-    val nodes1         = Set(nodeId)
-    val nodes2         = Set(nodeId)
+    val nodes          = Set(nodeId)
     inside(
       validate(
         FragmentInput(
@@ -616,15 +617,118 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       )
     ) {
       case ValidationPerformed(
+            List(PresetIdNotFoundInProvidedPresets(fixedValuesPresetId, nodes)),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate missing fragment preset ids in FragmentInputDefinition") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterFixedListPreset(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              None,
+              inputMode = InputModeFixedList,
+              fixedValuesListPresetId = fixedValuesPresetId,
+              effectiveFixedValuesList = List.empty
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
             List(
-              PresetIdNotFoundInProvidedPresets(
-                fixedValuePresetId,
-                nodes1
-              ),
-              RequireValueFromUndefinedFixedList(
-                "paramPreset",
-                nodes2
-              )
+              PresetIdNotFoundInProvidedPresets(fixedValuesPresetId, nodes),
+              RequireValueFromUndefinedFixedList(fixedValuesPresetId1, nodes1)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value outside (direct) possible values in FragmentInputDefinition") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterFixedValuesDirectInput(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+              None,
+              inputMode = InputModeFixedList,
+              fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue"))
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InitialValueNotPresentInPossibleValues("param1", nodes)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value outside (preset) possible values in FragmentInputDefinition") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterFixedListPreset(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+              None,
+              inputMode = InputModeFixedList,
+              fixedValuesListPresetId = fixedValuesPresetId,
+              effectiveFixedValuesList = List.empty
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InitialValueNotPresentInPossibleValues("param1", nodes)
             ),
             None,
             None

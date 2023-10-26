@@ -210,7 +210,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   test("should generate complex parameters for fragment input definition - 2") {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
 
-    val fixedValueList =
+    val fixedValuesList =
       List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
@@ -219,7 +219,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           "name",
           FragmentClazzRef[String],
           required = false,
-          fixedValueList = fixedValueList,
+          fixedValuesList = fixedValuesList,
           initialValue = None,
           hintText = None,
           inputMode = InputModeAnyWithSuggestions
@@ -233,7 +233,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
       DualParameterEditor(
-        FixedValuesParameterEditor(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label))),
+        FixedValuesParameterEditor(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))),
         DualEditorMode.SIMPLE
       )
     )
@@ -245,7 +245,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   test("should generate complex parameters for fragment input definition - 3") {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
 
-    val fixedValueList =
+    val fixedValuesList =
       List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
@@ -257,8 +257,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           initialValue = Some(FragmentFixedExpressionValue("'bbb'", "bbb")),
           hintText = Some("some hint text"),
           inputMode = InputModeFixedList,
-          fixedValueListPresetId = "preset",
-          effectiveFixedValuesList = fixedValueList
+          fixedValuesListPresetId = "preset",
+          effectiveFixedValuesList = fixedValuesList
         )
       )
     )
@@ -268,11 +268,11 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
-      FixedValuesParameterEditor(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label)))
+      FixedValuesParameterEditor(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
     )
     parameter.validators should contain theSameElementsAs List(
       MandatoryParameterValidator,
-      FixedValuesValidator(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label)))
+      FixedValuesValidator(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
     )
     parameter.defaultValue shouldBe Some(Expression("spel", "'bbb'"))
     parameter.hintText shouldBe Some("some hint text")
