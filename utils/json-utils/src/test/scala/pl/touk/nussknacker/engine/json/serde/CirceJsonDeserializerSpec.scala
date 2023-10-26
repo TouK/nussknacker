@@ -4,9 +4,8 @@ import org.everit.json.schema.NumberSchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, TypedMap}
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.json.swagger.extractor.LazyJsonTypedMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.time.LocalDate
