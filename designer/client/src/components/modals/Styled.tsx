@@ -5,20 +5,14 @@ export const VersionHeader = styled("div")`
 `;
 
 export const CompareModal = styled("div")`
-    max-width: 1000px;
     font-size: 15px;
     font-weight: 700;
 `;
 
 export const CompareContainer = styled("div")`
     zoom: 0.9;
-    > :first-child {
-        width: 50%;
-        display: inline-block;
-        vertical-align: top;
-    }
-
-    > :nth-child(2) {
+    > div:nth-of-type(1),
+    > div:nth-of-type(2) {
         width: 50%;
         display: inline-block;
         vertical-align: top;
@@ -28,7 +22,7 @@ export const CompareContainer = styled("div")`
 export const FormRow = styled("div")(
     ({ theme }) => `
     margin: 7px 30px 8px 30px;
-    > :first-child {
+    > p {
         width: 20%;
         color: ${theme.custom.colors.canvasBackground};
         display: inline-block;
@@ -38,7 +32,7 @@ export const FormRow = styled("div")(
         font-weight: 700;
     }
 
-    > :nth-child(2) {
+    > select {
         width: 80%;
         height: 40px;
         padding: 0 20px;

@@ -6,7 +6,7 @@ export type ValidationResult = {
     validationWarnings: ValidationWarnings[];
     nodeResults: NodeResults;
     errors?: ValidationErrors;
-    warnings?;
+    warnings?: Pick<ValidationErrors, "invalidNodes">;
 };
 
 export type NodeResults = Record<string, NodeTypingData>;

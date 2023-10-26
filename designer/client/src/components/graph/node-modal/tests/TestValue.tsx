@@ -1,26 +1,28 @@
 import React from "react";
-import Textarea from "react-textarea-autosize";
-import { get } from "lodash";
 import { Variable } from "../../../../common/TestResultUtils";
+import { cx } from "@emotion/css";
 
 interface Props {
     value: Variable;
     shouldHideTestResults?: boolean;
 }
 
+function prettyPrint(obj: unknown) {
+    return JSON.stringify(obj, null, 2);
+}
+
 export default function TestValue(props: Props) {
     const { value, shouldHideTestResults } = props;
-    const hiddenClassPart = shouldHideTestResults ? " partly-hidden" : "";
 
     return (
-        <div className={`node-value${hiddenClassPart}`}>
-            {get(value, "original") ? <Textarea className="node-input" readOnly={true} value={value.original} /> : null}
-            <Textarea className="node-input" readOnly={true} value={value !== null ? prettyPrint(value.pretty) : "null"} />
+        <div className={cx("node-value", shouldHideTestResults && "partly-hidden")}>
+            {value?.original ? <ReadonlyTextarea value={value.original} /> : null}
+            <ReadonlyTextarea value={prettyPrint(value?.pretty)} />
             {shouldHideTestResults ? <div className="fadeout" /> : null}
         </div>
     );
+}
 
-    function prettyPrint(obj: unknown) {
-        return JSON.stringify(obj, null, 2);
-    }
+function ReadonlyTextarea({ value = "" }: { value: string }) {
+    return <textarea className="node-input" readOnly value={value} rows={value.split("\n").length} />;
 }
