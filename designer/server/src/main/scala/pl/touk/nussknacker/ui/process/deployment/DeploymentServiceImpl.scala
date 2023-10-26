@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
-import cats.implicits.toTraverseOps
+import cats.{Applicative, Traverse}
+import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
@@ -11,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
 import pl.touk.nussknacker.ui.BadRequestError
@@ -25,7 +28,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import slick.dbio.DBIOAction
+import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
 import scala.concurrent.duration._
@@ -337,44 +340,42 @@ class DeploymentServiceImpl(
     } yield result)
   }
 
-  override def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ValidatedProcessDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessName, ProcessState]] =
-    for {
-      processesInProgress <- getInProgressActionTypesForAllProcesses
-      processStatus <- processes
-        .map(process => Future.successful(process.name) zip getProcessState(process, processesInProgress))
-        .sequence
-    } yield processStatus.toMap
-
-  override def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[T]]] =
-    for {
-      actionsInProgress <- getInProgressActionTypesForAllProcesses
-      processesWithState <- processList.map {
-        case process if process.isFragment => Future.successful((process, None))
-        case process => Future.successful(process) zip getProcessState(process, actionsInProgress).map(Option(_))
-      }.sequence
-    } yield processesWithState.map { case (process, state) => process.copy(state = state) }
-
-  // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
-  private def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
+  ): Future[F[ValidatedProcessDetails]] = {
     dbioRunner.run(
-      actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+      for {
+        actionsInProgress <- getInProgressActionTypesForProcessTraverse(processTraverse)
+        processesWithState <- processTraverse
+          .map {
+            case process if process.isFragment => DBIO.successful(process)
+            case process =>
+              getProcessState(
+                process.toProcessDetailsWithoutScenarioGraphAndValidationResult,
+                actionsInProgress.getOrElse(process.processId, Set.empty)
+              ).map(state => process.copy(state = Some(state)))
+          }
+          .sequence[DB, ValidatedProcessDetails]
+      } yield processesWithState
     )
+  }
 
-  private def getProcessState(
-      processDetails: BaseProcessDetails[_],
-      processesInProgress: Map[ProcessId, Set[ProcessActionType]]
-  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
-    dbioRunner.run(
-      getProcessState(processDetails, processesInProgress.getOrElse(processDetails.processId, Set.empty))
-    )
+  // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
+  // we do one call for all in progress action types for all scenarios
+  private def getInProgressActionTypesForProcessTraverse[F[_]: Traverse](
+      processTraverse: F[ValidatedProcessDetails]
+  )(implicit ec: ExecutionContext): DB[Map[ProcessId, Set[ProcessActionType]]] = {
+    processTraverse.toList match {
+      case Nil => DBIO.successful(Map.empty)
+      case head :: Nil =>
+        actionRepository.getInProgressActionTypes(head.processId).map(actionTypes => Map(head.processId -> actionTypes))
+      case _ =>
+        // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
+        actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+    }
+  }
 
   private def getProcessState(
       processDetails: BaseProcessDetails[_],

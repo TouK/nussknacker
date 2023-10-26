@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.instances.list._
 import akka.actor.ActorSystem
-import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.ProcessesQuery
@@ -591,30 +592,13 @@ class DeploymentServiceSpec
     state.status shouldBe SimpleStateStatus.DuringDeploy
   }
 
-  test("Should return valid process list") {
-    prepareProcessesInProgress
-
-    val processes = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isFragment = Some(false)))
-      .dbioActionValues
-
-    val resultWithCachedInProgress = deploymentService.fetchProcessStatesForProcesses(processes).futureValue
-
-    val resultWithoutCachedInProgress = processes
-      .map(baseProcess => Future.successful(baseProcess.name) zip deploymentService.getProcessState(baseProcess))
-      .sequence
-      .futureValue
-      .toMap
-
-    resultWithCachedInProgress shouldBe resultWithoutCachedInProgress
-  }
-
   test("Should enrich BaseProcessDetails") {
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
       .fetchProcessesDetails[Unit](ProcessesQuery.empty.toRepositoryQuery)
       .dbioActionValues
+      .map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult)
 
     val processesDetailsWithState = deploymentService.enrichDetailsWithProcessState(processesDetails).futureValue
 

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import cats.Traverse
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.{ValidatedProcessDetails, processdetails}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -57,19 +58,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-  override def fetchProcessStatesForProcesses(processes: List[processdetails.BaseProcessDetails[Unit]])(
+  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ValidatedProcessDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessName, ProcessState]] =
-    Future.successful(Map.empty)
-
-  override def enrichDetailsWithProcessState[T](
-      processList: List[processdetails.BaseProcessDetails[T]]
-  )(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[processdetails.BaseProcessDetails[T]]] = Future.successful(processList)
+  ): Future[F[ValidatedProcessDetails]] = Future.successful(processTraverse)
 
 }

@@ -1,15 +1,10 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeployedScenarioData,
-  ProcessAction,
-  ProcessActionId,
-  ProcessState
-}
+import cats.Traverse
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
@@ -58,17 +53,11 @@ trait DeploymentService extends ProcessStateService {
 
 trait ProcessStateService {
 
-  def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+  def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ValidatedProcessDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessName, ProcessState]]
-
-  def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[T]]]
+  ): Future[F[ValidatedProcessDetails]]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName

@@ -193,7 +193,7 @@ class DBProcessService(
     def apply[PS: ProcessShapeFetchStrategy]: Future[F[BaseProcessDetails[PS]]]
   }
 
-  private def doGetProcessWithDetails[F[_]: Functor: Traverse](
+  private def doGetProcessWithDetails[F[_]: Traverse](
       fetchScenario: FetchScenarioFun[F],
       options: GetScenarioWithDetailsOptions
   )(
@@ -207,14 +207,7 @@ class DBProcessService(
       case FetchScenarioGraph(validateAndResolve) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
-    }).flatMap(_.map { details =>
-      // FIXME: optimize for lists
-      if (options.fetchState) {
-        enrichDetailsWithProcessState(details)
-      } else {
-        Future.successful(details)
-      }
-    }.sequence)
+    }).flatMap(details => deploymentService.enrichDetailsWithProcessState(details))
   }
 
   override def getRawProcessesWithDetails[PS: ProcessShapeFetchStrategy](
@@ -261,17 +254,6 @@ class DBProcessService(
         validationResult
       )
     })
-  }
-
-  private def enrichDetailsWithProcessState(
-      process: ValidatedProcessDetails
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ValidatedProcessDetails] = {
-    if (process.isFragment)
-      Future.successful(process)
-    else
-      deploymentService
-        .getProcessState(process.toProcessDetailsWithoutScenarioGraphAndValidationResult)
-        .map(state => process.copy(state = Some(state)))
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
