@@ -14,6 +14,7 @@
     * Fix bug building source test context on LiteTestScenarioRunner
 * [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
 
+1.12.3 (26 Oct 2023)
 1.12.1 & 1.12.2 (25 Oct 2023)
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
 
