@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import cats.instances.list._
 import akka.actor.ActorSystem
+import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -597,16 +598,30 @@ class DeploymentServiceSpec
     val processesDetails = fetchingProcessRepository
       .fetchProcessesDetails[Unit](ProcessesQuery.empty)
       .dbioActionValues
-      .map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult)
 
-    val processesDetailsWithState = deploymentService.enrichDetailsWithProcessState(processesDetails).futureValue
+    val processesDetailsWithState = deploymentService
+      .enrichDetailsWithProcessState(
+        processesDetails
+          .map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult)
+      )
+      .futureValue
 
-    processesDetailsWithState.map(_.state.map(_.status.name)) shouldBe List(
+    val statesBasedOnCachedInProgressActionTypes = processesDetailsWithState.map(_.state)
+
+    statesBasedOnCachedInProgressActionTypes.map(_.map(_.status.name)) shouldBe List(
       Some("DURING_DEPLOY"),
       Some("DURING_CANCEL"),
       Some("RUNNING"),
       None
     )
+
+    val statesBasedOnNotCachedInProgressActionTypes =
+      processesDetails
+        .map(pd => Option(pd).filterNot(_.isFragment).map(deploymentService.getProcessState).sequence)
+        .sequence
+        .futureValue
+
+    statesBasedOnCachedInProgressActionTypes shouldEqual statesBasedOnNotCachedInProgressActionTypes
   }
 
   test(

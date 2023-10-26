@@ -290,7 +290,7 @@ class ProcessesResourcesSpec
       List(processName, fragmentName, archivedProcessName, archivedFragmentName)
     )
     verifyListOfProcesses(ProcessesQuery.empty.unarchived(), List(processName, fragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.archived(), List(archivedFragmentName, archivedFragmentName))
+    verifyListOfProcesses(ProcessesQuery.empty.archived(), List(archivedProcessName, archivedFragmentName))
   }
 
   test("return list of all fragments") {
@@ -995,7 +995,7 @@ class ProcessesResourcesSpec
       processes.map(_.name) should contain theSameElementsAs expectedNames.map(_.value)
     }
     forScenariosDetailsReturned(query) { processes =>
-      processes.map(_.name) should contain theSameElementsAs expectedNames.map(_.value)
+      processes.map(_.name) should contain theSameElementsAs expectedNames
     }
   }
 
