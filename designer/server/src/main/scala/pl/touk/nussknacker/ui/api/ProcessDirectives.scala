@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directive0, Directive1}
+import akka.http.scaladsl.server.Directive1
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
@@ -19,7 +19,9 @@ trait ProcessDirectives {
       processName: String
   )(implicit loggedUser: LoggedUser): Directive1[ValidatedProcessDetails] = {
     processId(processName).flatMap { processIdWithName =>
-      onSuccess(processService.getProcessDetailsOnly(processIdWithName)).flatMap(provide)
+      onSuccess(
+        processService.getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly)
+      ).flatMap(provide)
     }
   }
 

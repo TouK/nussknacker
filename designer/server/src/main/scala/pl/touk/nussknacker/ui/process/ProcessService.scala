@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
+import cats._
+import cats.syntax.functor._
+import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
@@ -14,7 +17,7 @@ import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -52,41 +55,39 @@ object ProcessService {
       forwardedUserName: Option[RemoteUserName]
   )
 
+  object GetScenarioWithDetailsOptions {
+    val detailsOnly: GetScenarioWithDetailsOptions =
+      GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
+  }
+
+  case class GetScenarioWithDetailsOptions(fetchGraphOptions: ScenarioGraphOptions, fetchState: Boolean)
+
+  sealed trait ScenarioGraphOptions
+
+  case object SkipScenarioGraph extends ScenarioGraphOptions
+
+  case class FetchScenarioGraph(validateAndResolve: Boolean) extends ScenarioGraphOptions
+
 }
 
 trait ProcessService {
   def getProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[ProcessId]
 
-  // Below we have many different strategies to provide processes and/or their details
-  // "raw" variant means that we don't do state enrichement, ui resolution and validation
-  // "details only" variant means that we don't fetch scenario json at all - only details
-  // "get process with details" variant means that we do all things
-  // TODO: reduce number of these variants
-  def getProcessWithDetails(processId: ProcessIdWithName, skipValidateAndResolve: Boolean)(
+  def getProcessWithDetails(processId: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[ValidatedProcessDetails]
 
-  def getProcessDetailsOnly(processIdWithName: ProcessIdWithName)(
+  def getProcessWithDetails(processId: ProcessIdWithName, versionId: VersionId, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[ValidatedProcessDetails]
 
-  def getProcessWithDetails(processId: ProcessIdWithName, versionId: VersionId, skipValidateAndResolve: Boolean)(
-      implicit user: LoggedUser
-  ): Future[ValidatedProcessDetails]
-
-  def getProcessDetailsWithStateOnly(query: ProcessesQuery)(
-      implicit user: LoggedUser
-  ): Future[List[ValidatedProcessDetails]]
-
-  def getProcessesWithDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
+  def getProcessesWithDetails(query: ProcessesQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ValidatedProcessDetails]]
 
   def getRawProcessesWithDetails[PS: ProcessShapeFetchStrategy](query: ProcessesQuery)(
       implicit user: LoggedUser
   ): Future[List[BaseProcessDetails[PS]]]
-
-  // END OF GET PROCESS AND / OR DETAILS
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit]
 
@@ -140,54 +141,80 @@ class DBProcessService(
       .map(_.getOrElse(throw ProcessNotFoundError(processName.toString)))
   }
 
-  override def getProcessWithDetails(processId: ProcessIdWithName, skipValidateAndResolve: Boolean)(
+  override def getProcessWithDetails(processIdWithName: ProcessIdWithName, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[ValidatedProcessDetails] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    fetchingProcessRepository
-      .fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id)
-      .flatMap(enrichWithStateAndThenValidateAndReverseResolve(processId, _, skipValidateAndResolve))
-  }
-
-  override def getProcessDetailsOnly(
-      processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser): Future[ValidatedProcessDetails] = {
-    fetchingProcessRepository
-      .fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
-      .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.id.value.toString)))
-      .map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult)
+    doGetProcessWithDetails(
+      new FetchScenarioFun[Id] {
+        override def apply[PS: ProcessShapeFetchStrategy]: Future[Id[BaseProcessDetails[PS]]] =
+          fetchingProcessRepository
+            .fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id)
+            .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.id.value.toString)))
+      },
+      options
+    )
   }
 
   override def getProcessWithDetails(
-      processId: ProcessIdWithName,
+      processIdWithName: ProcessIdWithName,
       versionId: VersionId,
-      skipValidateAndResolve: Boolean
+      options: GetScenarioWithDetailsOptions
   )(
       implicit user: LoggedUser
   ): Future[ValidatedProcessDetails] = {
-    fetchingProcessRepository
-      .fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId)
-      .map(_.getOrElse(throw ProcessVersionNotFoundError(processId.id, versionId)))
-      .map(validateAndReverseResolve(_, skipValidateAndResolve))
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    doGetProcessWithDetails(
+      new FetchScenarioFun[Id] {
+        override def apply[PS: ProcessShapeFetchStrategy]: Future[BaseProcessDetails[PS]] =
+          fetchingProcessRepository
+            .fetchProcessDetailsForId[PS](processIdWithName.id, versionId)
+            .map(_.getOrElse(throw ProcessVersionNotFoundError(processIdWithName.id, versionId)))
+      },
+      options
+    )
   }
 
-  override def getProcessDetailsWithStateOnly(
-      query: ProcessesQuery
-  )(implicit user: LoggedUser): Future[List[ValidatedProcessDetails]] = {
-    // To not overload engine, for list of processes we provide statuses that can be cached
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-    getRawProcessesWithDetails[Unit](query)
-      .flatMap(deploymentService.enrichDetailsWithProcessState)
-      .map(_.map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult))
-  }
-
-  override def getProcessesWithDetails(query: ProcessesQuery, skipValidateAndResolve: Boolean)(
+  override def getProcessesWithDetails(query: ProcessesQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ValidatedProcessDetails]] = {
-    getRawProcessesWithDetails[CanonicalProcess](query).map { processes =>
-      // TODO: In method variant with processId we do enrichDetailsWithProcessState as well, but here not. Is it ok?
-      processes.map(validateAndReverseResolve(_, skipValidateAndResolve))
-    }
+    // To not overload engine, for list of processes we provide statuses that can be cached
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
+    doGetProcessWithDetails(
+      new FetchScenarioFun[List] {
+        override def apply[PS: ProcessShapeFetchStrategy]: Future[List[BaseProcessDetails[PS]]] =
+          fetchingProcessRepository.fetchProcessesDetails(query.toRepositoryQuery)
+      },
+      options
+    )
+  }
+
+  private abstract class FetchScenarioFun[F[_]] {
+    def apply[PS: ProcessShapeFetchStrategy]: Future[F[BaseProcessDetails[PS]]]
+  }
+
+  private def doGetProcessWithDetails[F[_]: Functor: Traverse](
+      fetchScenario: FetchScenarioFun[F],
+      options: GetScenarioWithDetailsOptions
+  )(
+      implicit user: LoggedUser,
+      freshnessPolicy: DataFreshnessPolicy
+  ): Future[F[ValidatedProcessDetails]] = {
+    (options.fetchGraphOptions match {
+      case SkipScenarioGraph =>
+        fetchScenario[Unit]
+          .map(_.map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult))
+      case FetchScenarioGraph(validateAndResolve) =>
+        fetchScenario[CanonicalProcess]
+          .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
+    }).flatMap(_.map { details =>
+      // FIXME: optimize for lists
+      if (options.fetchState) {
+        enrichDetailsWithProcessState(details)
+      } else {
+        Future.successful(details)
+      }
+    }.sequence)
   }
 
   override def getRawProcessesWithDetails[PS: ProcessShapeFetchStrategy](
@@ -196,14 +223,15 @@ class DBProcessService(
     fetchingProcessRepository.fetchProcessesDetails(query.toRepositoryQuery)
   }
 
-  private def enrichWithStateAndThenValidateAndReverseResolve(
-      processId: ProcessIdWithName,
-      canonicalProcessOpt: Option[BaseProcessDetails[CanonicalProcess]],
-      skipValidateAndResolve: Boolean
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy) = {
-    val canonicalProcess = canonicalProcessOpt.getOrElse(throw ProcessNotFoundError(processId.id.toString))
-    enrichDetailsWithProcessState(canonicalProcess)
-      .map(validateAndReverseResolve(_, skipValidateAndResolve))
+  private def validateAndReverseResolve(
+      processDetails: BaseProcessDetails[CanonicalProcess],
+      validateAndResolve: Boolean
+  ): ValidatedProcessDetails = {
+    if (validateAndResolve) {
+      validateAndReverseResolve(processDetails)
+    } else {
+      toDisplayableProcessDetailsWithoutValidation(processDetails)
+    }
   }
 
   private def toDisplayableProcessDetailsWithoutValidation(
@@ -217,28 +245,6 @@ class DBProcessService(
       )
       ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
     })
-  }
-
-  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](
-      process: BaseProcessDetails[PS]
-  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
-    if (process.isFragment)
-      Future.successful(process)
-    else
-      deploymentService
-        .getProcessState(process)
-        .map(state => process.copy(state = Some(state)))
-  }
-
-  private def validateAndReverseResolve(
-      processDetails: BaseProcessDetails[CanonicalProcess],
-      skipValidateAndResolve: Boolean
-  ): ValidatedProcessDetails = {
-    if (skipValidateAndResolve) {
-      toDisplayableProcessDetailsWithoutValidation(processDetails)
-    } else {
-      validateAndReverseResolve(processDetails)
-    }
   }
 
   private def validateAndReverseResolve(
@@ -255,6 +261,17 @@ class DBProcessService(
         validationResult
       )
     })
+  }
+
+  private def enrichDetailsWithProcessState(
+      process: ValidatedProcessDetails
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ValidatedProcessDetails] = {
+    if (process.isFragment)
+      Future.successful(process)
+    else
+      deploymentService
+        .getProcessState(process.toProcessDetailsWithoutScenarioGraphAndValidationResult)
+        .map(state => process.copy(state = Some(state)))
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
@@ -282,7 +299,7 @@ class DBProcessService(
   override def unArchiveProcess(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser): Future[Unit] =
-    getProcessDetailsOnly(processIdWithName).flatMap { process =>
+    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         dbioRunner
           .runInTransaction(
@@ -446,7 +463,7 @@ class DBProcessService(
   private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
-    getProcessDetailsOnly(processIdWithName).flatMap { process =>
+    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         callback
       } else {
@@ -458,7 +475,7 @@ class DBProcessService(
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(
       callback: ValidatedProcessDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
-    getProcessDetailsOnly(processIdWithName).flatMap { process =>
+    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         throw ProcessIllegalAction(errorMessage)
       } else {
@@ -470,7 +487,7 @@ class DBProcessService(
   private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
       callback: ValidatedProcessDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] =
-    getProcessDetailsOnly(processIdWithName).flatMap { process =>
+    getProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
         throw ProcessIllegalAction.archived(action, process.idWithName)
       } else {

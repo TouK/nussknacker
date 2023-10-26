@@ -14,7 +14,13 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process.ProcessService.{
+  CreateProcessCommand,
+  FetchScenarioGraph,
+  GetScenarioWithDetailsOptions,
+  SkipScenarioGraph,
+  UpdateProcessCommand
+}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -47,7 +53,10 @@ class ProcessesResources(
         get {
           complete {
             processService
-              .getRawProcessesWithDetails[Unit](ProcessesQuery.empty.copy(isArchived = Some(true)))
+              .getProcessesWithDetails(
+                ProcessesQuery.empty.copy(isArchived = Some(true)),
+                GetScenarioWithDetailsOptions.detailsOnly
+              )
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -75,25 +84,31 @@ class ProcessesResources(
           processesQuery { query =>
             complete {
               // TODO: consider not returning versions as it was before clean-ups
-              processService.getProcessDetailsWithStateOnly(query)
+              processService.getProcessesWithDetails(
+                query,
+                GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = true)
+              )
             }
           }
         }
       } ~ path("processesDetails") {
         (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
           complete {
-            processService.getProcessesWithDetails(query, skipValidateAndResolve)
+            processService.getProcessesWithDetails(
+              query,
+              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
+            )
           }
         }
       } ~ path("processes" / "status") {
         get {
           complete {
-            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
             processService
-              .getRawProcessesWithDetails[Unit](
-                ProcessesQuery.empty.copy(isFragment = Some(false), isArchived = Some(false))
+              .getProcessesWithDetails(
+                ProcessesQuery.empty.copy(isFragment = Some(false), isArchived = Some(false)),
+                GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
               )
-              .flatMap(deploymentService.fetchProcessStatesForProcesses)
+              .map(_.flatMap(details => details.state.map(details.name -> _)).toMap)
           }
         }
       } ~ path("processes" / "import" / Segment) { processName =>
@@ -138,7 +153,10 @@ class ProcessesResources(
             }
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
-              processService.getProcessWithDetails(processId, skipValidateAndResolve)
+              processService.getProcessWithDetails(
+                processId,
+                GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
+              )
             }
           }
         }
@@ -155,7 +173,11 @@ class ProcessesResources(
       } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
         (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
           complete {
-            processService.getProcessWithDetails(processId, versionId, skipValidateAndResolve)
+            processService.getProcessWithDetails(
+              processId,
+              versionId,
+              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
+            )
           }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
@@ -193,7 +215,7 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             processService
-              .getProcessDetailsOnly(processId)
+              .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
               .map(_.toProcessDetailsWithoutScenarioGraphAndValidationResult)
               .map(processToolbarService.getProcessToolbarSettings)
           }
@@ -218,12 +240,12 @@ class ProcessesResources(
                 thisVersion <- processService.getProcessWithDetails(
                   processId,
                   thisVersion,
-                  skipValidateAndResolve = true
+                  GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
                 )
                 otherVersion <- processService.getProcessWithDetails(
                   processId,
                   otherVersion,
-                  skipValidateAndResolve = true
+                  GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
                 )
               } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
