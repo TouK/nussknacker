@@ -159,7 +159,7 @@ describe("Process", () => {
             cy.deployScenario(undefined, true);
         });
 
-        it("should display '?' when renaming a node and updating the count", () => {
+        it("should display question mark when renaming a node and updating the count", () => {
             cy.intercept("GET", "/api/processCounts/*", {
                 boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
                 enricher: { all: 120, errors: 10, fragmentCounts: {} },
@@ -187,7 +187,10 @@ describe("Process", () => {
             cy.contains(/^counts$/i).click();
 
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
-            cy.get("#app-container>main").matchImage();
+
+            cy.getNode("enricher")
+                .parent()
+                .matchImage({ screenshotConfig: { padding: 16 } });
         });
 
         it("should have counts button and modal", () => {
