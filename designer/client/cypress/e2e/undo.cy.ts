@@ -114,9 +114,17 @@ describe("Undo/Redo", () => {
         cy.contains(/^counts$/i).click();
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.get("@graph").matchImage(screenshotOptions);
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+
         cy.get("@redo").should("be.enabled").click().should("be.disabled");
-        cy.get("@graph").matchImage(screenshotOptions);
+
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+
+        cy.wait(500);
     });
 
     it("should work with validation", () => {

@@ -193,7 +193,9 @@ function layoutScenario(waitTime = 400) {
 function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
     cy.contains(/^deploy$/i).click();
     cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-    withScreenshot && cy.get("[data-testid=window]").matchImage();
+    if (withScreenshot) {
+        cy.get("[data-testid=window]").matchImage();
+    }
     cy.get("[data-testid=window] textarea").click().type(comment);
     cy.contains(/^ok$/i).should("be.enabled").click();
     cy.wait(["@deploy", "@fetch"], {
