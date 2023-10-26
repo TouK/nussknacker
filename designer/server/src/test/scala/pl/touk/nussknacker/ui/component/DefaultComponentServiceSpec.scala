@@ -16,8 +16,8 @@ import pl.touk.nussknacker.restmodel.component.{
   ComponentUsagesInScenario,
   NodeUsageData
 }
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -36,6 +36,7 @@ import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{
@@ -762,13 +763,17 @@ class DefaultComponentServiceSpec
     )
 
     forAll(testingData) {
-      (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])]) =>
+      (
+          user: LoggedUser,
+          componentId: ComponentId,
+          expected: List[(RepositoryScenarioWithDetails[_], List[NodeUsageData])]
+      ) =>
         val result = defaultComponentService
           .getComponentUsages(componentId)(user)
           .futureValue
           .map(_.map(n => n.copy(nodesUsagesData = n.nodesUsagesData.sorted)))
         val componentProcesses = expected.map { case (process, nodesUsagesData) =>
-          ComponentUsagesInScenario(process, nodesUsagesData.sorted)
+          DefaultComponentService.toComponentUsagesInScenario(process, nodesUsagesData.sorted)
         }
         result shouldBe Right(componentProcesses)
     }
@@ -790,7 +795,7 @@ class DefaultComponentServiceSpec
 
   private def createDbProcessService(
       processCategoryService: ProcessCategoryService,
-      processes: List[ProcessDetails] = Nil
+      processes: List[RepositoryScenarioWithDetails[DisplayableProcess]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),

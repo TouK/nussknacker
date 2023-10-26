@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -36,7 +36,7 @@ class CustomActionInvokerServiceImpl(
       ec: ExecutionContext
   ): Future[Either[CustomActionError, CustomActionResult]] = {
 
-    def createCustomAction(process: BaseProcessDetails[_]) =
+    def createCustomAction(process: RepositoryScenarioWithDetails[_]) =
       engine.api.deployment.CustomActionRequest(
         name = actionName,
         processVersion = process.toEngineProcessVersion,

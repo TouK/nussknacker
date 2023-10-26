@@ -1,18 +1,16 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import java.sql.Timestamp
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, ProcessVersion}
+import pl.touk.nussknacker.restmodel.scenariodetails.ProcessVersion
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.listener.services.ScenarioShapeFetchStrategy
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
-import scala.concurrent.ExecutionContext
+import java.sql.Timestamp
 import scala.language.higherKinds
 
 //FIXME: It's temporary trait. In future we should merge and refactor: DBFetchingProcessRepository, ProcessDBQueryRepository and DBProcessRepository to one repository
@@ -29,7 +27,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
   }
 
   protected def fetchProcessLatestVersionsQuery(processId: ProcessId)(
-      implicit fetchShape: ProcessShapeFetchStrategy[_]
+      implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processVersionsTableQuery
       .filter(_.processId === processId)
@@ -39,7 +37,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
       lastDeployedActionPerProcess: Set[ProcessId],
       isDeployed: Option[Boolean]
-  )(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
+  )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
     (
         ((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity),
         ProcessEntityFactory#ProcessEntity
@@ -64,18 +62,18 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       }
 
   protected def processVersionsTableQuery(
-      implicit fetchShape: ProcessShapeFetchStrategy[_]
+      implicit fetchShape: ScenarioShapeFetchStrategy[_]
   ): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
     fetchShape match {
-      case ProcessShapeFetchStrategy.FetchDisplayable =>
+      case ScenarioShapeFetchStrategy.FetchDisplayable =>
         processVersionsTableWithScenarioJson
           .asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
-      case ProcessShapeFetchStrategy.FetchCanonical =>
+      case ScenarioShapeFetchStrategy.FetchCanonical =>
         processVersionsTableWithScenarioJson
           .asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
-      case ProcessShapeFetchStrategy.NotFetch =>
+      case ScenarioShapeFetchStrategy.NotFetch =>
         processVersionsTableWithUnit.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
-      case ProcessShapeFetchStrategy.FetchComponentsUsages =>
+      case ScenarioShapeFetchStrategy.FetchComponentsUsages =>
         processVersionsTableWithComponentsUsages
           .asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
     }

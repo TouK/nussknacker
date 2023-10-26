@@ -5,10 +5,8 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
-import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.circe.syntax._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -17,7 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -133,7 +131,7 @@ class ManagementResourcesSpec
       comment = Some("deployComment")
     ) ~> checkThatEventually {
       getProcess(processName) ~> check {
-        val processDetails = responseAs[ProcessDetails]
+        val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
       cancelProcess(
@@ -197,7 +195,7 @@ class ManagementResourcesSpec
     deployProcess(processName.value) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
-        val processDetails = responseAs[ProcessDetails]
+        val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction shouldBe deployedWithVersions(1)
         processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
@@ -467,7 +465,7 @@ class ManagementResourcesSpec
     }
   }
 
-  def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
+  def decodeDetails: ScenarioWithDetails = responseAs[ScenarioWithDetails]
 
   def checkThatEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
 

@@ -10,12 +10,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
@@ -80,7 +80,7 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c2")
     val processes = fetching
       .fetchProcessesDetails(ProcessesQuery(isArchived = Some(false)))(
-        ProcessShapeFetchStrategy.NotFetch,
+        ScenarioShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
       )
@@ -194,7 +194,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val details: BaseProcessDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
+    val details: RepositoryScenarioWithDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
     details.processVersionId shouldBe VersionId.initialVersionId
 
     // change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
@@ -331,9 +331,9 @@ class DBFetchingProcessRepositorySpec
     }
   }
 
-  private def fetchLatestProcessDetails[PS: ProcessShapeFetchStrategy](
+  private def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       name: ProcessName
-  ): processdetails.BaseProcessDetails[PS] = {
+  ): RepositoryScenarioWithDetails[PS] = {
     val fetchedProcess = fetching
       .fetchProcessId(name)
       .futureValue

@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.{ExecutionContext, Future}
+import ScenarioWithDetailsConversions._
 
 class ProcessesResources(
     protected val processService: ProcessService,
@@ -215,7 +216,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
-              .map(_.toProcessDetailsWithoutScenarioGraphAndValidationResult)
+              .map(_.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }

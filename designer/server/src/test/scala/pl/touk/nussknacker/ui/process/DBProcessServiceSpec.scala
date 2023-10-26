@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -49,7 +49,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val reqRespArchivedfragment =
     createBasicProcess("reqRespArchivedfragment", isArchived = true, category = ReqRes)
 
-  private val processes: List[ProcessDetails] = List(
+  private val processes: List[RepositoryScenarioWithDetails[DisplayableProcess]] = List(
     category1Process,
     category2ArchivedProcess,
     testfragment,
@@ -81,7 +81,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(testfragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
@@ -102,7 +102,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(reqRespArchivedfragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
@@ -123,7 +123,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(fragmentTest, fragmentReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       implicit val implicitUser: LoggedUser = user
       val result = dBProcessService
         .getRawProcessesWithDetails[DisplayableProcess](
@@ -193,7 +193,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     Right(ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
   }
 
-  private def createDbProcessService(processes: List[ProcessDetails] = Nil): DBProcessService =
+  private def createDbProcessService(
+      processes: List[RepositoryScenarioWithDetails[DisplayableProcess]] = Nil
+  ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),

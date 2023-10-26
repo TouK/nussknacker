@@ -2,18 +2,19 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
-import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.Instant
@@ -44,7 +45,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       lastAction: Option[ProcessActionType] = None,
       json: Option[DisplayableProcess] = None
-  ): BaseProcessDetails[DisplayableProcess] =
+  ): RepositoryScenarioWithDetails[DisplayableProcess] =
     toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
 
   def createFragment(
@@ -54,7 +55,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None
-  ): BaseProcessDetails[DisplayableProcess] =
+  ): RepositoryScenarioWithDetails[DisplayableProcess] =
     toDetails(
       name,
       category,
@@ -70,7 +71,7 @@ object TestProcessUtil {
       category: Category = TestCategories.Category1,
       isArchived: Boolean = false,
       isFragment: Boolean = false
-  ): ProcessDetails =
+  ): RepositoryScenarioWithDetails[DisplayableProcess] =
     toDetails(
       displayable.id,
       category,
@@ -80,8 +81,8 @@ object TestProcessUtil {
       isFragment = isFragment
     )
 
-  def validatedToProcess(displayable: ValidatedDisplayableProcess): ValidatedProcessDetails =
-    ValidatedProcessDetails(
+  def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
+    ScenarioWithDetailsConversions.fromRepositoryDetails(
       toDetails(
         displayable.id,
         processingType = displayable.processingType,
@@ -99,11 +100,11 @@ object TestProcessUtil {
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
       history: Option[List[ProcessVersion]] = None
-  ): ProcessDetails = {
+  ): RepositoryScenarioWithDetails[DisplayableProcess] = {
     val jsonData = json
       .map(_.copy(id = name, processingType = processingType, category = category))
       .getOrElse(createEmptyJson(name, processingType, category))
-    BaseProcessDetails[DisplayableProcess](
+    RepositoryScenarioWithDetails[DisplayableProcess](
       id = name,
       name = ProcessName(name),
       processId = ProcessId(generateId()),
@@ -122,7 +123,7 @@ object TestProcessUtil {
       tags = List(),
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if StateActionsTypes.contains(action) => createProcessAction(action)
+        case action if ProcessActionType.StateActionsTypes.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)

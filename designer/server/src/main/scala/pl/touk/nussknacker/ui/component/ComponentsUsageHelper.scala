@@ -5,8 +5,8 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, NodeUsageData, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 
 object ComponentsUsageHelper {
 
@@ -14,7 +14,7 @@ object ComponentsUsageHelper {
 
   def computeComponentsUsageCount(
       componentIdProvider: ComponentIdProvider,
-      processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]
+      processesDetails: List[RepositoryScenarioWithDetails[ScenarioComponentsUsages]]
   ): Map[ComponentId, Long] = {
     computeComponentsUsage(componentIdProvider, processesDetails)
       .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
@@ -22,9 +22,9 @@ object ComponentsUsageHelper {
 
   def computeComponentsUsage(
       componentIdProvider: ComponentIdProvider,
-      processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]
-  ): Map[ComponentId, List[(BaseProcessDetails[_], List[NodeUsageData])]] = {
-    def flattenUsages(processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]) = for {
+      processesDetails: List[RepositoryScenarioWithDetails[ScenarioComponentsUsages]]
+  ): Map[ComponentId, List[(RepositoryScenarioWithDetails[_], List[NodeUsageData])]] = {
+    def flattenUsages(processesDetails: List[RepositoryScenarioWithDetails[ScenarioComponentsUsages]]) = for {
       processDetails       <- processesDetails
       componentIdNodesPair <- processDetails.json.value.toList
       (ComponentIdParts(componentName, componentType), nodeIds) = componentIdNodesPair
@@ -83,7 +83,7 @@ object ComponentsUsageHelper {
       componentId: ComponentId,
       componentType: ComponentType,
       componentName: Option[String],
-      processDetails: BaseProcessDetails[_],
+      processDetails: RepositoryScenarioWithDetails[_],
       nodeUsageData: NodeUsageDataShape
   )
 

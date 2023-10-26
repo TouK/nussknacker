@@ -15,13 +15,14 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
@@ -165,7 +166,7 @@ class NotificationServiceTest
       clock
     ) {
       override protected def validateBeforeDeploy(
-          processDetails: processdetails.BaseProcessDetails[CanonicalProcess],
+          processDetails: RepositoryScenarioWithDetails[CanonicalProcess],
           actionId: ProcessActionId
       )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
         Future.successful(

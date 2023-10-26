@@ -25,7 +25,8 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -64,7 +65,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def statefulEnvironment(
-      expectedProcessDetails: ValidatedProcessDetails,
+      expectedProcessDetails: ScenarioWithDetails,
       expectedProcessCategory: String,
       initialRemoteProcessList: List[String],
       onMigrate: Future[UpdateProcessCommand] => Unit
@@ -159,11 +160,11 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def environmentForTestMigration(
-      processes: List[ValidatedProcessDetails],
-      fragments: List[ValidatedProcessDetails]
+      processes: List[ScenarioWithDetails],
+      fragments: List[ScenarioWithDetails]
   ) = new MockRemoteEnvironment {
 
-    private def allProcesses: List[ValidatedProcessDetails] = processes ++ fragments
+    private def allProcesses: List[ScenarioWithDetails] = processes ++ fragments
 
     override protected def request(
         uri: Uri,
@@ -281,9 +282,11 @@ class StandardRemoteEnvironmentSpec
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
-          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
+          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+            .to[RequestEntity]
+            .map { entity =>
+              HttpResponse(StatusCodes.OK, entity = entity)
+            }
         } else {
           throw new AssertionError(s"Not expected $path")
         }
@@ -308,9 +311,11 @@ class StandardRemoteEnvironmentSpec
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
-          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
+          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+            .to[RequestEntity]
+            .map { entity =>
+              HttpResponse(StatusCodes.OK, entity = entity)
+            }
         } else {
           throw new AssertionError(s"Not expected $path")
         }

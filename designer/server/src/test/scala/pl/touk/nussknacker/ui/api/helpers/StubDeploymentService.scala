@@ -5,7 +5,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.{ValidatedProcessDetails, processdetails}
+import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -15,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
-      processDetails: processdetails.BaseProcessDetails[_]
+      processDetails: RepositoryScenarioWithDetails[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     getProcessState(processDetails.idWithName)
 
@@ -58,10 +60,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ValidatedProcessDetails])(
+  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[F[ValidatedProcessDetails]] = Future.successful(processTraverse)
+  ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
 
 }

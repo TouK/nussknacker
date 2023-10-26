@@ -9,8 +9,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
-import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.{ProcessService, ProcessesQuery}
@@ -77,7 +77,7 @@ class RemoteEnvironmentResources(
   }
 
   private def compareProcesses(
-      processes: List[ValidatedProcessDetails]
+      processes: List[ScenarioWithDetails]
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, EnvironmentComparisonResult]] = {
     val results = Future.sequence(processes.map(p => compareOneProcess(p.scenarioGraphUnsafe)))
     results.map { comparisonResult =>

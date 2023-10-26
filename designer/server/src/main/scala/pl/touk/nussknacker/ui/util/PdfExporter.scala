@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
 import scala.xml.{Elem, NodeSeq, XML}
@@ -32,7 +32,11 @@ object PdfExporter extends LazyLogging {
     ResourceResolverFactory.createDefaultResourceResolver
   ).getFopFactoryBuilder.build
 
-  def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity): Array[Byte] = {
+  def exportToPdf(
+      svg: String,
+      processDetails: RepositoryScenarioWithDetails[DisplayableProcess],
+      processActivity: ProcessActivity
+  ): Array[Byte] = {
 
     // initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
     initFontsIfNeeded()
@@ -85,7 +89,7 @@ object PdfExporter extends LazyLogging {
 
   private def prepareFopXml(
       svg: String,
-      processDetails: ProcessDetails,
+      processDetails: RepositoryScenarioWithDetails[DisplayableProcess],
       processActivity: ProcessActivity,
       displayableProcess: DisplayableProcess
   ) = {

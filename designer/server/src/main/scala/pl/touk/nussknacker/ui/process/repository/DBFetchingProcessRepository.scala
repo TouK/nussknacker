@@ -8,9 +8,10 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -37,9 +38,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   import api._
 
-  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](
+  override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ProcessesQuery
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[RepositoryScenarioWithDetails[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
@@ -58,19 +59,20 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     )
   }
 
-  private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](
+  private def fetchProcessDetailsByQueryAction[PS: ScenarioShapeFetchStrategy](
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
       isDeployed: Option[Boolean]
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
+  ): DBIOAction[List[RepositoryScenarioWithDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
       lastActionPerProcess <- fetchActionsOrEmpty(
         actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, None)
       )
       lastStateActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, Some(StateActionsTypes))
+        actionRepository
+          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ProcessActionType.StateActionsTypes))
       )
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(
@@ -90,29 +92,29 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       }).map(_.toList)
   }
 
-  private def fetchActionsOrEmpty[PS: ProcessShapeFetchStrategy](
+  private def fetchActionsOrEmpty[PS: ScenarioShapeFetchStrategy](
       doFetch: => DBIO[Map[ProcessId, ProcessAction]]
   ): DBIO[Map[ProcessId, ProcessAction]] = {
-    implicitly[ProcessShapeFetchStrategy[PS]] match {
+    implicitly[ScenarioShapeFetchStrategy[PS]] match {
       // For component usages we don't need full process details, so we don't fetch actions
-      case ProcessShapeFetchStrategy.FetchComponentsUsages => DBIO.successful(Map.empty)
-      case _                                               => doFetch
+      case ScenarioShapeFetchStrategy.FetchComponentsUsages => DBIO.successful(Map.empty)
+      case _                                                => doFetch
     }
   }
 
-  override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](
+  override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[RepositoryScenarioWithDetails[PS]]] = {
     run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
-  override def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](
+  override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](
       processId: ProcessId,
       versionId: VersionId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[RepositoryScenarioWithDetails[PS]]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
-        fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.NotFetch).result.headOption
+        fetchProcessLatestVersionsQuery(processId)(ScenarioShapeFetchStrategy.NotFetch).result.headOption
       )
       processVersion <- OptionT[DB, ProcessVersionEntityData](
         fetchProcessLatestVersionsQuery(processId).filter(pv => pv.id === versionId).result.headOption
@@ -143,7 +145,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       processId: ProcessId
   )(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
-      implicit val fetchStrategy: ProcessShapeFetchStrategy[_] = ProcessShapeFetchStrategy.NotFetch
+      implicit val fetchStrategy: ScenarioShapeFetchStrategy[_] = ScenarioShapeFetchStrategy.NotFetch
       fetchLatestProcessDetailsForProcessIdQuery(processId).flatMap {
         case None          => DBIO.failed(ProcessNotFoundError(processId.value.toString))
         case Some(process) => DBIO.successful(process.processingType)
@@ -151,9 +153,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     }
   }
 
-  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ProcessShapeFetchStrategy](
+  private def fetchLatestProcessDetailsForProcessIdQuery[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[BaseProcessDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[RepositoryScenarioWithDetails[PS]]] = {
     (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
         fetchProcessLatestVersionsQuery(id).result.headOption
@@ -162,15 +164,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     } yield processDetails).value
   }
 
-  private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](
+  private def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
       processVersion: ProcessVersionEntityData,
       isLatestVersion: Boolean
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, BaseProcessDetails[PS]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, RepositoryScenarioWithDetails[PS]] = {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](
-        fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result
+        fetchProcessLatestVersionsQuery(id)(ScenarioShapeFetchStrategy.NotFetch).result
       )
       actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id, None))
       tags    <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
@@ -178,7 +180,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find(a => StateActionsTypes.contains(a.actionType)),
+      lastStateActionData = actions.find(a => ProcessActionType.StateActionsTypes.contains(a.actionType)),
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
       lastDeployedActionData = actions.headOption.filter(a =>
         a.actionType == ProcessActionType.Deploy && a.state == ProcessActionState.Finished
@@ -191,7 +193,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     )
   }
 
-  private def createFullDetails[PS: ProcessShapeFetchStrategy](
+  private def createFullDetails[PS: ScenarioShapeFetchStrategy](
       process: ProcessEntityData,
       processVersion: ProcessVersionEntityData,
       lastActionData: Option[ProcessAction],
@@ -200,8 +202,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       isLatestVersion: Boolean,
       tags: Seq[TagsEntityData] = List.empty,
       history: Seq[ProcessVersion] = List.empty
-  ): BaseProcessDetails[PS] = {
-    BaseProcessDetails[PS](
+  ): RepositoryScenarioWithDetails[PS] = {
+    RepositoryScenarioWithDetails[PS](
       id = process.name.value, // TODO: replace by Long / ProcessId
       processId = process.id,  // TODO: Remove it weh we will support Long / ProcessId
       name = process.name,
@@ -227,19 +229,19 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](
+  private def convertToTargetShape[PS: ScenarioShapeFetchStrategy](
       processVersion: ProcessVersionEntityData,
       process: ProcessEntityData
   ): PS = {
-    (processVersion.json, processVersion.componentsUsages, implicitly[ProcessShapeFetchStrategy[PS]]) match {
-      case (Some(canonical), _, ProcessShapeFetchStrategy.FetchCanonical) =>
+    (processVersion.json, processVersion.componentsUsages, implicitly[ScenarioShapeFetchStrategy[PS]]) match {
+      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
-      case (Some(canonical), _, ProcessShapeFetchStrategy.FetchDisplayable) =>
+      case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchDisplayable) =>
         val displayableProcess =
           ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
         displayableProcess.asInstanceOf[PS]
-      case (_, _, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
-      case (_, Some(componentsUsages), ProcessShapeFetchStrategy.FetchComponentsUsages) =>
+      case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
+      case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
         componentsUsages.asInstanceOf[PS]
       case (_, _, strategy) =>
         throw new IllegalArgumentException(

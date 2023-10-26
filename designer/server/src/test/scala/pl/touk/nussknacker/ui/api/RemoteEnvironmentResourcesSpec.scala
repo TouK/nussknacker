@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.{ValidatedProcessDetails, processdetails}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
+import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ProcessVersion, ScenarioWithDetails}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -211,7 +211,7 @@ class RemoteEnvironmentResourcesSpec
     ): Future[List[ProcessVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: ValidatedProcessDetails => Boolean
+        processToInclude: ScenarioWithDetails => Boolean
     )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }

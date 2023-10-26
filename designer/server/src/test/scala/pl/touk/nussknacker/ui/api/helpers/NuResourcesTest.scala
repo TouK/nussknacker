@@ -29,11 +29,13 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, ValidatedProcessDetails, processdetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -374,20 +376,20 @@ trait NuResourcesTest
   protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
       callback: List[ProcessJson] => Unit
   ): Unit = {
-    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ValidatedProcessDetails]] =
-      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ValidatedProcessDetails]]])
+    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
+      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
     val url = query.createQueryParamsUrl("/processes")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
-      responseAs[List[ValidatedProcessDetails]] // just to test if decoder succeds
+      responseAs[List[ScenarioWithDetails]] // just to test if decoder succeds
       callback(processes)
     }
   }
 
   protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
-      callback: List[ValidatedProcessDetails] => Unit
+      callback: List[ScenarioWithDetails] => Unit
   ): Unit = {
     import FailFastCirceSupport._
 
@@ -395,7 +397,7 @@ trait NuResourcesTest
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val processes = responseAs[List[ValidatedProcessDetails]]
+      val processes = responseAs[List[ScenarioWithDetails]]
       callback(processes)
     }
   }
@@ -452,7 +454,7 @@ trait NuResourcesTest
     } yield id
   }
 
-  protected def getProcessDetails(processId: ProcessId): processdetails.BaseProcessDetails[Unit] =
+  protected def getProcessDetails(processId: ProcessId): RepositoryScenarioWithDetails[Unit] =
     futureFetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   protected def createEmptyProcess(

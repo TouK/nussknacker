@@ -9,14 +9,20 @@ import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
   ComponentUsagesInScenario,
+  NodeUsageData,
   ScenarioComponentsUsages
 }
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
-import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
+import pl.touk.nussknacker.ui.component.DefaultComponentService.{
+  getComponentDoc,
+  getComponentIcon,
+  toComponentUsagesInScenario
+}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
+import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ProcessesQuery, UserCategoryService}
@@ -66,6 +72,25 @@ object DefaultComponentService {
   ): Option[SingleComponentConfig] =
     componentsUiConfig.get(com.label)
 
+  private[component] def toComponentUsagesInScenario(
+      process: RepositoryScenarioWithDetails[_],
+      nodesUsagesData: List[NodeUsageData]
+  ): ComponentUsagesInScenario =
+    ComponentUsagesInScenario(
+      id = process.id, // Right now we assume that scenario id is name..
+      name = process.idWithName.name,
+      processId = process.processId,
+      nodesUsagesData = nodesUsagesData,
+      isFragment = process.isFragment,
+      processCategory = process.processCategory,
+      modificationDate = process.modificationDate, // TODO: Deprecated, please use modifiedAt
+      modifiedAt = process.modifiedAt,
+      modifiedBy = process.modifiedBy,
+      createdAt = process.createdAt,
+      createdBy = process.createdBy,
+      lastAction = process.lastAction
+    )
+
 }
 
 class DefaultComponentService private (
@@ -112,7 +137,7 @@ class DefaultComponentService private (
           .map(data =>
             Right(
               data
-                .map { case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData) }
+                .map { case (process, nodesUsagesData) => toComponentUsagesInScenario(process, nodesUsagesData) }
                 .sortBy(_.id)
             )
           )

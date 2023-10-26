@@ -1,22 +1,19 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 
 import java.net.URI
 import java.time.Instant
 
 package object component {
 
+  import io.circe.generic.extras.semiauto._
+  import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
   type NodeId = String
@@ -58,26 +55,6 @@ package object component {
       links: List[ComponentLink],
       usageCount: Long
   )
-
-  object ComponentUsagesInScenario {
-
-    def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario =
-      ComponentUsagesInScenario(
-        id = process.id, // Right now we assume that scenario id is name..
-        name = process.idWithName.name,
-        processId = process.processId,
-        nodesUsagesData = nodesUsagesData,
-        isFragment = process.isFragment,
-        processCategory = process.processCategory,
-        modificationDate = process.modificationDate, // TODO: Deprecated, please use modifiedAt
-        modifiedAt = process.modifiedAt,
-        modifiedBy = process.modifiedBy,
-        createdAt = process.createdAt,
-        createdBy = process.createdBy,
-        lastAction = process.lastAction
-      )
-
-  }
 
   @JsonCodec
   final case class ComponentUsagesInScenario(

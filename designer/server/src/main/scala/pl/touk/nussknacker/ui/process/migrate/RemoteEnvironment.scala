@@ -15,9 +15,8 @@ import cats.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessVersion}
+import pl.touk.nussknacker.restmodel.scenariodetails.{ProcessVersion, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
@@ -45,7 +44,7 @@ trait RemoteEnvironment {
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
 
-  def testMigration(processToInclude: ValidatedProcessDetails => Boolean = _ => true)(
+  def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
@@ -124,7 +123,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   implicit def materializer: Materializer
 
   override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] =
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
+    invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
       result.fold(_ => List(), _.history)
     }
 
@@ -140,8 +139,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   ): Future[Either[NuDesignerError, Map[String, Difference]]] = {
     val id = localProcess.id
     (for {
-      process  <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
-      compared <- EitherT.rightT[Future, NuDesignerError](ProcessComparator.compare(localProcess, process.json))
+      process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
+      compared <- EitherT.rightT[Future, NuDesignerError](
+        ProcessComparator.compare(localProcess, process.scenarioGraphUnsafe)
+      )
     } yield compared).value
   }
 
@@ -196,7 +197,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def testMigration(
-      processToInclude: ValidatedProcessDetails => Boolean = _ => true
+      processToInclude: ScenarioWithDetails => Boolean = _ => true
   )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
@@ -208,12 +209,12 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchGroupByGroup[T](
-      basicProcesses: List[ValidatedProcessDetails]
-  )(implicit ec: ExecutionContext): FutureE[List[ValidatedProcessDetails]] = {
+      basicProcesses: List[ScenarioWithDetails]
+  )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
     basicProcesses
       .map(_.name)
       .grouped(config.batchSize)
-      .foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ValidatedProcessDetails])) {
+      .foldLeft(EitherT.rightT[Future, NuDesignerError](List.empty[ScenarioWithDetails])) {
         case (acc, processesGroup) =>
           for {
             current <- acc
@@ -224,14 +225,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcesses(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, List[ValidatedProcessDetails]]] = {
-    invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
+  ): Future[Either[NuDesignerError, List[ScenarioWithDetails]]] = {
+    invokeJson[List[ScenarioWithDetails]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
   }
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])(
       implicit ec: ExecutionContext
-  ): Future[Either[NuDesignerError, ProcessDetails]] = {
-    invokeJson[ProcessDetails](
+  ): Future[Either[NuDesignerError, ScenarioWithDetails]] = {
+    invokeJson[ScenarioWithDetails](
       HttpMethods.GET,
       List("processes", id) ++ remoteProcessVersion.map(_.value.toString).toList,
       Query()
@@ -240,12 +241,12 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def fetchProcessDetails(
       id: String
-  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ProcessDetails]] = {
-    EitherT(invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id)).map(_.asRight))
+  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetails]] = {
+    EitherT(invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", id)).map(_.asRight))
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
-    invokeJson[List[ValidatedProcessDetails]](
+    invokeJson[List[ScenarioWithDetails]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
       Query(

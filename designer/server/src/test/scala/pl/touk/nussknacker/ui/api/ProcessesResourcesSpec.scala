@@ -17,9 +17,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -116,7 +115,7 @@ class ProcessesResourcesSpec
     createDeployedProcessFromProcess(SampleSpelTemplateProcess.process)
 
     Get(s"/processes/${SampleSpelTemplateProcess.processName.value}") ~> routeWithRead ~> check {
-      val newProcessDetails = responseAs[ValidatedProcessDetails]
+      val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 
       responseAs[String] should include("validationResult")
@@ -129,14 +128,14 @@ class ProcessesResourcesSpec
 
     Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      val validated = responseAs[ValidatedProcessDetails]
+      val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
       validated.validationResult.value.errors should not be empty
     }
 
     Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      val validated = responseAs[ValidatedProcessDetails]
+      val validated = responseAs[ScenarioWithDetails]
       validated.name shouldBe processName
       validated.validationResult shouldBe empty
     }
@@ -667,7 +666,7 @@ class ProcessesResourcesSpec
     }
 
     getProcess(processName) ~> check {
-      val processDetails = responseAs[ProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.name.value shouldBe SampleProcess.process.id
       processDetails.history.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
@@ -684,19 +683,19 @@ class ProcessesResourcesSpec
     }
 
     Get(s"/processes/${SampleProcess.process.id}/1") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/3") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
     }
@@ -706,7 +705,7 @@ class ProcessesResourcesSpec
     createEmptyProcess(processName)
 
     Get(s"/processes/$processName/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.validationResult shouldBe empty
     }
@@ -715,10 +714,10 @@ class ProcessesResourcesSpec
   test("perform idempotent process save") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-      val processHistoryBeforeDuplicatedWrite = responseAs[ProcessDetails].history
+      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].history
       updateProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
       Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-        val processHistoryAfterDuplicatedWrite = responseAs[ProcessDetails].history
+        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].history
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
     }
@@ -832,7 +831,7 @@ class ProcessesResourcesSpec
 
       Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
         status shouldEqual StatusCodes.OK
-        val loadedProcess = responseAs[ValidatedProcessDetails]
+        val loadedProcess = responseAs[ScenarioWithDetails]
         loadedProcess.processCategory shouldBe TestCat
         loadedProcess.createdAt should not be null
       }
@@ -865,7 +864,7 @@ class ProcessesResourcesSpec
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), TestCat) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
-          val processes = responseAs[List[ValidatedProcessDetails]]
+          val processes = responseAs[List[ScenarioWithDetails]]
           processes should have size 2
           processes.map(_.name) should contain only (firstProcessName, secondProcessName)
           every(processes.map(_.validationResult)) shouldBe empty
