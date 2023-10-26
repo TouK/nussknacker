@@ -1973,10 +1973,10 @@ lazy val root = (project in file("."))
     releaseProcess    := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
-//      runClean,
-//      // dist can't be aggregates by root because it using root tasks so we need to add cleaning of it explicitly
-//      // TODO: replace root tasks by some local tasks
-//      releaseStepCommand("dist/clean"),
+      runClean,
+      // dist can't be aggregates by root because it using root tasks so we need to add cleaning of it explicitly
+      // TODO: replace root tasks by some local tasks
+      releaseStepCommand("dist/clean"),
 //      ReleaseStep { st: State =>
 //        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
 //          releaseStepCommandAndRemaining("+test")(st)
@@ -1987,9 +1987,9 @@ lazy val root = (project in file("."))
 //      setReleaseVersion,
 //      commitReleaseVersion,
 //      tagRelease,
-//      releaseStepCommand("buildClient"),
+      releaseStepCommand("buildClient"),
 //      releaseStepCommandAndRemaining("+publishSigned"),
-//      releaseStepCommand("dist/Universal/packageZipTarball"),
+      releaseStepCommand("dist/Universal/packageZipTarball"),
 //      releaseStepCommandAndRemaining("+dist/Docker/publish"),
 //      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
 //      releaseStepCommand("sonatypeBundleRelease"),
