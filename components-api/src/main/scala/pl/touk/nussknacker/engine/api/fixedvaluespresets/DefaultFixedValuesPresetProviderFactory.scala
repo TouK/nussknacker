@@ -11,16 +11,16 @@ class DefaultFixedValuesPresetProviderFactory extends FixedValuesPresetProviderF
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  final val configPath: String = "fixedValuePresets"
+  final val configPath: String = "fixedValuesPresets"
 
   def create(config: Config, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext,
   ): FixedValuesPresetProvider = {
-    val fixedValuePresets = config
+    val fixedValuesPresets = config
       .getAs[Map[String, List[FixedExpressionValue]]](configPath)
       .getOrElse(Map.empty)
 
-    new DefaultFixedValuesPresetProvider(fixedValuePresets)
+    new DefaultFixedValuesPresetProvider(fixedValuesPresets)
   }
 
 }

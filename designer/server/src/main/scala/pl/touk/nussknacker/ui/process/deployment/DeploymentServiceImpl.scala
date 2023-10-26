@@ -131,9 +131,9 @@ class DeploymentServiceImpl(
       d => Some(d.processVersionId),
       d => Some(d.processingType)
     ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      val processDetailsWithFixedValuePresets = substituteFixedValuesPresets(processDetails)
+      val processDetailsWithFixedValuesPresets = substituteFixedValuesPresets(processDetails)
 
-      validateBeforeDeploy(processDetailsWithFixedValuePresets, actionId).transformWith {
+      validateBeforeDeploy(processDetailsWithFixedValuesPresets, actionId).transformWith {
         case Failure(ex) =>
           dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
         case Success(validationResult) =>
@@ -199,10 +199,10 @@ class DeploymentServiceImpl(
       })
 
     try {
-      val fixedValuePresets = fixedValuesPresetProvider.getAll
+      val fixedValuesPresets = fixedValuesPresetProvider.getAll
 
       replaceFixedValueList(
-        fixedValuePresets(_).map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+        fixedValuesPresets(_).map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
       )
     } catch {
       case e: Throwable =>

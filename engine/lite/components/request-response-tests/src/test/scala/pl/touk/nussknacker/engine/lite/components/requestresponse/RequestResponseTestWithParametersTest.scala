@@ -194,7 +194,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
 
     parameter.name shouldBe "name"
-    parameter.typ shouldBe Typed(classOf[String])
+    parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
     parameter.validators should contain theSameElementsAs List(MandatoryParameterValidator)
     parameter.defaultValue shouldBe Some(Expression.spel("'Tomasz'"))
@@ -223,7 +223,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
 
     parameter.name shouldBe "name"
-    parameter.typ shouldBe Typed(classOf[String])
+    parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
       DualParameterEditor(
         FixedValuesParameterEditor(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label))),
@@ -258,7 +258,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
 
     parameter.name shouldBe "name"
-    parameter.typ shouldBe Typed(classOf[String])
+    parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
       FixedValuesParameterEditor(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label)))
     )

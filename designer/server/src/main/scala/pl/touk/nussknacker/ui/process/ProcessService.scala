@@ -238,17 +238,17 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
-      val (processWithFixedValuePresets, presetValidation) =
+      val (processWithFixedValuesPresets, presetValidation) =
         substituteFixedValuesPresets(action.process, fixedValuesPresetProvider)
 
       val result = for {
         validation <- EitherT.fromEither[Future](
           FatalValidationError.saveNotAllowedAsError(
-            presetValidation.add(processResolving.validateBeforeUiResolving(processWithFixedValuePresets))
+            presetValidation.add(processResolving.validateBeforeUiResolving(processWithFixedValuesPresets))
           )
         )
         substituted = {
-          processResolving.resolveExpressions(processWithFixedValuePresets, validation.typingInfo)
+          processResolving.resolveExpressions(processWithFixedValuesPresets, validation.typingInfo)
         }
         updateProcessAction = UpdateProcessAction(
           processIdWithName.id,
@@ -337,20 +337,20 @@ class DBProcessService(
       process: DisplayableProcess,
       fixedValuesPresetProvider: FixedValuesPresetProvider
   ): (DisplayableProcess, ValidationResult) = {
-    val fixedValuePresets =
+    val fixedValuesPresets =
       try {
         fixedValuesPresetProvider.getAll
       } catch {
         case e: Throwable =>
-          logger.warn(s"FixedValuePresetsProvider failed to provide presets ", e)
+          logger.warn(s"FixedValuesPresetsProvider failed to provide presets ", e)
           return (
             process,
             ValidationResult.globalErrors(
               List(
                 NodeValidationError(
-                  "FixedValuePresetsProviderFailure",
-                  "FixedValuePresetsProvider failed to provide presets",
-                  "FixedValuePresetsProvider failed to provide presets",
+                  "FixedValuesPresetsProviderFailure",
+                  "FixedValuesPresetsProvider failed to provide presets",
+                  "FixedValuesPresetsProvider failed to provide presets",
                   None,
                   NodeValidationErrorType.SaveAllowed
                 )
@@ -367,7 +367,7 @@ class DBProcessService(
             fragmentParams = fragmentInput.fragmentParams.map(_.map { param =>
               param.fixedValueListPresetId match {
                 case Some(presetId) =>
-                  fixedValuePresets.get(presetId) match {
+                  fixedValuesPresets.get(presetId) match {
                     case Some(preset) =>
                       param.copy(fixedValueList =
                         preset.map(v => node.FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))

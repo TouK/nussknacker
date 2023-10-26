@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.fixedvaluespresets.DefaultFixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.{
+  DefaultFixedValuesPresetProvider,
+  FixedValuesPresetProvider,
+  TestFixedValuesPresetProvider
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -20,17 +24,16 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -45,11 +48,19 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val defaultFragmentId: String = "fragment1"
 
-  // todo use preset and test it's validation
+  private val fixedValuePresetId = "presetString"
+
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
     List(
-      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+      FlatNode(
+        FragmentInputDefinition(
+          "in",
+          List(
+            FragmentParameter("param1", FragmentClazzRef[String], fixedValueListPresetId = Some(fixedValuePresetId))
+          )
+        )
+      ),
       FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     )
   )
@@ -547,6 +558,31 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should validate missing fragment preset ids") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInput(nodeId, FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> "ok"))),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              PresetIdNotFoundInProvidedPresets(
+                fixedValuePresetId,
+                nodes
+              ),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   private def genericParameters = List(
     definition
       .Parameter[String]("par1")
@@ -565,7 +601,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       branchCtxs: Map[String, ValidationContext] = Map.empty,
       outgoingEdges: List[OutgoingEdge] = Nil,
       fragmentDefinition: CanonicalProcess = defaultFragmentDef,
-      aModelData: LocalModelData = modelData
+      aModelData: LocalModelData = modelData,
+      fixedValuesPresetProvider: FixedValuesPresetProvider = TestFixedValuesPresetProvider
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
     new NodeDataValidator(aModelData, fragmentResolver).validate(
@@ -573,7 +610,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       ctx,
       branchCtxs,
       outgoingEdges,
-      new DefaultFixedValuesPresetProvider(Map.empty) // TODO not empty + test it
+      fixedValuesPresetProvider
     )(
       MetaData("id", StreamMetaData())
     )

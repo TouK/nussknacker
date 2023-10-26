@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.fixedvaluespresets
+package pl.touk.nussknacker.engine.api.fixedvaluespresets
 
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
