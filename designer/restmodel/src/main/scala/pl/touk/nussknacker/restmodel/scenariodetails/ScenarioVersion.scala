@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.time.Instant
 
-@JsonCodec final case class ProcessVersion(
+@JsonCodec final case class ScenarioVersion(
     processVersionId: VersionId,
     createDate: Instant,
     user: String,

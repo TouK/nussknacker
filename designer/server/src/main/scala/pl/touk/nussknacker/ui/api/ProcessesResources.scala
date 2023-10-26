@@ -83,7 +83,6 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              // TODO: consider not returning versions as it was before clean-ups
               processService.getProcessesWithDetails(
                 query,
                 GetScenarioWithDetailsOptions.detailsOnly.withFetchState

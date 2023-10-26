@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.scenariodetails
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId => ApiProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -26,13 +26,13 @@ final case class ScenarioWithDetails(
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: List[String],
+    tags: Option[List[String]],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[ProcessAction],
     lastAction: Option[ProcessAction],
     // TODO: move things like processingType, category and validationResult on the root level and rename json to scenarioGraph
     json: Option[ValidatedDisplayableProcess],
-    history: List[ProcessVersion],
+    history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int],
     state: Option[ProcessState]
 ) {
@@ -44,6 +44,8 @@ final case class ScenarioWithDetails(
   ): ScenarioWithDetails = {
     copy(json = Some(scenarioWithValidationResult))
   }
+
+  def historyUnsafe: List[ScenarioVersion] = history.getOrElse(throw new IllegalStateException("Missing history"))
 
   def scenarioGraphUnsafe: DisplayableProcess = scenarioGraphAndValidationResultUnsafe.toDisplayable
 

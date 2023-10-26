@@ -7,6 +7,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
+* [#4912](https://github.com/TouK/nussknacker/pull/4912) Changes in scenario details:
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]` and `pl.touk.nussknacker.restmodel.processdetails.BasicProcess`
+    used in rest resources were merged into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails`
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]` and `pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy`
+    used in `pl.touk.nussknacker.ui.listener.services.PullProcessRepository` were moved into `listener-api` and renamed into
+    `pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails` and 
+    `pl.touk.nussknacker.ui.listener.services.ScenarioShapeFetchStrategy`
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessDetails` and `pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails`
+    type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
+  * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

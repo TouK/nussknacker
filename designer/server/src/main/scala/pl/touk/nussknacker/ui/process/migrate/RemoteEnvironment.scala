@@ -16,7 +16,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.scenariodetails.{ProcessVersion, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioVersion, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
@@ -37,7 +37,7 @@ trait RemoteEnvironment {
       implicit ec: ExecutionContext
   ): Future[Either[NuDesignerError, Map[String, Difference]]]
 
-  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]]
+  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
 
   def migrate(localProcess: DisplayableProcess, category: String)(
       implicit ec: ExecutionContext,
@@ -122,9 +122,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   implicit def materializer: Materializer
 
-  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] =
+  override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]] =
     invokeJson[ScenarioWithDetails](HttpMethods.GET, List("processes", processName.value)).map { result =>
-      result.fold(_ => List(), _.history)
+      result.fold(_ => List(), _.historyUnsafe)
     }
 
   protected def request(

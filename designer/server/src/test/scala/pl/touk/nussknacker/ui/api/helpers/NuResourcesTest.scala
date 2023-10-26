@@ -348,9 +348,6 @@ trait NuResourcesTest
     )
   }
 
-  protected def getProcesses: RouteTestResult =
-    Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)
-
   protected def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionRead)
 
@@ -374,8 +371,8 @@ trait NuResourcesTest
     }
 
   protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
-      callback: List[ProcessJson] => Unit
-  ): Unit = {
+      callback: List[ProcessJson] => Assertion
+  ): Assertion = {
     implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
       FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
     val url = query.createQueryParamsUrl("/processes")
@@ -389,8 +386,8 @@ trait NuResourcesTest
   }
 
   protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
-      callback: List[ScenarioWithDetails] => Unit
-  ): Unit = {
+      callback: List[ScenarioWithDetails] => Assertion
+  ): Assertion = {
     import FailFastCirceSupport._
 
     val url = query.createQueryParamsUrl("/processesDetails")

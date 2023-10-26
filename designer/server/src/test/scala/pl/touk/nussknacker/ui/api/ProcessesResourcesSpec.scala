@@ -90,6 +90,17 @@ class ProcessesResourcesSpec
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.NotDeployed))
   }
 
+  test("/processes and /processesDetails should return lighter details without history versions") {
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        every(processes.map(_.history)) shouldBe empty
+      }
+      forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+        every(processes.map(_.history)) shouldBe empty
+      }
+    }
+  }
+
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
@@ -668,7 +679,7 @@ class ProcessesResourcesSpec
     getProcess(processName) ~> check {
       val processDetails = responseAs[ScenarioWithDetails]
       processDetails.name.value shouldBe SampleProcess.process.id
-      processDetails.history.length shouldBe 3
+      processDetails.historyUnsafe.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
   }
@@ -714,10 +725,10 @@ class ProcessesResourcesSpec
   test("perform idempotent process save") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].history
+      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
       updateProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
       Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].history
+        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
     }
@@ -981,17 +992,10 @@ class ProcessesResourcesSpec
 
   private def verifyListOfProcesses(query: ProcessesQuery, expectedNames: List[ProcessName]): Unit = {
     forScenariosReturned(query) { processes =>
-      processes.size shouldBe expectedNames.size
-      expectedNames.foreach { name =>
-        assert(processes.exists(_.name == name.value), s"Missing name: ${name.value} for query: $query.")
-      }
+      processes.map(_.name) should contain theSameElementsAs expectedNames.map(_.value)
     }
-
     forScenariosDetailsReturned(query) { processes =>
-      processes.size shouldBe expectedNames.size
-      expectedNames.foreach { name =>
-        assert(processes.exists(_.name.value == name.value), s"Missing name: ${name.value} for query: $query.")
-      }
+      processes.map(_.name) should contain theSameElementsAs expectedNames.map(_.value)
     }
   }
 

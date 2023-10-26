@@ -25,7 +25,7 @@ final case class RepositoryScenarioWithDetails[ScenarioShape](
     modifiedBy: String,
     createdAt: Instant,
     createdBy: String,
-    tags: List[String],
+    tags: Option[List[String]],
     lastDeployedAction: Option[ProcessAction],
     lastStateAction: Option[
       ProcessAction
@@ -34,7 +34,7 @@ final case class RepositoryScenarioWithDetails[ScenarioShape](
       ProcessAction
     ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
     json: ScenarioShape,
-    history: List[scenariodetails.ProcessVersion],
+    history: Option[List[scenariodetails.ScenarioVersion]],
     modelVersion: Option[Int]
 ) {
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)

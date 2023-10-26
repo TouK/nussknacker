@@ -94,7 +94,7 @@ object PdfExporter extends LazyLogging {
       displayableProcess: DisplayableProcess
   ) = {
     val diagram        = XML.loadString(svg)
-    val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
+    val currentVersion = processDetails.history.get.find(_.processVersionId == processDetails.processVersionId).get
 
     <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en">
 

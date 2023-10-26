@@ -99,7 +99,7 @@ object TestProcessUtil {
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
-      history: Option[List[ProcessVersion]] = None
+      history: Option[List[ScenarioVersion]] = None
   ): RepositoryScenarioWithDetails[DisplayableProcess] = {
     val jsonData = json
       .map(_.copy(id = name, processingType = processingType, category = category))
@@ -120,7 +120,7 @@ object TestProcessUtil {
       modifiedBy = "user1",
       createdAt = Instant.now(),
       createdBy = "user1",
-      tags = List(),
+      tags = None,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
         case action if ProcessActionType.StateActionsTypes.contains(action) => createProcessAction(action)
@@ -129,7 +129,7 @@ object TestProcessUtil {
         createProcessAction(Deploy)
       },
       json = jsonData,
-      history = history.getOrElse(Nil),
+      history = history,
       modelVersion = None
     )
   }
