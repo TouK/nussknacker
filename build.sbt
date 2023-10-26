@@ -1975,18 +1975,18 @@ lazy val root = (project in file("."))
       inquireVersions,
       runClean,
       // dist can't be aggregates by root because it using root tasks so we need to add cleaning of it explicitly
-      // TODO: replace root tasks by some local tasks
+      // TODO: replace root tasks https://ghcr.io/v2/touk/nussknacker-quickstart/customerservice/manifests/latestby some local tasks
       releaseStepCommand("dist/clean"),
-//      ReleaseStep { st: State =>
-//        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
-//          releaseStepCommandAndRemaining("+test")(st)
-//        } else {
-//          st
-//        }
-//      },
-//      setReleaseVersion,
-//      commitReleaseVersion,
-//      tagRelease,
+      ReleaseStep { st: State =>
+        if (!st.get(ReleaseKeys.skipTests).getOrElse(false)) {
+          releaseStepCommandAndRemaining("+test")(st)
+        } else {
+          st
+        }
+      },
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
       releaseStepCommand("buildClient"),
 //      releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
