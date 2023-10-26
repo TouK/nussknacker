@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process
 
 import cats._
 import cats.syntax.functor._
-import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
@@ -57,10 +56,24 @@ object ProcessService {
 
   object GetScenarioWithDetailsOptions {
     val detailsOnly: GetScenarioWithDetailsOptions =
-      GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
+      new GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = false)
+
+    val withsScenarioGraph: GetScenarioWithDetailsOptions =
+      new GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
   }
 
-  case class GetScenarioWithDetailsOptions(fetchGraphOptions: ScenarioGraphOptions, fetchState: Boolean)
+  final case class GetScenarioWithDetailsOptions(fetchGraphOptions: ScenarioGraphOptions, fetchState: Boolean) {
+
+    def withValidation: GetScenarioWithDetailsOptions = {
+      val newFetchGraphOptions = fetchGraphOptions match {
+        case SkipScenarioGraph => throw new IllegalStateException("withValidation used with SkipScenarioGraph option")
+        case fetch: FetchScenarioGraph => fetch.copy(validateAndResolve = true)
+      }
+      copy(fetchGraphOptions = newFetchGraphOptions)
+    }
+
+    def withFetchState: GetScenarioWithDetailsOptions = copy(fetchState = true)
+  }
 
   sealed trait ScenarioGraphOptions
 

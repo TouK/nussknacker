@@ -56,7 +56,6 @@ class RemoteEnvironmentResourcesSpec
     val route = withPermissions(
       new RemoteEnvironmentResources(
         remoteEnvironment,
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -86,7 +85,6 @@ class RemoteEnvironmentResourcesSpec
     val route = withPermissions(
       new RemoteEnvironmentResources(
         remoteEnvironment,
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -125,7 +123,6 @@ class RemoteEnvironmentResourcesSpec
             processId2.value -> Map()
           )
         ),
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -159,7 +156,6 @@ class RemoteEnvironmentResourcesSpec
             processId1.value -> Map("n1" -> difference)
           )
         ),
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),

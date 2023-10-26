@@ -86,7 +86,7 @@ class ProcessesResources(
               // TODO: consider not returning versions as it was before clean-ups
               processService.getProcessesWithDetails(
                 query,
-                GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = true)
+                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
               )
             }
           }
@@ -240,12 +240,12 @@ class ProcessesResources(
                 thisVersion <- processService.getProcessWithDetails(
                   processId,
                   thisVersion,
-                  GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
+                  GetScenarioWithDetailsOptions.withsScenarioGraph
                 )
                 otherVersion <- processService.getProcessWithDetails(
                   processId,
                   otherVersion,
-                  GetScenarioWithDetailsOptions(FetchScenarioGraph(validateAndResolve = false), fetchState = false)
+                  GetScenarioWithDetailsOptions.withsScenarioGraph
                 )
               } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
@@ -313,4 +313,13 @@ final case class ProcessesQuery(
 
 object ProcessesQuery {
   def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
+
+  def unarchived: ProcessesQuery = empty.copy(isArchived = Some(false))
+
+  def unarchivedProcesses: ProcessesQuery = unarchived.copy(isFragment = Some(false))
+
+  def unarchivedFragments: ProcessesQuery = unarchived.copy(isFragment = Some(true))
+
+  def deployed: ProcessesQuery = unarchivedProcesses.copy(isDeployed = Some(true))
+
 }

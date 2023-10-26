@@ -5,31 +5,24 @@ import akka.http.scaladsl.server.{Directives, Route}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.process.migrate.{
-  RemoteEnvironment,
-  RemoteEnvironmentCommunicationError,
-  TestMigrationResult
-}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.util.{EspPathMatchers, ProcessComparator}
-
-import scala.concurrent.{ExecutionContext, Future}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, VersionId}
+import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
+import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.{EspPathMatchers, ProcessComparator}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class RemoteEnvironmentResources(
     remoteEnvironment: RemoteEnvironment,
-    processRepository: FetchingProcessRepository[Future],
     protected val processService: ProcessService,
     val processAuthorizer: AuthorizeProcess
 )(implicit val ec: ExecutionContext)
@@ -46,8 +39,9 @@ class RemoteEnvironmentResources(
         get {
           complete {
             for {
-              processes <- processRepository.fetchProcessesDetails[DisplayableProcess](
-                FetchProcessesDetailsQuery.unarchived
+              processes <- processService.getProcessesWithDetails(
+                ProcessesQuery.unarchived,
+                GetScenarioWithDetailsOptions.withsScenarioGraph
               )
               comparison <- compareProcesses(processes)
             } yield NuDesignerErrorToHttp.toResponseEither(comparison)
@@ -55,16 +49,20 @@ class RemoteEnvironmentResources(
         }
       } ~
         path(Segment / VersionIdSegment / "compare" / VersionIdSegment) { (processName, version, otherVersion) =>
-          (get & processId(processName)) { processId =>
+          (get & processId(processName)) { processIdWithName =>
             complete {
-              withProcess(processId.id, version, (process, _) => remoteEnvironment.compare(process, Some(otherVersion)))
+              withProcess(
+                processIdWithName,
+                version,
+                (process, _) => remoteEnvironment.compare(process, Some(otherVersion))
+              )
             }
           }
         } ~
         path(Segment / VersionIdSegment / "migrate") { (processName, version) =>
-          (post & processId(processName)) { processId =>
+          (post & processId(processName)) { processIdWithName =>
             complete {
-              withProcess(processId.id, version, remoteEnvironment.migrate)
+              withProcess(processIdWithName, version, remoteEnvironment.migrate)
             }
           }
         } ~
@@ -79,9 +77,9 @@ class RemoteEnvironmentResources(
   }
 
   private def compareProcesses(
-      processes: List[ProcessDetails]
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, EnvironmentComparisonResult]] = {
-    val results = Future.sequence(processes.map(p => compareOneProcess(p.json)))
+      processes: List[ValidatedProcessDetails]
+  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, EnvironmentComparisonResult]] = {
+    val results = Future.sequence(processes.map(p => compareOneProcess(p.scenarioGraphUnsafe)))
     results.map { comparisonResult =>
       comparisonResult
         .sequence[XError, ProcessDifference]
@@ -91,19 +89,17 @@ class RemoteEnvironmentResources(
   }
 
   private def withProcess[T: Encoder](
-      processId: ProcessId,
+      processIdWithName: ProcessIdWithName,
       version: VersionId,
       fun: (DisplayableProcess, String) => Future[Either[NuDesignerError, T]]
   )(implicit user: LoggedUser) = {
-    processRepository
-      .fetchProcessDetailsForId[DisplayableProcess](processId, version)
-      .map {
-        _.map { details => (details.json, details.processCategory) }
-      }
-      .flatMap {
-        case Some((process, category)) => fun(process, category)
-        case None                      => Future.successful(Left(ProcessNotFoundError(processId.value.toString)))
-      }
+    processService
+      .getProcessWithDetails(
+        processIdWithName,
+        version,
+        GetScenarioWithDetailsOptions.withsScenarioGraph
+      )
+      .flatMap(details => fun(details.scenarioGraphUnsafe, details.processCategory))
       .map(NuDesignerErrorToHttp.toResponseEither[T])
   }
 
@@ -119,8 +115,6 @@ class RemoteEnvironmentResources(
   }
 
 }
-
-@JsonCodec final case class TestMigrationSummary(message: String, testMigrationResults: List[TestMigrationResult])
 
 //we make additional class here to be able to e.g. compare model versions...
 @JsonCodec final case class EnvironmentComparisonResult(processDifferences: List[ProcessDifference])
