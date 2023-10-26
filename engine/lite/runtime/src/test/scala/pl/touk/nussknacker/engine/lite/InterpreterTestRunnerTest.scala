@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExpressionInvocationResult,
   ExternalInvocationResult,
-  NodeResult,
-  ResultContext
+  NodeResult
 }
 import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
 
@@ -38,17 +37,17 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results = sample.test(scenario, scenarioTestData)
 
     results.nodeResults("start") shouldBe List(
-      NodeResult(ResultContext("A", Map("input" -> 2))),
-      NodeResult(ResultContext("B", Map("input" -> 1))),
-      NodeResult(ResultContext("C", Map("input" -> 3)))
+      NodeResult(Context("A", Map("input" -> 2))),
+      NodeResult(Context("B", Map("input" -> 1))),
+      NodeResult(Context("C", Map("input" -> 3)))
     )
     results.nodeResults("sum") shouldBe List(
-      NodeResult(ResultContext("A", Map("input" -> 2, "out1" -> 2))),
-      NodeResult(ResultContext("C", Map("input" -> 3, "out1" -> 3)))
+      NodeResult(Context("A", Map("input" -> 2, "out1" -> 2))),
+      NodeResult(Context("C", Map("input" -> 3, "out1" -> 3)))
     )
     results.nodeResults("end") shouldBe List(
-      NodeResult(ResultContext("A", Map("input" -> 2, "out1" -> 2, "sum" -> 2))),
-      NodeResult(ResultContext("C", Map("input" -> 3, "out1" -> 3, "sum" -> 5)))
+      NodeResult(Context("A", Map("input" -> 2, "out1" -> 2, "sum" -> 2))),
+      NodeResult(Context("C", Map("input" -> 3, "out1" -> 3, "sum" -> 5)))
     )
 
     results.invocationResults("sum") shouldBe List(
@@ -80,10 +79,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results = sample.test(scenario, scenarioTestData)
 
     results.nodeResults("source1") shouldBe List(
-      NodeResult(ResultContext("A", Map("input" -> 1))),
-      NodeResult(ResultContext("B", Map("input" -> 2)))
+      NodeResult(Context("A", Map("input" -> 1))),
+      NodeResult(Context("B", Map("input" -> 2)))
     )
-    results.nodeResults("source2") shouldBe List(NodeResult(ResultContext("C", Map("input" -> 3))))
+    results.nodeResults("source2") shouldBe List(NodeResult(Context("C", Map("input" -> 3))))
 
     results.externalInvocationResults("end1") shouldBe List(
       ExternalInvocationResult("A", "end1", 1),
@@ -107,7 +106,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     results.nodeResults("source1") shouldBe List(
       NodeResult(
-        ResultContext(
+        Context(
           "some-ctx-id",
           Map(
             "input" -> SampleInputWithListAndMap(
@@ -142,7 +141,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     results.nodeResults("source1") shouldBe List(
       NodeResult(
-        ResultContext(
+        Context(
           "some-ctx-id",
           Map(
             "input" -> SampleInputWithListAndMap(
@@ -172,9 +171,9 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id"))))
+    results.nodeResults("fragment1") shouldBe List(NodeResult(Context("fragment1", Map("in" -> "some-text-id"))))
     results.nodeResults("fragmentEnd") shouldBe List(
-      NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id")))
+      NodeResult(Context("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id")))
     )
     results.invocationResults("fragmentEnd") shouldBe List(
       ExpressionInvocationResult("fragment1", "out", "some-text-id")
@@ -193,8 +192,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
-    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
+    results.nodeResults("fragment1") shouldBe List(NodeResult(Context("fragment1", Map("in" -> 0))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(Context("fragment1", Map("in" -> 0))))
     results.exceptions.map(e => (e.context, e.nodeComponentInfo.map(_.nodeId), e.throwable.getMessage)) shouldBe List(
       (
         Context("fragment1", Map("in" -> 0), None),

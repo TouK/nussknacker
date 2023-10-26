@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.testmode.TestProcess._
+import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, _}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
@@ -42,37 +42,25 @@ object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  val testResultsVariableEncoder: Any => io.circe.Json = {
-    case displayable: DisplayJson =>
-      def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
+  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
 
-      val displayableJson = displayable.asJson
-      displayable.originalDisplay match {
-        case None           => Json.obj("pretty" -> displayableJson)
-        case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
-      }
-    case null => Json.Null
-    case a =>
-      Json.obj(
-        "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
-      )
-  }
+  implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
 
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
+    implicit val anyEncoder: Encoder[Any] = {
+      case displayable: DisplayJson =>
+        def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
 
-  implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
-
-    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-    implicit val componentInfo: Encoder[ComponentInfo]                                 = deriveConfiguredEncoder
-    implicit val nodeComponentInfo: Encoder[NodeComponentInfo]                         = deriveConfiguredEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
-
-    implicit val mapAnyEncoder: Encoder[Map[String, Any]] = (value: Map[String, Any]) =>
-      value.map { case (key, value) => key -> testResultsVariableEncoder(value) }.asJson
-
-    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+        val displayableJson = displayable.asJson
+        displayable.originalDisplay match {
+          case None           => Json.obj("pretty" -> displayableJson)
+          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> displayableJson)
+        }
+      case null => Json.Null
+      case a =>
+        Json.obj(
+          "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
+        )
+    }
 
     // TODO: do we want more information here?
     implicit val contextEncoder: Encoder[Context] = (a: Context) =>
@@ -80,6 +68,30 @@ object ManagementResources {
         "id"        -> Json.fromString(a.id),
         "variables" -> a.variables.asJson
       )
+
+    implicit val nodeResultEncoder: Encoder[NodeResult]               = deriveConfiguredEncoder
+    implicit val componentInfoEncoder: Encoder[ComponentInfo]         = deriveConfiguredEncoder
+    implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
+
+    val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+
+    // FIXME: It has to be done manually, some reason deriveConfiguredEncoder doesn't work properly with value: Any
+    implicit val externalInvocationResultEncoder: Encoder[ExternalInvocationResult] =
+      (value: ExternalInvocationResult) =>
+        Json.obj(
+          "name"      -> Json.fromString(value.name),
+          "contextId" -> Json.fromString(value.contextId),
+          "value"     -> value.value.asJson,
+        )
+
+    // FIXME: It has to be done manually, some reason deriveConfiguredEncoder doesn't work properly with value: Any
+    implicit val expressionInvocationResultEncoder: Encoder[ExpressionInvocationResult] =
+      (value: ExpressionInvocationResult) =>
+        Json.obj(
+          "name"      -> Json.fromString(value.name),
+          "contextId" -> Json.fromString(value.contextId),
+          "value"     -> value.value.asJson,
+        )
 
     implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
       (value: NuExceptionInfo[_ <: Throwable]) =>
@@ -89,8 +101,8 @@ object ManagementResources {
           "context"           -> value.context.asJson
         )
 
-    override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+    override def apply(a: TestResults): Json = a match {
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
         Json.obj(
           "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
           "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
@@ -224,8 +236,7 @@ class ManagementResources(
                             .performTest(
                               idWithName,
                               displayableProcess,
-                              RawScenarioTestData(testDataContent),
-                              testResultsVariableEncoder
+                              RawScenarioTestData(testDataContent)
                             )
                             .flatMap { results =>
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
@@ -254,8 +265,7 @@ class ManagementResources(
                                 .performTest(
                                   idWithName,
                                   displayableProcess,
-                                  rawScenarioTestData,
-                                  testResultsVariableEncoder
+                                  rawScenarioTestData
                                 )
                                 .flatMap { results =>
                                   Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
@@ -284,8 +294,7 @@ class ManagementResources(
                             .performTest(
                               idWithName,
                               testParametersRequest.displayableProcess,
-                              testParametersRequest.sourceParameters,
-                              testResultsVariableEncoder
+                              testParametersRequest.sourceParameters
                             )
                             .flatMap { results =>
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))

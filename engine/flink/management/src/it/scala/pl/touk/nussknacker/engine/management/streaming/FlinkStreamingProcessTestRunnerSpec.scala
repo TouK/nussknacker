@@ -8,7 +8,8 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
+import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.testmode.TestProcess.NodeResult
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
@@ -54,11 +55,11 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processId)
 
-    whenReady(deploymentManager.test(ProcessName(processId), process, scenarioTestData, identity)) { r =>
+    whenReady(deploymentManager.test(ProcessName(processId), process, scenarioTestData)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
-        "nightFilter"  -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
-        "endSend"      -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere"))))
+        "startProcess" -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
+        "nightFilter"  -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
+        "endSend"      -> List(NodeResult(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))))
       )
     }
   }
@@ -75,7 +76,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.test(ProcessName(processId), process, scenarioTestData, _ => null),
+        deploymentManager.test(ProcessName(processId), process, scenarioTestData),
         patienceConfig.timeout
       )
     }

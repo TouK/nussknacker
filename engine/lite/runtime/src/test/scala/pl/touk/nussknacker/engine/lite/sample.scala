@@ -90,12 +90,12 @@ object sample {
     resultWithInitialState
   }
 
-  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
     implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }
     val testRunner = new InterpreterTestRunner[StateType, SampleInput, AnyRef]
-    testRunner.runTest(modelData, scenarioTestData, scenario, identity)
+    testRunner.runTest(modelData, scenarioTestData, scenario)
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])

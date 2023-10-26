@@ -152,12 +152,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     Future.unit
   }
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] = ???
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults] = ???
 
   override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
     Future.successful(memory.get(name).toList)

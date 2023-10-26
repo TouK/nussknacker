@@ -43,12 +43,11 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] = ???
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults] = ???
 
   override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
       implicit freshnessPolicy: DataFreshnessPolicy

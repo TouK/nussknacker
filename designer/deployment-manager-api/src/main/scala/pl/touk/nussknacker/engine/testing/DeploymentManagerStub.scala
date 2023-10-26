@@ -55,12 +55,11 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] = ???
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults] = ???
 
   // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
   override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
