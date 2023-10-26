@@ -52,9 +52,8 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       result: Try[Any]
   ) = {}
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
     ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))
-  }
 
 }
 

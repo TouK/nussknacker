@@ -42,7 +42,6 @@ object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  // TODO: Why not just use the BestEffortJsonEncoder?
   val testResultsVariableEncoder: Any => io.circe.Json = {
     case displayable: DisplayJson =>
       def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
@@ -69,15 +68,13 @@ object ManagementResources {
     implicit val componentInfo: Encoder[ComponentInfo]                                 = deriveConfiguredEncoder
     implicit val nodeComponentInfo: Encoder[NodeComponentInfo]                         = deriveConfiguredEncoder
     implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
-    // TODO: do we want more information here?
 
     implicit val mapAnyEncoder: Encoder[Map[String, Any]] = (value: Map[String, Any]) =>
-      value.map { case (key, value) =>
-        key -> testResultsVariableEncoder(value)
-      }.asJson
+      value.map { case (key, value) => key -> testResultsVariableEncoder(value) }.asJson
 
     implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
+    // TODO: do we want more information here?
     implicit val contextEncoder: Encoder[Context] = (a: Context) =>
       Json.obj(
         "id"        -> Json.fromString(a.id),
@@ -88,7 +85,7 @@ object ManagementResources {
       (value: NuExceptionInfo[_ <: Throwable]) =>
         Json.obj(
           "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
-          "throwable"         -> value.throwable.asInstanceOf[Throwable].asJson,
+          "throwable"         -> throwableEncoder(value.throwable),
           "context"           -> value.context.asJson
         )
 

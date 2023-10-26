@@ -33,8 +33,8 @@ object TestProcess {
       )
     }
 
-    def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) =
-      copy(exceptions = exceptions :+ espExceptionInfo)
+    def updateExceptionResult(exceptionInfo: NuExceptionInfo[_ <: Throwable]): TestResults[T] =
+      copy(exceptions = exceptions :+ exceptionInfo)
 
     // when evaluating e.g. keyBy expression can be invoked more than once...
     // TODO: is it the best way to handle it??
