@@ -70,13 +70,12 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
     delegate.cancel(name, deploymentId, user)
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults] =
+    delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 

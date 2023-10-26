@@ -58,8 +58,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val secondId   = contextIds.nextContextId()
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b")))),
-      NodeResult(ResultContext(secondId, Map("input" -> Request1("c", "d"))))
+      NodeResult(Context(firstId, Map("input" -> Request1("a", "b")))),
+      NodeResult(Context(secondId, Map("input" -> Request1("c", "d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -123,12 +123,11 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
-      scenarioTestData = scenarioTestData,
-      variableEncoder = identity
+      scenarioTestData = scenarioTestData
     )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b"))))
+      NodeResult(Context(firstId, Map("input" -> Request1("a", "b"))))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
@@ -193,7 +192,6 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity
     )
   }
 

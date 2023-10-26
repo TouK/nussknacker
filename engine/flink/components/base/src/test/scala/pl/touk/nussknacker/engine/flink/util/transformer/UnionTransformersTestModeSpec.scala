@@ -93,7 +93,7 @@ class UnionTransformersTestModeSpec
         unionPart
           .emptySink(endSinkId, "dead-end")
       )
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerRun
     val modelData          = createModelData(data, collectingListener)
 
     val testResults = collectTestResults(modelData, scenario, collectingListener)
@@ -132,12 +132,12 @@ class UnionTransformersTestModeSpec
       modelData: LocalModelData,
       testProcess: CanonicalProcess,
       collectingListener: ResultsCollectingListener
-  ): TestProcess.TestResults[Any] = {
+  ): TestProcess.TestResults = {
     runProcess(modelData, testProcess)
-    collectingListener.results[Any]
+    collectingListener.results
   }
 
-  private def extractContextIds(results: TestProcess.TestResults[Any]): List[String] = results
+  private def extractContextIds(results: TestProcess.TestResults): List[String] = results
     .nodeResults(endSinkId)
     .map(_.context.id)
 
