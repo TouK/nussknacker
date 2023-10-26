@@ -14,7 +14,6 @@ import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -196,7 +195,7 @@ class DBProcessService(
     doGetProcessWithDetails(
       new FetchScenarioFun[List] {
         override def apply[PS: ProcessShapeFetchStrategy]: Future[List[BaseProcessDetails[PS]]] =
-          fetchingProcessRepository.fetchProcessesDetails(query.toRepositoryQuery)
+          fetchingProcessRepository.fetchProcessesDetails(query)
       },
       options
     )
@@ -220,13 +219,18 @@ class DBProcessService(
       case FetchScenarioGraph(validateAndResolve) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
-    }).flatMap(details => deploymentService.enrichDetailsWithProcessState(details))
+    }).flatMap { details =>
+      if (options.fetchState)
+        deploymentService.enrichDetailsWithProcessState(details)
+      else
+        Future.successful(details)
+    }
   }
 
   override def getRawProcessesWithDetails[PS: ProcessShapeFetchStrategy](
       query: ProcessesQuery
   )(implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] = {
-    fetchingProcessRepository.fetchProcessesDetails(query.toRepositoryQuery)
+    fetchingProcessRepository.fetchProcessesDetails(query)
   }
 
   private def validateAndReverseResolve(

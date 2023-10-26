@@ -26,15 +26,14 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.ValidatedProcessDetails
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider
 }
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -596,7 +595,7 @@ class DeploymentServiceSpec
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](ProcessesQuery.empty.toRepositoryQuery)
+      .fetchProcessesDetails[Unit](ProcessesQuery.empty)
       .dbioActionValues
       .map(ValidatedProcessDetails.fromProcessDetailsIgnoringScenarioGraphAndValidationResult)
 

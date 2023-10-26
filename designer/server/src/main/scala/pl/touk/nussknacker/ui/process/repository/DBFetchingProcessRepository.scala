@@ -4,16 +4,15 @@ import cats.Monad
 import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.{DB, _}
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -39,7 +38,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
   import api._
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](
-      query: FetchProcessesDetailsQuery
+      query: ProcessesQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),

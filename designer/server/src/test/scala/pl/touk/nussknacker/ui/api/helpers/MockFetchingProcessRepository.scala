@@ -15,8 +15,8 @@ import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, Process
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.{
   BasicRepository,
   FetchingProcessRepository,
@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
     with BasicRepository {
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](
-      q: FetchProcessesDetailsQuery
+      q: ProcessesQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(
       _.filter(p =>

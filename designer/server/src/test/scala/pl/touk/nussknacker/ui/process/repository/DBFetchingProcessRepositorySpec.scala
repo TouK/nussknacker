@@ -14,12 +14,11 @@ import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
@@ -80,7 +79,7 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
     val processes = fetching
-      .fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(
+      .fetchProcessesDetails(ProcessesQuery(isArchived = Some(false)))(
         ProcessShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
@@ -324,7 +323,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived)
+        .fetchProcessesDetails[DisplayableProcess](ProcessesQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)

@@ -20,9 +20,9 @@ import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
@@ -35,6 +35,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+import scala.language.higherKinds
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
@@ -62,7 +63,7 @@ class DeploymentServiceImpl(
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
           processRepository.fetchProcessesDetails[CanonicalProcess](
-            FetchProcessesDetailsQuery(
+            ProcessesQuery(
               isFragment = Some(false),
               isArchived = Some(false),
               isDeployed = Some(true),

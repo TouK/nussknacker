@@ -18,12 +18,11 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateProcessCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  SkipScenarioGraph,
   UpdateProcessCommand
 }
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+import pl.touk.nussknacker.ui.process.ProcessesQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
@@ -54,7 +53,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessesWithDetails(
-                ProcessesQuery.empty.copy(isArchived = Some(true)),
+                ProcessesQuery(isArchived = Some(true)),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
           }
@@ -105,7 +104,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessesWithDetails(
-                ProcessesQuery.empty.copy(isFragment = Some(false), isArchived = Some(false)),
+                ProcessesQuery(isFragment = Some(false), isArchived = Some(false)),
                 GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
               )
               .map(_.flatMap(details => details.state.map(details.name -> _)).toMap)
@@ -277,7 +276,9 @@ class ProcessesResources(
       Symbol("categories").as(CsvSeq[String]).?,
       Symbol("processingTypes").as(CsvSeq[String]).?,
       Symbol("names").as(CsvSeq[String]).?,
-    ).as(ProcessesQuery.apply _)
+    ).tmap { case (isFragment, isArchived, isDeployed, categories, processingTypes, names) =>
+      (isFragment, isArchived, isDeployed, categories, processingTypes, names.map(_.map(ProcessName(_))))
+    }.as(ProcessesQuery.apply _)
   }
 
   private def skipValidateAndResolveParameter = {
@@ -288,38 +289,5 @@ class ProcessesResources(
 
 object ProcessesResources {
   final case class UnmarshallError(message: String) extends FatalError(message)
-
-}
-
-final case class ProcessesQuery(
-    isFragment: Option[Boolean],
-    isArchived: Option[Boolean],
-    isDeployed: Option[Boolean],
-    categories: Option[Seq[String]],
-    processingTypes: Option[Seq[String]],
-    names: Option[Seq[String]],
-) {
-
-  def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
-    isFragment = isFragment,
-    isArchived = isArchived,
-    isDeployed = isDeployed,
-    categories = categories,
-    processingTypes = processingTypes,
-    names = names.map(_.map(ProcessName(_))),
-  )
-
-}
-
-object ProcessesQuery {
-  def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
-
-  def unarchived: ProcessesQuery = empty.copy(isArchived = Some(false))
-
-  def unarchivedProcesses: ProcessesQuery = unarchived.copy(isFragment = Some(false))
-
-  def unarchivedFragments: ProcessesQuery = unarchived.copy(isFragment = Some(true))
-
-  def deployed: ProcessesQuery = unarchivedProcesses.copy(isDeployed = Some(true))
 
 }

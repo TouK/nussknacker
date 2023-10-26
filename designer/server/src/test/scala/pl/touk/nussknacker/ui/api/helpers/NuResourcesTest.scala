@@ -594,7 +594,7 @@ object ProcessesQueryEnrichments {
       query.copy(isDeployed = Some(false))
 
     def names(names: List[String]): ProcessesQuery =
-      query.copy(names = Some(names))
+      query.copy(names = Some(names.map(ProcessName(_))))
 
     def categories(categories: List[String]): ProcessesQuery =
       query.copy(categories = Some(categories))

@@ -14,7 +14,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -86,7 +85,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery.empty.copy(isArchived = Some(false)))
+        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery(isArchived = Some(false)))
         .futureValue
       result shouldBe expected
     }
@@ -107,7 +106,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery.empty.copy(isArchived = Some(true)))
+        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery(isArchived = Some(true)))
         .futureValue
       result shouldBe expected
     }
@@ -128,7 +127,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val implicitUser: LoggedUser = user
       val result = dBProcessService
         .getRawProcessesWithDetails[DisplayableProcess](
-          ProcessesQuery.empty.copy(isFragment = Some(true), isArchived = Some(false))
+          ProcessesQuery(isFragment = Some(true), isArchived = Some(false))
         )
         .futureValue
       result shouldBe expected
