@@ -29,7 +29,12 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  FragmentParameterFixedListPreset
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -57,7 +62,17 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           "in",
           List(
-            FragmentParameter("param1", FragmentClazzRef[String], fixedValueListPresetId = Some(fixedValuePresetId))
+            FragmentParameter("param1", FragmentClazzRef[String]),
+            FragmentParameterFixedListPreset(
+              "paramPreset",
+              FragmentClazzRef[String],
+              required = false,
+              None,
+              None,
+              inputMode = InputModeFixedList,
+              fixedValueListPresetId = fixedValuePresetId,
+              effectiveFixedValuesList = List.empty
+            )
           )
         )
       ),
@@ -353,7 +368,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
       validate(
-        FragmentInput("frInput", FragmentRef("fragment1", List(Parameter("param1", "145")), Map("out1" -> "test1"))),
+        FragmentInput(
+          "frInput",
+          FragmentRef(
+            "fragment1",
+            List(Parameter("param1", "145"), Parameter("paramPreset", "'someOtherString'")),
+            Map("out1" -> "test1")
+          )
+        ),
         ValidationContext.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
@@ -488,7 +510,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(
         FragmentInput(
           nodeId,
-          FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> incorrectVarName))
+          FragmentRef(
+            "fragment1",
+            List(Parameter("param1", "'someValue'"), Parameter("paramPreset", "'someOtherString'")),
+            Map("out1" -> incorrectVarName)
+          )
         ),
         ValidationContext.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
@@ -506,7 +532,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(
         FragmentInput(
           nodeId,
-          FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> existingVar))
+          FragmentRef(
+            "fragment1",
+            List(Parameter("param1", "'someValue'"), Parameter("paramPreset", "'someOtherString'")),
+            Map("out1" -> existingVar)
+          )
         ),
         ValidationContext(Map(existingVar -> Typed[String])),
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
@@ -520,7 +550,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodes  = Set("aa")
     inside(
       validate(
-        FragmentInput(nodeId, FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> "ok"))),
+        FragmentInput(
+          nodeId,
+          FragmentRef(
+            "fragment1",
+            List(Parameter("param1", "'someValue'"), Parameter("paramPreset", "'someOtherString'")),
+            Map("out1" -> "ok")
+          )
+        ),
         ValidationContext.empty
       )
     ) { case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None) =>
@@ -560,10 +597,18 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   test("should validate missing fragment preset ids") {
     val nodeId: String = "in"
-    val nodes          = Set(nodeId)
+    val nodes1         = Set(nodeId)
+    val nodes2         = Set(nodeId)
     inside(
       validate(
-        FragmentInput(nodeId, FragmentRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> "ok"))),
+        FragmentInput(
+          nodeId,
+          FragmentRef(
+            "fragment1",
+            List(Parameter("param1", "'someValue'"), Parameter("paramPreset", "'someOtherString'")),
+            Map("out1" -> "ok")
+          )
+        ),
         ValidationContext.empty,
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
@@ -574,8 +619,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
             List(
               PresetIdNotFoundInProvidedPresets(
                 fixedValuePresetId,
-                nodes
+                nodes1
               ),
+              RequireValueFromUndefinedFixedList(
+                "paramPreset",
+                nodes2
+              )
             ),
             None,
             None

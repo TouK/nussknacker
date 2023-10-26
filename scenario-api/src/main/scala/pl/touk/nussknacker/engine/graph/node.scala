@@ -13,6 +13,11 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  FragmentParameterInputMode,
+  InputModeAny,
+  InputModeWithFixedList
+}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
@@ -300,16 +305,76 @@ object node {
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
-    @JsonCodec case class FragmentParameter(
+    object FragmentParameterInputMode {
+
+      @JsonCodec
+      sealed trait FragmentParameterInputMode
+
+      case object InputModeAny extends FragmentParameterInputMode
+
+      @JsonCodec
+      sealed trait InputModeWithFixedList extends FragmentParameterInputMode
+
+      case object InputModeAnyWithSuggestions extends InputModeWithFixedList
+
+      case object InputModeFixedList extends InputModeWithFixedList
+
+    }
+
+    object FragmentParameter {
+
+      def apply(name: String, typ: FragmentClazzRef): FragmentParameterNoFixedValues = {
+        FragmentParameterNoFixedValues(name, typ, required = false, None, None)
+      }
+
+    }
+
+    @JsonCodec
+    sealed trait FragmentParameter {
+      val name: String
+      val typ: FragmentClazzRef
+      val required: Boolean
+      val initialValue: Option[FixedExpressionValue]
+      val hintText: Option[String]
+      val inputMode: FragmentParameterInputMode
+      val effectiveFixedValuesList: List[FixedExpressionValue]
+    }
+
+    case class FragmentParameterNoFixedValues(
         name: String,
         typ: FragmentClazzRef,
         required: Boolean = false,
-        fixedValueList: List[FixedExpressionValue] = List.empty,
-        fixedValueListPresetId: Option[String] = None,
-        allowOnlyValuesFromFixedValuesList: Boolean = false,
-        initialValue: Option[FixedExpressionValue] = None,
-        hintText: Option[String] = None
-    )
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+    ) extends FragmentParameter {
+      override val inputMode: FragmentParameterInputMode                = InputModeAny
+      override val effectiveFixedValuesList: List[FixedExpressionValue] = List.empty
+    }
+
+    case class FragmentParameterFixedValuesDirectInput(
+        name: String,
+        typ: FragmentClazzRef,
+        required: Boolean = false,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        inputMode: InputModeWithFixedList,
+        fixedValueList: List[FixedExpressionValue],
+    ) extends FragmentParameter {
+      override val effectiveFixedValuesList: List[FixedExpressionValue] = fixedValueList
+    }
+
+    case class FragmentParameterFixedListPreset(
+        name: String,
+        typ: FragmentClazzRef,
+        required: Boolean = false,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        inputMode: InputModeWithFixedList,
+        fixedValueListPresetId: String,
+        effectiveFixedValuesList: List[
+          FixedExpressionValue
+        ] // filled by BE and used only by BE, to not require Preset provider at process compilation
+    ) extends FragmentParameter
 
     object FragmentClazzRef {
 

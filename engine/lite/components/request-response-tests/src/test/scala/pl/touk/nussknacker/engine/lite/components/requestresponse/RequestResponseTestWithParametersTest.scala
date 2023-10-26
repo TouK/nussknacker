@@ -14,10 +14,17 @@ import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  InputModeAnyWithSuggestions,
+  InputModeFixedList
+}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
-  FragmentParameter
+  FragmentParameter,
+  FragmentParameterFixedListPreset,
+  FragmentParameterFixedValuesDirectInput,
+  FragmentParameterNoFixedValues
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
@@ -180,11 +187,10 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameter(
+        FragmentParameterNoFixedValues(
           "name",
           FragmentClazzRef[String],
           required = true,
-          fixedValueList = List(),
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text")
         )
@@ -209,13 +215,14 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameter(
+        FragmentParameterFixedValuesDirectInput(
           "name",
           FragmentClazzRef[String],
           required = false,
           fixedValueList = fixedValueList,
           initialValue = None,
-          hintText = None
+          hintText = None,
+          inputMode = InputModeAnyWithSuggestions
         )
       )
     )
@@ -243,14 +250,15 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameter(
+        FragmentParameterFixedListPreset(
           "name",
           FragmentClazzRef[String],
           required = true,
-          fixedValueList = fixedValueList,
-          allowOnlyValuesFromFixedValuesList = true,
           initialValue = Some(FragmentFixedExpressionValue("'bbb'", "bbb")),
-          hintText = Some("some hint text")
+          hintText = Some("some hint text"),
+          inputMode = InputModeFixedList,
+          fixedValueListPresetId = "preset",
+          effectiveFixedValuesList = fixedValueList
         )
       )
     )

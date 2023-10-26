@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver,
 import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, FragmentParameterValidator}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterFixedListPreset
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -156,36 +157,33 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           .valueOr(_ => List.empty)
 
         val presets = fixedValuesPresetProvider.getAll // TODO handle failure? or is just 500 ok here?
-        val missingPresetIdErrors = definition.fragmentParameters.flatMap { param =>
-          param.fixedValueListPresetId match {
-            case Some(presetId) =>
-              if (!presets.contains(presetId)) List(PresetIdNotFoundInProvidedPresets(presetId, Set(a.id)))
-              else List.empty
-            case None => List.empty
-          }
+        val missingPresetIdErrors = definition.fragmentParameters.flatMap {
+          case paramWithPreset: FragmentParameterFixedListPreset =>
+            if (!presets.contains(paramWithPreset.fixedValueListPresetId))
+              List(PresetIdNotFoundInProvidedPresets(paramWithPreset.fixedValueListPresetId, Set(a.id)))
+            else List.empty
+          case _ => List.empty
         }
 
-        val paramsWithSubstitutedPresets = definition.fragmentParameters.map { param =>
-          param.fixedValueListPresetId match {
-            case Some(presetId) =>
-              param.copy(
-                fixedValueList = presets
-                  .getOrElse(
-                    presetId,
-                    List.empty
-                  ) // List.empty is to not interfere with further validation, missingPresetIdErrors covers this
-                  .map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
-              )
-            case None => param
-          }
+        val paramsWithEffectivePresets = definition.fragmentParameters.map {
+          case paramWithPreset: FragmentParameterFixedListPreset =>
+            paramWithPreset.copy(
+              effectiveFixedValuesList = presets
+                .getOrElse(
+                  paramWithPreset.fixedValueListPresetId,
+                  List.empty
+                ) // List.empty is to not interfere with further validation, missingPresetIdErrors covers this
+                .map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+            )
+          case p => p
         }
 
-        val fragmentParameterErrors = paramsWithSubstitutedPresets.flatMap { param =>
+        val fragmentParameterErrors = paramsWithEffectivePresets.flatMap { param =>
           FragmentParameterValidator.validate(param, a.id)
         }
 
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithSubstitutedPresets)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithEffectivePresets)), validationContext)
         )
 
         parametersResponse
