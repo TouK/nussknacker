@@ -7,7 +7,7 @@ import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, Output}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, Output, Validations}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
@@ -74,10 +74,18 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
             compiler.compileEnricher(a, validationContext, outputVar = Some(OutputVar.enricher(a.output)))
           )
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
-        case a: Filter =>
-          toValidationResponse(
+        case a: Filter => {
+          val compilationResult = toValidationResponse(
             compiler.compileExpression(a.expression, validationContext, expectedType = Typed[Boolean], outputVar = None)
           )
+          val additionalValidationResult =
+            MandatoryParameterValidator.isValid("$expression", a.expression.expression, None)(NodeId("stub"))
+
+          additionalValidationResult match {
+            case Validated.Valid(_)   => compilationResult
+            case Validated.Invalid(e) => compilationResult.copy(errors = compilationResult.errors.appended(e))
+          }
+        }
         case a: Variable =>
           toValidationResponse(
             compiler.compileExpression(
