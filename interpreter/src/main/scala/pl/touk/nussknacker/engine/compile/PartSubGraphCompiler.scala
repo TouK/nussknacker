@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.Applicative
 import cats.data.Validated._
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -61,8 +61,17 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
       case splittednode.FilterNode(f @ Filter(id, expression, _, _), nextTrue, nextFalse) =>
         val NodeCompilationResult(typingInfo, _, _, compiledExpression, _) =
           nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean], outputVar = None)
+
+        val additionalValidationResult =
+          MandatoryParameterValidator.isValid("$expression", expression.expression, None)(NodeId(id))
+
+        val compiledExpressionWithAdditionalValidation = additionalValidationResult match {
+          case Validated.Valid(_)   => compiledExpression
+          case Validated.Invalid(e) => Validated.Invalid(NonEmptyList.one(e))
+        }
+
         CompilationResult.map3(
-          f0 = toCompilationResult(compiledExpression, typingInfo),
+          f0 = toCompilationResult(compiledExpressionWithAdditionalValidation, typingInfo),
           f1 = nextTrue.map(next => compile(next, ctx)).sequence,
           f2 = nextFalse.map(next => compile(next, ctx)).sequence
         )((expr, next, nextFalse) =>
