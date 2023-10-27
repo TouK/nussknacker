@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
@@ -64,7 +64,7 @@ class DeploymentServiceImpl(
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
           processRepository.fetchProcessesDetails[CanonicalProcess](
-            ProcessesQuery(
+            ScenarioQuery(
               isFragment = Some(false),
               isArchived = Some(false),
               isDeployed = Some(true),

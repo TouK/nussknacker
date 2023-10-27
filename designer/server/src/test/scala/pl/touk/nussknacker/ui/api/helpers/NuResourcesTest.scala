@@ -370,7 +370,7 @@ trait NuResourcesTest
       callback(status, responseAs[String])
     }
 
-  protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
+  protected def forScenariosReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
       callback: List[ProcessJson] => Assertion
   ): Assertion = {
     implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
@@ -385,7 +385,7 @@ trait NuResourcesTest
     }
   }
 
-  protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
+  protected def forScenariosDetailsReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
       callback: List[ScenarioWithDetails] => Assertion
   ): Assertion = {
     import FailFastCirceSupport._
@@ -572,33 +572,33 @@ final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, proc
 
 object ProcessesQueryEnrichments {
 
-  implicit class RichProcessesQuery(query: ProcessesQuery) {
+  implicit class RichProcessesQuery(query: ScenarioQuery) {
 
-    def process(): ProcessesQuery =
+    def process(): ScenarioQuery =
       query.copy(isFragment = Some(false))
 
-    def fragment(): ProcessesQuery =
+    def fragment(): ScenarioQuery =
       query.copy(isFragment = Some(true))
 
-    def unarchived(): ProcessesQuery =
+    def unarchived(): ScenarioQuery =
       query.copy(isArchived = Some(false))
 
-    def archived(): ProcessesQuery =
+    def archived(): ScenarioQuery =
       query.copy(isArchived = Some(true))
 
-    def deployed(): ProcessesQuery =
+    def deployed(): ScenarioQuery =
       query.copy(isDeployed = Some(true))
 
-    def notDeployed(): ProcessesQuery =
+    def notDeployed(): ScenarioQuery =
       query.copy(isDeployed = Some(false))
 
-    def names(names: List[String]): ProcessesQuery =
+    def names(names: List[String]): ScenarioQuery =
       query.copy(names = Some(names.map(ProcessName(_))))
 
-    def categories(categories: List[String]): ProcessesQuery =
+    def categories(categories: List[String]): ScenarioQuery =
       query.copy(categories = Some(categories))
 
-    def processingTypes(processingTypes: List[String]): ProcessesQuery =
+    def processingTypes(processingTypes: List[String]): ScenarioQuery =
       query.copy(processingTypes = Some(processingTypes))
 
     def createQueryParamsUrl(path: String): String = {

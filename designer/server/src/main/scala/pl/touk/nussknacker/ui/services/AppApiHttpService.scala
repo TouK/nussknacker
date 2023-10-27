@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ProcessesQuery, UserCategoryService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -152,7 +152,7 @@ class AppApiHttpService(
   private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
     for {
       processes <- processService.getProcessesWithDetails(
-        ProcessesQuery.deployed,
+        ScenarioQuery.deployed,
         GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
       )
       statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap
@@ -166,7 +166,7 @@ class AppApiHttpService(
   private def processesWithValidationErrors(implicit user: LoggedUser): Future[List[String]] = {
     processService
       .getProcessesWithDetails(
-        ProcessesQuery.unarchivedProcesses,
+        ScenarioQuery.unarchivedProcesses,
         GetScenarioWithDetailsOptions.withsScenarioGraph.withValidation
       )
       .map { processes =>

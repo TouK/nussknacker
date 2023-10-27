@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
@@ -47,7 +47,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ProcessesQuery.unarchivedProcesses)
+        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(2)))
@@ -66,7 +66,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ProcessesQuery.unarchivedProcesses)
+        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion))
@@ -89,7 +89,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchProcessesDetails[Unit](ProcessesQuery.unarchivedProcesses)
+        repository.fetchProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(1)))

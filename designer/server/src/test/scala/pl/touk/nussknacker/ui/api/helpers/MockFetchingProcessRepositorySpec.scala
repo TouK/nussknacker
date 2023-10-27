@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -136,7 +136,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       val result = mockRepository
-        .fetchProcessesDetails(ProcessesQuery.unarchivedProcesses)(DisplayableShape, user, global)
+        .fetchProcessesDetails(ScenarioQuery.unarchivedProcesses)(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
     }
@@ -152,7 +152,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       val result = mockRepository
-        .fetchProcessesDetails(ProcessesQuery.deployed)(DisplayableShape, user, global)
+        .fetchProcessesDetails(ScenarioQuery.deployed)(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
     }
@@ -170,7 +170,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       val names = processes.map(_.idWithName.name)
       val result = mockRepository
         .fetchProcessesDetails(
-          ProcessesQuery(names = Some(names), isArchived = Some(false), isFragment = Some(false))
+          ScenarioQuery(names = Some(names), isArchived = Some(false), isFragment = Some(false))
         )(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
@@ -187,7 +187,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       val result = mockRepository
-        .fetchProcessesDetails(ProcessesQuery.unarchivedFragments)(DisplayableShape, user, global)
+        .fetchProcessesDetails(ScenarioQuery.unarchivedFragments)(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
     }
@@ -202,13 +202,13 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val noneFragments        = displayableFragments.map(p => p.copy(json = ()))
 
     mockRepository
-      .fetchProcessesDetails(ProcessesQuery.unarchivedFragments)(DisplayableShape, admin, global)
+      .fetchProcessesDetails(ScenarioQuery.unarchivedFragments)(DisplayableShape, admin, global)
       .futureValue shouldBe displayableFragments
     mockRepository
-      .fetchProcessesDetails(ProcessesQuery.unarchivedFragments)(CanonicalShape, admin, global)
+      .fetchProcessesDetails(ScenarioQuery.unarchivedFragments)(CanonicalShape, admin, global)
       .futureValue shouldBe canonicalFragments
     mockRepository
-      .fetchProcessesDetails(ProcessesQuery.unarchivedFragments)(NoneShape, admin, global)
+      .fetchProcessesDetails(ScenarioQuery.unarchivedFragments)(NoneShape, admin, global)
       .futureValue shouldBe noneFragments
   }
 
@@ -234,7 +234,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
       val result = mockRepository
-        .fetchProcessesDetails(ProcessesQuery.unarchived)(DisplayableShape, user, global)
+        .fetchProcessesDetails(ScenarioQuery.unarchived)(DisplayableShape, user, global)
         .futureValue
       result shouldBe expected
     }
@@ -348,12 +348,12 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
   it should "fetchProcesses for each user by mixed FetchQuery" in {
     // given
-    val allProcessesQuery = ProcessesQuery()
+    val allProcessesQuery = ScenarioQuery()
     val allProcessesCategoryQuery =
       allProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val allProcessesCategoryTypesQuery = allProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val processesQuery         = ProcessesQuery(isFragment = Some(false), isArchived = Some(false))
+    val processesQuery         = ScenarioQuery(isFragment = Some(false), isArchived = Some(false))
     val deployedProcessesQuery = processesQuery.copy(isDeployed = Some(true))
     val deployedProcessesCategoryQuery =
       deployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
@@ -366,20 +366,20 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val notDeployedProcessesCategoryProcessingTypesQuery =
       notDeployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val archivedQuery          = ProcessesQuery(isArchived = Some(true))
+    val archivedQuery          = ScenarioQuery(isArchived = Some(true))
     val archivedProcessesQuery = archivedQuery.copy(isFragment = Some(false))
     val archivedProcessesCategoryQuery =
       archivedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val archivedProcessesCategoryProcessingTypesQuery =
       archivedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val allFragmentsQuery = ProcessesQuery(isFragment = Some(true))
+    val allFragmentsQuery = ScenarioQuery(isFragment = Some(true))
     val fragmentsQuery    = allFragmentsQuery.copy(isArchived = Some(false))
     val fragmentsCategoryQuery =
       fragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val fragmentsCategoryTypesQuery = fragmentsCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val archivedFragmentsQuery = ProcessesQuery(isFragment = Some(true), isArchived = Some(true))
+    val archivedFragmentsQuery = ScenarioQuery(isFragment = Some(true), isArchived = Some(true))
     val archivedFragmentsCategoryQuery =
       archivedFragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val archivedFragmentsCategoryTypesQuery =
@@ -536,7 +536,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) {
-      (user: LoggedUser, query: ProcessesQuery, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
+      (user: LoggedUser, query: ScenarioQuery, expected: List[RepositoryScenarioWithDetails[DisplayableProcess]]) =>
         val result = mockRepository.fetchProcessesDetails(query)(DisplayableShape, user, global).futureValue
 
         // then

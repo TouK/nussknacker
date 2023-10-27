@@ -15,7 +15,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{
   BasicRepository,
@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
     with BasicRepository {
 
   override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
-      q: ProcessesQuery
+      q: ScenarioQuery
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[RepositoryScenarioWithDetails[PS]]] =
     getUserProcesses[PS].map(
       _.filter(p =>

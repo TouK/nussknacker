@@ -30,7 +30,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAsserti
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
-import pl.touk.nussknacker.ui.process.{ProcessesQuery, ScenarioWithDetailsConversions}
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider
@@ -596,7 +596,7 @@ class DeploymentServiceSpec
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](ProcessesQuery.empty)
+      .fetchProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
     val processesDetailsWithState = deploymentService

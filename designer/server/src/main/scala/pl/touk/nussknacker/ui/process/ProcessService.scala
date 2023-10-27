@@ -94,11 +94,11 @@ trait ProcessService {
       implicit user: LoggedUser
   ): Future[ScenarioWithDetails]
 
-  def getProcessesWithDetails(query: ProcessesQuery, options: GetScenarioWithDetailsOptions)(
+  def getProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]]
 
-  def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ProcessesQuery)(
+  def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ScenarioQuery)(
       implicit user: LoggedUser
   ): Future[List[RepositoryScenarioWithDetails[PS]]]
 
@@ -188,7 +188,7 @@ class DBProcessService(
     )
   }
 
-  override def getProcessesWithDetails(query: ProcessesQuery, options: GetScenarioWithDetailsOptions)(
+  override def getProcessesWithDetails(query: ScenarioQuery, options: GetScenarioWithDetailsOptions)(
       implicit user: LoggedUser
   ): Future[List[ScenarioWithDetails]] = {
     // To not overload engine, for list of processes we provide statuses that can be cached
@@ -229,7 +229,7 @@ class DBProcessService(
   }
 
   override def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](
-      query: ProcessesQuery
+      query: ScenarioQuery
   )(implicit user: LoggedUser): Future[List[RepositoryScenarioWithDetails[PS]]] = {
     fetchingProcessRepository.fetchProcessesDetails(query)
   }

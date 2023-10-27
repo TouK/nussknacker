@@ -85,7 +85,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery(isArchived = Some(false)))
+        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(false)))
         .futureValue
       result shouldBe expected
     }
@@ -106,7 +106,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val loggedUser: LoggedUser = user
 
       val result = dBProcessService
-        .getRawProcessesWithDetails[DisplayableProcess](ProcessesQuery(isArchived = Some(true)))
+        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(true)))
         .futureValue
       result shouldBe expected
     }
@@ -127,7 +127,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       implicit val implicitUser: LoggedUser = user
       val result = dBProcessService
         .getRawProcessesWithDetails[DisplayableProcess](
-          ProcessesQuery(isFragment = Some(true), isArchived = Some(false))
+          ScenarioQuery(isFragment = Some(true), isArchived = Some(false))
         )
         .futureValue
       result shouldBe expected

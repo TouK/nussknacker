@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
@@ -54,7 +54,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessesWithDetails(
-                ProcessesQuery(isArchived = Some(true)),
+                ScenarioQuery(isArchived = Some(true)),
                 GetScenarioWithDetailsOptions.detailsOnly
               )
           }
@@ -104,7 +104,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessesWithDetails(
-                ProcessesQuery(isFragment = Some(false), isArchived = Some(false)),
+                ScenarioQuery(isFragment = Some(false), isArchived = Some(false)),
                 GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
               )
               .map(_.flatMap(details => details.state.map(details.name -> _)).toMap)
@@ -268,7 +268,7 @@ class ProcessesResources(
     processChangeListener.handle(event)
   }
 
-  private def processesQuery: Directive1[ProcessesQuery] = {
+  private def processesQuery: Directive1[ScenarioQuery] = {
     parameters(
       Symbol("isFragment").as[Boolean].?,
       Symbol("isArchived").as[Boolean].?,
@@ -278,7 +278,7 @@ class ProcessesResources(
       Symbol("names").as(CsvSeq[String]).?,
     ).tmap { case (isFragment, isArchived, isDeployed, categories, processingTypes, names) =>
       (isFragment, isArchived, isDeployed, categories, processingTypes, names.map(_.map(ProcessName(_))))
-    }.as(ProcessesQuery.apply _)
+    }.as(ScenarioQuery.apply _)
   }
 
   private def skipValidateAndResolveParameter = {

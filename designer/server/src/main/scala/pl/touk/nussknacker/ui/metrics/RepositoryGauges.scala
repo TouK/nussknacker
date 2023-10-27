@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.metrics
 
 import io.dropwizard.metrics5.{CachedGauge, Gauge, MetricName, MetricRegistry}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.DBFetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
@@ -33,7 +33,7 @@ class RepositoryGauges(
     override def loadValue(): Values = {
       implicit val user: LoggedUser = NussknackerInternalUser.instance
       val result =
-        processRepository.fetchProcessesDetails[Unit](ProcessesQuery(isArchived = Some(false))).map { scenarios =>
+        processRepository.fetchProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
           val all       = scenarios.size
           val deployed  = scenarios.count(_.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)))
           val fragments = scenarios.count(_.isFragment)

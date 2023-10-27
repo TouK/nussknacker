@@ -16,7 +16,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
@@ -79,7 +79,7 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
     val processes = fetching
-      .fetchProcessesDetails(ProcessesQuery(isArchived = Some(false)))(
+      .fetchProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
@@ -323,7 +323,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchProcessesDetails[DisplayableProcess](ProcessesQuery.unarchived)
+        .fetchProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)

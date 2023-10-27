@@ -26,7 +26,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.ui.process.ProcessesQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 
 import java.time.Instant
 
@@ -222,13 +222,13 @@ class ManagementResourcesSpec
     deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
-      forScenariosReturned(ProcessesQuery.empty) { processes =>
+      forScenariosReturned(ScenarioQuery.empty) { processes =>
         val process = processes.find(_.name == SampleProcess.process.id).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          forScenariosReturned(ProcessesQuery.empty) { processes =>
+          forScenariosReturned(ScenarioQuery.empty) { processes =>
             val process = processes.find(_.name == SampleProcess.process.id).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true

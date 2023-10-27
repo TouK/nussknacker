@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLink
 import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ProcessesQuery, UserCategoryService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +128,7 @@ class DefaultComponentService private (
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ProcessesQuery(isArchived = Some(false)))
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -166,7 +166,7 @@ class DefaultComponentService private (
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](ProcessesQuery(isArchived = Some(false)))
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -178,7 +178,7 @@ class DefaultComponentService private (
     implicit val userImplicit: LoggedUser = user
     processService
       .getRawProcessesWithDetails[CanonicalProcess](
-        ProcessesQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
+        ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
       )
       .map(_.map(sub => FragmentDetails(sub.json, sub.processCategory)).toSet)
       .map { fragments =>
