@@ -7,6 +7,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
+* [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner:
+  * `TestProcess.exceptions` type changed from `List[ExceptionResult[T]]` to `List[NuExceptionInfo[_ <: Throwable]]`
 * [#4912](https://github.com/TouK/nussknacker/pull/4912) Changes in scenario details:
   * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]` and `pl.touk.nussknacker.restmodel.processdetails.BasicProcess`
     used in rest resources were merged into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails`

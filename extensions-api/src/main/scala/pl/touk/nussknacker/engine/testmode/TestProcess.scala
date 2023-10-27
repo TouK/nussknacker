@@ -9,7 +9,7 @@ object TestProcess {
       nodeResults: Map[String, List[NodeResult[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
-      exceptions: List[ExceptionResult[T]],
+      exceptions: List[NuExceptionInfo[_ <: Throwable]],
       variableEncoder: Any => T
   ) {
 
@@ -33,15 +33,8 @@ object TestProcess {
       )
     }
 
-    def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
-      copy(exceptions =
-        exceptions :+ ExceptionResult(
-          toResult(espExceptionInfo.context),
-          espExceptionInfo.nodeComponentInfo.map(_.nodeId),
-          espExceptionInfo.throwable
-        )
-      )
-    }
+    def updateExceptionResult(exceptionInfo: NuExceptionInfo[_ <: Throwable]): TestResults[T] =
+      copy(exceptions = exceptions :+ exceptionInfo)
 
     // when evaluating e.g. keyBy expression can be invoked more than once...
     // TODO: is it the best way to handle it??
@@ -69,8 +62,6 @@ object TestProcess {
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
   case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
-
-  case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
 
   case class ResultContext[T](id: String, variables: Map[String, T]) {
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -194,14 +195,14 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
     results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
-    results.exceptions.map(e => (e.context, e.nodeId, e.throwable.getMessage)) shouldBe List(
+    results.exceptions.map(e => (e.context, e.nodeComponentInfo.map(_.nodeId), e.throwable.getMessage)) shouldBe List(
       (
-        ResultContext("fragment1", Map("in" -> 0)),
+        Context("fragment1", Map("in" -> 0), None),
         Some("fragmentEnd"),
         "Expression [4 / #in] evaluation failed, message: / by zero"
       ),
       (
-        ResultContext("fragment1", Map("in" -> 0)),
+        Context("fragment1", Map("in" -> 0), None),
         Some("fragmentEnd"),
         "Expression [8 / #in] evaluation failed, message: / by zero"
       )

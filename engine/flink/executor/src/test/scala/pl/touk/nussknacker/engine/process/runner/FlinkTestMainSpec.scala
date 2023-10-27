@@ -207,12 +207,12 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.exceptions should have length 2
 
     val exceptionFromExpression = results.exceptions.head
-    exceptionFromExpression.nodeId shouldBe Some("filter")
+    exceptionFromExpression.nodeComponentInfo.map(_.nodeId) shouldBe Some("filter")
     exceptionFromExpression.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "1"
     exceptionFromExpression.throwable.getMessage shouldBe "Expression [1 / #input.value1 >= 0] evaluation failed, message: / by zero"
 
     val exceptionFromService = results.exceptions.last
-    exceptionFromService.nodeId shouldBe Some("failing")
+    exceptionFromService.nodeComponentInfo.map(_.nodeId) shouldBe Some("failing")
     exceptionFromService.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "2"
     exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
   }
@@ -316,7 +316,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     val results = runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))))
 
     results.exceptions should have length 1
-    results.exceptions.head.nodeId shouldBe Some("out")
+    results.exceptions.head.nodeComponentInfo.map(_.nodeId) shouldBe Some("out")
     results.exceptions.head.throwable.getMessage should include("message: / by zero")
 
     SinkForInts.data should have length 0
