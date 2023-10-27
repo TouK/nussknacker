@@ -55,10 +55,8 @@ class LazyMap[A <: AnyRef, B >: Null](
   }
 
   override def get(key: Any): B = withCauseExtraction {
-    Option
-      .when(definedFields.contains(key))(key.asInstanceOf[A])
-      .flatMap(cache.get)
-      .orNull
+    if (definedFields.contains(key)) cache.get(key.asInstanceOf[A]).orNull
+    else null
   }
 
   override def toString: String =
