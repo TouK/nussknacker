@@ -9,12 +9,10 @@ interface Props {
     type: AlertColor;
 }
 
-export default function Notification({ icon, message, details, type }: Props): JSX.Element {
+export default function Notification({ icon, message, type }: Props): JSX.Element {
     return (
         <Alert icon={icon} severity={type} action={<CloseIcon sx={{ fontSize: 12 }} />}>
             {message}
-            <br />
-            {details}
         </Alert>
     );
 }

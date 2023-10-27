@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
@@ -105,7 +105,7 @@ class DefaultComponentService private (
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcessesAndFragments[ScenarioComponentsUsages]
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -143,7 +143,7 @@ class DefaultComponentService private (
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcessesAndFragments[ScenarioComponentsUsages]
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -226,5 +226,4 @@ class DefaultComponentService private (
 }
 
 private final case class ComponentNotFoundError(componentId: ComponentId)
-    extends Exception(s"Component $componentId not exist.")
-    with NotFoundError
+    extends NotFoundError(s"Component $componentId not exist.")

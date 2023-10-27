@@ -52,9 +52,14 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
     verifyOneToMany(categoryService)
   }
 
-  test("categories inside processing types configuration format") {
-    val configWithLegacyCategoriesConfig =
-      s"""scenarioTypes {
+  test("categories inside scenario types configuration format") {
+    val configWithCategoriesConfigInsideScenrioTypes =
+      s"""categoriesConfig {
+         |  $oneToOneCategory: $oneToOneProcessingType
+         |  $oneToManyCategory1: $oneToManyProcessingType
+         |  $oneToManyCategory2: $oneToManyProcessingType
+         |}
+         |scenarioTypes {
          |  $oneToOneProcessingType {
          |    $processingTypeBasicConfig
          |    categories: [$oneToOneCategory]
@@ -64,12 +69,53 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
          |    categories: [$oneToManyCategory1, $oneToManyCategory2]  
          |  }
          |}""".stripMargin
-    val config          = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
+    val config          = ConfigFactory.parseString(configWithCategoriesConfigInsideScenrioTypes)
     val categoryService = TestFactory.createCategoryService(config)
 
     categoryService.getAllCategories shouldEqual List(oneToManyCategory1, oneToManyCategory2, oneToOneCategory)
     categoryService.getTypeForCategoryUnsafe(oneToOneCategory) shouldEqual oneToOneProcessingType
     verifyOneToMany(categoryService)
+  }
+
+  test("mixed categories inside scenario types and legacy categories to processing types mapping") {
+    val scenarioTypeLegacy  = "scenarioTypeLegacy"
+    val scenarioTypeNew     = "scenarioTypeNew"
+    val scenarioTypeMixed   = "scenarioTypeMixed"
+    val categoryLegacy      = "LegacyCategory"
+    val categoryNew         = "NewCategory"
+    val categoryLegacyMixed = "LegacyMixedCategory"
+    val categoryNewMixed    = "NewMixedCategory"
+    val configWithMixedCategoriesConfig =
+      s"""categoriesConfig {
+         |  $categoryLegacy: $scenarioTypeLegacy
+         |  $categoryLegacyMixed: $scenarioTypeMixed
+         |}
+         |scenarioTypes {
+         |  $scenarioTypeLegacy {
+         |    $processingTypeBasicConfig
+         |  }
+         |  $scenarioTypeNew {
+         |    $processingTypeBasicConfig
+         |    categories: [$categoryNew]
+         |  }
+         |  $scenarioTypeMixed {
+         |    $processingTypeBasicConfig
+         |    categories: [$categoryNewMixed]
+         |  }
+         |}""".stripMargin
+    val config          = ConfigFactory.parseString(configWithMixedCategoriesConfig)
+    val categoryService = TestFactory.createCategoryService(config)
+
+    categoryService.getAllCategories.toSet shouldEqual Set(
+      categoryLegacy,
+      categoryNew,
+      categoryLegacyMixed,
+      categoryNewMixed
+    )
+    categoryService.getTypeForCategoryUnsafe(categoryLegacy) shouldEqual scenarioTypeLegacy
+    categoryService.getTypeForCategoryUnsafe(categoryNew) shouldEqual scenarioTypeNew
+    categoryService.getTypeForCategoryUnsafe(categoryLegacyMixed) shouldEqual scenarioTypeMixed
+    categoryService.getTypeForCategoryUnsafe(categoryNewMixed) shouldEqual scenarioTypeMixed
   }
 
   // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category

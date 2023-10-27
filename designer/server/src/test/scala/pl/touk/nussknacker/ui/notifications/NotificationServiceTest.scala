@@ -191,7 +191,7 @@ class NotificationServiceTest
       CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isFragment = false, forwardedUserName = None)
     writeProcessRepository
       .saveNewProcess(action)(TestFactory.adminUser())
-      .map(_.rightValue.value.processId)
+      .map(_.value.processId)
       .dbioActionValues
   }
 

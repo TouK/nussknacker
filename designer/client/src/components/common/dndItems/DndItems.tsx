@@ -3,8 +3,7 @@ import update from "immutability-helper";
 import { cloneDeep } from "lodash";
 import React, { useCallback, useRef } from "react";
 import { Draggable, DraggableChildrenFn } from "react-beautiful-dnd";
-import { DragHandlerContext } from "../../../toolbarComponents/DragHandle";
-import { DragHandle } from "./DragHandle";
+import { DragHandle, DragHandlerContext } from "./DragHandle";
 import { DropTarget } from "./DropTarget";
 import { FakeFormWindow } from "./FakeFormWindow";
 import { ItemsProps } from "./Items";
@@ -49,7 +48,7 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
             >
                 <DragHandlerContext.Provider value={p.dragHandleProps}>
                     {items[r.source.index].el}
-                    {!disabled && <DragHandle active={s.isDragging} provided={p.dragHandleProps} />}
+                    {!disabled && <DragHandle active={s.isDragging} />}
                 </DragHandlerContext.Provider>
             </div>
         ),

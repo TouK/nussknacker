@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
+import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -818,7 +818,7 @@ class DeploymentServiceSpec
       isFragment = false,
       forwardedUserName = None
     )
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def prepareFragment(processName: ProcessName): DB[ProcessId] = {
@@ -835,7 +835,7 @@ class DeploymentServiceSpec
       forwardedUserName = None
     )
 
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def generateProcessName = {

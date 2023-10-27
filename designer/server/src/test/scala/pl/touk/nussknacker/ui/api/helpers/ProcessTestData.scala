@@ -166,7 +166,7 @@ object ProcessTestData {
       category: String = TestCategories.TestCat
   ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
+    ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(

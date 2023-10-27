@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
@@ -33,6 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class DBFetchingProcessRepositorySpec
     extends AnyFunSuite
     with Matchers
+    with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
@@ -114,7 +117,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -141,7 +144,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     val comments = fetching
       .fetchProcessId(newName)
@@ -175,7 +178,9 @@ class DBFetchingProcessRepositorySpec
     processExists(oldName) shouldBe true
     processExists(existingName) shouldBe true
 
-    renameProcess(oldName, existingName) shouldBe ProcessAlreadyExists(existingName.value).asLeft
+    (the[TestFailedException] thrownBy {
+      renameProcess(oldName, existingName)
+    }).cause.value shouldBe ProcessAlreadyExists(existingName.value)
   }
 
   test("should generate new process version id based on latest version id") {
@@ -292,9 +297,7 @@ class DBFetchingProcessRepositorySpec
       forwardedUserName = None
     )
 
-    val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processUpdated shouldBe Symbol("right")
-    processUpdated.toOption.get
+    dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
   }
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
@@ -308,7 +311,7 @@ class DBFetchingProcessRepositorySpec
       forwardedUserName = None
     )
 
-    dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
+    dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue
   }
 
   private def renameProcess(processName: ProcessName, newName: ProcessName) = {

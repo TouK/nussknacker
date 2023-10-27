@@ -179,8 +179,8 @@ class AppApiHttpService(
       .fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchivedProcesses)
       .map { processes =>
         processes
-          .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json)))
-          .filter(process => !process.validationResult.errors.isEmpty)
+          .map(process => ValidatedDisplayableProcess(process.json, processValidation.validate(process.json)))
+          .filter(process => process.validationResult.exists(!_.errors.isEmpty))
           .map(_.id)
       }
   }

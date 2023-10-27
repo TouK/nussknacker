@@ -64,7 +64,7 @@ class TestInfoResourcesSpec
 
   private def route(additionalDataSize: Int = 0) = new TestInfoResources(
     processAuthorizer,
-    futureFetchingProcessRepository,
+    processService,
     createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize)))
   )
 

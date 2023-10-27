@@ -92,6 +92,15 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 layout: LayoutUtils.fromMeta(processToDisplay),
             };
         }
+        case "ARCHIVED": {
+            return {
+                ...state,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    isArchived: true,
+                },
+            };
+        }
         case "PROCESS_VERSIONS_LOADED": {
             const { history, lastDeployedAction, lastAction } = action;
             return {

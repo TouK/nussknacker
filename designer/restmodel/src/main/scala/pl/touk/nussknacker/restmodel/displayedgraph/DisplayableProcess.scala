@@ -15,7 +15,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
-//it would be better to have two classes but it would either to derivce from each other, which is not easy for final case classes
+//it would be better to have two classes but it would either to derive from each other, which is not easy for final case classes
 //or we'd have to do composition which would break many things in client
 // TODO: id type should be ProcessName
 @JsonCodec final case class DisplayableProcess(
@@ -40,21 +40,36 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
     edges: List[Edge],
     processingType: ProcessingType,
     category: String,
-    validationResult: ValidationResult
+    validationResult: Option[ValidationResult]
 ) {
 
-  def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
-    this(
+  def toDisplayable: DisplayableProcess = DisplayableProcess(id, properties, nodes, edges, processingType, category)
+
+}
+
+object ValidatedDisplayableProcess {
+
+  def apply(displayableProcess: DisplayableProcess, validationResult: ValidationResult): ValidatedDisplayableProcess =
+    new ValidatedDisplayableProcess(
       displayableProcess.id,
       displayableProcess.properties,
       displayableProcess.nodes,
       displayableProcess.edges,
       displayableProcess.processingType,
       displayableProcess.category,
-      validationResult
+      Some(validationResult)
     )
 
-  def toDisplayable: DisplayableProcess = DisplayableProcess(id, properties, nodes, edges, processingType, category)
+  def withEmptyValidationResult(displayableProcess: DisplayableProcess): ValidatedDisplayableProcess =
+    new ValidatedDisplayableProcess(
+      displayableProcess.id,
+      displayableProcess.properties,
+      displayableProcess.nodes,
+      displayableProcess.edges,
+      displayableProcess.processingType,
+      displayableProcess.category,
+      None
+    )
 
 }
 

@@ -80,7 +80,11 @@ class DeploymentServiceImpl(
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
-            DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
+            DeployedScenarioData(
+              details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
+              deploymentData,
+              resolvedScenario
+            )
           }
         deployedScenarioDataTry match {
           case Failure(exception) =>
@@ -395,11 +399,11 @@ class DeploymentServiceImpl(
         .sequence
     } yield processStatus.toMap
 
-  override def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
+  override def enrichDetailsWithProcessState[T](processList: List[BaseProcessDetails[T]])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[_]]] =
+  ): Future[List[BaseProcessDetails[T]]] =
     for {
       actionsInProgress <- getInProgressActionTypesForAllProcesses
       processesWithState <- processList.map {
@@ -632,4 +636,4 @@ class DeploymentServiceImpl(
 
 }
 
-private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
+private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")

@@ -1,13 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeployedScenarioData,
-  ProcessAction,
-  ProcessActionId,
-  ProcessState
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -71,12 +64,12 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Map[ProcessingType, ProcessState]] =
     Future.successful(Map.empty)
 
-  override def enrichDetailsWithProcessState(
-      processList: List[processdetails.BaseProcessDetails[_]]
+  override def enrichDetailsWithProcessState[T](
+      processList: List[processdetails.BaseProcessDetails[T]]
   )(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[processdetails.BaseProcessDetails[_]]] = Future.successful(processList)
+  ): Future[List[processdetails.BaseProcessDetails[T]]] = Future.successful(processList)
 
 }

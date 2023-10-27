@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import kafka.server
 import kafka.server.{KafkaRaftServer, KafkaServer, Server}
 import kafka.tools.StorageTool
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.output.NullOutputStream
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -17,6 +19,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.{Locale, Properties}
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 object EmbeddedKafkaServer {
 
@@ -27,18 +30,24 @@ object EmbeddedKafkaServer {
   val localhost: String = "127.0.0.1"
 
   def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServer = {
-    val logDir      = tempDir()
-    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, logDir, kafkaBrokerConfig)
+    val tempDir     = Files.createTempDirectory("embeddedKafka").toFile
+    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, tempDir, kafkaBrokerConfig)
     val server = if (kRaftEnabled) {
-      prepareRaftStorage(logDir, kafkaConfig)
+      prepareRaftStorage(tempDir, kafkaConfig)
       new EmbeddedKafkaServer(
         None,
         new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM, None),
-        s"$localhost:$brokerPort"
+        s"$localhost:$brokerPort",
+        tempDir
       )
     } else {
       val zk = createZookeeperServer(controllerPort)
-      new EmbeddedKafkaServer(Some(zk), new KafkaServer(kafkaConfig, time = Time.SYSTEM), s"$localhost:$brokerPort")
+      new EmbeddedKafkaServer(
+        Some(zk),
+        new KafkaServer(kafkaConfig, time = Time.SYSTEM),
+        s"$localhost:$brokerPort",
+        tempDir
+      )
     }
     server.startup()
     server
@@ -93,21 +102,19 @@ object EmbeddedKafkaServer {
   private def createZookeeperServer(zkPort: Int) = {
     val factory = new NIOServerCnxnFactory()
     factory.configure(new InetSocketAddress(localhost, zkPort), 1024)
-    val zkServer = new ZooKeeperServer(tempDir(), tempDir(), ZooKeeperServer.DEFAULT_TICK_TIME)
-    (factory, zkServer)
-  }
-
-  private def tempDir(): File = {
-    Files.createTempDirectory("embeddedKafka").toFile
+    val tempDir  = Files.createTempDirectory("embeddedKafkaZk").toFile
+    val zkServer = new ZooKeeperServer(tempDir, tempDir, ZooKeeperServer.DEFAULT_TICK_TIME)
+    (factory, zkServer, tempDir)
   }
 
 }
 
 class EmbeddedKafkaServer(
-    zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer)],
+    zooKeeperServerOpt: Option[(NIOServerCnxnFactory, ZooKeeperServer, File)],
     val kafkaServer: Server,
-    val kafkaAddress: String
-) {
+    val kafkaAddress: String,
+    tempDir: File
+) extends LazyLogging {
 
   def startup(): Unit = {
     zooKeeperServerOpt.foreach(t => t._1.startup(t._2))
@@ -116,7 +123,24 @@ class EmbeddedKafkaServer(
 
   def shutdown(): Unit = {
     kafkaServer.shutdown()
-    zooKeeperServerOpt.foreach(_._1.shutdown())
+    kafkaServer.awaitShutdown()
+    cleanDirectory(tempDir)
+
+    zooKeeperServerOpt.foreach { case (cnxnFactory, zkServer, zkTempDir) =>
+      cnxnFactory.shutdown()
+      // factory shutdown doesn't pass 'fullyShutDown' flag to ZkServer.shutdown, we need to explicitly close database
+      zkServer.getZKDatabase.close()
+      cleanDirectory(zkTempDir)
+    }
+  }
+
+  private def cleanDirectory(directory: File): Unit = {
+    try {
+      FileUtils.deleteDirectory(directory)
+    } catch {
+      case NonFatal(e) =>
+        logger.warn(s"Cannot remove $tempDir", e)
+    }
   }
 
 }
