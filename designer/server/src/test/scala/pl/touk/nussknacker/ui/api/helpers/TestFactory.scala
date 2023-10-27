@@ -6,6 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.{CategoriesConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
@@ -73,7 +74,8 @@ object TestFactory extends TestPermissions {
     processValidation,
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
-    )
+    ),
+    TestFixedValuesPresetProvider
   )
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")

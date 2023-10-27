@@ -314,7 +314,7 @@ object ProcessTestData {
     )
   }
 
-  val sampleFragmentOneOutWithPreset = {
+  def sampleFragmentOneOutWithPreset(presetId: String) = {
     CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       List(
@@ -329,7 +329,7 @@ object ProcessTestData {
                 None,
                 None,
                 inputMode = InputModeFixedList,
-                fixedValuesListPresetId = "presetString",
+                fixedValuesListPresetId = presetId,
                 effectiveFixedValuesList = List.empty
               )
             )

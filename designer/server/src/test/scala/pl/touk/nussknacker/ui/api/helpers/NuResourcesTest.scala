@@ -108,8 +108,7 @@ trait NuResourcesTest
       processValidation,
       scenarioResolver,
       processChangeListener,
-      None,
-      TestFixedValuesPresetProvider
+      None
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
@@ -187,8 +186,7 @@ trait NuResourcesTest
       futureFetchingProcessRepository,
       actionRepository,
       writeProcessRepository,
-      processValidation,
-      TestFixedValuesPresetProvider
+      processValidation
     )
 
   protected def createScenarioTestService(

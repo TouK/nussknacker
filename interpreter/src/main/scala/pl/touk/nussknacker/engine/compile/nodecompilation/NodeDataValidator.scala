@@ -113,8 +113,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput =>
-          validateFragment(validationContext, outgoingEdges, compiler, a, fixedValuesPresetProvider)
+        case a: FragmentInput           => validateFragment(validationContext, outgoingEdges, compiler, a)
         case a: FragmentInputDefinition => validateFragmentInputDefinition(a, fixedValuesPresetProvider)
         case _                          => ValidationNotPerformed
       }
@@ -125,8 +124,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
       compiler: NodeCompiler,
-      a: FragmentInput,
-      fixedValuesPresetProvider: FixedValuesPresetProvider
+      a: FragmentInput
   )(implicit nodeId: NodeId) = {
     fragmentResolver
       .resolveInput(a)
@@ -160,19 +158,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           .map(_.toList)
           .valueOr(_ => List.empty)
 
-        val presets = fixedValuesPresetProvider.getAll // TODO handle failure? or is just 500 ok here?
-
-        // missingPresetIdErrors is validated in FragmentInputDefinition, but here it is also needed, in case the preset has since been removed
-        val missingPresetIdErrors = validateMissingPresetIds(definition.fragmentParameters, presets, a.id)
-
-        val paramsWithEffectivePresets = definition.fragmentParameters.map(fillEffectivePreset(_, presets))
-
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithEffectivePresets)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), validationContext)
         )
-
-        parametersResponse
-          .copy(errors = parametersResponse.errors ++ outputErrors ++ missingPresetIdErrors)
+        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
       }
       .valueOr(errors => ValidationPerformed(errors.toList, None, None))
   }
@@ -182,11 +171,14 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       fixedValuesPresetProvider: FixedValuesPresetProvider
   ) = {
     val presets                    = fixedValuesPresetProvider.getAll // TODO handle failure? or is just 500 ok here?
-    val missingPresetIdErrors      = validateMissingPresetIds(definition.parameters, presets, definition.id)
-    val paramsWithEffectivePresets = definition.parameters.map(fillEffectivePreset(_, presets))
+    val missingPresetIdErrors      = validateMissingPresetIds(definition, presets)
+    val paramsWithEffectivePresets = fillEffectivePresets(definition, presets)
 
     val fragmentParameterErrors = paramsWithEffectivePresets.flatMap { param =>
-      FragmentParameterValidator.validate(param, definition.id)
+      FragmentParameterValidator.validate(
+        param,
+        definition.id
+      ) // TODO this validation should also happen in ProcessValidation (?)
     }
 
     ValidationPerformed(
@@ -196,10 +188,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
     )
   }
 
-  private def fillEffectivePreset(
-      param: FragmentParameter,
+  private def fillEffectivePresets(
+      definition: FragmentInputDefinition,
       presets: Map[String, List[FixedExpressionValue]]
-  ) = param match {
+  ) = definition.parameters.map {
     case paramWithPreset: FragmentParameterFixedListPreset =>
       paramWithPreset.copy(
         effectiveFixedValuesList = presets
@@ -213,13 +205,12 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   }
 
   private def validateMissingPresetIds(
-      parameters: List[FragmentParameter],
+      definition: FragmentInputDefinition,
       presets: Map[String, List[FixedExpressionValue]],
-      nodeId: String
-  ) = parameters.flatMap {
+  ) = definition.parameters.flatMap {
     case paramWithPreset: FragmentParameterFixedListPreset =>
       if (!presets.contains(paramWithPreset.fixedValuesListPresetId))
-        List(PresetIdNotFoundInProvidedPresets(paramWithPreset.fixedValuesListPresetId, Set(nodeId)))
+        List(PresetIdNotFoundInProvidedPresets(paramWithPreset.fixedValuesListPresetId, Set(definition.id)))
       else List.empty
     case _ => List.empty
   }

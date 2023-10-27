@@ -120,7 +120,10 @@ class AkkaHttpBasedRouteProvider(
 
       val substitutorsByProcessType =
         modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
-      val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
+      val fixedValuesPresetProvider = createFixedValuesPresetProvider(resolvedConfig, sttpBackend)
+
+      val processResolving =
+        new UIProcessResolving(processValidation, substitutorsByProcessType, fixedValuesPresetProvider)
 
       val dbioRunner        = DBIOActionRunner(dbRef)
       val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
@@ -139,8 +142,6 @@ class AkkaHttpBasedRouteProvider(
       val scenarioResolver = new ScenarioResolver(fragmentResolver)
       val dmDispatcher     = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
-      val fixedValuesPresetProvider = createFixedValuesPresetProvider(resolvedConfig, sttpBackend)
-
       val deploymentService = new DeploymentServiceImpl(
         dmDispatcher,
         processRepository,
@@ -150,7 +151,6 @@ class AkkaHttpBasedRouteProvider(
         scenarioResolver,
         processChangeListener,
         featureTogglesConfig.scenarioStateTimeout,
-        fixedValuesPresetProvider
       )
       deploymentService.invalidateInProgressActions()
 
@@ -190,8 +190,7 @@ class AkkaHttpBasedRouteProvider(
         futureProcessRepository,
         actionRepository,
         writeProcessRepository,
-        processValidation,
-        fixedValuesPresetProvider
+        processValidation
       )
       val scenarioTestService = ScenarioTestService(
         modelData,

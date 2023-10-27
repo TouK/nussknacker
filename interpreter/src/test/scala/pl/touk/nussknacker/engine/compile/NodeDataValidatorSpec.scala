@@ -597,33 +597,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate missing fragment preset ids in FragmentInput") {
-    val nodeId: String = "in"
-    val nodes          = Set(nodeId)
-    inside(
-      validate(
-        FragmentInput(
-          nodeId,
-          FragmentRef(
-            "fragment1",
-            List(Parameter("param1", "'someValue'"), Parameter("paramPreset", "'someOtherString'")),
-            Map("out1" -> "ok")
-          )
-        ),
-        ValidationContext.empty,
-        Map.empty,
-        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
-        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
-      )
-    ) {
-      case ValidationPerformed(
-            List(PresetIdNotFoundInProvidedPresets(fixedValuesPresetId, nodes)),
-            None,
-            None
-          ) =>
-    }
-  }
-
   test("should validate missing fragment preset ids in FragmentInputDefinition") {
     val nodeId: String       = "in"
     val nodes                = Set(nodeId)

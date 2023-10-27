@@ -373,7 +373,7 @@ object node {
         fixedValuesListPresetId: String,
         effectiveFixedValuesList: List[
           FixedExpressionValue
-        ] // filled by BE and used only by BE, to not require Preset provider at process compilation
+        ] // filled by BE at process save and used only by BE, to not require Preset provider at process compilation
     ) extends FragmentParameter
 
     object FragmentClazzRef {

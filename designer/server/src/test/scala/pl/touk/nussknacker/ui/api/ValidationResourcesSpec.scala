@@ -11,6 +11,7 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionVa
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -68,7 +69,7 @@ class ValidationResourcesSpec
   private val route: Route = withPermissions(
     new ValidationResources(
       processService,
-      new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+      new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider, TestFixedValuesPresetProvider)
     ),
     testPermissionRead
   )
@@ -200,6 +201,18 @@ class ValidationResourcesSpec
       val validation = responseAs[ValidationResult]
       validation.warnings.invalidNodes("filter1").head.message should include("Node filter1 is disabled")
       validation.warnings.invalidNodes("proc1").head.message should include("Node proc1 is disabled")
+    }
+  }
+
+  it should "find missing preset errors" in {
+    val nonExistentPresetId = "nonExistentPreset"
+
+    validateScenario(
+      TestProcessUtil.toDisplayable(ProcessTestData.sampleFragmentOneOutWithPreset(nonExistentPresetId))
+    ) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include(s"Preset with id='$nonExistentPresetId' not found")
     }
   }
 

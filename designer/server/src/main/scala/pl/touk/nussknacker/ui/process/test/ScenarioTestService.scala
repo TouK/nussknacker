@@ -130,7 +130,7 @@ class ScenarioTestService(
   }
 
   private def toCanonicalProcess(displayableProcess: DisplayableProcess): CanonicalProcess = {
-    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess)
+    val validationResult = processResolving.validateBeforeExpressionResolving(displayableProcess)
     processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 

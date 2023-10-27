@@ -50,7 +50,6 @@ class DeploymentServiceImpl(
     scenarioResolver: ScenarioResolver,
     processChangeListener: ProcessChangeListener,
     scenarioStateTimeout: Option[FiniteDuration],
-    fixedValuesPresetProvider: FixedValuesPresetProvider,
     clock: Clock = Clock.systemUTC()
 )(implicit system: ActorSystem)
     extends DeploymentService
@@ -136,9 +135,7 @@ class DeploymentServiceImpl(
       d => Some(d.processVersionId),
       d => Some(d.processingType)
     ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      val processDetailsWithEffectiveFixedValuesPresets = fillEffectiveFixedValuesPresets(processDetails)
-
-      validateBeforeDeploy(processDetailsWithEffectiveFixedValuesPresets, actionId).transformWith {
+      validateBeforeDeploy(processDetails, actionId).transformWith {
         case Failure(ex) =>
           dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
         case Success(validationResult) =>
@@ -179,45 +176,6 @@ class DeploymentServiceImpl(
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
       _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
-  }
-
-  private def fillEffectiveFixedValuesPresets(
-      processDetails: BaseProcessDetails[CanonicalProcess]
-  ): BaseProcessDetails[CanonicalProcess] = {
-    def fillEffectivePresets(getEffectivePreset: String => List[FragmentInputDefinition.FixedExpressionValue]) =
-      processDetails.mapProcess(_.mapAllNodes { nodes =>
-        nodes.map {
-          case fragment: Fragment =>
-            fragment.copy(
-              data = fragment.data.copy(
-                fragmentParams = fragment.data.fragmentParams.map(_.map {
-                  case paramWithPreset: FragmentParameterFixedListPreset =>
-                    paramWithPreset.copy(effectiveFixedValuesList =
-                      getEffectivePreset(paramWithPreset.fixedValuesListPresetId)
-                    )
-                  case p => p
-                })
-              )
-            )
-          case node => node
-        }
-      })
-
-    try {
-      val fixedValuesPresets = fixedValuesPresetProvider.getAll
-
-      fillEffectivePresets(
-        fixedValuesPresets(_).map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
-      )
-    } catch {
-      case e: Throwable =>
-        logger.warn(s"Failed to fill effective fixed value presets during deployment ", e)
-        // we skip filling effective presets instead of throwing, because missing presets (which are an UI functionality) shouldn't block deployment
-        // the only impact of this skip is that the process can pass validation it otherwise wouldn't, if inputMode=FixedList but the provided value is no longer in the used preset
-        fillEffectivePresets(_ =>
-          List.empty
-        ) // clear effectiveFixedValuesList instead of possibly using outdated presets
-    }
   }
 
   private def validateProcess(processDetails: BaseProcessDetails[CanonicalProcess]): Unit = {

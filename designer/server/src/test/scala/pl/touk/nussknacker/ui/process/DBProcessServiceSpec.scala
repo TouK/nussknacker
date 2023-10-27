@@ -204,8 +204,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation,
-      fixedValuesPresetProvider = TestFixedValuesPresetProvider
+      processValidation = TestFactory.processValidation
     )
 
 }

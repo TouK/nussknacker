@@ -805,8 +805,7 @@ class DefaultComponentServiceSpec
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation,
-      fixedValuesPresetProvider = TestFixedValuesPresetProvider
+      processValidation = TestFactory.processValidation
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

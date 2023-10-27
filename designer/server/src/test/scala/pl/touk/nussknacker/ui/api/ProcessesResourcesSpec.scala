@@ -4,14 +4,14 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
+import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -26,8 +26,6 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.sampleFragmentOneOutWithPreset
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
@@ -620,7 +618,8 @@ class ProcessesResourcesSpec
   }
 
   test("update process with fragment that uses fixed value preset should fill fixedValuesList") {
-    val processWithFragment = ProcessTestData.validProcessWithFragment(processName, sampleFragmentOneOutWithPreset)
+    val processWithFragment =
+      ProcessTestData.validProcessWithFragment(processName, sampleFragmentOneOutWithPreset("presetString"))
     val displayableFragment =
       ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
     savefragment(displayableFragment)(succeed)
@@ -642,12 +641,44 @@ class ProcessesResourcesSpec
         case _ => List.empty
       }
 
-      assert(fragmentInputParamsUsingPreset.nonEmpty)
-      fragmentInputParamsUsingPreset.foreach { param => assert(param.effectiveFixedValuesList.nonEmpty) }
+      // checking this in the FE response is a bit weird, as FE doesn't use `effectiveFixedValuesList`, what we care about is whether it got saved into the database
+
+      fragmentInputParamsUsingPreset should not be empty
+      fragmentInputParamsUsingPreset.foreach { param =>
+        param.effectiveFixedValuesList should not be empty
+      }
     }
   }
 
-  // todo add test for failing provider/missing presets
+  test("detect missing presets while saving fragment") {
+    val nonExistentPresetId = "nonExistentPreset"
+    val fragment            = sampleFragmentOneOutWithPreset(nonExistentPresetId)
+    val displayableFragment = ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, TestCat)
+    savefragment(displayableFragment) {
+      val validationResult = responseAs[ValidationResult]
+
+      validationResult.errors.invalidNodes.flatMap(_._2).map(_.message).mkString should include(
+        s"Preset with id='$nonExistentPresetId' not found"
+      )
+      succeed
+    }
+  }
+
+  test("detect missing presets while saving process") {
+    val nonExistentPresetId = "nonExistentPreset"
+
+    val processWithFragment =
+      ProcessTestData.validProcessWithFragment(processName, sampleFragmentOneOutWithPreset(nonExistentPresetId))
+
+    saveProcess(processName, processWithFragment.process, TestCat) {
+      val validationResult = responseAs[ValidationResult]
+
+      validationResult.errors.invalidNodes.flatMap(_._2).map(_.message).mkString should include(
+        s"Preset with id='$nonExistentPresetId' not found"
+      )
+      succeed
+    }
+  }
 
   test("return details of process with empty expression") {
     saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, TestCat) {

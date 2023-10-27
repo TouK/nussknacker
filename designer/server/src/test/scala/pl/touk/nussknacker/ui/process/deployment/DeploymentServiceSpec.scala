@@ -105,8 +105,7 @@ class DeploymentServiceSpec
       processValidation,
       TestFactory.scenarioResolver,
       listener,
-      scenarioStateTimeout,
-      TestFixedValuesPresetProvider
+      scenarioStateTimeout
     )
   }
 

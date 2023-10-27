@@ -33,9 +33,10 @@ class ValidationResources(
 
   private def validate(displayable: DisplayableProcess) = {
     NuDesignerErrorToHttp.toResponseEither(
-      FatalValidationError.renderNotAllowedAsError(
-        processResolving.validateBeforeUiResolving(displayable)
-      )
+      FatalValidationError.renderNotAllowedAsError {
+        val (processWithResolvedPresets, presetValidation) = processResolving.resolveFixedValuesPresets(displayable)
+        presetValidation.add(processResolving.validateBeforeExpressionResolving(processWithResolvedPresets))
+      }
     )
   }
 

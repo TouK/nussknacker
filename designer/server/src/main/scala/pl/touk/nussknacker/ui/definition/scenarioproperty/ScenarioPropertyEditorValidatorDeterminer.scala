@@ -15,10 +15,9 @@ protected class ScenarioPropertyEditorValidatorDeterminer(editor: Option[SimpleP
 
   override def determine(): Option[List[ParameterValidator]] = {
     editor match {
-      case Some(editor: FixedValuesParameterEditor)       => Some(List(FixedValuesValidator(editor.possibleValues)))
-      case Some(editor: FixedValuesPresetParameterEditor) => Some(List(FixedValuesValidator(editor.possibleValues)))
-      case Some(JsonParameterEditor)                      => Some(List(JsonValidator))
-      case _                                              => None
+      case Some(editor: FixedValuesParameterEditor) => Some(List(FixedValuesValidator(editor.possibleValues)))
+      case Some(JsonParameterEditor)                => Some(List(JsonValidator))
+      case _                                        => None
     }
   }
 

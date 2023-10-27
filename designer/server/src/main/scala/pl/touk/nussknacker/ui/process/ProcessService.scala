@@ -3,26 +3,19 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
-import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterFixedListPreset
-import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationResult
+import pl.touk.nussknacker.restmodel.processdetails.{
+  BaseProcessDetails,
+  ProcessShapeFetchStrategy,
+  ValidatedProcessDetails
 }
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.ProcessesQuery
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -46,7 +39,6 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import slick.dbio.DBIOAction
 
-import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -152,8 +144,7 @@ class DBProcessService(
     fetchingProcessRepository: FetchingProcessRepository[Future],
     processActionRepository: ProcessActionRepository[DB],
     processRepository: ProcessRepository[DB],
-    processValidation: ProcessValidation,
-    fixedValuesPresetProvider: FixedValuesPresetProvider
+    processValidation: ProcessValidation
 )(implicit ec: ExecutionContext)
     extends ProcessService
     with LazyLogging {
@@ -283,7 +274,11 @@ class DBProcessService(
     processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult =
-        processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
+        processResolving.validateBeforeExpressionReverseResolving(
+          canonical,
+          processingType,
+          processDetails.processCategory
+        )
       processResolving.reverseResolveExpressions(
         canonical,
         processingType,
@@ -388,15 +383,15 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
-      val (processWithEffectiveFixedValuesPresets, presetValidation) =
-        fillEffectiveFixedValuesPresets(action.process, fixedValuesPresetProvider)
-
-      val validation =
-        FatalValidationError.saveNotAllowedAsError(
-          presetValidation.add(processResolving.validateBeforeUiResolving(processWithEffectiveFixedValuesPresets))
+      val (processWithResolvedPresets, presetsValidation) =
+        processResolving.resolveFixedValuesPresets(action.process)
+      val validation = FatalValidationError.saveNotAllowedAsError(
+        presetsValidation.add(
+          processResolving.validateBeforeExpressionResolving(processWithResolvedPresets)
         )
+      )
       val substituted =
-        processResolving.resolveExpressions(processWithEffectiveFixedValuesPresets, validation.typingInfo)
+        processResolving.resolveExpressions(processWithResolvedPresets, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
         substituted,
@@ -437,7 +432,7 @@ class DBProcessService(
 
       val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
-      val validationResult = processResolving.validateBeforeUiReverseResolving(
+      val validationResult = processResolving.validateBeforeExpressionReverseResolving(
         canonical,
         displayable.processingType,
         process.processCategory
@@ -445,78 +440,6 @@ class DBProcessService(
       Future.successful(ValidatedDisplayableProcess(displayable, validationResult))
     }
   }
-
-  private def fillEffectiveFixedValuesPresets(
-      process: DisplayableProcess,
-      fixedValuesPresetProvider: FixedValuesPresetProvider
-  ): (DisplayableProcess, ValidationResult) = {
-    val fixedValuesPresets =
-      try {
-        fixedValuesPresetProvider.getAll
-      } catch {
-        case e: Throwable =>
-          logger.warn(s"FixedValuesPresetsProvider failed to provide presets ", e)
-          return (
-            process,
-            ValidationResult.globalErrors(
-              List(
-                NodeValidationError(
-                  "FixedValuesPresetsProviderFailure",
-                  "FixedValuesPresetsProvider failed to provide presets",
-                  "FixedValuesPresetsProvider failed to provide presets",
-                  None,
-                  NodeValidationErrorType.SaveAllowed
-                )
-              )
-            )
-          )
-      }
-
-    val nodeErrors = mutable.Map[String, List[NodeValidationError]]()
-    val processWithEffectivePresets = process.copy(
-      nodes = process.nodes.map {
-        case fragmentInput: FragmentInput =>
-          fragmentInput.copy(fragmentParams =
-            fillEffectivePresetsInFragmentInput(fragmentInput, fixedValuesPresets, nodeErrors)
-          )
-//        case fragmentInputDefinition: FragmentInputDefinition =>
-//          // TODO here it should be enough to just check whether the presets exists, but filling effectiveFixedValuesList won't hurt
-//          ???
-        case node => node
-      }
-    )
-
-    (processWithEffectivePresets, ValidationResult.errors(nodeErrors.toMap, List.empty, List.empty))
-  }
-
-  private def fillEffectivePresetsInFragmentInput(
-      fragmentInput: FragmentInput,
-      fixedValuesPresets: Map[String, List[FixedExpressionValue]],
-      nodeErrors: mutable.Map[String, List[NodeValidationError]]
-  ) =
-    fragmentInput.fragmentParams.map(_.map {
-      case paramWithPreset: FragmentParameterFixedListPreset =>
-        fixedValuesPresets.get(paramWithPreset.fixedValuesListPresetId) match {
-          case Some(preset) =>
-            paramWithPreset.copy(effectiveFixedValuesList =
-              preset.map(v => node.FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
-            )
-          case None =>
-            nodeErrors(fragmentInput.id) = NodeValidationError(
-              "FixedValuesPresetNotFound",
-              s"Preset with id='${paramWithPreset.fixedValuesListPresetId}' not found",
-              s"Preset with id='${paramWithPreset.fixedValuesListPresetId}' not found",
-              Some(paramWithPreset.name),
-              NodeValidationErrorType.SaveAllowed
-            ) :: nodeErrors.getOrElse(fragmentInput.id, List.empty)
-
-            paramWithPreset.copy(effectiveFixedValuesList =
-              List.empty // clear effectiveFixedValuesList instead of possibly using outdated presets
-            )
-        }
-
-      case p => p
-    })
 
   private def validateInitialScenarioProperties(
       canonicalProcess: CanonicalProcess,
