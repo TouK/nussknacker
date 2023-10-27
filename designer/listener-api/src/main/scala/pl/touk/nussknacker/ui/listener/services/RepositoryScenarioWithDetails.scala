@@ -9,6 +9,9 @@ import pl.touk.nussknacker.restmodel.scenariodetails
 import java.time.Instant
 
 // TODO we should split ScenarioDetails and ScenarioShape (json)
+// This class is in the listener module, because it was necessary for PullProcessRepository
+// but it is kind of internal, intermediate representation of scenario details that is returned by designer's
+// internal FetchingProcessRepository
 final case class RepositoryScenarioWithDetails[ScenarioShape](
     id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
     name: ProcessName,

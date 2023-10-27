@@ -21,7 +21,7 @@ final case class ScenarioWithDetails(
     isFragment: Boolean,
     processingType: ProcessingType,
     processCategory: String,
-    modificationDate: Instant,
+    modificationDate: Instant, // TODO: Deprecated, please use modifiedAt
     modifiedAt: Instant,
     modifiedBy: String,
     createdAt: Instant,
