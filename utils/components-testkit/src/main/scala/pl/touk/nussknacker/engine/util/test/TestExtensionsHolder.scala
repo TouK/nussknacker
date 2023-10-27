@@ -34,7 +34,7 @@ object TestExtensionsHolder {
       componentDefinitions: List[ComponentDefinition],
       globalVariables: Map[String, AnyRef]
   ): TestExtensionsHolder = synchronized {
-    val runId = TestRunId(UUID.randomUUID().toString)
+    val runId = TestRunId.generate
     extensions += (runId -> Extensions(componentDefinitions, globalVariables))
     TestExtensionsHolder(runId)
   }

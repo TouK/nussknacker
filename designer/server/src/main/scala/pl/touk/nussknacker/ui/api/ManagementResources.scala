@@ -12,8 +12,10 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.DisplayJson
+import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -40,32 +42,6 @@ object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
-
-  implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
-
-    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
-    // TODO: do we want more information here?
-    implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
-
-    override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
-        Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
-
   val testResultsVariableEncoder: Any => io.circe.Json = {
     case displayable: DisplayJson =>
       def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
@@ -80,6 +56,51 @@ object ManagementResources {
       Json.obj(
         "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
       )
+  }
+
+  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
+
+  implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
+
+    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
+    implicit val componentInfo: Encoder[ComponentInfo]                                 = deriveConfiguredEncoder
+    implicit val nodeComponentInfo: Encoder[NodeComponentInfo]                         = deriveConfiguredEncoder
+    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
+
+    implicit val mapAnyEncoder: Encoder[Map[String, Any]] = (value: Map[String, Any]) =>
+      value.map { case (key, value) => key -> testResultsVariableEncoder(value) }.asJson
+
+    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+
+    // TODO: do we want more information here?
+    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
+      Json.obj(
+        "id"        -> Json.fromString(a.id),
+        "variables" -> a.variables.asJson
+      )
+
+    implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
+      (value: NuExceptionInfo[_ <: Throwable]) =>
+        Json.obj(
+          "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
+          "throwable"         -> throwableEncoder(value.throwable),
+          "context"           -> value.context.asJson
+        )
+
+    override def apply(a: TestResults[Json]): Json = a match {
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+        Json.obj(
+          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
+          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
+            node -> list.sortBy(_.contextId)
+          }.asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id).asJson
+        )
+    }
+
   }
 
 }
