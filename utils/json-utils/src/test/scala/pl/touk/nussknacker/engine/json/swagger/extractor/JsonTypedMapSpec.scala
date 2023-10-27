@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 import java.{util => ju}
 
-class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
+class JsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
   import scala.jdk.CollectionConverters._
 
@@ -51,7 +51,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
       AdditionalPropertiesDisabled
     )
 
-    val value = LazyJsonTypedMap(jsonObject, definition)
+    val value = JsonTypedMap(jsonObject, definition)
 
     value shouldBe a[TypedMap]
 
@@ -124,7 +124,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
       elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))),
       AdditionalPropertiesDisabled
     )
-    val result = LazyJsonTypedMap(jsonObject, definition)
+    val result = JsonTypedMap(jsonObject, definition)
 
     val mapField = result.get("mapField").asInstanceOf[TypedMap]
 
@@ -137,7 +137,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
   test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
-    val result = LazyJsonTypedMap(jsonObject, definitionWithoutFields)
+    val result = JsonTypedMap(jsonObject, definitionWithoutFields)
 
     result.size() shouldBe 0
     Option(result.get("field3")) shouldBe Symbol("empty")
@@ -147,7 +147,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
     result shouldBe a[ju.Map[_, _]]
 
     val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
-    val result2                = LazyJsonTypedMap(jsonObject, definitionWithOneField)
+    val result2                = JsonTypedMap(jsonObject, definitionWithOneField)
     result2 shouldEqual TypedMap(Map("field2" -> 1L))
 
   }
@@ -155,7 +155,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
   test("should not trim additional fields fields when additionalPropertiesOn") {
     val json       = JsonObject("field1" -> Json.fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    val result     = LazyJsonTypedMap(json, definition)
+    val result     = JsonTypedMap(json, definition)
     result shouldBe
       TypedMap(
         Map(
@@ -167,7 +167,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
     val jsonIntegers = JsonObject("field1" -> Json.fromInt(2), "field2" -> Json.fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    LazyJsonTypedMap(jsonIntegers, definition2) shouldBe
+    JsonTypedMap(jsonIntegers, definition2) shouldBe
       TypedMap(
         Map(
           "field1" -> 2L,
@@ -181,7 +181,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      LazyJsonTypedMap(json, definition).get("field1")
+      JsonTypedMap(json, definition).get("field1")
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
@@ -206,8 +206,8 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
       AdditionalPropertiesDisabled
     )
 
-    val map1 = LazyJsonTypedMap(jsonObject, definition)
-    val map2 = LazyJsonTypedMap(jsonObject, definition)
+    val map1 = JsonTypedMap(jsonObject, definition)
+    val map2 = JsonTypedMap(jsonObject, definition)
 
     map1.equals(map2) shouldBe true
     map1 == map2 shouldBe true
@@ -215,7 +215,7 @@ class LazyJsonTypedMapSpec extends AnyFunSuite with ValidatedValuesDetailedMessa
     val jsonIntegers = JsonObject("field1" -> Json.fromInt(2), "field2" -> Json.fromInt(1))
     val definition2 =
       SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    val map3 = LazyJsonTypedMap(jsonIntegers, definition2)
+    val map3 = JsonTypedMap(jsonIntegers, definition2)
     val map4 = TypedMap(
       Map(
         "field1" -> 2L,

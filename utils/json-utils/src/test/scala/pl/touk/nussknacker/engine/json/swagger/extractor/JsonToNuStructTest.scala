@@ -164,7 +164,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     )
 
     def assertPath(json: Json, path: String, fields: String*) = {
-      def toMap: PartialFunction[Any, LazyJsonTypedMap] = { case map: LazyJsonTypedMap => map }
+      def toMap: PartialFunction[Any, JsonTypedMap] = { case map: JsonTypedMap => map }
 
       @tailrec def extractField(obj: Any, fields: List[String]): Any =
         fields match {

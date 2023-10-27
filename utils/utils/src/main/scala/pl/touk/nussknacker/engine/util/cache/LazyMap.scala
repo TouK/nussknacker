@@ -61,7 +61,8 @@ class LazyMap[A <: AnyRef, B >: Null](
       .orNull
   }
 
-  override def toString: String = cache.getAll(definedFields).asScala.toString()
+  override def toString: String =
+    cache.getAll(definedFields).asScala.map { case (key, value) => key -> value.orNull }.toString()
 
 }
 

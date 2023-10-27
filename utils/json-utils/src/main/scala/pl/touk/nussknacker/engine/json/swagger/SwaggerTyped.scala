@@ -79,7 +79,22 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
     elementType: Map[PropertyName, SwaggerTyped],
     additionalProperties: AdditionalProperties = AdditionalPropertiesEnabled(SwaggerAny),
     patternProperties: List[PatternWithSwaggerTyped] = List.empty
-) extends SwaggerTyped
+) extends SwaggerTyped {
+
+  def fieldSwaggerTypeByKey(key: String): Option[SwaggerTyped] =
+    elementType.get(key) orElse patternPropertyTypeOption(key) orElse additionalPropertyOption
+
+  private def patternPropertyTypeOption(key: String): Option[SwaggerTyped] = patternProperties
+    .find(_.testPropertyName(key))
+    .map(_.propertyType)
+
+  private def additionalPropertyOption: Option[SwaggerTyped] =
+    additionalProperties match {
+      case AdditionalPropertiesEnabled(swaggerType) => Some(swaggerType)
+      case _                                        => None
+    }
+
+}
 
 @JsonCodec case class PatternWithSwaggerTyped(pattern: String, propertyType: SwaggerTyped) {
   private lazy val compiledPattern: Pattern = Pattern.compile(pattern)
@@ -298,19 +313,5 @@ object SwaggerObject {
     }
     SwaggerObject(properties, additionalProperties, patternProperties)
   }
-
-  def fieldSwaggerTypeByKey(definition: SwaggerObject, key: String): Option[SwaggerTyped] =
-    definition.elementType.get(key) orElse patternPropertyOption(definition, key).map(
-      _.propertyType
-    ) orElse additionalPropertyOption(definition.additionalProperties)
-
-  private def patternPropertyOption(definition: SwaggerObject, key: String) = definition.patternProperties
-    .find(_.testPropertyName(key))
-
-  private def additionalPropertyOption(additionalProperties: AdditionalProperties): Option[SwaggerTyped] =
-    additionalProperties match {
-      case AdditionalPropertiesEnabled(swaggerType) => Some(swaggerType)
-      case _                                        => None
-    }
 
 }

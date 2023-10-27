@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.util.cache.LazyMap
 
 import scala.jdk.CollectionConverters._
 
-final case class LazyJsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: String = "")
+final case class JsonTypedMap(jsonObject: JsonObject, definition: SwaggerObject, path: String = "")
     extends LazyMap[String, Any](
-      jsonObject.keys.filter(SwaggerObject.fieldSwaggerTypeByKey(definition, _).isDefined).toSet.asJava,
+      jsonObject.keys.filter(definition.fieldSwaggerTypeByKey(_).isDefined).toSet.asJava,
       key =>
-        SwaggerObject.fieldSwaggerTypeByKey(definition, key) match {
+        definition.fieldSwaggerTypeByKey(key) match {
           case Some(swaggerType) =>
             JsonToNuStruct(jsonObject(key).getOrElse(Json.Null), swaggerType, if (path.isEmpty) key else s"$path.$key")
           case None => JsonToObjectError(jsonObject.asJson, definition, path)

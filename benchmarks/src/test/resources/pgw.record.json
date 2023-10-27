@@ -1,36 +1,36 @@
 {
   "pgwRecord": {
-    "recordType": 85,
+    "recordType": 34,
     "servedIMSI": {
-      "servedIMSI": "260060038119383"
+      "servedIMSI": "234523452345"
     },
     "p_GWAddress": {
       "iPBinaryAddress": {
         "iPBinV4Address": [
-          89,
-          108,
+          23,
+          45,
           -64,
-          20
+          45
         ]
       }
     },
-    "chargingID": "1210022852",
+    "chargingID": "2345324532",
     "servingNodeAddress": [
       {
         "iPBinaryAddress": {
           "iPBinV4Address": [
-            89,
-            108,
-            -64,
-            19
+            45,
+            10348,
+            -34,
+            34
           ]
         }
       }
     ],
-    "accessPointNameNI": "ims.mnc006.mcc260.gprs",
+    "accessPointNameNI": "ims.aaaa.bbbb.gprs",
     "pdpPDNType": {
-      "organization": "1",
-      "number": "02"
+      "organization": "a",
+      "number": "345"
     },
     "servedPDPPDNAddress": {
       "iPAddress": {
@@ -71,11 +71,11 @@
     "duration": 571,
     "causeForRecClosing": 0,
     "nodeID": "ogwc_a_c1.1.32",
-    "localSequenceNumber": "1060166004",
+    "localSequenceNumber": "1062222222",
     "apnSelectionMode": 0,
     "servedMSISDN": {
-      "prefix": "48",
-      "address": "607884843"
+      "prefix": "34",
+      "address": "607222222"
     },
     "chargingCharacteristics": [
       8,
@@ -83,11 +83,11 @@
     ],
     "chChSelectionMode": 3,
     "servingNodePLMNIdentifier": {
-      "mcc": "260",
+      "mcc": "43",
       "mnc": "06"
     },
     "servedIMEISV": {
-      "servedIMEI": "3525995061469001"
+      "servedIMEI": "35259222222222"
     },
     "rATType": 1,
     "mSTimeZone": [
@@ -147,8 +147,8 @@
             ]
           }
         },
-        "datavolumeFBCUplink": "8123",
-        "datavolumeFBCDownlink": "5911",
+        "datavolumeFBCUplink": "7777",
+        "datavolumeFBCDownlink": "9999",
         "timeOfReport": [
           35,
           16,
@@ -166,8 +166,8 @@
       2
     ],
     "p_GWPLMNIdentifier": {
-      "mcc": "260",
-      "mnc": "06"
+      "mcc": "261",
+      "mnc": "00"
     },
     "startTime": [
       35,
@@ -191,9 +191,9 @@
       2,
       0
     ],
-    "pDNConnectionID": "1210022852",
-    "lineNumber": 53050,
-    "fileName": "CDR_PGWO11_0136538_20231011115447.asn",
-    "timeStamp": "1697018627136"
+    "pDNConnectionID": "1211111152",
+    "lineNumber": 555555,
+    "fileName": "CDR_PGWO11_01111111_20231011115447.asn",
+    "timeStamp": "169111111136"
   }
 }

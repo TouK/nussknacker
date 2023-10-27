@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.json.serde
 
-import io.circe.Json
 import org.everit.json.schema.Schema
 import org.json.JSONTokener
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.{JsonToNuStruct, Mode}
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 import pl.touk.nussknacker.engine.util.json.JsonSchemaUtils
 
 import java.nio.charset.StandardCharsets
@@ -34,28 +33,6 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
 
     val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
     JsonToNuStruct(circeJson, swaggerTyped)
-  }
-
-  // For benchmarking only
-  def deserializeWithoutNuStruct(string: String): Json = {
-    val inputJson = new JSONTokener(string).nextValue()
-
-    val validatedJson = jsonSchema
-      .validateData(inputJson)
-      .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
-
-    JsonSchemaUtils.jsonToCirce(validatedJson)
-  }
-
-  def deserializeWithLazyMap(string: String): AnyRef = {
-    val inputJson = new JSONTokener(string).nextValue()
-
-    val validatedJson = jsonSchema
-      .validateData(inputJson)
-      .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
-
-    val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
-    JsonToNuStruct(circeJson, swaggerTyped)(Mode.LazyTypedMap)
   }
 
 }
