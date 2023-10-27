@@ -50,6 +50,8 @@ object ProcessActionType extends Enumeration {
   val Rename: Value    = Value("RENAME")
 
   val DefaultActions: List[ProcessActionType] = Nil
+
+  val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 }
 
 object ProcessActionState extends Enumeration {

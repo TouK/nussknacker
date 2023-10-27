@@ -10,16 +10,14 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
@@ -80,14 +78,14 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
     val processes = fetching
-      .fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(
-        ProcessShapeFetchStrategy.NotFetch,
+      .fetchProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
+        ScenarioShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
       )
       .futureValue
 
-    processes.map(_.name) shouldEqual "categorized-c1" :: Nil
+    processes.map(_.name.value) shouldEqual "categorized-c1" :: Nil
   }
 
   test("should rename process") {
@@ -195,7 +193,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val details: BaseProcessDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
+    val details: ScenarioWithDetailsEntity[CanonicalProcess] = fetchLatestProcessDetails(processName)
     details.processVersionId shouldBe VersionId.initialVersionId
 
     // change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
@@ -324,7 +322,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived)
+        .fetchProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)
@@ -332,9 +330,9 @@ class DBFetchingProcessRepositorySpec
     }
   }
 
-  private def fetchLatestProcessDetails[PS: ProcessShapeFetchStrategy](
+  private def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       name: ProcessName
-  ): processdetails.BaseProcessDetails[PS] = {
+  ): ScenarioWithDetailsEntity[PS] = {
     val fetchedProcess = fetching
       .fetchProcessId(name)
       .futureValue

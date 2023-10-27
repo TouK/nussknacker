@@ -2,22 +2,30 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
   ComponentUsagesInScenario,
+  NodeUsageData,
   ScenarioComponentsUsages
 }
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
-import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
+import pl.touk.nussknacker.ui.component.DefaultComponentService.{
+  getComponentDoc,
+  getComponentIcon,
+  toComponentUsagesInScenario
+}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, UserCategoryService}
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,6 +72,25 @@ object DefaultComponentService {
   ): Option[SingleComponentConfig] =
     componentsUiConfig.get(com.label)
 
+  private[component] def toComponentUsagesInScenario(
+      process: ScenarioWithDetailsEntity[_],
+      nodesUsagesData: List[NodeUsageData]
+  ): ComponentUsagesInScenario =
+    ComponentUsagesInScenario(
+      id = process.id, // Right now we assume that scenario id is name..
+      name = process.idWithName.name,
+      processId = process.processId,
+      nodesUsagesData = nodesUsagesData,
+      isFragment = process.isFragment,
+      processCategory = process.processCategory,
+      modificationDate = process.modificationDate, // TODO: Deprecated, please use modifiedAt
+      modifiedAt = process.modifiedAt,
+      modifiedBy = process.modifiedBy,
+      createdAt = process.createdAt,
+      createdBy = process.createdBy,
+      lastAction = process.lastAction
+    )
+
 }
 
 class DefaultComponentService private (
@@ -101,7 +128,7 @@ class DefaultComponentService private (
       componentId: ComponentId
   )(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -110,7 +137,7 @@ class DefaultComponentService private (
           .map(data =>
             Right(
               data
-                .map { case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData) }
+                .map { case (process, nodesUsagesData) => toComponentUsagesInScenario(process, nodesUsagesData) }
                 .sortBy(_.id)
             )
           )
@@ -139,7 +166,7 @@ class DefaultComponentService private (
       ec: ExecutionContext
   ): Future[Map[ComponentId, Long]] = {
     processService
-      .getRawProcessesWithDetails[ScenarioComponentsUsages](isFragment = None, isArchived = Some(false))
+      .getRawProcessesWithDetails[ScenarioComponentsUsages](ScenarioQuery(isArchived = Some(false)))
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -148,8 +175,12 @@ class DefaultComponentService private (
       processingType: ProcessingType,
       user: LoggedUser
   ): Future[List[ComponentListElement]] = {
+    implicit val userImplicit: LoggedUser = user
     processService
-      .getFragmentsDetails(processingTypes = Some(List(processingType)))(user)
+      .getRawProcessesWithDetails[CanonicalProcess](
+        ScenarioQuery(isFragment = Some(true), isArchived = Some(false), processingTypes = Some(List(processingType)))
+      )
+      .map(_.map(sub => FragmentDetails(sub.json, sub.processCategory)).toSet)
       .map { fragments =>
         val componentObjectsService = new ComponentObjectsService(categoryService)
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.

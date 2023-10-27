@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails
-import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
+import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioVersion, ScenarioWithDetails}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -56,7 +56,6 @@ class RemoteEnvironmentResourcesSpec
     val route = withPermissions(
       new RemoteEnvironmentResources(
         remoteEnvironment,
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -86,7 +85,6 @@ class RemoteEnvironmentResourcesSpec
     val route = withPermissions(
       new RemoteEnvironmentResources(
         remoteEnvironment,
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -125,7 +123,6 @@ class RemoteEnvironmentResourcesSpec
             processId2.value -> Map()
           )
         ),
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -159,7 +156,6 @@ class RemoteEnvironmentResourcesSpec
             processId1.value -> Map("n1" -> difference)
           )
         ),
-        futureFetchingProcessRepository,
         processService,
         processAuthorizer
       ),
@@ -179,19 +175,6 @@ class RemoteEnvironmentResourcesSpec
         }
       }
     }
-  }
-
-  // we replace Types with Unkown because this is how types from RemoteEnvironment are decoded (to avoid classloading issues...)
-  private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
-    process.copy(validationResult =
-      process.validationResult.map(validationResult =>
-        validationResult.copy(nodeResults =
-          validationResult.nodeResults.mapValuesNow(v =>
-            v.copy(variableTypes = v.variableTypes.mapValuesNow(_ => Unknown))
-          )
-        )
-      )
-    )
   }
 
   class MockRemoteEnvironment(
@@ -225,10 +208,10 @@ class RemoteEnvironmentResourcesSpec
 
     override def processVersions(processName: ProcessName)(
         implicit ec: ExecutionContext
-    ): Future[List[ProcessVersion]] = Future.successful(List())
+    ): Future[List[ScenarioVersion]] = Future.successful(List())
 
     override def testMigration(
-        processToInclude: processdetails.BasicProcess => Boolean
+        processToInclude: ScenarioWithDetails => Boolean
     )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
