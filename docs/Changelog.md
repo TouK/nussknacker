@@ -1,6 +1,23 @@
 # Changelog
 
-1.12.0 (Not released yet)
+1.13.0 (Not released yet)
+-------------------------
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
+* [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
+* [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+    * Run runner with proper prepared invocation collector for test mode
+    * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
+    * Add missing tests for passing global variables
+    * Fix bug with passing components on RequestResponseTestScenarioRunner
+    * Fix bug building source test context on LiteTestScenarioRunner
+* [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
+
+1.12.1 & 1.12.2 (25 Oct 2023)
+* [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
+
+1.12.0 (6 Oct 2023)
 -------------------------
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
   * Use `processingType` instead of `processName`
@@ -27,8 +44,6 @@
   * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
 * [#4797](https://github.com/TouK/nussknacker/pull/4797) Ability to define the name of query parameter with access token that will be passed into tabs url
 * [#4804](https://github.com/TouK/nussknacker/pull/4804) Improvement: Allow passing globalVariables on TestRunner
-* [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
-* [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available 
 
 1.11.3 (11 Sep 2023)
 -------------------------

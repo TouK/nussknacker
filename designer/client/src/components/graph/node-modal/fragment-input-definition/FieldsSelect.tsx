@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
-import { DndItems } from "./DndItems";
+import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFields } from "./NodeRowFields";
 import { Item, UpdatedItem, onChangeType } from "./item";
 

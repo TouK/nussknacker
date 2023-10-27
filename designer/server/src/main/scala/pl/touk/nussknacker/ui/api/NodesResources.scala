@@ -43,8 +43,8 @@ import pl.touk.nussknacker.ui.api.NodesResources.{
   prepareValidationContext
 }
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
@@ -55,7 +55,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /** This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
   */
 class NodesResources(
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     fragmentRepository: FragmentRepository,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
     processValidation: ProcessValidation,
@@ -72,7 +72,7 @@ class NodesResources(
     import akka.http.scaladsl.server.Directives._
 
     pathPrefix("nodes" / Segment) { processName =>
-      (post & processDetailsForName[Unit](processName)) { process =>
+      (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[NodeData]) { nodeData =>
             complete {
@@ -91,7 +91,7 @@ class NodesResources(
         }
       }
     } ~ pathPrefix("properties" / Segment) { processName =>
-      (post & processDetailsForName[Unit](processName)) { process =>
+      (post & processDetailsForName(processName)) { process =>
         path("additionalInfo") {
           entity(as[ProcessProperties]) { processProperties =>
             complete {

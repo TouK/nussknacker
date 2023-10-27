@@ -13,11 +13,10 @@ export function success(message: string): Action {
     });
 }
 
-export function error(message: string, error?: string, showErrorText?: boolean): Action {
-    const details = showErrorText && error ? error : null;
+export function error(message: string): Action {
     return Notifications.error({
         autoDismiss: 10,
-        children: <Notification type={"error"} icon={<DangerousIcon />} message={message} details={details} />,
+        children: <Notification type={"error"} icon={<DangerousIcon />} message={message} />,
     });
 }
 

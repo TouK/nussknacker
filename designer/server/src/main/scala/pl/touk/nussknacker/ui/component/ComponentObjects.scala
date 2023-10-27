@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.component.ComponentGroupName
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentGroupName}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.definition.{ComponentTemplate, UIProcessObjects}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -32,7 +32,7 @@ private[component] object ComponentObjects {
  */
 private[component] class ComponentObjectsService(categoryService: ProcessCategoryService) {
 
-  def prepareWithoutFragments(
+  def prepareWithoutFragmentsAndAdditionalUIConfigs(
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData
   ): ComponentObjects = {
@@ -41,6 +41,8 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingTypeData,
       user = NussknackerInternalUser.instance, // We need admin user to receive all components info
       fragments = Set.empty,
+      additionalUIConfigProvider =
+        AdditionalUIConfigProvider.empty // this method is only used in ComponentIdProviderFactory, and because AdditionalUIConfigProvider can't change ComponentId, we don't need it
     )
     ComponentObjects(uiProcessObjects)
   }
@@ -49,9 +51,11 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
-      fragments: Set[FragmentDetails]
+      fragments: Set[FragmentDetails],
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): ComponentObjects = {
-    val uiProcessObjects = createUIProcessObjects(processingType, processingTypeData, user, fragments)
+    val uiProcessObjects =
+      createUIProcessObjects(processingType, processingTypeData, user, fragments, additionalUIConfigProvider)
     ComponentObjects(uiProcessObjects)
   }
 
@@ -59,18 +63,20 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType: ProcessingType,
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
-      fragments: Set[FragmentDetails]
+      fragments: Set[FragmentDetails],
+      additionalUIConfigProvider: AdditionalUIConfigProvider
   ): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
-      staticObjectsDefinition = processingTypeData.staticObjectsDefinition,
+      processDefinition = processingTypeData.staticObjectsDefinition,
       deploymentManager = processingTypeData.deploymentManager,
       user = user,
       fragmentsDetails = fragments,
       isFragment = false, // It excludes fragment's components: input / output
       processCategoryService = categoryService,
-      additionalPropertiesConfig = processingTypeData.additionalPropertiesConfig,
-      processingType = processingType
+      scenarioPropertiesConfig = processingTypeData.scenarioPropertiesConfig,
+      processingType = processingType,
+      additionalUIConfigProvider = additionalUIConfigProvider
     )
   }
 

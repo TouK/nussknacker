@@ -1,11 +1,7 @@
 import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
-import { config } from "dotenv";
-import { resolve } from "path";
 import merge from "webpack-merge";
 import { commonConfig, outputPath } from "./common";
 import "webpack-dev-server";
-
-config({ path: resolve(__dirname, "../../.env") });
 
 export default merge(commonConfig, {
     mode: "development",
@@ -29,6 +25,21 @@ export default merge(commonConfig, {
         allowedHosts: "all",
         devMiddleware: {
             writeToDisk: true,
+        },
+        proxy: {
+            [process.env.PROXY_PATH]: {
+                target: process.env.NU_FE_CORE_URL,
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                },
+                pathRewrite: {
+                    [`^${process.env.PROXY_PATH}/api`]: "/api",
+                    [`^${process.env.PROXY_PATH}`]: "/static",
+                },
+            },
         },
     },
     devtool: "eval-source-map",

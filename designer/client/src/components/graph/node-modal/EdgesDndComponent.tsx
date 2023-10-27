@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import { Edge, EdgeKind, VariableTypes } from "../../../types";
 import { NodeRowFields } from "./fragment-input-definition/NodeRowFields";
-import { DndItems } from "./fragment-input-definition/DndItems";
+import { DndItems } from "../../common/dndItems/DndItems";
 import { EdgeFields } from "./EdgeFields";
 import { ExpressionLang } from "./editors/expression/types";
 import NodeUtils from "../NodeUtils";

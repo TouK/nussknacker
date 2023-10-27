@@ -1,17 +1,18 @@
-import { ModuleString, ModuleUrl, PathString, ScopeString, ScriptUrl } from "../types";
+import { ModuleString, ModuleUrl, PathString, QueryString, ScopeString, ScriptUrl } from "../types";
 
 /**
  * Split ExternalModule url to url and module parts.
- * @param url
+ * @param fullModuleUrl
  */
-export function splitUrl(url: ModuleUrl): [ModuleUrl, ModuleString, ScriptUrl, ScopeString, PathString] {
-    const [module, script] = url.split("@");
+export function splitUrl(fullModuleUrl: ModuleUrl): [ModuleUrl, ModuleString, ScriptUrl, ScopeString, PathString, QueryString] {
+    const [module, url] = fullModuleUrl.split("@");
     const [scope] = module.split("/");
     const path = module.replace(scope, ".");
+    const [script, query] = url.split("?");
 
     if (!scope || !script.match(/\.js$/)) {
         throw new Error("invalid remote module url");
     }
 
-    return [url, module as ModuleString, script as ScriptUrl, scope as ScopeString, path as PathString];
+    return [fullModuleUrl, module as ModuleString, script as ScriptUrl, scope as ScopeString, path as PathString, query as QueryString];
 }

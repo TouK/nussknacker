@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -54,6 +54,6 @@ class PeriodicDeploymentManagerProvider(
 
   override def metaDataInitializer(config: Config): MetaDataInitializer = delegate.metaDataInitializer(config)
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
-    delegate.additionalPropertiesConfig(config)
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+    delegate.scenarioPropertiesConfig(config)
 }

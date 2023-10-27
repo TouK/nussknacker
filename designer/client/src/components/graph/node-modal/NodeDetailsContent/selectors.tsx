@@ -3,15 +3,15 @@ import { getProcessCategory, getProcessToDisplay } from "../../../../reducers/se
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
-import { AdditionalPropertiesConfig, NodeId, NodeType, NodeValidationError, UIParameter } from "../../../../types";
+import { ScenarioPropertiesConfig, NodeId, NodeType, NodeValidationError, UIParameter } from "../../../../types";
 import { isEqual } from "lodash";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, (s) => s.processDefinition);
-export const getAdditionalPropertiesConfig = createSelector(
+export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
-    (s) => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig,
+    (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
 const getNodeResults = createSelector(getProcessToDisplay, (process) => ProcessUtils.getNodeResults(process));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>

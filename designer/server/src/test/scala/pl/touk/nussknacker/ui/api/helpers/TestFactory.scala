@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
+import pl.touk.nussknacker.engine.{CategoriesConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -13,16 +13,18 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDe
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.NewProcessPreparer
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   MapBasedProcessingTypeDataProvider,
+  ProcessingTypeDataConfigurationReader,
   ProcessingTypeDataProvider
 }
 import pl.touk.nussknacker.ui.process.repository._
@@ -63,7 +65,7 @@ object TestFactory extends TestPermissions {
 
   val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation
     .withFragmentResolver(sampleResolver)
-    .withAdditionalPropertiesConfig(
+    .withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
     )
 
@@ -123,7 +125,7 @@ object TestFactory extends TestPermissions {
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
 
   def asAdmin(route: RouteWithUser): Route =
-    route.securedRoute(adminUser())
+    route.securedRouteWithErrorHandling(adminUser())
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -131,14 +133,14 @@ object TestFactory extends TestPermissions {
   )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
-    route.securedRoute(user(permissions = permissions))
+    route.securedRouteWithErrorHandling(user(permissions = permissions))
 
   // FIXME: update
   def withAllPermissions(route: RouteWithUser): Route = withPermissions(route, testPermissionAll)
 
-  def withAdminPermissions(route: RouteWithUser): Route = route.securedRoute(adminUser())
+  def withAdminPermissions(route: RouteWithUser): Route = route.securedRouteWithErrorHandling(adminUser())
 
-  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRoute()
+  def withoutPermissions(route: RouteWithoutUser): Route = route.publicRouteWithErrorHandling()
 
   def userWithCategoriesReadPermission(
       id: String = "1",
@@ -173,5 +175,13 @@ object TestFactory extends TestPermissions {
       CustomProcessValidatorLoader.emptyCustomProcessValidator
     )
   }
+
+  def createCategoryService(designerConfig: Config): ProcessCategoryService =
+    ConfigProcessCategoryService(
+      designerConfig,
+      ProcessingTypeDataConfigurationReader
+        .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
+        .mapValuesNow(CategoriesConfig(_))
+    )
 
 }

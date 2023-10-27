@@ -83,7 +83,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
     val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {
@@ -127,25 +127,28 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
         TestCategories.Category1,
-        ValidationResult.errors(
-          Map(
-            unexpectedEnd.id -> List(
-              NodeValidationError(
-                "InvalidTailOfBranch",
-                "Scenario must end with a sink, processor or fragment",
-                "Scenario must end with a sink, processor or fragment",
-                None,
-                errorType = NodeValidationErrorType.SaveAllowed
+        Some(
+          ValidationResult.errors(
+            Map(
+              unexpectedEnd.id -> List(
+                NodeValidationError(
+                  "InvalidTailOfBranch",
+                  "Scenario must end with a sink, processor or fragment",
+                  "Scenario must end with a sink, processor or fragment",
+                  None,
+                  errorType = NodeValidationErrorType.SaveAllowed
+                )
               )
-            )
-          ),
-          List.empty,
-          List.empty
+            ),
+            List.empty,
+            List.empty
+          )
         )
       )
 
-      val validated    = displayableCanonical(process.toDisplayable)
-      val withoutTypes = validated.copy(validationResult = validated.validationResult.copy(nodeResults = Map.empty))
+      val validated = displayableCanonical(process.toDisplayable)
+      val withoutTypes =
+        validated.copy(validationResult = validated.validationResult.map(_.copy(nodeResults = Map.empty)))
       withoutTypes shouldBe process
     }
   }
@@ -167,40 +170,48 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
       TestCategories.Category1,
-      ValidationResult
-        .errors(
-          Map(
-            "e" -> List(
-              NodeValidationError(
-                "InvalidTailOfBranch",
-                "Scenario must end with a sink, processor or fragment",
-                "Scenario must end with a sink, processor or fragment",
+      Some(
+        ValidationResult
+          .errors(
+            Map(
+              "e" -> List(
+                NodeValidationError(
+                  "InvalidTailOfBranch",
+                  "Scenario must end with a sink, processor or fragment",
+                  "Scenario must end with a sink, processor or fragment",
+                  None,
+                  errorType = NodeValidationErrorType.SaveAllowed
+                )
+              )
+            ),
+            List.empty,
+            List.empty
+          )
+          .copy(nodeResults =
+            Map(
+              "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), Some(List.empty), Map.empty),
+              "v" -> NodeTypingData(
+                Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
                 None,
-                errorType = NodeValidationErrorType.SaveAllowed
+                Map.empty
+              ),
+              "e" -> NodeTypingData(
+                Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")),
+                None,
+                Map.empty
               )
             )
-          ),
-          List.empty,
-          List.empty
-        )
-        .copy(nodeResults =
-          Map(
-            "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), Some(List.empty), Map.empty),
-            "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
-            "e" -> NodeTypingData(
-              Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")),
-              None,
-              Map.empty
-            )
           )
-        )
+      )
     )
 
     val displayableProcess = displayableCanonical(process.toDisplayable)
     // because I'm lazy
     val displayableWithClearedTypingInfo = displayableProcess.copy(
-      validationResult = displayableProcess.validationResult.copy(
-        nodeResults = displayableProcess.validationResult.nodeResults.mapValuesNow(_.copy(typingInfo = Map.empty))
+      validationResult = displayableProcess.validationResult.map(validationResult =>
+        validationResult.copy(
+          nodeResults = validationResult.nodeResults.mapValuesNow(_.copy(typingInfo = Map.empty))
+        )
       )
     )
     displayableWithClearedTypingInfo shouldBe process

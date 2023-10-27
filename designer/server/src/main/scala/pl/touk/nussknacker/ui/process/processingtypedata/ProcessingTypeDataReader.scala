@@ -1,25 +1,23 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
+import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus._
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.{
-  CombinedProcessingTypeData,
-  ConfigWithUnresolvedVersion,
-  DeploymentManagerProvider,
-  ProcessingTypeConfig,
-  ProcessingTypeData
-}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.selectedScenarioTypeConfigurationPath
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object ProcessingTypeDataReader extends ProcessingTypeDataReader
+object ProcessingTypeDataReader extends ProcessingTypeDataReader {
+
+  val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
+
+}
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
@@ -27,22 +25,34 @@ trait ProcessingTypeDataReader extends LazyLogging {
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
-      deploymentService: DeploymentService,
-      categoryService: ProcessCategoryService
+      deploymentService: DeploymentService
   ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val types: Map[ProcessingType, ProcessingTypeConfig] =
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
-    val valueMap = types
-      .filterKeysNow(categoryService.getProcessingTypeCategories(_).nonEmpty)
+    val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+    val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
+    val processingTypesData = processingTypesConfig
+      .filter(selectedScenarioTypeFilter)
       .map { case (name, typeConfig) =>
         name -> createProcessingTypeData(name, typeConfig)
       }
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = createCombinedData(valueMap, categoryService)
+    val combinedData = createCombinedData(processingTypesData, config)
 
-    new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](valueMap, combinedData)
+    new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](
+      processingTypesData,
+      combinedData
+    )
+  }
+
+  // TODO Replace selectedScenarioType property by mechanism allowing to configure multiple scenario types with
+  //      different paradigms and engine configurations. This mechanism should also allow to have some scenario types
+  //      configurations that are invalid (e.g. some mandatory field is not configured)
+  private def createSelectedScenarioTypeFilter(
+      config: ConfigWithUnresolvedVersion
+  ): (ProcessingType, ProcessingTypeConfig) => Boolean = {
+    val selectedScenarioTypeOpt = config.resolved.getAs[String](selectedScenarioTypeConfigurationPath)
+    (processingType, _) => selectedScenarioTypeOpt.forall(_ == processingType)
   }
 
   protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)(
@@ -60,9 +70,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   protected def createCombinedData(
       valueMap: Map[ProcessingType, ProcessingTypeData],
-      categoryService: ProcessCategoryService
+      designerConfig: ConfigWithUnresolvedVersion
   ): CombinedProcessingTypeData = {
-    CombinedProcessingTypeData.create(valueMap, categoryService)
+    CombinedProcessingTypeData.create(valueMap, designerConfig)
   }
 
 }

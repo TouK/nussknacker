@@ -6,6 +6,7 @@ import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -15,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TestInfoResources(
     val processAuthorizer: AuthorizeProcess,
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     scenarioTestService: ScenarioTestService
 )(implicit val ec: ExecutionContext)
     extends Directives

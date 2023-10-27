@@ -6,7 +6,7 @@ import { editors, EditorType, simpleEditorValidators } from "./expression/Editor
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
-import { Error, Validator } from "./Validators";
+import { Error, PosibleValues, Validator } from "./Validators";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     param?: ParamType;
-    values?: Array<$TodoType>;
+    values?: Array<PosibleValues>;
     fieldName?: string;
     isMarked?: boolean;
     showValidation?: boolean;

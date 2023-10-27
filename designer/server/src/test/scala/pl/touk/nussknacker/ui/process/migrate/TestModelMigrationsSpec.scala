@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
@@ -165,8 +166,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.newErrors.hasErrors shouldBe false
     processMigrationResult.newErrors.hasWarnings shouldBe false
-    processMigrationResult.converted.validationResult.hasErrors shouldBe false
-    processMigrationResult.converted.validationResult.hasWarnings shouldBe false
+    processMigrationResult.converted.validationResult.value.hasErrors shouldBe false
+    processMigrationResult.converted.validationResult.value.hasWarnings shouldBe false
   }
 
   private def getFirst[T: ClassTag](result: TestMigrationResult): T =

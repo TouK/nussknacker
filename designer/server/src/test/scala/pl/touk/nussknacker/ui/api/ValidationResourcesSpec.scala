@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -40,22 +40,22 @@ class ValidationResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+  private val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> Map(
-        "requiredStringProperty" -> AdditionalPropertyConfig(
+        "requiredStringProperty" -> ScenarioPropertyConfig(
           None,
           Some(StringParameterEditor),
           Some(List(MandatoryParameterValidator)),
           Some("label")
         ),
-        "numberOfThreads" -> AdditionalPropertyConfig(
+        "numberOfThreads" -> ScenarioPropertyConfig(
           None,
           Some(FixedValuesParameterEditor(possibleValues)),
           Some(List(FixedValuesValidator(possibleValues))),
           None
         ),
-        "maxEvents" -> AdditionalPropertyConfig(
+        "maxEvents" -> ScenarioPropertyConfig(
           None,
           None,
           Some(List(LiteralParameterValidator.integerValidator)),
@@ -67,7 +67,7 @@ class ValidationResourcesSpec
 
   private val route: Route = withPermissions(
     new ValidationResources(
-      futureFetchingProcessRepository,
+      processService,
       new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
     ),
     testPermissionRead
@@ -98,7 +98,7 @@ class ValidationResourcesSpec
   }
 
   it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
+    createAndValidateScenario(ProcessTestData.processWithInvalidScenarioProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Configured property requiredStringProperty (label) is missing")
@@ -133,7 +133,7 @@ class ValidationResourcesSpec
     }
 
     val duplicateIds = newDisplayableProcess(
-      "p1",
+      "p2",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)

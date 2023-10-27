@@ -67,8 +67,7 @@ object OidcUserInfo extends EitherCodecs with EpochSecondsCodecs {
     rolesClaims.map(decoderWithCustomRolesClaim).getOrElse(decoder)
 }
 
-class OidcProfileAuthentication(configuration: OAuth2Configuration)
-    extends AuthenticationStrategy[OidcUserInfo] {
+class OidcProfileAuthentication(configuration: OAuth2Configuration) extends AuthenticationStrategy[OidcUserInfo] {
 
   override def authenticateUser(
       accessTokenData: IntrospectedAccessTokenData,
@@ -93,9 +92,9 @@ class OidcProfileAuthentication(configuration: OAuth2Configuration)
   }
 
   private def authenticateUserBasedOnProfile(
-                                              accessTokenData: IntrospectedAccessTokenData,
-                                              getProfile: => Future[OidcUserInfo],
-                                              configuration: OAuth2Configuration
+      accessTokenData: IntrospectedAccessTokenData,
+      getProfile: => Future[OidcUserInfo],
+      configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext) = {
     getProfile.map { profile =>
       val userIdentity = profile.subject

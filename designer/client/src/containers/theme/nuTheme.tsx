@@ -38,19 +38,21 @@ const colors = {
     focusColor: d1,
     baseColor: l4,
     evenBackground: d3,
-    accent: "#668547",
+    cobalt: "#0058A9",
     mineShaft: "#3e3e3e",
     tundora: d3,
     scorpion: "#5D5D5D",
     silverChalice: "#afafaf",
     cerulean: "#0E9AE0",
+    doveGray: d4,
+    charcoal: "#444444",
 };
 
 const selectColors = {
     ...tintPrimary(colors.focusColor),
     neutral0: colors.secondaryBackground,
     neutral5: colors.secondaryColor,
-    neutral10: colors.accent,
+    neutral10: colors.cobalt,
     neutral20: colors.mutedColor,
     neutral30: colors.borderColor,
     neutral40: colors.secondaryColor,
@@ -74,7 +76,7 @@ const custom = {
     colors: {
         danger: "#DE350B",
         dangerLight: "#FFBDAD",
-        accent: "#0058a9",
+        accent: "#668547",
         warning: "#FF9A4D",
         error: "#f25c6e",
         ok: "#8fad60",

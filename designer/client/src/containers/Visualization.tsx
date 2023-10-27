@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph } from "../reducers/selectors/graph";
+import { getFetchedProcessDetails, getGraph, getProcessToDisplay } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -27,6 +27,7 @@ import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "..
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
+import { RootState } from "../reducers";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -67,6 +68,7 @@ function useProcessState(time = 10000) {
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
     const id = useSelector(getFetchedProcessDetails)?.id;
+    const processToDisplay = useSelector(getProcessToDisplay);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
@@ -74,9 +76,9 @@ function useCountsIfNeeded() {
     useEffect(() => {
         const countParams = VisualizationUrl.extractCountParams({ from, to });
         if (id && countParams) {
-            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to));
+            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to, processToDisplay));
         }
-    }, [dispatch, from, id, to]);
+    }, [dispatch, from, id, to, processToDisplay]);
 }
 
 function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
@@ -138,7 +140,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state));
+    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;

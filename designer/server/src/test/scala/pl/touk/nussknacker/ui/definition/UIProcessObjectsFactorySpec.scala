@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -161,7 +162,55 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
 
-    processObjects.componentsConfig.get(fragment.id) shouldBe empty
+    processObjects.processDefinition.fragmentInputs.get(fragment.id) shouldBe empty
+  }
+
+  test("should override component's parameter config with additionally provided config") {
+    val model: ModelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+      new EmptyProcessConfigCreator() {
+        override def services(
+            processObjectDependencies: ProcessObjectDependencies
+        ): Map[String, WithCategories[Service]] =
+          Map("enricher" -> WithCategories(TestService))
+      }
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.processDefinition.services("enricher").parameters.map(p => p.name -> p.validators) should contain
+    "paramDualEditor" -> List(
+      FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel")))
+    )
+  }
+
+  test("should override component's component groups with additionally provided config") {
+    val model: ModelData = LocalModelData(
+      ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+      new EmptyProcessConfigCreator() {
+        override def services(
+            processObjectDependencies: ProcessObjectDependencies
+        ): Map[String, WithCategories[Service]] =
+          Map("enricher" -> WithCategories(TestService))
+      }
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.componentGroups.map(c => (c.name, c.components.head.label)) should contain(
+      TestAdditionalUIConfigProvider.componentGroupName,
+      "enricher"
+    )
+  }
+
+  test("should override scenario properties with additionally provided config") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
+      .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
@@ -174,9 +223,10 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       TestFactory.user("userId"),
       fragmentDetails,
       isFragment = false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
+      TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
-      TestProcessingTypes.Streaming
+      TestProcessingTypes.Streaming,
+      TestAdditionalUIConfigProvider
     )
   }
 
