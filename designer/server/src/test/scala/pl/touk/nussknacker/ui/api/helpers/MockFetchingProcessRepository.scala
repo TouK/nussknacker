@@ -4,7 +4,7 @@ import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.listener.services.ScenarioShapeFetchStrategy.{
+import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchCanonical,
   FetchComponentsUsages,
   FetchDisplayable,
@@ -14,13 +14,14 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
-import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{
   BasicRepository,
   FetchingProcessRepository,
-  ScenarioComponentsUsagesHelper
+  ScenarioComponentsUsagesHelper,
+  ScenarioShapeFetchStrategy,
+  ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -30,7 +31,7 @@ import scala.language.higherKinds
 object MockFetchingProcessRepository {
 
   def withProcessesDetails(
-      processes: List[RepositoryScenarioWithDetails[DisplayableProcess]]
+      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]]
   )(implicit ec: ExecutionContext): MockFetchingProcessRepository = {
     val canonicals = processes.map { p => p.mapScenario(ProcessConverter.fromDisplayable) }
 
@@ -44,14 +45,14 @@ object MockFetchingProcessRepository {
 
 class MockFetchingProcessRepository private (
     override val dbRef: DbRef,
-    processes: List[RepositoryScenarioWithDetails[CanonicalProcess]]
+    processes: List[ScenarioWithDetailsEntity[CanonicalProcess]]
 )(implicit ec: ExecutionContext)
     extends FetchingProcessRepository[Future]
     with BasicRepository {
 
   override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
       q: ScenarioQuery
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[RepositoryScenarioWithDetails[PS]]] =
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(
       _.filter(p =>
         check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(
@@ -63,13 +64,13 @@ class MockFetchingProcessRepository private (
 
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[RepositoryScenarioWithDetails[PS]]] =
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)
 
   override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): Future[Option[RepositoryScenarioWithDetails[PS]]] =
+  ): Future[Option[ScenarioWithDetailsEntity[PS]]] =
     getUserProcesses[PS].map(_.find(p => p.idWithName.id == processId && p.processVersionId == versionId))
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessId]] =
@@ -91,29 +92,29 @@ class MockFetchingProcessRepository private (
   private def getUserProcesses[PS: ScenarioShapeFetchStrategy](implicit loggedUser: LoggedUser) =
     getProcesses[PS].map(_.filter(p => loggedUser.isAdmin || loggedUser.can(p.processCategory, Permission.Read)))
 
-  private def getProcesses[PS: ScenarioShapeFetchStrategy]: Future[List[RepositoryScenarioWithDetails[PS]]] = {
+  private def getProcesses[PS: ScenarioShapeFetchStrategy]: Future[List[ScenarioWithDetailsEntity[PS]]] = {
     val shapeStrategy: ScenarioShapeFetchStrategy[PS] = implicitly[ScenarioShapeFetchStrategy[PS]]
     Future(processes.map(p => convertProcess(p)(shapeStrategy)))
   }
 
   private def convertProcess[PS: ScenarioShapeFetchStrategy](
-      process: RepositoryScenarioWithDetails[CanonicalProcess]
-  ): RepositoryScenarioWithDetails[PS] = {
+      process: ScenarioWithDetailsEntity[CanonicalProcess]
+  ): ScenarioWithDetailsEntity[PS] = {
     val shapeStrategy: ScenarioShapeFetchStrategy[PS] = implicitly[ScenarioShapeFetchStrategy[PS]]
 
     shapeStrategy match {
       case NotFetch       => process.copy(json = ().asInstanceOf[PS])
-      case FetchCanonical => process.asInstanceOf[RepositoryScenarioWithDetails[PS]]
+      case FetchCanonical => process.asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchDisplayable =>
         process
           .mapScenario(canonical =>
             ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
           )
-          .asInstanceOf[RepositoryScenarioWithDetails[PS]]
+          .asInstanceOf[ScenarioWithDetailsEntity[PS]]
       case FetchComponentsUsages =>
         process
           .mapScenario(canonical => ScenarioComponentsUsagesHelper.compute(canonical))
-          .asInstanceOf[RepositoryScenarioWithDetails[PS]]
+          .asInstanceOf[ScenarioWithDetailsEntity[PS]]
     }
   }
 

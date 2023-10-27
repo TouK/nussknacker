@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import scala.xml.{Elem, NodeSeq, XML}
 
@@ -34,7 +34,7 @@ object PdfExporter extends LazyLogging {
 
   def exportToPdf(
       svg: String,
-      processDetails: RepositoryScenarioWithDetails[DisplayableProcess],
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       processActivity: ProcessActivity
   ): Array[Byte] = {
 
@@ -89,7 +89,7 @@ object PdfExporter extends LazyLogging {
 
   private def prepareFopXml(
       svg: String,
-      processDetails: RepositoryScenarioWithDetails[DisplayableProcess],
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       processActivity: ProcessActivity,
       displayableProcess: DisplayableProcess
   ) = {

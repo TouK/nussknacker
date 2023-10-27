@@ -33,7 +33,6 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -100,7 +99,7 @@ trait ProcessService {
 
   def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](query: ScenarioQuery)(
       implicit user: LoggedUser
-  ): Future[List[RepositoryScenarioWithDetails[PS]]]
+  ): Future[List[ScenarioWithDetailsEntity[PS]]]
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit]
 
@@ -160,7 +159,7 @@ class DBProcessService(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     doGetProcessWithDetails(
       new FetchScenarioFun[Id] {
-        override def apply[PS: ScenarioShapeFetchStrategy]: Future[Id[RepositoryScenarioWithDetails[PS]]] =
+        override def apply[PS: ScenarioShapeFetchStrategy]: Future[Id[ScenarioWithDetailsEntity[PS]]] =
           fetchingProcessRepository
             .fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id)
             .map(_.getOrElse(throw ProcessNotFoundError(processIdWithName.id.value.toString)))
@@ -179,7 +178,7 @@ class DBProcessService(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     doGetProcessWithDetails(
       new FetchScenarioFun[Id] {
-        override def apply[PS: ScenarioShapeFetchStrategy]: Future[RepositoryScenarioWithDetails[PS]] =
+        override def apply[PS: ScenarioShapeFetchStrategy]: Future[ScenarioWithDetailsEntity[PS]] =
           fetchingProcessRepository
             .fetchProcessDetailsForId[PS](processIdWithName.id, versionId)
             .map(_.getOrElse(throw ProcessVersionNotFoundError(processIdWithName.id, versionId)))
@@ -195,7 +194,7 @@ class DBProcessService(
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
     doGetProcessWithDetails(
       new FetchScenarioFun[List] {
-        override def apply[PS: ScenarioShapeFetchStrategy]: Future[List[RepositoryScenarioWithDetails[PS]]] =
+        override def apply[PS: ScenarioShapeFetchStrategy]: Future[List[ScenarioWithDetailsEntity[PS]]] =
           fetchingProcessRepository.fetchProcessesDetails(query)
       },
       options
@@ -203,7 +202,7 @@ class DBProcessService(
   }
 
   private abstract class FetchScenarioFun[F[_]] {
-    def apply[PS: ScenarioShapeFetchStrategy]: Future[F[RepositoryScenarioWithDetails[PS]]]
+    def apply[PS: ScenarioShapeFetchStrategy]: Future[F[ScenarioWithDetailsEntity[PS]]]
   }
 
   private def doGetProcessWithDetails[F[_]: Traverse](
@@ -230,12 +229,12 @@ class DBProcessService(
 
   override def getRawProcessesWithDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
-  )(implicit user: LoggedUser): Future[List[RepositoryScenarioWithDetails[PS]]] = {
+  )(implicit user: LoggedUser): Future[List[ScenarioWithDetailsEntity[PS]]] = {
     fetchingProcessRepository.fetchProcessesDetails(query)
   }
 
   private def validateAndReverseResolve(
-      processDetails: RepositoryScenarioWithDetails[CanonicalProcess],
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       validateAndResolve: Boolean
   ): ScenarioWithDetails = {
     if (validateAndResolve) {
@@ -246,7 +245,7 @@ class DBProcessService(
   }
 
   private def toDisplayableProcessDetailsWithoutValidation(
-      canonicalProcessDetails: RepositoryScenarioWithDetails[CanonicalProcess]
+      canonicalProcessDetails: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromRepositoryDetails(canonicalProcessDetails.mapScenario { canonical =>
       val displayableProcess = ProcessConverter.toDisplayable(
@@ -259,7 +258,7 @@ class DBProcessService(
   }
 
   private def validateAndReverseResolve(
-      processDetails: RepositoryScenarioWithDetails[CanonicalProcess]
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromRepositoryDetails(processDetails.mapScenario { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType

@@ -1,24 +1,24 @@
 package pl.touk.nussknacker.ui.listener.services
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.ui.listener.User
+import pl.touk.nussknacker.ui.listener.{ListenerScenarioWithDetails, User}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait PullProcessRepository {
 
-  def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
+  def fetchLatestProcessDetailsForProcessId(
       id: ProcessId
-  )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[RepositoryScenarioWithDetails[PS]]]
+  )(implicit listenerUser: User, ec: ExecutionContext): Future[Option[ListenerScenarioWithDetails]]
 
-  def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](processId: ProcessId, versionId: VersionId)(
+  def fetchProcessDetailsForId(processId: ProcessId, versionId: VersionId)(
       implicit listenerUser: User,
       ec: ExecutionContext
-  ): Future[Option[RepositoryScenarioWithDetails[PS]]]
+  ): Future[Option[ListenerScenarioWithDetails]]
 
-  def fetchProcessDetailsForName[PS: ScenarioShapeFetchStrategy](processName: ProcessName, versionId: VersionId)(
+  def fetchProcessDetailsForName(processName: ProcessName, versionId: VersionId)(
       implicit listenerUser: User,
       ec: ExecutionContext
-  ): Future[Option[RepositoryScenarioWithDetails[PS]]]
+  ): Future[Option[ListenerScenarioWithDetails]]
 
 }

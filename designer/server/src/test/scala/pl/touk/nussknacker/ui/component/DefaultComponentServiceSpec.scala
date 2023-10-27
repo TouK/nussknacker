@@ -36,9 +36,9 @@ import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{
   ConfigProcessCategoryService,
   DBProcessService,
@@ -766,7 +766,7 @@ class DefaultComponentServiceSpec
       (
           user: LoggedUser,
           componentId: ComponentId,
-          expected: List[(RepositoryScenarioWithDetails[_], List[NodeUsageData])]
+          expected: List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]
       ) =>
         val result = defaultComponentService
           .getComponentUsages(componentId)(user)
@@ -795,7 +795,7 @@ class DefaultComponentServiceSpec
 
   private def createDbProcessService(
       processCategoryService: ProcessCategoryService,
-      processes: List[RepositoryScenarioWithDetails[DisplayableProcess]] = Nil
+      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),

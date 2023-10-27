@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -103,7 +102,7 @@ class AutomaticMigration(
   }
 
   private def migrateOne(
-      processDetails: RepositoryScenarioWithDetails[DisplayableProcess]
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess]
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     // TODO: unsafe processId?
     migrator

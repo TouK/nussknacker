@@ -11,8 +11,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
-import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, repository}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -40,7 +39,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   override def fetchProcessesDetails[PS: ScenarioShapeFetchStrategy](
       query: ScenarioQuery
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[RepositoryScenarioWithDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[ScenarioWithDetailsEntity[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
       query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
@@ -65,7 +64,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
   )(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
-  ): DBIOAction[List[RepositoryScenarioWithDetails[PS]], NoStream, Effect.All with Effect.Read] = {
+  ): DBIOAction[List[ScenarioWithDetailsEntity[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
       lastActionPerProcess <- fetchActionsOrEmpty(
         actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, None)
@@ -107,14 +106,14 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   override def fetchLatestProcessDetailsForProcessId[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[RepositoryScenarioWithDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]] = {
     run(fetchLatestProcessDetailsForProcessIdQuery(id))
   }
 
   override def fetchProcessDetailsForId[PS: ScenarioShapeFetchStrategy](
       processId: ProcessId,
       versionId: VersionId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[RepositoryScenarioWithDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[ScenarioWithDetailsEntity[PS]]] = {
     val action = for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
         fetchProcessLatestVersionsQuery(processId)(ScenarioShapeFetchStrategy.NotFetch).result.headOption
@@ -158,7 +157,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
 
   private def fetchLatestProcessDetailsForProcessIdQuery[PS: ScenarioShapeFetchStrategy](
       id: ProcessId
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[RepositoryScenarioWithDetails[PS]]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): DB[Option[ScenarioWithDetailsEntity[PS]]] = {
     (for {
       latestProcessVersion <- OptionT[DB, ProcessVersionEntityData](
         fetchProcessLatestVersionsQuery(id).result.headOption
@@ -170,7 +169,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
   private def fetchProcessDetailsForVersion[PS: ScenarioShapeFetchStrategy](
       processVersion: ProcessVersionEntityData,
       isLatestVersion: Boolean
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, RepositoryScenarioWithDetails[PS]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, ScenarioWithDetailsEntity[PS]] = {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
@@ -207,8 +206,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbRef: DbRef, action
       isLatestVersion: Boolean,
       tags: Option[Seq[TagsEntityData]],
       history: Option[Seq[ScenarioVersion]]
-  ): RepositoryScenarioWithDetails[PS] = {
-    RepositoryScenarioWithDetails[PS](
+  ): ScenarioWithDetailsEntity[PS] = {
+    repository.ScenarioWithDetailsEntity[PS](
       id = process.name.value, // TODO: replace by Long / ProcessId
       processId = process.id,  // TODO: Remove it weh we will support Long / ProcessId
       name = process.name,

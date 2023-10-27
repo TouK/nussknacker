@@ -7,10 +7,10 @@ import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.Tool
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonsConfigVariant.ToolbarButtonVariant
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.ToolbarPanelType
 import pl.touk.nussknacker.ui.config.processtoolbar._
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 trait ProcessToolbarService {
-  def getProcessToolbarSettings(process: RepositoryScenarioWithDetails[_]): ProcessToolbarSettings
+  def getProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ProcessToolbarSettings
 }
 
 class ConfigProcessToolbarService(config: Config, getCategories: () => List[String]) extends ProcessToolbarService {
@@ -20,7 +20,7 @@ class ConfigProcessToolbarService(config: Config, getCategories: () => List[Stri
       .map(category => category -> ProcessToolbarsConfigProvider.create(config, Some(category)))
       .toMap
 
-  override def getProcessToolbarSettings(process: RepositoryScenarioWithDetails[_]): ProcessToolbarSettings = {
+  override def getProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ProcessToolbarSettings = {
     val toolbarConfig = categoriesProcessToolbarConfig.getOrElse(
       process.processCategory,
       throw new IllegalArgumentException(
@@ -40,7 +40,7 @@ object ProcessToolbarSettings {
 
   def fromConfig(
       processToolbarConfig: ProcessToolbarsConfig,
-      process: RepositoryScenarioWithDetails[_]
+      process: ScenarioWithDetailsEntity[_]
   ): ProcessToolbarSettings =
     ProcessToolbarSettings(
       createProcessToolbarId(processToolbarConfig, process),
@@ -81,7 +81,7 @@ object ToolbarPanel {
   ): ToolbarPanel =
     ToolbarPanel(`type`.toString, title, buttonsVariant, buttons)
 
-  def fromConfig(config: ToolbarPanelConfig, process: RepositoryScenarioWithDetails[_]): ToolbarPanel =
+  def fromConfig(config: ToolbarPanelConfig, process: ScenarioWithDetailsEntity[_]): ToolbarPanel =
     ToolbarPanel(
       config.identity,
       config.title.map(t => fillByProcessData(t, process)),
@@ -109,7 +109,7 @@ object ToolbarButton {
 
   import ToolbarHelper._
 
-  def fromConfig(config: ToolbarButtonConfig, process: RepositoryScenarioWithDetails[_]): ToolbarButton = ToolbarButton(
+  def fromConfig(config: ToolbarButtonConfig, process: ScenarioWithDetailsEntity[_]): ToolbarButton = ToolbarButton(
     config.`type`,
     config.name.map(t => fillByProcessData(t, process)),
     config.title.map(t => fillByProcessData(t, process)),
@@ -132,11 +132,11 @@ final case class ToolbarButton(
 
 private[process] object ToolbarHelper {
 
-  def createProcessToolbarId(config: ProcessToolbarsConfig, process: RepositoryScenarioWithDetails[_]): String =
+  def createProcessToolbarId(config: ProcessToolbarsConfig, process: ScenarioWithDetailsEntity[_]): String =
     s"${config.uuidCode}-${if (process.isArchived) "archived" else "not-archived"}-${if (process.isFragment) "fragment"
       else "scenario"}"
 
-  def fillByProcessData(text: String, process: RepositoryScenarioWithDetails[_], urlOption: Boolean = false): String = {
+  def fillByProcessData(text: String, process: ScenarioWithDetailsEntity[_], urlOption: Boolean = false): String = {
     val processName = if (urlOption) UriUtils.encodeURIComponent(process.name.value) else process.name.value
 
     text
@@ -144,7 +144,7 @@ private[process] object ToolbarHelper {
       .replace("$processId", process.processId.value.toString)
   }
 
-  def verifyCondition(condition: Option[ToolbarCondition], process: RepositoryScenarioWithDetails[_]): Boolean = {
+  def verifyCondition(condition: Option[ToolbarCondition], process: ScenarioWithDetailsEntity[_]): Boolean = {
     condition.nonEmpty && condition.exists(con => {
       if (con.shouldMatchAllOfConditions) {
         verifyFragmentCondition(con, process) && verifyArchivedCondition(con, process)
@@ -154,10 +154,10 @@ private[process] object ToolbarHelper {
     })
   }
 
-  private def verifyFragmentCondition(condition: ToolbarCondition, process: RepositoryScenarioWithDetails[_]) =
+  private def verifyFragmentCondition(condition: ToolbarCondition, process: ScenarioWithDetailsEntity[_]) =
     verifyCondition(process.isFragment, condition.fragment, condition.shouldMatchAllOfConditions)
 
-  private def verifyArchivedCondition(condition: ToolbarCondition, process: RepositoryScenarioWithDetails[_]) =
+  private def verifyArchivedCondition(condition: ToolbarCondition, process: ScenarioWithDetailsEntity[_]) =
     verifyCondition(process.isArchived, condition.archived, condition.shouldMatchAllOfConditions)
 
   // When we should match all conditions and expected condition is empty (not set) then we ignore this condition

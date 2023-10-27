@@ -22,9 +22,9 @@ import pl.touk.nussknacker.ui.component.DefaultComponentService.{
   toComponentUsagesInScenario
 }
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -73,7 +73,7 @@ object DefaultComponentService {
     componentsUiConfig.get(com.label)
 
   private[component] def toComponentUsagesInScenario(
-      process: RepositoryScenarioWithDetails[_],
+      process: ScenarioWithDetailsEntity[_],
       nodesUsagesData: List[NodeUsageData]
   ): ComponentUsagesInScenario =
     ComponentUsagesInScenario(

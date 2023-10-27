@@ -1,18 +1,17 @@
-package pl.touk.nussknacker.ui.listener.services
+package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails
 
 import java.time.Instant
 
 // TODO we should split ScenarioDetails and ScenarioShape (json)
-// This class is in the listener module, because it was necessary for PullProcessRepository
-// but it is kind of internal, intermediate representation of scenario details that is returned by designer's
-// internal FetchingProcessRepository
-final case class RepositoryScenarioWithDetails[ScenarioShape](
+final case class ScenarioWithDetailsEntity[ScenarioShape](
     id: String, // It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
     name: ProcessName,
     processId: ProcessId, // TODO: Remove it when we will support Long / ProcessId
@@ -39,10 +38,10 @@ final case class RepositoryScenarioWithDetails[ScenarioShape](
     json: ScenarioShape,
     history: Option[List[scenariodetails.ScenarioVersion]],
     modelVersion: Option[Int]
-) {
+) extends ListenerScenarioWithDetails {
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)
 
-  def mapScenario[NewShape](action: ScenarioShape => NewShape): RepositoryScenarioWithDetails[NewShape] =
+  def mapScenario[NewShape](action: ScenarioShape => NewShape): ScenarioWithDetailsEntity[NewShape] =
     copy(json = action(json))
 
   def toEngineProcessVersion: EngineProcessVersion = EngineProcessVersion(
@@ -52,5 +51,13 @@ final case class RepositoryScenarioWithDetails[ScenarioShape](
     user = modifiedBy,
     modelVersion = modelVersion
   )
+
+  override def scenarioGraph: DisplayableProcess = json match {
+    case displayable: DisplayableProcess => displayable
+    case other =>
+      throw new IllegalStateException(
+        s"ScenarioWithDetailsEntity doesn't hold DisplayableProcess, instead of this it holds: $other"
+      )
+  }
 
 }

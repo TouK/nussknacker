@@ -15,7 +15,6 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.listener.services.{RepositoryScenarioWithDetails, ScenarioShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
@@ -194,7 +193,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val details: RepositoryScenarioWithDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
+    val details: ScenarioWithDetailsEntity[CanonicalProcess] = fetchLatestProcessDetails(processName)
     details.processVersionId shouldBe VersionId.initialVersionId
 
     // change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
@@ -333,7 +332,7 @@ class DBFetchingProcessRepositorySpec
 
   private def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       name: ProcessName
-  ): RepositoryScenarioWithDetails[PS] = {
+  ): ScenarioWithDetailsEntity[PS] = {
     val fetchedProcess = fetching
       .fetchProcessId(name)
       .futureValue

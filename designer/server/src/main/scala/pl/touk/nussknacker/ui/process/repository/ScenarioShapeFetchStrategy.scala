@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.listener.services
+package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages

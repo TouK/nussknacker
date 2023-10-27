@@ -22,12 +22,15 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository}
+import pl.touk.nussknacker.ui.process.repository.{
+  DBIOActionRunner,
+  DbProcessActionRepository,
+  ScenarioWithDetailsEntity
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -166,7 +169,7 @@ class NotificationServiceTest
       clock
     ) {
       override protected def validateBeforeDeploy(
-          processDetails: RepositoryScenarioWithDetails[CanonicalProcess],
+          processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           actionId: ProcessActionId
       )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
         Future.successful(

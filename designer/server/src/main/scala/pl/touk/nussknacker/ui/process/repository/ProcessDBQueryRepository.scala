@@ -6,7 +6,6 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.listener.services.ScenarioShapeFetchStrategy
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 

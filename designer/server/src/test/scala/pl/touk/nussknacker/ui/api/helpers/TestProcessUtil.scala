@@ -12,10 +12,10 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
-import pl.touk.nussknacker.ui.listener.services.RepositoryScenarioWithDetails
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
+import pl.touk.nussknacker.ui.process.{ScenarioWithDetailsConversions, repository}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.time.Instant
 import java.util.UUID
@@ -45,7 +45,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       lastAction: Option[ProcessActionType] = None,
       json: Option[DisplayableProcess] = None
-  ): RepositoryScenarioWithDetails[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
 
   def createFragment(
@@ -55,7 +55,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None
-  ): RepositoryScenarioWithDetails[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(
       name,
       category,
@@ -71,7 +71,7 @@ object TestProcessUtil {
       category: Category = TestCategories.Category1,
       isArchived: Boolean = false,
       isFragment: Boolean = false
-  ): RepositoryScenarioWithDetails[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(
       displayable.id,
       category,
@@ -100,11 +100,11 @@ object TestProcessUtil {
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
       history: Option[List[ScenarioVersion]] = None
-  ): RepositoryScenarioWithDetails[DisplayableProcess] = {
+  ): ScenarioWithDetailsEntity[DisplayableProcess] = {
     val jsonData = json
       .map(_.copy(id = name, processingType = processingType, category = category))
       .getOrElse(createEmptyJson(name, processingType, category))
-    RepositoryScenarioWithDetails[DisplayableProcess](
+    repository.ScenarioWithDetailsEntity[DisplayableProcess](
       id = name,
       name = ProcessName(name),
       processId = ProcessId(generateId()),
