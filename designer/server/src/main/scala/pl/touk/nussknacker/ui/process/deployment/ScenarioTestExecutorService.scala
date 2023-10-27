@@ -11,30 +11,32 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
-  def testProcess(
+  def testProcess[T](
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       category: String,
       processingType: ProcessingType,
       scenarioTestData: ScenarioTestData,
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults]
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
 
 }
 
 class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, dispatcher: DeploymentManagerDispatcher)
     extends ScenarioTestExecutorService {
 
-  override def testProcess(
+  override def testProcess[T](
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       category: String,
       processingType: ProcessingType,
-      scenarioTestData: ScenarioTestData
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults] = {
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
       manager = dispatcher.deploymentManagerUnsafe(processingType)
-      testResult <- manager.test(id.name, resolvedProcess, scenarioTestData)
+      testResult <- manager.test[T](id.name, resolvedProcess, scenarioTestData, variableEncoder)
     } yield testResult
   }
 

@@ -283,7 +283,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val model =
       modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
 
-    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun)
+    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
 
     the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
@@ -492,7 +492,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ): _*
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, testProcess, collectingListener)
     val lastResult = variablesForKey(collectingListener, id).last
     aggregates.foreach { case (name, expected) =>
@@ -512,8 +512,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       key: String,
       model: LocalModelData,
       testProcess: CanonicalProcess
-  ): List[TestProcess.NodeResult] = {
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+  ): List[TestProcess.NodeResult[Any]] = {
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, testProcess, collectingListener)
     variablesForKey(collectingListener, key)
   }
@@ -542,8 +542,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def variablesForKey(
       collectingListener: ResultsCollectingListener,
       key: String
-  ): List[TestProcess.NodeResult] = {
-    collectingListener.results
+  ): List[TestProcess.NodeResult[Any]] = {
+    collectingListener
+      .results[Any]
       .nodeResults("end")
       .filter(_.variableTyped(VariableConstants.KeyVariableName).contains(key))
   }

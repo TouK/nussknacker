@@ -6,7 +6,6 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -564,18 +563,18 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       config: Config = ConfigFactory.load()
-  ): TestResults = {
+  ): TestResults[Any] = {
     // We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
+      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration(), identity)
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): NodeResult =
+  private def nodeResult(count: Int, vars: (String, Any)*): NodeResult[Any] =
     nodeResult(count, "id", vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): NodeResult =
-    NodeResult(Context(s"proc1-$sourceId-0-$count", Map(vars: _*)))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): NodeResult[Any] =
+    NodeResult(ResultContext[Any](s"proc1-$sourceId-0-$count", Map(vars: _*)))
 
 }

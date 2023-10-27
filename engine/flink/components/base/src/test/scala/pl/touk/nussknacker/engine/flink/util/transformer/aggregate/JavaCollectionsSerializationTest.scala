@@ -55,10 +55,11 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
 
     val model = modelData(List(record))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, process, collectingListener)
 
-    val result = collectingListener.results
+    val result = collectingListener
+      .results[Any]
       .nodeResults("end")
       .map {
         _.variableTyped("input")

@@ -59,11 +59,12 @@ trait DeploymentManager extends AutoCloseable {
 
   def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit]
 
-  def test(
+  def test[T](
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestResults]
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestResults[T]]
 
   def getProcessStates(name: ProcessName)(
       implicit freshnessPolicy: DataFreshnessPolicy

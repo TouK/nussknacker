@@ -75,7 +75,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     results.nodeResults shouldNot contain key sinkId
   }
 
-  private def initializeListener = ResultsCollectingListenerHolder.registerRun
+  private def initializeListener = ResultsCollectingListenerHolder.registerRun(identity)
 
   private def modelData(
       list: List[TestRecord] = List(),
@@ -101,16 +101,16 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       model: LocalModelData,
       testProcess: CanonicalProcess,
       collectingListener: ResultsCollectingListener
-  ): TestProcess.TestResults = {
+  ): TestProcess.TestResults[Any] = {
     runProcess(model, testProcess)
-    collectingListener.results
+    collectingListener.results[Any]
   }
 
-  private def extractResultValues(results: TestProcess.TestResults): List[String] = results
+  private def extractResultValues(results: TestProcess.TestResults[Any]): List[String] = results
     .nodeResults(sinkId)
     .map(_.variableTyped[String](resultVariableName).get)
 
-  private def extractContextIds(results: TestProcess.TestResults): List[String] = results
+  private def extractContextIds(results: TestProcess.TestResults[Any]): List[String] = results
     .nodeResults(forEachNodeResultId)
     .map(_.context.id)
 

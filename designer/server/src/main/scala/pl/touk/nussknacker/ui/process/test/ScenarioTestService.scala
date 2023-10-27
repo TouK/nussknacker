@@ -85,8 +85,9 @@ class ScenarioTestService(
   def performTest[T](
       idWithName: ProcessIdWithName,
       displayableProcess: DisplayableProcess,
-      rawTestData: RawScenarioTestData
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
+      rawTestData: RawScenarioTestData,
+      testResultsVariableEncoder: Any => T
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
       preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
@@ -101,19 +102,19 @@ class ScenarioTestService(
         canonical,
         displayableProcess.category,
         displayableProcess.processingType,
-        scenarioTestData
+        scenarioTestData,
+        testResultsVariableEncoder
       )
-      _ <- {
-        assertTestResultsAreNotTooBig(testResults)
-      }
+      _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }
 
   def performTest[T](
       idWithName: ProcessIdWithName,
       displayableProcess: DisplayableProcess,
-      parameterTestData: TestSourceParameters
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
+      parameterTestData: TestSourceParameters,
+      testResultsVariableEncoder: Any => T
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val canonical = toCanonicalProcess(displayableProcess)
     for {
       testResults <- testExecutorService.testProcess(
@@ -121,7 +122,8 @@ class ScenarioTestService(
         canonical,
         displayableProcess.category,
         displayableProcess.processingType,
-        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions)
+        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
+        testResultsVariableEncoder
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
@@ -132,7 +134,7 @@ class ScenarioTestService(
     processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 
-  private def assertTestResultsAreNotTooBig(testResults: TestResults): Future[Unit] = {
+  private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
     if (testDataResultApproxByteSize > testDataSettings.resultsMaxBytes) {
       logger.info(
@@ -144,7 +146,7 @@ class ScenarioTestService(
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults): Map[String, NodeCount] = {
+  private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(
         nresults.size.toLong,

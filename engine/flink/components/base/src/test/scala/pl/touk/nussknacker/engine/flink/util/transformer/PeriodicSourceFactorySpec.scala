@@ -23,7 +23,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with Matchers
     val sinkId = "sinkId"
     val input  = "some value"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     val model              = LocalModelData(ConfigFactory.empty(), WithListener(collectingListener))
     val scenario = ScenarioBuilder
       .streaming("test")
@@ -44,7 +44,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with Matchers
     val id = stoppableEnv.executeAndWaitForStart(scenario.id)
     try {
       eventually {
-        val results = collectingListener.results.nodeResults.get(sinkId)
+        val results = collectingListener.results[Any].nodeResults.get(sinkId)
         results.flatMap(_.headOption).flatMap(_.variableTyped[String]("input")) shouldBe Some(input)
       }
     } finally {

@@ -68,7 +68,7 @@ object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
       new TestServiceInvocationCollector(resultsCollectingListener.runId)

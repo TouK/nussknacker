@@ -24,8 +24,6 @@ object Context {
 
   def apply(id: String): Context = Context(id, Map.empty, None)
 
-  def apply(id: String, variables: Map[String, Any]): Context = Context(id, variables, None)
-
 }
 
 case class ContextId(value: String)
