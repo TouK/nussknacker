@@ -1861,7 +1861,7 @@ lazy val designer = (project in file("designer/server"))
     }
   )
   .dependsOn(
-    interpreter, // TODO: remove dependency to interpreter - see BaseModelData for details
+    interpreter,
     processReports,
     security,
     deploymentManagerApi,

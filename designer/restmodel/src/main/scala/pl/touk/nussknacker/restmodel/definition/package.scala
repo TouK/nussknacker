@@ -6,7 +6,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -45,19 +45,8 @@ package object definition {
   }
 
   @JsonCodec(encodeOnly = true) final case class UIClazzDefinition(
-      clazzName: TypingResult,
-      methods: Map[String, UIMethodInfo],
-      staticMethods: Map[String, UIMethodInfo]
+      clazzName: TypingResult
   )
-
-  @JsonCodec(encodeOnly = true) final case class UIMethodInfo(
-      parameters: List[UIBasicParameter],
-      refClazz: TypingResult,
-      description: Option[String],
-      varArgs: Boolean
-  )
-
-  @JsonCodec(encodeOnly = true) final case class UIBasicParameter(name: String, refClazz: TypingResult)
 
   @JsonCodec(encodeOnly = true) final case class UIValueParameter(
       name: String,
@@ -74,11 +63,7 @@ package object definition {
       additionalVariables: Map[String, TypingResult],
       variablesToHide: Set[String],
       branchParam: Boolean
-  ) {
-
-    def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
-
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
       parameters: List[UIParameter],
