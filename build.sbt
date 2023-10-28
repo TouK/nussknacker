@@ -835,6 +835,14 @@ lazy val benchmarks = (project in file("benchmarks"))
         "org.apache.flink" % "flink-runtime"        % flinkV
       )
     },
+    Jmh / run / javaOptions ++= (
+      if (System.getProperty("os.name").startsWith("Windows")) {
+        // Allow long classpath on Windows, JMH requires that classpath and temp directory have common root path,
+        // so we're always setting it in sbt's target directory (https://github.com/sbt/sbt-jmh/issues/241)
+        Seq("-Djmh.separateClasspathJAR=true", "\"-Djava.io.tmpdir=" + target.value + "\"")
+      } else
+        Seq.empty
+    ),
     // To avoid Intellij message that jmh generated classes are shared between main and test
     Jmh / classDirectory                 := (Test / classDirectory).value,
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
