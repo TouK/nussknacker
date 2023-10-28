@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 
 sealed trait ScenarioShapeFetchStrategy[ScenarioShape]
 

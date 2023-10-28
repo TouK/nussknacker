@@ -21,9 +21,11 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -160,7 +162,7 @@ object ProcessTestData {
       category: String = TestCategories.TestCat
   ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
+    validation.ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(

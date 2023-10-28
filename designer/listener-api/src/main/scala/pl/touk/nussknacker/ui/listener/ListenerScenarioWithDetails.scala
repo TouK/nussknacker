@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.ui.listener
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, ScenarioVersion, VersionId}
 
 import java.time.Instant
 
@@ -49,7 +47,7 @@ trait ListenerScenarioWithDetails {
 
   def scenarioGraph: DisplayableProcess
 
-  def history: Option[List[scenariodetails.ScenarioVersion]]
+  def history: Option[List[ScenarioVersion]]
 
   def modelVersion: Option[Int]
 }

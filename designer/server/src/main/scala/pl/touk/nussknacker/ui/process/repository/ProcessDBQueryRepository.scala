@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion
+import pl.touk.nussknacker.engine.api.process
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
@@ -92,7 +92,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 object ProcessDBQueryRepository {
 
   def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[ProcessAction]): ScenarioVersion =
-    ScenarioVersion(
+    process.ScenarioVersion(
       processVersionId = versionData.id,
       createDate = versionData.createDate.toInstant,
       modelVersion = versionData.modelVersion,

@@ -3,12 +3,11 @@ package pl.touk.nussknacker.ui.util
 import org.apache.commons.io.IOUtils
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.{StreamMetaData, process}
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.{ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
@@ -19,7 +18,7 @@ import java.time.Instant
 class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   private val history = List(
-    ScenarioVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech", Option.empty, List.empty)
+    process.ScenarioVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech", Option.empty, List.empty)
   )
 
   it should "export process to " in {

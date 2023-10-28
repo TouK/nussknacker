@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.instances.future._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioShapeFetchStrategy.{
   FetchDisplayable,
   NotFetch
 }
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData

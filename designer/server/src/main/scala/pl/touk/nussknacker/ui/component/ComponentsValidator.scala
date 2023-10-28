@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,

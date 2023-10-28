@@ -17,8 +17,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     `pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails`
   * `pl.touk.nussknacker.restmodel.processdetails.ProcessDetails` and `pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails`
     type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
-  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.engine.api.process.ScenarioVersion`
   * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
+* [#4959](https://github.com/TouK/nussknacker/pull/4959) `listener-api` module become decoupled from `restmodel` module. 
+  Some classes were moved to `extensions-api` module to make it possible:
+  * `pl.touk.nussknacker.restmodel.displayedgraph` package was renamed to `pl.touk.nussknacker.engine.api.displayedgraph`
+  * `pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess` was moved to `pl.touk.nussknacker.restmodel.validation` package
+  * `pl.touk.nussknacker.restmodel.process.ProcessingType` was moved to `pl.touk.nussknacker.engine.api.process` package
+  * `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion` was moved to `pl.touk.nussknacker.engine.api.process` package
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

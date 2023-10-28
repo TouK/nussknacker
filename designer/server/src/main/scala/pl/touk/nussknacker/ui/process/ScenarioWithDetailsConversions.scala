@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {

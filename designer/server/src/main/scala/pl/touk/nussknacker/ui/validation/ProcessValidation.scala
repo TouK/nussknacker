@@ -5,6 +5,8 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
@@ -12,9 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefiniti
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory

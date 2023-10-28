@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}

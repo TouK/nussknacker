@@ -5,10 +5,12 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.validation
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
@@ -190,7 +192,12 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       "sourceId" -> NodeTypingData(Map("meta" -> meta), Some(List.empty), Map.empty)
     )
 
-    Right(ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
+    Right(
+      validation.ValidatedDisplayableProcess(
+        displayableProcess,
+        ValidationResult.success.copy(nodeResults = nodeResults)
+      )
+    )
   }
 
   private def createDbProcessService(

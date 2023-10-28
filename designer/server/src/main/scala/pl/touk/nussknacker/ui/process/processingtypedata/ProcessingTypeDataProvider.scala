@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 
 /**
  *  NOTICE: This is probably *temporary* solution. We want to be able to:
