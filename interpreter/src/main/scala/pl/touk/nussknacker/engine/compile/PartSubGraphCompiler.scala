@@ -58,20 +58,12 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
           toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty)
         )
 
-      case splittednode.FilterNode(f @ Filter(id, expression, _, _), nextTrue, nextFalse) =>
+      case splittednode.FilterNode(f @ Filter(id, _, _, _), nextTrue, nextFalse) =>
         val NodeCompilationResult(typingInfo, _, _, compiledExpression, _) =
-          nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean], outputVar = None)
-
-        val additionalValidationResult =
-          MandatoryParameterValidator.isValid("$expression", expression.expression, None)(NodeId(id))
-
-        val compiledExpressionWithAdditionalValidation = additionalValidationResult match {
-          case Validated.Valid(_)   => compiledExpression
-          case Validated.Invalid(e) => Validated.Invalid(NonEmptyList.one(e))
-        }
+          nodeCompiler.compileFilter(f, ctx)
 
         CompilationResult.map3(
-          f0 = toCompilationResult(compiledExpressionWithAdditionalValidation, typingInfo),
+          f0 = toCompilationResult(compiledExpression, typingInfo),
           f1 = nextTrue.map(next => compile(next, ctx)).sequence,
           f2 = nextFalse.map(next => compile(next, ctx)).sequence
         )((expr, next, nextFalse) =>
