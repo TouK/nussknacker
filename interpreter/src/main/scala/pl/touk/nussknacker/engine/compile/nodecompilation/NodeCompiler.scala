@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   JoinGenericNodeTransformation,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -293,6 +293,20 @@ class NodeCompiler(
       objExpression.product(objCases),
       expressionCompilation.flatMap(_.expressionType)
     )
+  }
+
+  def compileFilter(filter: Filter, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): NodeCompilationResult[expression.Expression] = {
+    val compilationResult: NodeCompilationResult[expression.Expression] =
+      compileExpression(filter.expression, ctx, expectedType = Typed[Boolean], outputVar = None)
+
+    val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
+      MandatoryParameterValidator
+        .isValid(NodeExpressionId.DefaultExpressionId, filter.expression.expression, None)
+        .toValidatedNel
+
+    combineCompiledObjectErrors(compilationResult, additionalValidationResult)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
@@ -717,6 +731,22 @@ class NodeCompiler(
       NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)
     }
 
+  }
+
+  private def combineCompiledObjectErrors[T](
+      compilationResult: NodeCompilationResult[T],
+      validationResult: ValidatedNel[ProcessCompilationError, Unit]
+  ): NodeCompilationResult[T] = {
+    val newCompiledObject: ValidatedNel[ProcessCompilationError, T] =
+      (compilationResult.compiledObject, validationResult) match {
+        case (Validated.Invalid(compilationErrors), Validated.Invalid(validationErrors)) =>
+          Validated.Invalid(compilationErrors ++ validationErrors.toList)
+        case (_, Validated.Invalid(validationErrors)) =>
+          Validated.Invalid(validationErrors)
+        case _ =>
+          compilationResult.compiledObject
+      }
+    compilationResult.copy(compiledObject = newCompiledObject)
   }
 
 }
