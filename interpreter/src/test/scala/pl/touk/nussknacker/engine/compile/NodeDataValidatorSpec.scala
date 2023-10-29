@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -169,6 +169,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
       case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
+    }
+    validate(Filter("filter", ""), ValidationContext.empty) should matchPattern {
+      case ValidationPerformed(
+            List(EmptyMandatoryParameter(_, _, NodeExpressionId.DefaultExpressionId, "filter")),
+            _,
+            _
+          ) =>
     }
   }
 
