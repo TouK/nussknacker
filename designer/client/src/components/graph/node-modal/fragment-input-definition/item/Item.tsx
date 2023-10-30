@@ -28,11 +28,6 @@ export function Item(props: ItemProps): JSX.Element {
     const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
-    const localInputMode = useMemo(
-        () => ["Fixed list", "Any value with suggestions", "Any value"].map((option) => ({ value: option, label: option })),
-        [],
-    );
-    const [selectedInputMode, setSelectedInputMode] = useState<InputMode>(localInputMode[0].value as InputMode);
 
     const getCurrentOption = useCallback(
         (field: Parameter) => {
@@ -46,7 +41,7 @@ export function Item(props: ItemProps): JSX.Element {
     const openSettingMenu = () => {
         onChange(`${path}.settingsOpen`, !item.settingsOpen);
         const { value } = getCurrentOption(item);
-        const fields = validateFieldsForCurrentOption(value, selectedInputMode);
+        const fields = validateFieldsForCurrentOption(value, "selectedInputMode");
         addNewFields(fields, item, onChange, path);
     };
 
@@ -66,7 +61,7 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
-                        const fields = validateFieldsForCurrentOption(value, selectedInputMode);
+                        const fields = validateFieldsForCurrentOption(value, "selectedInputMode");
                         addNewFields(fields, item, onChange, path);
                     }}
                     value={getCurrentOption(item)}
@@ -82,9 +77,6 @@ export function Item(props: ItemProps): JSX.Element {
                     onChange={onChange}
                     currentOption={getCurrentOption(item)}
                     variableTypes={variableTypes}
-                    localInputMode={localInputMode}
-                    selectedInputMode={selectedInputMode}
-                    setSelectedInputMode={setSelectedInputMode}
                 />
             )}
         </div>

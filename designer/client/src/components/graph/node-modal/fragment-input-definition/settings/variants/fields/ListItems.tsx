@@ -1,10 +1,11 @@
 import { Chip } from "@mui/material";
 import React from "react";
-import { onChangeType } from "../item";
+import { onChangeType } from "../../../item";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
+import { Option } from "../../../TypeSelect";
 
 interface ListItemsProps {
-    fixedValueList: string[];
+    fixedValueList: Option[];
     onChange: (path: string, value: onChangeType) => void;
     path: string;
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import { Switch, Typography, styled } from "@mui/material";
-import { NodeRow } from "../../../node-modal/NodeDetailsContent/NodeStyled";
+import { NodeRow } from "../../../../NodeDetailsContent/NodeStyled";
 
 export const SettingsWrapper = styled("div")`
     padding: 10px;

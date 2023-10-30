@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, SettingRow, SyledFormControlLabel } from "./StyledSettingsComponnets";
 import { FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
-import { PresetType, onChangeType } from "../item";
+import { PresetType, onChangeType } from "../../../item";
 
 interface PresetTypeGroup {
     onChange: (path: string, value: onChangeType) => void;

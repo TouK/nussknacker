@@ -1,14 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { Option } from "../FieldsSelect";
-import StringSetting from "./StringSetting";
-import InitialValue from "./InitialValue";
-import { useTranslation } from "react-i18next";
-import { FormControlLabel } from "@mui/material";
-import { InputMode, PresetType, UpdatedItem, onChangeType } from "../item";
-import ValidationsFields from "./ValidationsFields";
+import { InputMode, UpdatedItem, onChangeType } from "../item";
 import { VariableTypes } from "../../../../../types";
-import { TextAreaNodeWithFocus } from "../../../../withFocus";
-import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./StyledSettingsComponnets";
+import { isStringOrBooleanVariant } from "../item/utils";
+import { DefaultVariant, StringBooleanVariant } from "./variants";
 
 interface Settings {
     item: UpdatedItem;
@@ -16,36 +11,14 @@ interface Settings {
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     currentOption: Option;
-    localInputMode: Option[];
-    selectedInputMode: InputMode;
-    setSelectedInputMode: React.Dispatch<React.SetStateAction<InputMode>>;
 }
 
 export default function Settings(props: Settings) {
-    const { item, path, onChange } = props;
-    const [presetType, setPresetType] = useState<PresetType>("Preset");
-    const { t } = useTranslation();
+    const { currentOption } = props;
 
-    return (
-        <SettingsWrapper>
-            <SettingRow>
-                <SettingLabelStyled>{t("fragment.required", "Required:")}</SettingLabelStyled>
-                <FormControlLabel
-                    control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
-                    label=""
-                />
-            </SettingRow>
-            <StringSetting {...props} presetType={presetType} setPresetType={setPresetType} />
-            <ValidationsFields {...props} />
-            <InitialValue {...props} />
-            <SettingRow>
-                <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
-                    value={item.hintText}
-                    onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
-                    style={{ width: "70%" }}
-                />
-            </SettingRow>
-        </SettingsWrapper>
-    );
+    if (isStringOrBooleanVariant(currentOption.value)) {
+        return <StringBooleanVariant {...props} />;
+    }
+
+    return <DefaultVariant {...props} />;
 }

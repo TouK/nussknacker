@@ -1,11 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FragmentValidation, onChangeType } from "../item";
+import { FragmentValidation, onChangeType } from "../../../item";
 import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
-import { ExpressionLang } from "../../editors/expression/types";
-import { VariableTypes } from "../../../../../types";
-import EditableEditor from "../../editors/EditableEditor";
-import { NodeInput } from "../../../../withFocus";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import { VariableTypes } from "../../../../../../../types";
+import EditableEditor from "../../../../editors/EditableEditor";
+import { NodeInput } from "../../../../../../withFocus";
 
 interface ValidationFields extends Omit<FragmentValidation, "validation"> {
     onChange: (path: string, value: onChangeType) => void;

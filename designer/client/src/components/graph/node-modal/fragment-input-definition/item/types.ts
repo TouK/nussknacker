@@ -1,4 +1,5 @@
 import { Parameter } from "../../../../../types";
+import { Option } from "../TypeSelect";
 
 export type UpdatedItem = StringAndBoolean & AllValueExcludeStringAndBoolean;
 
@@ -22,11 +23,15 @@ export interface FragmentValidation {
 export interface AllValueExcludeStringAndBoolean extends FragmentValidation, DefaultItemType {}
 
 export type PresetType = "Preset" | "User defined list";
-export type InputMode = "Fixed list" | "Any value with suggestions" | "Any value";
+export enum InputMode {
+    "FixedList" = "FixedList",
+    "AnyValueWithSuggestions" = "AnyValueWithSuggestions",
+    "AnyValue" = "AnyValue",
+}
 
 export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
     allowOnlyValuesFromFixedValuesList: boolean;
-    fixedValueList?: string[];
+    fixedValueList?: Option[];
     presetSelection: string;
 }
 
@@ -42,4 +47,28 @@ interface DefaultFields {
 interface DefaultFieldsWithValidation {
     validationExpression: string;
     validationErrorMessage: string;
+}
+
+// NEW ONE
+interface ParameterDetails {
+    required: boolean;
+    validation: boolean;
+    validationExpression: string;
+    validationErrorMessage: string;
+    initialValue: string | undefined;
+    hintText: string | undefined;
+}
+
+interface FixedListParameterDetails {
+    inputMode: InputMode.FixedList;
+    required: boolean;
+    presetType: PresetType;
+}
+interface AnyValueWithSuggestionsParameterDetails {
+    inputMode: InputMode.AnyValueWithSuggestions;
+    presetType: PresetType;
+}
+interface AnyValueParameterDetails {
+    inputMode: InputMode.AnyValue;
+    presetType: PresetType;
 }

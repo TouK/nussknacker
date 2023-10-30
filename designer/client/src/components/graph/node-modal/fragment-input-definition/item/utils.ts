@@ -1,4 +1,4 @@
-import { Fields, InputMode, UpdatedItem, onChangeType } from ".";
+import { Fields, InputMode, UpdatedItem, onChangeType, AllValueExcludeStringAndBoolean, StringAndBoolean } from ".";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
     Object.entries(fields).map(([key, value]) => {
@@ -8,17 +8,20 @@ export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path:
     });
 };
 
-export const validateFieldsForCurrentOption = (currentOption: string, inputMode: InputMode) => {
+export const validateFieldsForCurrentOption = (
+    currentOption: string,
+    inputMode: InputMode,
+): AllValueExcludeStringAndBoolean | StringAndBoolean => {
     const defaultOption = {
         required: false,
         hintText: "",
         initialValue: "",
     };
 
-    if (isValidOption(currentOption) && inputMode !== "Any value with suggestions") {
+    if (isStringOrBooleanVariant(currentOption) && inputMode !== "AnyValueWithSuggestions") {
         return {
             ...defaultOption,
-            inputMode: "Fixed list" as InputMode,
+            inputMode: "Fixed list",
             allowOnlyValuesFromFixedValuesList: true,
             fixedValueList: [],
             presetSelection: "",
@@ -32,6 +35,6 @@ export const validateFieldsForCurrentOption = (currentOption: string, inputMode:
     }
 };
 
-export const isValidOption = (value: string) => {
+export const isStringOrBooleanVariant = (value: string) => {
     return value?.includes("String") || value?.includes("Boolean");
 };
