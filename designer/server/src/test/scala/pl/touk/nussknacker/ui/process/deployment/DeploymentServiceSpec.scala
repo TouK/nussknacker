@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.instances.list._
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
@@ -24,16 +25,16 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider
 }
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -279,7 +280,7 @@ class DeploymentServiceSpec
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.head.actions.map(_.actionType) should be(
+    processDetails.history.value.head.actions.map(_.actionType) should be(
       List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     )
   }
@@ -304,7 +305,7 @@ class DeploymentServiceSpec
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.head.actions.map(_.actionType) should be(
+    processDetails.history.value.head.actions.map(_.actionType) should be(
       List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     )
   }
@@ -591,39 +592,36 @@ class DeploymentServiceSpec
     state.status shouldBe SimpleStateStatus.DuringDeploy
   }
 
-  test("Should return valid process list") {
-    prepareProcessesInProgress
-
-    val processes = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isFragment = Some(false)))
-      .dbioActionValues
-
-    val resultWithCachedInProgress = deploymentService.fetchProcessStatesForProcesses(processes).futureValue
-
-    val resultWithoutCachedInProgress = processes
-      .map(baseProcess => Future.successful(baseProcess.name) zip deploymentService.getProcessState(baseProcess))
-      .sequence
-      .futureValue
-      .toMap
-
-    resultWithCachedInProgress shouldBe resultWithoutCachedInProgress
-  }
-
   test("Should enrich BaseProcessDetails") {
     prepareProcessesInProgress
 
     val processesDetails = fetchingProcessRepository
-      .fetchProcessesDetails[Unit](ProcessesQuery.empty.toRepositoryQuery)
+      .fetchProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
-    val processesDetailsWithState = deploymentService.enrichDetailsWithProcessState(processesDetails).futureValue
+    val processesDetailsWithState = deploymentService
+      .enrichDetailsWithProcessState(
+        processesDetails
+          .map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult)
+      )
+      .futureValue
 
-    processesDetailsWithState.map(_.state.map(_.status.name)) shouldBe List(
+    val statesBasedOnCachedInProgressActionTypes = processesDetailsWithState.map(_.state)
+
+    statesBasedOnCachedInProgressActionTypes.map(_.map(_.status.name)) shouldBe List(
       Some("DURING_DEPLOY"),
       Some("DURING_CANCEL"),
       Some("RUNNING"),
       None
     )
+
+    val statesBasedOnNotCachedInProgressActionTypes =
+      processesDetails
+        .map(pd => Option(pd).filterNot(_.isFragment).map(deploymentService.getProcessState).sequence)
+        .sequence
+        .futureValue
+
+    statesBasedOnCachedInProgressActionTypes shouldEqual statesBasedOnNotCachedInProgressActionTypes
   }
 
   test(
@@ -816,7 +814,7 @@ class DeploymentServiceSpec
       isFragment = false,
       forwardedUserName = None
     )
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def prepareFragment(processName: ProcessName): DB[ProcessId] = {
@@ -833,7 +831,7 @@ class DeploymentServiceSpec
       forwardedUserName = None
     )
 
-    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+    writeProcessRepository.saveNewProcess(action).map(_.value.processId)
   }
 
   private def generateProcessName = {

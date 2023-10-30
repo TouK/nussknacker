@@ -1,19 +1,21 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.{ScenarioWithDetailsConversions, repository}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.time.Instant
 import java.util.UUID
@@ -43,7 +45,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       lastAction: Option[ProcessActionType] = None,
       json: Option[DisplayableProcess] = None
-  ): BaseProcessDetails[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
 
   def createFragment(
@@ -53,7 +55,7 @@ object TestProcessUtil {
       processingType: String = Streaming,
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None
-  ): BaseProcessDetails[DisplayableProcess] =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(
       name,
       category,
@@ -69,7 +71,7 @@ object TestProcessUtil {
       category: Category = TestCategories.Category1,
       isArchived: Boolean = false,
       isFragment: Boolean = false
-  ): ProcessDetails =
+  ): ScenarioWithDetailsEntity[DisplayableProcess] =
     toDetails(
       displayable.id,
       category,
@@ -79,12 +81,14 @@ object TestProcessUtil {
       isFragment = isFragment
     )
 
-  def validatedToProcess(displayable: ValidatedDisplayableProcess): ValidatedProcessDetails =
-    toDetails(
-      displayable.id,
-      processingType = displayable.processingType,
-      category = displayable.category
-    ).copy(json = displayable)
+  def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
+    ScenarioWithDetailsConversions.fromRepositoryDetails(
+      toDetails(
+        displayable.id,
+        processingType = displayable.processingType,
+        category = displayable.category
+      ).copy(json = displayable)
+    )
 
   def toDetails(
       name: String,
@@ -95,14 +99,14 @@ object TestProcessUtil {
       json: Option[DisplayableProcess] = None,
       lastAction: Option[ProcessActionType] = None,
       description: Option[String] = None,
-      history: Option[List[ProcessVersion]] = None
-  ): ProcessDetails = {
+      history: Option[List[ScenarioVersion]] = None
+  ): ScenarioWithDetailsEntity[DisplayableProcess] = {
     val jsonData = json
       .map(_.copy(id = name, processingType = processingType, category = category))
       .getOrElse(createEmptyJson(name, processingType, category))
-    BaseProcessDetails[DisplayableProcess](
+    repository.ScenarioWithDetailsEntity[DisplayableProcess](
       id = name,
-      name = name,
+      name = ProcessName(name),
       processId = ProcessId(generateId()),
       processVersionId = VersionId.initialVersionId,
       isLatestVersion = true,
@@ -116,16 +120,16 @@ object TestProcessUtil {
       modifiedBy = "user1",
       createdAt = Instant.now(),
       createdBy = "user1",
-      tags = List(),
+      tags = None,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if StateActionsTypes.contains(action) => createProcessAction(action)
+        case action if ProcessActionType.StateActionsTypes.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)
       },
       json = jsonData,
-      history = history.getOrElse(Nil),
+      history = history,
       modelVersion = None
     )
   }

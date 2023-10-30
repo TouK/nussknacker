@@ -148,7 +148,10 @@ class ScenarioTestService(
 
   private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
-      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
+      key -> RawCount(
+        nresults.size.toLong,
+        results.exceptions.find(_.nodeComponentInfo.map(_.nodeId).contains(key)).size.toLong
+      )
     }
     processCounter.computeCounts(canonical, counts.get)
   }

@@ -1,20 +1,45 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
-import Handlebars from "../../../../assets/img/handlebars.svg";
+import Handlebars from "./handlebars.svg";
 import { useTheme } from "@mui/material";
 
 const grabbing = css({ "*": { cursor: "grabbing !important" } });
 
-export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvidedDragHandleProps }> = ({
-    active,
-    provided,
-}): JSX.Element => {
+export const DragHandlerContext = createContext<DraggableProvidedDragHandleProps>(null);
+
+export function useDragHandler() {
+    const handleProps = useContext(DragHandlerContext);
+    if (!handleProps) {
+        // eslint-disable-next-line i18next/no-literal-string
+        throw new Error("used outside DragHandlerContext.Provider");
+    }
+    return handleProps;
+}
+
+export function SimpleDragHandle({
+    children,
+    className,
+}: PropsWithChildren<{
+    className?: string;
+}>) {
+    const handleProps = useDragHandler();
+
+    return (
+        <div {...handleProps} className={className}>
+            {children}
+        </div>
+    );
+}
+
+export const DragHandle: React.FC<{ active?: boolean }> = ({ active }): React.JSX.Element => {
     const [isActive, setActive] = useState(false);
     const theme = useTheme();
+
     useEffect(() => {
         setActive(active);
     }, [active]);
+
     useEffect(() => {
         document.body.classList.toggle(grabbing, isActive);
     }, [isActive]);
@@ -23,8 +48,7 @@ export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvide
     const onMouseUp = useCallback(() => setActive(false), []);
 
     return (
-        <div
-            {...provided}
+        <SimpleDragHandle
             className={css({
                 outline: "none",
                 ":focus": {
@@ -42,6 +66,6 @@ export const DragHandle: React.FC<{ active?: boolean; provided: DraggableProvide
                     }),
                 )}
             />
-        </div>
+        </SimpleDragHandle>
     );
 };

@@ -1,21 +1,16 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeployedScenarioData,
-  ProcessAction,
-  ProcessActionId,
-  ProcessState
-}
+import cats.Traverse
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 trait DeploymentService extends ProcessStateService {
 
@@ -58,24 +53,18 @@ trait DeploymentService extends ProcessStateService {
 
 trait ProcessStateService {
 
-  def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+  def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[String, ProcessState]]
-
-  def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[_]]]
+  ): Future[F[ScenarioWithDetails]]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
   def getProcessState(
-      processDetails: BaseProcessDetails[_]
+      processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
 }

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
-import cats.implicits.toTraverseOps
+import cats.Traverse
+import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
@@ -12,26 +14,28 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.process.ScenarioQuery
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import slick.dbio.DBIOAction
+import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+import scala.language.higherKinds
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
@@ -59,7 +63,7 @@ class DeploymentServiceImpl(
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
         dbioRunner.run(
           processRepository.fetchProcessesDetails[CanonicalProcess](
-            FetchProcessesDetailsQuery(
+            ScenarioQuery(
               isFragment = Some(false),
               isArchived = Some(false),
               isDeployed = Some(true),
@@ -75,7 +79,11 @@ class DeploymentServiceImpl(
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
-            DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
+            DeployedScenarioData(
+              details.toEngineProcessVersion.copy(versionId = lastDeployAction.processVersionId),
+              deploymentData,
+              resolvedScenario
+            )
           }
         deployedScenarioDataTry match {
           case Failure(exception) =>
@@ -155,7 +163,7 @@ class DeploymentServiceImpl(
   }
 
   protected def validateBeforeDeploy(
-      processDetails: BaseProcessDetails[CanonicalProcess],
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
     for {
@@ -170,7 +178,7 @@ class DeploymentServiceImpl(
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
 
-  private def validateProcess(processDetails: BaseProcessDetails[CanonicalProcess]): Unit = {
+  private def validateProcess(processDetails: ScenarioWithDetailsEntity[CanonicalProcess]): Unit = {
     val validationResult = processValidation.processingTypeValidationWithTypingInfo(
       processDetails.json,
       processDetails.processingType,
@@ -179,15 +187,15 @@ class DeploymentServiceImpl(
     if (validationResult.hasErrors) throw DeployingInvalidScenarioError
   }
 
-  private def checkCanPerformActionAndAddInProgressAction[PS: ProcessShapeFetchStrategy](
+  private def checkCanPerformActionAndAddInProgressAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessId,
       actionType: ProcessActionType,
-      getVersionOnWhichActionIsDone: BaseProcessDetails[PS] => Option[VersionId],
-      getBuildInfoProcessingType: BaseProcessDetails[PS] => Option[ProcessingType]
+      getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
+      getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(
       implicit user: LoggedUser,
       ec: ExecutionContext
-  ): Future[(BaseProcessDetails[PS], ProcessActionId, Option[VersionId], Option[ProcessingType])] = {
+  ): Future[(ScenarioWithDetailsEntity[PS], ProcessActionId, Option[VersionId], Option[ProcessingType])] = {
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId))
       processDetails <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString)))
@@ -204,8 +212,8 @@ class DeploymentServiceImpl(
     } yield (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType)
   }
 
-  private def checkInProgressWithLocking[PS: ProcessShapeFetchStrategy](
-      processDetails: BaseProcessDetails[PS],
+  private def checkInProgressWithLocking[PS: ScenarioShapeFetchStrategy](
+      processDetails: ScenarioWithDetailsEntity[PS],
       actionType: ProcessActionType,
       versionOnWhichActionIsDone: Option[VersionId],
       buildInfoProcessIngType: Option[ProcessingType]
@@ -227,9 +235,9 @@ class DeploymentServiceImpl(
     } yield actionId)
   }
 
-  private def checkIfCanPerformActionOnProcess[PS: ProcessShapeFetchStrategy](
+  private def checkIfCanPerformActionOnProcess[PS: ScenarioShapeFetchStrategy](
       actionType: ProcessActionType,
-      processDetails: BaseProcessDetails[PS]
+      processDetails: ScenarioWithDetailsEntity[PS]
   ): Unit = {
     if (processDetails.isArchived) {
       throw ProcessIllegalAction.archived(actionType, processDetails.idWithName)
@@ -238,9 +246,9 @@ class DeploymentServiceImpl(
     }
   }
 
-  private def checkIfCanPerformActionInState[PS: ProcessShapeFetchStrategy](
+  private def checkIfCanPerformActionInState[PS: ScenarioShapeFetchStrategy](
       actionType: ProcessActionType,
-      processDetails: BaseProcessDetails[PS],
+      processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
@@ -329,7 +337,7 @@ class DeploymentServiceImpl(
   }
 
   override def getProcessState(
-      processDetails: BaseProcessDetails[_]
+      processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
@@ -337,47 +345,45 @@ class DeploymentServiceImpl(
     } yield result)
   }
 
-  override def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(
+  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[String, ProcessState]] =
-    for {
-      processesInProgress <- getInProgressActionTypesForAllProcesses
-      processStatus <- processes
-        .map(process => Future.successful(process.name) zip getProcessState(process, processesInProgress))
-        .sequence
-    } yield processStatus.toMap
-
-  override def enrichDetailsWithProcessState(processList: List[BaseProcessDetails[_]])(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[BaseProcessDetails[_]]] =
-    for {
-      actionsInProgress <- getInProgressActionTypesForAllProcesses
-      processesWithState <- processList.map {
-        case process if process.isFragment => Future.successful((process, None))
-        case process => Future.successful(process) zip getProcessState(process, actionsInProgress).map(Option(_))
-      }.sequence
-    } yield processesWithState.map { case (process, state) => process.copy(state = state) }
-
-  // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
-  private def getInProgressActionTypesForAllProcesses: Future[Map[ProcessId, Set[ProcessActionType]]] =
+  ): Future[F[ScenarioWithDetails]] = {
     dbioRunner.run(
-      actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+      for {
+        actionsInProgress <- getInProgressActionTypesForProcessTraverse(processTraverse)
+        processesWithState <- processTraverse
+          .map {
+            case process if process.isFragment => DBIO.successful(process)
+            case process =>
+              getProcessState(
+                process.toRepositoryDetailsWithoutScenarioGraphAndValidationResult,
+                actionsInProgress.getOrElse(process.processId, Set.empty)
+              ).map(state => process.copy(state = Some(state)))
+          }
+          .sequence[DB, ScenarioWithDetails]
+      } yield processesWithState
     )
+  }
+
+  // This is optimisation tweak. We want to reduce number of calls for in progress action types. So for >1 scenarios
+  // we do one call for all in progress action types for all scenarios
+  private def getInProgressActionTypesForProcessTraverse[F[_]: Traverse](
+      processTraverse: F[ScenarioWithDetails]
+  )(implicit ec: ExecutionContext): DB[Map[ProcessId, Set[ProcessActionType]]] = {
+    processTraverse.toList match {
+      case Nil => DBIO.successful(Map.empty)
+      case head :: Nil =>
+        actionRepository.getInProgressActionTypes(head.processId).map(actionTypes => Map(head.processId -> actionTypes))
+      case _ =>
+        // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
+        actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+    }
+  }
 
   private def getProcessState(
-      processDetails: BaseProcessDetails[_],
-      processesInProgress: Map[ProcessId, Set[ProcessActionType]]
-  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
-    dbioRunner.run(
-      getProcessState(processDetails, processesInProgress.getOrElse(processDetails.processId, Set.empty))
-    )
-
-  private def getProcessState(
-      processDetails: BaseProcessDetails[_],
+      processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionTypes: Set[ProcessActionType]
   )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher
@@ -421,7 +427,9 @@ class DeploymentServiceImpl(
   }
 
   // We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
-  private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
+  private def getArchivedProcessState(
+      processDetails: ScenarioWithDetailsEntity[_]
+  )(implicit manager: DeploymentManager) = {
     processDetails.lastStateAction.map(a => (a.actionType, a.state)) match {
       case Some((Cancel, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
@@ -545,8 +553,11 @@ class DeploymentServiceImpl(
   ): Future[Option[ProcessAction]] = {
     dbioRunner.run {
       for {
-        _               <- validateExpectedProcessingType(expectedProcessingType, processId)
-        lastStateAction <- actionRepository.getFinishedProcessActions(processId, Some(StateActionsTypes))
+        _ <- validateExpectedProcessingType(expectedProcessingType, processId)
+        lastStateAction <- actionRepository.getFinishedProcessActions(
+          processId,
+          Some(ProcessActionType.StateActionsTypes)
+        )
       } yield lastStateAction.headOption
     }
   }
@@ -586,4 +597,4 @@ class DeploymentServiceImpl(
 
 }
 
-private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
+private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")

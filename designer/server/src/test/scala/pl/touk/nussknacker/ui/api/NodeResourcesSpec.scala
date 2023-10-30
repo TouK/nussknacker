@@ -58,7 +58,7 @@ class NodeResourcesSpec
   )
 
   private val nodeRoute = new NodesResources(
-    futureFetchingProcessRepository,
+    processService,
     fragmentRepository,
     typeToConfig.mapValues(_.modelData),
     validation,

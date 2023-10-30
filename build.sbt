@@ -115,16 +115,18 @@ def modelMergeStrategy: String => MergeStrategy = {
 }
 
 def designerMergeStrategy: String => MergeStrategy = {
-  case PathList(ps @ _*) if ps.last == "module-info.class"              => MergeStrategy.discard
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"              => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList("org", "apache", "commons", "logging", _ @_*)           => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"   =>
+  case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+    MergeStrategy.singleOrError // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
+  case PathList(ps @ _*) if ps.last == "module-info.class"                          => MergeStrategy.discard
+  case PathList(ps @ _*) if ps.last == "NumberUtils.class"                          => MergeStrategy.first // TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @_*)                       => MergeStrategy.first // TODO: shade Spring EL?
+  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"               =>
     MergeStrategy.first // Netty has buildTime here, which is different for different modules :/
-  case PathList("com", "sun", "el", _ @_*)                              => MergeStrategy.first // Some legacy batik stuff
-  case PathList("org", "w3c", "dom", "events", _ @_*)                   => MergeStrategy.first // Some legacy batik stuff
-  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema" =>
+  case PathList("com", "sun", "el", _ @_*)                                          => MergeStrategy.first // Some legacy batik stuff
+  case PathList("org", "w3c", "dom", "events", _ @_*)                               => MergeStrategy.first // Some legacy batik stuff
+  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema"             =>
     MergeStrategy.first // Due to swagger-parser dependencies having different schema definitions
-  case x                                                                => MergeStrategy.defaultMergeStrategy(x)
+  case x                                                                            => MergeStrategy.defaultMergeStrategy(x)
 }
 
 def requestResponseMergeStrategy: String => MergeStrategy = {
@@ -535,7 +537,8 @@ lazy val dist = sbt
             Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
           else Nil)
       ++ (if (addDevArtifacts) (root / devArtifacts).value: @sbtUnchecked
-          else (root / modelArtifacts).value: @sbtUnchecked),
+          else (root / modelArtifacts).value: @sbtUnchecked)
+      ++ (flinkExecutor / additionalBundledArtifacts).value,
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
       // we don't want docker-* stuff in .tgz
@@ -764,18 +767,43 @@ lazy val defaultModel = (project in (file("defaultModel")))
 
 lazy val flinkExecutor = (project in flink("executor"))
   .settings(commonSettings)
+  .settings(itSettings())
   .settings(assemblyNoScala("flinkExecutor.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
-    name := "nussknacker-flink-executor",
+    name                        := "nussknacker-flink-executor",
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test)
+      .dependsOn(
+        ThisScope / prepareItLibs
+      )
+      .value,
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java"       % flinkV % "provided",
         "org.apache.flink" % "flink-runtime"              % flinkV % "provided",
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided",
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % "provided",
       )
-    }
+    },
+    prepareItLibs               := {
+      val workTarget = (ThisScope / baseDirectory).value / "target" / "it-libs"
+      val artifacts  = (ThisScope / additionalBundledArtifacts).value
+      IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
+    },
+    additionalBundledArtifacts  := {
+      createClasspathBasedMapping(
+        (Compile / managedClasspath).value,
+        "org.apache.flink",
+        "flink-metrics-dropwizard",
+        "flink-dropwizard-metrics-deps/flink-metrics-dropwizard.jar"
+      ) ++
+        createClasspathBasedMapping(
+          (Compile / managedClasspath).value,
+          "io.dropwizard.metrics",
+          "metrics-core",
+          "flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar"
+        )
+    }.toList,
   )
   .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % "test")
 
@@ -1688,6 +1716,10 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
 
+lazy val additionalBundledArtifacts = taskKey[List[(File, String)]]("additional artifacts to include in the bundle")
+
+lazy val prepareItLibs = taskKey[Unit]("Prepare jar libraries needed for integration tests")
+
 lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
@@ -1816,6 +1848,7 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
+        "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
       ) ++ forScalaVersion(scalaVersion.value, Seq(), (2, 13) -> Seq("org.scala-lang.modules" %% "scala-xml" % "2.1.0"))
     }
   )
@@ -1988,7 +2021,8 @@ lazy val prepareDev = taskKey[Unit]("Prepare components and model for running fr
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  = componentArtifacts.value ++ devArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
-    Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value
+    Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value ++
+    (flinkExecutor / additionalBundledArtifacts).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
 }
@@ -2003,4 +2037,24 @@ buildClient := {
   } else {
     throw new IllegalStateException("Frontend build failed!")
   }
+}
+
+def createClasspathBasedMapping(
+    classpath: Classpath,
+    organizationName: String,
+    packageName: String,
+    targetFilename: String
+): Option[(File, String)] = {
+  classpath.toSet
+    .find(attr =>
+      attr
+        .get(sbt.Keys.moduleID.key)
+        .exists(moduleID =>
+          moduleID.organization.equalsIgnoreCase(organizationName) && moduleID.name.equalsIgnoreCase(packageName)
+        )
+    )
+    .map { attribute =>
+      val file = attribute.data
+      file -> targetFilename
+    }
 }

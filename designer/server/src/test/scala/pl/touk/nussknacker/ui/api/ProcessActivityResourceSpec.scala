@@ -33,7 +33,7 @@ class ProcessActivityResourceSpec
 
   private val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
   private val attachmentsRoute =
-    new AttachmentResources(attachmentService, futureFetchingProcessRepository, processAuthorizer)
+    new AttachmentResources(attachmentService, processService, processAuthorizer)
   private val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess

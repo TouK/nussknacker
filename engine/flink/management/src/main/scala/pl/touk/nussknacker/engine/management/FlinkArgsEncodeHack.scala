@@ -11,6 +11,7 @@ object FlinkArgsEncodeHack {
       _.replace("\"", "__FRH_")
         .replace("\n", "__FRH2_")
         .replace("'", "__FRH3_")
+        .replace("#", "__FRH4_")
     )
     .map(s => "\"" + s + "\"")
 

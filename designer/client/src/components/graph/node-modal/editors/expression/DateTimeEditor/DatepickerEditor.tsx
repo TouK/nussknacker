@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { ExpressionObj } from "../types";
-import classNames from "classnames";
 import { useDebouncedCallback } from "use-debounce";
 import moment from "moment";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
@@ -8,6 +7,7 @@ import i18next from "i18next";
 import { allValid, HandledErrorType, Validator, ValidatorType } from "../../Validators";
 import { Formatter } from "../Formatter";
 import { DTPicker } from "../../../../../common/DTPicker";
+import { cx } from "@emotion/css";
 
 /* eslint-disable i18next/no-literal-string */
 export enum JavaTimeTypes {
@@ -87,7 +87,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 onChange={setValue}
                 value={value}
                 inputProps={{
-                    className: classNames([
+                    className: cx([
                         "node-input",
                         showValidation && !isValid && "node-input-with-error",
                         isMarked && "marked",

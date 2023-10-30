@@ -120,7 +120,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     runResults.validValue.successes shouldBe List(now.toString)
   }
 
-  test("should catch exception during compilation in test run mode") {
+  test("should handle exception during runtime in test run mode") {
     val scenario =
       ScenarioBuilder
         .streaming(getClass.getName)

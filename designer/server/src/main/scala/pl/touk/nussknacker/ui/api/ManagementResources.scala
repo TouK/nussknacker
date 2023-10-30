@@ -12,17 +12,19 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.DisplayJson
+import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment.{
   CustomActionInvokerService,
@@ -30,7 +32,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   DeploymentService
 }
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -39,32 +41,6 @@ import scala.concurrent.{ExecutionContext, Future}
 object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
-
-  implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
-
-    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
-    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
-    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
-    // TODO: do we want more information here?
-    implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-    implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
-
-    override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
-        Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
-          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
-            node -> list.sortBy(_.contextId)
-          }.asJson,
-          "exceptions" -> exceptions.sortBy(_.context.id).asJson
-        )
-    }
-
-  }
 
   val testResultsVariableEncoder: Any => io.circe.Json = {
     case displayable: DisplayJson =>
@@ -82,11 +58,56 @@ object ManagementResources {
       )
   }
 
+  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
+
+  implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
+
+    implicit val nodeResult: Encoder[NodeResult[Json]]                                 = deriveConfiguredEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
+    implicit val componentInfo: Encoder[ComponentInfo]                                 = deriveConfiguredEncoder
+    implicit val nodeComponentInfo: Encoder[NodeComponentInfo]                         = deriveConfiguredEncoder
+    implicit val resultContext: Encoder[ResultContext[Json]]                           = deriveConfiguredEncoder
+
+    implicit val mapAnyEncoder: Encoder[Map[String, Any]] = (value: Map[String, Any]) =>
+      value.map { case (key, value) => key -> testResultsVariableEncoder(value) }.asJson
+
+    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+
+    // TODO: do we want more information here?
+    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
+      Json.obj(
+        "id"        -> Json.fromString(a.id),
+        "variables" -> a.variables.asJson
+      )
+
+    implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
+      (value: NuExceptionInfo[_ <: Throwable]) =>
+        Json.obj(
+          "nodeComponentInfo" -> value.nodeComponentInfo.asJson,
+          "throwable"         -> throwableEncoder(value.throwable),
+          "context"           -> value.context.asJson
+        )
+
+    override def apply(a: TestResults[Json]): Json = a match {
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+        Json.obj(
+          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
+          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
+            node -> list.sortBy(_.contextId)
+          }.asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id).asJson
+        )
+    }
+
+  }
+
 }
 
 class ManagementResources(
     val processAuthorizer: AuthorizeProcess,
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     deploymentService: DeploymentService,
     dispatcher: DeploymentManagerDispatcher,
@@ -108,13 +129,13 @@ class ManagementResources(
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String]     = Unmarshaller.stringUnmarshaller
 
-  sealed case class ValidationError(message: String) extends Exception(message) with BadRequestError
+  sealed case class ValidationError(message: String) extends BadRequestError(message)
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap { comment =>
       DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
-        case Invalid(exc)             => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
+        case Invalid(exc) => complete(NuDesignerErrorToHttp.nuDesignerErrorToHttp(ValidationError(exc.getMessage)))
       }
     }
   }
@@ -155,7 +176,6 @@ class ManagementResources(
                   deploymentService
                     .deployProcessAsync(processId, Some(savepointPath), deploymentComment)
                     .map(_ => ())
-                    .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
             }
@@ -172,7 +192,6 @@ class ManagementResources(
                     deploymentService
                       .deployProcessAsync(processId, None, deploymentComment)
                       .map(_ => ())
-                      .andThen(toResponseTryPF(StatusCodes.OK))
                   }
                 }
               }
@@ -185,9 +204,7 @@ class ManagementResources(
                 withDeploymentComment { deploymentComment =>
                   complete {
                     measureTime("cancel", metricRegistry) {
-                      deploymentService
-                        .cancelProcess(processId, deploymentComment)
-                        .andThen(toResponseTryPF(StatusCodes.OK))
+                      deploymentService.cancelProcess(processId, deploymentComment)
                     }
                   }
                 }
@@ -213,7 +230,6 @@ class ManagementResources(
                             .flatMap { results =>
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                             }
-                            .recover(EspErrorToHttp.errorToHttp)
                         case Left(error) =>
                           Future.failed(UnmarshallError(error.toString))
                       }
@@ -244,7 +260,6 @@ class ManagementResources(
                                 .flatMap { results =>
                                   Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                                 }
-                                .recover(EspErrorToHttp.errorToHttp)
                           }
                         }
                       }
@@ -256,7 +271,7 @@ class ManagementResources(
           } ~
           path("testWithParameters" / Segment) { processName =>
             {
-              (post & processDetailsForName[Unit](processName)) { process =>
+              (post & processDetailsForName(processName)) { process =>
                 val modelData = typeToConfig.forTypeUnsafe(process.processingType)
                 implicit val requestDecoder: Decoder[TestFromParametersRequest] =
                   prepareTestFromParametersDecoder(modelData)
@@ -275,7 +290,6 @@ class ManagementResources(
                             .flatMap { results =>
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                             }
-                            .recover(EspErrorToHttp.errorToHttp)
                         }
                       }
                     }
@@ -315,7 +329,6 @@ class ManagementResources(
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future
       .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
-      .recover(EspErrorToHttp.errorToHttp)
   }
 
 }

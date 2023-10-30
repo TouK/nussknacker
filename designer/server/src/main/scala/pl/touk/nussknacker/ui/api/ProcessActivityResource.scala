@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import java.io.ByteArrayInputStream
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.ContentTypeResolver
@@ -8,21 +7,17 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import akka.stream.scaladsl.StreamConverters
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.ui.process.repository.{
-  FetchingProcessRepository,
-  ProcessActivityRepository,
-  SystemComment,
-  UpdateProcessComment,
-  UserComment
-}
-import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
+import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.io.ByteArrayInputStream
+import scala.concurrent.ExecutionContext
 
 class ProcessActivityResource(
     processActivityRepository: ProcessActivityRepository,
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     val processAuthorizer: AuthorizeProcess
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
@@ -68,7 +63,7 @@ class ProcessActivityResource(
 
 class AttachmentResources(
     attachmentService: ProcessAttachmentService,
-    val processRepository: FetchingProcessRepository[Future],
+    protected val processService: ProcessService,
     val processAuthorizer: AuthorizeProcess
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { ExpressionObj } from "../types";
 import { Validator } from "../../Validators";
-import "./timeRange.styl";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";

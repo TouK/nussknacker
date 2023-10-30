@@ -1,27 +1,22 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeployedScenarioData,
-  ProcessAction,
-  ProcessActionId,
-  ProcessState
-}
+import cats.Traverse
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
+import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import scala.language.higherKinds
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
 
   override def getProcessState(
-      processDetails: processdetails.BaseProcessDetails[_]
+      processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     getProcessState(processDetails.idWithName)
 
@@ -64,19 +59,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   ): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-  override def fetchProcessStatesForProcesses(processes: List[processdetails.BaseProcessDetails[Unit]])(
+  override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
       ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
-  ): Future[Map[ProcessingType, ProcessState]] =
-    Future.successful(Map.empty)
-
-  override def enrichDetailsWithProcessState(
-      processList: List[processdetails.BaseProcessDetails[_]]
-  )(
-      implicit user: LoggedUser,
-      ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
-  ): Future[List[processdetails.BaseProcessDetails[_]]] = Future.successful(processList)
+  ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
 
 }
