@@ -315,6 +315,8 @@ object node {
 
   }
 
+  val IdFieldName = "$id"
+
   // TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
 
   import shapeless.syntax.typeable._

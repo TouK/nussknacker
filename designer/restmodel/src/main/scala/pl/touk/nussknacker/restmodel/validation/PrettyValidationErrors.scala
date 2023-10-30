@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -53,32 +54,32 @@ object PrettyValidationErrors {
           case EmptyScenarioId(isFragment) =>
             node(
               s"${processTypeName(isFragment)} name is mandatory and cannot be empty",
-              s"Empty ${processTypeName(isFragment)} name",
-              fieldName = Some("$id")
+              s"Empty ${processTypeName(isFragment).toLowerCase} name",
+              fieldName = Some(CanonicalProcess.IdFieldName)
             )
           case BlankScenarioId(isFragment) =>
             node(
               s"${processTypeName(isFragment)} name cannot be blank",
-              s"Blank ${processTypeName(isFragment)} name",
-              fieldName = Some("$id")
+              s"Blank ${processTypeName(isFragment).toLowerCase} name",
+              fieldName = Some(CanonicalProcess.IdFieldName)
             )
           case LeadingSpacesScenarioId(isFragment) =>
             node(
               s"${processTypeName(isFragment)} name cannot have leading spaces",
-              s"Leading spaces in ${processTypeName(isFragment)} name",
-              fieldName = Some("$id")
+              s"Leading spaces in ${processTypeName(isFragment).toLowerCase} name",
+              fieldName = Some(CanonicalProcess.IdFieldName)
             )
           case TrailingSpacesScenarioId(isFragment) =>
             node(
               s"${processTypeName(isFragment)} name cannot have trailing spaces",
-              s"Trailing spaces in ${processTypeName(isFragment)} name",
-              fieldName = Some("$id")
+              s"Trailing spaces in ${processTypeName(isFragment).toLowerCase} name",
+              fieldName = Some(CanonicalProcess.IdFieldName)
             )
           case ScenarioNameValidationError(message, description) =>
             node(
               message,
               description,
-              fieldName = Some("$id"),
+              fieldName = Some(CanonicalProcess.IdFieldName),
             )
           case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
         }
@@ -89,32 +90,32 @@ object PrettyValidationErrors {
               "Node name cannot be empty",
               "Empty node name",
               errorType = NodeValidationErrorType.RenderNotAllowed,
-              fieldName = Some("$id")
+              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
             )
           case InvalidCharactersNodeId(_) =>
             node(
               "Node name contains invalid characters. Quotation mark (\"), comma (,) and apostrophe (') are not allowed",
               "Invalid characters in node name",
-              NodeValidationErrorType.RenderNotAllowed,
-              Some("$id")
+              errorType = NodeValidationErrorType.RenderNotAllowed,
+              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
             )
           case BlankNodeId(_) =>
             node(
               "Node name cannot be blank",
               "Blank node name",
-              fieldName = Some("$id")
+              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
             )
           case LeadingSpacesNodeId(_) =>
             node(
               "Node name cannot have leading spaces",
               "Leading spaces in node name",
-              fieldName = Some("$id")
+              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
             )
           case TrailingSpacesNodeId(_) =>
             node(
               "Node name cannot have trailing spaces",
               "Trailing spaces in node name",
-              fieldName = Some("$id")
+              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
             )
         }
       case NonUniqueEdgeType(etype, nodeId) =>
