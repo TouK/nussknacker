@@ -132,7 +132,13 @@ describe("Process", () => {
             cy.layoutScenario();
             cy.get("[data-testid='component:customFilter']")
                 .should("be.visible")
-                .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
+                .drag("#nk-graph-main", {
+                    target: {
+                        x: 580,
+                        y: 450,
+                    },
+                    force: true,
+                });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
             cy.contains(/^save\*$/i).click();
@@ -159,7 +165,7 @@ describe("Process", () => {
             cy.deployScenario(undefined, true);
         });
 
-        it("should display '?' when renaming a node and updating the count", () => {
+        it("should display question mark when renaming a node and updating the count", () => {
             cy.intercept("GET", "/api/processCounts/*", {
                 boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
                 enricher: { all: 120, errors: 10, fragmentCounts: {} },
@@ -187,7 +193,10 @@ describe("Process", () => {
             cy.contains(/^counts$/i).click();
 
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
-            cy.get("#app-container>main").matchImage();
+
+            cy.getNode("enricher")
+                .parent()
+                .matchImage({ screenshotConfig: { padding: 16 } });
         });
 
         it("should have counts button and modal", () => {
@@ -270,9 +279,10 @@ describe("Process", () => {
         const x = 900;
         const y = 630;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 
@@ -324,9 +334,10 @@ describe("Process", () => {
         const x = 700;
         const y = 600;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 

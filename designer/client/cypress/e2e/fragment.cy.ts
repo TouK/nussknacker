@@ -36,8 +36,10 @@ describe("Fragment", () => {
         cy.contains("fragment-test")
             .last()
             .should("be.visible")
-            .move({ x: 800, y: 600, position: "right", force: true })
-            .drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
+            .drag("#nk-graph-main", {
+                target: { x: 800, y: 600 },
+                force: true,
+            });
         cy.layoutScenario();
 
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
@@ -113,9 +115,6 @@ describe("Fragment", () => {
         cy.contains(/^apply/i).should("be.enabled");
         cy.get("[data-testid=window]").matchImage({
             maxDiffThreshold: 0.01,
-            screenshotConfig: {
-                blackout: ["[title=Name] + * input"],
-            },
         });
     });
 
@@ -146,7 +145,10 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.contains("fragments").should("be.visible").click();
-        cy.contains(`${seed2}-test`).last().should("be.visible").drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
+        cy.contains(`${seed2}-test`)
+            .last()
+            .should("be.visible")
+            .drag("#nk-graph-main", { target: { x: 800, y: 600 }, force: true });
         cy.layoutScenario();
 
         cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");

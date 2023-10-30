@@ -20,7 +20,13 @@ describe("Node window", () => {
             .click();
         cy.get("[data-testid='component:periodic']")
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 800, y: 300, position: "right", force: true });
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 800,
+                    y: 300,
+                },
+                force: true,
+            });
 
         cy.getNode("periodic").dblclick();
 
