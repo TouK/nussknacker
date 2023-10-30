@@ -83,6 +83,10 @@ class ProcessValidation(
     // displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
+      // Error deduplication is needed for validations that are done on both DisplayableProcess and CanonicalProcess
+      // levels. For example we want to display node and scenario id errors for scenarios that contain errors preventing
+      // graph canonization so we duplicate the validations in both places - so in the case of full validation we get
+      // duplicated id errors.
       deduplicateErrors(
         uiValidationResult
           .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
