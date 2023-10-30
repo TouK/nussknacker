@@ -3,8 +3,9 @@ import React, { CSSProperties, MouseEventHandler, PropsWithChildren, ReactNode, 
 import { createPortal } from "react-dom";
 
 import Select from "react-select";
-import styles from "../../stylesheets/select.styl";
 import { ButtonProps, ButtonWithFocus } from "../withFocus";
+import { selectStyled } from "../../stylesheets/SelectStyled";
+import { useTheme } from "@mui/material";
 
 interface Option<T> {
     label: string;
@@ -20,6 +21,9 @@ export interface DropdownButtonProps<T> {
 export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & DropdownButtonProps<T>>): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>();
     const { options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps } = props;
+    const theme = useTheme();
+
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
 
     const toggleOpen = useCallback(
         (e) => {
@@ -50,9 +54,9 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
         >
             <Select
                 autoFocus
-                classNamePrefix={styles.nodeValueSelect}
                 backspaceRemovesValue={false}
                 components={{ IndicatorsContainer: EmptyContainer }}
+                classNamePrefix={"nodeValueSelect"}
                 controlShouldRenderValue={false}
                 isClearable={false}
                 menuPortalTarget={document.body}
@@ -68,7 +72,8 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                         margin: 0,
                         padding: 0,
                     }),
-                    control: () => ({
+                    control: (base, props) => ({
+                        ...control(base, props.isFocused, props.isDisabled),
                         height: "0 !important",
                         minHeight: "0 !important",
                         maxHeight: "0 !important",
@@ -76,8 +81,19 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                         margin: 0,
                         padding: 0,
                     }),
-                    menuPortal: ({ width, ...base }) => ({ ...base, minWidth: width }),
-                    menu: ({ position, ...base }) => ({ ...base }),
+                    menuPortal: ({ width, ...base }) => ({ ...menuPortal({ ...base, minWidth: width }) }),
+                    menu: ({ position, ...base }) => ({ ...menu(base) }),
+                    input: (base) => ({ ...input(base) }),
+                    valueContainer: (base, props) => ({
+                        ...valueContainer(base, props.hasValue),
+                    }),
+                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    menuList: (base) => ({
+                        ...menuList(base),
+                    }),
+                    option: (base, props) => ({
+                        ...menuOption(base, props.isSelected, props.isFocused),
+                    }),
                 }}
                 tabSelectsValue={false}
             />
@@ -91,6 +107,7 @@ const Menu = (props: PropsWithChildren<unknown>) => (
             position: "absolute",
             left: "10px",
             right: "10px",
+            top: "1em",
             bottom: "1em",
         }}
         {...props}

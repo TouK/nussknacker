@@ -20,7 +20,7 @@ export function NussknackerApp() {
     }
 
     return (
-        <NuThemeProvider>
+        <>
             <WindowManager
                 className={css({
                     flex: 1,
@@ -48,6 +48,6 @@ export function NussknackerApp() {
             </ConnectionErrorProvider>
             <VersionInfo />
             <UsageReportingImage />
-        </NuThemeProvider>
+        </>
     );
 }
