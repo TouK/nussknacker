@@ -274,6 +274,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should validate empty variable expression") {
+    inside(validate(Variable("var1", "specialVariable_2", "", None), ValidationContext())) {
+      case ValidationPerformed((error: EmptyMandatoryParameter) :: Nil, None, _) =>
+        error.message shouldBe "This field is mandatory and can not be empty"
+    }
+  }
+
   test("should validate variable definition") {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))

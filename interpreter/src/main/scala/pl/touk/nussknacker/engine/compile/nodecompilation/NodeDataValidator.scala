@@ -82,12 +82,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           )
         case a: Variable =>
           toValidationResponse(
-            compiler.compileExpression(
-              a.value,
-              validationContext,
-              expectedType = typing.Unknown,
-              outputVar = Some(OutputVar.variable(a.varName))
-            )
+            compiler.compileVariable(a, validationContext)
           )
         case a: VariableBuilder =>
           toValidationResponse(

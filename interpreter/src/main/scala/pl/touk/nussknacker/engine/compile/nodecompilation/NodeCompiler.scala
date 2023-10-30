@@ -309,6 +309,26 @@ class NodeCompiler(
     combineCompiledObjectErrors(compilationResult, additionalValidationResult)
   }
 
+  def compileVariable(variable: Variable, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): NodeCompilationResult[expression.Expression] = {
+    val compilationResult: NodeCompilationResult[expression.Expression] =
+      compileExpression(
+        variable.value,
+        ctx,
+        expectedType = Unknown,
+        outputVar = Some(OutputVar.variable(variable.varName))
+      )
+
+    // TODO: deduplicate code
+    val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
+      MandatoryParameterValidator
+        .isValid(NodeExpressionId.DefaultExpressionId, variable.value.expression, None)
+        .toValidatedNel
+
+    combineCompiledObjectErrors(compilationResult, additionalValidationResult)
+  }
+
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
