@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.fixedvaluespresets
 
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 
 object TestFixedValuesPresetProvider extends FixedValuesPresetProvider {
 
