@@ -822,7 +822,7 @@ lazy val interpreter = (project in file("interpreter"))
       )
     }
   )
-  .dependsOn(utilsInternal, mathUtils, testUtils % "test", componentsUtils % "test")
+  .dependsOn(utilsInternal, mathUtils, testUtils % "test", componentsUtils, componentsApi % "test->test")
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(commonSettings)
@@ -1878,6 +1878,7 @@ lazy val designer = (project in file("designer/server"))
     requestResponseRuntime            % "provided",
     developmentTestsDeploymentManager % "provided",
     devPeriodicDM                     % "provided",
+    componentsApi % "test->test"
   )
 
 /*
