@@ -168,13 +168,7 @@ class ProcessValidation(
   }
 
   private def validateScenarioId(displayable: DisplayableProcess): ValidationResult = {
-    val fakeCanonicalProcess =
-      if (displayable.metaData.isFragment) {
-        ScenarioBuilder.fragmentWithInputNodeId(displayable.id, "inputId").emptySink("sinkId", "stub")
-      } else {
-        ScenarioBuilder.streaming(displayable.id).source("sourceId", "stub").emptySink("sinkId", "stub")
-      }
-    IdValidator.validate(fakeCanonicalProcess) match {
+    IdValidator.validateScenarioId(displayable.id, displayable.metaData.isFragment) match {
       case Valid(_)   => ValidationResult.success
       case Invalid(e) => formatErrors(e)
     }
@@ -182,7 +176,7 @@ class ProcessValidation(
 
   private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
     val nodeIdErrors = displayable.nodes
-      .map(n => IdValidator.validateNodeId(n))
+      .map(n => IdValidator.validateNodeId(n.id))
       .collect { case Invalid(e) =>
         e
       }

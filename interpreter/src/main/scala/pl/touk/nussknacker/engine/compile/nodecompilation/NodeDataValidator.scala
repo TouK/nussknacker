@@ -109,7 +109,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           ValidationNotPerformed
       }
 
-      val nodeIdErrors = IdValidator.validateNodeId(nodeData) match {
+      val nodeIdErrors = IdValidator.validateNodeId(nodeData.id) match {
         case Validated.Valid(_)   => List.empty
         case Validated.Invalid(e) => e.toList
       }
