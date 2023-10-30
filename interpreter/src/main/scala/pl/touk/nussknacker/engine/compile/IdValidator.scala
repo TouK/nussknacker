@@ -22,10 +22,10 @@ object IdValidator {
   }
 
   def validateScenarioId(scenarioId: String, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] = {
-    val data = ScenarioIdValidationData(scenarioId, isFragment)
-    validateIdIsNotEmpty(data).andThen { _ =>
-      validateIdIsNotBlank(data).andThen { _ =>
-        (validateIdHasNoLeadingSpaces(data), validateIdHasNoTrailingSpaces(data)).mapN((_, _) => ())
+    val validatedData = ScenarioIdValidationData(scenarioId, isFragment)
+    validateIdIsNotEmpty(validatedData).andThen { _ =>
+      validateIdIsNotBlank(validatedData).andThen { _ =>
+        (validateIdHasNoLeadingSpaces(validatedData), validateIdHasNoTrailingSpaces(validatedData)).mapN((_, _) => ())
       }
     }
   }
@@ -44,37 +44,37 @@ object IdValidator {
 
   private final case class ScenarioIdValidationData(scenarioId: String, isFragment: Boolean)
 
-  private def validateIdIsNotEmpty(implicit process: ScenarioIdValidationData) =
+  private def validateIdIsNotEmpty(implicit validationData: ScenarioIdValidationData) =
     applySingleErrorValidation[ScenarioIdValidationData](
-      process.scenarioId.isEmpty,
-      EmptyScenarioId(process.isFragment)
+      validationData.scenarioId.isEmpty,
+      EmptyScenarioId(validationData.isFragment)
     )
 
   private def validateIdIsNotEmpty(implicit nodeId: String) =
     applySingleErrorValidation[String](nodeId.isEmpty, EmptyNodeId())
 
-  private def validateIdIsNotBlank(implicit process: ScenarioIdValidationData) =
+  private def validateIdIsNotBlank(implicit validationData: ScenarioIdValidationData) =
     applySingleErrorValidation[ScenarioIdValidationData](
-      process.scenarioId.isBlank,
-      BlankScenarioId(process.isFragment)
+      validationData.scenarioId.isBlank,
+      BlankScenarioId(validationData.isFragment)
     )
 
   private def validateIdIsNotBlank(implicit nodeId: String) =
     applySingleErrorValidation[String](nodeId.isBlank, BlankNodeId(nodeId))
 
-  private def validateIdHasNoLeadingSpaces(implicit process: ScenarioIdValidationData) =
+  private def validateIdHasNoLeadingSpaces(implicit validationData: ScenarioIdValidationData) =
     applySingleErrorValidation[ScenarioIdValidationData](
-      process.scenarioId.startsWith(" "),
-      LeadingSpacesScenarioId(process.isFragment)
+      validationData.scenarioId.startsWith(" "),
+      LeadingSpacesScenarioId(validationData.isFragment)
     )
 
   private def validateIdHasNoLeadingSpaces(implicit nodeId: String) =
     applySingleErrorValidation[String](nodeId.startsWith(" "), LeadingSpacesNodeId(nodeId))
 
-  private def validateIdHasNoTrailingSpaces(implicit process: ScenarioIdValidationData) =
+  private def validateIdHasNoTrailingSpaces(implicit validationData: ScenarioIdValidationData) =
     applySingleErrorValidation[ScenarioIdValidationData](
-      process.scenarioId.endsWith(" "),
-      TrailingSpacesScenarioId(process.isFragment)
+      validationData.scenarioId.endsWith(" "),
+      TrailingSpacesScenarioId(validationData.isFragment)
     )
 
   private def validateIdHasNoTrailingSpaces(implicit nodeId: String) =
