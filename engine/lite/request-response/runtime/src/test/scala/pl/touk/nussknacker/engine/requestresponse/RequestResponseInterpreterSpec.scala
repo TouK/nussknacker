@@ -153,7 +153,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     creator.eagerEnricher.opened shouldBe true
     creator.eagerEnricher.closed shouldBe true
     val openedInvokers = creator.eagerEnricher.list.filter(_._2.opened == true)
-    openedInvokers.map(_._1).toSet == Set("1", "2")
+    openedInvokers.map(_._1) should contain only ("1", "2")
     openedInvokers.foreach { cl =>
       cl._2.closed shouldBe true
     }

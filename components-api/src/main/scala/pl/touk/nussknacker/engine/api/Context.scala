@@ -37,6 +37,9 @@ case class ContextId(value: String)
  */
 case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 
+  def appendIdSuffix(suffix: String): Context =
+    copy(id = s"$id-$suffix")
+
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
 
