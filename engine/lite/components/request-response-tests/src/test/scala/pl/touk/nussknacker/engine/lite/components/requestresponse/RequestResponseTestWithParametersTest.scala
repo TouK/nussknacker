@@ -268,7 +268,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
-      FixedValuesParameterEditor(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
+      FixedValuesPresetParameterEditor("preset", fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
     )
     parameter.validators should contain theSameElementsAs List(
       MandatoryParameterValidator,
