@@ -30,9 +30,9 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -348,9 +348,6 @@ trait NuResourcesTest
     )
   }
 
-  protected def getProcesses: RouteTestResult =
-    Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)
-
   protected def getProcess(processName: ProcessName): RouteTestResult =
     Get(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionRead)
 
@@ -373,31 +370,31 @@ trait NuResourcesTest
       callback(status, responseAs[String])
     }
 
-  protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
-      callback: List[ProcessJson] => Unit
-  ): Unit = {
-    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[BasicProcess]] =
-      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[BasicProcess]]])
+  protected def forScenariosReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
+      callback: List[ProcessJson] => Assertion
+  ): Assertion = {
+    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[ScenarioWithDetails]] =
+      FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[ScenarioWithDetails]]])
     val url = query.createQueryParamsUrl("/processes")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
-      responseAs[List[BasicProcess]] // just to test if decoder succeds
+      responseAs[List[ScenarioWithDetails]] // just to test if decoder succeds
       callback(processes)
     }
   }
 
-  protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(
-      callback: List[ValidatedProcessDetails] => Unit
-  ): Unit = {
+  protected def forScenariosDetailsReturned(query: ScenarioQuery, isAdmin: Boolean = false)(
+      callback: List[ScenarioWithDetails] => Assertion
+  ): Assertion = {
     import FailFastCirceSupport._
 
     val url = query.createQueryParamsUrl("/processesDetails")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val processes = responseAs[List[ValidatedProcessDetails]]
+      val processes = responseAs[List[ScenarioWithDetails]]
       callback(processes)
     }
   }
@@ -454,7 +451,7 @@ trait NuResourcesTest
     } yield id
   }
 
-  protected def getProcessDetails(processId: ProcessId): processdetails.BaseProcessDetails[Unit] =
+  protected def getProcessDetails(processId: ProcessId): ScenarioWithDetailsEntity[Unit] =
     futureFetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
   protected def createEmptyProcess(
@@ -575,33 +572,33 @@ final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, proc
 
 object ProcessesQueryEnrichments {
 
-  implicit class RichProcessesQuery(query: ProcessesQuery) {
+  implicit class RichProcessesQuery(query: ScenarioQuery) {
 
-    def process(): ProcessesQuery =
+    def process(): ScenarioQuery =
       query.copy(isFragment = Some(false))
 
-    def fragment(): ProcessesQuery =
+    def fragment(): ScenarioQuery =
       query.copy(isFragment = Some(true))
 
-    def unarchived(): ProcessesQuery =
+    def unarchived(): ScenarioQuery =
       query.copy(isArchived = Some(false))
 
-    def archived(): ProcessesQuery =
+    def archived(): ScenarioQuery =
       query.copy(isArchived = Some(true))
 
-    def deployed(): ProcessesQuery =
+    def deployed(): ScenarioQuery =
       query.copy(isDeployed = Some(true))
 
-    def notDeployed(): ProcessesQuery =
+    def notDeployed(): ScenarioQuery =
       query.copy(isDeployed = Some(false))
 
-    def names(names: List[String]): ProcessesQuery =
-      query.copy(names = Some(names))
+    def names(names: List[String]): ScenarioQuery =
+      query.copy(names = Some(names.map(ProcessName(_))))
 
-    def categories(categories: List[String]): ProcessesQuery =
+    def categories(categories: List[String]): ScenarioQuery =
       query.copy(categories = Some(categories))
 
-    def processingTypes(processingTypes: List[String]): ProcessesQuery =
+    def processingTypes(processingTypes: List[String]): ScenarioQuery =
       query.copy(processingTypes = Some(processingTypes))
 
     def createQueryParamsUrl(path: String): String = {

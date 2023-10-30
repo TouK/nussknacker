@@ -1,5 +1,6 @@
 import { styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
+import { StyledCloseIcon } from "../toolbarComponents/toolbarWrapper/ToolbarStyled";
 
 export const ProcessCommentsWrapper = styled("div")`
     padding: 0 13px 10px;
@@ -11,7 +12,7 @@ export const ProcessCommentsList = styled("div")`
     padding: 0;
 `;
 
-export const RemoveButton = styled("span")`
+export const RemoveButton = styled(StyledCloseIcon)`
     float: right;
     &:hover {
         cursor: pointer;

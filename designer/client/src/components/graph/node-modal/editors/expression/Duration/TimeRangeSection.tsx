@@ -5,7 +5,7 @@ import React from "react";
 import { Duration } from "./DurationEditor";
 import { allValid, Validator } from "../../Validators";
 import { Period } from "./PeriodEditor";
-import "./timeRange.styl";
+import { TimeRangeStyled } from "./TimeRangeStyled";
 
 type Props = {
     components: Array<TimeRange>;
@@ -22,7 +22,7 @@ export default function TimeRangeSection(props: Props): JSX.Element {
     const { components, onComponentValueChange, readOnly, showValidation, validators, value, expression, isMarked } = props;
 
     return (
-        <div className={"time-range-section"}>
+        <TimeRangeStyled className={"time-range-section"}>
             <div className={"time-range-components"}>
                 {components.map((componentName) => (
                     <TimeRangeComponent
@@ -38,6 +38,6 @@ export default function TimeRangeSection(props: Props): JSX.Element {
                 ))}
             </div>
             {showValidation && <ValidationLabels validators={validators} values={[expression]} />}
-        </div>
+        </TimeRangeStyled>
     );
 }

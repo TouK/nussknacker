@@ -9,7 +9,6 @@ import { NodeTable, NodeTableBody } from "./graph/node-modal/NodeDetailsContent/
 import { NodeInput, SelectNodeWithFocus } from "./withFocus";
 import { NodeLabelStyled } from "./graph/node-modal/fragment-input-definition/NodeStyled";
 import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
-import "../stylesheets/graph.styl";
 
 type FormValue = { processId: string; processCategory: string };
 

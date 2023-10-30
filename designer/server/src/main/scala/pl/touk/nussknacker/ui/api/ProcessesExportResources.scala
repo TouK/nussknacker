@@ -7,15 +7,17 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.{
+  FetchingProcessRepository,
+  ProcessActivityRepository,
+  ScenarioWithDetailsEntity
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
 import io.circe.syntax._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -73,12 +75,13 @@ class ProcessesExportResources(
     }
   }
 
-  private def exportProcess(processDetails: Option[ProcessDetails]): HttpResponse = processDetails.map(_.json) match {
-    case Some(displayableProcess) =>
-      exportProcess(displayableProcess)
-    case None =>
-      HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
-  }
+  private def exportProcess(processDetails: Option[ScenarioWithDetailsEntity[DisplayableProcess]]): HttpResponse =
+    processDetails.map(_.json) match {
+      case Some(displayableProcess) =>
+        exportProcess(displayableProcess)
+      case None =>
+        HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
+    }
 
   private def exportProcess(processDetails: DisplayableProcess): HttpResponse = {
     fileResponse(ProcessConverter.fromDisplayable(processDetails))
@@ -99,7 +102,7 @@ class ProcessesExportResources(
 
   private def exportProcessToPdf(
       svg: String,
-      processDetails: Option[ProcessDetails],
+      processDetails: Option[ScenarioWithDetailsEntity[DisplayableProcess]],
       processActivity: ProcessActivity
   ) = processDetails match {
     case Some(process) =>

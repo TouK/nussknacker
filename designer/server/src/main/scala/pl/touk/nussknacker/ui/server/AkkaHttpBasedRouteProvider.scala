@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Directives.handleExceptions
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{ContextShift, IO, Resource}
@@ -211,9 +210,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         processingTypeDataReloader = reload,
         modelData = modelData,
-        processRepository = futureProcessRepository,
-        processValidation = processValidation,
-        deploymentService = deploymentService,
+        processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         getProcessCategoryService = getProcessCategoryService
       )
@@ -303,7 +300,6 @@ class AkkaHttpBasedRouteProvider(
             .map { remoteEnvironment =>
               new RemoteEnvironmentResources(
                 remoteEnvironment,
-                futureProcessRepository,
                 processService,
                 processAuthorizer
               )

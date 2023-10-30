@@ -1,11 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
-import css from "!raw-loader!./export.styl";
 import { dia, V, Vectorizer } from "jointjs";
 import { toXml } from "../../../common/SVGUtils";
+import { exportStyled } from "./ExportStyled";
 
 function createStyle() {
     const style = V("style").node;
-    style.appendChild(document.createTextNode(css));
+    style.appendChild(document.createTextNode(exportStyled.styles));
     return style;
 }
 

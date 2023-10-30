@@ -58,6 +58,7 @@ object Union extends CustomStreamTransformer {
               val branchNewValue = interpreterByBranchId(branchId.value)(branchContext)
               branchContext.clearUserVariables
                 .withVariable(variableName, branchNewValue)
+                .appendIdSuffix(branchId.value)
             }
             continuation(DataBatch(contextWithNewValue))
           }

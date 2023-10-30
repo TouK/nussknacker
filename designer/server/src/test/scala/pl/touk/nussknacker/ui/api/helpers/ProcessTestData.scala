@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetPr
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -142,9 +142,9 @@ object ProcessTestData {
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
-  val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
+  val validProcessDetails: ScenarioWithDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
-  val archivedValidProcessDetails: ValidatedProcessDetails =
+  val archivedValidProcessDetails: ScenarioWithDetails =
     TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
   def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder

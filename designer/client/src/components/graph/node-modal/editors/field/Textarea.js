@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import { cx } from "@emotion/css";
 import { allValid } from "../Validators";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import PropTypes from "prop-types";
@@ -29,7 +29,7 @@ export default function Textarea(props) {
                         autoFocus={autoFocus}
                         readOnly={readOnly}
                         placeholder={placeholder}
-                        className={classNames([
+                        className={cx([
                             !showValidation || allValid(validators, [formattedValue ? formattedValue : value])
                                 ? "node-input"
                                 : "node-input node-input-with-error",
