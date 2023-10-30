@@ -45,29 +45,33 @@ object PrettyValidationErrors {
           "Scenario must end with a sink, processor or fragment"
         )
       case propertiesError: ScenarioPropertiesError =>
+        def processTypeName(isFragment: Boolean) = {
+          if (isFragment) "Fragment" else "Scenario"
+        }
+
         propertiesError match {
           case EmptyScenarioId(isFragment) =>
             node(
-              s"${if (isFragment) "Fragment" else "Scenario"} name is mandatory and cannot be empty",
-              s"Empty ${if (isFragment) "fragment" else "scenario"}",
+              s"${processTypeName(isFragment)} name is mandatory and cannot be empty",
+              s"Empty ${processTypeName(isFragment)} name",
               fieldName = Some("$id")
             )
           case BlankScenarioId(isFragment) =>
             node(
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot be blank",
-              s"Blank ${if (isFragment) "fragment" else "scenario"} name",
+              s"${processTypeName(isFragment)} name cannot be blank",
+              s"Blank ${processTypeName(isFragment)} name",
               fieldName = Some("$id")
             )
           case LeadingSpacesScenarioId(isFragment) =>
             node(
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have leading spaces",
-              s"Leading spaces in ${if (isFragment) "fragment" else "scenario"} name",
+              s"${processTypeName(isFragment)} name cannot have leading spaces",
+              s"Leading spaces in ${processTypeName(isFragment)} name",
               fieldName = Some("$id")
             )
           case TrailingSpacesScenarioId(isFragment) =>
             node(
-              s"${if (isFragment) "Fragment" else "Scenario"} name cannot have trailing spaces",
-              s"Trailing spaces in ${if (isFragment) "fragment" else "scenario"} name",
+              s"${processTypeName(isFragment)} name cannot have trailing spaces",
+              s"Trailing spaces in ${processTypeName(isFragment)} name",
               fieldName = Some("$id")
             )
           case ScenarioNameValidationError(message, description) =>
