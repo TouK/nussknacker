@@ -94,5 +94,4 @@ export type GlobalVariables = Record<string, GlobalVariable>;
 
 export type ClassDefinition = {
     clazzName: TypingResult;
-    methods: Record<string, $TodoType>;
 };

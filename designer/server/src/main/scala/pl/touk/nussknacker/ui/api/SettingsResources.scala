@@ -140,11 +140,6 @@ object TopTabType extends Enumeration {
 
 @JsonCodec final case class AuthenticationSettings(provider: String)
 
-@JsonCodec final case class ProcessStateSettings(
-    icons: Map[String, Map[String, String]],
-    tooltips: Map[String, Map[String, String]]
-)
-
 @JsonCodec final case class UISettings(
     features: ToggleFeaturesOptions,
     authentication: AuthenticationSettings,
