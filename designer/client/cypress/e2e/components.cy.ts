@@ -195,7 +195,7 @@ describe("Components list", () => {
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.viewport(1400, 500);
+        cy.viewport(1400, 600);
         cy.visit("/components/usages/filter");
 
         cy.contains(/^other$/i).click();
