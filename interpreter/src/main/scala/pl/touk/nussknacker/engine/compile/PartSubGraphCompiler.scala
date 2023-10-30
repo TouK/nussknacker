@@ -180,14 +180,10 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
       CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
 
     data match {
-      case Variable(id, varName, expression, _) =>
+      case variable @ Variable(id, varName, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, t) =
-          nodeCompiler.compileExpression(
-            expression,
-            ctx,
-            expectedType = Unknown,
-            outputVar = Some(OutputVar.variable(varName))
-          )
+          nodeCompiler.compileVariable(variable, ctx)
+
         CompilationResult.map3(
           f0 = CompilationResult(newCtx),
           f1 = toCompilationResult(compiledExpression, typingInfo, parameters),
