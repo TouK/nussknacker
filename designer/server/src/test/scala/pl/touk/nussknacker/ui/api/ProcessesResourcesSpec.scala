@@ -640,9 +640,9 @@ class ProcessesResourcesSpec
     saveProcess(processName, processWithFragment.process, TestCat)(succeed)
 
     Get(s"/processes/${processWithFragment.process.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
 
-      val fragmentInputParamsUsingPreset: List[FragmentParameter] = processDetails.json.nodes.flatMap {
+      val fragmentInputParamsUsingPreset: List[FragmentParameter] = processDetails.json.get.nodes.flatMap {
         case fragmentInput: FragmentInput =>
           fragmentInput.fragmentParams match {
             case Some(params) =>
