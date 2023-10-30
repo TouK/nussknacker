@@ -187,17 +187,23 @@ class ValidationResourcesSpec
   }
 
   it should "find missing mandatory parameter errors in base components" in {
+    val emptyExpression = Expression.spel("")
+
     val process =
       ScenarioBuilder
         .streaming("process")
-        .source("source1", ProcessTestData.existingSourceFactory)
-        .filter("filter1", Expression.spel(""))
+        .source("source", ProcessTestData.existingSourceFactory)
+        .filter("filter", emptyExpression)
+        .buildSimpleVariable("variable", "varName", emptyExpression)
         .emptySink("sink", ProcessTestData.existingSinkFactory)
 
     createAndValidateScenario(process) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.errors.invalidNodes("filter1").head.message should include(
+      validation.errors.invalidNodes("filter").head.message should include(
+        "This field is mandatory and can not be empty"
+      )
+      validation.errors.invalidNodes("variable").head.message should include(
         "This field is mandatory and can not be empty"
       )
     }
