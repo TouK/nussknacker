@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import progressBar from "./progressBar.js";
-import bootstrap from "bootstrap";
 import path from "path";
 import webpack, { Configuration } from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
@@ -233,17 +232,7 @@ const config: Configuration = {
                 test: /\.styl$/,
                 enforce: "pre",
                 exclude: /node_modules/,
-                use: [
-                    ...cssPreLoaders,
-                    {
-                        loader: "stylus-loader",
-                        options: {
-                            stylusOptions: {
-                                use: [bootstrap()],
-                            },
-                        },
-                    },
-                ],
+                use: cssPreLoaders,
             },
             {
                 test: /\.less$/,

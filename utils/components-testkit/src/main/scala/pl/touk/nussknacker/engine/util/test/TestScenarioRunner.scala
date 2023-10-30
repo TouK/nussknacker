@@ -67,21 +67,23 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
-    val (resultCollector, resultsCollectingHolder) = if (ComponentUseCase.TestRuntime == componentUseCase) {
-      val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
-      (new TestServiceInvocationCollector(collectingListener.runId), Some(collectingListener))
+
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
+      new TestServiceInvocationCollector(resultsCollectingListener.runId)
     } else {
-      (ProductionServiceInvocationCollector, None)
+      ProductionServiceInvocationCollector
     }
 
-    new TestScenarioCollectorHandler(resultCollector, resultsCollectingHolder)
+    new TestScenarioCollectorHandler(resultCollector, resultsCollectingListener)
   }
 
   final class TestScenarioCollectorHandler(
       val resultCollector: ResultCollector,
-      private val resultsCollectingListener: Option[ResultsCollectingListener]
+      val resultsCollectingListener: ResultsCollectingListener
   ) extends AutoCloseable {
-    def close(): Unit = resultsCollectingListener.foreach(_.clean())
+    def close(): Unit = resultsCollectingListener.close()
   }
 
 }

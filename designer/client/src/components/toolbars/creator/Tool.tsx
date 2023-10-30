@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import Highlighter from "react-highlight-words";
-import "../../../stylesheets/toolBox.styl";
 import { NodeType } from "../../../types";
 import { ComponentIcon } from "./ComponentIcon";
 import { useTheme } from "@mui/material";

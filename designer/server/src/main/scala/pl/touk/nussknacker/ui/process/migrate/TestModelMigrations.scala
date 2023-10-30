@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
@@ -23,8 +24,8 @@ class TestModelMigrations(
 ) {
 
   def testMigrations(
-      processes: List[ValidatedProcessDetails],
-      fragments: List[ValidatedProcessDetails]
+      processes: List[ScenarioWithDetails],
+      fragments: List[ScenarioWithDetails]
   ): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
@@ -42,22 +43,18 @@ class TestModelMigrations(
     }
   }
 
-  private def migrateProcess(process: ValidatedProcessDetails): Option[MigratedProcessDetails] = {
+  private def migrateProcess(process: ScenarioWithDetails): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
-        process.mapProcess(_.toDisplayable),
+        process.toRepositoryDetailsWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
       MigratedProcessDetails(
         displayable,
-        process.json.validationResult.getOrElse(
-          throw new IllegalStateException(
-            "Empty validation result. Migrated process should contain validationResult. It suppose to by empty only if validation is skipped"
-          )
-        ),
+        process.validationResultUnsafe,
         migrations.exists(_.failOnNewValidationError),
         process.processCategory
       )

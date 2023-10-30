@@ -6,7 +6,6 @@ import { getProcessDefinitionData } from "../../../../../reducers/selectors/sett
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
-import cn from "classnames";
 import { allValid, Validator } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
@@ -14,6 +13,7 @@ import ReactAce from "react-ace/lib/ace";
 import { EditorMode, ExpressionLang } from "./types";
 import { SerializedStyles } from "@emotion/react";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
+import { cx } from "@emotion/css";
 
 interface InputProps {
     value: string;
@@ -61,7 +61,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     return dataResolved ? (
         <>
             <div
-                className={cn([
+                className={cx([
                     "row-ace-editor",
                     showValidation && !allValid(validators, [value]) && "node-input-with-error",
                     isMarked && "marked",

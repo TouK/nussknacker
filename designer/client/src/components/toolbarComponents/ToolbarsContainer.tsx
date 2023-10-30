@@ -13,11 +13,61 @@ import {
 import React, { CSSProperties, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { TOOLBAR_DRAGGABLE_TYPE } from "./ToolbarsLayer";
-import styles from "./ToolbarsLayer.styl";
-import cn from "classnames";
 import { DragHandlerContext } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
+import { cx } from "@emotion/css";
+import { css, styled } from "@mui/material";
+import { alpha } from "../../containers/theme/helpers";
+
+export const StyledDraggableItem = styled("div")(
+    ({ theme }) => css`
+        .is-dragging-over {
+            opacity: 1;
+            ::after {
+                transition: all 0.3s;
+                content: "";
+                line-height: 0;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                backdrop-filter: none;
+                background: ${alpha(theme.custom.colors.lime, 0.05)};
+                outline: 2px solid ${theme.custom.colors.lime};
+                outline-offset: -2.5px;
+            }
+        }
+
+        .is-dragging {
+            backdrop-filter: blur(8px);
+            background: ${alpha(theme.custom.colors.borderColor, 0.25)};
+            transition: all 0.3s;
+            opacity: 0.75;
+            ::after {
+                transition: all 0.3s;
+                content: "";
+                line-height: 0;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                backdrop-filter: blur(0.5px);
+                outline: 2px dashed ${theme.custom.colors.orangered};
+                background: ${alpha(theme.custom.colors.orangered, 0.2)};
+                outline-offset: -3px;
+            }
+        }
+
+        .is-animating {
+            .content {
+                opacity: 1;
+            }
+        }
+    `,
+);
 
 interface Rubric extends DraggableRubric {
     source: DraggableLocation;
@@ -45,23 +95,20 @@ export function ToolbarsContainer(props: Props): JSX.Element {
 
     const renderDraggable: DraggableChildrenFn = useCallback(
         (p: DraggableProvided, s: DraggableStateSnapshot, r: Rubric) => (
-            <div
-                ref={p.innerRef}
-                {...p.draggableProps}
-                style={getStyle(p.draggableProps.style, s)}
-                className={cn([
-                    styles.draggable,
-                    s.isDragging && styles.isDragging,
-                    s.draggingOver && styles.isDraggingOver,
-                    s.isDropAnimating && styles.isAnimating,
-                    r.source.index === 0 && styles.first,
-                    r.source.index === ordered.length - 1 && styles.last,
-                ])}
-            >
+            <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={"draggable"}>
                 <DragHandlerContext.Provider value={p.dragHandleProps}>
-                    <div className={styles.background}>
-                        <div className={styles.content}>{ordered[r.source.index].component}</div>
-                    </div>
+                    <StyledDraggableItem>
+                        <div
+                            className={cx(
+                                s.draggingOver ? "is-dragging-over" : s.isDragging && "is-dragging",
+                                s.isDropAnimating && "is-animating",
+                                r.source.index === 0 && "first",
+                                r.source.index === ordered.length - 1 && "last",
+                            )}
+                        >
+                            {ordered[r.source.index].component}
+                        </div>
+                    </StyledDraggableItem>
                 </DragHandlerContext.Provider>
             </div>
         ),
@@ -72,15 +119,10 @@ export function ToolbarsContainer(props: Props): JSX.Element {
         (p: DroppableProvided, s: DroppableStateSnapshot) => (
             <div
                 ref={p.innerRef}
-                className={cn([
-                    styles.droppable,
-                    s.isDraggingOver && styles.isDraggingOver,
-                    s.draggingFromThisWith && styles.isDraggingFrom,
-                    className,
-                ])}
+                className={cx("droppable", s.isDraggingOver && "is-dragging-over", s.draggingFromThisWith && "is-dragging-from", className)}
             >
-                <div {...p.droppableProps} className={cn(styles.draggableList)}>
-                    <div className={styles.background}>
+                <div {...p.droppableProps} className={"draggable-list"}>
+                    <div className={"background"}>
                         {ordered.map(({ id, isHidden }, index) => {
                             if (isHidden) {
                                 return null;

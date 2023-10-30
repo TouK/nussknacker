@@ -32,9 +32,7 @@ export default function CommentsList({ deleteComment }: CommentsListProps) {
                             component={"span"}
                             sx={(theme) => ({ color: theme.custom.colors.silverChalice })}
                         >{`| v${comment.processVersionId} | ${comment.user}`}</Box>
-                        {comment.user != loggedUser.id ? null : (
-                            <RemoveButton className="glyphicon glyphicon-remove" onClick={() => deleteComment(comment)} />
-                        )}
+                        {comment.user != loggedUser.id ? null : <RemoveButton onClick={() => deleteComment(comment)} />}
                     </div>
                     <CommentContent content={comment.content} commentSettings={commentSettings} />
                     {!isLastComment(index) && <ListSeparator />}

@@ -44,26 +44,6 @@ export function getDarkenContrastColor(color: string, contrast = 5, ratio = 0.1)
     return resultColor.hex();
 }
 
-function parseVarName(name: string) {
-    return name.startsWith("--") ? name : `--${name}`;
-}
-
-function parseColorName(name: string) {
-    return name.toLowerCase().endsWith("color") ? name : `${name}Color`;
-}
-
-function colorsToVariables(colors: Record<string, string>): Record<`--${string}`, string> {
-    return Object.fromEntries(Object.entries(colors).map(([name, value]) => [parseVarName(parseColorName(name)), value]));
-}
-
-function themeToVariables(theme: Theme): { ":root": Record<`--${string}`, string> } {
-    return {
-        ":root": colorsToVariables(theme.custom.colors),
-    };
-}
-
-export const GlobalCSSVariables = () => <GlobalStyles styles={themeToVariables} />;
-
 export const useFocus = () => {
     const theme = useTheme();
 

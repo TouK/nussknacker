@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from "react";
 import Select from "react-select";
-import styles from "../../../../stylesheets/select.styl";
 import { NodeValue } from "./NodeValue";
+import { selectStyled } from "../../../../stylesheets/SelectStyled";
+import { useTheme } from "@mui/material";
 
 export interface Option {
     value: string;
@@ -34,12 +35,13 @@ function useCaptureEsc() {
 
 export function TypeSelect({ isMarked, options, readOnly, value, onChange }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
+    const theme = useTheme();
 
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
                 className="node-value node-value-select node-value-type-select"
-                classNamePrefix={styles.nodeValueSelect}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
@@ -48,6 +50,28 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
                 value={value}
                 onChange={(option) => onChange(option.value)}
                 menuPortalTarget={document.body}
+                styles={{
+                    input: (base) => ({ ...input(base) }),
+                    control: (base, props) => ({
+                        ...control(base, props.isFocused, props.isDisabled),
+                    }),
+                    menu: (base) => ({
+                        ...menu(base),
+                    }),
+                    menuPortal: (base) => ({
+                        ...menuPortal(base),
+                    }),
+                    menuList: (base) => ({
+                        ...menuList(base),
+                    }),
+                    option: (base, props) => ({
+                        ...menuOption(base, props.isSelected, props.isFocused),
+                    }),
+                    valueContainer: (base, props) => ({
+                        ...valueContainer(base, props.hasValue),
+                    }),
+                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                }}
             />
         </NodeValue>
     );
