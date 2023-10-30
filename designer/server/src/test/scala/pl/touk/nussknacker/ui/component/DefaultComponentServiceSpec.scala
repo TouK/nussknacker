@@ -16,8 +16,8 @@ import pl.touk.nussknacker.restmodel.component.{
   ComponentUsagesInScenario,
   NodeUsageData
 }
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -38,6 +38,7 @@ import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigE
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{
   ConfigProcessCategoryService,
   DBProcessService,
@@ -544,7 +545,7 @@ class DefaultComponentServiceSpec
   )
 
   it should "return components for each user" in {
-    val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
+    val processes      = List(MarketingProcess, FraudProcess, FraudTestProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService =
       DefaultComponentService(
@@ -755,20 +756,24 @@ class DefaultComponentServiceSpec
           (FraudFragment, List(ScenarioUsageData(FragmentFilterName))),
           (
             FraudProcessWithFragment,
-            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))
+            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name.value, FragmentFilterName))
           ),
         )
       ),
     )
 
     forAll(testingData) {
-      (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])]) =>
+      (
+          user: LoggedUser,
+          componentId: ComponentId,
+          expected: List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]
+      ) =>
         val result = defaultComponentService
           .getComponentUsages(componentId)(user)
           .futureValue
           .map(_.map(n => n.copy(nodesUsagesData = n.nodesUsagesData.sorted)))
         val componentProcesses = expected.map { case (process, nodesUsagesData) =>
-          ComponentUsagesInScenario(process, nodesUsagesData.sorted)
+          DefaultComponentService.toComponentUsagesInScenario(process, nodesUsagesData.sorted)
         }
         result shouldBe Right(componentProcesses)
     }
@@ -790,7 +795,7 @@ class DefaultComponentServiceSpec
 
   private def createDbProcessService(
       processCategoryService: ProcessCategoryService,
-      processes: List[ProcessDetails] = Nil
+      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),

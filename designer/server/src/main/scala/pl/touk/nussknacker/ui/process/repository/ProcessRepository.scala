@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.listener.Comment
@@ -199,7 +198,7 @@ class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeData
       maybeProcess <- processTableFilteredByUser.filter(_.id === processId).result.headOption
       process = maybeProcess.getOrElse(throw ProcessNotFoundError(processId.value.toString))
       latestProcessVersion <- fetchProcessLatestVersionsQuery(processId)(
-        ProcessShapeFetchStrategy.FetchDisplayable
+        ScenarioShapeFetchStrategy.FetchDisplayable
       ).result.headOption
       newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
       _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))

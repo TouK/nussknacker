@@ -5,6 +5,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
@@ -21,8 +22,8 @@ class UnionTransformerSpec
     with VeryPatientScalaFutures {
 
   import ValidatedValuesDetailedMessage._
-  import spel.Implicits._
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+  import spel.Implicits._
 
   private val BranchFooId = "foo"
 
@@ -163,7 +164,7 @@ class UnionTransformerSpec
     result.toList should contain(CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
   }
 
-  test("should not throw when one branch emits error") {
+  test("should throw when one branch emits error") {
     val data = List(10, 20, 30, 40)
     val testScenarioRunner = TestScenarioRunner
       .flinkBased(config, flinkMiniCluster)
@@ -194,7 +195,15 @@ class UnionTransformerSpec
     val result = testScenarioRunner.runWithData(scenario, data).validValue
     result.successes.size shouldBe 6
     result.successes.toSet shouldBe Set(5, 10, 15, 20, 30, 40)
-    result.errors shouldBe Nil
+
+    val errors = result.errors.map(_.throwable).map { exc =>
+      exc.asInstanceOf[CustomNodeValidationException].getMessage
+    }
+
+    errors shouldBe List(
+      "Expression [#input / (#input % 4)] evaluation failed, message: / by zero",
+      "Expression [#input / (#input % 4)] evaluation failed, message: EL1072E: An exception occurred whilst evaluating a compiled expression"
+    )
   }
 
 }

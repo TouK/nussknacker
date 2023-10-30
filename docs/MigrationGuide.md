@@ -3,17 +3,29 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.13.0 (Not released yet)
+## In version 1.13.x (Not released yet)
 
 ### Code API changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
+* [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner:
+  * `TestProcess.exceptions` type changed from `List[ExceptionResult[T]]` to `List[NuExceptionInfo[_ <: Throwable]]`
+* [#4912](https://github.com/TouK/nussknacker/pull/4912) Changes in scenario details:
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]` and `pl.touk.nussknacker.restmodel.processdetails.BasicProcess`
+    used in rest resources were merged into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails`
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]`
+    used in `pl.touk.nussknacker.ui.listener.services.PullProcessRepository` were moved into `listener-api` and renamed into
+    `pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails`
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessDetails` and `pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails`
+    type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
+  * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
 
-## In version 1.12.0
+## In version 1.12.x
 
 ### Code API changes
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils

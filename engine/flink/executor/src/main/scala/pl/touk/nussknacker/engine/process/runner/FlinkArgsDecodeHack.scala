@@ -10,6 +10,7 @@ object FlinkArgsDecodeHack {
     _.replace("__FRH_", "\"")
       .replace("__FRH2_", "\n")
       .replace("__FRH3_", "'")
+      .replace("__FRH4_", "#")
   )
 
 }

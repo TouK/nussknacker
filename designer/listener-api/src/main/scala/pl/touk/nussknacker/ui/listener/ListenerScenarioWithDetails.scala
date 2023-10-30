@@ -1,0 +1,55 @@
+package pl.touk.nussknacker.ui.listener
+
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.scenariodetails
+
+import java.time.Instant
+
+trait ListenerScenarioWithDetails {
+  def id: String
+
+  def name: ProcessName
+
+  def processId: ProcessId
+
+  def processVersionId: VersionId
+
+  def isLatestVersion: Boolean
+
+  def description: Option[String]
+
+  def isArchived: Boolean
+
+  def isFragment: Boolean
+
+  def processingType: ProcessingType
+
+  def processCategory: String
+
+  def modificationDate: Instant // TODO: Deprecated, please use modifiedAt
+
+  def modifiedAt: Instant
+
+  def modifiedBy: String
+
+  def createdAt: Instant
+
+  def createdBy: String
+
+  def tags: Option[List[String]]
+
+  def lastDeployedAction: Option[ProcessAction]
+
+  def lastStateAction: Option[ProcessAction]
+
+  def lastAction: Option[ProcessAction]
+
+  def scenarioGraph: DisplayableProcess
+
+  def history: Option[List[scenariodetails.ScenarioVersion]]
+
+  def modelVersion: Option[Int]
+}

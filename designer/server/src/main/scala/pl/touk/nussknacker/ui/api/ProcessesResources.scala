@@ -10,20 +10,25 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
+import pl.touk.nussknacker.ui.process.ProcessService.{
+  CreateProcessCommand,
+  FetchScenarioGraph,
+  GetScenarioWithDetailsOptions,
+  UpdateProcessCommand
+}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.{ExecutionContext, Future}
+import ScenarioWithDetailsConversions._
 
 class ProcessesResources(
     protected val processService: ProcessService,
@@ -47,7 +52,11 @@ class ProcessesResources(
       path("archive") {
         get {
           complete {
-            processService.getRawProcessesWithDetails[Unit](isFragment = None, isArchived = Some(true)).toBasicProcess
+            processService
+              .getProcessesWithDetails(
+                ScenarioQuery(isArchived = Some(true)),
+                GetScenarioWithDetailsOptions.detailsOnly
+              )
           }
         }
       } ~ path("unarchive" / Segment) { processName =>
@@ -74,23 +83,31 @@ class ProcessesResources(
         get {
           processesQuery { query =>
             complete {
-              processService.getProcessDetailsWithStateOnly(query).toBasicProcess
+              processService.getProcessesWithDetails(
+                query,
+                GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+              )
             }
           }
         }
       } ~ path("processesDetails") {
         (get & processesQuery & skipValidateAndResolveParameter) { (query, skipValidateAndResolve) =>
           complete {
-            processService.getProcessesWithDetails(query, skipValidateAndResolve)
+            processService.getProcessesWithDetails(
+              query,
+              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
+            )
           }
         }
       } ~ path("processes" / "status") {
         get {
           complete {
-            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
             processService
-              .getRawProcessesWithDetails[Unit](isFragment = Some(false), isArchived = Some(false))
-              .flatMap(deploymentService.fetchProcessStatesForProcesses)
+              .getProcessesWithDetails(
+                ScenarioQuery(isFragment = Some(false), isArchived = Some(false)),
+                GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
+              )
+              .map(_.flatMap(details => details.state.map(details.name -> _)).toMap)
           }
         }
       } ~ path("processes" / "import" / Segment) { processName =>
@@ -135,7 +152,10 @@ class ProcessesResources(
             }
           } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
             complete {
-              processService.getProcessWithDetails(processId, skipValidateAndResolve)
+              processService.getProcessWithDetails(
+                processId,
+                GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
+              )
             }
           }
         }
@@ -152,7 +172,11 @@ class ProcessesResources(
       } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
         (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
           complete {
-            processService.getProcessWithDetails(processId, versionId, skipValidateAndResolve)
+            processService.getProcessWithDetails(
+              processId,
+              versionId,
+              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
+            )
           }
         }
       } ~ path("processes" / Segment / Segment) { (processName, category) =>
@@ -190,7 +214,8 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             processService
-              .getProcessDetailsOnly(processId)
+              .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
+              .map(_.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }
@@ -211,9 +236,17 @@ class ProcessesResources(
           (get & processId(processName)) { processId =>
             complete {
               for {
-                thisVersion  <- processService.getRawProcessWithDetails(processId, thisVersion)
-                otherVersion <- processService.getRawProcessWithDetails(processId, otherVersion)
-              } yield ProcessComparator.compare(thisVersion.json, otherVersion.json)
+                thisVersion <- processService.getProcessWithDetails(
+                  processId,
+                  thisVersion,
+                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                )
+                otherVersion <- processService.getProcessWithDetails(
+                  processId,
+                  otherVersion,
+                  GetScenarioWithDetailsOptions.withsScenarioGraph
+                )
+              } yield ProcessComparator.compare(thisVersion.scenarioGraphUnsafe, otherVersion.scenarioGraphUnsafe)
             }
           }
       }
@@ -235,11 +268,7 @@ class ProcessesResources(
     processChangeListener.handle(event)
   }
 
-  private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {
-    def toBasicProcess: Future[List[BasicProcess]] = self.map(f => f.map(bpd => BasicProcess(bpd)))
-  }
-
-  private def processesQuery: Directive1[ProcessesQuery] = {
+  private def processesQuery: Directive1[ScenarioQuery] = {
     parameters(
       Symbol("isFragment").as[Boolean].?,
       Symbol("isArchived").as[Boolean].?,
@@ -247,7 +276,9 @@ class ProcessesResources(
       Symbol("categories").as(CsvSeq[String]).?,
       Symbol("processingTypes").as(CsvSeq[String]).?,
       Symbol("names").as(CsvSeq[String]).?,
-    ).as(ProcessesQuery.apply _)
+    ).tmap { case (isFragment, isArchived, isDeployed, categories, processingTypes, names) =>
+      (isFragment, isArchived, isDeployed, categories, processingTypes, names.map(_.map(ProcessName(_))))
+    }.as(ScenarioQuery.apply _)
   }
 
   private def skipValidateAndResolveParameter = {
@@ -259,28 +290,4 @@ class ProcessesResources(
 object ProcessesResources {
   final case class UnmarshallError(message: String) extends FatalError(message)
 
-}
-
-final case class ProcessesQuery(
-    isFragment: Option[Boolean],
-    isArchived: Option[Boolean],
-    isDeployed: Option[Boolean],
-    categories: Option[Seq[String]],
-    processingTypes: Option[Seq[String]],
-    names: Option[Seq[String]],
-) {
-
-  def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
-    isFragment = isFragment,
-    isArchived = isArchived,
-    isDeployed = isDeployed,
-    categories = categories,
-    processingTypes = processingTypes,
-    names = names.map(_.map(ProcessName(_))),
-  )
-
-}
-
-object ProcessesQuery {
-  def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
 }

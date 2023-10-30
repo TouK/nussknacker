@@ -7,7 +7,9 @@ object ClassPaths {
   val commonClasspath = List(
     s"./engine/flink/components/base/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkBase.jar",
     s"./engine/flink/components/kafka/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkKafka.jar",
-    s"./engine/flink/executor/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkExecutor.jar"
+    s"./engine/flink/executor/target/scala-${ScalaMajorVersionConfig.scalaMajorVersion}/flinkExecutor.jar",
+    "./engine/flink/executor/target/it-libs/flink-dropwizard-metrics-deps/flink-metrics-dropwizard.jar",
+    "./engine/flink/executor/target/it-libs/flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar",
   )
 
   val javaClasspath: List[String] =

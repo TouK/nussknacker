@@ -8,7 +8,6 @@ import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -16,23 +15,18 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationResult
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptyFragment, toValidatedDisplayable, validProcess}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{toValidatedDisplayable, validProcess}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{
-  ProcessTestData,
-  TestCategories,
-  TestFactory,
-  TestProcessUtil,
-  TestProcessingTypes
-}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import io.circe.parser
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -71,7 +65,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def statefulEnvironment(
-      expectedProcessDetails: ValidatedProcessDetails,
+      expectedProcessDetails: ScenarioWithDetails,
       expectedProcessCategory: String,
       initialRemoteProcessList: List[String],
       onMigrate: Future[UpdateProcessCommand] => Unit
@@ -166,13 +160,11 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def environmentForTestMigration(
-      processes: List[ValidatedProcessDetails],
-      fragments: List[ValidatedProcessDetails]
+      processes: List[ScenarioWithDetails],
+      fragments: List[ScenarioWithDetails]
   ) = new MockRemoteEnvironment {
 
-    private def basicProcesses: List[BasicProcess] = (processes ++ fragments).map(BasicProcess.apply(_))
-
-    private def allProcesses: List[ValidatedProcessDetails] = processes ++ fragments
+    private def allProcesses: List[ScenarioWithDetails] = processes ++ fragments
 
     override protected def request(
         uri: Uri,
@@ -180,20 +172,20 @@ class StandardRemoteEnvironmentSpec
         request: MessageEntity,
         header: Seq[HttpHeader]
     ): Future[HttpResponse] = {
-      object GetBasicProcesses {
+      object GetProcessesDetailsWithoutScenarioGraph {
         def unapply(arg: (Uri, HttpMethod)): Boolean = {
           arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
         }
       }
 
       object GetProcessesDetails {
-        def unapply(arg: (Uri, HttpMethod)): Option[Set[String]] = {
+        def unapply(arg: (Uri, HttpMethod)): Option[Set[ProcessName]] = {
           val uri = arg._1
           if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri
               .query()
               .get("isArchived")
               .contains("false") && arg._2 == HttpMethods.GET) {
-            uri.query().get("names").map(_.split(",").toSet)
+            uri.query().get("names").map(_.split(",").map(ProcessName(_)).toSet)
           } else {
             None
           }
@@ -201,8 +193,10 @@ class StandardRemoteEnvironmentSpec
       }
 
       (uri, method) match {
-        case GetBasicProcesses() =>
-          Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+        case GetProcessesDetailsWithoutScenarioGraph() =>
+          Marshal(allProcesses.map(_.copy(json = None))).to[ResponseEntity].map { entity =>
+            HttpResponse(entity = entity)
+          }
         case GetProcessesDetails(names) =>
           Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity =>
             HttpResponse(entity = entity)
@@ -288,9 +282,11 @@ class StandardRemoteEnvironmentSpec
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
-          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
+          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+            .to[RequestEntity]
+            .map { entity =>
+              HttpResponse(StatusCodes.OK, entity = entity)
+            }
         } else {
           throw new AssertionError(s"Not expected $path")
         }
@@ -315,9 +311,11 @@ class StandardRemoteEnvironmentSpec
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
-          Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
-            HttpResponse(StatusCodes.OK, entity = entity)
-          }
+          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+            .to[RequestEntity]
+            .map { entity =>
+              HttpResponse(StatusCodes.OK, entity = entity)
+            }
         } else {
           throw new AssertionError(s"Not expected $path")
         }
@@ -419,7 +417,7 @@ class StandardRemoteEnvironmentSpec
     migrationResult should have size 2
     migrationResult.map(
       _.converted.id
-    ) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.id)
+    ) should contain only (ProcessTestData.validProcessDetails.name.value, ProcessTestData.sampleFragment.id)
   }
 
 }
