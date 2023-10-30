@@ -23,9 +23,6 @@ object FragmentParameterValidator {
         -> RequireValueFromUndefinedFixedList(name, Set(fragmentInputId)),
       (initialValue.isDefined && allowOnlyValuesFromFixedValuesList && !effectiveFixedValuesList.contains(initialValue))
         -> InitialValueNotPresentInPossibleValues(name, Set(fragmentInputId))
-
-      // TODO ? FragmentParameterFixedValuesDirectInput -> `typ` must be string or boolean ???
-      // TODO ? (harder) initialValue (and fixedValues?) have to be of proper type (subclass/castable to `typ`) ?
     ).collect {
       case (condition, error) if condition => error
     }

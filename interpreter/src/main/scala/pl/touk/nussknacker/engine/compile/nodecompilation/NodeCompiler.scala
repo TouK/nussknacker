@@ -505,7 +505,7 @@ class NodeCompiler(
   }
 
   // TODO: better classloader error handling
-  private def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
+  def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId): TypingResult =
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))

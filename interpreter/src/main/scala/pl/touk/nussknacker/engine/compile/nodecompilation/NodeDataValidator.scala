@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver,
 import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, FragmentParameterValidator}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentParameter,
   FragmentParameterFixedListPreset
@@ -113,9 +114,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput           => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case a: FragmentInputDefinition => validateFragmentInputDefinition(a, fixedValuesPresetProvider)
-        case _                          => ValidationNotPerformed
+        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
+        case a: FragmentInputDefinition =>
+          validateFragmentInputDefinition(compiler, validationContext, a, fixedValuesPresetProvider)
+        case _ => ValidationNotPerformed
       }
     }
   }
@@ -167,9 +169,11 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   }
 
   private def validateFragmentInputDefinition(
+      compiler: NodeCompiler,
+      validationContext: ValidationContext,
       definition: FragmentInputDefinition,
       fixedValuesPresetProvider: FixedValuesPresetProvider
-  ) = {
+  )(implicit nodeId: NodeId) = {
     val presets                    = fixedValuesPresetProvider.getAll // TODO handle failure? or is just 500 ok here?
     val missingPresetIdErrors      = validateMissingPresetIds(definition, presets)
     val paramsWithEffectivePresets = fillEffectivePresets(definition, presets)
@@ -181,8 +185,20 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       ) // TODO this validation should also happen in ProcessValidation (?)
     }
 
+    val fixedValueResponses = definition.parameters.flatMap { param =>
+      val expectedType = compiler.loadFromParameter(param)
+      (param.effectiveFixedValuesList ++ param.initialValue).map { fixedExpressionValue =>
+        compiler.compileExpression(
+          Expression.spel(fixedExpressionValue.expression),
+          validationContext,
+          expectedType = expectedType,
+          outputVar = None
+        )
+      }
+    } // TODO this validation should also happen in ProcessValidation (?)
+
     ValidationPerformed(
-      missingPresetIdErrors ++ fragmentParameterErrors,
+      missingPresetIdErrors ++ fragmentParameterErrors ++ fixedValueResponses.flatMap(_.errors),
       None,
       None
     )

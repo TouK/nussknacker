@@ -146,14 +146,14 @@ class FragmentComponentDefinitionExtractor(
 
     val extractedEditor = fragmentParameter match {
       case param: FragmentParameterFixedValuesDirectInput =>
-        considerEditorInputMode(
+        fixedValuesEditorWithInputMode(
           param.inputMode,
           FixedValuesParameterEditor(
             fragmentParameter.effectiveFixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
           )
         )
       case param: FragmentParameterFixedListPreset =>
-        considerEditorInputMode(
+        fixedValuesEditorWithInputMode(
           param.inputMode,
           FixedValuesPresetParameterEditor(
             param.fixedValuesListPresetId,
@@ -181,7 +181,7 @@ class FragmentComponentDefinitionExtractor(
       )
   }
 
-  private def considerEditorInputMode(
+  private def fixedValuesEditorWithInputMode(
       inputMode: InputModeWithFixedList,
       fixedValuesEditor: SimpleParameterEditor
   ) = {
