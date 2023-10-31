@@ -94,7 +94,7 @@ object PrettyValidationErrors {
             )
           case InvalidCharactersNodeId(_) =>
             node(
-              "Node name contains invalid characters. Quotation mark (\"), comma (,) and apostrophe (') are not allowed",
+              "Node name contains invalid characters. Quotation mark (\"), dot (.) and apostrophe (') are not allowed",
               "Invalid characters in node name",
               errorType = NodeValidationErrorType.RenderNotAllowed,
               fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
