@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{invalidNel, valid}
+import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import cats.implicits._
 
 object IdValidator {
-
-  import cats.implicits._
 
   private val nodeIdIllegalCharacters = Set('.', '"', '\'')
 
@@ -21,80 +20,75 @@ object IdValidator {
     scenarioIdValidationResult.combine(nodesIdValidationResult)
   }
 
-  def validateScenarioId(scenarioId: String, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] = {
-    val validatedData = ScenarioIdValidationData(scenarioId, isFragment)
-    validateIdIsNotEmpty(validatedData).andThen { _ =>
-      validateIdIsNotBlank(validatedData).andThen { _ =>
-        (validateIdHasNoLeadingSpaces(validatedData), validateIdHasNoTrailingSpaces(validatedData)).mapN((_, _) => ())
-      }
-    }
-  }
+  def validateScenarioId(scenarioId: String, isFragment: Boolean): ValidatedNel[ProcessCompilationError, Unit] =
+    validateIdWithMapping(scenarioId, Set.empty, e => toScenarioIdError(e, isFragment))
 
-  def validateNodeId(nodeId: String): ValidatedNel[ProcessCompilationError, Unit] = {
+  def validateNodeId(nodeId: String): ValidatedNel[ProcessCompilationError, Unit] =
+    validateIdWithMapping(nodeId, nodeIdIllegalCharacters, toNodeError)
+
+  private def validateIdWithMapping(
+      nodeId: String,
+      illegalCharacters: Set[Char],
+      errorMapping: IdValidationError => ProcessCompilationError
+  ): ValidatedNel[ProcessCompilationError, Unit] =
+    validateId(nodeId, illegalCharacters).leftMap(_.map(errorMapping))
+
+  private def validateId(id: String, illegalCharacters: Set[Char]) = {
     (
-      validateIdIsNotEmpty(nodeId).andThen { _ =>
-        validateIdIsNotBlank(nodeId).andThen { _ =>
-          (validateIdHasNoLeadingSpaces(nodeId), validateIdHasNoTrailingSpaces(nodeId)).mapN((_, _) => ())
+      validateIdIsNotEmpty(id).andThen { _ =>
+        validateIdIsNotBlank(id).andThen { _ =>
+          (validateIdHasNoLeadingSpaces(id), validateIdHasNoTrailingSpaces(id)).mapN((_, _) => ())
         }
       },
-      validateNodeHasNoIllegalCharacters(nodeId)
+      validateIdHasNoIllegalCharacters(id, illegalCharacters)
     )
       .mapN((_, _) => ())
   }
 
-  private final case class ScenarioIdValidationData(scenarioId: String, isFragment: Boolean)
-
-  private def validateIdIsNotEmpty(implicit validationData: ScenarioIdValidationData) =
-    applySingleErrorValidation[ScenarioIdValidationData](
-      validationData.scenarioId.isEmpty,
-      EmptyScenarioId(validationData.isFragment)
-    )
-
-  private def validateIdIsNotEmpty(implicit nodeId: String) =
-    applySingleErrorValidation[String](nodeId.isEmpty, EmptyNodeId())
-
-  private def validateIdIsNotBlank(implicit validationData: ScenarioIdValidationData) =
-    applySingleErrorValidation[ScenarioIdValidationData](
-      validationData.scenarioId.isBlank,
-      BlankScenarioId(validationData.isFragment)
-    )
-
-  private def validateIdIsNotBlank(implicit nodeId: String) =
-    applySingleErrorValidation[String](nodeId.isBlank, BlankNodeId(nodeId))
-
-  private def validateIdHasNoLeadingSpaces(implicit validationData: ScenarioIdValidationData) =
-    applySingleErrorValidation[ScenarioIdValidationData](
-      validationData.scenarioId.startsWith(" "),
-      LeadingSpacesScenarioId(validationData.isFragment)
-    )
-
-  private def validateIdHasNoLeadingSpaces(implicit nodeId: String) =
-    applySingleErrorValidation[String](nodeId.startsWith(" "), LeadingSpacesNodeId(nodeId))
-
-  private def validateIdHasNoTrailingSpaces(implicit validationData: ScenarioIdValidationData) =
-    applySingleErrorValidation[ScenarioIdValidationData](
-      validationData.scenarioId.endsWith(" "),
-      TrailingSpacesScenarioId(validationData.isFragment)
-    )
-
-  private def validateIdHasNoTrailingSpaces(implicit nodeId: String) =
-    applySingleErrorValidation[String](nodeId.endsWith(" "), TrailingSpacesNodeId(nodeId))
-
-  private def validateNodeHasNoIllegalCharacters(implicit nodeId: String) = {
-    applySingleErrorValidation[String](
-      nodeId.exists(nodeIdIllegalCharacters.contains),
-      InvalidCharactersNodeId(nodeId)
-    )
+  private def validateIdIsNotEmpty(id: String) = {
+    if (id.isEmpty) invalidNel(EmptyIdError()) else valid(())
   }
 
-  private def applySingleErrorValidation[T](
-      isValid: Boolean,
-      error: ProcessCompilationError
-  )(implicit validated: T): ValidatedNel[ProcessCompilationError, T] = {
-    if (isValid)
-      invalid(NonEmptyList.one(error))
-    else
-      valid(validated)
+  private def validateIdIsNotBlank(id: String) = {
+    if (id.trim.isEmpty) invalidNel(BlankIdError(id)) else valid(())
   }
+
+  private def validateIdHasNoLeadingSpaces(id: String) = {
+    if (id.startsWith(" ")) invalidNel(LeadingSpacesIdError(id)) else valid(())
+  }
+
+  private def validateIdHasNoTrailingSpaces(id: String) = {
+    if (id.endsWith(" ")) invalidNel(TrailingSpacesIdError(id)) else valid(())
+  }
+
+  private def validateIdHasNoIllegalCharacters(id: String, illegalCharacters: Set[Char]) = {
+    if (id.exists(illegalCharacters.contains)) invalidNel(IllegalCharactersIdError(id)) else valid(())
+  }
+
+  private def toNodeError(idError: IdValidationError): ProcessCompilationError = idError match {
+    case EmptyIdError()               => EmptyNodeId()
+    case BlankIdError(id)             => BlankNodeId(id)
+    case LeadingSpacesIdError(id)     => LeadingSpacesNodeId(id)
+    case TrailingSpacesIdError(id)    => TrailingSpacesNodeId(id)
+    case IllegalCharactersIdError(id) => InvalidCharactersNodeId(id)
+  }
+
+  private def toScenarioIdError(idError: IdValidationError, isFragment: Boolean): ProcessCompilationError =
+    idError match {
+      case EmptyIdError()           => EmptyScenarioId(isFragment)
+      case BlankIdError(_)          => BlankScenarioId(isFragment)
+      case LeadingSpacesIdError(_)  => LeadingSpacesScenarioId(isFragment)
+      case TrailingSpacesIdError(_) => TrailingSpacesScenarioId(isFragment)
+      case IllegalCharactersIdError(_) =>
+        ScenarioNameValidationError("Scenario name contains invalid characters", "Invalid characters in scenario name")
+    }
+
+  private sealed trait IdValidationError
+
+  private final case class EmptyIdError()                       extends IdValidationError
+  private final case class BlankIdError(id: String)             extends IdValidationError
+  private final case class LeadingSpacesIdError(id: String)     extends IdValidationError
+  private final case class TrailingSpacesIdError(id: String)    extends IdValidationError
+  private final case class IllegalCharactersIdError(id: String) extends IdValidationError
 
 }
