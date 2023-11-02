@@ -25,7 +25,10 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 object ValidatedDisplayableProcess {
 
-  def apply(displayableProcess: DisplayableProcess, validationResult: ValidationResult): ValidatedDisplayableProcess =
+  def withValidationResult(
+      displayableProcess: DisplayableProcess,
+      validationResult: ValidationResult
+  ): ValidatedDisplayableProcess =
     new ValidatedDisplayableProcess(
       displayableProcess.id,
       displayableProcess.properties,

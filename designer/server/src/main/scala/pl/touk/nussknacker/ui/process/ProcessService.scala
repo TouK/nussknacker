@@ -33,7 +33,6 @@ import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidatio
 import ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.validation
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import slick.dbio.DBIOAction
 
@@ -407,7 +406,7 @@ class DBProcessService(
         displayable.processingType,
         process.processCategory
       )
-      Future.successful(validation.ValidatedDisplayableProcess(displayable, validationResult))
+      Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
     }
   }
 

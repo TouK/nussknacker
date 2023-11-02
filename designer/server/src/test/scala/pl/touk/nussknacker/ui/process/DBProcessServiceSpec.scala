@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.validation
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -193,7 +192,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     )
 
     Right(
-      validation.ValidatedDisplayableProcess(
+      ValidatedDisplayableProcess.withValidationResult(
         displayableProcess,
         ValidationResult.success.copy(nodeResults = nodeResults)
       )

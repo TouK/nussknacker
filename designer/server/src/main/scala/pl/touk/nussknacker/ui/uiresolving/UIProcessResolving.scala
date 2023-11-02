@@ -60,7 +60,7 @@ class UIProcessResolving(
       .getOrElse(canonical)
     val displayable   = ProcessConverter.toDisplayable(substituted, processingType, category)
     val uiValidations = validation.uiValidation(displayable)
-    ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult))
+    ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
   }
 
 }

@@ -84,7 +84,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
     val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {

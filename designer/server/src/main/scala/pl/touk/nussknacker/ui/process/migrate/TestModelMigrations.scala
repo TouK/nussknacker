@@ -37,7 +37,7 @@ class TestModelMigrations(
       val validationResult = validation.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
-        ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
+        ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
         newErrors,
         migrationDetails.shouldFail
       )
