@@ -358,7 +358,7 @@ class DeploymentServiceImpl(
             case process if process.isFragment => DBIO.successful(process)
             case process =>
               getProcessState(
-                process.toRepositoryDetailsWithoutScenarioGraphAndValidationResult,
+                process.toEntity,
                 actionsInProgress.getOrElse(process.processId, Set.empty)
               ).map(state => process.copy(state = Some(state)))
           }

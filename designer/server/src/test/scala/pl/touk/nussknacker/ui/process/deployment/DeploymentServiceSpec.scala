@@ -602,7 +602,7 @@ class DeploymentServiceSpec
     val processesDetailsWithState = deploymentService
       .enrichDetailsWithProcessState(
         processesDetails
-          .map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult)
+          .map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult)
       )
       .futureValue
 

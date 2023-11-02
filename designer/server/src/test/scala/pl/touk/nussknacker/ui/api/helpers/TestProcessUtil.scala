@@ -82,7 +82,7 @@ object TestProcessUtil {
     )
 
   def validatedToProcess(displayable: ValidatedDisplayableProcess): ScenarioWithDetails =
-    ScenarioWithDetailsConversions.fromRepositoryDetails(
+    ScenarioWithDetailsConversions.fromEntity(
       toDetails(
         displayable.id,
         processingType = displayable.processingType,

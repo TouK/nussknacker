@@ -7,19 +7,19 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
 
-  def fromRepositoryDetails(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
-    fromRepositoryDetailsIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
+  def fromEntity(details: ScenarioWithDetailsEntity[ValidatedDisplayableProcess]): ScenarioWithDetails =
+    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
       details.json
     )
 
-  def fromRepositoryDetailsWithScenarioGraph(
+  def fromEntityWithScenarioGraph(
       details: ScenarioWithDetailsEntity[DisplayableProcess]
   ): ScenarioWithDetails =
-    fromRepositoryDetailsIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
+    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraphAndValidationResult(
       ValidatedDisplayableProcess.withEmptyValidationResult(details.json)
     )
 
-  def fromRepositoryDetailsIgnoringGraphAndValidationResult(
+  def fromEntityIgnoringGraphAndValidationResult(
       details: ScenarioWithDetailsEntity[_]
   ): ScenarioWithDetails = {
     ScenarioWithDetails(
@@ -52,16 +52,16 @@ object ScenarioWithDetailsConversions {
   implicit class Ops(scenarioWithDetails: ScenarioWithDetails) {
 
     // TODO: Instead of doing these conversions below, wee should pass around ScenarioWithDetails
-    def toRepositoryDetailsWithoutScenarioGraphAndValidationResult: ScenarioWithDetailsEntity[Unit] = {
-      toRepositoryDetails(())
+    def toEntity: ScenarioWithDetailsEntity[Unit] = {
+      toEntity(())
     }
 
-    def toRepositoryDetailsWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
-      toRepositoryDetails(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable)
+    def toEntityWithScenarioGraphUnsafe: ScenarioWithDetailsEntity[DisplayableProcess] = {
+      toEntity(scenarioWithDetails.scenarioGraphAndValidationResultUnsafe.toDisplayable)
     }
 
-    private def toRepositoryDetails[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {
-      repository.ScenarioWithDetailsEntity(
+    private def toEntity[T](prepareJson: => T): ScenarioWithDetailsEntity[T] = {
+      ScenarioWithDetailsEntity(
         id = scenarioWithDetails.id,
         name = scenarioWithDetails.name,
         processId = scenarioWithDetails.processId,
