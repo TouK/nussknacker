@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.restmodel.displayedgraph
+package pl.touk.nussknacker.engine.api.displayedgraph
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.EdgeType

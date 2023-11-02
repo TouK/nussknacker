@@ -215,7 +215,7 @@ class ProcessesResources(
           complete {
             processService
               .getProcessWithDetails(processId, GetScenarioWithDetailsOptions.detailsOnly)
-              .map(_.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
+              .map(_.toEntity)
               .map(processToolbarService.getProcessToolbarSettings)
           }
         }

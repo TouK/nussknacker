@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.uiresolving
 
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -59,7 +60,7 @@ class UIProcessResolving(
       .getOrElse(canonical)
     val displayable   = ProcessConverter.toDisplayable(substituted, processingType, category)
     val uiValidations = validation.uiValidation(displayable)
-    ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult))
+    ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
   }
 
 }

@@ -282,7 +282,7 @@ class StandardRemoteEnvironmentSpec
           header: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
-          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+          Marshal(ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(displayableToProcess(process)))
             .to[RequestEntity]
             .map { entity =>
               HttpResponse(StatusCodes.OK, entity = entity)
@@ -311,7 +311,7 @@ class StandardRemoteEnvironmentSpec
           headers: Seq[HttpHeader]
       ): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
-          Marshal(ScenarioWithDetailsConversions.fromRepositoryDetailsWithScenarioGraph(displayableToProcess(process)))
+          Marshal(ScenarioWithDetailsConversions.fromEntityWithScenarioGraph(displayableToProcess(process)))
             .to[RequestEntity]
             .map { entity =>
               HttpResponse(StatusCodes.OK, entity = entity)
