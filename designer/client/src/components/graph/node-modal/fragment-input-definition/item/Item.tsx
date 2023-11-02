@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
@@ -9,7 +9,7 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { InputMode, UpdatedItem, onChangeType } from "./";
+import { UpdatedItem, onChangeType } from "./";
 import { addNewFields, validateFieldsForCurrentOption } from "./utils";
 
 interface ItemProps {
@@ -38,10 +38,11 @@ export function Item(props: ItemProps): JSX.Element {
         [options],
     );
 
+    console.log(item);
     const openSettingMenu = () => {
         onChange(`${path}.settingsOpen`, !item.settingsOpen);
         const { value } = getCurrentOption(item);
-        const fields = validateFieldsForCurrentOption(value, "selectedInputMode");
+        const fields = validateFieldsForCurrentOption(value, item.inputMode);
         addNewFields(fields, item, onChange, path);
     };
 

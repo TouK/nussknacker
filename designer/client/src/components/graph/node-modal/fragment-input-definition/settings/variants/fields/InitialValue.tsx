@@ -1,7 +1,7 @@
 import React from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
-import { UpdatedItem, onChangeType } from "../../../item";
+import { UpdatedItem, onChangeType, FixedValuesOption } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { NodeInput } from "../../../../../../withFocus";
 
@@ -9,12 +9,13 @@ interface InitialValue {
     item: UpdatedItem;
     path: string;
     onChange: (path: string, value: onChangeType) => void;
-    options?: Option[];
+    fixedValuesOptions?: FixedValuesOption[];
 }
 
-export default function InitialValue({ onChange, item, path, options }: InitialValue) {
+export default function InitialValue({ onChange, item, path, fixedValuesOptions }: InitialValue) {
     const { t } = useTranslation();
 
+    const options: Option[] = (fixedValuesOptions ?? []).map(({ label }) => ({ label, value: label }));
     return (
         <SettingRow>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>

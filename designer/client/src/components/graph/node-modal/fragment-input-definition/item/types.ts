@@ -1,11 +1,10 @@
 import { Parameter } from "../../../../../types";
-import { Option } from "../TypeSelect";
 
 export type UpdatedItem = StringAndBoolean & AllValueExcludeStringAndBoolean;
 
 export type Fields = DefaultFields | DefaultFieldsWithValidation;
 
-export type onChangeType = string | number | boolean | string[];
+export type onChangeType = string | number | boolean | FixedValuesOption[];
 
 export interface DefaultItemType extends Parameter {
     required: boolean;
@@ -29,15 +28,23 @@ export enum InputMode {
     "AnyValue" = "AnyValue",
 }
 
+export interface FixedValuesOption {
+    expression: string;
+    label: string;
+}
+
 export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
     allowOnlyValuesFromFixedValuesList: boolean;
-    fixedValueList?: Option[];
+    fixedValuesList?: FixedValuesOption[];
+    fixedValuesPresets?: FixedValuesOption[];
+    inputMode: InputMode;
     presetSelection: string;
+    fixedValuesListPresetId: string;
 }
 
 interface DefaultFields {
     allowOnlyValuesFromFixedValuesList: boolean;
-    fixedValueList?: string[];
+    fixedValuesList?: string[];
     presetSelection: string;
     required: boolean;
     hintText: string;

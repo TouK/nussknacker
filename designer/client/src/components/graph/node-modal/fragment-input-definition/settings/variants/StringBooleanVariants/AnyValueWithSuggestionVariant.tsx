@@ -8,17 +8,15 @@ import PresetTypeGroup from "../fields/PresetTypeGroup";
 import PresetTypesSetting from "../fields/PresetTypesSetting";
 import ValidationsFields from "../fields/ValidationsFields";
 import { VariableTypes } from "../../../../../../../types";
-import { Option } from "../../../TypeSelect";
 
 interface Props {
     item: UpdatedItem;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
-    presetListOptions: Option[];
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, presetListOptions }: Props) => {
+export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes }: Props) => {
     const [presetType, setPresetType] = useState<PresetType>("Preset");
 
     const { t } = useTranslation();
@@ -31,11 +29,17 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 onChange={onChange}
                 presetType={presetType}
                 presetSelection={item.presetSelection}
-                fixedValueList={item.fixedValueList}
-                presetListOptions={presetListOptions}
+                fixedValuesList={item.fixedValuesList}
+                fixedValuesPresets={item.fixedValuesPresets}
+                fixedValuesListPresetId={item.fixedValuesListPresetId}
             />
             <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />
-            <InitialValue path={path} item={item} onChange={onChange} options={presetListOptions || item.fixedValueList} />
+            <InitialValue
+                path={path}
+                item={item}
+                onChange={onChange}
+                fixedValuesOptions={item.fixedValuesPresets || item.fixedValuesList}
+            />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

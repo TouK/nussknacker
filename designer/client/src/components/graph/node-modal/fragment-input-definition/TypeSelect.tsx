@@ -38,7 +38,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
     const theme = useTheme();
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
-    console.log(options);
+
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select

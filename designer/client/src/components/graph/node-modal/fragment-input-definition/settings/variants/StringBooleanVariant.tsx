@@ -16,7 +16,7 @@ interface Props {
     variableTypes: VariableTypes;
 }
 
-export const StringBooleanVariant = ({ item, currentOption, path, variableTypes, onChange }: Props) => {
+export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -25,7 +25,6 @@ export const StringBooleanVariant = ({ item, currentOption, path, variableTypes,
 
     const [selectedInputMode, setSelectedInputMode] = useState<InputMode>(inputModeOptions[0].value);
     const { t } = useTranslation();
-    const presetListOptions = [{ value: "Defined list 1", label: "Defined list 1" }];
 
     return (
         <SettingsWrapper>
@@ -47,17 +46,9 @@ export const StringBooleanVariant = ({ item, currentOption, path, variableTypes,
             {selectedInputMode === InputMode.AnyValue && (
                 <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
-            {selectedInputMode === InputMode.FixedList && (
-                <FixedValueVariant item={item} onChange={onChange} path={path} presetListOptions={presetListOptions} />
-            )}
+            {selectedInputMode === InputMode.FixedList && <FixedValueVariant item={item} onChange={onChange} path={path} />}
             {selectedInputMode === InputMode.AnyValueWithSuggestions && (
-                <AnyValueWithSuggestionVariant
-                    item={item}
-                    onChange={onChange}
-                    path={path}
-                    variableTypes={variableTypes}
-                    presetListOptions={presetListOptions}
-                />
+                <AnyValueWithSuggestionVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
         </SettingsWrapper>
     );

@@ -6,16 +6,14 @@ import PresetTypeGroup from "../fields/PresetTypeGroup";
 import PresetTypesSetting from "../fields/PresetTypesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { Option } from "../../../TypeSelect";
 
 interface Props {
     item: UpdatedItem;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    presetListOptions: Option[];
 }
 
-export const FixedValueVariant = ({ item, path, onChange, presetListOptions }: Props) => {
+export const FixedValueVariant = ({ item, path, onChange }: Props) => {
     const [presetType, setPresetType] = useState<PresetType>("Preset");
 
     const { t } = useTranslation();
@@ -28,10 +26,16 @@ export const FixedValueVariant = ({ item, path, onChange, presetListOptions }: P
                 onChange={onChange}
                 presetType={presetType}
                 presetSelection={item.presetSelection}
-                fixedValueList={item.fixedValueList}
-                presetListOptions={presetListOptions}
+                fixedValuesList={item.fixedValuesList}
+                fixedValuesPresets={item.fixedValuesPresets}
+                fixedValuesListPresetId={item.fixedValuesListPresetId}
             />
-            <InitialValue path={path} item={item} onChange={onChange} options={presetListOptions || item.fixedValueList} />
+            <InitialValue
+                path={path}
+                item={item}
+                onChange={onChange}
+                fixedValuesOptions={item.fixedValuesPresets || item.fixedValuesList}
+            />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

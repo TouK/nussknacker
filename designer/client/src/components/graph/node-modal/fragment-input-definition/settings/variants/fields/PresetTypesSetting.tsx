@@ -2,20 +2,32 @@ import React, { useState } from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { NodeInput } from "../../../../../../withFocus";
 import { useTranslation } from "react-i18next";
-import { PresetType, UpdatedItem, onChangeType } from "../../../item";
+import { PresetType, UpdatedItem, onChangeType, FixedValuesOption } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 
-interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection" | "fixedValueList"> {
+interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     presetType: PresetType;
-    presetListOptions: Option[];
+    fixedValuesList: FixedValuesOption[];
+    fixedValuesPresets: FixedValuesOption[];
+    fixedValuesListPresetId: string;
 }
 
-export default function PresetTypesSetting({ fixedValueList, path, presetType, onChange, presetListOptions }: PresetTypesSetting) {
+export default function PresetTypesSetting({
+    path,
+    presetType,
+    onChange,
+    fixedValuesListPresetId,
+    fixedValuesPresets,
+    fixedValuesList,
+}: PresetTypesSetting) {
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
+
+    const presetListOptions: Option[] = (fixedValuesPresets ?? []).map(({ label }) => ({ label, value: label }));
+    const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     return (
         <>
@@ -23,8 +35,8 @@ export default function PresetTypesSetting({ fixedValueList, path, presetType, o
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
-                        onChange={(value) => onChange(`${path}.presetSelection`, value)}
-                        value={{ value: "Defined list 1", label: "Defined list 1" }}
+                        onChange={(value) => onChange(`${path}.fixedValuesListPresetId`, value)}
+                        value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
                     />
                 </SettingRow>
@@ -37,13 +49,13 @@ export default function PresetTypesSetting({ fixedValueList, path, presetType, o
                         onChange={(e) => setTemporaryListItem(e.currentTarget.value)}
                         onKeyUp={(event) => {
                             if (event.key === "Enter") {
-                                const updatedList = [...fixedValueList, temporaryListItem];
-                                onChange(`${path}.fixedValueList`, updatedList);
+                                const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
+                                onChange(`${path}.fixedValuesList`, updatedList);
                                 setTemporaryListItem("");
                             }
                         }}
                     />
-                    {fixedValueList?.length > 0 && <ListItems fixedValueList={fixedValueList} onChange={onChange} path={path} />}
+                    {userDefinedListOptions?.length > 0 && <ListItems fixedValuesList={fixedValuesList} onChange={onChange} path={path} />}
                 </SettingRow>
             )}
         </>

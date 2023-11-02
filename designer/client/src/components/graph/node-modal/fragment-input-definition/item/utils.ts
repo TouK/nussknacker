@@ -18,21 +18,21 @@ export const validateFieldsForCurrentOption = (
         initialValue: "",
     };
 
-    if (isStringOrBooleanVariant(currentOption) && inputMode !== "AnyValueWithSuggestions") {
+    if (isStringOrBooleanVariant(currentOption) && inputMode !== "AnyValue") {
         return {
             ...defaultOption,
-            inputMode: "Fixed list",
+            inputMode,
             allowOnlyValuesFromFixedValuesList: true,
-            fixedValueList: [],
+            fixedValuesList: [],
             presetSelection: "",
         };
-    } else {
-        return {
-            ...defaultOption,
-            validationExpression: "",
-            validationErrorMessage: "",
-        };
     }
+
+    return {
+        ...defaultOption,
+        validationExpression: "",
+        validationErrorMessage: "",
+    };
 };
 
 export const isStringOrBooleanVariant = (value: string) => {
