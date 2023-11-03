@@ -20,9 +20,10 @@ export interface FragmentValidation {
 
 export interface AllValueExcludeStringAndBoolean extends FragmentValidation, DefaultItemType {}
 
-export enum PresetType {
+export enum FixedValuesType {
     "Preset" = "Preset",
     "UserDefinedList" = "UserDefinedList",
+    "None" = "None",
 }
 
 export enum InputMode {
@@ -43,6 +44,7 @@ export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
     fixedValuesList?: FixedValuesOption[];
     fixedValuesPresets?: FixedValuesPresetOption;
     inputMode: InputMode;
+    fixedValuesType: FixedValuesType;
     presetSelection: string;
     fixedValuesListPresetId: string;
 }
@@ -74,13 +76,13 @@ interface ParameterDetails {
 interface FixedListParameterDetails {
     inputMode: InputMode.FixedList;
     required: boolean;
-    presetType: PresetType;
+    presetType: FixedValuesType;
 }
 interface AnyValueWithSuggestionsParameterDetails {
     inputMode: InputMode.AnyValueWithSuggestions;
-    presetType: PresetType;
+    presetType: FixedValuesType;
 }
 interface AnyValueParameterDetails {
     inputMode: InputMode.AnyValue;
-    presetType: PresetType;
+    presetType: FixedValuesType;
 }

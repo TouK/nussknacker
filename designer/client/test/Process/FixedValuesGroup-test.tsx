@@ -3,7 +3,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import PresetTypeGroup from "../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/PresetTypeGroup";
+import { FixedValuesGroup } from "../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesGroup";
 
 jest.mock("../../src/brace/theme/nussknacker.js", () => ({}));
 
@@ -18,18 +18,18 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-describe(PresetTypeGroup.name, () => {
+describe(FixedValuesGroup.name, () => {
     it("should clear initialValue on Preset type change", async () => {
         const mockOnChange = jest.fn();
         const mockSetPresetType = jest.fn();
 
         render(
             <NuThemeProvider>
-                <PresetTypeGroup
+                <FixedValuesGroup
                     onChange={mockOnChange}
                     path={"test"}
                     // @ts-ignore
-                    presetType={"Preset"}
+                    fixedValuesType={"Preset"}
                     setPresetType={mockSetPresetType}
                 />
             </NuThemeProvider>,

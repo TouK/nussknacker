@@ -14,7 +14,7 @@ interface RowSelectProps {
     options: Option[];
     readOnly?: boolean;
     isMarked?: boolean;
-    value?: Option;
+    value: Option;
 }
 
 function useCaptureEsc() {
@@ -49,8 +49,8 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
                 options={options}
-                value={value}
-                onChange={(option) => onChange(option.value)}
+                value={value || ""}
+                onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 menuPortalTarget={document.body}
                 styles={{
                     input: (base) => ({ ...input(base) }),

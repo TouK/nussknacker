@@ -2,17 +2,16 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, SettingRow, SyledFormControlLabel } from "./StyledSettingsComponnets";
 import { FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
-import { PresetType, onChangeType } from "../../../item";
+import { FixedValuesType, onChangeType } from "../../../item";
 
-interface PresetTypeGroup {
+interface FixedValuesGroup {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    presetType: PresetType;
-    setPresetType: React.Dispatch<React.SetStateAction<PresetType>>;
+    fixedValuesType: FixedValuesType;
 }
 
-export default function PresetTypeGroup(props: PresetTypeGroup) {
-    const { onChange, path, presetType, setPresetType } = props;
+export function FixedValuesGroup(props: FixedValuesGroup) {
+    const { onChange, path, fixedValuesType } = props;
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -20,21 +19,21 @@ export default function PresetTypeGroup(props: PresetTypeGroup) {
         <SettingRow>
             <SettingLabelStyled></SettingLabelStyled>
             <RadioGroup
-                value={presetType}
+                value={fixedValuesType}
                 onChange={(event) => {
                     onChange(`${path}.initialValue`, "");
-                    setPresetType(event.target.value as PresetType);
+                    onChange(`${path}.fixedValuesType`, event.target.value);
                 }}
             >
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={PresetType.Preset}
+                    value={FixedValuesType.Preset}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</SyledFormControlLabel>}
                 />
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={PresetType.UserDefinedList}
+                    value={FixedValuesType.UserDefinedList}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</SyledFormControlLabel>}
                 />

@@ -6,7 +6,7 @@ import { InputMode, onChangeType, UpdatedItem } from "../../item";
 import { Option } from "../../FieldsSelect";
 import { VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
-import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedValueVariant } from "./StringBooleanVariants";
+import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
 interface Props {
     item: UpdatedItem;
@@ -46,7 +46,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Pr
             {selectedInputMode === InputMode.AnyValue && (
                 <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
-            {selectedInputMode === InputMode.FixedList && <FixedValueVariant item={item} onChange={onChange} path={path} />}
+            {selectedInputMode === InputMode.FixedList && <FixedListVariant item={item} onChange={onChange} path={path} />}
             {selectedInputMode === InputMode.AnyValueWithSuggestions && (
                 <AnyValueWithSuggestionVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}

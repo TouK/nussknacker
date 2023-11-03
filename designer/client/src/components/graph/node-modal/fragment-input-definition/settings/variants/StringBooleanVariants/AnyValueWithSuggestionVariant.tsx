@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { onChangeType, PresetType, UpdatedItem } from "../../../item";
+import { onChangeType, UpdatedItem } from "../../../item";
 import { useTranslation } from "react-i18next";
-import PresetTypeGroup from "../fields/PresetTypeGroup";
-import PresetTypesSetting from "../fields/PresetTypesSetting";
+import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import ValidationsFields from "../fields/ValidationsFields";
 import { VariableTypes } from "../../../../../../../types";
 import { Option } from "../../../TypeSelect";
@@ -18,8 +18,6 @@ interface Props {
 }
 
 export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes }: Props) => {
-    const [presetType, setPresetType] = useState<PresetType>(PresetType.Preset);
-
     const { t } = useTranslation();
 
     const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
@@ -28,13 +26,15 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
     }));
     const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
+    const fixedValuesType = item.fixedValuesType;
+
     return (
         <>
-            <PresetTypeGroup presetType={presetType} setPresetType={setPresetType} path={path} onChange={onChange} />
-            <PresetTypesSetting
+            <FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} />
+            <FixedValuesSetting
                 path={path}
                 onChange={onChange}
-                presetType={presetType}
+                fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={item.fixedValuesList}
                 fixedValuesPresets={item.fixedValuesPresets}
@@ -45,7 +45,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={presetType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
+                options={fixedValuesType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

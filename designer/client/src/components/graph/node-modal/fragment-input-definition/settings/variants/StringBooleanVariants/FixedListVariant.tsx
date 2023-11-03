@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { onChangeType, PresetType, UpdatedItem } from "../../../item";
+import { onChangeType, UpdatedItem } from "../../../item";
 import InitialValue from "../fields/InitialValue";
-import PresetTypeGroup from "../fields/PresetTypeGroup";
-import PresetTypesSetting from "../fields/PresetTypesSetting";
+import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { Option } from "../../../TypeSelect";
@@ -14,9 +14,7 @@ interface Props {
     path: string;
 }
 
-export const FixedValueVariant = ({ item, path, onChange }: Props) => {
-    const [presetType, setPresetType] = useState<PresetType>(PresetType.Preset);
-
+export const FixedListVariant = ({ item, path, onChange }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
@@ -24,14 +22,15 @@ export const FixedValueVariant = ({ item, path, onChange }: Props) => {
         value: label,
     }));
     const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
+    const fixedValuesType = item.fixedValuesType;
 
     return (
         <>
-            <PresetTypeGroup presetType={presetType} setPresetType={setPresetType} path={path} onChange={onChange} />
-            <PresetTypesSetting
+            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} />
+            <FixedValuesSetting
                 path={path}
                 onChange={onChange}
-                presetType={presetType}
+                fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={item.fixedValuesList}
                 fixedValuesPresets={item.fixedValuesPresets}
@@ -41,7 +40,7 @@ export const FixedValueVariant = ({ item, path, onChange }: Props) => {
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={presetType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
+                options={fixedValuesType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

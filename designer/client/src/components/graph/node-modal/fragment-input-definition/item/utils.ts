@@ -1,7 +1,6 @@
-import { Fields, InputMode, UpdatedItem, onChangeType, AllValueExcludeStringAndBoolean, StringAndBoolean } from ".";
+import { AllValueExcludeStringAndBoolean, Fields, FixedValuesType, InputMode, onChangeType, StringAndBoolean, UpdatedItem } from ".";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
-    console.log({ fields });
     Object.entries(fields).map(([key, value]) => {
         if (!item[key]) {
             onChange(`${path}.${key}`, value);
@@ -17,6 +16,7 @@ export const validateFieldsForCurrentOption = (
         required: false,
         hintText: "",
         initialValue: "",
+        fixedValuesType: "None",
     };
 
     if (isStringOrBooleanVariant(currentOption) && inputMode !== "AnyValue") {
@@ -27,6 +27,7 @@ export const validateFieldsForCurrentOption = (
             fixedValuesList: [],
             fixedValuesPresets: {},
             presetSelection: "",
+            fixedValuesType: FixedValuesType.Preset,
         };
     }
 

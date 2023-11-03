@@ -2,27 +2,27 @@ import React, { useState } from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { NodeInput } from "../../../../../../withFocus";
 import { useTranslation } from "react-i18next";
-import { PresetType, UpdatedItem, onChangeType, FixedValuesOption, FixedValuesPresetOption } from "../../../item";
+import { FixedValuesType, UpdatedItem, onChangeType, FixedValuesOption, FixedValuesPresetOption } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 
-interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection"> {
+interface FixedValuesSetting extends Pick<UpdatedItem, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    presetType: PresetType;
+    fixedValuesType: FixedValuesType;
     fixedValuesList: FixedValuesOption[];
     fixedValuesPresets: FixedValuesPresetOption;
     fixedValuesListPresetId: string;
 }
 
-export default function PresetTypesSetting({
+export function FixedValuesSetting({
     path,
-    presetType,
+    fixedValuesType,
     onChange,
     fixedValuesListPresetId,
     fixedValuesPresets,
     fixedValuesList,
-}: PresetTypesSetting) {
+}: FixedValuesSetting) {
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
 
@@ -31,7 +31,7 @@ export default function PresetTypesSetting({
 
     return (
         <>
-            {presetType === "Preset" ? (
+            {fixedValuesType === "Preset" ? (
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect

@@ -3,7 +3,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import PresetTypesSetting from "../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/PresetTypesSetting";
+import { FixedValuesSetting } from "../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesSetting";
 
 const DOWN_ARROW = { keyCode: 40 };
 
@@ -56,19 +56,19 @@ jest.mock("react-i18next", () => ({
     }),
 }));
 
-describe(PresetTypesSetting.name, () => {
+describe(FixedValuesSetting.name, () => {
     it("should clear initialValue on Preset selection change", async () => {
         const mockOnChange = jest.fn();
 
         render(
             <NuThemeProvider>
-                <PresetTypesSetting
+                <FixedValuesSetting
                     onChange={mockOnChange}
                     fixedValuesPresets={processPropertyMock.fixedValuesPresets}
                     fixedValuesList={processPropertyMock.fixedValuesList}
                     fixedValuesListPresetId={processPropertyMock.fixedValuesListPresetId}
                     // @ts-ignore
-                    presetType={"Preset"}
+                    fixedValuesType={"Preset"}
                     path={"test"}
                     presetSelection={"test1"}
                 />
