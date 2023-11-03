@@ -29,6 +29,14 @@ export function FixedValuesSetting({
     const presetListOptions: Option[] = Object.keys(fixedValuesPresets).map((key) => ({ label: key, value: key }));
     const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
+    const selectedPresetValueExpressions: Option[] = (fixedValuesPresets?.[fixedValuesListPresetId] ?? []).map(
+        (selectedPresetValueExpression) => ({ label: selectedPresetValueExpression.label, value: selectedPresetValueExpression.label }),
+    );
+
+    const handleDeleteDefinedListItem = (currentIndex: number) => {
+        const filteredItemList = fixedValuesList.filter((_, index) => index !== currentIndex);
+        onChange(`${path}.fixedValuesList`, filteredItemList);
+    };
     return (
         <>
             {fixedValuesType === "Preset" ? (
@@ -42,6 +50,7 @@ export function FixedValuesSetting({
                         value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
                     />
+                    {selectedPresetValueExpressions?.length > 0 && <ListItems items={selectedPresetValueExpressions} />}
                 </SettingRow>
             ) : (
                 <SettingRow>
@@ -58,7 +67,7 @@ export function FixedValuesSetting({
                             }
                         }}
                     />
-                    {userDefinedListOptions?.length > 0 && <ListItems fixedValuesList={fixedValuesList} onChange={onChange} path={path} />}
+                    {userDefinedListOptions?.length > 0 && <ListItems items={fixedValuesList} handleDelete={handleDeleteDefinedListItem} />}
                 </SettingRow>
             )}
         </>

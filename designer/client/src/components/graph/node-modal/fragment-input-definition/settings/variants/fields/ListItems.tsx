@@ -1,30 +1,25 @@
 import { Chip } from "@mui/material";
 import React from "react";
-import { FixedValuesOption, onChangeType } from "../../../item";
+import { FixedValuesOption } from "../../../item";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
+import { Option } from "../../../TypeSelect";
 
 interface ListItemsProps {
-    fixedValuesList: FixedValuesOption[];
-    onChange: (path: string, value: onChangeType) => void;
-    path: string;
+    items: FixedValuesOption[] | Option[];
+    handleDelete?: (currentIndex: number) => void;
 }
 
-export const ListItems = ({ fixedValuesList, onChange, path }: ListItemsProps) => {
-    const handleDelete = (currentIndex: number) => {
-        const filteredItemList = fixedValuesList.filter((_, index) => index !== currentIndex);
-        onChange(`${path}.fixedValuesList`, filteredItemList);
-    };
-
+export const ListItems = ({ items, handleDelete }: ListItemsProps) => {
     return (
         <ListItemContainer>
             <ListItemWrapper>
-                {fixedValuesList.map((item, index) => (
+                {items.map((item, index) => (
                     <Chip
                         variant="outlined"
                         sx={{ marginRight: "10px", marginBottom: "10px" }}
                         key={index}
                         label={item.label}
-                        onDelete={() => handleDelete(index)}
+                        onDelete={handleDelete}
                     />
                 ))}
             </ListItemWrapper>

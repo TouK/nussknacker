@@ -22,7 +22,6 @@ export default function InputModeSelect(props: Props) {
                 <SettingLabelStyled>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
                 <TypeSelect
                     onChange={(value: InputMode) => {
-                        console.log(value);
                         if (value === "FixedList") {
                             onChange(`${path}.initialValue`, "");
                         }
