@@ -15,6 +15,7 @@
 * [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation 
 
 1.12.3 (26 Oct 2023)
 1.12.1 & 1.12.2 (25 Oct 2023)

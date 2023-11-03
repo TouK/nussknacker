@@ -110,13 +110,17 @@ object ScenarioBuilder {
   def requestResponse(id: String, slug: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))
 
-  def fragment(id: String, params: (String, Class[_])*): ProcessGraphBuilder = {
+  def fragmentWithInputNodeId(id: String, inputNodeId: String, params: (String, Class[_])*): ProcessGraphBuilder = {
     new ProcessGraphBuilder(
       GraphBuilder
-        .fragmentInput(id, params: _*)
+        .fragmentInput(inputNodeId, params: _*)
         .creator
         .andThen(r => EspProcess(MetaData(id, FragmentSpecificData()), NonEmptyList.of(r)).toCanonicalProcess)
     )
+  }
+
+  def fragment(id: String, params: (String, Class[_])*): ProcessGraphBuilder = {
+    fragmentWithInputNodeId(id, id, params: _*)
   }
 
 }

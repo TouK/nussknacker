@@ -9,8 +9,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  BlankId,
   ExpressionParserCompilationError,
-  InvalidPropertyFixedValue
+  InvalidPropertyFixedValue,
+  NodeIdValidationError,
+  ScenarioIdError,
+  ScenarioNameValidationError
 }
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -256,17 +260,32 @@ class NodeResourcesSpec
     }
   }
 
+  test("validates node id") {
+    saveProcess(testProcess) {
+      val blankValue        = " "
+      val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
+      val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
+        responseAs[NodeValidationResult].validationErrors shouldBe List(
+          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
+        )
+      }
+    }
+  }
+
   test("validate properties") {
     saveProcess(testProcess) {
       val request = PropertiesValidationRequest(
-        ProcessProperties.combineTypeSpecificProperties(
-          StreamMetaData(),
-          additionalFields = ProcessAdditionalFields(
-            None,
-            Map("numberOfThreads" -> "a", "environment" -> "test"),
-            StreamMetaData.typeName
-          )
-        )
+        additionalFields = ProcessAdditionalFields(
+          properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
+          metaDataType = StreamMetaData.typeName,
+          description = None
+        ),
+        id = testProcess.id
       )
 
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
@@ -283,6 +302,41 @@ class NodeResourcesSpec
           ),
           validationPerformed = true
         )
+      }
+    }
+  }
+
+  test("validate scenario id") {
+    saveProcess(testProcess) {
+      val blankValue = " "
+      val request = PropertiesValidationRequest(
+        additionalFields = ProcessAdditionalFields(
+          properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
+          metaDataType = StreamMetaData.typeName,
+          description = None
+        ),
+        id = blankValue
+      )
+
+      val expectedErrors = List(
+        PrettyValidationErrors.formatErrorMessage(
+          InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), "")
+        ),
+        PrettyValidationErrors.formatErrorMessage(
+          ScenarioNameValidationError(
+            s"Invalid scenario name $blankValue. Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
+            "Provided scenario name is invalid for this category. Please enter valid name using only specified characters."
+          )
+        ),
+        PrettyValidationErrors.formatErrorMessage(
+          ScenarioIdError(BlankId, blankValue, isFragment = false)
+        )
+      )
+      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
+        nodeRoute,
+        testPermissionRead
+      ) ~> check {
+        responseAs[NodeValidationResult].validationErrors should contain allElementsOf expectedErrors
       }
     }
   }

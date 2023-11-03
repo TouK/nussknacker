@@ -8,20 +8,21 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
+import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 
 object ProcessValidation {
 
@@ -82,8 +83,12 @@ class ProcessValidation(
     // displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      uiValidationResult
-        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
+      // The deduplication is needed for errors that are validated on both uiValidation for DisplayableProcess and
+      // CanonicalProcess validation.
+      deduplicateErrors(
+        uiValidationResult
+          .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
+      )
     } else {
       uiValidationResult
     }
@@ -102,9 +107,13 @@ class ProcessValidation(
     }
   }
 
+  // Some of these validations are duplicated with CanonicalProcess validations in order to show them in case when there
+  // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
+  // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
+  // resulting errors later.
   def uiValidation(displayable: DisplayableProcess): ValidationResult = {
-    validateIds(displayable)
-      .add(validateEmptyId(displayable))
+    validateScenarioId(displayable)
+      .add(validateNodesId(displayable))
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
@@ -164,18 +173,25 @@ class ProcessValidation(
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
-  private def validateIds(displayable: DisplayableProcess): ValidationResult = {
-    val invalidCharsRegexp = "[\"'\\.]".r
+  private def validateScenarioId(displayable: DisplayableProcess): ValidationResult = {
+    IdValidator.validateScenarioId(displayable.id, displayable.metaData.isFragment) match {
+      case Valid(_)   => ValidationResult.success
+      case Invalid(e) => formatErrors(e)
+    }
+  }
 
-    ValidationResult.errors(
-      displayable.nodes
-        .map(_.id)
-        .filter(n => invalidCharsRegexp.findFirstIn(n).isDefined)
-        .map(n => n -> List(PrettyValidationErrors.formatErrorMessage(InvalidCharacters(n))))
-        .toMap,
-      List(),
-      List()
-    )
+  private def validateNodesId(displayable: DisplayableProcess): ValidationResult = {
+    val nodeIdErrors = displayable.nodes
+      .map(n => IdValidator.validateNodeId(n.id))
+      .collect { case Invalid(e) =>
+        e
+      }
+      .reduceOption(_ concatNel _)
+
+    nodeIdErrors match {
+      case Some(value) => formatErrors(value)
+      case None        => ValidationResult.success
+    }
   }
 
   private def validateScenarioProperties(displayable: DisplayableProcess): ValidationResult = {
@@ -231,14 +247,6 @@ class ProcessValidation(
     }
   }
 
-  private def validateEmptyId(displayableProcess: DisplayableProcess): ValidationResult = {
-    if (displayableProcess.nodes.exists(_.id.isEmpty)) {
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.formatErrorMessage(EmptyNodeId)))
-    } else {
-      ValidationResult.success
-    }
-  }
-
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val processErrors                   = errors.filter(_.nodeIds.isEmpty)
     val (propertiesErrors, otherErrors) = processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
@@ -250,6 +258,20 @@ class ProcessValidation(
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
       processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
       globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
+    )
+  }
+
+  private def deduplicateErrors(result: ValidationResult): ValidationResult = {
+    val deduplicatedInvalidNodes = result.errors.invalidNodes.map { case (key, value) => key -> value.distinct }
+    val deduplicatedProcessPropertiesErrors = result.errors.processPropertiesErrors.distinct
+    val deduplicatedGlobalErrors            = result.errors.globalErrors.distinct
+
+    result.copy(errors =
+      ValidationErrors(
+        invalidNodes = deduplicatedInvalidNodes,
+        processPropertiesErrors = deduplicatedProcessPropertiesErrors,
+        globalErrors = deduplicatedGlobalErrors
+      )
     )
   }
 

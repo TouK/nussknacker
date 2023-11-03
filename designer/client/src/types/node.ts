@@ -1,4 +1,4 @@
-import { ReturnedType } from "./process";
+import { ProcessAdditionalFields, ReturnedType } from "./process";
 
 type Type = "Properties" | "FragmentInput" | string;
 
@@ -41,10 +41,6 @@ export type NodeType<F extends Field = Field> = {
         id: string;
         parameters?: $TodoType[];
     };
-    typeSpecificProperties?: {
-        type: $TodoType;
-        slug?: string;
-    };
     nodeType: string;
     [key: string]: any;
 };
@@ -70,6 +66,7 @@ export interface Expression {
 //TODO: Add other process properties...
 export type PropertiesType = NodeType & {
     type: "Properties";
+    additionalFields: ProcessAdditionalFields;
 };
 
 export type NodeId = NodeType["id"];

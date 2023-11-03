@@ -25,6 +25,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess` was moved to `pl.touk.nussknacker.restmodel.validation` package
   * `pl.touk.nussknacker.restmodel.process.ProcessingType` was moved to `pl.touk.nussknacker.engine.api.process` package
   * `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion` was moved to `pl.touk.nussknacker.engine.api.process` package
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
+  from fragment id
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
+
+### REST API changes
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
+  * Replace `processProperties` with `additionalFields`
+  * Add `id` field for scenario or fragment id
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

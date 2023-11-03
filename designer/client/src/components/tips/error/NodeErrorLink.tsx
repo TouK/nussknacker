@@ -37,7 +37,8 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
         </span>
     ) : (
         <Link className={styles} to={`?nodeId=${nodeId}`} onClick={onClick}>
-            {nodeId}
+            {/* blank values don't render as links so this is a workaround */}
+            {nodeId.trim() === "" ? "blank" : nodeId}
         </Link>
     );
 };

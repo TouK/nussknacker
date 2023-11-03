@@ -3,16 +3,13 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  MissingSourceFactory,
-  ScenarioNameValidationError,
-  UnknownFragment
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -24,12 +21,12 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -51,8 +48,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.jdk.CollectionConverters._
 
@@ -80,7 +77,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.invalidNodes shouldBe Map(
       "subIn" -> List(
@@ -110,7 +107,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
     result.errors.invalidNodes shouldBe Symbol("empty")
   }
 
@@ -128,7 +125,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.invalidNodes shouldBe Map(
       "subIn" -> List(
@@ -152,7 +149,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       ),
       List(Edge("in", "out", None))
     )
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.invalidNodes shouldBe Map(
       "loose" -> List(
@@ -182,7 +179,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         "requiredStringProperty" -> "test"
       )
     )
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.hasErrors shouldBe false
   }
@@ -199,7 +196,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         Edge("filter", "out", Some(EdgeType.FilterTrue)),
       )
     )
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.warnings.invalidNodes shouldBe Map(
       "filter" -> List(
@@ -214,27 +211,6 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("check for empty ids") {
-    val process = createProcess(
-      List(
-        Source("", SourceRef(existingSourceFactory, List())),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("", "out", None))
-    )
-    val result = validator.validate(process)
-
-    result.errors.globalErrors shouldBe List(
-      NodeValidationError(
-        "EmptyNodeId",
-        "Nodes cannot have empty id",
-        "Nodes cannot have empty id",
-        None,
-        RenderNotAllowed
-      )
-    )
-  }
-
   test("check for duplicated ids") {
     val process = createProcess(
       List(
@@ -244,7 +220,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       ),
       List(Edge("inID", "inID", None), Edge("inID", "out", None))
     )
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe List(
       NodeValidationError(
@@ -272,7 +248,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe List(
       NodeValidationError(
@@ -296,7 +272,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(Edge("in", "out", None)),
       `type` = TestProcessingTypes.RequestResponse
     )
-    validator.validate(process) should matchPattern {
+    configuredValidator.validate(process) should matchPattern {
       case ValidationResult(
             ValidationErrors(_, Nil, errors),
             ValidationWarnings.success,
@@ -374,7 +350,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   }
 
-  test("validate type) scenario field") {
+  test("validate type scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(
@@ -431,10 +407,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List()
     )
 
-    validator.validate(process("a\"s")).saveAllowed shouldBe false
-    validator.validate(process("a's")).saveAllowed shouldBe false
-    validator.validate(process("a.s")).saveAllowed shouldBe false
-    validator.validate(process("as")).saveAllowed shouldBe true
+    configuredValidator.validate(process("a\"s")).saveAllowed shouldBe false
+    configuredValidator.validate(process("a's")).saveAllowed shouldBe false
+    configuredValidator.validate(process("a.s")).saveAllowed shouldBe false
+    configuredValidator.validate(process("as")).saveAllowed shouldBe true
 
   }
 
@@ -574,7 +550,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(Edge("inID", "custom", None), Edge("custom", "out", None))
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -599,7 +575,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       Map.empty
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("custom") should matchPattern {
@@ -627,7 +603,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val result = validator.validate(process)
+    val result = configuredValidator.validate(process)
 
     result.errors.globalErrors shouldBe empty
     result.errors.processPropertiesErrors should matchPattern {
@@ -811,27 +787,53 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  test("check for invalid characters") {
-    val process = createProcess(
+  test("should validate invalid scenario id") {
+    val blankValue     = " "
+    val testedScenario = ProcessValidationSpec.validFlinkProcess.copy(id = blankValue)
+    val result         = TestFactory.flinkProcessValidation.validate(testedScenario).errors.processPropertiesErrors
+    result shouldBe List(
+      PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, blankValue, isFragment = false))
+    )
+  }
+
+  test("should validate invalid node id") {
+    val blankValue = " "
+    val testedScenario = createProcess(
       List(
-        Source("in\"'.", SourceRef(existingSourceFactory, List())),
+        Source(blankValue, SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List()))
       ),
-      List(Edge("in\"'.", "out", None))
+      List(Edge(blankValue, "out", None))
     )
-    val result = validator.validate(process)
+    val result = TestFactory.flinkProcessValidation.validate(testedScenario).errors.invalidNodes
+    val nodeErrors =
+      Map(blankValue -> List(PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, blankValue))))
+    result shouldBe nodeErrors
+  }
 
-    result.errors.invalidNodes shouldBe Map(
-      "in\"'." -> List(
-        NodeValidationError(
-          "InvalidCharacters",
-          "Invalid characters",
-          "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id",
-          None,
-          RenderNotAllowed
-        )
-      )
-    )
+  test("should validate scenario id with error preventing canonized form") {
+    val incompleteScenarioWithBlankIds = createProcess(
+      List(
+        Variable(id = " ", varName = "var", value = "")
+      ),
+      List.empty
+    ).copy(id = " ")
+    val result = TestFactory.flinkProcessValidation.validate(incompleteScenarioWithBlankIds)
+    inside(result) {
+      case ValidationResult(errors, _, _) => {
+        inside(errors) {
+          case ValidationErrors(nodeErrors, propertiesErrors, _) => {
+            nodeErrors should contain key " "
+            nodeErrors(" ") should contain(
+              PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
+            )
+            propertiesErrors shouldBe List(
+              PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, " ", isFragment = false))
+            )
+          }
+        }
+      }
+    }
   }
 
 }
@@ -849,7 +851,7 @@ private object ProcessValidationSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'"))
     )
 
-  val validator: ProcessValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
+  val configuredValidator: ProcessValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> (Map(
         "requiredStringProperty" -> ScenarioPropertyConfig(
@@ -872,6 +874,29 @@ private object ProcessValidationSpec {
         )
       ) ++ FlinkStreamingPropertiesConfig.properties)
     )
+  )
+
+  val validFlinkProcess: DisplayableProcess = createProcess(
+    List(
+      Source("in", SourceRef(existingSourceFactory, List())),
+      Sink("out", SinkRef(existingSinkFactory, List()))
+    ),
+    List(Edge("in", "out", None))
+  )
+
+  val validFlinkFragment: DisplayableProcess = DisplayableProcess(
+    "test",
+    ProcessProperties.combineTypeSpecificProperties(
+      StreamMetaData(),
+      additionalFields = ProcessAdditionalFields(None, FragmentSpecificData().toMap, FragmentSpecificData.typeName)
+    ),
+    nodes = List(
+      FragmentInputDefinition("in", List()),
+      FragmentOutputDefinition("out", "outputName")
+    ),
+    edges = List(Edge("in", "out", None)),
+    processingType = TestProcessingTypes.Streaming,
+    category = Category1
   )
 
   def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
