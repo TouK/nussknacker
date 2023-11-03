@@ -71,7 +71,7 @@ export const CustomSwitch = styled(Switch)`
     }
 `;
 
-export const SyledFormControlLabel = styled(Typography)`
+export const StyledFormControlLabel = styled(Typography)`
     font-family: Open Sans;
     font-size: 12px;
     font-weight: 400;

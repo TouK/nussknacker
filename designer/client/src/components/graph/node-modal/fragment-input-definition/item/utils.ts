@@ -1,7 +1,6 @@
 import {
     AnyValueItemVariant,
     AnyValueWithSuggestionsItemVariant,
-    DefaultItemVariant,
     FixedListItemVariant,
     FixedValuesType,
     GenericParameterVariant,
@@ -71,10 +70,6 @@ export const validateFieldsForCurrentOption = (item: PropertyItem): PropertyItem
                     fixedValuesType: FixedValuesType.Preset,
                     fixedValuesListPresetId: "",
                 } as FixedListItemVariant;
-            }
-            default: {
-                const exhaustiveCheck: never = inputMode;
-                throw new Error(`Input mode ${exhaustiveCheck} is not handled`);
             }
         }
     }
