@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ScenarioIdError,
   ScenarioNameValidationError
 }
+import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -29,7 +30,6 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.definition.UIParameter
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
@@ -248,7 +248,6 @@ class NodeResourcesSpec
 
   test("it should return additional info for process properties") {
     saveProcess(testProcess) {
-      import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
 
       Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(
         nodeRoute,

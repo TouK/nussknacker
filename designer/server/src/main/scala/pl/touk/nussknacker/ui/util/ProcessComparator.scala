@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.util
 
 import io.circe.generic.extras.ConfiguredJsonCodec
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 
 object ProcessComparator {
 

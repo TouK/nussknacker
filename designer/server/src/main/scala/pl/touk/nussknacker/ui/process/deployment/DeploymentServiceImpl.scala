@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
@@ -358,7 +358,7 @@ class DeploymentServiceImpl(
             case process if process.isFragment => DBIO.successful(process)
             case process =>
               getProcessState(
-                process.toRepositoryDetailsWithoutScenarioGraphAndValidationResult,
+                process.toEntity,
                 actionsInProgress.getOrElse(process.processId, Set.empty)
               ).map(state => process.copy(state = Some(state)))
           }

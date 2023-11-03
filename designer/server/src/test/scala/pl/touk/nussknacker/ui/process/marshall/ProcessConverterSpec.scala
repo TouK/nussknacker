@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.process.marshall
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
@@ -21,8 +23,6 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
   NodeValidationError,
@@ -33,6 +33,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProv
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -83,7 +84,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
     val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {

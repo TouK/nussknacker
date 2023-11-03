@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult,
@@ -23,6 +22,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 
 import scala.reflect.ClassTag
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 

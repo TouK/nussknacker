@@ -1740,7 +1740,7 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel)
+  .dependsOn(extensionsApi)
 
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
@@ -1865,6 +1865,7 @@ lazy val designer = (project in file("designer/server"))
     processReports,
     security,
     deploymentManagerApi,
+    restmodel,
     listenerApi,
     testUtils                         % "test",
     // TODO: this is unfortunately needed to run without too much hassle in Intellij...
