@@ -1,4 +1,4 @@
-import { allValid, Error, errorValidator, uniqueScenarioValueValidator, Validator } from "./editors/Validators";
+import { allValid, Error, errorValidator, uniqueScenarioValueValidator } from "./editors/Validators";
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
