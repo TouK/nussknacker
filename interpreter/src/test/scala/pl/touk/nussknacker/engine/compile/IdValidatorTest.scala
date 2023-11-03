@@ -57,7 +57,10 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
     val scenarioWithEmptyIds = validScenario("", "")
     IdValidator.validate(scenarioWithEmptyIds) match {
       case Validated.Invalid(errors) =>
-        errors.toList shouldBe List(EmptyScenarioId(false), EmptyNodeId())
+        errors.toList should contain theSameElementsAs List(
+          ScenarioIdError(EmptyValue, "", isFragment = false),
+          NodeIdValidationError(EmptyValue, "")
+        )
       case Validated.Valid(_) =>
         fail("Validation succeeded, but was expected to fail")
     }
@@ -76,33 +79,39 @@ class IdValidatorTest extends AnyFunSuite with Matchers {
 
 object IdValidationTestData {
 
-  val nodeIdErrorCases: TableFor2[String, List[NodeIdError]] = Table(
+  val nodeIdErrorCases: TableFor2[String, List[IdError]] = Table(
     ("nodeId", "errors"),
     ("validId", List.empty),
-    ("", List(EmptyNodeId())),
-    ("  ", List(BlankNodeId("  "))),
-    ("trailingSpace ", List(TrailingSpacesNodeId("trailingSpace "))),
-    (" leadingSpace", List(LeadingSpacesNodeId(" leadingSpace"))),
+    ("", List(NodeIdValidationError(EmptyValue, ""))),
+    (" ", List(NodeIdValidationError(BlankId, " "))),
+    ("trailingSpace ", List(NodeIdValidationError(TrailingSpacesId, "trailingSpace "))),
+    (" leadingSpace", List(NodeIdValidationError(LeadingSpacesId, " leadingSpace"))),
     (
       " leadingAndTrailingSpace ",
-      List(LeadingSpacesNodeId(" leadingAndTrailingSpace "), TrailingSpacesNodeId(" leadingAndTrailingSpace "))
+      List(
+        NodeIdValidationError(LeadingSpacesId, " leadingAndTrailingSpace "),
+        NodeIdValidationError(TrailingSpacesId, " leadingAndTrailingSpace ")
+      )
     ),
   )
 
-  val scenarioIdErrorCases: TableFor2[String, List[ProcessCompilationError]] = buildProcessIdErrorCases(false)
-  val fragmentIdErrorCases: TableFor2[String, List[ProcessCompilationError]] = buildProcessIdErrorCases(true)
+  val scenarioIdErrorCases: TableFor2[String, List[IdError]] = buildProcessIdErrorCases(false)
+  val fragmentIdErrorCases: TableFor2[String, List[IdError]] = buildProcessIdErrorCases(true)
 
-  private def buildProcessIdErrorCases(forFragment: Boolean): TableFor2[String, List[ProcessCompilationError]] = {
+  private def buildProcessIdErrorCases(forFragment: Boolean): TableFor2[String, List[IdError]] = {
     Table(
       ("scenarioId", "errors"),
       ("validId", List.empty),
-      ("", List(EmptyScenarioId(forFragment))),
-      ("  ", List(BlankScenarioId(forFragment))),
-      ("trailingSpace ", List(TrailingSpacesScenarioId(forFragment))),
-      (" leadingSpace", List(LeadingSpacesScenarioId(forFragment))),
+      ("", List(ScenarioIdError(EmptyValue, "", forFragment))),
+      (" ", List(ScenarioIdError(BlankId, " ", forFragment))),
+      ("trailingSpace ", List(ScenarioIdError(TrailingSpacesId, "trailingSpace ", forFragment))),
+      (" leadingSpace", List(ScenarioIdError(LeadingSpacesId, " leadingSpace", forFragment))),
       (
         " leadingAndTrailingSpace ",
-        List(LeadingSpacesScenarioId(forFragment), TrailingSpacesScenarioId(forFragment))
+        List(
+          ScenarioIdError(LeadingSpacesId, " leadingAndTrailingSpace ", forFragment),
+          ScenarioIdError(TrailingSpacesId, " leadingAndTrailingSpace ", forFragment)
+        )
       ),
     )
   }

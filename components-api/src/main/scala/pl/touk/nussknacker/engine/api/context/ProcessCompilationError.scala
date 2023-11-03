@@ -43,10 +43,6 @@ object ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }
 
-  sealed trait NodeIdError extends ProcessCompilationError {
-    self: ProcessCompilationError =>
-  }
-
   final case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
 
   final case class MissingPart(nodeId: String) extends ProcessCompilationError with InASingleNode
@@ -70,30 +66,6 @@ object ProcessCompilationError {
   final case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
-
-  final case class InvalidCharactersNodeId(nodeId: String) extends NodeIdError with InASingleNode
-
-  final case class BlankNodeId(nodeId: String) extends NodeIdError with InASingleNode
-
-  final case class LeadingSpacesNodeId(nodeId: String) extends NodeIdError with InASingleNode
-
-  final case class TrailingSpacesNodeId(nodeId: String) extends NodeIdError with InASingleNode
-
-  final case class EmptyNodeId() extends NodeIdError with InASingleNode {
-    override val nodeId = ""
-  }
-
-  final case class EmptyScenarioId(isFragment: Boolean) extends ProcessCompilationError with ScenarioPropertiesError
-
-  final case class BlankScenarioId(isFragment: Boolean) extends ProcessCompilationError with ScenarioPropertiesError
-
-  final case class LeadingSpacesScenarioId(isFragment: Boolean)
-      extends ProcessCompilationError
-      with ScenarioPropertiesError
-
-  final case class TrailingSpacesScenarioId(isFragment: Boolean)
-      extends ProcessCompilationError
-      with ScenarioPropertiesError
 
   final case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
       extends PartSubGraphCompilationError
@@ -318,5 +290,25 @@ object ProcessCompilationError {
   final case class SpecificDataValidationError(fieldName: String, message: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
+
+  sealed trait IdError extends ProcessCompilationError {
+    val errorType: IdErrorType
+    val id: String
+  }
+
+  final case class ScenarioIdError(errorType: IdErrorType, id: String, isFragment: Boolean)
+      extends IdError
+      with ScenarioPropertiesError
+
+  final case class NodeIdValidationError(errorType: IdErrorType, id: String) extends IdError with InASingleNode {
+    override protected def nodeId: String = id
+  }
+
+  sealed trait IdErrorType
+  object EmptyValue                                                           extends IdErrorType
+  object BlankId                                                              extends IdErrorType
+  object LeadingSpacesId                                                      extends IdErrorType
+  object TrailingSpacesId                                                     extends IdErrorType
+  final case class IllegalCharactersId(illegalCharacterHumanReadable: String) extends IdErrorType
 
 }

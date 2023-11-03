@@ -791,7 +791,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val blankValue     = " "
     val testedScenario = ProcessValidationSpec.validFlinkProcess.copy(id = blankValue)
     val result         = TestFactory.flinkProcessValidation.validate(testedScenario).errors.processPropertiesErrors
-    result shouldBe List(PrettyValidationErrors.formatErrorMessage(BlankScenarioId(isFragment = false)))
+    result shouldBe List(
+      PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, blankValue, isFragment = false))
+    )
   }
 
   test("should validate invalid node id") {
@@ -803,8 +805,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       ),
       List(Edge(blankValue, "out", None))
     )
-    val result     = TestFactory.flinkProcessValidation.validate(testedScenario).errors.invalidNodes
-    val nodeErrors = Map(blankValue -> List(PrettyValidationErrors.formatErrorMessage(BlankNodeId(blankValue))))
+    val result = TestFactory.flinkProcessValidation.validate(testedScenario).errors.invalidNodes
+    val nodeErrors =
+      Map(blankValue -> List(PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, blankValue))))
     result shouldBe nodeErrors
   }
 
@@ -821,9 +824,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         inside(errors) {
           case ValidationErrors(nodeErrors, propertiesErrors, _) => {
             nodeErrors should contain key " "
-            nodeErrors(" ") should contain(PrettyValidationErrors.formatErrorMessage(BlankNodeId(" ")))
+            nodeErrors(" ") should contain(
+              PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
+            )
             propertiesErrors shouldBe List(
-              PrettyValidationErrors.formatErrorMessage(BlankScenarioId(isFragment = false))
+              PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, " ", isFragment = false))
             )
           }
         }

@@ -9,10 +9,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  BlankNodeId,
-  BlankScenarioId,
+  BlankId,
   ExpressionParserCompilationError,
   InvalidPropertyFixedValue,
+  NodeIdValidationError,
+  ScenarioIdError,
   ScenarioNameValidationError
 }
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -271,7 +272,7 @@ class NodeResourcesSpec
         testPermissionRead
       ) ~> check {
         responseAs[NodeValidationResult].validationErrors shouldBe List(
-          PrettyValidationErrors.formatErrorMessage(BlankNodeId(blankValue))
+          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
         )
       }
     }
@@ -329,7 +330,7 @@ class NodeResourcesSpec
           )
         ),
         PrettyValidationErrors.formatErrorMessage(
-          BlankScenarioId(isFragment = false)
+          ScenarioIdError(BlankId, blankValue, isFragment = false)
         )
       )
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(

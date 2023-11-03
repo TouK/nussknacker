@@ -11,7 +11,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 object PrettyValidationErrors {
 
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
-    val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
+    val typ = getErrorTypeName(error)
 
     def node(
         message: String,
@@ -45,79 +45,16 @@ object PrettyValidationErrors {
           "Scenario must end with a sink, processor or fragment",
           "Scenario must end with a sink, processor or fragment"
         )
-      case propertiesError: ScenarioPropertiesError =>
-        def processTypeName(isFragment: Boolean) = {
-          if (isFragment) "Fragment" else "Scenario"
-        }
-
-        propertiesError match {
-          case EmptyScenarioId(isFragment) =>
-            node(
-              s"${processTypeName(isFragment)} name is mandatory and cannot be empty",
-              s"Empty ${processTypeName(isFragment).toLowerCase} name",
-              fieldName = Some(CanonicalProcess.IdFieldName)
-            )
-          case BlankScenarioId(isFragment) =>
-            node(
-              s"${processTypeName(isFragment)} name cannot be blank",
-              s"Blank ${processTypeName(isFragment).toLowerCase} name",
-              fieldName = Some(CanonicalProcess.IdFieldName)
-            )
-          case LeadingSpacesScenarioId(isFragment) =>
-            node(
-              s"${processTypeName(isFragment)} name cannot have leading spaces",
-              s"Leading spaces in ${processTypeName(isFragment).toLowerCase} name",
-              fieldName = Some(CanonicalProcess.IdFieldName)
-            )
-          case TrailingSpacesScenarioId(isFragment) =>
-            node(
-              s"${processTypeName(isFragment)} name cannot have trailing spaces",
-              s"Trailing spaces in ${processTypeName(isFragment).toLowerCase} name",
-              fieldName = Some(CanonicalProcess.IdFieldName)
-            )
-          case ScenarioNameValidationError(message, description) =>
-            node(
-              message,
-              description,
-              fieldName = Some(CanonicalProcess.IdFieldName),
-            )
-          case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
-        }
-      case nodeIdError: NodeIdError =>
-        nodeIdError match {
-          case EmptyNodeId() =>
-            node(
-              "Node name cannot be empty",
-              "Empty node name",
-              errorType = NodeValidationErrorType.RenderNotAllowed,
-              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
-            )
-          case InvalidCharactersNodeId(_) =>
-            node(
-              "Node name contains invalid characters. Quotation mark (\"), dot (.) and apostrophe (') are not allowed",
-              "Invalid characters in node name",
-              errorType = NodeValidationErrorType.RenderNotAllowed,
-              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
-            )
-          case BlankNodeId(_) =>
-            node(
-              "Node name cannot be blank",
-              "Blank node name",
-              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
-            )
-          case LeadingSpacesNodeId(_) =>
-            node(
-              "Node name cannot have leading spaces",
-              "Leading spaces in node name",
-              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
-            )
-          case TrailingSpacesNodeId(_) =>
-            node(
-              "Node name cannot have trailing spaces",
-              "Trailing spaces in node name",
-              fieldName = Some(pl.touk.nussknacker.engine.graph.node.IdFieldName)
-            )
-        }
+      case error: IdError => {
+        mapIdErrorToNodeError(error)
+      }
+      case ScenarioNameValidationError(message, description) =>
+        node(
+          message,
+          description,
+          fieldName = Some(CanonicalProcess.IdFieldName),
+        )
+      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
           "Edges are not unique",
@@ -261,6 +198,52 @@ object PrettyValidationErrors {
   private def getLabel(label: Option[String]) = label match {
     case Some(text) => s" ($text)"
     case None       => StringUtils.EMPTY
+  }
+
+  private def getErrorTypeName(error: ProcessCompilationError) = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
+
+  private def mapIdErrorToNodeError(error: IdError) = {
+    val validatedObjectName = error match {
+      case ScenarioIdError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
+      case NodeIdValidationError(_, _)       => "Node"
+    }
+    val errorSeverity = error.errorType match {
+      case ProcessCompilationError.EmptyValue =>
+        error match {
+          case NodeIdValidationError(_, _) => NodeValidationErrorType.RenderNotAllowed
+          case _                           => NodeValidationErrorType.SaveAllowed
+        }
+      case IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
+      case _                      => NodeValidationErrorType.SaveAllowed
+    }
+    val fieldName = error match {
+      case ScenarioIdError(_, _, _)    => CanonicalProcess.IdFieldName
+      case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
+    }
+    val message = error.errorType match {
+      case ProcessCompilationError.EmptyValue       => s"$validatedObjectName name is mandatory and cannot be empty"
+      case ProcessCompilationError.BlankId          => s"$validatedObjectName name cannot be blank"
+      case ProcessCompilationError.LeadingSpacesId  => s"$validatedObjectName name cannot have leading spaces"
+      case ProcessCompilationError.TrailingSpacesId => s"$validatedObjectName name cannot have trailing spaces"
+      case ProcessCompilationError.IllegalCharactersId(illegalCharactersHumanReadable) =>
+        s"$validatedObjectName name contains invalid characters. $illegalCharactersHumanReadable are not allowed"
+    }
+    val description = error.errorType match {
+      case ProcessCompilationError.EmptyValue      => s"Empty ${validatedObjectName.toLowerCase} name"
+      case ProcessCompilationError.BlankId         => s"Blank ${validatedObjectName.toLowerCase} name"
+      case ProcessCompilationError.LeadingSpacesId => s"Leading spaces in ${validatedObjectName.toLowerCase} name"
+      case ProcessCompilationError.TrailingSpacesId =>
+        s"Trailing spaces in ${validatedObjectName.toLowerCase} name"
+      case ProcessCompilationError.IllegalCharactersId(_) =>
+        s"Invalid characters in ${validatedObjectName.toLowerCase} name"
+    }
+    NodeValidationError(
+      typ = getErrorTypeName(error),
+      message = message,
+      description = description,
+      fieldName = Some(fieldName),
+      errorType = errorSeverity
+    )
   }
 
 }
