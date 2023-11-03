@@ -2,7 +2,7 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { onChangeType, UpdatedItem } from "../../../item";
+import { AnyValueWithSuggestionsItemVariant, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -11,7 +11,7 @@ import { VariableTypes } from "../../../../../../../types";
 import { Option } from "../../../TypeSelect";
 
 interface Props {
-    item: UpdatedItem;
+    item: AnyValueWithSuggestionsItemVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
@@ -20,7 +20,7 @@ interface Props {
 export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes }: Props) => {
     const { t } = useTranslation();
 
-    const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+    const presetListItemOptions: Option[] = (item.fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
         label: label,
         value: label,
     }));

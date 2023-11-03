@@ -1,12 +1,12 @@
 import React from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
-import { UpdatedItem, onChangeType } from "../../../item";
+import { DefaultItemVariant, onChangeType, PropertyItem, StringOrBooleanItemVariant } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { NodeInput } from "../../../../../../withFocus";
 
 interface InitialValue {
-    item: UpdatedItem;
+    item: PropertyItem;
     path: string;
     onChange: (path: string, value: onChangeType) => void;
     options?: Option[];

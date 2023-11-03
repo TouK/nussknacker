@@ -2,20 +2,18 @@ import React from "react";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { InputMode, UpdatedItem, onChangeType } from "../../../item";
+import { InputMode, onChangeType, StringOrBooleanItemVariant } from "../../../item";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
-    item: UpdatedItem;
+    item: StringOrBooleanItemVariant;
     path: string;
-    setSelectedInputMode: React.Dispatch<React.SetStateAction<InputMode>>;
-    selectedInputMode: InputMode;
     inputModeOptions: Option[];
 }
 
 export default function InputModeSelect(props: Props) {
-    const { onChange, path, setSelectedInputMode, selectedInputMode, inputModeOptions } = props;
+    const { onChange, path, item, inputModeOptions } = props;
     const { t } = useTranslation();
 
     return (
@@ -23,14 +21,15 @@ export default function InputModeSelect(props: Props) {
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
                 <TypeSelect
-                    onChange={(value) => {
-                        if (value === "Fixed list") {
+                    onChange={(value: InputMode) => {
+                        console.log(value);
+                        if (value === "FixedList") {
                             onChange(`${path}.initialValue`, "");
                         }
-                        setSelectedInputMode(value as InputMode);
-                        onChange(`${path}.allowOnlyValuesFromFixedValuesList`, value === "Fixed list");
+                        onChange(`${path}.inputMode`, value);
+                        onChange(`${path}.allowOnlyValuesFromFixedValuesList`, value === "FixedList");
                     }}
-                    value={inputModeOptions.find((inputModeOption) => inputModeOption.value === selectedInputMode)}
+                    value={inputModeOptions.find((inputModeOption) => inputModeOption.value === item.inputMode)}
                     options={inputModeOptions}
                 />
             </SettingRow>

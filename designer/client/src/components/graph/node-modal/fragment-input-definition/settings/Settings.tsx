@@ -1,12 +1,12 @@
 import React from "react";
 import { Option } from "../FieldsSelect";
-import { InputMode, UpdatedItem, onChangeType } from "../item";
+import { onChangeType, StringOrBooleanItemVariant, DefaultItemVariant, PropertyItem } from "../item";
 import { VariableTypes } from "../../../../../types";
 import { isStringOrBooleanVariant } from "../item/utils";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
 
 interface Settings {
-    item: UpdatedItem;
+    item: PropertyItem;
     path: string;
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
@@ -14,11 +14,9 @@ interface Settings {
 }
 
 export default function Settings(props: Settings) {
-    const { currentOption } = props;
-
-    if (isStringOrBooleanVariant(currentOption.value)) {
-        return <StringBooleanVariant {...props} />;
+    if (isStringOrBooleanVariant(props.item)) {
+        return <StringBooleanVariant {...props} item={props.item} />;
     }
 
-    return <DefaultVariant {...props} />;
+    return <DefaultVariant {...props} item={props.item} />;
 }

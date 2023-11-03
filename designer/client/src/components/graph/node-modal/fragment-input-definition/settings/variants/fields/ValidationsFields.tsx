@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { t } from "i18next";
 import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
-import { UpdatedItem, onChangeType } from "../../../item";
+import { onChangeType, AnyValueWithSuggestionsItemVariant, AnyValueItemVariant, DefaultItemVariant } from "../../../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { VariableTypes } from "../../../../../../../types";
 
 interface ValidationsFields {
-    item: UpdatedItem;
+    item: AnyValueWithSuggestionsItemVariant | AnyValueItemVariant | DefaultItemVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;

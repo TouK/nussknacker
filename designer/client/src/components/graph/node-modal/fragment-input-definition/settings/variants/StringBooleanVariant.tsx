@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
-import { InputMode, onChangeType, UpdatedItem } from "../../item";
+import { InputMode, onChangeType, StringOrBooleanItemVariant } from "../../item";
 import { Option } from "../../FieldsSelect";
 import { VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
 interface Props {
-    item: UpdatedItem;
+    item: StringOrBooleanItemVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     currentOption: Option;
@@ -23,7 +23,6 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Pr
         { label: "Any value", value: InputMode.AnyValue },
     ];
 
-    const [selectedInputMode, setSelectedInputMode] = useState<InputMode>(inputModeOptions[0].value);
     const { t } = useTranslation();
 
     return (
@@ -35,19 +34,12 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Pr
                     label=""
                 />
             </SettingRow>
-            <InputModeSelect
-                path={path}
-                onChange={onChange}
-                item={item}
-                selectedInputMode={selectedInputMode}
-                inputModeOptions={inputModeOptions}
-                setSelectedInputMode={setSelectedInputMode}
-            />
-            {selectedInputMode === InputMode.AnyValue && (
+            <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} />
+            {item.inputMode === InputMode.AnyValue && (
                 <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
-            {selectedInputMode === InputMode.FixedList && <FixedListVariant item={item} onChange={onChange} path={path} />}
-            {selectedInputMode === InputMode.AnyValueWithSuggestions && (
+            {item.inputMode === InputMode.FixedList && <FixedListVariant item={item} onChange={onChange} path={path} />}
+            {item.inputMode === InputMode.AnyValueWithSuggestions && (
                 <AnyValueWithSuggestionVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
         </SettingsWrapper>

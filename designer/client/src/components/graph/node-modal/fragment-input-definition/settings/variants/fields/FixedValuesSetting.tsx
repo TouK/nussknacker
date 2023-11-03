@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { NodeInput } from "../../../../../../withFocus";
 import { useTranslation } from "react-i18next";
-import { FixedValuesType, UpdatedItem, onChangeType, FixedValuesOption, FixedValuesPresetOption } from "../../../item";
+import { FixedValuesType, onChangeType, FixedValuesOption, FixedValuesPresetOption, FixedListItemVariant } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 
-interface FixedValuesSetting extends Pick<UpdatedItem, "presetSelection"> {
+interface FixedValuesSetting extends Pick<FixedListItemVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesType: FixedValuesType;

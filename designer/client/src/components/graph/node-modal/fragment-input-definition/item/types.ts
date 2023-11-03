@@ -1,24 +1,12 @@
-import { Parameter } from "../../../../../types";
-
-export type UpdatedItem = StringAndBoolean & AllValueExcludeStringAndBoolean;
-
-export type Fields = DefaultFields | DefaultFieldsWithValidation;
+import { ReturnedType } from "../../../../../types";
 
 export type onChangeType = string | number | boolean | FixedValuesOption[];
-
-export interface DefaultItemType extends Parameter {
-    required: boolean;
-    initialValue: string;
-    hintText: string;
-}
 
 export interface FragmentValidation {
     validation: boolean;
     validationErrorMessage: string;
     validationExpression: string;
 }
-
-export interface AllValueExcludeStringAndBoolean extends FragmentValidation, DefaultItemType {}
 
 export enum FixedValuesType {
     "Preset" = "Preset",
@@ -39,50 +27,39 @@ export interface FixedValuesOption {
     label: string;
 }
 
-export interface StringAndBoolean extends DefaultItemType, FragmentValidation {
-    allowOnlyValuesFromFixedValuesList: boolean;
-    fixedValuesList?: FixedValuesOption[];
-    fixedValuesPresets?: FixedValuesPresetOption;
-    inputMode: InputMode;
-    fixedValuesType: FixedValuesType;
-    presetSelection: string;
-    fixedValuesListPresetId: string;
-}
-
-interface DefaultFields {
-    allowOnlyValuesFromFixedValuesList: boolean;
-    fixedValuesList?: string[];
-    presetSelection: string;
-    required: boolean;
-    hintText: string;
-    initialValue: string;
-}
-
-interface DefaultFieldsWithValidation {
-    validationExpression: string;
-    validationErrorMessage: string;
-}
-
 // NEW ONE
-interface ParameterDetails {
+export interface GenericParameterVariant {
     required: boolean;
-    validation: boolean;
-    validationExpression: string;
-    validationErrorMessage: string;
+    name: string;
+    typ?: ReturnedType;
     initialValue: string | undefined;
     hintText: string | undefined;
+    fixedValuesType: FixedValuesType;
 }
 
-interface FixedListParameterDetails {
+export interface DefaultItemVariant extends GenericParameterVariant, FragmentValidation {
+    name: string;
+}
+
+export interface FixedListItemVariant extends GenericParameterVariant {
     inputMode: InputMode.FixedList;
-    required: boolean;
-    presetType: FixedValuesType;
+    fixedValuesList: FixedValuesOption[];
+    fixedValuesPresets: FixedValuesPresetOption;
+    allowOnlyValuesFromFixedValuesList: boolean;
+    fixedValuesListPresetId: string;
+    presetSelection: string;
 }
-interface AnyValueWithSuggestionsParameterDetails {
+export interface AnyValueWithSuggestionsItemVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValueWithSuggestions;
-    presetType: FixedValuesType;
+    fixedValuesList: FixedValuesOption[];
+    fixedValuesPresets: FixedValuesPresetOption | undefined;
+    fixedValuesListPresetId: string;
+    presetSelection: string;
 }
-interface AnyValueParameterDetails {
+export interface AnyValueItemVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValue;
-    presetType: FixedValuesType;
 }
+
+export type StringOrBooleanItemVariant = FixedListItemVariant | AnyValueWithSuggestionsItemVariant | AnyValueItemVariant;
+
+export type PropertyItem = StringOrBooleanItemVariant | DefaultItemVariant;

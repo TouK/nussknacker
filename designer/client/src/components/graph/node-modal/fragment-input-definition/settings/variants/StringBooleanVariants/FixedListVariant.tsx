@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { onChangeType, UpdatedItem } from "../../../item";
+import { FixedListItemVariant, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -9,7 +9,7 @@ import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { Option } from "../../../TypeSelect";
 
 interface Props {
-    item: UpdatedItem;
+    item: FixedListItemVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
 }
@@ -17,7 +17,7 @@ interface Props {
 export const FixedListVariant = ({ item, path, onChange }: Props) => {
     const { t } = useTranslation();
 
-    const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+    const presetListItemOptions: Option[] = (item.fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
         label: label,
         value: label,
     }));

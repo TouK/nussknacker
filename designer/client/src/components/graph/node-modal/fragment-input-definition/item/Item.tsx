@@ -4,17 +4,17 @@ import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
 import { Validator } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
-import { Parameter, VariableTypes } from "../../../../../types";
+import { ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { UpdatedItem, onChangeType } from "./";
+import { onChangeType, PropertyItem } from "./";
 import { addNewFields, validateFieldsForCurrentOption } from "./utils";
 
 interface ItemProps {
     index: number;
-    item: UpdatedItem;
+    item: PropertyItem;
     validators: Validator[];
     namespace: string;
     readOnly?: boolean;
@@ -30,18 +30,17 @@ export function Item(props: ItemProps): JSX.Element {
     const [isMarked] = useDiffMark();
     const [isOpen, setIsOpen] = useState(false);
     const getCurrentOption = useCallback(
-        (field: Parameter) => {
-            const fallbackValue = { label: field?.typ?.refClazzName, value: field?.typ?.refClazzName };
-            const foundValue = options.find((item) => isEqual(field?.typ?.refClazzName, item.value));
+        (typ: ReturnedType | undefined) => {
+            const fallbackValue = { label: typ?.refClazzName, value: typ?.refClazzName };
+            const foundValue = options.find((item) => isEqual(typ?.refClazzName, item.value));
             return foundValue || fallbackValue;
         },
         [options],
     );
 
     const openSettingMenu = () => {
-        const { value } = getCurrentOption(item);
         setIsOpen((prevState) => !prevState);
-        const fields = validateFieldsForCurrentOption(value, item.inputMode);
+        const fields = validateFieldsForCurrentOption(item);
         addNewFields(fields, item, onChange, path);
     };
 
@@ -61,10 +60,10 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
-                        const fields = validateFieldsForCurrentOption(value, "selectedInputMode");
+                        const fields = validateFieldsForCurrentOption(item);
                         addNewFields(fields, item, onChange, path);
                     }}
-                    value={getCurrentOption(item)}
+                    value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
                 />
@@ -75,7 +74,7 @@ export function Item(props: ItemProps): JSX.Element {
                     path={path}
                     item={item}
                     onChange={onChange}
-                    currentOption={getCurrentOption(item)}
+                    currentOption={getCurrentOption(item.typ)}
                     variableTypes={variableTypes}
                 />
             )}
