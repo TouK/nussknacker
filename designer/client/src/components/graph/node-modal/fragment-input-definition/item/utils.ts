@@ -1,6 +1,7 @@
 import { Fields, InputMode, UpdatedItem, onChangeType, AllValueExcludeStringAndBoolean, StringAndBoolean } from ".";
 
 export const addNewFields = (fields: Fields, item: UpdatedItem, onChange: (path: string, value: onChangeType) => void, path: string) => {
+    console.log({ fields });
     Object.entries(fields).map(([key, value]) => {
         if (!item[key]) {
             onChange(`${path}.${key}`, value);
@@ -24,6 +25,7 @@ export const validateFieldsForCurrentOption = (
             inputMode,
             allowOnlyValuesFromFixedValuesList: true,
             fixedValuesList: [],
+            fixedValuesPresets: {},
             presetSelection: "",
         };
     }

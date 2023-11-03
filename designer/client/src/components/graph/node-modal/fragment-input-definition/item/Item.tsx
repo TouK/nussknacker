@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
@@ -28,7 +28,7 @@ export function Item(props: ItemProps): JSX.Element {
     const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
-
+    const [isOpen, setIsOpen] = useState(false);
     const getCurrentOption = useCallback(
         (field: Parameter) => {
             const fallbackValue = { label: field?.typ?.refClazzName, value: field?.typ?.refClazzName };
@@ -38,10 +38,9 @@ export function Item(props: ItemProps): JSX.Element {
         [options],
     );
 
-    console.log(item);
     const openSettingMenu = () => {
-        onChange(`${path}.settingsOpen`, !item.settingsOpen);
         const { value } = getCurrentOption(item);
+        setIsOpen((prevState) => !prevState);
         const fields = validateFieldsForCurrentOption(value, item.inputMode);
         addNewFields(fields, item, onChange, path);
     };
@@ -69,9 +68,9 @@ export function Item(props: ItemProps): JSX.Element {
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
                 />
-                <SettingsButton isOpen={item.settingsOpen} openSettingMenu={openSettingMenu} />
+                <SettingsButton isOpen={isOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {item.settingsOpen && (
+            {isOpen && (
                 <Settings
                     path={path}
                     item={item}

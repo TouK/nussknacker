@@ -14,7 +14,7 @@ interface RowSelectProps {
     options: Option[];
     readOnly?: boolean;
     isMarked?: boolean;
-    value: Option;
+    value?: Option;
 }
 
 function useCaptureEsc() {
@@ -42,6 +42,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
+                aria-label={"type-select"}
                 className="node-value node-value-select node-value-type-select"
                 isDisabled={readOnly}
                 maxMenuHeight={190}

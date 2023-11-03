@@ -6,6 +6,7 @@ import PresetTypeGroup from "../fields/PresetTypeGroup";
 import PresetTypesSetting from "../fields/PresetTypesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
+import { Option } from "../../../TypeSelect";
 
 interface Props {
     item: UpdatedItem;
@@ -14,9 +15,15 @@ interface Props {
 }
 
 export const FixedValueVariant = ({ item, path, onChange }: Props) => {
-    const [presetType, setPresetType] = useState<PresetType>("Preset");
+    const [presetType, setPresetType] = useState<PresetType>(PresetType.Preset);
 
     const { t } = useTranslation();
+
+    const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+        label: label,
+        value: label,
+    }));
+    const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     return (
         <>
@@ -34,7 +41,7 @@ export const FixedValueVariant = ({ item, path, onChange }: Props) => {
                 path={path}
                 item={item}
                 onChange={onChange}
-                fixedValuesOptions={item.fixedValuesPresets || item.fixedValuesList}
+                options={presetType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

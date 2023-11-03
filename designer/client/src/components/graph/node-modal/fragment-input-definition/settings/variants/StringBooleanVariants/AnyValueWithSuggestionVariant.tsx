@@ -8,6 +8,7 @@ import PresetTypeGroup from "../fields/PresetTypeGroup";
 import PresetTypesSetting from "../fields/PresetTypesSetting";
 import ValidationsFields from "../fields/ValidationsFields";
 import { VariableTypes } from "../../../../../../../types";
+import { Option } from "../../../TypeSelect";
 
 interface Props {
     item: UpdatedItem;
@@ -17,9 +18,15 @@ interface Props {
 }
 
 export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes }: Props) => {
-    const [presetType, setPresetType] = useState<PresetType>("Preset");
+    const [presetType, setPresetType] = useState<PresetType>(PresetType.Preset);
 
     const { t } = useTranslation();
+
+    const presetListItemOptions: Option[] = (item.fixedValuesPresets[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+        label: label,
+        value: label,
+    }));
+    const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     return (
         <>
@@ -38,7 +45,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 path={path}
                 item={item}
                 onChange={onChange}
-                fixedValuesOptions={item.fixedValuesPresets || item.fixedValuesList}
+                options={presetType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

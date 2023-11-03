@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { NodeInput } from "../../../../../../withFocus";
 import { useTranslation } from "react-i18next";
-import { PresetType, UpdatedItem, onChangeType, FixedValuesOption } from "../../../item";
+import { PresetType, UpdatedItem, onChangeType, FixedValuesOption, FixedValuesPresetOption } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 
@@ -11,7 +11,7 @@ interface PresetTypesSetting extends Pick<UpdatedItem, "presetSelection"> {
     path: string;
     presetType: PresetType;
     fixedValuesList: FixedValuesOption[];
-    fixedValuesPresets: FixedValuesOption[];
+    fixedValuesPresets: FixedValuesPresetOption;
     fixedValuesListPresetId: string;
 }
 
@@ -26,7 +26,7 @@ export default function PresetTypesSetting({
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
 
-    const presetListOptions: Option[] = (fixedValuesPresets ?? []).map(({ label }) => ({ label, value: label }));
+    const presetListOptions: Option[] = Object.keys(fixedValuesPresets).map((key) => ({ label: key, value: key }));
     const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     return (
@@ -35,7 +35,10 @@ export default function PresetTypesSetting({
                 <SettingRow>
                     <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
-                        onChange={(value) => onChange(`${path}.fixedValuesListPresetId`, value)}
+                        onChange={(value) => {
+                            onChange(`${path}.fixedValuesListPresetId`, value);
+                            onChange(`${path}.initialValue`, "");
+                        }}
                         value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
                     />

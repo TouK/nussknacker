@@ -22,24 +22,19 @@ export default function PresetTypeGroup(props: PresetTypeGroup) {
             <RadioGroup
                 value={presetType}
                 onChange={(event) => {
+                    onChange(`${path}.initialValue`, "");
                     setPresetType(event.target.value as PresetType);
-                    if (event.target.value !== "Preset") {
-                        onChange(`${path}.addListItem`, []);
-                        onChange(`${path}.initialValue`, "");
-                    } else {
-                        onChange(`${path}.presetSelection`, []);
-                    }
                 }}
             >
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={"Preset"}
+                    value={PresetType.Preset}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</SyledFormControlLabel>}
                 />
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={"User defined list"}
+                    value={PresetType.UserDefinedList}
                     control={<Radio />}
                     label={<SyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</SyledFormControlLabel>}
                 />
