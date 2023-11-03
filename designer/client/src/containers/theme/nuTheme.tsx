@@ -131,7 +131,7 @@ const globalStyles = {
         fontSize: "16px",
         overflow: "hidden",
         letterSpacing: "unset",
-        "-webkit-font-smoothing": "initial",
+        WebkitFontSmoothing: "initial",
         lineHeight: 1.428571429,
     },
     "input, button, select, textarea": {
