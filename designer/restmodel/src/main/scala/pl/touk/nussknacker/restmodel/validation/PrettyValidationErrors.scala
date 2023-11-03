@@ -206,14 +206,13 @@ object PrettyValidationErrors {
       case ScenarioIdError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
       case NodeIdValidationError(_, _)       => "Node"
     }
-    val errorSeverity = error.errorType match {
-      case ProcessCompilationError.EmptyValue =>
-        error match {
-          case NodeIdValidationError(_, _) => NodeValidationErrorType.RenderNotAllowed
-          case _                           => NodeValidationErrorType.SaveAllowed
+    val errorSeverity = error match {
+      case ScenarioIdError(_, _, _) => NodeValidationErrorType.SaveAllowed
+      case NodeIdValidationError(errorType, _) =>
+        errorType match {
+          case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
+          case _                                                           => NodeValidationErrorType.SaveAllowed
         }
-      case IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
-      case _                      => NodeValidationErrorType.SaveAllowed
     }
     val fieldName = error match {
       case ScenarioIdError(_, _, _)    => CanonicalProcess.IdFieldName
