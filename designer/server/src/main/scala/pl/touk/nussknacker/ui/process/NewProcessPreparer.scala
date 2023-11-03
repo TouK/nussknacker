@@ -15,7 +15,7 @@ object NewProcessPreparer {
       processingTypesData: ProcessingTypeDataProvider[ProcessingTypeData, _],
       additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ): NewProcessPreparer =
-    new NewProcessPreparer(processingTypesData.mapValues(_.metaDataInitializer), additionalFields)
+    new NewProcessPreparer(processingTypesData.mapValues(_.deploymentData.metaDataInitializer), additionalFields)
 
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
     None,

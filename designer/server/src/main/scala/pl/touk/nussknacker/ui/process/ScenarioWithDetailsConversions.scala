@@ -53,7 +53,7 @@ object ScenarioWithDetailsConversions {
       modelVersion = entity.modelVersion,
       state = None,
       processingMode = processingTypeSetup.processingMode,
-      engineSetupName = processingTypeSetup.engineSetupName
+      engineSetupName = processingTypeSetup.engineSetup.name
     )
   }
 

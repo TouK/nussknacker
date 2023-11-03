@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine
 
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.scenariodetails.EngineSetupName
 
 object ProcessingTypeSetupsProvider {
 
@@ -14,7 +14,16 @@ object ProcessingTypeSetupsProvider {
       case Nil            => ???
       case moreThenOne    => ???
     }
-    ProcessingTypeSetup(singleProcessingMode, EngineSetupName("TODO"))
+    ProcessingTypeSetup(singleProcessingMode, EngineSetup(EngineSetupName("TODO"), List.empty))
   }
+
+  def engineSetups(deploymentManagersData: Map[ProcessingType, EngineSetupData]): Map[ProcessingType, EngineSetup] = ???
+
+  case class EngineSetupData(
+      defaultEngineSetupName: EngineSetupName,
+      setupIdentity: Any,
+      setupErrors: List[String],
+      specifiedEngineSetupName: Option[EngineSetupName]
+  )
 
 }

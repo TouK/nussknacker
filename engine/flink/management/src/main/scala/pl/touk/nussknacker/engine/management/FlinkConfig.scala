@@ -21,6 +21,11 @@ case class FlinkConfig(
     scenarioStateRequestTimeout: FiniteDuration = 3 seconds
 )
 
+object FlinkConfig {
+  // Keep it synchronize with FlinkConfig
+  val RestUrlPath = "restUrl"
+}
+
 case class FlinkWaitForDuringDeployFinishedConfig(
     enabled: Boolean,
     maxChecks: Option[Int],

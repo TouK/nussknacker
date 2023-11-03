@@ -53,12 +53,12 @@ class DefinitionResources(
                   UIProcessObjectsFactory.prepareUIProcessObjects(
                     processingTypeData.modelData,
                     processingTypeData.staticObjectsDefinition,
-                    processingTypeData.deploymentManager,
+                    processingTypeData.deploymentData.deploymentManager,
                     user,
                     fragments,
                     isFragment,
                     processingTypeDataProvider.combined._1,
-                    processingTypeData.scenarioPropertiesConfig,
+                    processingTypeData.deploymentData.scenarioPropertiesConfig,
                     processingType,
                     additionalUIConfigProvider
                   )

@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
-import pl.touk.nussknacker.restmodel.scenariodetails.EngineSetupName
+import pl.touk.nussknacker.engine.processingtypesetup.{EngineSetupName, ProcessingMode}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 class ProcessingTypeSetupService(
@@ -16,8 +15,8 @@ class ProcessingTypeSetupService(
       for {
         (processingType, details) <- setups.toList
         category                  <- categoryService.getProcessingTypeCategories(processingType)
-      } yield ProcessingTypeParametersCombination(details.processingMode, category, details.engineSetupName)
-    ).sortBy(setup => (setup.processingMode.value, setup.category, setup.engineSetupName.value))
+      } yield ProcessingTypeParametersCombination(details.processingMode, details.engineSetup, category)
+    ).sortBy(setup => (setup.processingMode.value, setup.category, setup.engineSetup.name.value))
 
   def processingTypeSetup(processingType: ProcessingType): ProcessingTypeSetup = setups(processingType)
 
@@ -36,11 +35,13 @@ object ProcessingTypeSetupService {
 }
 
 // ParametersCombination = Setup + Category
-case class ProcessingTypeSetup(processingMode: ProcessingMode, engineSetupName: EngineSetupName)
+case class ProcessingTypeSetup(processingMode: ProcessingMode, engineSetup: EngineSetup)
+@JsonCodec
+case class EngineSetup(name: EngineSetupName, errors: List[String])
 
 @JsonCodec
 case class ProcessingTypeParametersCombination(
     processingMode: ProcessingMode,
-    category: String,
-    engineSetupName: EngineSetupName
+    engineSetup: EngineSetup,
+    category: String
 )

@@ -28,12 +28,12 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, Processin
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.restmodel.scenariodetails.{EngineSetupName, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil.streamingSetup
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
@@ -183,7 +183,7 @@ trait NuResourcesTest
     new DBProcessService(
       deploymentService,
       newProcessPreparer,
-      () => _ => ProcessingTypeSetup(ProcessingMode.Streaming, EngineSetupName("Test")),
+      () => _ => streamingSetup,
       () => processCategoryService,
       processResolving,
       dbioRunner,

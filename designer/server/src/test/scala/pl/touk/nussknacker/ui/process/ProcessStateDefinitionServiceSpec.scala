@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -179,7 +180,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
       ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
-        deploymentManager,
+        Valid(deploymentManager),
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
         ConfigFactory.empty(),
         CategoriesConfig(List.empty)

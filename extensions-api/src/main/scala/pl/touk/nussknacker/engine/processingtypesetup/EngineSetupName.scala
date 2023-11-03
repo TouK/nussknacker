@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.restmodel.scenariodetails
+package pl.touk.nussknacker.engine.processingtypesetup
 
 import io.circe.{Decoder, Encoder}
 

@@ -100,16 +100,16 @@ class AkkaHttpBasedRouteProvider(
 
       val modelData = typeToConfig.mapValues(_.modelData)
 
-      val managers = typeToConfig.mapValues(_.deploymentManager)
+      val managers = typeToConfig.mapValues(_.deploymentData.deploymentManager)
 
       val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val scenarioProperties = typeToConfig.mapValues(_.scenarioPropertiesConfig)
+      val scenarioProperties = typeToConfig.mapValues(_.deploymentData.scenarioPropertiesConfig)
       val processValidation = ProcessValidation(
         modelData,
         scenarioProperties,
-        typeToConfig.mapValues(_.additionalValidators),
+        typeToConfig.mapValues(_.deploymentData.additionalValidators),
         fragmentResolver
       )
 

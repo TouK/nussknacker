@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.ProcessingTypeSetup
+import pl.touk.nussknacker.engine.{EngineSetup, ProcessingTypeSetup}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMeta
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
+import pl.touk.nussknacker.engine.processingtypesetup.{EngineSetupName, ProcessingMode}
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestResponse, Streaming}
@@ -93,7 +93,8 @@ object TestProcessUtil {
       streamingSetup
     )
 
-  val streamingSetup = ProcessingTypeSetup(ProcessingMode.Streaming, EngineSetupName("Test engine"))
+  val streamingSetup =
+    ProcessingTypeSetup(ProcessingMode.Streaming, EngineSetup(EngineSetupName("Test engine"), List.empty))
 
   def toDetails(
       name: String,

@@ -12,9 +12,9 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
+import pl.touk.nussknacker.engine.processingtypesetup.{EngineSetupName, ProcessingMode}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.scenariodetails.{EngineSetupName, ScenarioWithDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService._

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{
   ScenarioVersion,
   VersionId
 }
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
+import pl.touk.nussknacker.engine.processingtypesetup.{EngineSetupName, ProcessingMode}
 import pl.touk.nussknacker.restmodel.validation.{ValidatedDisplayableProcess, ValidationResults}
 
 import java.time.Instant

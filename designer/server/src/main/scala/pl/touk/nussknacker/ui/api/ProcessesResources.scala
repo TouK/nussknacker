@@ -9,9 +9,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.processingtypesetup.ProcessingMode
+import pl.touk.nussknacker.engine.processingtypesetup.{EngineSetupName, ProcessingMode}
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.restmodel.scenariodetails.EngineSetupName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._

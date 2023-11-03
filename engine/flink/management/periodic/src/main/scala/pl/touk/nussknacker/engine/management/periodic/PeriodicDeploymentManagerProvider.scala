@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
+import pl.touk.nussknacker.engine.processingtypesetup.EngineSetupName
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
@@ -56,4 +57,10 @@ class PeriodicDeploymentManagerProvider(
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
     delegate.scenarioPropertiesConfig(config)
+
+  override def defaultEngineSetupName: EngineSetupName = delegate.defaultEngineSetupName
+
+  override def engineSetupIdentity(modelData: BaseModelData, config: Config): Any =
+    delegate.engineSetupIdentity(modelData, config)
+
 }

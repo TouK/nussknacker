@@ -249,28 +249,48 @@ class DefinitionResourcesSpec
         """[
           |  {
           |    "processingMode" : "Streaming",
-          |    "category" : "Category1",
-          |    "engineSetupName" : "TODO"
+          |    "engineSetup" : {
+          |      "name" : "TODO",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "Category1"
           |  },
           |  {
           |    "processingMode" : "Streaming",
-          |    "category" : "Category2",
-          |    "engineSetupName" : "TODO"
+          |    "engineSetup" : {
+          |      "name" : "TODO",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "Category2"
           |  },
           |  {
           |    "processingMode" : "Streaming",
-          |    "category" : "ReqRes",
-          |    "engineSetupName" : "TODO"
+          |    "engineSetup" : {
+          |      "name" : "TODO",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "ReqRes"
           |  },
           |  {
           |    "processingMode" : "Streaming",
-          |    "category" : "TESTCAT",
-          |    "engineSetupName" : "TODO"
+          |    "engineSetup" : {
+          |      "name" : "TODO",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "TESTCAT"
           |  },
           |  {
           |    "processingMode" : "Streaming",
-          |    "category" : "TESTCAT2",
-          |    "engineSetupName" : "TODO"
+          |    "engineSetup" : {
+          |      "name" : "TODO",
+          |      "errors" : [
+          |      ]
+          |    },
+          |    "category" : "TESTCAT2"
           |  }
           |]""".stripMargin
     }
