@@ -99,10 +99,10 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
     val decodedNames = decoded.map(_.getClazz.getName)
 
     withClue(s"New classes: ${names -- decodedNames} ") {
-      (names -- decodedNames) shouldBe Set.empty
+      (names -- decodedNames) shouldBe empty
     }
     withClue(s"Removed classes: ${decodedNames -- names} ") {
-      (decodedNames -- names) shouldBe Set.empty
+      (decodedNames -- names) shouldBe empty
     }
 
     val decodedMap = decoded.map(k => k.getClazz -> k).toMap[Class[_], ClazzDefinition]
@@ -114,7 +114,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
         def checkMethods(getMethods: ClazzDefinition => Map[String, List[MethodInfo]]): Unit = {
           val methods        = getMethods(clazzDefinition)
           val decodedMethods = getMethods(decoded)
-          methods.keys shouldBe decodedMethods.keys
+          methods.keys should contain theSameElementsAs decodedMethods.keys
           methods.foreach { case (k, v) =>
             withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${decodedMethods(k).asJson}: ") {
               v.map(simplifyMethodInfo) should contain theSameElementsAs decodedMethods(k)
