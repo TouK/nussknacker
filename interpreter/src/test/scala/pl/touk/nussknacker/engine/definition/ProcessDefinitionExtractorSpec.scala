@@ -58,13 +58,13 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extract type info from classes from additional variables") {
-    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
-    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[OnlyUsedInAdditionalVariable]).value
+    classDefinition.methods.keys should contain theSameElementsAs Set("someField", "toString")
   }
 
   test("extract type info from additional classes") {
-    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[AdditionalClass])
-    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[AdditionalClass]).value
+    classDefinition.methods.keys should contain theSameElementsAs Set("someField", "toString")
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {
