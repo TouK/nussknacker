@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.Applicative
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -183,7 +183,6 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
       case variable @ Variable(id, varName, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, t) =
           nodeCompiler.compileVariable(variable, ctx)
-
         CompilationResult.map3(
           f0 = CompilationResult(newCtx),
           f1 = toCompilationResult(compiledExpression, typingInfo, parameters),
