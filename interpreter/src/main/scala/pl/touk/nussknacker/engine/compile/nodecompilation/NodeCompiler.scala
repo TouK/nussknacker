@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -347,11 +347,29 @@ class NodeCompiler(
       ctx: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-    val compilationResult
+    // TODO: extract this someplace else? its not used anywhere else
+    def validateUniqueRecordKey(allValues: Seq[String], requiredToBeUniqueValue: String, fieldName: String)(
+        implicit nodeId: NodeId
+    ) = {
+      if (allValues.count(_ == requiredToBeUniqueValue) <= 1) {
+        valid(())
+      } else {
+        Invalid(
+          CustomParameterValidationError(
+            "The key of a record has to be unique",
+            "Record key not unique",
+            fieldName,
+            nodeId.id
+          )
+        )
+      }
+    }
+
+    val fieldsCompilationResult
         : ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] =
-      fields.map { field =>
+      fields.zipWithIndex.map { case (field, index) =>
         objectParametersExpressionCompiler
-          .compile(field.expression, Some(field.name), ctx, Unknown)
+          .compile(field.expression, Some(s"fields-$index-value"), ctx, Unknown)
           .map(typedExpression =>
             ExpressionCompilation(
               field.name,
@@ -361,27 +379,36 @@ class NodeCompiler(
           )
       }.sequence
 
-    val typedObject = compilationResult
+    val additionalFieldValidationResult = fields.zipWithIndex.map { case (field, index) =>
+      (
+        MandatoryValueValidator.validate(field.expression.expression, s"fields-$index-value"),
+        validateUniqueRecordKey(fields.map(_.name), field.name, s"fields-$index-key").toValidatedNel
+      ).mapN { (_, _) => () }
+    }.combineAll
+
+    val typedObject = fieldsCompilationResult
       .map { fieldsComp =>
         TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
       }
       .valueOr(_ => Unknown)
 
-    val fieldsTypingInfo = compilationResult
+    val fieldsTypingInfo = fieldsCompilationResult
       .map { compilations =>
         compilations.flatMap(_.expressionTypingInfo).toMap
       }
       .getOrElse(Map.empty)
 
-    val compiledFields = compilationResult.andThen(_.map(_.validated).sequence)
+    val compiledFields = fieldsCompilationResult.andThen(_.map(_.validated).sequence)
 
-    NodeCompilationResult(
+    val compilationResult = NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
       parameters = None,
       validationContext = outputVar.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
       compiledObject = compiledFields,
       expressionType = Some(typedObject)
     )
+
+    combineErrors(compilationResult, additionalFieldValidationResult)
   }
 
   def compileExpression(
