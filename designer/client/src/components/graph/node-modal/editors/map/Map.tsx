@@ -78,11 +78,11 @@ export function Map<F extends Field>({
                 item,
                 el: (
                     <FieldsRow index={index}>
-                        <MapRow index={index} item={item} validators={[mandatoryValueValidator, uniqueNameValidator(index)]} />
+                        <MapRow index={index} item={item} />
                     </FieldsRow>
                 ),
             })),
-        [appendTypeInfo, fields, uniqueNameValidator],
+        [appendTypeInfo, fields],
     );
 
     return (
