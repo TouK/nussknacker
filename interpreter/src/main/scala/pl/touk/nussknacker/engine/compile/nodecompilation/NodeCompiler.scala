@@ -286,13 +286,20 @@ class NodeCompiler(
 
     val objCases = caseExpressions.map(_.compiledObject).sequence
 
-    NodeCompilationResult(
+    val compilationResult = NodeCompilationResult(
       expressionTypingInfos,
       None,
       expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
       objExpression.product(objCases),
       expressionCompilation.flatMap(_.expressionType)
     )
+
+    val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
+      choices.map { e =>
+        MandatoryValueValidator.validate(e._2.expression, e._1)
+      }.combineAll
+
+    combineErrors(compilationResult, additionalValidationResult)
   }
 
   def compileFilter(filter: Filter, ctx: ValidationContext)(
