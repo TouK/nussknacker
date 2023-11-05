@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Field } from "../../../../../types";
-import { Validator } from "../Validators";
+import { errorValidator } from "../Validators";
 import { MapItemsCtx } from "./Map";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";
@@ -8,14 +8,13 @@ import MapValue from "./MapValue";
 interface MapRowProps<F extends Field> {
     index: number;
     item: F;
-    validators: Validator[];
 }
 
 type TypedField = Field & {
     typeInfo: string;
 };
 
-export default function MapRow<F extends TypedField>({ index, item, validators }: MapRowProps<F>) {
+export default function MapRow<F extends TypedField>({ index, item }: MapRowProps<F>) {
     const { fieldErrors, isMarked, readOnly, setProperty, showValidation, variableTypes } = useContext(MapItemsCtx);
     const setItemProperty = (field: string, value) => setProperty(`[${index}].${field}`, value);
     const isPropertyMarked = (field: string) => isMarked(`[${index}].${field}`);
@@ -28,7 +27,7 @@ export default function MapRow<F extends TypedField>({ index, item, validators }
                 isMarked={isPropertyMarked("name")}
                 onChange={(value) => setItemProperty("name", value)}
                 value={name}
-                validators={validators}
+                validators={[errorValidator(fieldErrors, `fields-${index}-key`)]}
             />
             <MapValue
                 readOnly={readOnly}
@@ -39,6 +38,7 @@ export default function MapRow<F extends TypedField>({ index, item, validators }
                 validationLabelInfo={typeInfo}
                 errors={fieldErrors}
                 variableTypes={variableTypes}
+                validators={[errorValidator(fieldErrors, `fields-${index}-value`)]}
             />
         </>
     );
