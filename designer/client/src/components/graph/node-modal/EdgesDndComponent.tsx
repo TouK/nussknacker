@@ -117,7 +117,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
                         edges={array}
                         types={types}
                         variableTypes={variableTypes}
-                        validators={[mandatoryValueValidator, errorValidator(fieldErrors, edge._id || edge.to)]}
+                        validators={[errorValidator(fieldErrors, edge._id || edge.to)]}
                     />
                 ),
             };
