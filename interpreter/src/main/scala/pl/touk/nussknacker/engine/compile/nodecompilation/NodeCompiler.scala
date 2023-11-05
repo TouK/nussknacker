@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.toTraverseOps
+import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -302,11 +302,9 @@ class NodeCompiler(
       compileExpression(filter.expression, ctx, expectedType = Typed[Boolean], outputVar = None)
 
     val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
-      MandatoryParameterValidator
-        .isValid(NodeExpressionId.DefaultExpressionId, filter.expression.expression, None)
-        .toValidatedNel
+      MandatoryValueValidator.validate(filter.expression.expression, DefaultExpressionId)
 
-    combineCompiledObjectErrors(compilationResult, additionalValidationResult)
+    combineErrors(compilationResult, additionalValidationResult)
   }
 
   def compileVariable(variable: Variable, ctx: ValidationContext)(
@@ -322,11 +320,9 @@ class NodeCompiler(
 
     // TODO: deduplicate code
     val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
-      MandatoryParameterValidator
-        .isValid(NodeExpressionId.DefaultExpressionId, variable.value.expression, None)
-        .toValidatedNel
+      MandatoryValueValidator.validate(variable.value.expression, DefaultExpressionId)
 
-    combineCompiledObjectErrors(compilationResult, additionalValidationResult)
+    combineErrors(compilationResult, additionalValidationResult)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
@@ -753,20 +749,38 @@ class NodeCompiler(
 
   }
 
-  private def combineCompiledObjectErrors[T](
+  private def combineErrors[T](
       compilationResult: NodeCompilationResult[T],
-      validationResult: ValidatedNel[ProcessCompilationError, Unit]
+      additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit]
   ): NodeCompilationResult[T] = {
     val newCompiledObject: ValidatedNel[ProcessCompilationError, T] =
-      (compilationResult.compiledObject, validationResult) match {
-        case (Validated.Invalid(compilationErrors), Validated.Invalid(validationErrors)) =>
-          Validated.Invalid(compilationErrors ++ validationErrors.toList)
-        case (_, Validated.Invalid(validationErrors)) =>
-          Validated.Invalid(validationErrors)
-        case _ =>
+      additionalValidationResult match {
+        case Validated.Invalid(validationErrors) =>
+          compilationResult.compiledObject match {
+            case Validated.Invalid(compilationErrors) =>
+              Validated.Invalid(compilationErrors ++ validationErrors.toList)
+            case _ =>
+              Validated.Invalid(validationErrors)
+          }
+        case Validated.Valid(_) =>
           compilationResult.compiledObject
       }
     compilationResult.copy(compiledObject = newCompiledObject)
+
+  }
+
+  sealed trait NodeValidator {
+    def validate(value: String, fieldName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
+  }
+
+  private final object MandatoryValueValidator extends NodeValidator {
+
+    override def validate(value: String, fieldName: String)(
+        implicit nodeId: NodeId
+    ): ValidatedNel[ProcessCompilationError, Unit] = {
+      MandatoryParameterValidator.isValid(fieldName, value, None).toValidatedNel
+    }
+
   }
 
 }
