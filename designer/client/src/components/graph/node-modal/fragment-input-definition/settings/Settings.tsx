@@ -1,5 +1,4 @@
 import React from "react";
-import { Option } from "../FieldsSelect";
 import { onChangeType, PropertyItem } from "../item";
 import { VariableTypes } from "../../../../../types";
 import { isStringOrBooleanVariant } from "../item/utils";

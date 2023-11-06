@@ -33,7 +33,6 @@ export interface GenericParameterVariant {
     typ?: ReturnedType;
     initialValue: string | undefined;
     hintText: string | undefined;
-    fixedValuesType: FixedValuesType;
     isOpen?: boolean;
 }
 
@@ -48,6 +47,7 @@ export interface FixedListItemVariant extends GenericParameterVariant {
     allowOnlyValuesFromFixedValuesList: boolean;
     fixedValuesListPresetId: string;
     presetSelection: string;
+    fixedValuesType: FixedValuesType;
 }
 export interface AnyValueWithSuggestionsItemVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValueWithSuggestions;
@@ -55,9 +55,11 @@ export interface AnyValueWithSuggestionsItemVariant extends GenericParameterVari
     fixedValuesPresets: FixedValuesPresetOption | undefined;
     fixedValuesListPresetId: string;
     presetSelection: string;
+    fixedValuesType: FixedValuesType;
 }
 export interface AnyValueItemVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValue;
+    fixedValuesType: FixedValuesType;
 }
 
 export type StringOrBooleanItemVariant = FixedListItemVariant | AnyValueWithSuggestionsItemVariant | AnyValueItemVariant;

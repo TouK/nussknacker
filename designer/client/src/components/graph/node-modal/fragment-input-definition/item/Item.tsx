@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
@@ -10,7 +10,6 @@ import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
 import { onChangeType, PropertyItem } from "./";
-import { addNewFields, validateFieldsForCurrentOption } from "./utils";
 
 interface ItemProps {
     index: number;
@@ -39,11 +38,8 @@ export function Item(props: ItemProps): JSX.Element {
 
     const openSettingMenu = () => {
         onChange(`${path}.isOpen`, !item.isOpen);
-        const fields = validateFieldsForCurrentOption(item);
-        addNewFields(fields, item, onChange, path);
     };
 
-    console.log(item.typ);
     return (
         <div>
             <FieldsRow index={index}>
@@ -60,8 +56,6 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
-                        const fields = validateFieldsForCurrentOption(item);
-                        addNewFields(fields, item, onChange, path);
                     }}
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}

@@ -8,6 +8,7 @@ import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
 import { find, head, orderBy } from "lodash";
+import { getDefaultFields } from "./item/utils";
 
 interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
@@ -33,7 +34,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
 
     const addField = useCallback(() => {
-        addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);
+        addElement("parameters", getDefaultFields(defaultTypeOption.value));
     }, [addElement, defaultTypeOption.value]);
 
     const fields = useMemo(() => node.parameters || [], [node.parameters]);

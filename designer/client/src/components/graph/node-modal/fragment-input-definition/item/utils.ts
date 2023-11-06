@@ -1,84 +1,23 @@
-import {
-    AnyValueItemVariant,
-    AnyValueWithSuggestionsItemVariant,
-    FixedListItemVariant,
-    FixedValuesType,
-    GenericParameterVariant,
-    InputMode,
-    onChangeType,
-    PropertyItem,
-    StringOrBooleanItemVariant,
-} from ".";
+import { FixedValuesType, PropertyItem, StringOrBooleanItemVariant } from ".";
 
-export const addNewFields = (
-    fields: PropertyItem,
-    item: PropertyItem,
-    onChange: (path: string, value: onChangeType) => void,
-    path: string,
-) => {
-    Object.entries(fields).map(([key, value]) => {
-        if (!item[key]) {
-            onChange(`${path}.${key}`, value);
-        }
-    });
-};
-
-export const validateFieldsForCurrentOption = (item: PropertyItem): PropertyItem => {
-    const defaultOption: GenericParameterVariant = {
+export const getDefaultFields = (refClazzName: string): PropertyItem => {
+    return {
+        allowOnlyValuesFromFixedValuesList: false,
+        isOpen: false,
+        inputMode: undefined,
         name: "",
         required: false,
         hintText: "",
         initialValue: "",
-        fixedValuesType: FixedValuesType.None,
-    };
-
-    if (isStringOrBooleanVariant(item)) {
-        const inputMode = item.inputMode;
-        switch (inputMode) {
-            case InputMode.AnyValue: {
-                return {
-                    ...defaultOption,
-                    inputMode: InputMode.AnyValue,
-                    presetSelection: "",
-                    validationExpression: "",
-                    validationErrorMessage: "",
-                    validation: true,
-                } as AnyValueItemVariant;
-            }
-            case InputMode.AnyValueWithSuggestions: {
-                return {
-                    ...defaultOption,
-                    inputMode: InputMode.AnyValueWithSuggestions,
-                    fixedValuesList: [],
-                    fixedValuesPresets: {},
-                    presetSelection: "",
-                    fixedValuesType: FixedValuesType.Preset,
-                    fixedValuesListPresetId: "",
-                    validationExpression: "",
-                    validationErrorMessage: "",
-                    validation: true,
-                } as AnyValueWithSuggestionsItemVariant;
-            }
-            case InputMode.FixedList: {
-                return {
-                    ...defaultOption,
-                    inputMode: InputMode.FixedList,
-                    allowOnlyValuesFromFixedValuesList: true,
-                    fixedValuesList: [],
-                    fixedValuesPresets: {},
-                    presetSelection: "",
-                    fixedValuesType: FixedValuesType.Preset,
-                    fixedValuesListPresetId: "",
-                } as FixedListItemVariant;
-            }
-        }
-    }
-
-    return {
-        ...defaultOption,
+        fixedValuesType: FixedValuesType.Preset,
         validationExpression: "",
+        fixedValuesList: [],
+        fixedValuesListPresetId: "",
+        fixedValuesPresets: {},
+        presetSelection: "",
         validationErrorMessage: "",
         validation: true,
+        typ: { display: "", type: "", params: [], refClazzName },
     };
 };
 
