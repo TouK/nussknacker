@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe.parser
 import io.circe.syntax.EncoderOps
-import io.circe.{Json, parser}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
@@ -91,6 +91,27 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
     referenceParameter.asJson shouldBe parsedJson
     deserializedParameter shouldBe referenceParameter
+  }
+
+  test("fail deserialization if inputMode doesn't match parameter type") {
+
+    val json =
+      """{
+        |  "name" : "name",
+        |  "typ" : {
+        |    "refClazzName" : "java.lang.String"
+        |  },
+        |  "required" : true,
+        |  "initialValue" : {
+        |    "expression" : "'Tomasz'",
+        |    "label" : "Tomasz"
+        |  },
+        |  "hintText" : "some hint text",
+        |  "inputMode" : "InputModeFixedList"
+        |}""".stripMargin
+
+    val parsedJson = parser.parse(json).toOption.get
+    parsedJson.as[FragmentParameter].isLeft shouldBe true
   }
 
 }

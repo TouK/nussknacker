@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
-  FragmentParameterInputMode,
   InputModeAny,
   InputModeAnyWithSuggestions,
   InputModeFixedList
@@ -345,25 +344,26 @@ object node {
     }
 
     implicit val decoder: Decoder[FragmentParameter] = Decoder.instance { c =>
-      def checkDecodeResult(
-          paramResult: Decoder.Result[FragmentParameter],
-          allowedInputModes: List[FragmentParameterInputMode]
+      def checkInputMode(
+          param: FragmentParameter,
       ) = {
-        paramResult match {
-          case Left(err) => Left(err)
-          case Right(param) =>
-            if (allowedInputModes.contains(param.inputMode)) {
-              Right(param)
-            } else {
-              Left(DecodingFailure(s"Invalid input mode '${param.inputMode}' for '${param.getClass}", c.history))
-            }
+        param match {
+          case f: FragmentParameterNoFixedValues if f.inputMode == InputModeAny => Right(f)
+          case f: FragmentParameterFixedValuesUserDefinedList
+              if List(InputModeFixedList, InputModeAnyWithSuggestions).contains(f.inputMode) =>
+            Right(f)
+          case _ => Left(DecodingFailure(s"Invalid input mode '${param.inputMode}' for '${param.getClass}", c.history))
         }
       }
 
-      checkDecodeResult(
-        c.as[FragmentParameterFixedValuesUserDefinedList],
-        List(InputModeFixedList, InputModeAnyWithSuggestions)
-      ).orElse(checkDecodeResult(c.as[FragmentParameterNoFixedValues], List(InputModeAny)))
+      val paramOption = List(c.as[FragmentParameterFixedValuesUserDefinedList], c.as[FragmentParameterNoFixedValues])
+        .flatMap(_.toOption)
+        .headOption
+
+      paramOption match {
+        case Some(param) => checkInputMode(param)
+        case None        => Left(DecodingFailure(s"Failed to decode FragmentParameter", c.history))
+      }
     }
 
     @JsonCodec
