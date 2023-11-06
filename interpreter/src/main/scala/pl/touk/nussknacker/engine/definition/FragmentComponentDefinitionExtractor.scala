@@ -11,7 +11,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   MultipleOutputsForName
 }
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  FixedExpressionValue,
+  FixedValuesParameterEditor,
+  Parameter,
+  SimpleParameterEditor
+}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -26,7 +33,16 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{
 }
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  FragmentParameterInputMode,
+  InputModeFixedList
+}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentParameter,
+  FragmentParameterFixedValuesUserDefinedList,
+  FragmentParameterNoFixedValues
+}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
@@ -101,35 +117,64 @@ class FragmentComponentDefinitionExtractor(
 
   private def toParameter(
       componentConfig: SingleComponentConfig
-  )(p: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
-    val paramName = p.name
-    p.typ
+  )(fragmentParameter: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
+    fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))
       .map(Writer.value[List[FragmentParamClassLoadErrorData], TypingResult])
       .getOrElse(
         Writer
           .value[List[FragmentParamClassLoadErrorData], TypingResult](Unknown)
-          .tell(List(FragmentParamClassLoadErrorData(paramName, p.typ.refClazzName)))
+          .tell(List(FragmentParamClassLoadErrorData(fragmentParameter.name, fragmentParameter.typ.refClazzName)))
       )
-      .map(toParameter(componentConfig, paramName, _))
+      .map(toParameter(componentConfig, _, fragmentParameter))
   }
 
-  private def toParameter(componentConfig: SingleComponentConfig, paramName: String, typ: typing.TypingResult) = {
-    val config          = componentConfig.params.flatMap(_.get(paramName)).getOrElse(ParameterConfig.empty)
-    val parameterData   = ParameterData(typ, Nil)
-    val extractedEditor = EditorExtractor.extract(parameterData, config)
+  private def toParameter(
+      componentConfig: SingleComponentConfig,
+      typ: typing.TypingResult,
+      fragmentParameter: FragmentParameter
+  ) = {
+    val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
+    val parameterData = ParameterData(typ, Nil)
+
+    val extractedEditor = fragmentParameter match {
+      case param: FragmentParameterFixedValuesUserDefinedList =>
+        fixedValuesEditorWithInputMode(
+          param.inputMode,
+          FixedValuesParameterEditor(
+            param.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+          )
+        )
+      case _: FragmentParameterNoFixedValues => EditorExtractor.extract(parameterData, config)
+    }
+
+    val isOptional = !fragmentParameter.required
     Parameter
-      .optional(paramName, typ)
+      .optional(fragmentParameter.name, typ)
       .copy(
         editor = extractedEditor,
         validators = ValidatorsExtractor
-          .extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
-        // TODO: ability to pick a default value from gui
-        defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(
-          DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)
-        )
+          .extract(ValidatorExtractorParameters(parameterData, isOptional = isOptional, config, extractedEditor)),
+        defaultValue = fragmentParameter.initialValue
+          .map(i => Expression.spel(i.expression))
+          .orElse(
+            DefaultValueDeterminerChain.determineParameterDefaultValue(
+              DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor)
+            )
+          ),
+        hintText = fragmentParameter.hintText
       )
+  }
+
+  private def fixedValuesEditorWithInputMode(
+      inputMode: FragmentParameterInputMode,
+      fixedValuesEditor: SimpleParameterEditor
+  ) = {
+    inputMode match {
+      case InputModeFixedList => Some(fixedValuesEditor)
+      case _                  => Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
+    }
   }
 
 }

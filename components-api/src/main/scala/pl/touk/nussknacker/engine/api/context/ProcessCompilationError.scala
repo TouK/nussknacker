@@ -250,6 +250,11 @@ object ProcessCompilationError {
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
+  case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError

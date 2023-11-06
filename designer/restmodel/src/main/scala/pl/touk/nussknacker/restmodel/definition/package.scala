@@ -6,7 +6,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -62,7 +62,8 @@ package object definition {
       defaultValue: Expression,
       additionalVariables: Map[String, TypingResult],
       variablesToHide: Set[String],
-      branchParam: Boolean
+      branchParam: Boolean,
+      hintText: Option[String]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(

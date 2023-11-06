@@ -144,6 +144,18 @@ object PrettyValidationErrors {
           s"There is more than one output with '$name' name defined in the fragment, currently this is not allowed",
           "Please check fragment definition"
         )
+      case InitialValueNotPresentInPossibleValues(paramName, _) =>
+        node(
+          s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
+          "Please check fragment definition",
+          fieldName = Some(paramName)
+        )
+      case RequireValueFromEmptyFixedList(paramName, _) =>
+        node(
+          s"Required parameter '$paramName' cannot be a member of an empty fixed list",
+          "Please check fragment definition",
+          fieldName = Some(paramName)
+        )
     }
   }
 

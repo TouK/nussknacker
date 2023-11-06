@@ -253,7 +253,8 @@ object UIProcessObjectsFactory {
       defaultValue = defaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
-      branchParam = parameter.branchParam
+      branchParam = parameter.branchParam,
+      hintText = parameter.hintText
     )
   }
 

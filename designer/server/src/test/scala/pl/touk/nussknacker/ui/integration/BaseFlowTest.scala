@@ -108,13 +108,14 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
             "paramDualEditor" -> ParameterConfig(
               None,
               None,
               Some(
                 List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
               ),
+              None,
               None
             )
           )
@@ -131,14 +132,16 @@ class BaseFlowTest
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
               None,
+              None,
               None
             ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "baz" -> ParameterConfig(
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
               None,
-              None
+              None,
+              Some("some hint text")
             )
           )
         ),
@@ -157,7 +160,7 @@ class BaseFlowTest
       "sub1" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
           )
         ),
         icon = None,
@@ -168,8 +171,14 @@ class BaseFlowTest
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
-            "overriddenByDevConfigParam"  -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None, None),
+            "overriddenByDevConfigParam" -> ParameterConfig(
+              None,
+              None,
+              Some(List(MandatoryParameterValidator)),
+              None,
+              None
+            )
           )
         ),
         icon = None,

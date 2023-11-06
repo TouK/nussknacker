@@ -28,13 +28,23 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  InputModeAny,
+  InputModeFixedList
+}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
+  FragmentClazzRef,
+  FragmentParameter,
+  FragmentParameterFixedValuesUserDefinedList,
+  FragmentParameterNoFixedValues
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -555,6 +565,101 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(Variable(nodeId, "varName", "1", None), ValidationContext()) match {
         case ValidationPerformed(errors, _, _) => errors shouldBe expectedErrors
         case ValidationNotPerformed            => fail("should not happen")
+      }
+    }
+  }
+
+  test("should validate initial value outside possible values in FragmentInputDefinition") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterFixedValuesUserDefinedList(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+              None,
+              inputMode = InputModeFixedList,
+              fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue"))
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InitialValueNotPresentInPossibleValues("param1", nodes)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'stringButShouldBeBoolean'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterNoFixedValues(
+              "param1",
+              FragmentClazzRef[Boolean],
+              required = false,
+              initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
+              None,
+              inputMode = InputModeAny
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+        error.message should include("Bad expression type, expected: Boolean, found: String")
+      }
+    }
+  }
+
+  test("should validate fixed value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'stringButShouldBeBoolean'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterFixedValuesUserDefinedList(
+              "param1",
+              FragmentClazzRef[Boolean],
+              required = false,
+              initialValue = None,
+              None,
+              inputMode = InputModeFixedList,
+              fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean"))
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+        error.message should include("Bad expression type, expected: Boolean, found: String")
       }
     }
   }

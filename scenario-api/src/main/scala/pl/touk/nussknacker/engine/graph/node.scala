@@ -2,21 +2,28 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, JsonKey}
-import io.circe.{Decoder, Encoder}
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, DecodingFailure, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  FragmentParameterInputMode,
+  InputModeAny,
+  InputModeAnyWithSuggestions,
+  InputModeFixedList
+}
+import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
-import scala.util.Try
+import scala.util.{Right, Try}
 
 object node {
 
@@ -298,7 +305,92 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec case class FragmentParameter(name: String, typ: FragmentClazzRef)
+    @JsonCodec case class FixedExpressionValue(expression: String, label: String)
+
+    object FragmentParameterInputMode extends Enumeration {
+      type FragmentParameterInputMode = Value
+
+      implicit val typeEncoder: Encoder[FragmentParameterInputMode.Value] =
+        Encoder.encodeEnumeration(FragmentParameterInputMode)
+      implicit val typeDecoder: Decoder[FragmentParameterInputMode.Value] =
+        Decoder.decodeEnumeration(FragmentParameterInputMode)
+
+      val InputModeAny: Value                = Value("InputModeAny")
+      val InputModeAnyWithSuggestions: Value = Value("InputModeAnyWithSuggestions")
+      val InputModeFixedList: Value          = Value("InputModeFixedList")
+    }
+
+    object FragmentParameter {
+
+      def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
+        FragmentParameterNoFixedValues(name, typ, required = false, None, None, InputModeAny)
+      }
+
+    }
+
+    sealed trait FragmentParameter {
+      val name: String
+      val typ: FragmentClazzRef
+      val required: Boolean
+      val initialValue: Option[FixedExpressionValue]
+      val hintText: Option[String]
+      val inputMode: FragmentParameterInputMode.Value
+
+      def withName(name: String): FragmentParameter
+    }
+
+    implicit val encoder: Encoder[FragmentParameter] = {
+      case f: FragmentParameterFixedValuesUserDefinedList => f.asJson
+      case f: FragmentParameterNoFixedValues              => f.asJson
+    }
+
+    implicit val decoder: Decoder[FragmentParameter] = Decoder.instance { c =>
+      def checkDecodeResult(
+          paramResult: Decoder.Result[FragmentParameter],
+          allowedInputModes: List[FragmentParameterInputMode]
+      ) = {
+        paramResult match {
+          case Left(err) => Left(err)
+          case Right(param) =>
+            if (allowedInputModes.contains(param.inputMode)) {
+              Right(param)
+            } else {
+              Left(DecodingFailure(s"Invalid input mode '${param.inputMode}' for '${param.getClass}", c.history))
+            }
+        }
+      }
+
+      checkDecodeResult(
+        c.as[FragmentParameterFixedValuesUserDefinedList],
+        List(InputModeFixedList, InputModeAnyWithSuggestions)
+      )
+        .orElse(checkDecodeResult(c.as[FragmentParameterNoFixedValues], List(InputModeAny)))
+    }
+
+    @JsonCodec
+    case class FragmentParameterNoFixedValues(
+        name: String,
+        typ: FragmentClazzRef,
+        required: Boolean,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        inputMode: FragmentParameterInputMode.Value,
+    ) extends FragmentParameter {
+      override def withName(name: String): FragmentParameter = copy(name = name)
+    }
+
+    @JsonCodec
+    case class FragmentParameterFixedValuesUserDefinedList(
+        name: String,
+        typ: FragmentClazzRef,
+        required: Boolean,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        inputMode: FragmentParameterInputMode.Value,
+        fixedValuesList: List[FixedExpressionValue],
+    ) extends FragmentParameter {
+      override def withName(name: String): FragmentParameter = copy(name = name)
+    }
 
     object FragmentClazzRef {
 

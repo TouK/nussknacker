@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{
   DefaultServiceInvoker,
   FragmentComponentDefinitionExtractor,
+  FragmentParameterValidator,
   ProcessDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -149,34 +150,54 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
+      def fragmentParameterErrors(validationContext: ValidationContext) = params.flatMap { param =>
+        FragmentParameterValidator.validate(param, id, this, validationContext)
+      }
+
       definitions.sourceFactories.get(id) match {
         case Some(definition) =>
           val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val validationContext = Valid(
-            contextWithOnlyGlobalVariables.copy(localVariables =
-              contextWithOnlyGlobalVariables.globalVariables ++ variables
-            )
+          val validationContext = contextWithOnlyGlobalVariables.copy(localVariables =
+            contextWithOnlyGlobalVariables.globalVariables ++ variables
           )
 
-          compileObjectWithTransformation[Source](
+          val compilationResult = compileObjectWithTransformation[Source](
             Nil,
             Nil,
             Left(contextWithOnlyGlobalVariables),
             None,
             definition,
-            _ => validationContext
+            _ => Valid(validationContext)
           ).map(_._1)
+
+          compilationResult.copy(
+            compiledObject = compilationResult.compiledObject.andThen(v =>
+              NonEmptyList.fromList(fragmentParameterErrors(validationContext)) match {
+                case Some(errors) => Invalid(errors)
+                case None         => Valid(v)
+              }
+            )
+          )
+
         case None =>
-          NodeCompilationResult(
+          val validationContext =
+            contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)
+
+          val compilationResult = NodeCompilationResult(
             Map.empty,
             None,
-            Valid(
-              contextWithOnlyGlobalVariables.copy(localVariables =
-                params.map(p => p.name -> loadFromParameter(p)).toMap
-              )
-            ),
+            Valid(validationContext),
             Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+          )
+
+          compilationResult.copy( // TODO share code
+            compiledObject = compilationResult.compiledObject.andThen(v =>
+              NonEmptyList.fromList(fragmentParameterErrors(validationContext)) match {
+                case Some(errors) => Invalid(errors)
+                case None         => Valid(v)
+              }
+            )
           )
       }
   }
@@ -505,7 +526,7 @@ class NodeCompiler(
   }
 
   // TODO: better classloader error handling
-  private def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
+  def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId): TypingResult =
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))

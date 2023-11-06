@@ -200,10 +200,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   None,
                   Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
                   None,
+                  None,
                   None
                 ),
-                "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
-                "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+                "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
+                "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
               )
             )
           )
@@ -213,7 +214,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           SingleComponentConfig.zero.copy(
             params = Some(
               Map(
-                "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None)
+                "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
               )
             )
           )
@@ -236,12 +237,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   None,
                   None,
                   Some(List(MandatoryParameterValidator)),
+                  None,
                   None
                 ),
                 "overriddenByFileConfigParam" -> ParameterConfig(
                   None,
                   None,
                   Some(List(MandatoryParameterValidator)),
+                  None,
                   None
                 )
               )

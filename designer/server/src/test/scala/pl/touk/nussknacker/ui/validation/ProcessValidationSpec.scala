@@ -22,7 +22,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  FragmentParameterFixedValuesUserDefinedList
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -33,6 +37,7 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -414,7 +419,54 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   }
 
-  test("validates fragment input definition") {
+  test("validates fragment input definition while validating fragment") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameterFixedValuesUserDefinedList(
+                  "subParam1",
+                  FragmentClazzRef[String],
+                  required = false,
+                  initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+                  None,
+                  inputMode = InputModeFixedList,
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val displayableFragment =
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
+
+    val validationResult = processValidation.validate(displayableFragment)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "InitialValueNotPresentInPossibleValues",
+              _,
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition while validating process that uses fragment") {
     val invalidFragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -447,6 +499,91 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
           if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
+    }
+  }
+
+  test("validates FragmentInput parameters according to FragmentInputDefinition") {
+    val fragment = CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      nodes = List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameterFixedValuesUserDefinedList(
+                "subParam1",
+                FragmentClazzRef[String],
+                required = true,
+                initialValue = None,
+                None,
+                inputMode = InputModeFixedList,
+                fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+              ),
+            )
+          )
+        ),
+        FlatNode(FragmentOutputDefinition("subOut1", "subOut1", List(Field("foo", "42L"))))
+      ),
+      additionalBranches = List.empty
+    )
+
+    val process = createProcess(
+      nodes = List(
+        Source("source", SourceRef(sourceTypeName, Nil)),
+        FragmentInput(
+          "subIn1",
+          FragmentRef(
+            fragment.id,
+            List(
+              evaluatedparam.Parameter("subParam1", "'outsideAllowedValues'"),
+            )
+          ),
+          isDisabled = Some(false)
+        ),
+        FragmentInput(
+          "subIn2",
+          FragmentRef(
+            fragment.id,
+            List(
+              evaluatedparam.Parameter("subParam1", ""),
+            )
+          ),
+          isDisabled = Some(false)
+        ),
+        Sink("sink1", SinkRef(sinkTypeName, Nil)),
+      ),
+      edges = List(
+        Edge("source", "subIn1", None),
+        Edge("subIn1", "subIn2", Some(EdgeType.FragmentOutput("subOut1"))),
+        Edge("subIn2", "sink1", Some(EdgeType.FragmentOutput("subOut1")))
+      )
+    )
+
+    val processValidation = mockedProcessValidation(fragment)
+    val validationResult  = processValidation.validate(process)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("subIn1") should matchPattern {
+      case List(
+            NodeValidationError(
+              "InvalidPropertyFixedValue",
+              _,
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+    validationResult.errors.invalidNodes("subIn2") should matchPattern {
+      case List(
+            NodeValidationError(
+              "EmptyMandatoryParameter",
+              _,
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
     }
   }
 
