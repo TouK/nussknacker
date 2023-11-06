@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.{invalidNel, valid}
+import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
@@ -15,17 +15,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, Output}
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, FragmentParameterValidator}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, FragmentParameterValidator}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FragmentParameterFixedValuesUserDefinedList,
-  FragmentParameterNoFixedValues
-}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -179,21 +172,25 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       definition: FragmentInputDefinition,
   )(implicit nodeId: NodeId) = {
-    val variables: Map[String, TypingResult] =
-      definition.parameters.map(a => a.name -> compiler.loadFromParameter(a)).toMap
-    val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)
 
-    val fragmentParameterErrors = definition.parameters.flatMap { param =>
-      FragmentParameterValidator.validate(
-        param,
-        definition.id,
-        compiler,
-        updatedContext
-      )
+    val errors = compiler.loadParametersTypeMap(definition.parameters) match {
+      case Valid(variables) =>
+        val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)
+
+        definition.parameters.flatMap { param =>
+          FragmentParameterValidator.validate(
+            param,
+            definition.id,
+            compiler,
+            updatedContext
+          )
+        }
+
+      case Invalid(e) => e.toList
     }
 
     ValidationPerformed(
-      fragmentParameterErrors,
+      errors,
       None,
       None
     )

@@ -21,9 +21,8 @@ object FragmentParameterValidator {
       fragmentParameter: FragmentParameter,
       fragmentInputId: String,
       compiler: NodeCompiler,
-      validationContext: ValidationContext
+      validationContext: ValidationContext // localVariables must include this and other FragmentParameters
   )(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    val expectedType = compiler.loadFromParameter(fragmentParameter)
     val fixedValuesList = fragmentParameter match {
       case _: FragmentParameterNoFixedValues              => None
       case f: FragmentParameterFixedValuesUserDefinedList => Some(f.fixedValuesList)
@@ -32,11 +31,11 @@ object FragmentParameterValidator {
     val fixedValueResponses = (fixedValuesList.getOrElse(List.empty) ++ fragmentParameter.initialValue).map {
       fixedExpressionValue =>
         compiler.compileExpression(
-          Expression.spel(fixedExpressionValue.expression),
-          validationContext,
-          expectedType,
-          fragmentParameter.name,
-          None
+          expr = Expression.spel(fixedExpressionValue.expression),
+          ctx = validationContext,
+          expectedType = validationContext(fragmentParameter.name),
+          fieldName = fragmentParameter.name,
+          outputVar = None
         )
     }
 

@@ -25,7 +25,8 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterFixedValuesUserDefinedList
+  FragmentParameterFixedValuesUserDefinedList,
+  FragmentParameterNoFixedValues
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -37,7 +38,10 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.InputModeFixedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+  InputModeAny,
+  InputModeFixedList
+}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -417,6 +421,52 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     configuredValidator.validate(process("a.s")).saveAllowed shouldBe false
     configuredValidator.validate(process("as")).saveAllowed shouldBe true
 
+  }
+
+  test("fails validation if cannot resolve fragment parameter type while validating fragment") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameterNoFixedValues(
+                  "subParam1",
+                  FragmentClazzRef("thisTypeDoesntExist"),
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  inputMode = InputModeAny,
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val displayableFragment =
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
+
+    val validationResult = processValidation.validate(displayableFragment)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "FailedToResolveFragmentParameterType",
+              "Failed to resolve type 'thisTypeDoesntExist' of parameter 'subParam1'",
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
   }
 
   test("validates fragment input definition while validating fragment") {

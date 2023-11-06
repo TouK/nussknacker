@@ -255,6 +255,9 @@ object ProcessCompilationError {
   case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
+  case class FailedToResolveFragmentParameterType(paramName: String, typ: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError

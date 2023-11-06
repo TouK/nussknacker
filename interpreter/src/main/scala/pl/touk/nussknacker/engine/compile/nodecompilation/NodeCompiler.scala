@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -55,6 +55,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object NodeCompiler {
 
@@ -188,19 +189,30 @@ class NodeCompiler(
           )
 
         case None =>
-          val validationContext =
-            contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)
+          loadParametersTypeMap(params) match {
+            case Valid(paramTypeMap) =>
+              val validationContext =
+                contextWithOnlyGlobalVariables.copy(localVariables = paramTypeMap)
 
-          val compilationResult = NodeCompilationResult(
-            Map.empty,
-            None,
-            Valid(validationContext),
-            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
-          )
+              val compilationResult = NodeCompilationResult(
+                Map.empty,
+                None,
+                Valid(validationContext),
+                Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+              )
 
-          compilationResult.copy(compiledObject =
-            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
-          )
+              compilationResult.copy(compiledObject =
+                withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
+              )
+
+            case Invalid(errors) =>
+              NodeCompilationResult(
+                Map.empty,
+                None,
+                Invalid(errors),
+                Invalid(errors)
+              )
+          }
       }
   }
 
@@ -527,16 +539,40 @@ class NodeCompiler(
     }
   }
 
-  // TODO: better classloader error handling
-  def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId): TypingResult =
-    fragmentParameter.typ
-      .toRuntimeClass(classLoader)
-      .map(Typed(_))
-      .getOrElse(
-        throw new IllegalArgumentException(
-          s"Failed to load scenario fragment parameter: ${fragmentParameter.typ.refClazzName} for ${nodeId.id}"
-        )
+  def loadParametersTypeMap(
+      params: List[FragmentParameter]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Map[String, TypingResult]] = {
+    val paramTypeMap = params.map(p => p.name -> loadFromParameter(p)).toMap
+    val paramTypeResolveErrors = paramTypeMap.values.flatMap {
+      case Valid(_)   => List.empty
+      case Invalid(e) => e.toList
+    }.toList
+
+    paramTypeResolveErrors match {
+      case head :: tail => Invalid(NonEmptyList(head, tail))
+      case Nil          => Valid(paramTypeMap.mapValuesNow(_.toOption.get))
+    }
+  }
+
+  private def loadFromParameter(
+      fragmentParameter: FragmentParameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult] =
+    Validated
+      .fromTry(
+        fragmentParameter.typ
+          .toRuntimeClass(classLoader)
+          .map(Typed(_))
       )
+      .leftMap { _ =>
+        NonEmptyList(
+          FailedToResolveFragmentParameterType(
+            fragmentParameter.name,
+            fragmentParameter.typ.refClazzName,
+            Set(nodeId.id)
+          ),
+          Nil
+        )
+      }
 
   private def compileObjectWithTransformation[T](
       parameters: List[evaluatedparam.Parameter],

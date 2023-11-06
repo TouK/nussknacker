@@ -582,7 +582,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
-              None,
+              hintText = None,
               inputMode = InputModeFixedList,
               fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue"))
             )
@@ -617,7 +617,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[Boolean],
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
-              None,
+              hintText = None,
               inputMode = InputModeAny
             )
           ),
@@ -645,7 +645,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[Boolean],
               required = false,
               initialValue = None,
-              None,
+              hintText = None,
               inputMode = InputModeFixedList,
               fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean"))
             )
@@ -675,7 +675,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
-              None,
+              hintText = None,
               inputMode = InputModeAny
             ),
             FragmentParameterNoFixedValues(
@@ -683,7 +683,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
-              None,
+              hintText = None,
               inputMode = InputModeAny
             )
           ),
@@ -711,7 +711,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
-              None,
+              hintText = None,
               inputMode = InputModeAny
             )
           ),
@@ -722,6 +722,37 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       )
     ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
       error.message should include("Unresolved reference 'unknownVar'")
+    }
+  }
+
+  test("should fail on unresolvable type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val invalidType    = "thisTypeDoesntExist"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterNoFixedValues(
+              paramName,
+              FragmentClazzRef(invalidType),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              inputMode = InputModeAny
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: FailedToResolveFragmentParameterType) :: Nil, None, None) =>
+      error.paramName shouldBe paramName
+      error.typ shouldBe invalidType
+      error.nodeIds shouldBe Set(nodeId)
     }
   }
 
