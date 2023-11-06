@@ -3,7 +3,6 @@ import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { InputMode, onChangeType, StringOrBooleanItemVariant } from "../../item";
-import { Option } from "../../FieldsSelect";
 import { VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
@@ -12,7 +11,6 @@ interface Props {
     item: StringOrBooleanItemVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    currentOption: Option;
     variableTypes: VariableTypes;
 }
 

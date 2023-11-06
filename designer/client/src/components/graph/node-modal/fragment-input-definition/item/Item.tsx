@@ -43,6 +43,7 @@ export function Item(props: ItemProps): JSX.Element {
         addNewFields(fields, item, onChange, path);
     };
 
+    console.log(item.typ);
     return (
         <div>
             <FieldsRow index={index}>
@@ -68,15 +69,7 @@ export function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={item.isOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {item.isOpen && (
-                <Settings
-                    path={path}
-                    item={item}
-                    onChange={onChange}
-                    currentOption={getCurrentOption(item.typ)}
-                    variableTypes={variableTypes}
-                />
-            )}
+            {item.isOpen && <Settings path={path} item={item} onChange={onChange} variableTypes={variableTypes} />}
         </div>
     );
 }

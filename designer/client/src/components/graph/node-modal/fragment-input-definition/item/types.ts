@@ -34,7 +34,7 @@ export interface GenericParameterVariant {
     initialValue: string | undefined;
     hintText: string | undefined;
     fixedValuesType: FixedValuesType;
-    isOpen: boolean;
+    isOpen?: boolean;
 }
 
 export interface DefaultItemVariant extends GenericParameterVariant, FragmentValidation {

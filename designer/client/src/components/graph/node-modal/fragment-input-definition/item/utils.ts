@@ -83,5 +83,5 @@ export const validateFieldsForCurrentOption = (item: PropertyItem): PropertyItem
 };
 
 export function isStringOrBooleanVariant(item: PropertyItem): item is StringOrBooleanItemVariant {
-    return Boolean((item as StringOrBooleanItemVariant).inputMode);
+    return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
 }
