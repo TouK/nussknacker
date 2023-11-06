@@ -313,9 +313,8 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     response2.code shouldEqual StatusCode.Ok
-    // TODO: in the future should be more local error
-    response2.body.rightValue.errors.globalErrors.map(_.description) shouldBe List(
-      "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration"
+    response2.body.rightValue.errors.invalidNodes("input1").map(_.message) shouldBe List(
+      "Failed to resolve type 'i.do.not.exist' of parameter 'badParam'"
     )
 
     val response3 = httpClient.send(

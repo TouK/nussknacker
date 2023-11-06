@@ -363,8 +363,7 @@ object node {
       checkDecodeResult(
         c.as[FragmentParameterFixedValuesUserDefinedList],
         List(InputModeFixedList, InputModeAnyWithSuggestions)
-      )
-        .orElse(checkDecodeResult(c.as[FragmentParameterNoFixedValues], List(InputModeAny)))
+      ).orElse(checkDecodeResult(c.as[FragmentParameterNoFixedValues], List(InputModeAny)))
     }
 
     @JsonCodec
