@@ -60,7 +60,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
 
                 return { item, el: <ItemElement key={index} index={index} item={item} validators={validators} /> };
             }),
-        [Item, fields],
+        [ItemElement, fields],
     );
 
     return (

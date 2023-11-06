@@ -20,19 +20,11 @@ const Styled = styled("div")(
         .fieldName {
             width: 28%;
         }
-        .handle-bars {
-            height: 35px;
-            width: 12px;
-            margin-left: 6px;
-            cursor: grab;
-        }
-
         .node-value {
             &.fieldName {
                 flex-basis: 30%;
                 max-width: 20em;
             }
-
             &.fieldRemove {
                 flex: 0;
             }

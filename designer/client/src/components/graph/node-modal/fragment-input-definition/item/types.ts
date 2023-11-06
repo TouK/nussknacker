@@ -27,7 +27,6 @@ export interface FixedValuesOption {
     label: string;
 }
 
-// NEW ONE
 export interface GenericParameterVariant {
     required: boolean;
     name: string;
@@ -35,6 +34,7 @@ export interface GenericParameterVariant {
     initialValue: string | undefined;
     hintText: string | undefined;
     fixedValuesType: FixedValuesType;
+    isOpen: boolean;
 }
 
 export interface DefaultItemVariant extends GenericParameterVariant, FragmentValidation {

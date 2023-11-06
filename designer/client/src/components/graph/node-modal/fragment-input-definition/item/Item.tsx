@@ -28,7 +28,6 @@ export function Item(props: ItemProps): JSX.Element {
     const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options } = props;
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
-    const [isOpen, setIsOpen] = useState(false);
     const getCurrentOption = useCallback(
         (typ: ReturnedType | undefined) => {
             const fallbackValue = { label: typ?.refClazzName, value: typ?.refClazzName };
@@ -39,7 +38,7 @@ export function Item(props: ItemProps): JSX.Element {
     );
 
     const openSettingMenu = () => {
-        setIsOpen((prevState) => !prevState);
+        onChange(`${path}.isOpen`, !item.isOpen);
         const fields = validateFieldsForCurrentOption(item);
         addNewFields(fields, item, onChange, path);
     };
@@ -67,9 +66,9 @@ export function Item(props: ItemProps): JSX.Element {
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
                 />
-                <SettingsButton isOpen={isOpen} openSettingMenu={openSettingMenu} />
+                <SettingsButton isOpen={item.isOpen} openSettingMenu={openSettingMenu} />
             </FieldsRow>
-            {isOpen && (
+            {item.isOpen && (
                 <Settings
                     path={path}
                     item={item}
