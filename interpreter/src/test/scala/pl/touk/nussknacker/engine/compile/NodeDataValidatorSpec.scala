@@ -605,7 +605,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   test("should validate initial value of invalid type in FragmentInputDefinition") {
     val nodeId: String   = "in"
-    val stringExpression = "'stringButShouldBeBoolean'"
+    val stringExpression = "'someString'"
 
     inside(
       validate(
@@ -626,16 +626,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) {
-      { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
-        error.message should include("Bad expression type, expected: Boolean, found: String")
-      }
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
     }
   }
 
   test("should validate fixed value of invalid type in FragmentInputDefinition") {
     val nodeId: String   = "in"
-    val stringExpression = "'stringButShouldBeBoolean'"
+    val stringExpression = "'someString'"
 
     inside(
       validate(
@@ -657,10 +655,73 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) {
-      { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
-        error.message should include("Bad expression type, expected: Boolean, found: String")
-      }
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
+    }
+
+  }
+
+  test("should allow expressions that reference other parameters in FragmentInputDefinition") {
+    val nodeId: String        = "in"
+    val referencingExpression = "#otherStringParam"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterNoFixedValues(
+              "otherStringParam",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              None,
+              inputMode = InputModeAny
+            ),
+            FragmentParameterNoFixedValues(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
+              None,
+              inputMode = InputModeAny
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("shouldn't allow expressions that reference unknown variables in FragmentInputDefinition") {
+    val nodeId: String               = "in"
+    val invalidReferencingExpression = "#unknownVar"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameterNoFixedValues(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
+              None,
+              inputMode = InputModeAny
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+      error.message should include("Unresolved reference 'unknownVar'")
     }
   }
 

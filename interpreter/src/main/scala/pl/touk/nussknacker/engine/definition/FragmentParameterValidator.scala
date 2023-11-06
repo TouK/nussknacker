@@ -31,16 +31,13 @@ object FragmentParameterValidator {
 
     val fixedValueResponses = (fixedValuesList.getOrElse(List.empty) ++ fragmentParameter.initialValue).map {
       fixedExpressionValue =>
-        compiler.compileExpression( // todo make sure this doesn't break on lazy values (like #input.something)
+        compiler.compileExpression(
           Expression.spel(fixedExpressionValue.expression),
           validationContext,
-          expectedType = expectedType,
-          outputVar = None
-        ) // TODO change to a better/clearer error, currently:
-        // NodeValidationError("ExpressionParserCompilationError",
-        // "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
-        // "There is problem with expression in field Some($expression) - it could not be parsed.",
-        // Some("$expression"), SaveAllowed),
+          expectedType,
+          fragmentParameter.name,
+          None
+        )
     }
 
     val allowOnlyValuesFromFixedList =

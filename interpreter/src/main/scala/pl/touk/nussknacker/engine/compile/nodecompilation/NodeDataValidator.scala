@@ -179,12 +179,16 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       definition: FragmentInputDefinition,
   )(implicit nodeId: NodeId) = {
+    val variables: Map[String, TypingResult] =
+      definition.parameters.map(a => a.name -> compiler.loadFromParameter(a)).toMap
+    val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)
+
     val fragmentParameterErrors = definition.parameters.flatMap { param =>
       FragmentParameterValidator.validate(
         param,
         definition.id,
         compiler,
-        validationContext
+        updatedContext
       )
     }
 

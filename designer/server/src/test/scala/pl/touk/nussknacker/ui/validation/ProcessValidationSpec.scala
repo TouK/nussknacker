@@ -433,7 +433,16 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   FragmentClazzRef[String],
                   required = false,
                   initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
-                  None,
+                  hintText = None,
+                  inputMode = InputModeFixedList,
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+                ),
+                FragmentParameterFixedValuesUserDefinedList(
+                  "subParam2",
+                  FragmentClazzRef[Boolean],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
                   inputMode = InputModeFixedList,
                   fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
                 )
@@ -457,9 +466,16 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       case List(
             NodeValidationError(
               "InitialValueNotPresentInPossibleValues",
-              _,
+              "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
               _,
               Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "ExpressionParserCompilationError",
+              "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
+              _,
+              Some("subParam2"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>

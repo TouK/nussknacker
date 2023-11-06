@@ -150,8 +150,20 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
-      def fragmentParameterErrors(validationContext: ValidationContext) = params.flatMap { param =>
-        FragmentParameterValidator.validate(param, id, this, validationContext)
+      def withFragmentParameterErrors[T](
+          compiledObject: ValidatedNel[ProcessCompilationError, T],
+          validationContext: ValidationContext
+      ) = {
+        val paramValidationErrors = params.flatMap { param =>
+          FragmentParameterValidator.validate(param, id, this, validationContext)
+        }
+
+        compiledObject.andThen(v =>
+          NonEmptyList.fromList(paramValidationErrors) match {
+            case Some(errors) => Invalid(errors)
+            case None         => Valid(v)
+          }
+        )
       }
 
       definitions.sourceFactories.get(id) match {
@@ -171,13 +183,8 @@ class NodeCompiler(
             _ => Valid(validationContext)
           ).map(_._1)
 
-          compilationResult.copy(
-            compiledObject = compilationResult.compiledObject.andThen(v =>
-              NonEmptyList.fromList(fragmentParameterErrors(validationContext)) match {
-                case Some(errors) => Invalid(errors)
-                case None         => Valid(v)
-              }
-            )
+          compilationResult.copy(compiledObject =
+            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
           )
 
         case None =>
@@ -191,13 +198,8 @@ class NodeCompiler(
             Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
           )
 
-          compilationResult.copy( // TODO share code
-            compiledObject = compilationResult.compiledObject.andThen(v =>
-              NonEmptyList.fromList(fragmentParameterErrors(validationContext)) match {
-                case Some(errors) => Invalid(errors)
-                case None         => Valid(v)
-              }
-            )
+          compilationResult.copy(compiledObject =
+            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
           )
       }
   }
