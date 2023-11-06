@@ -1,6 +1,6 @@
-import { FixedValuesType, PropertyItem, StringOrBooleanItemVariant } from ".";
+import { FixedValuesType, FragmentInputParameter, StringOrBooleanParameterVariant } from ".";
 
-export const getDefaultFields = (refClazzName: string): PropertyItem => {
+export const getDefaultFields = (refClazzName: string): FragmentInputParameter => {
     return {
         allowOnlyValuesFromFixedValuesList: false,
         isOpen: false,
@@ -21,6 +21,6 @@ export const getDefaultFields = (refClazzName: string): PropertyItem => {
     };
 };
 
-export function isStringOrBooleanVariant(item: PropertyItem): item is StringOrBooleanItemVariant {
+export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {
     return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
 }

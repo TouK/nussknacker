@@ -1,4 +1,4 @@
-import { ReturnedType } from "../../../../../types";
+import { Expression, ReturnedType } from "../../../../../types";
 
 export type onChangeType = string | number | boolean | FixedValuesOption[];
 
@@ -34,13 +34,15 @@ export interface GenericParameterVariant {
     initialValue: string | undefined;
     hintText: string | undefined;
     isOpen?: boolean;
+    //It's only to satisfy typescript
+    expression?: Expression;
 }
 
-export interface DefaultItemVariant extends GenericParameterVariant, FragmentValidation {
+export interface DefaultParameterVariant extends GenericParameterVariant, FragmentValidation {
     name: string;
 }
 
-export interface FixedListItemVariant extends GenericParameterVariant {
+export interface FixedListParameterVariant extends GenericParameterVariant {
     inputMode: InputMode.FixedList;
     fixedValuesList: FixedValuesOption[];
     fixedValuesPresets: FixedValuesPresetOption;
@@ -49,7 +51,7 @@ export interface FixedListItemVariant extends GenericParameterVariant {
     presetSelection: string;
     fixedValuesType: FixedValuesType;
 }
-export interface AnyValueWithSuggestionsItemVariant extends GenericParameterVariant, FragmentValidation {
+export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValueWithSuggestions;
     fixedValuesList: FixedValuesOption[];
     fixedValuesPresets: FixedValuesPresetOption | undefined;
@@ -57,11 +59,14 @@ export interface AnyValueWithSuggestionsItemVariant extends GenericParameterVari
     presetSelection: string;
     fixedValuesType: FixedValuesType;
 }
-export interface AnyValueItemVariant extends GenericParameterVariant, FragmentValidation {
+export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValue;
     fixedValuesType: FixedValuesType;
 }
 
-export type StringOrBooleanItemVariant = FixedListItemVariant | AnyValueWithSuggestionsItemVariant | AnyValueItemVariant;
+export type StringOrBooleanParameterVariant =
+    | FixedListParameterVariant
+    | AnyValueWithSuggestionsParameterVariant
+    | AnyValueParameterVariant;
 
-export type PropertyItem = StringOrBooleanItemVariant | DefaultItemVariant;
+export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;

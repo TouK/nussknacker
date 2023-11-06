@@ -1,4 +1,5 @@
 import { ReturnedType } from "./process";
+import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
 type Type = "Properties" | "FragmentInput" | string;
 
@@ -51,10 +52,7 @@ export type NodeType<F extends Field = Field> = {
 
 export type FragmentNodeType = NodeType;
 
-export type Field = {
-    name: string;
-    expression: Expression;
-};
+export type Field = Parameter | FragmentInputParameter;
 
 export interface Parameter {
     name: string;

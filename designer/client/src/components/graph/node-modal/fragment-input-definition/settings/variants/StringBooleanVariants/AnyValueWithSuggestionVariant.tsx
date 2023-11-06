@@ -2,7 +2,7 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueWithSuggestionsItemVariant, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -11,7 +11,7 @@ import { VariableTypes } from "../../../../../../../types";
 import { Option } from "../../../TypeSelect";
 
 interface Props {
-    item: AnyValueWithSuggestionsItemVariant;
+    item: AnyValueWithSuggestionsParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;

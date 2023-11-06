@@ -2,12 +2,12 @@ import React from "react";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { InputMode, onChangeType, StringOrBooleanItemVariant } from "../../../item";
+import { InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
-    item: StringOrBooleanItemVariant;
+    item: StringOrBooleanParameterVariant;
     path: string;
     inputModeOptions: Option[];
 }

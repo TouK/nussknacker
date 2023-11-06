@@ -1,11 +1,11 @@
 import React from "react";
-import { onChangeType, PropertyItem } from "../item";
+import { onChangeType, FragmentInputParameter } from "../item";
 import { VariableTypes } from "../../../../../types";
 import { isStringOrBooleanVariant } from "../item/utils";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
 
 interface Settings {
-    item: PropertyItem;
+    item: FragmentInputParameter;
     path: string;
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FixedListItemVariant, onChangeType } from "../../../item";
+import { FixedListParameterVariant, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -9,7 +9,7 @@ import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { Option } from "../../../TypeSelect";
 
 interface Props {
-    item: FixedListItemVariant;
+    item: FixedListParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
 }

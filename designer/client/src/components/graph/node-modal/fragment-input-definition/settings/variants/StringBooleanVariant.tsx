@@ -2,13 +2,13 @@ import React from "react";
 import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
-import { InputMode, onChangeType, StringOrBooleanItemVariant } from "../../item";
+import { InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
 interface Props {
-    item: StringOrBooleanItemVariant;
+    item: StringOrBooleanParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;

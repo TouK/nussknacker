@@ -29,6 +29,7 @@ import { Split } from "./split";
 import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
+import { FragmentInputParameter } from "./fragment-input-definition/item";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -186,7 +187,7 @@ export function NodeTypeDetailsContent({
                     addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
-                    node={node}
+                    node={node as NodeType<FragmentInputParameter>}
                     removeElement={removeElement}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}

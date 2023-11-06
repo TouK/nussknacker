@@ -3,14 +3,14 @@ import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
 import { find, head, orderBy } from "lodash";
 import { getDefaultFields } from "./item/utils";
+import { FragmentInputParameter } from "./item";
 
-interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
+interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly"> {
     isEditMode?: boolean;
 }
 

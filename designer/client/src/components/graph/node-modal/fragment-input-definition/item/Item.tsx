@@ -9,11 +9,11 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import Settings from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, PropertyItem } from "./";
+import { onChangeType, FragmentInputParameter } from "./";
 
 interface ItemProps {
     index: number;
-    item: PropertyItem;
+    item: FragmentInputParameter;
     validators: Validator[];
     namespace: string;
     readOnly?: boolean;

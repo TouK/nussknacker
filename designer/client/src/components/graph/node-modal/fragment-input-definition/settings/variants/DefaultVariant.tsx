@@ -2,14 +2,14 @@ import React from "react";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DefaultItemVariant, onChangeType } from "../../item";
+import { DefaultParameterVariant, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import ValidationsFields from "./fields/ValidationsFields";
 import InitialValue from "./fields/InitialValue";
 
 interface Props {
-    item: DefaultItemVariant;
+    item: DefaultParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;

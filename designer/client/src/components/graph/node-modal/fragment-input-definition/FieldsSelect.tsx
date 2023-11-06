@@ -3,7 +3,7 @@ import { Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFields } from "./NodeRowFields";
-import { Item, onChangeType, PropertyItem } from "./item";
+import { Item, onChangeType, FragmentInputParameter } from "./item";
 
 export interface Option {
     value: string;
@@ -27,7 +27,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation } = props;
 
     const ItemElement = useCallback(
-        ({ index, item, validators }: { index: number; item: PropertyItem; validators: Validator[] }) => {
+        ({ index, item, validators }: { index: number; item: FragmentInputParameter; validators: Validator[] }) => {
             return (
                 <Item
                     index={index}
