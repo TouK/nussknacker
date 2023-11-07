@@ -33,6 +33,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       generateDeploymentId,
       notNamedScheduleId,
       fooRunAt,
+      Option(fooRunAt),
       PeriodicProcessDeploymentStatus.Scheduled,
       processActive = true,
       None
@@ -47,6 +48,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       generateDeploymentId,
       firstScheduleId,
       fooRunAt,
+      Option(fooRunAt),
       PeriodicProcessDeploymentStatus.Scheduled,
       processActive = true,
       None
@@ -56,6 +58,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
       generateDeploymentId,
       secScheduleId,
       fooRunAt,
+      Option(fooRunAt),
       PeriodicProcessDeploymentStatus.Deployed,
       processActive = true,
       None

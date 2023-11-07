@@ -421,13 +421,14 @@ class PeriodicProcessService(
             deployment.id,
             scheduleId,
             deployment.runAt,
+            deployment.state.completedAt,
             deployment.state.status,
             scheduleData.process.active,
             runtimeStatuses.getStatus(deployment.id)
           )
         }
       }
-      .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+      .sortBy(_.completedAt.getOrElse(LocalDateTime.MIN))(Ordering[LocalDateTime].reverse)
 
     for {
       activeSchedules <- getLatestDeploymentsForActiveSchedules(name, MaxDeploymentsStatus)
@@ -498,7 +499,7 @@ object PeriodicProcessService {
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
       ))
-        .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+        .sortBy(_.completedAt.getOrElse(LocalDateTime.MIN))(Ordering[LocalDateTime].reverse)
 
     // We present merged name to be possible to filter scenario by status
     override def name: StatusName = mergedStatusDetails.status.name
@@ -596,6 +597,7 @@ object PeriodicProcessService {
       deploymentId: PeriodicProcessDeploymentId,
       scheduleId: ScheduleId,
       runAt: LocalDateTime,
+      completedAt: Option[LocalDateTime],
       // This status is almost fine but:
       // - we don't have cancel status - we have to check processActive as well (isCanceled)
       // - sometimes we have to check runtimeStatusOpt (isWaitingForReschedule)

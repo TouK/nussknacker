@@ -29,7 +29,7 @@ object PeriodicProcessStateDefinitionManager {
 
   def statusTooltip(processStatus: PeriodicProcessStatus): String = {
     processStatus.limitedAndSortedDeployments
-      .map { case d @ DeploymentStatus(_, scheduleId, runAt, status, _, _) =>
+      .map { case d @ DeploymentStatus(_, scheduleId, runAt, _, status, _, _) =>
         val refinedStatus = {
           if (d.isCanceled) {
             "Canceled"
