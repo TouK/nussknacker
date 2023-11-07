@@ -309,7 +309,7 @@ class SlickPeriodicProcessesRepository(
         (
           rowNumber() :: Over
             .partitionBy((deployment.periodicProcessId, deployment.scheduleName))
-            .sortBy(deployment.runAt.desc),
+            .sortBy(deployment.runAt.desc, deployment.id.value.desc),
           process,
           deployment
         )
@@ -354,7 +354,7 @@ class SlickPeriodicProcessesRepository(
               .filter(deployment =>
                 deployment.periodicProcessId === process.id && (deployment.scheduleName === scheduleName || deployment.scheduleName.isEmpty && scheduleName.isEmpty)
               )
-              .sortBy(_.runAt.desc)
+              .sortBy(a => (a.runAt.desc, a.id.value.desc))
               .take(deploymentsPerScheduleMaxCount)
               .result
               .map(_.map((process, _)))

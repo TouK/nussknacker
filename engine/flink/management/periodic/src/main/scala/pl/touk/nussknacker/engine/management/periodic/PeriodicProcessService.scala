@@ -146,7 +146,7 @@ class PeriodicProcessService(
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
       toBeRetried <- scheduledProcessesRepository.findToBeRetried.run
       // We don't block scheduled deployments by retries
-    } yield toBeDeployed.sortBy(_.runAt) ++ toBeRetried.sortBy(_.nextRetryAt)
+    } yield toBeDeployed.sortBy(a => (a.runAt, a.id.value)) ++ toBeRetried.sortBy(a => (a.runAt, a.id.value))
   }
 
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
@@ -427,7 +427,8 @@ class PeriodicProcessService(
           )
         }
       }
-      .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+      .sortBy(a => (a.runAt, a.deploymentId.value))
+      .reverse
 
     for {
       activeSchedules <- getLatestDeploymentsForActiveSchedules(name, MaxDeploymentsStatus)
@@ -498,7 +499,8 @@ object PeriodicProcessService {
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
       ))
-        .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+        .sortBy(a => (a.runAt, a.deploymentId.value))
+        .reverse
 
     // We present merged name to be possible to filter scenario by status
     override def name: StatusName = mergedStatusDetails.status.name
@@ -566,7 +568,7 @@ object PeriodicProcessService {
     def pickMostImportantActiveDeployment: Option[DeploymentStatus] = {
       val lastActiveDeploymentStatusForEachSchedule =
         latestDeploymentForEachSchedule(activeDeploymentsStatuses)
-          .sortBy(_.runAt)(Ordering[LocalDateTime])
+          .sortBy(a => (a.runAt, a.deploymentId.value))
       def first(status: PeriodicProcessDeploymentStatus) =
         lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
@@ -586,7 +588,7 @@ object PeriodicProcessService {
         .groupBy(_.scheduleId)
         .values
         .toList
-        .map(_.sortBy(_.runAt)(Ordering[LocalDateTime].reverse).head)
+        .map(_.sortBy(a => (a.runAt, a.deploymentId.value)).reverse.head)
     }
 
   }
