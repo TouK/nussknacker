@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { Parameter, VariableTypes } from "../../../../types";
+import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFields } from "./NodeRowFields";
@@ -21,10 +21,23 @@ interface FieldsSelectProps {
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
+    fixedValuesPresets: FixedValuesPresets;
 }
 
 function FieldsSelect(props: FieldsSelectProps): JSX.Element {
-    const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation } = props;
+    const {
+        fields,
+        label,
+        namespace,
+        options,
+        onChange,
+        variableTypes,
+        removeField,
+        addField,
+        readOnly,
+        showValidation,
+        fixedValuesPresets,
+    } = props;
 
     const ItemElement = useCallback(
         ({ index, item, validators }: { index: number; item: FragmentInputParameter; validators: Validator[] }) => {
@@ -39,6 +52,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     readOnly={readOnly}
                     variableTypes={variableTypes}
                     showValidation={showValidation}
+                    fixedValuesPresets={fixedValuesPresets}
                 />
             );
         },

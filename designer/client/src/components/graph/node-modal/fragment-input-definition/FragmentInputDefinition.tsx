@@ -52,6 +52,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 showValidation={showValidation}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fixedValuesPresets={definitionData.fixedValuesPresets}
             />
         </NodeCommonDetailsDefinition>
     );

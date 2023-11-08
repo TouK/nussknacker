@@ -20,8 +20,6 @@ export enum InputMode {
     "AnyValue" = "AnyValue",
 }
 
-export type FixedValuesPresetOption = Record<string, FixedValuesOption[]>;
-
 export interface FixedValuesOption {
     expression: string;
     label: string;
@@ -45,7 +43,6 @@ export interface DefaultParameterVariant extends GenericParameterVariant, Fragme
 export interface FixedListParameterVariant extends GenericParameterVariant {
     inputMode: InputMode.FixedList;
     fixedValuesList: FixedValuesOption[];
-    fixedValuesPresets: FixedValuesPresetOption;
     allowOnlyValuesFromFixedValuesList: boolean;
     fixedValuesListPresetId: string;
     presetSelection: string;
@@ -54,7 +51,6 @@ export interface FixedListParameterVariant extends GenericParameterVariant {
 export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
     inputMode: InputMode.AnyValueWithSuggestions;
     fixedValuesList: FixedValuesOption[];
-    fixedValuesPresets: FixedValuesPresetOption | undefined;
     fixedValuesListPresetId: string;
     presetSelection: string;
     fixedValuesType: FixedValuesType;

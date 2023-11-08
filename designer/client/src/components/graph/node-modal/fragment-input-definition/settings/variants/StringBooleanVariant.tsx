@@ -3,7 +3,7 @@ import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../item";
-import { VariableTypes } from "../../../../../../types";
+import { FixedValuesPresets, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
@@ -12,9 +12,10 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    fixedValuesPresets: FixedValuesPresets;
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Props) => {
+export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -36,9 +37,17 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange }: Pr
             {item.inputMode === InputMode.AnyValue && (
                 <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
             )}
-            {item.inputMode === InputMode.FixedList && <FixedListVariant item={item} onChange={onChange} path={path} />}
+            {item.inputMode === InputMode.FixedList && (
+                <FixedListVariant item={item} onChange={onChange} path={path} fixedValuesPresets={fixedValuesPresets} />
+            )}
             {item.inputMode === InputMode.AnyValueWithSuggestions && (
-                <AnyValueWithSuggestionVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
+                <AnyValueWithSuggestionVariant
+                    item={item}
+                    onChange={onChange}
+                    path={path}
+                    variableTypes={variableTypes}
+                    fixedValuesPresets={fixedValuesPresets}
+                />
             )}
         </SettingsWrapper>
     );

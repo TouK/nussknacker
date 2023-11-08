@@ -6,6 +6,7 @@ import { ValidationResult } from "./validation";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ProcessingType } from "../actions/nk";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
+import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
 export type Process = {
     id: string;
@@ -67,6 +68,8 @@ export interface ProcessDefinition {
 
 export type ComponentsConfig = Record<string, SingleComponentConfig>;
 
+export type FixedValuesPresets = Record<string, FixedValuesOption[]>;
+
 export interface ProcessDefinitionData {
     componentsConfig?: ComponentsConfig;
     processDefinition?: ProcessDefinition;
@@ -75,6 +78,7 @@ export interface ProcessDefinitionData {
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
     defaultAsyncInterpretation?: boolean;
+    fixedValuesPresets?: FixedValuesPresets;
 }
 
 export type EdgesForNode = {

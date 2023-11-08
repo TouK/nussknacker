@@ -13,7 +13,6 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         validationExpression: "",
         fixedValuesList: [],
         fixedValuesListPresetId: "",
-        fixedValuesPresets: {},
         presetSelection: "",
         validationErrorMessage: "",
         validation: true,

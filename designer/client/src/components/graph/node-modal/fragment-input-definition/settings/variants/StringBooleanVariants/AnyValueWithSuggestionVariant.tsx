@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import ValidationsFields from "../fields/ValidationsFields";
-import { VariableTypes } from "../../../../../../../types";
+import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 import { Option } from "../../../TypeSelect";
 
 interface Props {
@@ -15,12 +15,13 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    fixedValuesPresets: FixedValuesPresets;
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes }: Props) => {
+export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets }: Props) => {
     const { t } = useTranslation();
 
-    const presetListItemOptions: Option[] = (item.fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+    const presetListItemOptions: Option[] = (fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
         label: label,
         value: label,
     }));
@@ -37,7 +38,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={item.fixedValuesList}
-                fixedValuesPresets={item.fixedValuesPresets}
+                fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
             />
             <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />

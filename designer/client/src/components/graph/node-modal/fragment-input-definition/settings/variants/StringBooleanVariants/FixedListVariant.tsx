@@ -7,17 +7,19 @@ import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { Option } from "../../../TypeSelect";
+import { FixedValuesPresets } from "../../../../../../../types";
 
 interface Props {
     item: FixedListParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
+    fixedValuesPresets: FixedValuesPresets;
 }
 
-export const FixedListVariant = ({ item, path, onChange }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: Props) => {
     const { t } = useTranslation();
 
-    const presetListItemOptions: Option[] = (item.fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
+    const presetListItemOptions: Option[] = (fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
         label: label,
         value: label,
     }));
@@ -33,7 +35,7 @@ export const FixedListVariant = ({ item, path, onChange }: Props) => {
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={item.fixedValuesList}
-                fixedValuesPresets={item.fixedValuesPresets}
+                fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
             />
             <InitialValue

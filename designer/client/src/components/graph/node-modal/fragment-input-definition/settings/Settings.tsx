@@ -1,6 +1,6 @@
 import React from "react";
 import { onChangeType, FragmentInputParameter } from "../item";
-import { VariableTypes } from "../../../../../types";
+import { FixedValuesPresets, VariableTypes } from "../../../../../types";
 import { isStringOrBooleanVariant } from "../item/utils";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
 
@@ -9,6 +9,7 @@ interface Settings {
     path: string;
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
+    fixedValuesPresets: FixedValuesPresets;
 }
 
 export default function Settings(props: Settings) {
