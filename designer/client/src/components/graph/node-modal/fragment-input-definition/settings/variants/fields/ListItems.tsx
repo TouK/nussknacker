@@ -19,7 +19,7 @@ export const ListItems = ({ items, handleDelete }: ListItemsProps) => {
                         sx={{ marginRight: "10px", marginBottom: "10px" }}
                         key={index}
                         label={item.label}
-                        onDelete={handleDelete}
+                        onDelete={handleDelete && (() => handleDelete(index))}
                     />
                 ))}
             </ListItemWrapper>
