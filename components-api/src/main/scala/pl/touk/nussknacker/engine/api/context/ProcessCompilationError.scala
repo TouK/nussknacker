@@ -4,7 +4,6 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.definition.Parameter
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -29,7 +28,7 @@ object ProcessCompilationError {
   val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
     Applicative[ValidatedNelCompilationError]
 
-  trait InASingleNode {
+  sealed trait InASingleNode {
     self: ProcessCompilationError =>
 
     override def nodeIds: Set[String] = Set(nodeId)
@@ -39,40 +38,36 @@ object ProcessCompilationError {
   }
 
   // All errors which we want to be seen in process as properties errors should extend this trait
-  trait ScenarioPropertiesError {
+  sealed trait ScenarioPropertiesError {
     self: ProcessCompilationError =>
     override def nodeIds: Set[String] = Set()
   }
 
-  case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class MissingPart(nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class MissingPart(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
+  final case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
   object EmptyProcess extends ProcessUncanonizationError {
     override def nodeIds = Set()
   }
 
-  case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationError with InASingleNode
+  final case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
-  case class DuplicatedNodeIds(nodeIds: Set[String]) extends ProcessCompilationError
+  final case class DuplicatedNodeIds(nodeIds: Set[String]) extends ProcessCompilationError
 
-  case class NonUniqueEdgeType(edgeType: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class NonUniqueEdgeType(edgeType: String, nodeId: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  case class NonUniqueEdge(nodeId: String, target: String) extends ProcessCompilationError with InASingleNode
+  final case class NonUniqueEdge(nodeId: String, target: String) extends ProcessCompilationError with InASingleNode
 
-  case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class InvalidCharacters(nodeId: String) extends ProcessCompilationError with InASingleNode
-
-  object EmptyNodeId extends ProcessCompilationError {
-    override def nodeIds = Set()
-  }
-
-  case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
+  final case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -81,7 +76,7 @@ object ProcessCompilationError {
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
-  case class ExpressionParserCompilationError(
+  final case class ExpressionParserCompilationError(
       message: String,
       nodeId: String,
       fieldName: Option[String],
@@ -98,32 +93,36 @@ object ProcessCompilationError {
 
   }
 
-  case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
+  final case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  case class MissingService(serviceId: String, nodeId: String) extends PartSubGraphCompilationError with InASingleNode
+  final case class MissingService(serviceId: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
 
   object MissingService {
     def apply(serviceId: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingService(serviceId, nodeId.id)
   }
 
-  case class MissingSourceFactory(typ: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class MissingSourceFactory(typ: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   object MissingSourceFactory {
     def apply(typ: String)(implicit nodeId: NodeId): ProcessCompilationError =
       MissingSourceFactory(typ, nodeId.id)
   }
 
-  case class MissingSinkFactory(typ: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class MissingSinkFactory(typ: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   object MissingSinkFactory {
     def apply(typ: String)(implicit nodeId: NodeId): ProcessCompilationError =
       MissingSinkFactory(typ, nodeId.id)
   }
 
-  case class MissingCustomNodeExecutor(name: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class MissingCustomNodeExecutor(name: String, nodeId: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
   object MissingCustomNodeExecutor {
     def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
@@ -134,14 +133,14 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  case class UnresolvedFragment(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
+  final case class UnresolvedFragment(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
 
   object MissingParameters {
     def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
   }
 
-  case class RedundantParameters(params: Set[String], nodeId: String)
+  final case class RedundantParameters(params: Set[String], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -150,7 +149,7 @@ object ProcessCompilationError {
       RedundantParameters(params, nodeId.id)
   }
 
-  case class WrongParameters(requiredParameters: Set[String], passedParameters: Set[String], nodeId: String)
+  final case class WrongParameters(requiredParameters: Set[String], passedParameters: Set[String], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -163,31 +162,39 @@ object ProcessCompilationError {
 
   }
 
-  case class BlankParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class BlankParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class InvalidIntegerLiteralParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class InvalidIntegerLiteralParameter(
+      message: String,
+      description: String,
+      paramName: String,
+      nodeId: String
+  ) extends ParameterValidationError
+
+  final case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class LowerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class LowerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class JsonRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
       extends ParameterValidationError
 
-  case class JsonRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
+  final case class CustomParameterValidationError(
+      message: String,
+      description: String,
+      paramName: String,
+      nodeId: String
+  ) extends ParameterValidationError
 
-  case class CustomParameterValidationError(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
-
-  case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
+  final case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -196,14 +203,16 @@ object ProcessCompilationError {
       MissingRequiredProperty(paramName, label, nodeId.id)
   }
 
-  case class UnknownProperty(paramName: String, nodeId: String) extends PartSubGraphCompilationError with InASingleNode
+  final case class UnknownProperty(paramName: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
 
   object UnknownProperty {
     def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
       UnknownProperty(paramName, nodeId.id)
   }
 
-  case class InvalidPropertyFixedValue(
+  final case class InvalidPropertyFixedValue(
       paramName: String,
       label: Option[String],
       value: String,
@@ -221,7 +230,7 @@ object ProcessCompilationError {
 
   }
 
-  case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])
+  final case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -230,7 +239,7 @@ object ProcessCompilationError {
       OverwrittenVariable(variableName, nodeId.id, paramName)
   }
 
-  case class InvalidVariableOutputName(name: String, nodeId: String, paramName: Option[String])
+  final case class InvalidVariableOutputName(name: String, nodeId: String, paramName: Option[String])
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -239,23 +248,25 @@ object ProcessCompilationError {
       InvalidVariableOutputName(variableName, nodeId.id, paramName)
   }
 
-  case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+  final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+  final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+  final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError {
+  final case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set.empty
   }
 
-  case class UnknownFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class UnknownFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class InvalidFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class InvalidFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class MultipleOutputsForName(name: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class MultipleOutputsForName(name: String, nodeId: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
+  final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
       extends ProcessCompilationError
       with InASingleNode
 
@@ -264,18 +275,40 @@ object ProcessCompilationError {
       CustomNodeError(nodeId.id, message, paramName)
   }
 
-  case class FatalUnknownError(message: String) extends ProcessCompilationError {
+  final case class FatalUnknownError(message: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set()
   }
 
-  case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+  final case class CannotCreateObjectError(message: String, nodeId: String)
+      extends ProcessCompilationError
+      with InASingleNode
 
-  case class ScenarioNameValidationError(message: String, description: String)
+  final case class ScenarioNameValidationError(message: String, description: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
 
-  case class SpecificDataValidationError(fieldName: String, message: String)
+  final case class SpecificDataValidationError(fieldName: String, message: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
+
+  sealed trait IdError extends ProcessCompilationError {
+    val errorType: IdErrorType
+    val id: String
+  }
+
+  final case class ScenarioIdError(errorType: IdErrorType, id: String, isFragment: Boolean)
+      extends IdError
+      with ScenarioPropertiesError
+
+  final case class NodeIdValidationError(errorType: IdErrorType, id: String) extends IdError with InASingleNode {
+    override protected def nodeId: String = id
+  }
+
+  sealed trait IdErrorType
+  object EmptyValue                                                           extends IdErrorType
+  object BlankId                                                              extends IdErrorType
+  object LeadingSpacesId                                                      extends IdErrorType
+  object TrailingSpacesId                                                     extends IdErrorType
+  final case class IllegalCharactersId(illegalCharacterHumanReadable: String) extends IdErrorType
 
 }

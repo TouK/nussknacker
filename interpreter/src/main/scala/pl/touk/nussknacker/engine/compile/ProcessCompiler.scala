@@ -61,10 +61,11 @@ trait ProcessValidator extends LazyLogging {
   def validate(process: CanonicalProcess): CompilationResult[Unit] = {
 
     try {
-      CompilationResult.map2(
+      CompilationResult.map3(
+        CompilationResult(IdValidator.validate(process)),
         CompilationResult(validateWithCustomProcessValidators(process)),
         compile(process).map(_ => ()): CompilationResult[Unit]
-      )((_, compiled) => {
+      )((_, _, compiled) => {
         compiled
       })
     } catch {

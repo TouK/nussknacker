@@ -1,16 +1,16 @@
-package pl.touk.nussknacker.restmodel.displayedgraph
+package pl.touk.nussknacker.engine.api.displayedgraph
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import displayablenode._
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 //it would be better to have two classes but it would either to derive from each other, which is not easy for final case classes
 //or we'd have to do composition which would break many things in client
@@ -27,46 +27,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
   val metaData: MetaData = properties.toMetaData(id)
 
   val processName: ProcessName = ProcessName(id)
-
-}
-
-@JsonCodec final case class ValidatedDisplayableProcess(
-    id: String,
-    properties: ProcessProperties,
-    nodes: List[NodeData],
-    edges: List[Edge],
-    processingType: ProcessingType,
-    category: String,
-    validationResult: Option[ValidationResult]
-) {
-
-  def toDisplayable: DisplayableProcess = DisplayableProcess(id, properties, nodes, edges, processingType, category)
-
-}
-
-object ValidatedDisplayableProcess {
-
-  def apply(displayableProcess: DisplayableProcess, validationResult: ValidationResult): ValidatedDisplayableProcess =
-    new ValidatedDisplayableProcess(
-      displayableProcess.id,
-      displayableProcess.properties,
-      displayableProcess.nodes,
-      displayableProcess.edges,
-      displayableProcess.processingType,
-      displayableProcess.category,
-      Some(validationResult)
-    )
-
-  def withEmptyValidationResult(displayableProcess: DisplayableProcess): ValidatedDisplayableProcess =
-    new ValidatedDisplayableProcess(
-      displayableProcess.id,
-      displayableProcess.properties,
-      displayableProcess.nodes,
-      displayableProcess.edges,
-      displayableProcess.processingType,
-      displayableProcess.category,
-      None
-    )
 
 }
 

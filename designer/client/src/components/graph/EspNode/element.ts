@@ -120,7 +120,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         const attributes: shapes.devs.ModelAttributes = {
             id: node.id,
             inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
-            outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
+            outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
                 background: {
                     opacity: node.isDisabled ? 0.4 : 1,
@@ -158,7 +158,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             // add event listeners after element setup
             setTimeout(() => {
                 e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-                    if (isModelElement(el) && !isConnected(el) && el.hasPort("In") && el.hasPort("Out")) {
+                    if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
                         setLinksHovered(el.graph, el.getBBox());
                     }
                 });

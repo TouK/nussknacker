@@ -13,9 +13,11 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver}
@@ -32,9 +34,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.NodesResources.{
@@ -104,11 +104,11 @@ class NodesResources(
         } ~ path("validation") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
-          entity(as[PropertiesValidationRequest]) { properties =>
+          entity(as[PropertiesValidationRequest]) { request =>
             complete {
               val scenario = DisplayableProcess(
-                processName,
-                properties.processProperties,
+                request.id,
+                ProcessProperties(request.additionalFields),
                 Nil,
                 Nil,
                 process.processingType,
@@ -348,10 +348,15 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     variableTypes: Map[String, TypingResult],
     branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
     // TODO: remove Option when FE is ready
+    // In this request edges are not guaranteed to have the correct "from" field. Normally it's synced with node id but
+    // when renaming node, it contains node's id before the rename.
     outgoingEdges: Option[List[Edge]]
 )
 
-@JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(processProperties: ProcessProperties)
+@JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(
+    additionalFields: ProcessAdditionalFields,
+    id: String
+)
 
 // TODO like in 'validate' create globalVariables based on processingType on backend side. Do not pass them from FE.
 final case class ExpressionSuggestionRequest(

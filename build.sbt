@@ -835,6 +835,14 @@ lazy val benchmarks = (project in file("benchmarks"))
         "org.apache.flink" % "flink-runtime"        % flinkV
       )
     },
+    Jmh / run / javaOptions ++= (
+      if (System.getProperty("os.name").startsWith("Windows")) {
+        // Allow long classpath on Windows, JMH requires that classpath and temp directory have common root path,
+        // so we're always setting it in sbt's target directory (https://github.com/sbt/sbt-jmh/issues/241)
+        Seq("-Djmh.separateClasspathJAR=true", "\"-Djava.io.tmpdir=" + target.value + "\"")
+      } else
+        Seq.empty
+    ),
     // To avoid Intellij message that jmh generated classes are shared between main and test
     Jmh / classDirectory                 := (Test / classDirectory).value,
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
@@ -1732,7 +1740,7 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel)
+  .dependsOn(extensionsApi)
 
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
@@ -1853,10 +1861,11 @@ lazy val designer = (project in file("designer/server"))
     }
   )
   .dependsOn(
-    interpreter, // TODO: remove dependency to interpreter - see BaseModelData for details
+    interpreter,
     processReports,
     security,
     deploymentManagerApi,
+    restmodel,
     listenerApi,
     testUtils                         % "test",
     // TODO: this is unfortunately needed to run without too much hassle in Intellij...

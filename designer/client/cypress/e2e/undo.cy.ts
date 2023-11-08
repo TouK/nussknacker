@@ -36,7 +36,13 @@ describe("Undo/Redo", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("[data-testid='component:customFilter']")
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 480, y: 450, position: "right", force: true });
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 480,
+                    y: 450,
+                },
+                force: true,
+            });
         cy.get("@graph").matchImage(screenshotOptions);
         cy.dragNode("customFilter", { x: 560, y: 500 });
         cy.get("@graph").matchImage(screenshotOptions);
@@ -56,7 +62,13 @@ describe("Undo/Redo", () => {
         cy.getNode("enricher-dynamicService").find("[event=remove]").eq(0).click();
         cy.get("[data-testid='component:customFilter']")
             .should("be.visible")
-            .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 580,
+                    y: 450,
+                },
+                force: true,
+            });
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
@@ -114,9 +126,17 @@ describe("Undo/Redo", () => {
         cy.contains(/^counts$/i).click();
         cy.get("[data-testid=window]").contains(/^ok$/i).click();
 
-        cy.get("@graph").matchImage(screenshotOptions);
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+
         cy.get("@redo").should("be.enabled").click().should("be.disabled");
-        cy.get("@graph").matchImage(screenshotOptions);
+
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+
+        cy.wait(500);
     });
 
     it("should work with validation", () => {

@@ -3,13 +3,13 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { SettingsData, ValidationData } from "../actions/nk";
+import { SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessDefinitionData, ProcessId } from "../types";
+import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessId } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -111,6 +111,11 @@ type NotificationActions = {
 export interface TestProcessResponse {
     results: TestResults;
     counts: ProcessCounts;
+}
+
+export interface PropertiesValidationRequest {
+    id: string;
+    additionalFields: ProcessAdditionalFields;
 }
 
 class HttpService {
@@ -397,7 +402,7 @@ class HttpService {
         });
     }
 
-    validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
+    validateNode(processId: string, node: ValidationRequest): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"), error, true),
@@ -434,8 +439,8 @@ class HttpService {
         return promise;
     }
 
-    validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
-        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, { processProperties });
+    validateProperties(processId: string, propertiesRequest: PropertiesValidationRequest): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, propertiesRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"), error, true),
         );

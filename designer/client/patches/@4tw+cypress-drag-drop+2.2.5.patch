@@ -1,0 +1,13 @@
+diff --git a/node_modules/@4tw/cypress-drag-drop/index.js b/node_modules/@4tw/cypress-drag-drop/index.js
+index b316fc1..c68f8c6 100644
+--- a/node_modules/@4tw/cypress-drag-drop/index.js
++++ b/node_modules/@4tw/cypress-drag-drop/index.js
+@@ -128,7 +128,7 @@ const DragSimulator = {
+       .then(() => this.dragstart())
+       .then(() => this.dragover())
+       .then((success) => {
+-        if (success) {
++        if (success || options.force) {
+           return this.drop().then(() => true)
+         } else {
+           return false

@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.restmodel.scenariodetails
+package pl.touk.nussknacker.engine.api.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.time.Instant
 

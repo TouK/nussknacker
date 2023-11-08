@@ -5,7 +5,6 @@ export type ActionTypes =
     | "LAYOUT"
     | "LOGGED_USER"
     | "UI_SETTINGS"
-    | "PROCESS_DEFINITION_DATA"
     | "AVAILABLE_QUERY_STATES"
     | "SWITCH_TOOL_TIPS_HIGHLIGHT"
     | "ZOOM_IN"

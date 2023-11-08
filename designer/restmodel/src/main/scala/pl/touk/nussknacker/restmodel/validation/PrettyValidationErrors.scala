@@ -4,18 +4,14 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
-  RenderNotAllowed,
-  SaveAllowed
-}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
 
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
-    val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
+    val typ = getErrorTypeName(error)
 
     def node(
         message: String,
@@ -42,14 +38,6 @@ object PrettyValidationErrors {
           s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
-      case ScenarioNameValidationError(message, description) =>
-        node(
-          message,
-          description
-          // TODO: we should pass id here, but editing scenario id is *really* quirky...
-          //  , fieldName = Some("id")
-        )
-      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) =>
@@ -57,12 +45,15 @@ object PrettyValidationErrors {
           "Scenario must end with a sink, processor or fragment",
           "Scenario must end with a sink, processor or fragment"
         )
-      case EmptyNodeId =>
+      case error: IdError =>
+        mapIdErrorToNodeError(error)
+      case ScenarioNameValidationError(message, description) =>
         node(
-          "Nodes cannot have empty id",
-          "Nodes cannot have empty id",
-          errorType = NodeValidationErrorType.RenderNotAllowed
+          message,
+          description,
+          fieldName = Some(CanonicalProcess.IdFieldName),
         )
+      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
           "Edges are not unique",
@@ -81,17 +72,11 @@ object PrettyValidationErrors {
           s"Node $nodeId is not connected to source, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
-      case InvalidCharacters(nodeId) =>
-        node(
-          "Invalid characters",
-          s"Node $nodeId contains invalid characters: " + "\", . and ' are not allowed in node id",
-          RenderNotAllowed
-        )
       case DisabledNode(nodeId) =>
         node(
           s"Node $nodeId is disabled",
           "Deploying scenario with disabled node can have unexpected consequences",
-          SaveAllowed
+          NodeValidationErrorType.SaveAllowed
         )
 
       case MissingParameters(params, _) =>
@@ -212,6 +197,51 @@ object PrettyValidationErrors {
   private def getLabel(label: Option[String]) = label match {
     case Some(text) => s" ($text)"
     case None       => StringUtils.EMPTY
+  }
+
+  private def getErrorTypeName(error: ProcessCompilationError) = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
+
+  private def mapIdErrorToNodeError(error: IdError) = {
+    val validatedObjectType = error match {
+      case ScenarioIdError(_, _, isFragment) => if (isFragment) "Fragment" else "Scenario"
+      case NodeIdValidationError(_, _)       => "Node"
+    }
+    val errorSeverity = error match {
+      case ScenarioIdError(_, _, _) => NodeValidationErrorType.SaveAllowed
+      case NodeIdValidationError(errorType, _) =>
+        errorType match {
+          case ProcessCompilationError.EmptyValue | IllegalCharactersId(_) => NodeValidationErrorType.RenderNotAllowed
+          case _                                                           => NodeValidationErrorType.SaveAllowed
+        }
+    }
+    val fieldName = error match {
+      case ScenarioIdError(_, _, _)    => CanonicalProcess.IdFieldName
+      case NodeIdValidationError(_, _) => pl.touk.nussknacker.engine.graph.node.IdFieldName
+    }
+    val message = error.errorType match {
+      case ProcessCompilationError.EmptyValue       => s"$validatedObjectType name is mandatory and cannot be empty"
+      case ProcessCompilationError.BlankId          => s"$validatedObjectType name cannot be blank"
+      case ProcessCompilationError.LeadingSpacesId  => s"$validatedObjectType name cannot have leading spaces"
+      case ProcessCompilationError.TrailingSpacesId => s"$validatedObjectType name cannot have trailing spaces"
+      case ProcessCompilationError.IllegalCharactersId(illegalCharactersHumanReadable) =>
+        s"$validatedObjectType name contains invalid characters. $illegalCharactersHumanReadable are not allowed"
+    }
+    val description = error.errorType match {
+      case ProcessCompilationError.EmptyValue      => s"Empty ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.BlankId         => s"Blank ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.LeadingSpacesId => s"Leading spaces in ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.TrailingSpacesId =>
+        s"Trailing spaces in ${validatedObjectType.toLowerCase} name"
+      case ProcessCompilationError.IllegalCharactersId(_) =>
+        s"Invalid characters in ${validatedObjectType.toLowerCase} name"
+    }
+    NodeValidationError(
+      typ = getErrorTypeName(error),
+      message = message,
+      description = description,
+      fieldName = Some(fieldName),
+      errorType = errorSeverity
+    )
   }
 
 }

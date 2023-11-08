@@ -55,6 +55,7 @@ export default function Variable({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <LabeledInput
                 value={node.varName}

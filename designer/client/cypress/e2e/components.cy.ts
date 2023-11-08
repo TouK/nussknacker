@@ -182,16 +182,20 @@ describe("Components list", () => {
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
         cy.get("#toolbox").contains("fragments").should("be.visible").click();
-        cy.contains(`${seed}_xxx`).last().should("be.visible").drag("#nk-graph-main", {
-            x: 800,
-            y: 600,
-            position: "right",
-            force: true,
-        });
+        cy.contains(`${seed}_xxx`)
+            .last()
+            .should("be.visible")
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 800,
+                    y: 600,
+                },
+                force: true,
+            });
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.viewport(1400, 500);
+        cy.viewport(1400, 600);
         cy.visit("/components/usages/filter");
 
         cy.contains(/^other$/i).click();

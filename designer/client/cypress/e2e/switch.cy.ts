@@ -20,8 +20,13 @@ describe("Process", () => {
                 .click();
             cy.contains(/^choice$/)
                 .should("be.visible")
-                .move({ x: 580, y: 450, position: "right", force: true })
-                .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
+                .drag("#nk-graph-main", {
+                    target: {
+                        x: 580,
+                        y: 450,
+                    },
+                    force: true,
+                });
             cy.layoutScenario();
             cy.get("[model-id$=choice-sendSms-true]").should("be.visible").trigger("dblclick");
 

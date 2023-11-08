@@ -1,11 +1,17 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.{
+  ProcessId,
+  ProcessIdWithName,
+  ProcessName,
+  ProcessingType,
+  ScenarioVersion,
+  VersionId
+}
 import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails
 
 import java.time.Instant
@@ -36,7 +42,7 @@ final case class ScenarioWithDetailsEntity[ScenarioShape](
       ProcessAction
     ], // TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
     json: ScenarioShape,
-    history: Option[List[scenariodetails.ScenarioVersion]],
+    history: Option[List[ScenarioVersion]],
     modelVersion: Option[Int]
 ) extends ListenerScenarioWithDetails {
   lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, name)

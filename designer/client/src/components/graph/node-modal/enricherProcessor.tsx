@@ -40,6 +40,7 @@ export function EnricherProcessor({
                 node={node}
                 setProperty={setProperty}
                 renderFieldLabel={renderFieldLabel}
+                errors={fieldErrors}
             />
             {serviceParameters(node).map((param, index) => {
                 return (

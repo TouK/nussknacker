@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
@@ -31,12 +32,7 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
-  ComponentImplementationInvoker,
-  ObjectDefinition,
-  ObjectWithMethodDef,
-  StandardObjectWithMethodDef
-}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   CustomTransformerAdditionalData,
   ExpressionDefinition,
@@ -449,6 +445,54 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern { case Valid(_) =>
+    }
+  }
+
+  test("should handle all cases of scenario id validation") {
+    forAll(IdValidationTestData.scenarioIdErrorCases) {
+      (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val scenario = ScenarioBuilder
+            .streaming(scenarioId)
+            .source("sourceId", "source")
+            .emptySink("sinkId", "sink")
+          validate(scenario, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+          }
+        }
+    }
+  }
+
+  test("should handle all cases of fragment id validation") {
+    forAll(IdValidationTestData.fragmentIdErrorCases) {
+      (fragmentId: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val fragment = ScenarioBuilder
+            .fragmentWithInputNodeId(fragmentId, "sourceId")
+            .emptySink("sinkId", "sink")
+          validate(fragment, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+
+          }
+        }
+    }
+  }
+
+  test("should handle all cases node id validation") {
+    forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
+      {
+        val scenario = ScenarioBuilder
+          .streaming("scenarioId")
+          .source(nodeId, "source")
+          .emptySink("sinkId", "sink")
+        validate(scenario, baseDefinition).result match {
+          case Valid(_)   => expectedErrors shouldBe empty
+          case Invalid(e) => e.toList shouldBe expectedErrors
+
+        }
+      }
     }
   }
 

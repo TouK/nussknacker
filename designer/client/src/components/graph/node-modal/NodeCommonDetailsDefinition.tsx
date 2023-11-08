@@ -40,11 +40,10 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("id")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                validators={[mandatoryValueValidator]}
+                validators={[errorValidator(fieldErrors, "id")]}
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
-
             {outputField && outputName && (
                 <LabeledInput
                     value={node[outputField]}

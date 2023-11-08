@@ -7,10 +7,9 @@ import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService._
@@ -32,7 +31,9 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 import ScenarioWithDetailsConversions._
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -215,7 +216,7 @@ class DBProcessService(
     (options.fetchGraphOptions match {
       case SkipScenarioGraph =>
         fetchScenario[Unit]
-          .map(_.map(ScenarioWithDetailsConversions.fromRepositoryDetailsIgnoringGraphAndValidationResult))
+          .map(_.map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult))
       case FetchScenarioGraph(validateAndResolve) =>
         fetchScenario[CanonicalProcess]
           .map(_.map(validateAndReverseResolve(_, validateAndResolve)))
@@ -234,40 +235,40 @@ class DBProcessService(
   }
 
   private def validateAndReverseResolve(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+      entity: ScenarioWithDetailsEntity[CanonicalProcess],
       validateAndResolve: Boolean
   ): ScenarioWithDetails = {
     if (validateAndResolve) {
-      validateAndReverseResolve(processDetails)
+      validateAndReverseResolve(entity)
     } else {
-      toDisplayableProcessDetailsWithoutValidation(processDetails)
+      toDisplayableProcessDetailsWithoutValidation(entity)
     }
   }
 
   private def toDisplayableProcessDetailsWithoutValidation(
-      canonicalProcessDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+      entity: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromRepositoryDetails(canonicalProcessDetails.mapScenario { canonical =>
+    ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical =>
       val displayableProcess = ProcessConverter.toDisplayable(
         canonical,
-        canonicalProcessDetails.processingType,
-        canonicalProcessDetails.processCategory
+        entity.processingType,
+        entity.processCategory
       )
       ValidatedDisplayableProcess.withEmptyValidationResult(displayableProcess)
     })
   }
 
   private def validateAndReverseResolve(
-      processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+      entity: ScenarioWithDetailsEntity[CanonicalProcess]
   ): ScenarioWithDetails = {
-    ScenarioWithDetailsConversions.fromRepositoryDetails(processDetails.mapScenario { canonical: CanonicalProcess =>
-      val processingType = processDetails.processingType
+    ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
+      val processingType = entity.processingType
       val validationResult =
-        processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
+        processResolving.validateBeforeUiReverseResolving(canonical, processingType, entity.processCategory)
       processResolving.reverseResolveExpressions(
         canonical,
         processingType,
-        processDetails.processCategory,
+        entity.processCategory,
         validationResult
       )
     })
@@ -405,7 +406,7 @@ class DBProcessService(
         displayable.processingType,
         process.processCategory
       )
-      Future.successful(ValidatedDisplayableProcess(displayable, validationResult))
+      Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
     }
   }
 
@@ -425,7 +426,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     deploymentService
-      .getProcessState(process.toRepositoryDetailsWithoutScenarioGraphAndValidationResult)
+      .getProcessState(process.toEntity)
       .flatMap(state => {
         if (state.allowedActions.contains(actionToCheck)) {
           callback

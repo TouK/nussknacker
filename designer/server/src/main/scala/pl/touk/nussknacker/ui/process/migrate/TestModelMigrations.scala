@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -36,7 +37,7 @@ class TestModelMigrations(
       val validationResult = validation.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
-        ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
+        ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
         newErrors,
         migrationDetails.shouldFail
       )
@@ -47,7 +48,7 @@ class TestModelMigrations(
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
-        process.toRepositoryDetailsWithScenarioGraphUnsafe,
+        process.toEntityWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)

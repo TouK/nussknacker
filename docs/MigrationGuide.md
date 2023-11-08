@@ -17,8 +17,22 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     `pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails`
   * `pl.touk.nussknacker.restmodel.processdetails.ProcessDetails` and `pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails`
     type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
-  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion`
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.engine.api.process.ScenarioVersion`
   * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
+* [#4959](https://github.com/TouK/nussknacker/pull/4959) `listener-api` module become decoupled from `restmodel` module. 
+  Some classes were moved to `extensions-api` module to make it possible:
+  * `pl.touk.nussknacker.restmodel.displayedgraph` package was renamed to `pl.touk.nussknacker.engine.api.displayedgraph`
+  * `pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess` was moved to `pl.touk.nussknacker.restmodel.validation` package
+  * `pl.touk.nussknacker.restmodel.process.ProcessingType` was moved to `pl.touk.nussknacker.engine.api.process` package
+  * `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion` was moved to `pl.touk.nussknacker.engine.api.process` package
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
+  from fragment id
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
+
+### REST API changes
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
+  * Replace `processProperties` with `additionalFields`
+  * Add `id` field for scenario or fragment id
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

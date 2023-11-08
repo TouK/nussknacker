@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, Fragme
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{
@@ -170,25 +169,7 @@ object UIProcessObjectsFactory {
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
-    def toUIBasicParam(p: generics.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
-
-    // TODO: present all overloaded methods on FE
-    def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
-      val m   = methods.maxBy(_.signatures.map(_.parametersToList.length).toList.max)
-      val sig = m.signatures.toList.maxBy(_.parametersToList.length)
-      // We send varArg as Type instead of Array[Type] so it is easier to
-      // format it on FE.
-      UIMethodInfo(
-        (sig.noVarArgs ::: sig.varArg.toList).map(toUIBasicParam),
-        sig.result,
-        m.description,
-        sig.varArg.isDefined
-      )
-    }
-
-    val methodsWithHighestArity       = definition.methods.mapValuesNow(toUIMethod)
-    val staticMethodsWithHighestArity = definition.staticMethods.mapValuesNow(toUIMethod)
-    UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
+    UIClazzDefinition(definition.clazzName)
   }
 
   private def extractFragmentInputs(
