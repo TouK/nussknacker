@@ -146,7 +146,7 @@ class PeriodicProcessService(
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
       toBeRetried <- scheduledProcessesRepository.findToBeRetried.run
       // We don't block scheduled deployments by retries
-    } yield toBeDeployed.sortBy(d => (d.runAt, d.id.value)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.id.value))
+    } yield toBeDeployed.sortBy(d => (d.runAt, d.createdAt)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.createdAt))
   }
 
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
@@ -419,6 +419,7 @@ class PeriodicProcessService(
         scheduleData.latestDeployments.map { deployment =>
           DeploymentStatus(
             deployment.id,
+            deployment.createdAt,
             scheduleId,
             deployment.runAt,
             deployment.state.status,
@@ -427,7 +428,7 @@ class PeriodicProcessService(
           )
         }
       }
-      .sortBy(_.runAtWithId)
+      .sortBy(_.runAtWithCreatedAt)
       .reverse
 
     for {
@@ -499,7 +500,7 @@ object PeriodicProcessService {
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
       ))
-        .sortBy(_.runAtWithId)
+        .sortBy(_.runAtWithCreatedAt)
         .reverse
 
     // We present merged name to be possible to filter scenario by status
@@ -568,7 +569,7 @@ object PeriodicProcessService {
     def pickMostImportantActiveDeployment: Option[DeploymentStatus] = {
       val lastActiveDeploymentStatusForEachSchedule =
         latestDeploymentForEachSchedule(activeDeploymentsStatuses)
-          .sortBy(_.runAtWithId)
+          .sortBy(_.runAtWithCreatedAt)
       def first(status: PeriodicProcessDeploymentStatus) =
         lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
@@ -588,7 +589,7 @@ object PeriodicProcessService {
         .groupBy(_.scheduleId)
         .values
         .toList
-        .map(_.sortBy(_.runAtWithId).reverse.head)
+        .map(_.sortBy(_.runAtWithCreatedAt).reverse.head)
     }
 
   }
@@ -596,6 +597,7 @@ object PeriodicProcessService {
   case class DeploymentStatus( // Probably it is too much technical to present to users, but the only other alternative
       // to present to users is scheduleName+runAt
       deploymentId: PeriodicProcessDeploymentId,
+      createdAt: LocalDateTime,
       scheduleId: ScheduleId,
       runAt: LocalDateTime,
       // This status is almost fine but:
@@ -607,7 +609,7 @@ object PeriodicProcessService {
       runtimeStatusOpt: Option[StatusDetails]
   ) {
 
-    val runAtWithId: (LocalDateTime, Long) = (runAt, deploymentId.value)
+    val runAtWithCreatedAt: (LocalDateTime, LocalDateTime) = (runAt, createdAt)
 
     def scheduleName: ScheduleName = scheduleId.scheduleName
 
