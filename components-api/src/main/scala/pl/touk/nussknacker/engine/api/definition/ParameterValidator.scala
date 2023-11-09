@@ -9,15 +9,15 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import io.circe.parser._
-
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.collection.concurrent.TrieMap
 
 trait Validator {
 
-  def isValid(paramName: String, value: Any, label: Option[String])(
+  def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit]
 
@@ -36,13 +36,29 @@ trait Validator {
 //TODO: These validators should be moved to separated module
 case object MandatoryParameterValidator extends ParameterValidator {
 
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] =
+    if (!expression.expression.isBlank) valid(()) else invalid(error(paramName, nodeId.id))
+
+  private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
+    "This field is mandatory and can not be empty",
+    "Please fill field for this parameter",
+    paramName,
+    nodeId
+  )
+
+}
+
+case object NotNullParameterValidator extends ParameterValidator {
+
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     if (value != null) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
-    "This field is mandatory and can not be empty",
+    "This field is required and can not be null",
     "Please fill field for this parameter",
     paramName,
     nodeId
@@ -55,7 +71,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
   private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("^\\s*$")
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
@@ -77,15 +93,16 @@ case object NotBlankParameterValidator extends ParameterValidator {
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
 
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     // FIXME: we should properly evaluate `possibleValues`
     val values = possibleValues.map(possibleValue => possibleValue.expression)
 
     value match {
-      case null                                  => valid(())
-      case s: String if values.contains(s"'$s'") => valid(())
+      case null                                        => valid(())
+      case s: String if values.contains(s"'$s'")       => valid(())
+      case _ if values.contains(expression.expression) => valid(())
       case s: String => invalid(InvalidPropertyFixedValue(paramName, label, s"'$s'", possibleValues.map(_.expression)))
       case x if values.contains(x.toString) => valid(())
       case _ => invalid(InvalidPropertyFixedValue(paramName, label, value.toString, possibleValues.map(_.expression)))
@@ -100,7 +117,7 @@ case class LiteralRegExpParameterValidator(pattern: String, message: String, des
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
@@ -116,7 +133,7 @@ case class LiteralRegExpParameterValidator(pattern: String, message: String, des
 case object LiteralIntegerValidator extends ParameterValidator {
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
@@ -137,7 +154,7 @@ case object LiteralIntegerValidator extends ParameterValidator {
 case object LiteralNumberValidator extends ParameterValidator {
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
@@ -158,7 +175,7 @@ case object LiteralNumberValidator extends ParameterValidator {
 case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterValidator {
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
@@ -180,7 +197,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
 case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterValidator {
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
@@ -204,7 +221,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
 case object JsonValidator extends ParameterValidator {
 
   // null value should not be validated - we want to chain validators
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
@@ -253,9 +270,9 @@ trait CustomParameterValidator extends Validator {
 case class CustomParameterValidatorDelegate(name: String) extends ParameterValidator {
   import CustomParameterValidatorDelegate._
 
-  override def isValid(paramName: String, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, label)
+  ): Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, expression, value, label)
 
 }
 

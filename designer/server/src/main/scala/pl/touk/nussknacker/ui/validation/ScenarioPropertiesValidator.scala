@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, P
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
@@ -72,7 +73,8 @@ class ScenarioPropertiesValidator(
             .orElse(Try { expression.toDouble })
             .getOrElse(expression)
         }
-        validator.isValid(property._1, value, config.label).toValidatedNel
+        // FIXME: is this really Spel or just Literal expression? (currently we only have spel and spel template)
+        validator.isValid(property._1, Expression.spel(expression), value, config.label).toValidatedNel
       }
       .sequence
       .map(_ => ())

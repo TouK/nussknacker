@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.compiledgraph
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 object Validations {
 
@@ -63,15 +64,19 @@ object Validations {
   ): ValidatedNel[PartSubGraphCompilationError, (compiledgraph.evaluatedparam.TypedParameter, T)] = {
     paramDefinition.validators
       .flatMap { validator =>
-        val paramsWithValues = parameter._1.typedValue match {
-          case te: TypedExpression => List((parameter._1.name, te.typingInfo.typingResult.valueOpt))
+        val paramWithValueAndExpressionList = parameter._1.typedValue match {
+          case te: TypedExpression => List((parameter._1.name, te.typingInfo.typingResult.valueOpt, te.expression))
           case tem: TypedExpressionMap =>
             tem.valueByKey.toList.map { case (branchName, expression) =>
-              (ParameterNaming.getNameForBranchParameter(parameter._1.name, branchName), expression.returnType.valueOpt)
+              (
+                ParameterNaming.getNameForBranchParameter(parameter._1.name, branchName),
+                expression.returnType.valueOpt,
+                expression.expression
+              )
             }
         }
-        paramsWithValues.collect { case (name: String, Some(value)) =>
-          validator.isValid(name, value, None).toValidatedNel
+        paramWithValueAndExpressionList.collect { case (name: String, Some(value), expression) =>
+          validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
         }
 
       }

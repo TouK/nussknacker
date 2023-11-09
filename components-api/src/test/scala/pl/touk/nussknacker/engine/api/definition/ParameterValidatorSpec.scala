@@ -4,12 +4,55 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.jdk.CollectionConverters._
 
 class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
   private implicit val nodeId: NodeId = NodeId("someNode")
+
+  test("MandatoryParameterValidator") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("", null, false),
+        ("  ", null, false),
+        ("\t", null, false),
+        (" \n ", null, false),
+        ("null", null, true),
+        ("#input.foo['bar']", null, true),
+        ("true", true, true),
+        ("''", "", true),
+        ("'foo'", "foo", true),
+        ("1", 1, true),
+        ("1 + 1", 2, true),
+      )
+    ) { (expression, value, expected) =>
+      MandatoryParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+    }
+  }
+
+  test("NonNullParameterValidator") {
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("", null, false),
+        ("  ", null, false),
+        ("\t", null, false),
+        (" \n ", null, false),
+        ("null", null, false),
+        ("#input.foo['bar']", null, false),
+        ("true", true, true),
+        ("''", "", true),
+        ("'foo'", "foo", true),
+        ("1", 1, true),
+        ("1 + 1", 2, true),
+      )
+    ) { (expression, value, expected) =>
+      NotNullParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+    }
+  }
 
   test("NotBlankParameterValidator") {
     forAll(
@@ -26,7 +69,9 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("\"someString\" + \"\"", true)
       )
     ) { (expression, expected) =>
-      NotBlankParameterValidator.isValid("dummy", expression, None).isValid shouldBe expected
+      NotBlankParameterValidator
+        .isValid("dummy", Expression.spel(s"'$value'"), expression, None)
+        .isValid shouldBe expected
     }
   }
 
@@ -52,7 +97,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'c'", false),
       )
     ) { (expression, expected) =>
-      validator.isValid("dummy", expression, None).isValid shouldBe expected
+      validator.isValid("dummy", Expression.spel(s"'$value'"), expression, None).isValid shouldBe expected
     }
   }
 
@@ -60,14 +105,14 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     val validator = LiteralIntegerValidator
     forAll(
       Table(
-        ("value", "isValid"),
-        (null, true),
-        ("1", false),
-        (3.14, false),
-        (1, true),
+        ("expression", "value", "isValid"),
+        ("", null, true),
+        ("'1'", "1", false),
+        ("3.14", 3.14, false),
+        ("1", 1, true),
       )
-    ) { (value, isValid) =>
-      validator.isValid("dummy", value, None).isValid shouldBe isValid
+    ) { (expression, value, isValid) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
     }
   }
 
@@ -75,15 +120,15 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     val validator = LiteralNumberValidator
     forAll(
       Table(
-        ("value", "isValid"),
-        (null, true),
-        ("1", false),
-        (3.14, true),
-        (1, true),
-        ("ala", false),
+        ("expression", "value", "isValid"),
+        ("", null, true),
+        ("'1'", "1", false),
+        ("3.14", 3.14, true),
+        ("1", 1, true),
+        ("'ala'", "ala", false),
       )
-    ) { (value, isValid) =>
-      validator.isValid("dummy", value, None).isValid shouldBe isValid
+    ) { (expression, value, isValid) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
     }
   }
 
@@ -91,17 +136,17 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     val validator = MinimalNumberValidator(5)
     forAll(
       Table(
-        ("value", "isValid"),
-        (null, true),
-        ("1", false),
-        (3.14, false),
-        (1, false),
-        (5, true),
-        (6, true),
-        (21.37, true),
+        ("expression", "value", "isValid"),
+        ("", null, true),
+        ("'1'", "1", false),
+        ("3.14", 3.14, false),
+        ("1", 1, false),
+        ("5", 5, true),
+        ("6", 6, true),
+        ("21.37", 21.37, true),
       )
-    ) { (value, isValid) =>
-      validator.isValid("dummy", value, None).isValid shouldBe isValid
+    ) { (expression, value, isValid) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
     }
   }
 
@@ -109,17 +154,17 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     val validator = MaximalNumberValidator(5)
     forAll(
       Table(
-        ("value", "isValid"),
-        (null, true),
-        ("1", false),
-        (3.14, true),
-        (1, true),
-        (5, true),
-        (6, false),
-        (21.37, false),
+        ("expression", "value", "isValid"),
+        ("", null, true),
+        ("'1'", "1", false),
+        ("3.14", 3.14, true),
+        ("1", 1, true),
+        ("5", 5, true),
+        ("6", 6, false),
+        ("21.37", 21.37, false),
       )
-    ) { (value, isValid) =>
-      validator.isValid("dummy", value, None).isValid shouldBe isValid
+    ) { (expression, value, isValid) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
     }
   }
 
@@ -144,7 +189,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("kot'", alaValidator, false),
       )
     ) { (value, validator, expected) =>
-      validator.isValid("dummy", value, None).isValid shouldBe expected
+      validator.isValid("dummy", Expression.spel(s"'$value'"), value, None).isValid shouldBe expected
     }
   }
 
