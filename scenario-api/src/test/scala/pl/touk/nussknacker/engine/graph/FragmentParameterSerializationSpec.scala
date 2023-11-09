@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentPar
   InputModeFixedList
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue => FragmentFixedExpressionValue,
+  FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
   FragmentParameterFixedValuesUserDefinedList,
@@ -23,7 +23,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       "name",
       FragmentClazzRef[String],
       required = true,
-      initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
+      initialValue = Some(FixedExpressionValue("'Tomasz'", "Tomasz")),
       hintText = Some("some hint text"),
       inputMode = InputModeAny
     )
@@ -52,7 +52,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
   test("properly serialize and deserialize FragmentParameterFixedValuesUserDefinedList") {
     val fixedValuesList =
-      List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
+      List(FixedExpressionValue("'aaa'", "aaa"), FixedExpressionValue("'bbb'", "bbb"))
 
     val referenceParameter = FragmentParameterFixedValuesUserDefinedList(
       "name",
