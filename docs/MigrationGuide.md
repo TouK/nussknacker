@@ -6,6 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.13.x (Not released yet)
 
 ### Code API changes
+* [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner:
   * `TestProcess.exceptions` type changed from `List[ExceptionResult[T]]` to `List[NuExceptionInfo[_ <: Throwable]]`
