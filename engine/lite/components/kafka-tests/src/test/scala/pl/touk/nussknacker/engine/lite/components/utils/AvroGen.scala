@@ -108,7 +108,7 @@ object AvroGen {
 
 object ExcludedConfig {
   // Array can't be root schema, see: https://github.com/confluentinc/schema-registry/issues/1298
-  private val DefaultRootExcluded: List[Type] = List(Type.NULL, Type.ARRAY)
+  private val DefaultRootExcluded: List[Type] = List(Type.ARRAY)
 
   val Base: ExcludedConfig = ExcludedConfig(DefaultRootExcluded, Nil)
 }

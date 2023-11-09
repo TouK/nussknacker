@@ -91,7 +91,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           sConfig(null, nullSchema, integerSchema, Input),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Integer'"))
+          invalidTypes("actual: 'Null' expected: 'Integer'")
         ),
         (
           sConfig(sampleBoolean, booleanSchema, integerSchema, Input),
@@ -112,7 +112,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           sConfig(sampleInteger, integerSchema, null),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Integer'"))
+          invalidTypes("actual: 'Null' expected: 'Integer'")
         ),
         (
           sConfig(sampleInteger, integerSchema, sampleString),
@@ -164,7 +164,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger.toLong)),
         (
           sConfig(null, nullSchema, longSchema, Input),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Long'"))
+          invalidTypes("actual: 'Null' expected: 'Long'")
         ),
         (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Long'")),
         (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("actual: 'String' expected: 'Long'")),
@@ -173,7 +173,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Long'")),
         (
           sConfig(sampleLong, longSchema, null),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Long'"))
+          invalidTypes("actual: 'Null' expected: 'Long'")
         ),
         (
           sConfig(sampleLong, longSchema, sampleString),
@@ -210,7 +210,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong.toFloat)),
         (
           sConfig(null, nullSchema, floatSchema, Input),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Float'"))
+          invalidTypes("actual: 'Null' expected: 'Float'")
         ),
         (
           sConfig(sampleBoolean, booleanSchema, floatSchema, Input),
@@ -220,7 +220,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Float'")),
         (
           sConfig(sampleFloat, floatSchema, null),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Float'"))
+          invalidTypes("actual: 'Null' expected: 'Float'")
         ),
         (
           sConfig(sampleFloat, floatSchema, sampleString),
@@ -246,7 +246,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong.toDouble)),
         (
           sConfig(null, nullSchema, doubleSchema, Input),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Double'"))
+          invalidTypes("actual: 'Null' expected: 'Double'")
         ),
         (
           sConfig(sampleBoolean, booleanSchema, doubleSchema, Input),
@@ -259,7 +259,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           sConfig(sampleDouble, doubleSchema, null),
-          emptyMandatoryParameter().findValid(invalidTypes("actual: 'Unknown' expected: 'Double'"))
+          invalidTypes("actual: 'Null' expected: 'Double'")
         ),
         (
           sConfig(sampleDouble, doubleSchema, sampleString),
@@ -1157,19 +1157,6 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
     error.getMessage shouldBe "Error serializing Avro message"
 
     error.getCause.getMessage shouldBe s"""Not in union ${nestedRecordV2FieldsSchema}: {"sub": {"price": $sampleDouble}, "str": "$sampleString"} (field=$RecordFieldName)"""
-  }
-
-  private def emptyMandatoryParameter(): ValidatedNel[ProcessCompilationError, RunResult[_]] = {
-    Invalid(
-      NonEmptyList.one(
-        EmptyMandatoryParameter(
-          "This field is mandatory and can not be empty",
-          "Please fill field for this parameter",
-          "Value",
-          "my-sink"
-        )
-      )
-    )
   }
 
   private def runWithValueResults(config: ScenarioConfig) =

@@ -51,17 +51,15 @@ class DelayedKafkaSourceFactory[K: ClassTag, V: ClassTag](
           (TopicParamName, DefinedEagerParameter(topic: String, _)) ::
           (TypeDefinitionParamName, DefinedEagerParameter(definition: TypeDefinition, _)) ::
           (TimestampFieldParamName, DefinedEagerParameter(field, _)) ::
-          (DelayParameterName, DefinedEagerParameter(delay, _)) :: Nil,
+          (DelayParameterName, DefinedEagerParameter(_, _)) :: Nil,
           _
         ) =>
       val topicValidationErrors = topicsValidationErrors(topic)
       calculateTypingResult(definition) match {
         case Valid((definition, typingResult)) =>
-          val delayValidationErrors =
-            Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
           val timestampValidationErrors =
             Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
-          val errors = topicValidationErrors ++ timestampValidationErrors ++ delayValidationErrors
+          val errors = topicValidationErrors ++ timestampValidationErrors
           prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, errors)
         case Invalid(exc) =>
           val errors = topicValidationErrors ++ List(exc.toCustomNodeError(nodeId))
@@ -81,11 +79,12 @@ class DelayedKafkaSourceFactory[K: ClassTag, V: ClassTag](
 
 object DelayedKafkaSourceFactory {
 
-  val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
+  private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
   final val DelayParameterName = "delayInMillis"
 
-  final val DelayParameter = Parameter.optional(DelayParameterName, Typed[java.lang.Long])
+  final val DelayParameter =
+    Parameter.optional(DelayParameterName, Typed[java.lang.Long]).copy(validators = delayValidators)
 
   final val TimestampFieldParamName = "timestampField"
 
@@ -101,10 +100,6 @@ object DelayedKafkaSourceFactory {
 
   def extractDelayInMillis(params: Map[String, Any]): Long =
     params(DelayParameterName).asInstanceOf[Long]
-
-  def validateDelay(value: java.lang.Long)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    delayValidators.flatMap(_.isValid(DelayParameterName, value, None).swap.toList)
-  }
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId
