@@ -571,7 +571,7 @@ object PeriodicProcessService {
         lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
       def last(status: PeriodicProcessDeploymentStatus) =
-        lastActiveDeploymentStatusForEachSchedule.findLast(_.status == status)
+        lastActiveDeploymentStatusForEachSchedule.reverse.find(_.status == status)
 
       first(PeriodicProcessDeploymentStatus.Deployed)
         .orElse(last(PeriodicProcessDeploymentStatus.Failed))

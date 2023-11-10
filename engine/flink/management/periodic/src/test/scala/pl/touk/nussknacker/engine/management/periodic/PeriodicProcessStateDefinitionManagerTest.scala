@@ -49,7 +49,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     val firstDeploymentStatus = DeploymentStatus(
       generateDeploymentId,
       firstScheduleId,
-      fooCreatedAt,
+      fooCreatedAt.minusMinutes(1),
       fooRunAt,
       PeriodicProcessDeploymentStatus.Deployed,
       processActive = true,
