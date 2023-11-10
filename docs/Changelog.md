@@ -1,5 +1,8 @@
 # Changelog
 
+1.12.4 (?? Oct 2023)
+* [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: Sort PeriodicProcessDeployments by `runAt` and `createdAt` and instead of `runAt` only.
+
 1.12.3 (26 Oct 2023)
 1.12.2 (25 Oct 2023)
 1.12.1 (25 Oct 2023)
