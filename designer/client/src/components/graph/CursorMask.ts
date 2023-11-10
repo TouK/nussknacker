@@ -1,17 +1,18 @@
 import { CSSProperties } from "react";
 
 export class CursorMask {
-    private readonly cursorMask: HTMLElement;
-
-    constructor(element: HTMLElement) {
-        this.cursorMask = element;
-    }
+    private cursorMask: HTMLElement;
 
     enable(cursor: CSSProperties["cursor"] = "not-allowed"): void {
-        this.cursorMask.style.cursor = cursor;
+        this.cursorMask = document.createElement("style");
+        this.cursorMask.innerHTML = `*{cursor: ${cursor}!important;}`;
+        this.cursorMask.id = "cursor-style";
+        document.head.appendChild(this.cursorMask);
     }
 
     disable(): void {
-        this.cursorMask.style.cursor = "initial";
+        if (this.cursorMask) {
+            this.cursorMask.remove();
+        }
     }
 }

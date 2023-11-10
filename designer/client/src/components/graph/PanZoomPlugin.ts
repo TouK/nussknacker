@@ -28,7 +28,7 @@ export class PanZoomPlugin {
     private panEnabled = false;
 
     constructor(private paper: dia.Paper) {
-        this.cursorMask = new CursorMask(paper.el);
+        this.cursorMask = new CursorMask();
         this.instance = svgPanZoom(paper.svg, {
             fit: false,
             contain: false,

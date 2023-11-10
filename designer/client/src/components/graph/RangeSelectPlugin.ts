@@ -16,7 +16,7 @@ export interface RangeSelectedEventData {
 }
 
 export class RangeSelectPlugin {
-    private readonly cursorMask: CursorMask;
+    private readonly cursorMask = new CursorMask();
     private readonly rectangle = new shapes.standard.Rectangle();
     private readonly pressedKeys = pressedKeys.map((events) => events.map((e) => e.key));
     private keys: string[];
@@ -24,7 +24,6 @@ export class RangeSelectPlugin {
     private getPinchEventActive: () => boolean;
 
     constructor(private paper: dia.Paper, getPinchEventActive: () => boolean) {
-        this.cursorMask = new CursorMask(paper.el);
         this.getPinchEventActive = getPinchEventActive;
         this.pressedKeys.onValue(this.onPressedKeysChange);
         paper.on(Events.BLANK_POINTERDOWN, this.onInit.bind(this));
