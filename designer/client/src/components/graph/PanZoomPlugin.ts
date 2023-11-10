@@ -25,10 +25,10 @@ export class PanZoomPlugin {
         touched?: boolean;
     };
 
-    private disabledPan = true;
+    private panEnabled = false;
 
     constructor(private paper: dia.Paper) {
-        this.cursorMask = new CursorMask();
+        this.cursorMask = new CursorMask(paper.el);
         this.instance = svgPanZoom(paper.svg, {
             fit: false,
             contain: false,
@@ -63,7 +63,7 @@ export class PanZoomPlugin {
     private handleBlankPointerDown = (event: dia.Event) => {
         if (isTouchEvent(event)) {
             const pressTimer = setTimeout(() => {
-                this.disabledPan = true;
+                this.panEnabled = false;
             }, LONG_PRESS_TIME);
             this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
             this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
@@ -189,18 +189,22 @@ export class PanZoomPlugin {
 
     private initPanMove = (paper: dia.Paper) => {
         const hammer = new Hammer(paper.el);
-        hammer.get("pan").set({ threshold: 2 });
+        hammer.get("pan").set({
+            threshold: 2,
+            direction: Hammer.DIRECTION_ALL,
+            enable: (recognizer, input) => {
+                const isInitialPanTouch = input?.isFirst;
 
-        paper.on("blank:pointerdown", (e) => {
-            this.disabledPan = e.target?.parentElement?.id !== "nk-graph-main";
+                if (isInitialPanTouch) {
+                    const diagramBoardIds = ["nk-graph-main", "nk-graph-fragment"];
+                    this.panEnabled = diagramBoardIds.some((diagramBoardId) => diagramBoardId === input?.target.parentElement.id);
+                }
+
+                return this.panEnabled;
+            },
         });
 
         hammer.on("panstart", (event) => {
-            if (this.disabledPan) {
-                this.cleanup();
-                return;
-            }
-
             this.initMove(event.pointers[0]);
         });
 
@@ -227,7 +231,6 @@ export class PanZoomPlugin {
                 event.pointers[0].stopImmediatePropagation();
             }
             this.cleanup();
-            this.disabledPan = true;
         });
     };
 
