@@ -26,6 +26,7 @@ object PeriodicProcessesRepository {
     val process = createPeriodicProcess(processEntity)
     PeriodicProcessDeployment(
       processDeploymentEntity.id,
+      processDeploymentEntity.createdAt,
       process,
       processDeploymentEntity.runAt,
       ScheduleName(processDeploymentEntity.scheduleName),
@@ -309,7 +310,7 @@ class SlickPeriodicProcessesRepository(
         (
           rowNumber() :: Over
             .partitionBy((deployment.periodicProcessId, deployment.scheduleName))
-            .sortBy(deployment.runAt.desc),
+            .sortBy(deployment.runAt.desc, deployment.createdAt.desc),
           process,
           deployment
         )
@@ -354,7 +355,7 @@ class SlickPeriodicProcessesRepository(
               .filter(deployment =>
                 deployment.periodicProcessId === process.id && (deployment.scheduleName === scheduleName || deployment.scheduleName.isEmpty && scheduleName.isEmpty)
               )
-              .sortBy(_.runAt.desc)
+              .sortBy(a => (a.runAt.desc, a.createdAt.desc))
               .take(deploymentsPerScheduleMaxCount)
               .result
               .map(_.map((process, _)))

@@ -9,6 +9,7 @@ import java.time.{Clock, LocalDateTime}
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
 case class PeriodicProcessDeployment(
     id: PeriodicProcessDeploymentId,
+    createdAt: LocalDateTime,
     periodicProcess: PeriodicProcess,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,

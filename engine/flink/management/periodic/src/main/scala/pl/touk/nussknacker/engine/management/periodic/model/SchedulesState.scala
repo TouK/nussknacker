@@ -44,13 +44,14 @@ case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 
 case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
+    createdAt: LocalDateTime,
     runAt: LocalDateTime,
     retriesLeft: Int,
     nextRetryAt: Option[LocalDateTime],
     state: PeriodicProcessDeploymentState
 ) {
   def toFullDeploymentData(process: PeriodicProcess, scheduleName: ScheduleName): PeriodicProcessDeployment =
-    PeriodicProcessDeployment(id, process, runAt, scheduleName, retriesLeft, nextRetryAt, state)
+    PeriodicProcessDeployment(id, createdAt, process, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
   def display = s"deploymentId=$id"
 
@@ -61,6 +62,7 @@ object ScheduleDeploymentData {
   def apply(deployment: PeriodicProcessDeploymentEntity): ScheduleDeploymentData = {
     ScheduleDeploymentData(
       deployment.id,
+      deployment.createdAt,
       deployment.runAt,
       deployment.retriesLeft,
       deployment.nextRetryAt,

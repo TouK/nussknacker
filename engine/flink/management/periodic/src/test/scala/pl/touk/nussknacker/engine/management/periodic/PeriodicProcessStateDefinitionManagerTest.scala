@@ -22,6 +22,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
 
   private val fooRunAt = LocalDateTime.of(2023, 1, 1, 10, 0)
 
+  private val fooCreatedAt = fooRunAt.minusMinutes(5)
+
   private val notNamedScheduleId = ScheduleId(fooProcessId, ScheduleName(None))
 
   private val nextDeploymentId = new AtomicLong()
@@ -31,6 +33,7 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("display periodic deployment status for not named schedule") {
     val deploymentStatus = DeploymentStatus(
       generateDeploymentId,
+      fooCreatedAt,
       notNamedScheduleId,
       fooRunAt,
       PeriodicProcessDeploymentStatus.Scheduled,
@@ -41,29 +44,31 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     statusTooltip(status) shouldEqual "Scheduled at: 2023-01-01 10:00 status: Scheduled"
   }
 
-  test("display periodic deployment status for named schedules") {
+  test("display sorted periodic deployment status for named schedules") {
     val firstScheduleId = generateScheduleId
     val firstDeploymentStatus = DeploymentStatus(
       generateDeploymentId,
+      fooCreatedAt,
       firstScheduleId,
       fooRunAt,
-      PeriodicProcessDeploymentStatus.Scheduled,
+      PeriodicProcessDeploymentStatus.Deployed,
       processActive = true,
       None
     )
     val secScheduleId = generateScheduleId
     val secDeploymentStatus = DeploymentStatus(
       generateDeploymentId,
+      fooCreatedAt,
       secScheduleId,
       fooRunAt,
-      PeriodicProcessDeploymentStatus.Deployed,
+      PeriodicProcessDeploymentStatus.Scheduled,
       processActive = true,
       None
     )
     val status = PeriodicProcessStatus(List(firstDeploymentStatus, secDeploymentStatus), List.empty)
     statusTooltip(status) shouldEqual
-      s"""Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
-         |Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
+      s"""Schedule ${secScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Scheduled,
+         |Schedule ${firstScheduleId.scheduleName.display} scheduled at: 2023-01-01 10:00 status: Deployed""".stripMargin
   }
 
   private def generateDeploymentId = PeriodicProcessDeploymentId(nextDeploymentId.getAndIncrement())
