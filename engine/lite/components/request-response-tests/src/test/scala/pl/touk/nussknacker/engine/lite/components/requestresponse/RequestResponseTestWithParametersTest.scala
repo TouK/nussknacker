@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse
 
 import com.typesafe.config.ConfigFactory
 import io.circe.parser.parse
-import io.circe.syntax.EncoderOps
-import io.circe.{Json, parser}
 import org.everit.json.schema.EmptySchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -18,15 +16,13 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
   InputModeAny,
-  InputModeAnyWithSuggestions,
-  InputModeFixedList
+  InputModeAnyWithSuggestions
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterFixedValuesUserDefinedList,
-  FragmentParameterNoFixedValues
+  FragmentParameterInputConfig
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
@@ -184,18 +180,18 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameters.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
   }
 
-  test("should generate parameters for expanded fragment input definition - NoFixedValues") {
+  test("should generate parameters for expanded fragment input definition without fixed values") {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameterNoFixedValues(
+        FragmentParameter(
           "name",
           FragmentClazzRef[String],
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
-          inputMode = InputModeAny
+          inputConfig = FragmentParameterInputConfig(InputModeAny, None)
         )
       )
     )
@@ -210,7 +206,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.hintText shouldBe Some("some hint text")
   }
 
-  test("should generate complex parameters for expanded fragment input definition - FixedValuesUserDefinedList") {
+  test("should generate complex parameters for expanded fragment input definition with fixed values") {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
 
     val fixedValuesList =
@@ -218,14 +214,16 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameterFixedValuesUserDefinedList(
+        FragmentParameter(
           "name",
           FragmentClazzRef[String],
           required = false,
-          fixedValuesList = fixedValuesList,
           initialValue = None,
           hintText = None,
-          inputMode = InputModeAnyWithSuggestions
+          inputConfig = FragmentParameterInputConfig(
+            inputMode = InputModeAnyWithSuggestions,
+            fixedValuesList = Some(fixedValuesList)
+          )
         )
       )
     )

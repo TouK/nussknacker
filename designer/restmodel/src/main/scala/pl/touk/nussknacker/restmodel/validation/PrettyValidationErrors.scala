@@ -150,6 +150,12 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(paramName)
         )
+      case InvalidParameterInputConfig(paramName, _) =>
+        node(
+          s"The input configuration for $paramName is invalid.",
+          "Please check fragment definition",
+          fieldName = Some(paramName)
+        )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",

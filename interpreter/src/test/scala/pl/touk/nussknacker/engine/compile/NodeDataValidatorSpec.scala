@@ -38,8 +38,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterFixedValuesUserDefinedList,
-  FragmentParameterNoFixedValues
+  FragmentParameterInputConfig
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -569,6 +568,42 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should validate fragment parameter input config") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
+              hintText = None,
+              inputConfig = FragmentParameterInputConfig(
+                inputMode = InputModeAny,
+                fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidParameterInputConfig("param1", nodes)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   test("should validate initial value outside possible values in FragmentInputDefinition") {
     val nodeId: String = "in"
     val nodes          = Set(nodeId)
@@ -577,14 +612,16 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterFixedValuesUserDefinedList(
+            FragmentParameter(
               "param1",
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
               hintText = None,
-              inputMode = InputModeFixedList,
-              fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue"))
+              inputConfig = FragmentParameterInputConfig(
+                inputMode = InputModeFixedList,
+                fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+              )
             )
           ),
         ),
@@ -612,13 +649,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterNoFixedValues(
+            FragmentParameter(
               "param1",
               FragmentClazzRef[Boolean],
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              inputMode = InputModeAny
+              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -640,14 +677,16 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterFixedValuesUserDefinedList(
+            FragmentParameter(
               "param1",
               FragmentClazzRef[Boolean],
               required = false,
               initialValue = None,
               hintText = None,
-              inputMode = InputModeFixedList,
-              fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean"))
+              inputConfig = FragmentParameterInputConfig(
+                inputMode = InputModeFixedList,
+                fixedValuesList = Some(List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")))
+              )
             )
           ),
         ),
@@ -670,21 +709,21 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterNoFixedValues(
+            FragmentParameter(
               "otherStringParam",
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
               hintText = None,
-              inputMode = InputModeAny
+              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
             ),
-            FragmentParameterNoFixedValues(
+            FragmentParameter(
               "param1",
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              inputMode = InputModeAny
+              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -706,13 +745,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterNoFixedValues(
+            FragmentParameter(
               "param1",
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              inputMode = InputModeAny
+              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -735,13 +774,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         FragmentInputDefinition(
           nodeId,
           List(
-            FragmentParameterNoFixedValues(
+            FragmentParameter(
               paramName,
               FragmentClazzRef(invalidType),
               required = false,
               initialValue = None,
               hintText = None,
-              inputMode = InputModeAny
+              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
             )
           ),
         ),

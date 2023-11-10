@@ -38,11 +38,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentPar
   FragmentParameterInputMode,
   InputModeFixedList
 }
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FragmentParameter,
-  FragmentParameterFixedValuesUserDefinedList,
-  FragmentParameterNoFixedValues
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
@@ -138,16 +134,16 @@ class FragmentComponentDefinitionExtractor(
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
 
-    val extractedEditor = fragmentParameter match {
-      case param: FragmentParameterFixedValuesUserDefinedList =>
+    val extractedEditor = fragmentParameter.inputConfig.fixedValuesList
+      .map { fixedValues =>
         fixedValuesEditorWithInputMode(
-          param.inputMode,
+          fragmentParameter.inputConfig.inputMode,
           FixedValuesParameterEditor(
-            param.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+            fixedValues.map(v => FixedExpressionValue(v.expression, v.label))
           )
         )
-      case _: FragmentParameterNoFixedValues => EditorExtractor.extract(parameterData, config)
-    }
+      }
+      .getOrElse(EditorExtractor.extract(parameterData, config))
 
     val isOptional = !fragmentParameter.required
     Parameter

@@ -25,8 +25,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterFixedValuesUserDefinedList,
-  FragmentParameterNoFixedValues
+  FragmentParameterInputConfig
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -432,13 +431,13 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
             FragmentInputDefinition(
               "in",
               List(
-                FragmentParameterNoFixedValues(
+                FragmentParameter(
                   "subParam1",
                   FragmentClazzRef("thisTypeDoesntExist"),
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputMode = InputModeAny,
+                  inputConfig = FragmentParameterInputConfig(InputModeAny, None)
                 )
               )
             )
@@ -478,23 +477,29 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
             FragmentInputDefinition(
               "in",
               List(
-                FragmentParameterFixedValuesUserDefinedList(
+                FragmentParameter(
                   "subParam1",
                   FragmentClazzRef[String],
                   required = false,
                   initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
-                  inputMode = InputModeFixedList,
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+                  inputConfig = FragmentParameterInputConfig(
+                    inputMode = InputModeFixedList,
+                    fixedValuesList =
+                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                  )
                 ),
-                FragmentParameterFixedValuesUserDefinedList(
+                FragmentParameter(
                   "subParam2",
                   FragmentClazzRef[Boolean],
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputMode = InputModeFixedList,
-                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+                  inputConfig = FragmentParameterInputConfig(
+                    inputMode = InputModeFixedList,
+                    fixedValuesList =
+                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                  )
                 )
               )
             )
@@ -576,14 +581,16 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
           FragmentInputDefinition(
             "in",
             List(
-              FragmentParameterFixedValuesUserDefinedList(
+              FragmentParameter(
                 "subParam1",
                 FragmentClazzRef[String],
                 required = true,
                 initialValue = None,
                 None,
-                inputMode = InputModeFixedList,
-                fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))
+                inputConfig = FragmentParameterInputConfig(
+                  inputMode = InputModeFixedList,
+                  fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                )
               ),
             )
           )

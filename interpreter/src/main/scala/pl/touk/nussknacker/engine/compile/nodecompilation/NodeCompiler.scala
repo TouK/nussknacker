@@ -39,7 +39,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{
   DefaultServiceInvoker,
   FragmentComponentDefinitionExtractor,
-  FragmentParameterValidator,
   ProcessDefinitionExtractor
 }
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
