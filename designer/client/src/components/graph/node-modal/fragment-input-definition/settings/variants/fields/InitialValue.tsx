@@ -1,7 +1,7 @@
 import React from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
-import { DefaultParameterVariant, onChangeType, FragmentInputParameter, StringOrBooleanParameterVariant } from "../../../item";
+import { onChangeType, FragmentInputParameter } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { NodeInput } from "../../../../../../withFocus";
 
@@ -15,6 +15,7 @@ interface InitialValue {
 export default function InitialValue({ onChange, item, path, options }: InitialValue) {
     const { t } = useTranslation();
 
+    const OptionsWithEmptyValue = options.unshift({ label: "", value: null });
     return (
         <SettingRow>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>

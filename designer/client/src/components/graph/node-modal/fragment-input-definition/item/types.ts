@@ -41,22 +41,21 @@ export interface DefaultParameterVariant extends GenericParameterVariant, Fragme
 }
 
 export interface FixedListParameterVariant extends GenericParameterVariant {
-    inputMode: InputMode.FixedList;
-    fixedValuesList: FixedValuesOption[];
-    allowOnlyValuesFromFixedValuesList: boolean;
+    inputMode?: InputMode.FixedList;
+    fixedValuesList?: FixedValuesOption[];
     fixedValuesListPresetId: string;
     presetSelection: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputMode: InputMode.AnyValueWithSuggestions;
-    fixedValuesList: FixedValuesOption[];
+    inputMode?: InputMode.AnyValueWithSuggestions;
+    fixedValuesList?: FixedValuesOption[];
     fixedValuesListPresetId: string;
     presetSelection: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputMode: InputMode.AnyValue;
+    inputMode?: InputMode.AnyValue;
     fixedValuesType: FixedValuesType;
 }
 

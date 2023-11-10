@@ -23,7 +23,9 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: P
         label: label,
         value: label,
     }));
-    const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
+
+    const fixedValuesList = item.fixedValuesList ?? [];
+    const fixedValuesListOptions: Option[] = fixedValuesList.map(({ label }) => ({ label, value: label }));
     const fixedValuesType = item.fixedValuesType;
 
     return (
@@ -34,7 +36,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: P
                 onChange={onChange}
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
-                fixedValuesList={item.fixedValuesList}
+                fixedValuesList={fixedValuesList}
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
             />

@@ -40,7 +40,7 @@ export function FixedValuesSetting({
     };
     return (
         <>
-            {fixedValuesType === "Preset" ? (
+            {fixedValuesType === FixedValuesType.Preset && (
                 <SettingRow>
                     <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
@@ -53,7 +53,8 @@ export function FixedValuesSetting({
                     />
                     {selectedPresetValueExpressions?.length > 0 && <ListItems items={selectedPresetValueExpressions} />}
                 </SettingRow>
-            ) : (
+            )}
+            {fixedValuesType === FixedValuesType.UserDefinedList && (
                 <SettingRow>
                     <SettingLabelStyled required>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
                     <NodeInput
@@ -63,6 +64,7 @@ export function FixedValuesSetting({
                         onKeyUp={(event) => {
                             if (event.key === "Enter") {
                                 const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
+                                console.log(updatedList);
                                 onChange(`${path}.fixedValuesList`, updatedList);
                                 setTemporaryListItem("");
                             }

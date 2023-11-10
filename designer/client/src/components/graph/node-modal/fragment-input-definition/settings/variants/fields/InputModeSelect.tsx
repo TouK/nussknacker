@@ -26,7 +26,6 @@ export default function InputModeSelect(props: Props) {
                             onChange(`${path}.initialValue`, "");
                         }
                         onChange(`${path}.inputMode`, value);
-                        onChange(`${path}.allowOnlyValuesFromFixedValuesList`, value === "FixedList");
                     }}
                     value={inputModeOptions.find((inputModeOption) => inputModeOption.value === item.inputMode)}
                     options={inputModeOptions}

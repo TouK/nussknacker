@@ -25,7 +25,9 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
         label: label,
         value: label,
     }));
-    const fixedValuesListOptions: Option[] = (item.fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
+
+    const fixedValuesList = item.fixedValuesList ?? [];
+    const fixedValuesListOptions: Option[] = fixedValuesList.map(({ label }) => ({ label, value: label }));
 
     const fixedValuesType = item.fixedValuesType;
 
@@ -37,11 +39,11 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 onChange={onChange}
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
-                fixedValuesList={item.fixedValuesList}
+                fixedValuesList={fixedValuesList}
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
             />
-            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />
+            {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
                 path={path}
                 item={item}

@@ -2,14 +2,13 @@ import { FixedValuesType, FragmentInputParameter, StringOrBooleanParameterVarian
 
 export const getDefaultFields = (refClazzName: string): FragmentInputParameter => {
     return {
-        allowOnlyValuesFromFixedValuesList: false,
         isOpen: false,
         inputMode: undefined,
         name: "",
         required: false,
         hintText: "",
         initialValue: "",
-        fixedValuesType: FixedValuesType.Preset,
+        fixedValuesType: FixedValuesType.UserDefinedList,
         validationExpression: "",
         fixedValuesList: [],
         fixedValuesListPresetId: "",

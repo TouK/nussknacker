@@ -19,7 +19,7 @@ export const AnyValueVariant = ({ item, path, variableTypes, onChange }: Props) 
 
     return (
         <>
-            <ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />
+            {/*<ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />*/}
             <InitialValue path={path} item={item} onChange={onChange} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
