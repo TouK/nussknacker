@@ -96,13 +96,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       "'tereferer'",
       List("", "'fullname'", "'generated-avro'"),
       "id"
-    ) :: InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") ::
-      EmptyMandatoryParameter(
-        "This field is mandatory and can not be empty",
-        "Please fill field for this parameter",
-        "Value",
-        "id"
-      ) :: Nil
+    ) :: InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
   }
 
   test("should return sane error on invalid version") {
@@ -120,11 +114,6 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       None,
       "'343543'",
       List("'latest'", "'1'", "'2'", "'3'"),
-      "id"
-    ) :: EmptyMandatoryParameter(
-      "This field is mandatory and can not be empty",
-      "Please fill field for this parameter",
-      "Value",
       "id"
     ) :: Nil
   }

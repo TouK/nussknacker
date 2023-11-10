@@ -503,14 +503,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
           "key for branch branch1",
           "join1"
         ),
-        List(
-          EmptyMandatoryParameter(
-            "This field is mandatory and can not be empty",
-            "Please fill field for this parameter",
-            "value for branch branch2",
-            "join1"
-          )
-        )
+        Nil
       )
     )
   }
