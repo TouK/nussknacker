@@ -17,8 +17,8 @@ object PeriodicProcessDeploymentGen {
   def apply(): PeriodicProcessDeployment = {
     PeriodicProcessDeployment(
       id = PeriodicProcessDeploymentId(42),
-      createdAt = now.minusMinutes(10),
       periodicProcess = PeriodicProcessGen(),
+      createdAt = now.minusMinutes(10),
       runAt = now,
       scheduleName = ScheduleName(None),
       retriesLeft = 0,

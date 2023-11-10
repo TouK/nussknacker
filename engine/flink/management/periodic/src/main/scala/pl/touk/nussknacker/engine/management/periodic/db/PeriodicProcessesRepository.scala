@@ -26,8 +26,8 @@ object PeriodicProcessesRepository {
     val process = createPeriodicProcess(processEntity)
     PeriodicProcessDeployment(
       processDeploymentEntity.id,
-      processDeploymentEntity.createdAt,
       process,
+      processDeploymentEntity.createdAt,
       processDeploymentEntity.runAt,
       ScheduleName(processDeploymentEntity.scheduleName),
       processDeploymentEntity.retriesLeft,

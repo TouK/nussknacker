@@ -419,8 +419,8 @@ class PeriodicProcessService(
         scheduleData.latestDeployments.map { deployment =>
           DeploymentStatus(
             deployment.id,
-            deployment.createdAt,
             scheduleId,
+            deployment.createdAt,
             deployment.runAt,
             deployment.state.status,
             scheduleData.process.active,
@@ -428,8 +428,7 @@ class PeriodicProcessService(
           )
         }
       }
-      .sortBy(_.runAtWithCreatedAt)
-      .reverse
+      .sorted(DeploymentStatus.ordering.reverse)
 
     for {
       activeSchedules <- getLatestDeploymentsForActiveSchedules(name, MaxDeploymentsStatus)
@@ -499,9 +498,7 @@ object PeriodicProcessService {
     def limitedAndSortedDeployments: List[DeploymentStatus] =
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
-      ))
-        .sortBy(_.runAtWithCreatedAt)
-        .reverse
+      )).sorted(DeploymentStatus.ordering.reverse)
 
     // We present merged name to be possible to filter scenario by status
     override def name: StatusName = mergedStatusDetails.status.name
@@ -568,13 +565,13 @@ object PeriodicProcessService {
       */
     def pickMostImportantActiveDeployment: Option[DeploymentStatus] = {
       val lastActiveDeploymentStatusForEachSchedule =
-        latestDeploymentForEachSchedule(activeDeploymentsStatuses)
-          .sortBy(_.runAtWithCreatedAt)
+        latestDeploymentForEachSchedule(activeDeploymentsStatuses).sorted
+
       def first(status: PeriodicProcessDeploymentStatus) =
         lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
       def last(status: PeriodicProcessDeploymentStatus) =
-        lastActiveDeploymentStatusForEachSchedule.reverse.find(_.status == status)
+        lastActiveDeploymentStatusForEachSchedule.findLast(_.status == status)
 
       first(PeriodicProcessDeploymentStatus.Deployed)
         .orElse(last(PeriodicProcessDeploymentStatus.Failed))
@@ -589,7 +586,7 @@ object PeriodicProcessService {
         .groupBy(_.scheduleId)
         .values
         .toList
-        .map(_.sortBy(_.runAtWithCreatedAt).reverse.head)
+        .map(_.min(DeploymentStatus.ordering.reverse))
     }
 
   }
@@ -597,8 +594,8 @@ object PeriodicProcessService {
   case class DeploymentStatus( // Probably it is too much technical to present to users, but the only other alternative
       // to present to users is scheduleName+runAt
       deploymentId: PeriodicProcessDeploymentId,
-      createdAt: LocalDateTime,
       scheduleId: ScheduleId,
+      createdAt: LocalDateTime,
       runAt: LocalDateTime,
       // This status is almost fine but:
       // - we don't have cancel status - we have to check processActive as well (isCanceled)
@@ -608,8 +605,6 @@ object PeriodicProcessService {
       // Some additional information that are available in StatusDetails returned by engine runtime
       runtimeStatusOpt: Option[StatusDetails]
   ) {
-
-    val runAtWithCreatedAt: (LocalDateTime, LocalDateTime) = (runAt, createdAt)
 
     def scheduleName: ScheduleName = scheduleId.scheduleName
 
@@ -623,6 +618,17 @@ object PeriodicProcessService {
       // We don't have Canceled status, because of that we base on tricky assumption. It can be wrong when we cancel
       // scenario just after it was marked as finished and is not rescheduled yet
       !processActive && status != PeriodicProcessDeploymentStatus.Finished
+    }
+
+  }
+
+  object DeploymentStatus {
+
+    implicit val ordering: Ordering[DeploymentStatus] = (self: DeploymentStatus, that: DeploymentStatus) => {
+      self.runAt.compareTo(that.runAt) match {
+        case 0 => self.createdAt.compareTo(that.createdAt)
+        case a => a
+      }
     }
 
   }

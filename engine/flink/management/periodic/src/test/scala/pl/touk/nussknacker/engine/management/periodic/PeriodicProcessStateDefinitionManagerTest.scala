@@ -33,8 +33,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
   test("display periodic deployment status for not named schedule") {
     val deploymentStatus = DeploymentStatus(
       generateDeploymentId,
-      fooCreatedAt,
       notNamedScheduleId,
+      fooCreatedAt,
       fooRunAt,
       PeriodicProcessDeploymentStatus.Scheduled,
       processActive = true,
@@ -48,8 +48,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     val firstScheduleId = generateScheduleId
     val firstDeploymentStatus = DeploymentStatus(
       generateDeploymentId,
-      fooCreatedAt,
       firstScheduleId,
+      fooCreatedAt,
       fooRunAt,
       PeriodicProcessDeploymentStatus.Deployed,
       processActive = true,
@@ -58,8 +58,8 @@ class PeriodicProcessStateDefinitionManagerTest extends AnyFunSuite with Matcher
     val secScheduleId = generateScheduleId
     val secDeploymentStatus = DeploymentStatus(
       generateDeploymentId,
-      fooCreatedAt,
       secScheduleId,
+      fooCreatedAt,
       fooRunAt,
       PeriodicProcessDeploymentStatus.Scheduled,
       processActive = true,

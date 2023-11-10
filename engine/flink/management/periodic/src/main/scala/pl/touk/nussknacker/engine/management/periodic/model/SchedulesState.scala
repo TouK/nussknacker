@@ -51,7 +51,7 @@ case class ScheduleDeploymentData(
     state: PeriodicProcessDeploymentState
 ) {
   def toFullDeploymentData(process: PeriodicProcess, scheduleName: ScheduleName): PeriodicProcessDeployment =
-    PeriodicProcessDeployment(id, createdAt, process, runAt, scheduleName, retriesLeft, nextRetryAt, state)
+    PeriodicProcessDeployment(id, process, createdAt, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
   def display = s"deploymentId=$id"
 
