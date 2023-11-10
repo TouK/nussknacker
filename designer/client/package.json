@@ -47,7 +47,7 @@
         "@mui/material": "5.10.17",
         "@touk/window-manager": "1.7.0",
         "ace-builds": "1.28.0",
-        "axios": "0.25.0",
+        "axios": "1.6.1",
         "dagre": "0.8.5",
         "event-from": "1.0.0",
         "file-saver": "2.0.5",
