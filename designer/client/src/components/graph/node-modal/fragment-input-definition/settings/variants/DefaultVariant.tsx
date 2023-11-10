@@ -21,7 +21,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes }: Props) =
     return (
         <SettingsWrapper>
             <SettingRow>
-                <SettingLabelStyled>{t("fragment.required", "Required:")}</SettingLabelStyled>
+                <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
                     label=""

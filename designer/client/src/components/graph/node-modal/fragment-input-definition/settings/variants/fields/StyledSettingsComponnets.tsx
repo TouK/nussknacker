@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Typography, styled } from "@mui/material";
+import { Switch, Typography, styled, FormLabel } from "@mui/material";
 import { NodeRow } from "../../../../NodeDetailsContent/NodeStyled";
 
 export const SettingsWrapper = styled("div")`
@@ -11,7 +11,7 @@ export const SettingsWrapper = styled("div")`
     margin-bottom: 20px;
 `;
 
-export const SettingLabelStyled = styled("div")(
+export const SettingLabelStyled = styled(FormLabel)(
     ({ theme }) => `
     font-family: Open Sans;
     color: ${theme.custom.colors.baseColor};
@@ -80,4 +80,4 @@ export const StyledFormControlLabel = styled(Typography)`
     text-align: left;
 `;
 
-export const fieldLabel = (label: string) => <SettingLabelStyled>{label}</SettingLabelStyled>;
+export const fieldLabel = (label: string) => <SettingLabelStyled required>{label}</SettingLabelStyled>;

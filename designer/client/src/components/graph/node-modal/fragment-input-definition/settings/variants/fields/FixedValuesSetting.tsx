@@ -42,7 +42,7 @@ export function FixedValuesSetting({
         <>
             {fixedValuesType === "Preset" ? (
                 <SettingRow>
-                    <SettingLabelStyled>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
+                    <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
                         onChange={(value) => {
                             onChange(`${path}.fixedValuesListPresetId`, value);
@@ -55,7 +55,7 @@ export function FixedValuesSetting({
                 </SettingRow>
             ) : (
                 <SettingRow>
-                    <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
+                    <SettingLabelStyled required>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
                     <NodeInput
                         style={{ width: "70%" }}
                         value={temporaryListItem}

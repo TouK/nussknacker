@@ -20,7 +20,7 @@ export default function ValidationsFields(props: ValidationsFields) {
     return (
         <>
             <SettingRow>
-                <SettingLabelStyled>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
+                <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={<CustomSwitch checked={validation} onChange={(event) => setValidation(event.currentTarget.checked)} />}
                     label=""

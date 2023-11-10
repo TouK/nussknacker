@@ -27,7 +27,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
     return (
         <SettingsWrapper>
             <SettingRow>
-                <SettingLabelStyled>{t("fragment.required", "Required:")}</SettingLabelStyled>
+                <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
                     control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
                     label=""

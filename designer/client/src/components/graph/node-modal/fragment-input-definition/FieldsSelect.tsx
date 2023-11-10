@@ -56,7 +56,7 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                 />
             );
         },
-        [namespace, onChange, options, variableTypes, readOnly, showValidation],
+        [namespace, onChange, options, readOnly, variableTypes, showValidation, fixedValuesPresets],
     );
 
     const changeOrder = useCallback((value) => onChange(namespace, value), [namespace, onChange]);
