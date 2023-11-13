@@ -68,15 +68,12 @@ case object NotNullParameterValidator extends ParameterValidator {
 
 case object NotBlankParameterValidator extends ParameterValidator {
 
-  private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("^\\s*$")
-
-  // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
     value match {
       case null      => valid(())
-      case s: String => if (isBlankStringLiteral(s)) invalid(error(paramName, nodeId.id)) else valid(())
+      case s: String => if (s.isBlank) invalid(error(paramName, nodeId.id)) else valid(())
       case _         => valid(())
     }
 
@@ -87,8 +84,6 @@ case object NotBlankParameterValidator extends ParameterValidator {
     nodeId
   )
 
-  private def isBlankStringLiteral(value: String): Boolean =
-    blankStringLiteralPattern.matcher(value.trim).matches()
 }
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
