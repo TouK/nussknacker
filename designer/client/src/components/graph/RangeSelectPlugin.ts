@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
-import { CursorMask } from "./CursorMask";
+import { GlobalCursor } from "./GlobalCursor";
 import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
@@ -16,7 +16,7 @@ export interface RangeSelectedEventData {
 }
 
 export class RangeSelectPlugin {
-    private readonly cursorMask = new CursorMask();
+    private readonly globalCursor = new GlobalCursor();
     private readonly rectangle = new shapes.standard.Rectangle();
     private readonly pressedKeys = pressedKeys.map((events) => events.map((e) => e.key));
     private keys: string[];
@@ -87,7 +87,7 @@ export class RangeSelectPlugin {
 
     private startSelection(event: dia.Event) {
         event.stopImmediatePropagation();
-        this.cursorMask.enable("crosshair");
+        this.globalCursor.enable("crosshair");
 
         this.selectStart = {
             x: event.clientX,
@@ -169,7 +169,7 @@ export class RangeSelectPlugin {
     }
 
     private cleanup(): void {
-        this.cursorMask.disable();
+        this.globalCursor.disable();
         this.rectangle.remove();
         this.selectStart = null;
     }
