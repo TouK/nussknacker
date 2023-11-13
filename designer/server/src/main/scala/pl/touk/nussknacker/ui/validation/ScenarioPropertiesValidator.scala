@@ -8,10 +8,13 @@ import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, P
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+
+import scala.util.Try
 
 class ScenarioPropertiesValidator(
     scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
@@ -60,7 +63,18 @@ class ScenarioPropertiesValidator(
 
     propertiesWithConfiguredValidator
       .collect { case (property, Some(config), validator: ParameterValidator) =>
-        validator.isValid(property._1, property._2, config.label).toValidatedNel
+        val expression = property._2
+        val value = expression match {
+          case ex if ex.isBlank => null
+          // FIXME: scenario properties does not have TypingResult hence this little hack to convert them to proper values
+          case _ =>
+            Try[Any] { expression.toBoolean }
+              .orElse(Try { expression.toInt })
+              .orElse(Try { expression.toDouble })
+              .getOrElse(expression)
+        }
+        // FIXME: is this really Spel or just Literal expression? (currently we only have spel and spel template)
+        validator.isValid(property._1, Expression.spel(expression), value, config.label).toValidatedNel
       }
       .sequence
       .map(_ => ())

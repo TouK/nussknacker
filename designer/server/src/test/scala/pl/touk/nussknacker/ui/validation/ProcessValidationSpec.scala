@@ -582,7 +582,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       case Some(
             List(
               NodeValidationError(
-                "InvalidPropertyFixedValue",
+                "ExpressionParserCompilationError",
                 _,
                 _,
                 Some("expression"),
