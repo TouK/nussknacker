@@ -3,7 +3,7 @@ import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
 import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
-import { CursorMask } from "./CursorMask";
+import { GlobalCursor } from "./GlobalCursor";
 import { Events } from "./types";
 import Hammer from "hammerjs";
 
@@ -15,7 +15,7 @@ const getAnimationClass = (disabled?: boolean) =>
     });
 
 export class PanZoomPlugin {
-    private cursorMask: CursorMask;
+    private globalCursor: GlobalCursor;
     private instance: SvgPanZoom.Instance;
     private pinchEventActive = false;
     private animationClassHolder: HTMLElement;
@@ -28,7 +28,7 @@ export class PanZoomPlugin {
     private panEnabled = false;
 
     constructor(private paper: dia.Paper) {
-        this.cursorMask = new CursorMask();
+        this.globalCursor = new GlobalCursor();
         this.instance = svgPanZoom(paper.svg, {
             fit: false,
             contain: false,
@@ -74,7 +74,7 @@ export class PanZoomPlugin {
         const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
         if (!isModified) {
             if (!isTouchEvent(event)) {
-                this.cursorMask.enable("move");
+                this.globalCursor.enable("move");
             }
             this.panStart = {
                 x: event.clientX,
@@ -97,7 +97,7 @@ export class PanZoomPlugin {
 
     private cleanup() {
         this.panStart = null;
-        this.cursorMask.disable();
+        this.globalCursor.disable();
     }
 
     fitSmallAndLargeGraphs = debounce((): void => {

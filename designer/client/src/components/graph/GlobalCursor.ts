@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 
-export class CursorMask {
+export class GlobalCursor {
     private cursorMask: HTMLElement;
 
     enable(cursor: CSSProperties["cursor"] = "not-allowed"): void {
