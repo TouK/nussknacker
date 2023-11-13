@@ -6,7 +6,7 @@ export const NodeLabelStyled = styled("div")(
         color: ${theme.custom.colors.canvasBackground};
         flex-basis: 20%;
         max-width: 20em;
-        display: inline-block;
+        display: flex;
         vertical-align: sub;
         margin-top: 9px;
         font-size: 12px;

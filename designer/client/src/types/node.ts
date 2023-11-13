@@ -54,6 +54,7 @@ export interface Parameter {
     name: string;
     expression: Expression;
     typ?: ReturnedType;
+    hintText?: string;
 }
 
 export interface Expression {

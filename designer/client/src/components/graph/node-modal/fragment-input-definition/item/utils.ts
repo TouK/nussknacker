@@ -1,21 +1,24 @@
-import { FixedValuesType, FragmentInputParameter, StringOrBooleanParameterVariant } from ".";
+import { FixedValuesType, FragmentInputParameter, InputMode, StringOrBooleanParameterVariant } from ".";
+import { ReturnedType } from "../../../../../types";
 
 export const getDefaultFields = (refClazzName: string): FragmentInputParameter => {
     return {
-        isOpen: false,
-        inputMode: undefined,
         name: "",
         required: false,
         hintText: "",
-        initialValue: "",
-        fixedValuesType: FixedValuesType.UserDefinedList,
-        validationExpression: "",
-        fixedValuesList: [],
-        fixedValuesListPresetId: "",
-        presetSelection: "",
-        validationErrorMessage: "",
-        validation: true,
-        typ: { display: "", type: "", params: [], refClazzName },
+        initialValue: null,
+        // fixedValuesType: FixedValuesType.UserDefinedList,
+        inputConfig: {
+            fixedValuesList: [],
+            inputMode: null,
+        },
+        // fixedValuesListPresetId: "",
+        // validationExpression: "test",
+        // presetSelection: "",
+        // validationExpression: "",
+        // validationErrorMessage: "",
+        // validation: true,
+        typ: { refClazzName } as ReturnedType,
     };
 };
 

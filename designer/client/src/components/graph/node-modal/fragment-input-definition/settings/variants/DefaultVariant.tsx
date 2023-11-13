@@ -27,7 +27,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes }: Props) =
                     label=""
                 />
             </SettingRow>
-            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />
+            {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue onChange={onChange} item={item} path={path} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

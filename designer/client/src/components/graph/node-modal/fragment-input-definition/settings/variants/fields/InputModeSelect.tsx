@@ -22,12 +22,12 @@ export default function InputModeSelect(props: Props) {
                 <SettingLabelStyled required>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
                 <TypeSelect
                     onChange={(value: InputMode) => {
-                        if (value === "FixedList") {
-                            onChange(`${path}.initialValue`, "");
+                        if (value === InputMode.FixedList) {
+                            onChange(`${path}.initialValue`, null);
                         }
-                        onChange(`${path}.inputMode`, value);
+                        onChange(`${path}.inputConfig.inputMode`, value);
                     }}
-                    value={inputModeOptions.find((inputModeOption) => inputModeOption.value === item.inputMode)}
+                    value={inputModeOptions.find((inputModeOption) => inputModeOption.value === item.inputConfig.inputMode)}
                     options={inputModeOptions}
                 />
             </SettingRow>

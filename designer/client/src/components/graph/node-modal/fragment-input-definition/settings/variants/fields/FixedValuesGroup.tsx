@@ -10,8 +10,7 @@ interface FixedValuesGroup {
     fixedValuesType: FixedValuesType;
 }
 
-export function FixedValuesGroup(props: FixedValuesGroup) {
-    const { onChange, path, fixedValuesType } = props;
+export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValuesType.UserDefinedList }: FixedValuesGroup) {
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -21,7 +20,7 @@ export function FixedValuesGroup(props: FixedValuesGroup) {
             <RadioGroup
                 value={fixedValuesType}
                 onChange={(event) => {
-                    onChange(`${path}.initialValue`, "");
+                    onChange(`${path}.initialValue`, null);
                     onChange(`${path}.fixedValuesType`, event.target.value);
                 }}
             >

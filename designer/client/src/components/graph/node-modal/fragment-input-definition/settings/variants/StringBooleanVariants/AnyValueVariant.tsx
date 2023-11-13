@@ -3,7 +3,7 @@ import ValidationsFields from "../fields/ValidationsFields";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueParameterVariant, AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../item";
+import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +14,7 @@ interface Props {
     variableTypes: VariableTypes;
 }
 
-export const AnyValueVariant = ({ item, path, variableTypes, onChange }: Props) => {
+export const AnyValueVariant = ({ item, path, onChange }: Props) => {
     const { t } = useTranslation();
 
     return (

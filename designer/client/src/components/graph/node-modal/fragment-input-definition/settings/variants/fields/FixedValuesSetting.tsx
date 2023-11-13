@@ -18,7 +18,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
 
 export function FixedValuesSetting({
     path,
-    fixedValuesType,
+    fixedValuesType = FixedValuesType.UserDefinedList,
     onChange,
     fixedValuesListPresetId,
     fixedValuesPresets,
@@ -27,7 +27,7 @@ export function FixedValuesSetting({
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
 
-    const presetListOptions: Option[] = Object.keys(fixedValuesPresets).map((key) => ({ label: key, value: key }));
+    const presetListOptions: Option[] = Object.keys(fixedValuesPresets ?? {}).map((key) => ({ label: key, value: key }));
     const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     const selectedPresetValueExpressions: Option[] = (fixedValuesPresets?.[fixedValuesListPresetId] ?? []).map(
@@ -36,7 +36,7 @@ export function FixedValuesSetting({
 
     const handleDeleteDefinedListItem = (currentIndex: number) => {
         const filteredItemList = fixedValuesList.filter((_, index) => index !== currentIndex);
-        onChange(`${path}.fixedValuesList`, filteredItemList);
+        onChange(`${path}.inputConfig.fixedValuesList`, filteredItemList);
     };
     return (
         <>
@@ -46,7 +46,7 @@ export function FixedValuesSetting({
                     <TypeSelect
                         onChange={(value) => {
                             onChange(`${path}.fixedValuesListPresetId`, value);
-                            onChange(`${path}.initialValue`, "");
+                            onChange(`${path}.initialValue`, null);
                         }}
                         value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
@@ -56,7 +56,7 @@ export function FixedValuesSetting({
             )}
             {fixedValuesType === FixedValuesType.UserDefinedList && (
                 <SettingRow>
-                    <SettingLabelStyled required>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
+                    <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
                     <NodeInput
                         style={{ width: "70%" }}
                         value={temporaryListItem}
@@ -64,8 +64,7 @@ export function FixedValuesSetting({
                         onKeyUp={(event) => {
                             if (event.key === "Enter") {
                                 const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
-                                console.log(updatedList);
-                                onChange(`${path}.fixedValuesList`, updatedList);
+                                onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
                                 setTemporaryListItem("");
                             }
                         }}

@@ -1,11 +1,12 @@
 import { Expression, ReturnedType } from "../../../../../types";
 
-export type onChangeType = string | number | boolean | FixedValuesOption[];
+export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[];
 
+//TODO: Makes values required when backend ready
 export interface FragmentValidation {
-    validation: boolean;
-    validationErrorMessage: string;
-    validationExpression: string;
+    validation?: boolean;
+    validationErrorMessage?: string;
+    validationExpression?: string;
 }
 
 export enum FixedValuesType {
@@ -15,9 +16,9 @@ export enum FixedValuesType {
 }
 
 export enum InputMode {
-    "FixedList" = "FixedList",
-    "AnyValueWithSuggestions" = "AnyValueWithSuggestions",
-    "AnyValue" = "AnyValue",
+    "FixedList" = "InputModeFixedList",
+    "AnyValueWithSuggestions" = "InputModeAnyWithSuggestions",
+    "AnyValue" = "InputModeAny",
 }
 
 export interface FixedValuesOption {
@@ -29,8 +30,8 @@ export interface GenericParameterVariant {
     required: boolean;
     name: string;
     typ?: ReturnedType;
-    initialValue: string | undefined;
-    hintText: string | undefined;
+    initialValue: FixedValuesOption | null;
+    hintText: string | null;
     isOpen?: boolean;
     //It's only to satisfy typescript
     expression?: Expression;
@@ -41,21 +42,28 @@ export interface DefaultParameterVariant extends GenericParameterVariant, Fragme
 }
 
 export interface FixedListParameterVariant extends GenericParameterVariant {
-    inputMode?: InputMode.FixedList;
-    fixedValuesList?: FixedValuesOption[];
+    inputConfig: {
+        inputMode: InputMode.FixedList;
+        fixedValuesList: FixedValuesOption[];
+    };
     fixedValuesListPresetId: string;
-    presetSelection: string;
+    presetSelection?: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputMode?: InputMode.AnyValueWithSuggestions;
-    fixedValuesList?: FixedValuesOption[];
+    inputConfig: {
+        inputMode: InputMode.AnyValueWithSuggestions;
+        fixedValuesList: FixedValuesOption[];
+    };
     fixedValuesListPresetId: string;
-    presetSelection: string;
+    presetSelection?: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputMode?: InputMode.AnyValue;
+    inputConfig: {
+        inputMode: InputMode.AnyValue;
+        fixedValuesList: FixedValuesOption[];
+    };
     fixedValuesType: FixedValuesType;
 }
 
@@ -65,3 +73,15 @@ export type StringOrBooleanParameterVariant =
     | AnyValueParameterVariant;
 
 export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;
+
+export function isFixedListParameter(item: StringOrBooleanParameterVariant): item is FixedListParameterVariant {
+    return item.inputConfig.inputMode === InputMode.FixedList;
+}
+
+export function isAnyValueWithSuggestionsParameter(item: StringOrBooleanParameterVariant): item is AnyValueWithSuggestionsParameterVariant {
+    return item.inputConfig.inputMode === InputMode.AnyValueWithSuggestions;
+}
+
+export function isAnyValueParameter(item: StringOrBooleanParameterVariant): item is AnyValueParameterVariant {
+    return item.inputConfig.inputMode === InputMode.AnyValue;
+}

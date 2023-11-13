@@ -2,7 +2,14 @@ import React from "react";
 import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
-import { InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../item";
+import {
+    InputMode,
+    isAnyValueParameter,
+    isAnyValueWithSuggestionsParameter,
+    isFixedListParameter,
+    onChangeType,
+    StringOrBooleanParameterVariant,
+} from "../../item";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
@@ -34,13 +41,11 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                 />
             </SettingRow>
             <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} />
-            {item.inputMode === InputMode.AnyValue && (
-                <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />
-            )}
-            {item.inputMode === InputMode.FixedList && (
+            {isAnyValueParameter(item) && <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />}
+            {isFixedListParameter(item) && (
                 <FixedListVariant item={item} onChange={onChange} path={path} fixedValuesPresets={fixedValuesPresets} />
             )}
-            {item.inputMode === InputMode.AnyValueWithSuggestions && (
+            {isAnyValueWithSuggestionsParameter(item) && (
                 <AnyValueWithSuggestionVariant
                     item={item}
                     onChange={onChange}

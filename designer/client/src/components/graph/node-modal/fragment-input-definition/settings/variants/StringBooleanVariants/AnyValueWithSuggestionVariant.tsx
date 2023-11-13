@@ -2,13 +2,11 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueWithSuggestionsParameterVariant, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
-import ValidationsFields from "../fields/ValidationsFields";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
-import { Option } from "../../../TypeSelect";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -21,15 +19,11 @@ interface Props {
 export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets }: Props) => {
     const { t } = useTranslation();
 
-    const presetListItemOptions: Option[] = (fixedValuesPresets?.[item.fixedValuesListPresetId] ?? []).map(({ label }) => ({
-        label: label,
-        value: label,
-    }));
+    const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
 
-    const fixedValuesList = item.fixedValuesList ?? [];
-    const fixedValuesListOptions: Option[] = fixedValuesList.map(({ label }) => ({ label, value: label }));
+    const fixedValuesList = item.inputConfig.fixedValuesList ?? [];
 
-    const fixedValuesType = item.fixedValuesType;
+    const fixedValuesType = item.fixedValuesType || FixedValuesType.UserDefinedList;
 
     return (
         <>
@@ -48,7 +42,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={fixedValuesType === "UserDefinedList" ? fixedValuesListOptions : presetListItemOptions}
+                options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
