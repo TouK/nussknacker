@@ -146,7 +146,7 @@ class PeriodicProcessService(
       // We retry scenarios that failed on deployment. Failure recovery of running scenarios should be handled by Flink's restart strategy
       toBeRetried <- scheduledProcessesRepository.findToBeRetried.run
       // We don't block scheduled deployments by retries
-    } yield toBeDeployed.sortBy(_.runAt) ++ toBeRetried.sortBy(_.nextRetryAt)
+    } yield toBeDeployed.sortBy(d => (d.runAt, d.createdAt)) ++ toBeRetried.sortBy(d => (d.nextRetryAt, d.createdAt))
   }
 
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
@@ -420,6 +420,7 @@ class PeriodicProcessService(
           DeploymentStatus(
             deployment.id,
             scheduleId,
+            deployment.createdAt,
             deployment.runAt,
             deployment.state.status,
             scheduleData.process.active,
@@ -427,7 +428,7 @@ class PeriodicProcessService(
           )
         }
       }
-      .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+      .sorted(DeploymentStatus.ordering.reverse)
 
     for {
       activeSchedules <- getLatestDeploymentsForActiveSchedules(name, MaxDeploymentsStatus)
@@ -497,8 +498,7 @@ object PeriodicProcessService {
     def limitedAndSortedDeployments: List[DeploymentStatus] =
       (activeDeploymentsStatuses ++ inactiveDeploymentsStatuses.take(
         MaxDeploymentsStatus - activeDeploymentsStatuses.size
-      ))
-        .sortBy(_.runAt)(Ordering[LocalDateTime].reverse)
+      )).sorted(DeploymentStatus.ordering.reverse)
 
     // We present merged name to be possible to filter scenario by status
     override def name: StatusName = mergedStatusDetails.status.name
@@ -565,8 +565,8 @@ object PeriodicProcessService {
       */
     def pickMostImportantActiveDeployment: Option[DeploymentStatus] = {
       val lastActiveDeploymentStatusForEachSchedule =
-        latestDeploymentForEachSchedule(activeDeploymentsStatuses)
-          .sortBy(_.runAt)(Ordering[LocalDateTime])
+        latestDeploymentForEachSchedule(activeDeploymentsStatuses).sorted
+
       def first(status: PeriodicProcessDeploymentStatus) =
         lastActiveDeploymentStatusForEachSchedule.find(_.status == status)
 
@@ -586,7 +586,7 @@ object PeriodicProcessService {
         .groupBy(_.scheduleId)
         .values
         .toList
-        .map(_.sortBy(_.runAt)(Ordering[LocalDateTime].reverse).head)
+        .map(_.min(DeploymentStatus.ordering.reverse))
     }
 
   }
@@ -595,6 +595,7 @@ object PeriodicProcessService {
       // to present to users is scheduleName+runAt
       deploymentId: PeriodicProcessDeploymentId,
       scheduleId: ScheduleId,
+      createdAt: LocalDateTime,
       runAt: LocalDateTime,
       // This status is almost fine but:
       // - we don't have cancel status - we have to check processActive as well (isCanceled)
@@ -617,6 +618,17 @@ object PeriodicProcessService {
       // We don't have Canceled status, because of that we base on tricky assumption. It can be wrong when we cancel
       // scenario just after it was marked as finished and is not rescheduled yet
       !processActive && status != PeriodicProcessDeploymentStatus.Finished
+    }
+
+  }
+
+  object DeploymentStatus {
+
+    implicit val ordering: Ordering[DeploymentStatus] = (self: DeploymentStatus, that: DeploymentStatus) => {
+      self.runAt.compareTo(that.runAt) match {
+        case 0 => self.createdAt.compareTo(that.createdAt)
+        case a => a
+      }
     }
 
   }
