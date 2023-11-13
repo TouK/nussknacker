@@ -64,14 +64,14 @@ class ScenarioPropertiesValidator(
     propertiesWithConfiguredValidator
       .collect { case (property, Some(config), validator: ParameterValidator) =>
         val expression = property._2
-        val value = if (expression.isBlank) {
-          null
-        } else {
+        val value = expression match {
+          case ex if ex.isBlank => null
           // FIXME: scenario properties does not have TypingResult hence this little hack to convert them to proper values
-          Try[Any] { expression.toBoolean }
-            .orElse(Try { expression.toInt })
-            .orElse(Try { expression.toDouble })
-            .getOrElse(expression)
+          case _ =>
+            Try[Any] { expression.toBoolean }
+              .orElse(Try { expression.toInt })
+              .orElse(Try { expression.toDouble })
+              .getOrElse(expression)
         }
         // FIXME: is this really Spel or just Literal expression? (currently we only have spel and spel template)
         validator.isValid(property._1, Expression.spel(expression), value, config.label).toValidatedNel
