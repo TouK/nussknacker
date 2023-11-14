@@ -1,20 +1,16 @@
 package pl.touk.nussknacker.engine.process.async
 
-import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicLong
-
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 
+import java.util.concurrent._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??
 object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
   private final var asyncExecutionContext: Option[(String, ExecutionContextExecutorService)] = None
-
-  private final val counter = new AtomicLong(0)
 
   private val executorServiceCreator: (Int, ThreadFactory) => ExecutorService =
     (workers, threadFactory) => {
@@ -26,8 +22,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
     }
 
   private[DefaultAsyncExecutionConfigPreparer] def getExecutionContext(workers: Int, process: String) = synchronized {
-    counter.incrementAndGet()
-    logger.info(s"Creating asyncExecutor for $process, with $workers workers, counter is ${counter.get()}")
+    logger.info(s"Creating asyncExecutor for $process, with $workers workers}")
     asyncExecutionContext match {
       case Some((_, ec)) => ec
       case None =>
@@ -38,12 +33,9 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  private[DefaultAsyncExecutionConfigPreparer] def close(): Unit = {
-    logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)} counter is ${counter.get()}")
-    if (counter.decrementAndGet() == 0) {
-      asyncExecutionContext.foreach(_._2.shutdownNow())
-      asyncExecutionContext = None
-    }
+  private[DefaultAsyncExecutionConfigPreparer] def close(): Unit = synchronized {
+    logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)}")
+    asyncExecutionContext.foreach { case (_, executorService) => executorService.shutdownNow() }
   }
 
 }

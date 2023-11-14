@@ -41,6 +41,14 @@ private[registrar] class AsyncInterpretationFunction(
       compiledProcessWithDeps.metaData.id,
       getRuntimeContext.getExecutionConfig.getParallelism
     )
+    getRuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent(
+      "closeAsyncExecutionContext",
+      () => {
+        logger.info("User class loader release hook called - closing async execution context")
+        asyncExecutionContextPreparer.close()
+      }
+    )
+    getRuntimeContext
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -73,11 +81,6 @@ private[registrar] class AsyncInterpretationFunction(
       implicit val future: FutureShape = new FutureShape()
       interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
     }
-  }
-
-  override def close(): Unit = {
-    super.close()
-    asyncExecutionContextPreparer.close()
   }
 
   // This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
