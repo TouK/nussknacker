@@ -8,22 +8,26 @@
 * [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
 * [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
-    * Run runner with proper prepared invocation collector for test mode
-    * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
-    * Add missing tests for passing global variables
-    * Fix bug with passing components on RequestResponseTestScenarioRunner
-    * Fix bug building source test context on LiteTestScenarioRunner
+  * Run runner with proper prepared invocation collector for test mode
+  * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
+  * Add missing tests for passing global variables
+  * Fix bug with passing components on RequestResponseTestScenarioRunner
+  * Fix bug building source test context on LiteTestScenarioRunner
 * [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
-* [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation 
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation
 
-
-1.12.4 (?? Oct 2023)
+1.12.4 (14 Nov 2023)
+------------------------
 * [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
 
 1.12.3 (26 Oct 2023)
-1.12.1 & 1.12.2 (25 Oct 2023)
+-------------------------
+1.12.2 (25 Oct 2023)
+-------------------------
+1.12.1 (25 Oct 2023)
+-------------------------
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
 
 1.12.0 (6 Oct 2023)
