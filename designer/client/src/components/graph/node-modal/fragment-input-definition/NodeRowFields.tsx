@@ -1,4 +1,4 @@
-import React, { createContext, PropsWithChildren, useContext, useMemo, useState } from "react";
+import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { FieldsControl } from "./FieldsControl";
 import { NodeRow } from "./NodeRow";
 import { NodeValue } from "./NodeValue";
@@ -36,6 +36,11 @@ export function NodeRowFields({ children, ...props }: PropsWithChildren<NodeRowF
     const remove = useMemo(() => {
         if (onFieldRemove) {
             return (uuid: string) => {
+                setIsOpen((prevState) => {
+                    delete prevState[uuid];
+
+                    return prevState;
+                });
                 return onFieldRemove(path, uuid);
             };
         }
@@ -47,7 +52,7 @@ export function NodeRowFields({ children, ...props }: PropsWithChildren<NodeRowF
         }
     }, [onFieldAdd, path]);
 
-    const getIsOpen = (uuid: string) => isOpen[uuid] || false;
+    const getIsOpen = useCallback((uuid: string) => isOpen[uuid] || false, [isOpen]);
 
     const toggleIsOpen = (uuid: string) => {
         setIsOpen((prevState) => {
