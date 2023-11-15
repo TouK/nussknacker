@@ -13,9 +13,10 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    readOnly: boolean;
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes }: Props) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }: Props) => {
     const { t } = useTranslation();
 
     return (
@@ -28,7 +29,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes }: Props) =
                 />
             </SettingRow>
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
-            <InitialValue onChange={onChange} item={item} path={path} />
+            <InitialValue onChange={onChange} item={item} path={path} readOnly={readOnly} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

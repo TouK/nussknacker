@@ -51,6 +51,7 @@ export type FragmentNodeType = NodeType;
 export type Field = Parameter | FragmentInputParameter;
 
 export interface Parameter {
+    uuid: string;
     name: string;
     expression: Expression;
     typ?: ReturnedType;

@@ -1,8 +1,10 @@
-import { FixedValuesType, FragmentInputParameter, InputMode, StringOrBooleanParameterVariant } from ".";
+import { FragmentInputParameter, StringOrBooleanParameterVariant } from ".";
 import { ReturnedType } from "../../../../../types";
+import { v4 as uuid4 } from "uuid";
 
 export const getDefaultFields = (refClazzName: string): FragmentInputParameter => {
     return {
+        uuid: uuid4(),
         name: "",
         required: false,
         hintText: "",

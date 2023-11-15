@@ -17,7 +17,7 @@ interface MapProps<F extends Field> {
     label: string;
     namespace: string;
     addField: (namespace: string, field?: F) => void;
-    removeField: (namespace: string, index: number) => void;
+    removeField: (namespace: string, uuid: string) => void;
     expressionType?: Partial<TypedObjectTypingResult>;
 }
 
@@ -77,7 +77,7 @@ export function Map<F extends Field>({
             fields?.map(appendTypeInfo)?.map((item, index) => ({
                 item,
                 el: (
-                    <FieldsRow index={index}>
+                    <FieldsRow uuid={item.uuid} index={index}>
                         <MapRow index={index} item={item} validators={[mandatoryValueValidator, uniqueNameValidator(index)]} />
                     </FieldsRow>
                 ),

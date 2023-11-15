@@ -20,9 +20,10 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
+    readOnly: boolean;
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets }: Props) => {
+export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -36,14 +37,22 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
-                    control={<CustomSwitch checked={item.required} onChange={() => onChange(`${path}.required`, !item.required)} />}
+                    control={
+                        <CustomSwitch
+                            disabled={readOnly}
+                            checked={item.required}
+                            onChange={() => onChange(`${path}.required`, !item.required)}
+                        />
+                    }
                     label=""
                 />
             </SettingRow>
-            <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} />
-            {isAnyValueParameter(item) && <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} />}
+            <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} readOnly={readOnly} />
+            {isAnyValueParameter(item) && (
+                <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} readOnly={readOnly} />
+            )}
             {isFixedListParameter(item) && (
-                <FixedListVariant item={item} onChange={onChange} path={path} fixedValuesPresets={fixedValuesPresets} />
+                <FixedListVariant item={item} onChange={onChange} path={path} fixedValuesPresets={fixedValuesPresets} readOnly={readOnly} />
             )}
             {isAnyValueWithSuggestionsParameter(item) && (
                 <AnyValueWithSuggestionVariant
@@ -52,6 +61,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     path={path}
                     variableTypes={variableTypes}
                     fixedValuesPresets={fixedValuesPresets}
+                    readOnly={readOnly}
                 />
             )}
         </SettingsWrapper>

@@ -14,6 +14,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     fixedValuesList: FixedValuesOption[];
     fixedValuesPresets: FixedValuesPresets;
     fixedValuesListPresetId: string;
+    readOnly: boolean;
 }
 
 export function FixedValuesSetting({
@@ -23,6 +24,7 @@ export function FixedValuesSetting({
     fixedValuesListPresetId,
     fixedValuesPresets,
     fixedValuesList,
+    readOnly,
 }: FixedValuesSetting) {
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
@@ -44,6 +46,7 @@ export function FixedValuesSetting({
                 <SettingRow>
                     <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
+                        readOnly={readOnly}
                         onChange={(value) => {
                             onChange(`${path}.fixedValuesListPresetId`, value);
                             onChange(`${path}.initialValue`, null);
@@ -68,8 +71,11 @@ export function FixedValuesSetting({
                                 setTemporaryListItem("");
                             }
                         }}
+                        readOnly={readOnly}
                     />
-                    {userDefinedListOptions?.length > 0 && <ListItems items={fixedValuesList} handleDelete={handleDeleteDefinedListItem} />}
+                    {userDefinedListOptions?.length > 0 && (
+                        <ListItems items={fixedValuesList} handleDelete={readOnly ? undefined : handleDeleteDefinedListItem} />
+                    )}
                 </SettingRow>
             )}
         </>

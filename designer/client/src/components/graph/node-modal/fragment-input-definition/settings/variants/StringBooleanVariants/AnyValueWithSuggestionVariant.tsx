@@ -14,9 +14,10 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
+    readOnly: boolean;
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets }: Props) => {
+export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets, readOnly }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -27,7 +28,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
 
     return (
         <>
-            <FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} />
+            <FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} readOnly={readOnly} />
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
@@ -36,6 +37,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 fixedValuesList={fixedValuesList}
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
+                readOnly={readOnly}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
@@ -43,6 +45,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 item={item}
                 onChange={onChange}
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
+                readOnly={readOnly}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
@@ -50,6 +53,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
+                    disabled={readOnly}
                 />
             </SettingRow>
         </>

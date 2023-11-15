@@ -10,9 +10,10 @@ interface InitialValue {
     path: string;
     onChange: (path: string, value: onChangeType) => void;
     options?: FixedValuesOption[];
+    readOnly: boolean;
 }
 
-export default function InitialValue({ onChange, item, path, options = [] }: InitialValue) {
+export default function InitialValue({ onChange, item, path, options = [], readOnly }: InitialValue) {
     const { t } = useTranslation();
 
     const emptyOption = { label: "", value: null };
@@ -29,6 +30,8 @@ export default function InitialValue({ onChange, item, path, options = [] }: Ini
                     }}
                     value={optionsToDisplay.find((option) => option.value === item?.initialValue?.label)}
                     options={optionsToDisplay}
+                    readOnly={readOnly}
+                    placeholder={""}
                 />
             ) : (
                 <NodeInput
@@ -37,6 +40,7 @@ export default function InitialValue({ onChange, item, path, options = [] }: Ini
                     onChange={(event) =>
                         onChange(`${path}.initialValue`, { label: event.currentTarget.value, expression: event.currentTarget.value })
                     }
+                    readOnly={readOnly}
                 />
             )}
         </SettingRow>

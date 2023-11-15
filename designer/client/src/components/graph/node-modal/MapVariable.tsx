@@ -5,6 +5,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
 import { Error } from "./editors/Validators";
+import { v4 as uuid4 } from "uuid";
 
 export interface MapVariableProps<F extends Field> {
     node: NodeType<F>;
@@ -13,7 +14,7 @@ export interface MapVariableProps<F extends Field> {
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
     fieldErrors: Error[];
-    removeElement: (namespace: string, ix: number) => void;
+    removeElement: (namespace: string, uuid: string) => void;
     addElement: (property: string, element: F) => void;
     variableTypes: VariableTypes;
     expressionType?: Partial<TypedObjectTypingResult>;
@@ -25,7 +26,7 @@ function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
 
     const addField = useCallback(
         (namespace, field) => {
-            const newField: Field = { name: "", expression: { expression: "", language: ExpressionLang.SpEL } };
+            const newField: Field = { uuid: uuid4(), name: "", expression: { expression: "", language: ExpressionLang.SpEL } };
             addElement(namespace, field || newField);
         },
         [addElement],

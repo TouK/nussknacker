@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
@@ -7,9 +7,10 @@ import { Option } from "../FieldsSelect";
 import { FixedValuesPresets, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
-import Settings from "../settings/Settings";
+import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
 import { onChangeType, FragmentInputParameter } from "./";
+import { useFieldsContext } from "../NodeRowFields";
 
 interface ItemProps {
     index: number;
@@ -26,6 +27,10 @@ interface ItemProps {
 
 export function Item(props: ItemProps): JSX.Element {
     const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options, fixedValuesPresets } = props;
+    const { getIsOpen, toggleIsOpen } = useFieldsContext();
+
+    const isOpen = getIsOpen(item.uuid);
+
     const path = `${namespace}[${index}]`;
     const [isMarked] = useDiffMark();
     const getCurrentOption = useCallback(
@@ -38,12 +43,12 @@ export function Item(props: ItemProps): JSX.Element {
     );
 
     const openSettingMenu = () => {
-        onChange(`${path}.isOpen`, !item.isOpen);
+        toggleIsOpen(item.uuid);
     };
 
     return (
         <div>
-            <FieldsRow index={index}>
+            <FieldsRow index={index} uuid={item.uuid}>
                 <MapKey
                     className="parametersFieldName"
                     readOnly={readOnly}
@@ -62,15 +67,16 @@ export function Item(props: ItemProps): JSX.Element {
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
                 />
-                <SettingsButton isOpen={item.isOpen} openSettingMenu={openSettingMenu} />
+                <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>
-            {item.isOpen && (
+            {isOpen && (
                 <Settings
                     path={path}
                     item={item}
                     onChange={onChange}
                     variableTypes={variableTypes}
                     fixedValuesPresets={fixedValuesPresets}
+                    readOnly={readOnly}
                 />
             )}
         </div>

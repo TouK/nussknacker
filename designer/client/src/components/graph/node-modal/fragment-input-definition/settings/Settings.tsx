@@ -10,9 +10,10 @@ interface Settings {
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     fixedValuesPresets: FixedValuesPresets;
+    readOnly: boolean;
 }
 
-export default function Settings(props: Settings) {
+export function Settings(props: Settings) {
     if (isStringOrBooleanVariant(props.item)) {
         return <StringBooleanVariant {...props} item={props.item} />;
     }

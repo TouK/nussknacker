@@ -10,6 +10,7 @@ interface Props {
     item: StringOrBooleanParameterVariant;
     path: string;
     inputModeOptions: Option[];
+    readOnly: boolean;
 }
 
 export default function InputModeSelect(props: Props) {
@@ -21,6 +22,7 @@ export default function InputModeSelect(props: Props) {
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.settings.inputMode", "Input mode:")}</SettingLabelStyled>
                 <TypeSelect
+                    readOnly={props.readOnly}
                     onChange={(value: InputMode) => {
                         if (value === InputMode.FixedList) {
                             onChange(`${path}.initialValue`, null);

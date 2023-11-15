@@ -8,9 +8,10 @@ interface FixedValuesGroup {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesType: FixedValuesType;
+    readOnly: boolean;
 }
 
-export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValuesType.UserDefinedList }: FixedValuesGroup) {
+export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValuesType.UserDefinedList, readOnly }: FixedValuesGroup) {
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -35,6 +36,7 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValues
                     value={FixedValuesType.UserDefinedList}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</StyledFormControlLabel>}
+                    disabled={readOnly}
                 />
             </RadioGroup>
         </SettingRow>

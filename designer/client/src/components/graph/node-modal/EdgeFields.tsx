@@ -101,6 +101,7 @@ export function EdgeFields(props: Props): JSX.Element {
     const showType = types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1;
     return (
         <FieldsRow
+            uuid={edge._id}
             index={index}
             className={cx(
                 "movable-row",

@@ -17,7 +17,7 @@ interface FieldsSelectProps {
     namespace: string;
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
-    removeField: (path: string, index: number) => void;
+    removeField: (path: string, uuid: string) => void;
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;

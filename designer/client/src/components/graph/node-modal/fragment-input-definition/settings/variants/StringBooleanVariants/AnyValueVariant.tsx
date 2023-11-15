@@ -12,18 +12,20 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    readOnly: boolean;
 }
 
-export const AnyValueVariant = ({ item, path, onChange }: Props) => {
+export const AnyValueVariant = ({ item, path, onChange, readOnly }: Props) => {
     const { t } = useTranslation();
 
     return (
         <>
             {/*<ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />*/}
-            <InitialValue path={path} item={item} onChange={onChange} />
+            <InitialValue path={path} item={item} onChange={onChange} readOnly={readOnly} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
+                    disabled={readOnly}
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}

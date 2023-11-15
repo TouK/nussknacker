@@ -11,6 +11,7 @@ interface ValidationFields extends Omit<FragmentValidation, "validation"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    readOnly: boolean;
 }
 
 export default function ValidationFields({
@@ -19,6 +20,7 @@ export default function ValidationFields({
     variableTypes,
     path,
     onChange,
+    readOnly,
 }: ValidationFields) {
     const { t } = useTranslation();
     return (
@@ -30,6 +32,7 @@ export default function ValidationFields({
                 expressionObj={{ language: ExpressionLang.SpEL, expression: validationExpression }}
                 onValueChange={(value) => onChange(`${path}.validationExpression`, value)}
                 variableTypes={variableTypes}
+                readOnly={readOnly}
             />
             <SettingRow>
                 {fieldLabel(t("fragment.validation.validationErrorMessage", "Validation error message:"))}
@@ -37,6 +40,7 @@ export default function ValidationFields({
                     style={{ width: "70%" }}
                     value={validationErrorMessage}
                     onChange={(event) => onChange(`${path}.validationErrorMessage`, event.currentTarget.value)}
+                    readOnly={readOnly}
                 />
             </SettingRow>
         </>

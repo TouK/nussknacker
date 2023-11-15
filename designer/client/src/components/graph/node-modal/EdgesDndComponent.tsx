@@ -57,7 +57,7 @@ function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
 }
 
 function getDefaultEdge(kind: EdgeKind): Edge {
-    return { from: "", to: "", edgeType: getDefaultEdgeType(kind) };
+    return { _id: `id${Math.random()}`, from: "", to: "", edgeType: getDefaultEdgeType(kind) };
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
@@ -88,7 +88,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
         [],
     );
 
-    const removeEdge = useCallback((n, index) => setEdges((edges) => edges.filter((e, i) => i !== index)), []);
+    const removeEdge = useCallback((n, uuid: string) => setEdges((edges) => edges.filter((e) => e._id !== uuid)), []);
 
     const addEdge = useCallback(() => {
         const [{ value: type }] = availableTypes;

@@ -7,12 +7,13 @@ import { cx } from "@emotion/css";
 
 interface FieldsRow {
     index: number;
+    uuid: string;
     className?: string;
 }
 
-export function FieldsRow({ index, className, children }: PropsWithChildren<FieldsRow>): JSX.Element {
+export function FieldsRow({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): JSX.Element {
     const { readOnly, remove } = useFieldsContext();
-    const onClick = useCallback(() => remove?.(index), [index, remove]);
+    const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (
         <NodeRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
             {children}

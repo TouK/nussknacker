@@ -11,10 +11,11 @@ interface ValidationsFields {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
+    readOnly: boolean;
 }
 
 export default function ValidationsFields(props: ValidationsFields) {
-    const { onChange, path, variableTypes, item } = props;
+    const { onChange, path, variableTypes, item, readOnly } = props;
     const [validation, setValidation] = useState(true);
 
     return (
@@ -22,7 +23,13 @@ export default function ValidationsFields(props: ValidationsFields) {
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
                 <FormControlLabel
-                    control={<CustomSwitch checked={validation} onChange={(event) => setValidation(event.currentTarget.checked)} />}
+                    control={
+                        <CustomSwitch
+                            disabled={readOnly}
+                            checked={validation}
+                            onChange={(event) => setValidation(event.currentTarget.checked)}
+                        />
+                    }
                     label=""
                 />
                 <div style={{ width: "100%", justifyContent: "flex-end", display: "flex" }}>
@@ -41,6 +48,7 @@ export default function ValidationsFields(props: ValidationsFields) {
                     validationErrorMessage={item.validationErrorMessage}
                     validationExpression={item.validationExpression}
                     variableTypes={variableTypes}
+                    readOnly={readOnly}
                 />
             )}
         </>

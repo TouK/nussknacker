@@ -15,6 +15,7 @@ interface RowSelectProps {
     readOnly?: boolean;
     isMarked?: boolean;
     value: Option;
+    placeholder?: string;
 }
 
 function useCaptureEsc() {
@@ -33,7 +34,7 @@ function useCaptureEsc() {
     return { setCaptureEsc, preventEsc };
 }
 
-export function TypeSelect({ isMarked, options, readOnly, value, onChange }: RowSelectProps): JSX.Element {
+export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
@@ -52,6 +53,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange }: Row
                 value={value || ""}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 menuPortalTarget={document.body}
+                placeholder={placeholder}
                 styles={{
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({

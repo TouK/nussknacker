@@ -5,8 +5,8 @@ export const NodeInputCss = (theme: Theme) => css`
     width: 100%;
     padding: 0 10px;
     border: none;
-    background-color: ${theme.custom.colors.secondaryBackground} !important;
-    color: ${theme.custom.colors.secondaryColor} !important;
+    background-color: ${theme.custom.colors.secondaryBackground};
+    color: ${theme.custom.colors.secondaryColor};
     font-weight: 400;
     font-size: 14px;
     outline: 1px solid rgba(255, 255, 255, 0.075);

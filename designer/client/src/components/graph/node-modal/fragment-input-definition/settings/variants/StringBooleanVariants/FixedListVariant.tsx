@@ -13,9 +13,10 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesPresets: FixedValuesPresets;
+    readOnly: boolean;
 }
 
-export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -27,7 +28,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: P
 
     return (
         <>
-            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} />
+            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
@@ -36,12 +37,14 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: P
                 fixedValuesList={fixedValuesList}
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
+                readOnly={readOnly}
             />
             <InitialValue
                 path={path}
                 item={item}
                 onChange={onChange}
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
+                readOnly={readOnly}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
@@ -49,6 +52,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets }: P
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
+                    disabled={readOnly}
                 />
             </SettingRow>
         </>

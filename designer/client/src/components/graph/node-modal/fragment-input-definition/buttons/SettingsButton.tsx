@@ -5,10 +5,10 @@ import { useTheme } from "@mui/material";
 
 interface SettingsButton {
     isOpen: boolean;
-    openSettingMenu: () => void;
+    toggleIsOpen: () => void;
 }
 
-export default function SettingsButton({ isOpen, openSettingMenu }: SettingsButton) {
+export default function SettingsButton({ isOpen, toggleIsOpen }: SettingsButton) {
     const theme = useTheme();
 
     return (
@@ -21,7 +21,7 @@ export default function SettingsButton({ isOpen, openSettingMenu }: SettingsButt
                 backgroundColor: isOpen && theme.custom.colors.charcoal,
             }}
             title={"SettingsButton"}
-            onClick={openSettingMenu}
+            onClick={toggleIsOpen}
         >
             <TuneIcon />
         </StyledButtonWithFocus>

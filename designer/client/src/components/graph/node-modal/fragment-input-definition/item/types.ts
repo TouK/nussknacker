@@ -27,12 +27,12 @@ export interface FixedValuesOption {
 }
 
 export interface GenericParameterVariant {
+    uuid: string;
     required: boolean;
     name: string;
     typ?: ReturnedType;
     initialValue: FixedValuesOption | null;
     hintText: string | null;
-    isOpen?: boolean;
     //It's only to satisfy typescript
     expression?: Expression;
 }
