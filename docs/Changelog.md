@@ -1,11 +1,15 @@
 # Changelog
 
-1.12.4 (?? Oct 2023)
+1.12.4 (14 Nov 2023)
+------------------------
 * [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
 
 1.12.3 (26 Oct 2023)
+-------------------------
 1.12.2 (25 Oct 2023)
+-------------------------
 1.12.1 (25 Oct 2023)
+-------------------------
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
 
 1.12.0 (6 Oct 2023)
