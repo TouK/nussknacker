@@ -13,7 +13,6 @@ import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
 import sttp.model.headers.WWWAuthenticateChallenge
-import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +32,7 @@ class OAuth2AuthenticationResources(
 
   private val authenticator = OAuth2Authenticator(service)
 
-  override def authenticationMethod(): Auth[AuthCredentials, _] =
+  override def authenticationMethod(): EndpointInput[AuthCredentials] =
     auth.oauth2
       .authorizationCode(
         authorizationUrl = configuration.authorizeUrl.map(_.toString),

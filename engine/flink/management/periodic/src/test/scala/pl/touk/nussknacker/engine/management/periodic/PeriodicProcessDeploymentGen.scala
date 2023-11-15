@@ -12,11 +12,14 @@ import java.time.LocalDateTime
 
 object PeriodicProcessDeploymentGen {
 
+  val now: LocalDateTime = LocalDateTime.now()
+
   def apply(): PeriodicProcessDeployment = {
     PeriodicProcessDeployment(
       id = PeriodicProcessDeploymentId(42),
       periodicProcess = PeriodicProcessGen(),
-      runAt = LocalDateTime.now(),
+      createdAt = now.minusMinutes(10),
+      runAt = now,
       scheduleName = ScheduleName(None),
       retriesLeft = 0,
       nextRetryAt = None,

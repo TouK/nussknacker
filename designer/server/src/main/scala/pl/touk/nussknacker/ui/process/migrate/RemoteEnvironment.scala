@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
@@ -27,7 +27,8 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.Difference
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 
 trait RemoteEnvironment {
 
@@ -80,12 +81,15 @@ class HttpRemoteEnvironment(
     val testModelMigrations: TestModelMigrations,
     val environmentId: String
 )(implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext)
-    extends StandardRemoteEnvironment {
+    extends StandardRemoteEnvironment
+    with AutoCloseable {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
   override val passUsernameInMigration: Boolean = httpConfig.passUsernameInMigration
 
-  val http = Http()
+  private val closeTimeout = 10 seconds
+
+  val http: HttpExt = Http()
 
   override protected def request(
       uri: Uri,
@@ -103,6 +107,9 @@ class HttpRemoteEnvironment(
     )
   }
 
+  override def close(): Unit = Await.ready(http.shutdownAllConnectionPools(), closeTimeout)
+
+  def closeAsync(): Future[Unit] = http.shutdownAllConnectionPools()
 }
 
 final case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
@@ -118,7 +125,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   def testModelMigrations: TestModelMigrations
 
-  def baseUri = Uri(config.uri)
+  def baseUri: Uri = Uri(config.uri)
 
   implicit def materializer: Materializer
 
@@ -208,7 +215,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield testModelMigrations.testMigrations(processes, fragments)).value
   }
 
-  private def fetchGroupByGroup[T](
+  private def fetchGroupByGroup(
       basicProcesses: List[ScenarioWithDetails]
   )(implicit ec: ExecutionContext): FutureE[List[ScenarioWithDetails]] = {
     basicProcesses
@@ -314,14 +321,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           .stringUnmarshaller(response.entity)
           .map(error => RemoteEnvironmentCommunicationError(response.status, error).asLeft)
       }
-    }
-
-  private def invokeStatus(method: HttpMethod, pathParts: List[String])(
-      implicit ec: ExecutionContext
-  ): Future[StatusCode] =
-    invoke(method, pathParts, headers = Nil) { response =>
-      response.discardEntityBytes()
-      Future.successful(response.status)
     }
 
   private def invokeJson[T: Decoder](

@@ -109,7 +109,7 @@ private[spel] class Typer(
       case _: LiteralExpression =>
         (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
       case _: NullExpression =>
-        (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+        (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(TypedNull)))
     }
   }
 

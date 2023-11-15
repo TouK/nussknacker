@@ -38,9 +38,7 @@ const ReactMarkdownStyled = styled(ReactMarkdown)`
         font-size: 12px;
     }
     a {
-        &:hover &:focus {
-            color: #359af1 !important;
-        }
+        color: #359af1 !important;
     }
 `;
 

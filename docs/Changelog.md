@@ -2,6 +2,7 @@
 
 1.13.0 (Not released yet)
 -------------------------
+* [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
 * [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
 * [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
@@ -16,6 +17,10 @@
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation 
+
+
+1.12.4 (?? Oct 2023)
+* [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
 
 1.12.3 (26 Oct 2023)
 1.12.1 & 1.12.2 (25 Oct 2023)

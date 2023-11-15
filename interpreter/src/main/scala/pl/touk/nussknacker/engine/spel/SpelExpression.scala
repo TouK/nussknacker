@@ -165,7 +165,7 @@ class SpelExpressionParser(
         TypedExpression(
           NullExpression(original, flavour),
           expectedType,
-          SpelExpressionTypingInfo(Map.empty, typing.Unknown)
+          SpelExpressionTypingInfo(Map.empty, typing.TypedNull)
         )
       )
     } else {

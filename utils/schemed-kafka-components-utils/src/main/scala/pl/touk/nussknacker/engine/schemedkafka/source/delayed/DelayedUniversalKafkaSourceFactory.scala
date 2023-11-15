@@ -50,18 +50,15 @@ class DelayedUniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](
 
       valueValidationResult match {
         case Valid((valueRuntimeSchema, typingResult)) =>
-          val delayValidationErrors =
-            Option(delay.asInstanceOf[java.lang.Long]).map(d => validateDelay(d)).getOrElse(Nil)
           val timestampValidationErrors =
             Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
-          val errors = delayValidationErrors ++ timestampValidationErrors
           prepareSourceFinalResults(
             preparedTopic,
             valueValidationResult,
             context,
             dependencies,
             step.parameters,
-            errors
+            timestampValidationErrors
           )
         case Invalid(exc) =>
           prepareSourceFinalErrors(context, dependencies, step.parameters, List(exc))
