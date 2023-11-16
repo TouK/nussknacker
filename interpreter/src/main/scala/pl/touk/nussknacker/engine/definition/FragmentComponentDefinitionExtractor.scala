@@ -134,7 +134,7 @@ class FragmentComponentDefinitionExtractor(
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
 
-    val extractedEditor = fragmentParameter.inputConfig.fixedValuesList
+    val extractedEditor = fragmentParameter.inputConfig.effectiveFixedValuesList
       .map { fixedValues =>
         fixedValuesEditorWithInputMode(
           fragmentParameter.inputConfig.inputMode,
@@ -151,12 +151,12 @@ class FragmentComponentDefinitionExtractor(
       .copy(
         editor = extractedEditor,
         validators = ValidatorsExtractor
-          .extract(ValidatorExtractorParameters(parameterData, isOptional = isOptional, config, extractedEditor)),
+          .extract(ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)),
         defaultValue = fragmentParameter.initialValue
           .map(i => Expression.spel(i.expression))
           .orElse(
             DefaultValueDeterminerChain.determineParameterDefaultValue(
-              DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor)
+              DefaultValueDeterminerParameters(parameterData, isOptional, config, extractedEditor)
             )
           ),
         hintText = fragmentParameter.hintText

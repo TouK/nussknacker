@@ -29,7 +29,7 @@ object FragmentParameterValidator {
     }
 
     val fixedExpressionsResponses = validateFixedExpressions(
-      fragmentParameter.inputConfig.fixedValuesList.getOrElse(List.empty) ++ fragmentParameter.initialValue,
+      fragmentParameter.inputConfig.effectiveFixedValuesList.getOrElse(List.empty) ++ fragmentParameter.initialValue,
       compiler,
       validationContext,
       fragmentParameter.name
@@ -60,9 +60,9 @@ object FragmentParameterValidator {
   private def validateFixedValuesList(fragmentParameter: FragmentParameter, fragmentInputId: String) =
     if (fragmentParameter.inputConfig.inputMode == FragmentParameterInputMode.InputModeFixedList) {
       List(
-        fragmentParameter.inputConfig.fixedValuesList.isEmpty
+        fragmentParameter.inputConfig.effectiveFixedValuesList.isEmpty
           -> RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)),
-        ((fragmentParameter.initialValue, fragmentParameter.inputConfig.fixedValuesList) match {
+        ((fragmentParameter.initialValue, fragmentParameter.inputConfig.effectiveFixedValuesList) match {
           case (Some(value), Some(fixedValuesList)) if !fixedValuesList.contains(value) => true
           case _                                                                        => false
         }) -> InitialValueNotPresentInPossibleValues(fragmentParameter.name, Set(fragmentInputId)),

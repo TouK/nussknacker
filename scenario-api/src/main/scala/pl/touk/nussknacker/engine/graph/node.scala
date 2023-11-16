@@ -348,15 +348,23 @@ object node {
     @JsonCodec
     case class FragmentParameterInputConfig(
         inputMode: FragmentParameterInputMode.Value,
-        fixedValuesList: Option[List[FixedExpressionValue]]
+        fixedValuesList: Option[
+          List[FixedExpressionValue]
+        ] // don't access directly, use effectiveFixedValuesList instead
     ) {
 
-      def isValid: Boolean = {
+      val effectiveFixedValuesList: Option[List[FixedExpressionValue]] =
         inputMode match {
-          case InputModeAny                                     => fixedValuesList.isEmpty
+          case InputModeAny =>
+            None // allow for saving the list for UX purposes, don't use it in BE unless inputMode is changed
+          case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList
+        }
+
+      val isValid: Boolean =
+        inputMode match {
+          case InputModeAny                                     => true
           case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList.isDefined
         }
-      }
 
     }
 

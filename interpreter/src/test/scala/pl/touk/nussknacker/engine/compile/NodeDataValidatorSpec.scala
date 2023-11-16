@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
   InputModeAny,
+  InputModeAnyWithSuggestions,
   InputModeFixedList
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
@@ -580,11 +581,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               "param1",
               FragmentClazzRef[String],
               required = false,
-              initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
+              initialValue = None,
               hintText = None,
               inputConfig = FragmentParameterInputConfig(
-                inputMode = InputModeAny,
-                fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                inputMode = InputModeAnyWithSuggestions,
+                fixedValuesList = None // must be defined if inputMode == InputModeAnyWithSuggestions
               )
             )
           ),
