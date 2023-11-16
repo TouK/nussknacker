@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
