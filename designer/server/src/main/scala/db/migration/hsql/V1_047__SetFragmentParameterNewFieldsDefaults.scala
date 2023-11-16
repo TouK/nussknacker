@@ -1,0 +1,8 @@
+package db.migration.hsql
+
+import db.migration.V1_047__SetFragmentParameterNewFieldsDefaultsDefinition
+import slick.jdbc.{HsqldbProfile, JdbcProfile}
+
+class V1_047__SetFragmentParameterNewFieldsDefaults extends V1_047__SetFragmentParameterNewFieldsDefaultsDefinition {
+  override protected lazy val profile: JdbcProfile = HsqldbProfile
+}
