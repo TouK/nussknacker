@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterInputConfig
+  ParameterInputConfig
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
   InputModeFixedList
 }
@@ -437,7 +437,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+                  inputConfig = ParameterInputConfig(InputModeAny, None)
                 )
               )
             )
@@ -483,7 +483,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
-                  inputConfig = FragmentParameterInputConfig(
+                  inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
                     fixedValuesList =
                       Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
@@ -495,7 +495,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputConfig = FragmentParameterInputConfig(
+                  inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
                     fixedValuesList =
                       Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
@@ -587,7 +587,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                 required = true,
                 initialValue = None,
                 None,
-                inputConfig = FragmentParameterInputConfig(
+                inputConfig = ParameterInputConfig(
                   inputMode = InputModeFixedList,
                   fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
                 )

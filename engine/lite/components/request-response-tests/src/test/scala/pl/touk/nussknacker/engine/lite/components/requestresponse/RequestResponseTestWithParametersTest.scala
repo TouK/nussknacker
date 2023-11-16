@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
   InputModeAnyWithSuggestions
 }
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterInputConfig
+  ParameterInputConfig
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
@@ -191,7 +191,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
-          inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+          inputConfig = ParameterInputConfig(InputModeAny, None)
         )
       )
     )
@@ -220,7 +220,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = false,
           initialValue = None,
           hintText = None,
-          inputConfig = FragmentParameterInputConfig(
+          inputConfig = ParameterInputConfig(
             inputMode = InputModeAnyWithSuggestions,
             fixedValuesList = Some(fixedValuesList)
           )

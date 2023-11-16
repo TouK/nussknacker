@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
@@ -17,12 +18,11 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   ProcessDefinitionWithComponentIds,
   mapByName
 }
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.scenarioproperty.{

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentParameter,
-  FragmentParameterInputMode
+  ParameterInputMode
 }
 
 object FragmentParameterValidator {
@@ -58,7 +58,7 @@ object FragmentParameterValidator {
     .flatMap(_.errors)
 
   private def validateFixedValuesList(fragmentParameter: FragmentParameter, fragmentInputId: String) =
-    if (fragmentParameter.inputConfig.inputMode == FragmentParameterInputMode.InputModeFixedList) {
+    if (fragmentParameter.inputConfig.inputMode == ParameterInputMode.InputModeFixedList) {
       List(
         fragmentParameter.inputConfig.effectiveFixedValuesList.isEmpty
           -> RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)),

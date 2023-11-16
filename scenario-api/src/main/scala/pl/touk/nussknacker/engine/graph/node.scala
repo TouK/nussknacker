@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
   InputModeAnyWithSuggestions,
   InputModeFixedList
@@ -305,13 +305,13 @@ object node {
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
-    object FragmentParameterInputMode extends Enumeration {
-      type FragmentParameterInputMode = Value
+    object ParameterInputMode extends Enumeration {
+      type ParameterInputMode = Value
 
-      implicit val typeEncoder: Encoder[FragmentParameterInputMode.Value] =
-        Encoder.encodeEnumeration(FragmentParameterInputMode)
-      implicit val typeDecoder: Decoder[FragmentParameterInputMode.Value] =
-        Decoder.decodeEnumeration(FragmentParameterInputMode)
+      implicit val typeEncoder: Encoder[ParameterInputMode.Value] =
+        Encoder.encodeEnumeration(ParameterInputMode)
+      implicit val typeDecoder: Decoder[ParameterInputMode.Value] =
+        Decoder.decodeEnumeration(ParameterInputMode)
 
       val InputModeAny: Value                = Value("InputModeAny")
       val InputModeAnyWithSuggestions: Value = Value("InputModeAnyWithSuggestions")
@@ -327,7 +327,7 @@ object node {
           required = false,
           initialValue = None,
           hintText = None,
-          inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+          inputConfig = ParameterInputConfig(InputModeAny, None)
         )
       }
 
@@ -340,14 +340,14 @@ object node {
         required: Boolean,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        inputConfig: FragmentParameterInputConfig,
+        inputConfig: ParameterInputConfig,
     ) {
       def withName(name: String): FragmentParameter = copy(name = name)
     }
 
     @JsonCodec
-    case class FragmentParameterInputConfig(
-        inputMode: FragmentParameterInputMode.Value,
+    case class ParameterInputConfig(
+        inputMode: ParameterInputMode.Value,
         fixedValuesList: Option[
           List[FixedExpressionValue]
         ] // don't access directly, use effectiveFixedValuesList instead

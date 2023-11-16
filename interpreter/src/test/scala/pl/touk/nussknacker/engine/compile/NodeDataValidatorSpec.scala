@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
   InputModeAnyWithSuggestions,
   InputModeFixedList
@@ -39,7 +39,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  FragmentParameterInputConfig
+  ParameterInputConfig
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -583,7 +583,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(
+              inputConfig = ParameterInputConfig(
                 inputMode = InputModeAnyWithSuggestions,
                 fixedValuesList = None // must be defined if inputMode == InputModeAnyWithSuggestions
               )
@@ -619,7 +619,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(
+              inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
                 fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
               )
@@ -656,7 +656,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -684,7 +684,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(
+              inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
                 fixedValuesList = Some(List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")))
               )
@@ -716,7 +716,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig(InputModeAny, None)
             ),
             FragmentParameter(
               "param1",
@@ -724,7 +724,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -752,7 +752,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
         ),
@@ -781,7 +781,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = FragmentParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
         ),

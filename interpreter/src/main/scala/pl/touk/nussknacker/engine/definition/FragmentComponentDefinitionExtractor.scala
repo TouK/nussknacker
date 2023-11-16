@@ -34,9 +34,9 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameterInputMode.{
-  FragmentParameterInputMode,
-  InputModeFixedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
+  InputModeFixedList,
+  ParameterInputMode
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
@@ -164,7 +164,7 @@ class FragmentComponentDefinitionExtractor(
   }
 
   private def fixedValuesEditorWithInputMode(
-      inputMode: FragmentParameterInputMode,
+      inputMode: ParameterInputMode,
       fixedValuesEditor: SimpleParameterEditor
   ) = {
     inputMode match {
