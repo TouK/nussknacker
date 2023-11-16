@@ -65,13 +65,19 @@ export function FixedValuesSetting({
                         value={temporaryListItem}
                         onChange={(e) => setTemporaryListItem(e.currentTarget.value)}
                         onKeyUp={(event) => {
-                            if (event.key === "Enter") {
+                            const isUniqueValue = fixedValuesList.every(
+                                (fixedValuesItem) => fixedValuesItem.label.trim() !== temporaryListItem.trim(),
+                            );
+                            const isEmptyValue = !temporaryListItem;
+
+                            if (event.key === "Enter" && isUniqueValue && !isEmptyValue) {
                                 const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
                                 onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
                                 setTemporaryListItem("");
                             }
                         }}
                         readOnly={readOnly}
+                        data-testid={"add-list-item"}
                     />
                     {userDefinedListOptions?.length > 0 && (
                         <ListItems items={fixedValuesList} handleDelete={readOnly ? undefined : handleDeleteDefinedListItem} />

@@ -37,6 +37,6 @@ describe(FixedValuesGroup.name, () => {
 
         fireEvent.click(screen.getByRole("radio", { name: "fragment.settings.userDefinedList" }));
 
-        expect(mockOnChange).toHaveBeenCalledWith("test.initialValue", "");
+        expect(mockOnChange).toHaveBeenCalledWith("test.initialValue", null);
     });
 });
