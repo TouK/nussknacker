@@ -317,6 +317,10 @@ object node {
 
   val IdFieldName = "$id"
 
+  // TODO: record vs fields prefix? with $ or without?
+  def recordKeyFieldName(index: Int)   = s"fields-$index-key"
+  def recordValueFieldName(index: Int) = s"fields-$index-value"
+
   // TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
 
   import shapeless.syntax.typeable._
