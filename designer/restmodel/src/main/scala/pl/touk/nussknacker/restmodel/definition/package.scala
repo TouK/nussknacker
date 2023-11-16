@@ -97,7 +97,7 @@ package object definition {
       isForInputDefinition: Boolean
   )
 
-  import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   object ComponentTemplate {
 

@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.{Configuration, JsonKey}
-import io.circe.{Decoder, Encoder}
+import io.circe.generic.extras.JsonKey
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -14,7 +16,6 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterIn
   InputModeAnyWithSuggestions,
   InputModeFixedList
 }
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -71,6 +72,11 @@ object node {
     def id: String
 
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
+  }
+
+  object NodeData {
+    implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
+    implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
   }
 
   // this represents node that originates from real node on UI, in contrast with Branch
@@ -320,6 +326,45 @@ object node {
 
     object FragmentParameter {
 
+      implicit def encoder: Encoder[FragmentParameter] = deriveConfiguredEncoder[FragmentParameter]
+
+      private val fieldNameRequired     = "required"
+      private val fieldNameInitialValue = "initialValue"
+      private val fieldNameHintText     = "hintText"
+      private val fieldNameInputConfig  = "inputConfig"
+
+      private val defaultInputConfig: Json = Json.fromJsonObject(
+        JsonObject(
+          "inputMode"       -> Json.fromString(InputModeAny.toString),
+          "fixedValuesList" -> Json.Null
+        )
+      )
+
+      private val defaultNewFieldValues = Map(
+        fieldNameRequired     -> Json.fromBoolean(false),
+        fieldNameInitialValue -> Json.Null,
+        fieldNameHintText     -> Json.Null,
+        fieldNameInputConfig  -> defaultInputConfig
+      )
+
+      private def setDefaultIfAbsent(obj: JsonObject, fieldName: String): JsonObject =
+        if (!obj.contains(fieldName)) {
+          obj.add(fieldName, defaultNewFieldValues(fieldName))
+        } else {
+          obj
+        }
+
+      // TODO needed for compatibility, could be removed in NU 1.13
+      private def setAbsentNewFieldsToDefaults(aCursor: ACursor): ACursor = {
+        aCursor.withFocus(_.mapObject { jsonObject =>
+          List(fieldNameRequired, fieldNameInitialValue, fieldNameHintText, fieldNameInputConfig)
+            .foldLeft(jsonObject)((acc, fieldName) => setDefaultIfAbsent(acc, fieldName))
+        })
+      }
+
+      implicit def decoder: Decoder[FragmentParameter] =
+        deriveConfiguredDecoder[FragmentParameter].prepare(setAbsentNewFieldsToDefaults)
+
       def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
         FragmentParameter(
           name,
@@ -333,7 +378,6 @@ object node {
 
     }
 
-    @JsonCodec
     case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
@@ -399,18 +443,5 @@ object node {
     nodeData.cast[FragmentInputDefinition]
 
   def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
-
-}
-
-// we don't do this is in NodeData because: https://circe.github.io/circe/codecs/known-issues.html#knowndirectsubclasses-error
-// seems our hierarchy is too complex for scala :)
-object NodeDataCodec {
-
-  import io.circe.generic.extras.semiauto._
-
-  private implicit val config: Configuration = CirceUtil.configuration
-
-  implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
-  implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
 
 }
