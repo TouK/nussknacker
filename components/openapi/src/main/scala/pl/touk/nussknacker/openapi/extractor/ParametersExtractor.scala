@@ -51,7 +51,8 @@ object ParametersExtractor {
         branchParam = false,
         isLazyParameter = true,
         scalaOptionParameter = false,
-        javaOptionalParameter = false
+        javaOptionalParameter = false,
+        hintText = None
       ),
       isBodyPart = isBodyPart
     )

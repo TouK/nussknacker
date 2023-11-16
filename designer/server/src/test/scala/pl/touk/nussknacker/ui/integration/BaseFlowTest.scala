@@ -108,13 +108,14 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
             "paramDualEditor" -> ParameterConfig(
               None,
               None,
               Some(
                 List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
               ),
+              None,
               None
             )
           )
@@ -131,14 +132,16 @@ class BaseFlowTest
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
               None,
+              None,
               None
             ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "baz" -> ParameterConfig(
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
               None,
-              None
+              None,
+              Some("some hint text")
             )
           )
         ),
@@ -157,7 +160,7 @@ class BaseFlowTest
       "sub1" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
           )
         ),
         icon = None,
@@ -168,8 +171,14 @@ class BaseFlowTest
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
-            "overriddenByDevConfigParam"  -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None, None),
+            "overriddenByDevConfigParam" -> ParameterConfig(
+              None,
+              None,
+              Some(List(MandatoryParameterValidator)),
+              None,
+              None
+            )
           )
         ),
         icon = None,
@@ -304,9 +313,8 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     response2.code shouldEqual StatusCode.Ok
-    // TODO: in the future should be more local error
-    response2.body.rightValue.errors.globalErrors.map(_.description) shouldBe List(
-      "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration"
+    response2.body.rightValue.errors.invalidNodes("input1").map(_.message) shouldBe List(
+      "Failed to resolve type 'i.do.not.exist' of parameter 'badParam'"
     )
 
     val response3 = httpClient.send(

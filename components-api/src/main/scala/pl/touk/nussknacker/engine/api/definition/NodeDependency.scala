@@ -79,7 +79,8 @@ object Parameter {
       branchParam = false,
       isLazyParameter = false,
       scalaOptionParameter = false,
-      javaOptionalParameter = false
+      javaOptionalParameter = false,
+      hintText = None
     )
 
   def optional[T: TypeTag: NotNothing](name: String): Parameter =
@@ -99,7 +100,8 @@ object Parameter {
       branchParam = false,
       isLazyParameter = false,
       scalaOptionParameter = false,
-      javaOptionalParameter = false
+      javaOptionalParameter = false,
+      hintText = None
     )
 
 }
@@ -122,7 +124,8 @@ case class Parameter(
     branchParam: Boolean,
     isLazyParameter: Boolean,
     scalaOptionParameter: Boolean,
-    javaOptionalParameter: Boolean
+    javaOptionalParameter: Boolean,
+    hintText: Option[String]
 ) extends NodeDependency {
 
   // we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
