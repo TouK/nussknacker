@@ -1,7 +1,6 @@
 import React from "react";
-import { onChangeType, FragmentInputParameter } from "../item";
+import { onChangeType, FragmentInputParameter, isStringOrBooleanVariant } from "../item";
 import { FixedValuesPresets, VariableTypes } from "../../../../../types";
-import { isStringOrBooleanVariant } from "../item/utils";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
 
 interface Settings {

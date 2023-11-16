@@ -1,4 +1,4 @@
-import { FragmentInputParameter, StringOrBooleanParameterVariant } from ".";
+import { FragmentInputParameter, InputMode } from ".";
 import { ReturnedType } from "../../../../../types";
 import { v4 as uuid4 } from "uuid";
 
@@ -12,7 +12,7 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         // fixedValuesType: FixedValuesType.UserDefinedList,
         inputConfig: {
             fixedValuesList: [],
-            inputMode: null,
+            inputMode: InputMode.AnyValue,
         },
         // fixedValuesListPresetId: "",
         // validationExpression: "test",
@@ -23,7 +23,3 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         typ: { refClazzName } as ReturnedType,
     };
 };
-
-export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {
-    return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
-}

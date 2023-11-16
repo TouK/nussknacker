@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";

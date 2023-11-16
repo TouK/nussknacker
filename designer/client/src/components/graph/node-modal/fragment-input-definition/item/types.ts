@@ -85,3 +85,7 @@ export function isAnyValueWithSuggestionsParameter(item: StringOrBooleanParamete
 export function isAnyValueParameter(item: StringOrBooleanParameterVariant): item is AnyValueParameterVariant {
     return item.inputConfig.inputMode === InputMode.AnyValue;
 }
+
+export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {
+    return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
+}
