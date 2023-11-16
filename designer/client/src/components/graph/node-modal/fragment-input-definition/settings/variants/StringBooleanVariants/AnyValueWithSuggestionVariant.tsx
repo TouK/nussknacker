@@ -54,6 +54,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
+                    className={"node-input"}
                 />
             </SettingRow>
         </>

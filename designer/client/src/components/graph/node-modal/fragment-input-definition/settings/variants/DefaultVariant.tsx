@@ -36,6 +36,8 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
+                    disabled={readOnly}
+                    className={"node-input"}
                 />
             </SettingRow>
         </SettingsWrapper>

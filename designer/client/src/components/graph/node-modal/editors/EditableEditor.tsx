@@ -62,6 +62,7 @@ function EditableEditorRow({
     rowClassName?: string;
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
+    console.log("props", props);
     return (
         <NodeRow className={`${rowClassName && rowClassName}`} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>

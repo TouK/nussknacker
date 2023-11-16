@@ -14,6 +14,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
 
     const lineEndPattern = /\r\n|\r|\n/;
 
+    console.log("props", props);
     return (
         <NodeRow>
             {children}

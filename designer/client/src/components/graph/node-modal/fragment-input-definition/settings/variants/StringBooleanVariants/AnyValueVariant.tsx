@@ -25,10 +25,11 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly }: Props) => {
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
-                    disabled={readOnly}
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
+                    disabled={readOnly}
+                    className={"node-input"}
                 />
             </SettingRow>
         </>
