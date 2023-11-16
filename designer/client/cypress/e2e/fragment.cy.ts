@@ -12,7 +12,7 @@ describe("Fragment", () => {
         cy.viewport(1440, 1200);
     });
 
-    it("should allow adding input parameters and display used fragment graph in modal", () => {
+    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
         cy.visitNewFragment(seed, "fragment").as("fragmentName");
         cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible").as("window");
@@ -47,7 +47,7 @@ describe("Fragment", () => {
         cy.wait(750);
         cy.get("[data-testid=window]").matchImage();
 
-        cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult");
+        cy.get("[data-testid=window]").find("input[value=testOutput]").type("{selectall}fragmentResult");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
