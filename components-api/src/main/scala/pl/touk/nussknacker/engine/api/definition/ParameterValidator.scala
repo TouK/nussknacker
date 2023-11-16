@@ -39,7 +39,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
   override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] =
-    if (!expression.expression.isBlank) valid(()) else invalid(error(paramName, nodeId.id))
+    if (!expression.expression.isEmpty) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
     "This field is mandatory and can not be empty",
