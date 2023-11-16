@@ -212,7 +212,7 @@ object PrettyValidationErrors {
     NodeValidationError(
       typ,
       s"Property $propertyName$labelText has invalid value",
-      s"Expected one of ${values.mkString(", ")}, got: '$value'.",
+      s"Expected one of ${values.mkString(", ")}, got: $value.",
       Some(propertyName),
       NodeValidationErrorType.SaveAllowed
     )

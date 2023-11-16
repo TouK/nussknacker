@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import javax.validation.constraints.NotBlank
 import scala.concurrent.Future
 
 object validationHelpers {
@@ -91,7 +92,7 @@ object validationHelpers {
 
     @MethodToInvoke
     def execute(
-        @BranchParamName("key") keyByBranchId: Map[String, LazyParameter[
+        @BranchParamName("key") @NotBlank keyByBranchId: Map[String, LazyParameter[
           CharSequence
         ]], // key is only for runtime purpose
         @BranchParamName("value") valueByBranchId: Map[String, LazyParameter[_]],

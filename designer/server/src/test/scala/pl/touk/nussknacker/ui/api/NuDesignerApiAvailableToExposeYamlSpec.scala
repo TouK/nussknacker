@@ -8,9 +8,8 @@ import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
-import sttp.tapir.EndpointInput.Auth
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
-import sttp.tapir.{Endpoint, auth}
+import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
 import scala.jdk.CollectionConverters._
@@ -63,7 +62,7 @@ object NuDesignerApiAvailableToExpose {
   }
 
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
-    Try(clazz.getConstructor(classOf[Auth[AuthCredentials, _]]))
+    Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
       .map(_.newInstance(auth.basic[AuthCredentials]()))
       .orElse {
         Try(clazz.getDeclaredConstructor())

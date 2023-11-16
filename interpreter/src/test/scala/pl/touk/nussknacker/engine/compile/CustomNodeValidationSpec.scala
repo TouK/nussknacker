@@ -8,7 +8,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  BlankParameter,
   CustomNodeError,
+  EmptyMandatoryParameter,
   ExpressionParserCompilationError,
   InvalidTailOfBranch,
   MissingParameters
@@ -466,6 +468,44 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             )
           ) =>
     }
+  }
+
+  test("custom validation of branch parameters") {
+    val process =
+      ScenarioBuilder
+        .streaming("proc1")
+        .sources(
+          GraphBuilder
+            .source("sourceId1", "mySource")
+            .branchEnd("branch1", "join1"),
+          GraphBuilder
+            .source("sourceId2", "mySource")
+            .branchEnd("branch2", "join1"),
+          GraphBuilder
+            .join(
+              "join1",
+              "unionTransformer",
+              Some("outPutVar"),
+              List(
+                "branch1" -> List("key" -> "''", "value" -> "'ala'"),
+                "branch2" -> List("key" -> "'key2'", "value" -> "null")
+              )
+            )
+            .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
+        )
+
+    val validationResult = validator.validate(process)
+    validationResult.result shouldBe Invalid(
+      NonEmptyList(
+        BlankParameter(
+          "This field value is required and can not be blank",
+          "Please fill field value for this parameter",
+          "key for branch branch1",
+          "join1"
+        ),
+        Nil
+      )
+    )
   }
 
   test("scenario with enricher") {

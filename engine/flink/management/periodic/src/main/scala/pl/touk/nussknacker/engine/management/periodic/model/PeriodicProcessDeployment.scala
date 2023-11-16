@@ -10,6 +10,7 @@ import java.time.{Clock, LocalDateTime}
 case class PeriodicProcessDeployment(
     id: PeriodicProcessDeploymentId,
     periodicProcess: PeriodicProcess,
+    createdAt: LocalDateTime,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,
     retriesLeft: Int,

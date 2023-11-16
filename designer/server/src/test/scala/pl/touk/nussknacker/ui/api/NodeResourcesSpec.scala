@@ -297,7 +297,7 @@ class NodeResourcesSpec
           expressionType = None,
           validationErrors = List(
             PrettyValidationErrors.formatErrorMessage(
-              InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), "")
+              InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "'a'", List("1", "2"), "")
             )
           ),
           validationPerformed = true
@@ -320,7 +320,7 @@ class NodeResourcesSpec
 
       val expectedErrors = List(
         PrettyValidationErrors.formatErrorMessage(
-          InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), "")
+          InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "'a'", List("1", "2"), "")
         ),
         PrettyValidationErrors.formatErrorMessage(
           ScenarioNameValidationError(
