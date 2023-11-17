@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   JoinGenericNodeTransformation,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotNullParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -326,7 +326,13 @@ class NodeCompiler(
     val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
       BaseComponentsValidator.validate(variable)
 
-    combineErrors(compilationResult, additionalValidationResult)
+    // TODO: do this in a civilized way
+    val nullCheckResult = NotNullParameterValidator
+      .isValid(DefaultExpressionId, variable.value, compilationResult.expressionType.orNull.valueOpt.get, None)
+      .toValidatedNel
+    val combined = additionalValidationResult.combine(nullCheckResult)
+
+    combineErrors(compilationResult, combined)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
