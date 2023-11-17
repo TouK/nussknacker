@@ -461,7 +461,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
               "FailedToResolveFragmentParameterType",
               "Failed to resolve type 'thisTypeDoesntExist' of parameter 'subParam1'",
               _,
-              Some("subParam1"),
+              Some("$param.subParam1.$typ"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -523,14 +523,14 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
               "InitialValueNotPresentInPossibleValues",
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
               _,
-              Some("subParam1"),
+              Some("$param.subParam1.$initialValue"),
               NodeValidationErrorType.SaveAllowed
             ),
             NodeValidationError(
-              "ExpressionParserCompilationError",
+              "ExpressionParserCompilationErrorInFragmentDefinition",
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
-              _,
-              Some("subParam2"),
+              "There is a problem with expression: 'someValue'",
+              Some("$param.subParam2.$fixedValuesList"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>

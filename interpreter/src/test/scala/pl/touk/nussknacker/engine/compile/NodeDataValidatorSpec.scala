@@ -664,7 +664,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
       error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
     }
   }
@@ -695,7 +695,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
       error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
     }
 
@@ -760,7 +760,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
       error.message should include("Unresolved reference 'unknownVar'")
     }
   }

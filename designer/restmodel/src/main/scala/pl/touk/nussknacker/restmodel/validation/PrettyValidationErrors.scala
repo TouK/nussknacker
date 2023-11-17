@@ -3,9 +3,16 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.graph.node.{
+  FixedValuesListFieldName,
+  InitialValueFieldName,
+  InputModeFieldName,
+  TypFieldName,
+  qualifiedParamFieldName
+}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
@@ -148,25 +155,44 @@ object PrettyValidationErrors {
         node(
           s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
           "Please check fragment definition",
-          fieldName = Some(paramName)
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
       case InvalidParameterInputConfig(paramName, _) =>
         node(
           s"The input configuration for $paramName is invalid.",
           "Please check fragment definition",
-          fieldName = Some(paramName)
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = None))
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",
           "Please check fragment definition",
-          fieldName = Some(paramName)
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case FailedToResolveFragmentParameterType(paramName, typ, _) =>
         node(
           s"Failed to resolve type '$typ' of parameter '$paramName'",
           "Please check fragment definition",
-          fieldName = Some(paramName)
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
+        )
+      case DuplicateFragmentParameterNames(paramName, _) =>
+        node(
+          s"Duplicate parameter name present: '$paramName'",
+          "Please check fragment definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = None))
+        )
+      case DuplicateFragmentFixedValueLabels(paramName, duplicateFixedValueLabel, _) =>
+        node(
+          s"Duplicate fixed value label present: '$duplicateFixedValueLabel' in definition of parameter '$paramName'",
+          "Please check fragment definition",
+          fieldName =
+            Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(FixedValuesListFieldName)))
+        )
+      case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
+        node(
+          s"Failed to parse expression: $message",
+          s"There is a problem with expression: $originalExpr",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
         )
     }
   }
