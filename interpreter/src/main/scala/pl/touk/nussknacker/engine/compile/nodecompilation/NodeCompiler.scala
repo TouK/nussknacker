@@ -777,18 +777,4 @@ class NodeCompiler(
 
   }
 
-  sealed trait NodeValidator {
-    def validate(value: String, fieldName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
-  }
-
-  private final object MandatoryValueValidator extends NodeValidator {
-
-    override def validate(value: String, fieldName: String)(
-        implicit nodeId: NodeId
-    ): ValidatedNel[ProcessCompilationError, Unit] = {
-      MandatoryParameterValidator.isValid(fieldName, Expression.spel(value), value, None).toValidatedNel
-    }
-
-  }
-
 }
