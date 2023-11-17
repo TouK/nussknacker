@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  ExpressionParserCompilationError,
+  ExpressionParserCompilationErrorInFragmentDefinition,
   InitialValueNotPresentInPossibleValues,
   InvalidParameterInputConfig,
   RequireValueFromEmptyFixedList
@@ -13,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentParameter,
   ParameterInputMode
 }
+import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialValueFieldName}
 
 object FragmentParameterValidator {
 
@@ -28,8 +31,9 @@ object FragmentParameterValidator {
       List(InvalidParameterInputConfig(fragmentParameter.name, Set(fragmentInputId)))
     }
 
-    val fixedExpressionsResponses = validateFixedExpressions(
-      fragmentParameter.inputConfig.effectiveFixedValuesList.getOrElse(List.empty) ++ fragmentParameter.initialValue,
+    val fixedExpressionsResponses = validateFixedExpressionValues(
+      fragmentParameter.initialValue,
+      fragmentParameter.inputConfig.effectiveFixedValuesList.getOrElse(List.empty),
       compiler,
       validationContext,
       fragmentParameter.name
@@ -40,22 +44,43 @@ object FragmentParameterValidator {
     inputConfigResponse ++ fixedValuesListResponses ++ fixedExpressionsResponses
   }
 
-  private def validateFixedExpressions(
-      fixedValues: List[FixedExpressionValue],
+  private def validateFixedExpressionValues(
+      initialValue: Option[FixedExpressionValue],
+      fixedValuesList: List[FixedExpressionValue],
       compiler: NodeCompiler,
       validationContext: ValidationContext,
       paramName: String
-  )(implicit nodeId: NodeId) = fixedValues
-    .map { fixedExpressionValue =>
-      compiler.compileExpression(
-        expr = Expression.spel(fixedExpressionValue.expression),
-        ctx = validationContext,
-        expectedType = validationContext(paramName),
-        fieldName = paramName,
-        outputVar = None
-      )
-    }
-    .flatMap(_.errors)
+  )(implicit nodeId: NodeId) = {
+    def fixedExpressionsCompilationErrors(
+        fixedExpressions: Iterable[FixedExpressionValue],
+        subFieldName: Option[String],
+    ) = fixedExpressions
+      .map { fixedExpressionValue =>
+        compiler.compileExpression(
+          expr = Expression.spel(fixedExpressionValue.expression),
+          ctx = validationContext,
+          expectedType = validationContext(paramName),
+          fieldName = paramName,
+          outputVar = None
+        )
+      }
+      .flatMap(_.errors)
+      .map {
+        case e: ExpressionParserCompilationError =>
+          ExpressionParserCompilationErrorInFragmentDefinition(
+            e.message, nodeId.id, paramName, subFieldName, e.originalExpr
+          )
+        case e => e
+      }
+
+    fixedExpressionsCompilationErrors(
+      initialValue,
+      Some(InitialValueFieldName)
+    ) ++ fixedExpressionsCompilationErrors(
+      fixedValuesList,
+      Some(FixedValuesListFieldName)
+    )
+  }
 
   private def validateFixedValuesList(fragmentParameter: FragmentParameter, fragmentInputId: String) =
     if (fragmentParameter.inputConfig.inputMode == ParameterInputMode.InputModeFixedList) {

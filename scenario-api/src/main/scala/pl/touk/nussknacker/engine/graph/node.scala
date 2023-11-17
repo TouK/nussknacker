@@ -11,11 +11,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeAnyWithSuggestions,
-  InputModeFixedList
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{InputModeAny, InputModeAnyWithSuggestions, InputModeFixedList}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -427,7 +423,21 @@ object node {
 
   }
 
-  val IdFieldName = "$id"
+  val IdFieldName              = "$id"
+  val ParameterFieldNamePrefix = "$param"
+  val InitialValueFieldName    = "$initialValue"
+  val InputModeFieldName       = "$inputMode"
+  val TypFieldName             = "$typ"
+  val FixedValuesListFieldName = "$fixedValuesList"
+
+  def qualifiedParamFieldName(
+      paramName: String,
+      subFieldName: Option[String]
+  ): String = // for example: "$param.P1.$initialValue"
+    subFieldName match {
+      case Some(subField) => ParameterFieldNamePrefix + "." + paramName + "." + subField
+      case None           => ParameterFieldNamePrefix + "." + paramName
+    }
 
   // TODO: after migration to cats > 1.0.0 shapeless cast on node subclasses won't compile outside package :|
 
