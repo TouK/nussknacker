@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DefaultParameterVariant, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
-import ValidationsFields from "./fields/ValidationsFields";
+import { ValidationsFields } from "./fields/ValidationsFields";
 import InitialValue from "./fields/InitialValue";
 
 interface Props {
@@ -29,7 +29,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }
                 />
             </SettingRow>
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
-            <InitialValue onChange={onChange} item={item} path={path} readOnly={readOnly} />
+            <InitialValue onChange={onChange} item={item} path={path} readOnly={readOnly} variableTypes={variableTypes} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

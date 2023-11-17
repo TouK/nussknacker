@@ -14,7 +14,7 @@ interface ValidationsFields {
     readOnly: boolean;
 }
 
-export default function ValidationsFields(props: ValidationsFields) {
+export function ValidationsFields(props: ValidationsFields) {
     const { onChange, path, variableTypes, item, readOnly } = props;
     const [validation, setValidation] = useState(true);
 

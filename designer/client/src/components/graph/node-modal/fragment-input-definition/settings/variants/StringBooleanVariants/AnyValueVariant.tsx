@@ -1,5 +1,5 @@
 import React from "react";
-import ValidationsFields from "../fields/ValidationsFields";
+import { ValidationsFields } from "../fields/ValidationsFields";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
@@ -15,13 +15,13 @@ interface Props {
     readOnly: boolean;
 }
 
-export const AnyValueVariant = ({ item, path, onChange, readOnly }: Props) => {
+export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes }: Props) => {
     const { t } = useTranslation();
 
     return (
         <>
             {/*<ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />*/}
-            <InitialValue path={path} item={item} onChange={onChange} readOnly={readOnly} />
+            <InitialValue path={path} item={item} onChange={onChange} readOnly={readOnly} variableTypes={variableTypes} />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

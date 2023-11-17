@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
-import { NodeInput } from "../../../../../../withFocus";
 import { useTranslation } from "react-i18next";
 import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
-import { FixedValuesPresets } from "../../../../../../../types";
+import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { UserDefinedListInput } from "./UserDefinedListInput";
 
 interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
@@ -15,6 +15,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     fixedValuesPresets: FixedValuesPresets;
     fixedValuesListPresetId: string;
     readOnly: boolean;
+    variableTypes: VariableTypes;
 }
 
 export function FixedValuesSetting({
@@ -25,21 +26,16 @@ export function FixedValuesSetting({
     fixedValuesPresets,
     fixedValuesList,
     readOnly,
+    variableTypes,
 }: FixedValuesSetting) {
     const { t } = useTranslation();
-    const [temporaryListItem, setTemporaryListItem] = useState("");
 
     const presetListOptions: Option[] = Object.keys(fixedValuesPresets ?? {}).map((key) => ({ label: key, value: key }));
-    const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     const selectedPresetValueExpressions: Option[] = (fixedValuesPresets?.[fixedValuesListPresetId] ?? []).map(
         (selectedPresetValueExpression) => ({ label: selectedPresetValueExpression.label, value: selectedPresetValueExpression.label }),
     );
 
-    const handleDeleteDefinedListItem = (currentIndex: number) => {
-        const filteredItemList = fixedValuesList.filter((_, index) => index !== currentIndex);
-        onChange(`${path}.inputConfig.fixedValuesList`, filteredItemList);
-    };
     return (
         <>
             {fixedValuesType === FixedValuesType.Preset && (
@@ -58,31 +54,13 @@ export function FixedValuesSetting({
                 </SettingRow>
             )}
             {fixedValuesType === FixedValuesType.UserDefinedList && (
-                <SettingRow>
-                    <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
-                    <NodeInput
-                        style={{ width: "70%" }}
-                        value={temporaryListItem}
-                        onChange={(e) => setTemporaryListItem(e.currentTarget.value)}
-                        onKeyUp={(event) => {
-                            const isUniqueValue = fixedValuesList.every(
-                                (fixedValuesItem) => fixedValuesItem.label.trim() !== temporaryListItem.trim(),
-                            );
-                            const isEmptyValue = !temporaryListItem;
-
-                            if (event.key === "Enter" && isUniqueValue && !isEmptyValue) {
-                                const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
-                                onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
-                                setTemporaryListItem("");
-                            }
-                        }}
-                        readOnly={readOnly}
-                        data-testid={"add-list-item"}
-                    />
-                    {userDefinedListOptions?.length > 0 && (
-                        <ListItems items={fixedValuesList} handleDelete={readOnly ? undefined : handleDeleteDefinedListItem} />
-                    )}
-                </SettingRow>
+                <UserDefinedListInput
+                    fixedValuesList={fixedValuesList}
+                    variableTypes={variableTypes}
+                    readOnly={readOnly}
+                    onChange={onChange}
+                    path={path}
+                />
             )}
         </>
     );

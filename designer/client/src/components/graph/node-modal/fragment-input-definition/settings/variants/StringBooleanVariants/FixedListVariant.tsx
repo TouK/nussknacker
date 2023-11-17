@@ -6,7 +6,7 @@ import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { FixedValuesPresets } from "../../../../../../../types";
+import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -14,9 +14,10 @@ interface Props {
     path: string;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
+    variableTypes: VariableTypes;
 }
 
-export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -38,6 +39,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
             />
             <InitialValue
                 path={path}
@@ -45,6 +47,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 onChange={onChange}
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

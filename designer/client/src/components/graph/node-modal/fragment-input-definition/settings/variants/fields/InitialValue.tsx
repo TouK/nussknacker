@@ -3,7 +3,9 @@ import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
 import { onChangeType, FragmentInputParameter, FixedValuesOption } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
-import { NodeInput } from "../../../../../../withFocus";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import { EditableEditor } from "../../../../editors/EditableEditor";
+import { VariableTypes } from "../../../../../../../types";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -11,9 +13,10 @@ interface InitialValue {
     onChange: (path: string, value: onChangeType) => void;
     options?: FixedValuesOption[];
     readOnly: boolean;
+    variableTypes: VariableTypes;
 }
 
-export default function InitialValue({ onChange, item, path, options = [], readOnly }: InitialValue) {
+export default function InitialValue({ onChange, item, path, options = [], readOnly, variableTypes }: InitialValue) {
     const { t } = useTranslation();
 
     const emptyOption = { label: "", value: null };
@@ -34,12 +37,11 @@ export default function InitialValue({ onChange, item, path, options = [], readO
                     placeholder={""}
                 />
             ) : (
-                <NodeInput
-                    style={{ width: "70%" }}
-                    value={item?.initialValue?.label}
-                    onChange={(event) =>
-                        onChange(`${path}.initialValue`, { label: event.currentTarget.value, expression: event.currentTarget.value })
-                    }
+                <EditableEditor
+                    fieldName="initialValue"
+                    expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.label }}
+                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
+                    variableTypes={variableTypes}
                     readOnly={readOnly}
                 />
             )}

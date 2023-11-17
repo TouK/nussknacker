@@ -52,7 +52,14 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                 <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} readOnly={readOnly} />
             )}
             {isFixedListParameter(item) && (
-                <FixedListVariant item={item} onChange={onChange} path={path} fixedValuesPresets={fixedValuesPresets} readOnly={readOnly} />
+                <FixedListVariant
+                    item={item}
+                    onChange={onChange}
+                    path={path}
+                    fixedValuesPresets={fixedValuesPresets}
+                    readOnly={readOnly}
+                    variableTypes={variableTypes}
+                />
             )}
             {isAnyValueWithSuggestionsParameter(item) && (
                 <AnyValueWithSuggestionVariant

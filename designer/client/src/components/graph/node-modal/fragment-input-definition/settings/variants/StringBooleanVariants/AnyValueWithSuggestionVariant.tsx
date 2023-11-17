@@ -38,6 +38,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
@@ -46,6 +47,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 onChange={onChange}
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
