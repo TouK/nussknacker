@@ -68,7 +68,11 @@ object FragmentParameterValidator {
       .map {
         case e: ExpressionParserCompilationError =>
           ExpressionParserCompilationErrorInFragmentDefinition(
-            e.message, nodeId.id, paramName, subFieldName, e.originalExpr
+            e.message,
+            nodeId.id,
+            paramName,
+            subFieldName,
+            e.originalExpr
           )
         case e => e
       }
