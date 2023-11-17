@@ -175,7 +175,7 @@ class ProcessesResources(
             processService.getProcessWithDetails(
               processId,
               versionId,
-              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = false)
+              GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
             )
           }
         }
