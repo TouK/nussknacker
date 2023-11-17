@@ -12,7 +12,7 @@ describe("Fragment", () => {
         cy.viewport(1440, 1200);
     });
 
-    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
+    it("should allow adding input parameters and display used fragment graph in modal", () => {
         cy.visitNewFragment(seed, "fragment").as("fragmentName");
         cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible").as("window");
