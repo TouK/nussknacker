@@ -12179,7 +12179,23 @@
     }
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        },
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Map"
+    },
     "methods": {
       "containsKey": [
         {
@@ -12269,6 +12285,15 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
@@ -14752,7 +14777,23 @@
           "name": "properties",
           "signature": {
             "noVarArgs": [],
-            "result": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"}
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                },
+                {
+                  "display": "Unknown",
+                  "params": [],
+                  "refClazzName": "java.lang.Object",
+                  "type": "Unknown"
+                }
+              ],
+              "refClazzName": "java.util.Map"
+            }
           }
         }
       ],
@@ -14773,7 +14814,26 @@
           "signature": {
             "noVarArgs": [
               {"name": "processName", "refClazz": {"refClazzName": "java.lang.String"}},
-              {"name": "properties", "refClazz": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"}}
+              {
+                "name": "properties",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "String",
+                      "params": [],
+                      "refClazzName": "java.lang.String",
+                      "type": "TypedClass"
+                    },
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Map"
+                }
+              }
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"}
           }

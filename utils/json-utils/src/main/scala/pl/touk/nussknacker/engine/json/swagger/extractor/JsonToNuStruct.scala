@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.json.swagger.extractor
 
-import io.circe.{Json, JsonNumber, JsonObject}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
+import io.circe.{Json, JsonNumber}
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
@@ -10,6 +9,7 @@ import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
+
 object JsonToNuStruct {
 
   import scala.jdk.CollectionConverters._
@@ -24,38 +24,6 @@ object JsonToNuStruct {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
       fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition, path))
-
-    def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
-
-    def extractObject(obj: SwaggerObject): AnyRef = {
-      object KeyMatchingPatternSchema {
-        def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
-          val (propertyName, _) = keyValue
-          obj.patternProperties.find(_.testPropertyName(propertyName)).map(_.propertyType)
-        }
-      }
-
-      extract[JsonObject](
-        _.asObject,
-        jo =>
-          TypedMap(
-            jo.toMap.collect {
-              case (key, value) if obj.elementType.contains(key) =>
-                key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
-              case keyValue @ KeyMatchingPatternSchema(patternPropertySchema) =>
-                val (key, value) = keyValue
-                key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
-              case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled =>
-                obj.additionalProperties match {
-                  case add: AdditionalPropertiesEnabled =>
-                    key -> JsonToNuStruct(value, add.value, addPath(key))
-                  case _ =>
-                    key -> jsonToAny(value)
-                }
-            }
-          )
-      )
-    }
 
     // we handle null here to enable pattern matching exhaustive check
     if (json.isNull) {
@@ -90,7 +58,8 @@ object JsonToNuStruct {
             _.asArray,
             _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava
           )
-        case obj: SwaggerObject => extractObject(obj)
+        case obj: SwaggerObject =>
+          JsonTypedMap(json.asObject.get, obj, path)
         case u @ SwaggerUnion(types) =>
           types.view
             .flatMap(aType => Try(apply(json, aType)).toOption)

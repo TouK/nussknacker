@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToOb
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
+import scala.annotation.tailrec
 
 class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
@@ -72,8 +73,11 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))),
       AdditionalPropertiesDisabled
     )
+    val result = JsonToNuStruct(json, definition).asInstanceOf[TypedMap]
 
-    val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
+    val mapField = result.get("mapField").asInstanceOf[TypedMap]
+
+    val ex = intercept[JsonToObjectError](mapField.get("b"))
 
     ex.getMessage shouldBe "JSON returned by service has invalid type at mapField.b. Expected: SwaggerString. Returned json: 2"
     ex.path shouldBe "mapField.b"
@@ -115,7 +119,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      extractor.JsonToNuStruct(json, definition)
+      extractor.JsonToNuStruct(json, definition).asInstanceOf[java.util.Map[String, Any]].get("field1")
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
@@ -132,6 +136,23 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     fields.get("field2") shouldBe 1L
   }
 
+  test("should handle arrays") {
+
+    import scala.jdk.CollectionConverters._
+    val definition =
+      SwaggerObject(elementType = Map("array" -> SwaggerArray(SwaggerString)))
+
+    val json = Json.obj(
+      "array" -> fromValues(List(fromString("string1"), fromString("string2")))
+    )
+
+    val value = JsonToNuStruct(json, definition)
+
+    value shouldBe a[TypedMap]
+    val fields = value.asInstanceOf[TypedMap]
+    fields.get("array") shouldBe List("string1", "string2").asJava
+  }
+
   test("should handle display path in error") {
     val definition = SwaggerObject(
       elementType = Map(
@@ -142,17 +163,30 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
       )
     )
 
-    def assertPath(json: Json, path: String) =
-      intercept[JsonToObjectError](JsonToNuStruct(json, definition)).path shouldBe path
+    def assertPath(json: Json, path: String, fields: String*) = {
+      def toMap: PartialFunction[Any, JsonTypedMap] = { case map: JsonTypedMap => map }
 
-    assertPath(Json.obj("string" -> fromLong(1)), "string")
+      @tailrec def extractField(obj: Any, fields: List[String]): Any =
+        fields match {
+          case Nil          => obj
+          case last :: Nil  => toMap(obj).get(last)
+          case head :: rest => extractField(toMap(obj).get(head), rest)
+        }
+
+      intercept[JsonToObjectError] {
+        extractField(JsonToNuStruct(json, definition), fields.toList)
+      }.path shouldBe path
+    }
+
+    assertPath(Json.obj("string" -> fromLong(1)), "string", "string")
     assertPath(
       Json.obj(
         "string" -> fromString(""),
         "long"   -> fromLong(1),
         "array"  -> fromValues(List(fromBoolean(false), fromString("string")))
       ),
-      "array[1]"
+      "array[1]",
+      "array"
     )
     assertPath(
       Json.obj(
@@ -161,7 +195,9 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "array"  -> fromValues(Nil),
         "nested" -> Json.obj("string" -> fromLong(1))
       ),
-      "nested.string"
+      "nested.string",
+      "nested",
+      "string"
     )
   }
 

@@ -57,6 +57,10 @@ class LiteKafkaUniversalJsonFunctionalTest
       (config(sampleObjNull, schemaObjNull, schemaObjNull), valid(sampleObjNull)),
       (config(sampleObjNull, schemaObjNull, schemaObjNull, objOutputAsInputField), valid(sampleObjNull)),
       (config(obj(), schemaObjStr, schemaObjStr), valid(obj())),
+      (
+        config(obj("field" -> Json.Null), schemaObjUnionNullStr, schemaObjUnionNullStr, objOutputAsInputField),
+        valid(sampleObjNull)
+      ),
       (config(obj(), schemaObjUnionNullStr, schemaObjUnionNullStr, objOutputAsInputField), valid(sampleObjNull)),
       (config(obj(), schemaObjUnionNullStr, schemaObjUnionNullStr), valid(obj())),
       (config(sampleObjNull, schemaObjUnionNullStr, schemaObjUnionNullStr), valid(sampleObjNull)),

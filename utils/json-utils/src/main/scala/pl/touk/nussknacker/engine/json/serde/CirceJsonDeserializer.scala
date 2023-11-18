@@ -32,8 +32,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
       .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))
 
     val circeJson = JsonSchemaUtils.jsonToCirce(validatedJson)
-    val struct    = JsonToNuStruct(circeJson, swaggerTyped)
-    struct
+    JsonToNuStruct(circeJson, swaggerTyped)
   }
 
 }

@@ -189,7 +189,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize("""{
+    val result = new CirceJsonDeserializer(schema)
+      .deserialize("""{
         |  "someDefinedProp": true,
         |  "someAdditionalProp": "string",
         |  "somePatternProp_int": 1234
@@ -213,7 +214,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize("""{
+    val result = new CirceJsonDeserializer(schema)
+      .deserialize("""{
         |  "somePatternProp_int": 1234
         |}""".stripMargin)
 

@@ -18,7 +18,7 @@ case class TypedMapSerializer(override val serializers: Array[(String, TypeSeria
   override def duplicate(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[TypedMap] =
     TypedMapSerializer(serializers)
 
-  override def createInstance(): TypedMap = new TypedMap()
+  override def createInstance(): TypedMap = TypedMap()
 
   override def snapshotConfiguration(
       snapshots: Array[(String, TypeSerializerSnapshot[_])]

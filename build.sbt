@@ -832,8 +832,8 @@ lazy val benchmarks = (project in file("benchmarks"))
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV exclude ("com.esotericsoftware", "kryo-shaded"),
-        "org.apache.flink" % "flink-runtime"        % flinkV
-      )
+        "org.apache.flink" % "flink-runtime"        % flinkV,
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     Jmh / run / javaOptions ++= (
       if (System.getProperty("os.name").startsWith("Windows")) {
