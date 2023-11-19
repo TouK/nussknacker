@@ -6,68 +6,43 @@ import cats.implicits.{catsSyntaxTuple2Semigroupal, catsSyntaxValidatedId, toFol
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
-import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
-  NotBlankParameterValidator,
-  NotNullParameterValidator,
-  ParameterValidator
-}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
-import pl.touk.nussknacker.engine.graph.node.{Filter, Variable, recordKeyFieldName, recordValueFieldName}
+import pl.touk.nussknacker.engine.graph.node.{recordKeyFieldName, recordValueFieldName}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 object BaseComponentsValidator {
 
-  def validate(filter: Filter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    validateSequentially(
-      filter.expression.expression,
-      DefaultExpressionId,
-      List(MandatoryParameterValidator, NotBlankParameterValidator, NotNullParameterValidator)
-    )
-  }
+  final case class TypedField(field: Field, index: Int, typingResult: Option[TypingResult])
 
-  def validate(variable: Variable)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    validateSequentially(
-      variable.value.expression,
-      DefaultExpressionId,
-      List(MandatoryParameterValidator, NotBlankParameterValidator)
-    )
-  }
-
-  def validateRecord(fields: List[Field])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    fields.zipWithIndex.map { case (field, index) =>
-      (
-        validate(field.expression.expression, recordValueFieldName(index), MandatoryParameterValidator),
-        validateUniqueRecordKey(fields.map(_.name), field.name, recordKeyFieldName(index)).toValidatedNel
-      ).mapN { (_, _) => () }
-    }.combineAll
-  }
-
-  def validateSwitchChoices(
-      choices: List[(String, Expression)]
-  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    choices.map { case (branchFieldName, expression) =>
-      validateSequentially(
-        expression.expression,
-        branchFieldName,
-        List(MandatoryParameterValidator, NotBlankParameterValidator, NotNullParameterValidator)
-      )
-    }.combineAll
-  }
-
-  private def validateSequentially(expression: String, fieldName: String, validators: List[ParameterValidator])(
+  def validateFailFast(
+      expression: Expression,
+      typingResult: Option[TypingResult],
+      fieldName: String,
+      validators: List[ParameterValidator]
+  )(
       implicit nodeId: NodeId
-  ) = {
+  ): ValidatedNel[ProcessCompilationError, Unit] = {
     validators.foldLeft(().validNel[ProcessCompilationError]) { (acc, validator) =>
-      acc.andThen(_ => validate(expression, fieldName, validator))
+      acc.andThen(_ => validator.isValid(fieldName, expression, extractValue(typingResult), None).toValidatedNel)
     }
   }
 
-  private def validate(value: String, fieldName: String, validator: ParameterValidator)(
-      implicit nodeId: NodeId
-  ) = {
-    validator.isValid(fieldName, Expression.spel(value), value, None).toValidatedNel
+  def validateRecord(
+      fields: List[TypedField]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    fields.map { field =>
+      (
+        validateFailFast(
+          field.field.expression,
+          field.typingResult,
+          recordValueFieldName(field.index),
+          List(MandatoryParameterValidator)
+        ),
+        validateUniqueRecordKey(fields.map(_.field.name), field.field.name, recordKeyFieldName(field.index))
+      ).mapN { (_, _) => () }
+    }.combineAll
   }
 
   private def validateUniqueRecordKey(allValues: Seq[String], requiredToBeUniqueValue: String, fieldName: String)(
@@ -75,17 +50,27 @@ object BaseComponentsValidator {
   ) = {
     if (allValues.count(_ == requiredToBeUniqueValue) <= 1) {
       valid(())
-    } else {
-      Invalid(
-        // TODO: Make typed Error for this?
-        CustomParameterValidationError(
-          "The key of a record has to be unique",
-          "Record key not unique",
-          fieldName,
-          nodeId.id
+    } else
+      {
+        Invalid(
+          // TODO: Make typed Error for this?
+          CustomParameterValidationError(
+            "The key of a record has to be unique",
+            "Record key not unique",
+            fieldName,
+            nodeId.id
+          )
         )
-      )
-    }
+      }.toValidatedNel
+  }
+
+  private def extractValue(typingResult: Option[TypingResult]) = typingResult match {
+    case Some(value) =>
+      value.valueOpt match {
+        case Some(value) => value
+        case None        => null
+      }
+    case None => null
   }
 
 }
