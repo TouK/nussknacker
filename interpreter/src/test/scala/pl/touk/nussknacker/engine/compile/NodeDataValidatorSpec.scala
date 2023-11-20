@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -40,7 +40,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
+class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with TableDrivenPropertyChecks {
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
@@ -170,12 +170,24 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
     }
-    validate(Filter("filter", ""), ValidationContext.empty) should matchPattern {
-      case ValidationPerformed(
-            List(EmptyMandatoryParameter(_, _, NodeExpressionId.DefaultExpressionId, "filter")),
-            _,
-            _
-          ) =>
+  }
+
+  test("should not allow null values in filter") {
+    forAll(ExpressionsTestData.nullExpressions) { filterExpression =>
+      validate(Filter("filter", filterExpression), ValidationContext.empty) should matchPattern {
+        case ValidationPerformed(
+              (
+                EmptyMandatoryParameter(
+                  "This field is required and can not be null",
+                  _,
+                  NodeExpressionId.DefaultExpressionId,
+                  "filter"
+                )
+              ) :: Nil,
+              _,
+              _
+            ) =>
+      }
     }
   }
 
@@ -274,10 +286,22 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate empty variable expression") {
-    inside(validate(Variable("var1", "specialVariable_2", "", None), ValidationContext())) {
-      case ValidationPerformed((error: EmptyMandatoryParameter) :: Nil, None, _) =>
-        error.message shouldBe "This field is mandatory and can not be empty"
+  test("should validate empty or blank variable expression") {
+    forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
+      validate(Variable("var1", "specialVariable_2", e), ValidationContext.empty) should matchPattern {
+        case ValidationPerformed(
+              (
+                EmptyMandatoryParameter(
+                  "This field is mandatory and can not be empty",
+                  _,
+                  NodeExpressionId.DefaultExpressionId,
+                  "var1"
+                )
+              ) :: Nil,
+              _,
+              _
+            ) =>
+      }
     }
   }
 
@@ -324,6 +348,58 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         ValidationContext(localVariables = Map("var1" -> typing.Unknown))
       )
     ) { case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
+    }
+  }
+
+  test("should not allow overriding fields in variable builder") {
+    inside(
+      validate(
+        VariableBuilder("mapVariable", "var1", Field("field", "null") :: Field("field", "null") :: Nil),
+        ValidationContext.empty
+      )
+    ) {
+      case ValidationPerformed(
+            CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "fields-0-key",
+              "mapVariable"
+            ) :: CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "fields-1-key",
+              "mapVariable"
+            ) :: Nil,
+            None,
+            _
+          ) =>
+    }
+  }
+
+  test("should not allow empty values in variable builder") {
+    forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
+      inside(
+        validate(
+          VariableBuilder("mapVariable", "var1", Field("field1", e) :: Field("field2", e) :: Nil),
+          ValidationContext.empty
+        )
+      ) {
+        case ValidationPerformed(
+              EmptyMandatoryParameter(
+                "This field is mandatory and can not be empty",
+                _,
+                "fields-0-value",
+                "mapVariable"
+              ) :: EmptyMandatoryParameter(
+                "This field is mandatory and can not be empty",
+                _,
+                "fields-1-value",
+                "mapVariable"
+              ) :: Nil,
+              None,
+              _
+            ) =>
+      }
     }
   }
 
@@ -564,6 +640,30 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should not allow null values in choice expressions") {
+    forAll(ExpressionsTestData.nullExpressions) { e =>
+      inside(
+        validate(
+          Switch("switchId", None, None),
+          ValidationContext.empty,
+          Map.empty,
+          List(OutgoingEdge("caseTarget", Some(NextSwitch(e))))
+        )
+      ) {
+        case ValidationPerformed(
+              EmptyMandatoryParameter(
+                "This field is required and can not be null",
+                _,
+                "caseTarget",
+                "switchId"
+              ) :: Nil,
+              None,
+              None
+            ) =>
+      }
+    }
+  }
+
   test("should validate node id in all cases") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       validate(Variable(nodeId, "varName", "1", None), ValidationContext()) match {
@@ -600,5 +700,21 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression.spel(expr))
+
+}
+
+object ExpressionsTestData extends TableDrivenPropertyChecks {
+
+  val nullExpressions: TableFor1[String] = Table(
+    "",
+    "  ",
+    "null",
+    "true ? null : null"
+  )
+
+  val emptyOrBlankExpressions: TableFor1[String] = Table(
+    "",
+    "  "
+  )
 
 }
