@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.{
-  FixedValuesListFieldName,
   InitialValueFieldName,
   InputModeFieldName,
   TypFieldName,
@@ -157,11 +156,17 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
-      case InvalidParameterInputConfig(paramName, _) =>
+      case MissingFixedValuesList(paramName, _) =>
         node(
-          s"The input configuration for $paramName is invalid.",
+          s"Missing required fixed values list in input configuration of param $paramName ",
           "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = None))
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
+        )
+      case UnsupportedFixedValuesType(paramName, typ, _) =>
+        node(
+          s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
+          "Please check fragment definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
