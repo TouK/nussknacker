@@ -1,5 +1,5 @@
 import { isEmpty } from "lodash";
-import React, { useMemo } from "react";
+import React, { forwardRef, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
 import { editors, EditorType, simpleEditorValidators } from "./expression/Editor";
@@ -27,7 +27,7 @@ interface Props {
     validators?: Validator[];
 }
 
-export function EditableEditor(props: Props): JSX.Element {
+export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldLabel, errors, fieldName, validationLabelInfo, validators = [] } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
@@ -44,6 +44,7 @@ export function EditableEditor(props: Props): JSX.Element {
     return (
         <Editor
             {...props}
+            ref={ref}
             editorConfig={param?.editor}
             className={`${valueClassName ? valueClassName : "node-value"}`}
             validators={mergedValidators}
@@ -51,7 +52,9 @@ export function EditableEditor(props: Props): JSX.Element {
             expressionInfo={validationLabelInfo}
         />
     );
-}
+});
+
+EditableEditor.displayName = "EditableEditor";
 
 function EditableEditorRow({
     rowClassName,

@@ -6,7 +6,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "./node";
 
 type OutputFieldProps = {
     autoFocus?: boolean;

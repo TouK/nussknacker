@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import Select from "react-select";
-import { NodeValue } from "./NodeValue";
+import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 
@@ -15,6 +15,7 @@ interface RowSelectProps {
     readOnly?: boolean;
     isMarked?: boolean;
     value: Option;
+    placeholder?: string;
 }
 
 function useCaptureEsc() {
@@ -33,23 +34,26 @@ function useCaptureEsc() {
     return { setCaptureEsc, preventEsc };
 }
 
-export function TypeSelect({ isMarked, options, readOnly, value, onChange }: RowSelectProps): JSX.Element {
+export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
+
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
+                aria-label={"type-select"}
                 className="node-value node-value-select node-value-type-select"
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
                 options={options}
-                value={value}
-                onChange={(option) => onChange(option.value)}
+                value={value || ""}
+                onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 menuPortalTarget={document.body}
+                placeholder={placeholder}
                 styles={{
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({

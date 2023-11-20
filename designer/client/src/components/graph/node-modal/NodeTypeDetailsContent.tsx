@@ -29,6 +29,7 @@ import { Split } from "./split";
 import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
+import { FragmentInputParameter } from "./fragment-input-definition/item";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -92,10 +93,10 @@ export function NodeTypeDetailsContent({
     );
 
     const removeElement = useCallback(
-        (property: keyof NodeType, index: number): void => {
+        (property: keyof NodeType, uuid: string): void => {
             setEditedNode((currentNode) => ({
                 ...currentNode,
-                [property]: currentNode[property]?.filter((_, i) => i !== index) || [],
+                [property]: currentNode[property]?.filter((item) => item.uuid !== uuid) || [],
             }));
         },
         [setEditedNode],
@@ -186,7 +187,7 @@ export function NodeTypeDetailsContent({
                     addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
-                    node={node}
+                    node={node as NodeType<FragmentInputParameter>}
                     removeElement={removeElement}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}

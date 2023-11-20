@@ -7,8 +7,8 @@ import { Validator } from "./graph/node-modal/editors/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable, NodeTableBody } from "./graph/node-modal/NodeDetailsContent/NodeTable";
 import { NodeInput, SelectNodeWithFocus } from "./withFocus";
-import { NodeLabelStyled } from "./graph/node-modal/fragment-input-definition/NodeStyled";
 import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
+import { NodeLabelStyled } from "./graph/node-modal/node";
 
 type FormValue = { processId: string; processCategory: string };
 
