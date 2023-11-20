@@ -5,8 +5,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   ExpressionParserCompilationErrorInFragmentDefinition,
   InitialValueNotPresentInPossibleValues,
-  InvalidParameterInputConfig,
-  RequireValueFromEmptyFixedList
+  MissingFixedValuesList,
+  RequireValueFromEmptyFixedList,
+  UnsupportedFixedValuesType
 }
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterIn
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
+  FragmentClazzRef,
   FragmentParameter,
   ParameterInputMode
 }
@@ -49,10 +51,24 @@ object FragmentParameterValidator {
     fragmentParameter.inputConfig.inputMode match {
       case InputModeAny => List.empty
       case InputModeAnyWithSuggestions | InputModeFixedList =>
-        fragmentParameter.inputConfig.fixedValuesList match {
+        val missingFixedValuesResponse = fragmentParameter.inputConfig.fixedValuesList match {
           case Some(_) => List.empty
-          case None    => List(InvalidParameterInputConfig(fragmentParameter.name, Set(fragmentInputId)))
+          case None    => List(MissingFixedValuesList(fragmentParameter.name, Set(fragmentInputId)))
         }
+
+        val unsupportedFixedValuesTypeResponse =
+          if (!List(FragmentClazzRef[Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ))
+            List(
+              UnsupportedFixedValuesType(
+                fragmentParameter.name,
+                fragmentParameter.typ.refClazzName,
+                Set(fragmentInputId)
+              )
+            )
+          else
+            List.empty
+
+        missingFixedValuesResponse ++ unsupportedFixedValuesTypeResponse
     }
 
   private def validateFixedExpressionValues(

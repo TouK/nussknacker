@@ -569,9 +569,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate fragment parameter input config") {
+  test("should validate fragment parameter input config ") {
     val nodeId: String = "in"
     val nodes          = Set(nodeId)
+    val nodes1         = Set(nodeId)
     inside(
       validate(
         FragmentInputDefinition(
@@ -579,7 +580,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
           List(
             FragmentParameter(
               "param1",
-              FragmentClazzRef[String],
+              FragmentClazzRef[Int],
               required = false,
               initialValue = None,
               hintText = None,
@@ -597,7 +598,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     ) {
       case ValidationPerformed(
             List(
-              InvalidParameterInputConfig("param1", nodes)
+              MissingFixedValuesList("param1", nodes),
+              UnsupportedFixedValuesType("param1", "int", nodes1),
             ),
             None,
             None
