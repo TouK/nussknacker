@@ -11,7 +11,6 @@ export const TimeRangeStyled = styled("div")(
         .time-range-component {
             display: inline-flex;
             margin-right: 1em;
-            margin-bottom: 0.5em;
         }
 
         .time-range-component:after {
