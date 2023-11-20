@@ -10,6 +10,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
+  InputModeAny,
+  InputModeAnyWithSuggestions,
+  InputModeFixedList
+}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentParameter,
@@ -25,11 +30,7 @@ object FragmentParameterValidator {
       compiler: NodeCompiler,
       validationContext: ValidationContext // localVariables must include this and other FragmentParameters
   )(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    val inputConfigResponse = if (fragmentParameter.inputConfig.isValid) {
-      List.empty
-    } else {
-      List(InvalidParameterInputConfig(fragmentParameter.name, Set(fragmentInputId)))
-    }
+    val inputConfigResponse = validateInputConfig(fragmentParameter, fragmentInputId)
 
     val fixedExpressionsResponses = validateFixedExpressionValues(
       fragmentParameter.initialValue,
@@ -43,6 +44,16 @@ object FragmentParameterValidator {
 
     inputConfigResponse ++ fixedValuesListResponses ++ fixedExpressionsResponses
   }
+
+  private def validateInputConfig(fragmentParameter: FragmentParameter, fragmentInputId: String) =
+    fragmentParameter.inputConfig.inputMode match {
+      case InputModeAny => List.empty
+      case InputModeAnyWithSuggestions | InputModeFixedList =>
+        fragmentParameter.inputConfig.fixedValuesList match {
+          case Some(_) => List.empty
+          case None    => List(InvalidParameterInputConfig(fragmentParameter.name, Set(fragmentInputId)))
+        }
+    }
 
   private def validateFixedExpressionValues(
       initialValue: Option[FixedExpressionValue],

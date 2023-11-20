@@ -270,15 +270,6 @@ object ProcessCompilationError {
   final case class FailedToResolveFragmentParameterType(paramName: String, typ: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
-  final case class DuplicateFragmentParameterNames(paramName: String, nodeIds: Set[String])
-      extends ProcessCompilationError
-
-  final case class DuplicateFragmentFixedValueLabels(
-      paramName: String,
-      duplicateFixedValueLabel: String,
-      nodeIds: Set[String]
-  ) extends ProcessCompilationError
-
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class DisablingManyOutputsFragment(id: String, nodeIds: Set[String]) extends ProcessCompilationError
