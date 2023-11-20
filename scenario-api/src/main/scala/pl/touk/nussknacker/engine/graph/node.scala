@@ -404,12 +404,6 @@ object node {
           case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList
         }
 
-      val isValid: Boolean =
-        inputMode match {
-          case InputModeAny                                     => true
-          case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList.isDefined
-        }
-
     }
 
     object FragmentClazzRef {

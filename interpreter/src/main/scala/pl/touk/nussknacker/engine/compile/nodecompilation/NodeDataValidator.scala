@@ -172,8 +172,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       definition: FragmentInputDefinition,
   )(implicit nodeId: NodeId) = {
-    // TODO trim and validate uniqueness of parameter names and fixed expressions' labels
-
     val errors = compiler.loadParametersTypeMap(definition.parameters) match {
       case Valid(variables) =>
         val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)

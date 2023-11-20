@@ -150,8 +150,6 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
-      // TODO trim and validate uniqueness of parameter names and fixed expressions' labels
-
       def withFragmentParameterErrors[T](
           compiledObject: ValidatedNel[ProcessCompilationError, T],
           validationContext: ValidationContext

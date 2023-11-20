@@ -175,19 +175,6 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
-      case DuplicateFragmentParameterNames(paramName, _) =>
-        node(
-          s"Duplicate parameter name present: '$paramName'",
-          "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = None))
-        )
-      case DuplicateFragmentFixedValueLabels(paramName, duplicateFixedValueLabel, _) =>
-        node(
-          s"Duplicate fixed value label present: '$duplicateFixedValueLabel' in definition of parameter '$paramName'",
-          "Please check fragment definition",
-          fieldName =
-            Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(FixedValuesListFieldName)))
-        )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
         node(
           s"Failed to parse expression: $message",
