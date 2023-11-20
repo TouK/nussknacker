@@ -11,13 +11,7 @@ import { useDiffMark } from "../../PathsToMark";
 import { onChangeType, FragmentInputParameter } from "./";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
-import { styled } from "@mui/material";
 import { NodeValue } from "../../node";
-
-const StyledNodeValueName = styled(NodeValue)`
-    flex-basis: 30% !important; // It fixes a style on dnd
-    max-width: 20em !important; // It fixes a style on dnd
-`;
 
 interface ItemProps {
     index: number;
@@ -56,7 +50,7 @@ export function Item(props: ItemProps): JSX.Element {
     return (
         <div>
             <FieldsRow index={index} uuid={item.uuid}>
-                <StyledNodeValueName>
+                <NodeValue>
                     <Input
                         readOnly={readOnly}
                         showValidation={showValidation}
@@ -66,7 +60,7 @@ export function Item(props: ItemProps): JSX.Element {
                         validators={validators}
                         placeholder="Field name"
                     />
-                </StyledNodeValueName>
+                </NodeValue>
                 <TypeSelect
                     readOnly={readOnly}
                     onChange={(value) => {

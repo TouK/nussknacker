@@ -16,19 +16,6 @@ const Styled = styled("div")(
             font-weight: bold;
             font-size: 20px;
         }
-
-        .fieldName {
-            width: 28%;
-        }
-        .node-value {
-            &.fieldName {
-                flex-basis: 30%;
-                max-width: 20em;
-            }
-            &.fieldRemove {
-                flex: 0;
-            }
-        }
     `,
 );
 

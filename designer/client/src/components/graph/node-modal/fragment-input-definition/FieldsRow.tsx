@@ -3,6 +3,22 @@ import { useFieldsContext } from "../node-row-fields-provider";
 import { NodeRow, NodeValue } from "../node/";
 import { RemoveButton } from "./buttons/RemoveButton";
 import { cx } from "@emotion/css";
+import { styled } from "@mui/material";
+
+const StyledFieldsRow = styled(NodeRow)`
+    .fieldName {
+        width: 28%;
+    }
+    .node-value {
+        &.fieldName {
+            flex-basis: 30%;
+            max-width: 20em;
+        }
+        &.fieldRemove {
+            flex: 0;
+        }
+    }
+`;
 
 interface FieldsRow {
     index: number;
@@ -14,13 +30,13 @@ export function FieldsRow({ index, uuid, className, children }: PropsWithChildre
     const { readOnly, remove } = useFieldsContext();
     const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (
-        <NodeRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
+        <StyledFieldsRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
             {children}
             {!readOnly && remove && (
                 <NodeValue className="fieldRemove">
                     <RemoveButton onClick={onClick} />
                 </NodeValue>
             )}
-        </NodeRow>
+        </StyledFieldsRow>
     );
 }
