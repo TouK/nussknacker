@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types";
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
-import { NodeRowFields } from "./NodeRowFields";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { Item, onChangeType, FragmentInputParameter } from "./item";
 
 export interface Option {
@@ -24,7 +24,7 @@ interface FieldsSelectProps {
     fixedValuesPresets: FixedValuesPresets;
 }
 
-function FieldsSelect(props: FieldsSelectProps): JSX.Element {
+export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     const {
         fields,
         label,
@@ -78,10 +78,8 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     );
 
     return (
-        <NodeRowFields label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
+        <NodeRowFieldsProvider label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
             <DndItems disabled={readOnly} items={items} onChange={changeOrder} />
-        </NodeRowFields>
+        </NodeRowFieldsProvider>
     );
 }
-
-export default FieldsSelect;

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import Select from "react-select";
-import { NodeValue } from "./NodeValue";
+import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 

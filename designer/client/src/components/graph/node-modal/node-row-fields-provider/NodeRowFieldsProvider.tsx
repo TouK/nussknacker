@@ -1,7 +1,7 @@
 import React, { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 import { FieldsControl } from "./FieldsControl";
-import { NodeRow } from "./NodeRow";
-import { NodeValue } from "./NodeValue";
+import { NodeRow } from "../node";
+import { NodeValue } from "../node";
 
 interface FieldsContext {
     add?: () => void;
@@ -29,7 +29,7 @@ export function useFieldsContext(): FieldsContext {
     return fieldsContext;
 }
 
-export function NodeRowFields({ children, ...props }: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
+export function NodeRowFieldsProvider({ children, ...props }: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
     const { label, path, onFieldAdd, onFieldRemove, readOnly } = props;
     const [isOpen, setIsOpen] = useState<Record<string, boolean>>({});
 

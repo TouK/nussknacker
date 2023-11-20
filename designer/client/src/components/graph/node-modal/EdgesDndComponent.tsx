@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import { Edge, EdgeKind, VariableTypes } from "../../../types";
-import { NodeRowFields } from "./fragment-input-definition/NodeRowFields";
+import { NodeRowFieldsProvider } from "./node-row-fields-provider";
 import { DndItems } from "../../common/dndItems/DndItems";
 import { EdgeFields } from "./EdgeFields";
 import { ExpressionLang } from "./editors/expression/types";
@@ -127,7 +127,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const namespace = `edges`;
 
     return (
-        <NodeRowFields
+        <NodeRowFieldsProvider
             label={label}
             path={namespace}
             readOnly={readOnly}
@@ -135,6 +135,6 @@ export function EdgesDndComponent(props: Props): JSX.Element {
             onFieldAdd={availableTypes.length ? addEdge : null}
         >
             <DndItems disabled={readOnly || !ordered} items={edgeItems} onChange={setEdges} />
-        </NodeRowFields>
+        </NodeRowFieldsProvider>
     );
 }

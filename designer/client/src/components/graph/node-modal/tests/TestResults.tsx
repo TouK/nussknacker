@@ -6,7 +6,7 @@ import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "../node";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {

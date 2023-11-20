@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import { isEqual } from "lodash";
-import MapKey from "../../editors/map/MapKey";
 import { TypeSelect } from "../TypeSelect";
 import { Validator } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
@@ -10,8 +9,8 @@ import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
 import { onChangeType, FragmentInputParameter } from "./";
-import { useFieldsContext } from "../NodeRowFields";
-import { NodeValue } from "../NodeValue";
+import { useFieldsContext } from "../../node-row-fields-provider";
+import { NodeValue } from "../../node";
 import Input from "../../editors/field/Input";
 
 interface ItemProps {

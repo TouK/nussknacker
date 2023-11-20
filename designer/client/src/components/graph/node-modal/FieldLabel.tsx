@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "./node";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 

@@ -5,7 +5,7 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
-import FieldsSelect from "./FieldsSelect";
+import { FieldsSelect } from "./FieldsSelect";
 import { find, head, orderBy } from "lodash";
 import { getDefaultFields } from "./item/utils";
 import { FragmentInputParameter } from "./item";
