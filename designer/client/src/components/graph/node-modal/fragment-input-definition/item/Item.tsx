@@ -11,6 +11,8 @@ import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
 import { onChangeType, FragmentInputParameter } from "./";
 import { useFieldsContext } from "../NodeRowFields";
+import { NodeValue } from "../NodeValue";
+import Input from "../../editors/field/Input";
 
 interface ItemProps {
     index: number;
@@ -49,15 +51,17 @@ export function Item(props: ItemProps): JSX.Element {
     return (
         <div>
             <FieldsRow index={index} uuid={item.uuid}>
-                <MapKey
-                    className="parametersFieldName"
-                    readOnly={readOnly}
-                    showValidation={showValidation}
-                    isMarked={isMarked(`${path}.name`)}
-                    onChange={(value) => onChange(`${path}.name`, value)}
-                    value={item.name}
-                    validators={validators}
-                />
+                <NodeValue className={"fieldName parametersFieldName"}>
+                    <Input
+                        readOnly={readOnly}
+                        showValidation={showValidation}
+                        isMarked={isMarked(`${path}.name`)}
+                        onChange={(e) => onChange(`${path}.name`, e.target.value)}
+                        value={item.name}
+                        validators={validators}
+                        placeholder="Field name"
+                    />
+                </NodeValue>
                 <TypeSelect
                     readOnly={readOnly}
                     onChange={(value) => {
