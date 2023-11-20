@@ -202,6 +202,7 @@ class ValidationResourcesSpec
     }
   }
 
+  // TODO: write tests for other base components
   it should "find missing mandatory parameter errors in base components" in {
     val emptyExpression = Expression.spel("")
 
@@ -217,7 +218,7 @@ class ValidationResourcesSpec
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.errors.invalidNodes("filter").head.message should include(
-        "This field is mandatory and can not be empty"
+        "This field is required and can not be null"
       )
       validation.errors.invalidNodes("variable").head.message should include(
         "This field is mandatory and can not be empty"
