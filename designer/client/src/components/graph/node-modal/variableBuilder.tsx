@@ -20,7 +20,7 @@ export function VariableBuilder({
     fieldErrors?: NodeValidationError[];
     isEditMode?: boolean;
     node: NodeType;
-    removeElement: (property: keyof NodeType, index: number) => void;
+    removeElement: (property: keyof NodeType, uuid: string) => void;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useMemo } from "react";
 import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
-import { NodeRowFields } from "../../fragment-input-definition/NodeRowFields";
+import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
 import { Error, mandatoryValueValidator, uniqueListValueValidator } from "../Validators";
 import { useDiffMark } from "../../PathsToMark";
 import { DndItems } from "../../../../common/dndItems/DndItems";
@@ -17,7 +17,7 @@ interface MapProps<F extends Field> {
     label: string;
     namespace: string;
     addField: (namespace: string, field?: F) => void;
-    removeField: (namespace: string, index: number) => void;
+    removeField: (namespace: string, uuid: string) => void;
     expressionType?: Partial<TypedObjectTypingResult>;
 }
 
@@ -77,7 +77,7 @@ export function Map<F extends Field>({
             fields?.map(appendTypeInfo)?.map((item, index) => ({
                 item,
                 el: (
-                    <FieldsRow index={index}>
+                    <FieldsRow uuid={item.uuid} index={index}>
                         <MapRow index={index} item={item} />
                     </FieldsRow>
                 ),
@@ -86,7 +86,7 @@ export function Map<F extends Field>({
     );
 
     return (
-        <NodeRowFields label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
+        <NodeRowFieldsProvider label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
             <MapItemsCtx.Provider
                 value={{
                     readOnly,
@@ -99,7 +99,7 @@ export function Map<F extends Field>({
             >
                 <DndItems disabled={readOnly} items={items} onChange={changeOrder} />
             </MapItemsCtx.Provider>
-        </NodeRowFields>
+        </NodeRowFieldsProvider>
     );
 }
 

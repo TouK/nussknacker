@@ -47,7 +47,7 @@ describe("Fragment", () => {
         cy.wait(750);
         cy.get("[data-testid=window]").matchImage();
 
-        cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult");
+        cy.get("[data-testid=window]").find("input[value=testOutput]").type("{selectall}fragmentResult");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
