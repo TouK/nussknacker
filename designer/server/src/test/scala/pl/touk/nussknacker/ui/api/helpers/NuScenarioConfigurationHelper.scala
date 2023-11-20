@@ -27,26 +27,22 @@ import scala.concurrent.Future
 //       that are supposed to configure Nussknacker DB state (using repositories or through HTTP API).
 trait NuScenarioConfigurationHelper extends ScalaFutures {
   this: WithTestDb =>
-//here API changes
-  protected implicit val users: LoggedUser = TestFactory.adminUser("user")
-//here API changes
-  protected val dbioRunners: DBIOActionRunner                 = newDBIOActionRunner(testDbRef)
+  private implicit val user: LoggedUser                       = TestFactory.adminUser("user")
+  private val dbioRunner: DBIOActionRunner                    = newDBIOActionRunner(testDbRef)
   private val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
-//  here API changes
-  protected val writeProcessRepositorys: DBProcessRepository = newWriteProcessRepository(testDbRef)
+  private val writeProcessRepository: DBProcessRepository     = newWriteProcessRepository(testDbRef)
   protected val futureFetchingProcessRepository: DBFetchingProcessRepository[Future] =
     newFutureFetchingProcessRepository(testDbRef)
 
   protected implicit val processCategoryService: ProcessCategoryService =
     TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
-  // here API changes - whole method
   protected def createProcessS(
       process: CanonicalProcess,
       category: String,
       processingType: ProcessingType
   ): ProcessId = {
-    saveAndGetIds(process, category, process.metaData.isFragment, processingType).futureValue
+    saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
   }
 
   def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
@@ -67,7 +63,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
   def prepareDeploy(id: ProcessId): Future[_] = {
     val actionType = ProcessActionType.Deploy
     val comment    = DeploymentComment.unsafe("Deploy comment").toComment(actionType)
-    dbioRunners.run(
+    dbioRunner.run(
       actionRepository.addInstantAction(id, VersionId.initialVersionId, actionType, Some(comment), Some(Streaming))
     )
   }
@@ -75,7 +71,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
   def prepareCancel(id: ProcessId): Future[_] = {
     val actionType = ProcessActionType.Cancel
     val comment    = DeploymentComment.unsafe("Cancel comment").toComment(actionType)
-    dbioRunners.run(actionRepository.addInstantAction(id, VersionId.initialVersionId, actionType, Some(comment), None))
+    dbioRunner.run(actionRepository.addInstantAction(id, VersionId.initialVersionId, actionType, Some(comment), None))
   }
 
   private def prepareValidProcess(
@@ -85,11 +81,11 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
   ): Future[ProcessId] = {
     val validProcess: CanonicalProcess = if (isFragment) SampleFragment.fragment else SampleProcess.process
     val withNameSet = validProcess.copy(metaData = validProcess.metaData.copy(id = processName.value))
-    saveAndGetIds(withNameSet, category, isFragment)
+    saveAndGetId(withNameSet, category, isFragment)
   }
 
 // here API changes
-  protected def saveAndGetIds(
+  private def saveAndGetId(
       process: CanonicalProcess,
       category: String,
       isFragment: Boolean,
@@ -99,7 +95,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
     val action =
       CreateProcessAction(processName, category, process, processingType, isFragment, forwardedUserName = None)
     for {
-      _  <- dbioRunners.runInTransaction(writeProcessRepositorys.saveNewProcess(action))
+      _  <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
