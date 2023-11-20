@@ -11,12 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   JoinGenericNodeTransformation,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.{
-  MandatoryParameterValidator,
-  NotBlankParameterValidator,
-  NotNullParameterValidator,
-  Parameter
-}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotNullParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -26,8 +21,8 @@ import pl.touk.nussknacker.engine.api.expression.{
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentsValidator.TypedField
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
+import pl.touk.nussknacker.engine.compile.nodecompilation.RecordValidator.TypedField
 import pl.touk.nussknacker.engine.compile.{
   ExpressionCompiler,
   NodeValidationExceptionHandler,
@@ -308,16 +303,20 @@ class NodeCompiler(
       expressionCompilation.flatMap(_.expressionType)
     )
 
-    val additionalValidationResult = compiledChoices
-      .map(a =>
-        BaseComponentsValidator.validateFailFast(
-          a.expression,
-          a.compilationResult.expressionType,
-          a.edgeFieldName,
-          List(MandatoryParameterValidator, NotBlankParameterValidator, NotNullParameterValidator)
-        )
-      )
-      .combineAll
+    val additionalValidationResult = compilationResult.compiledObject match {
+      case Valid(_) =>
+        compiledChoices
+          .map(choice =>
+            ParameterValidatorAdapter.validate(
+              choice.expression,
+              choice.compilationResult.expressionType,
+              choice.edgeFieldName,
+              NotNullParameterValidator
+            )
+          )
+          .combineAll
+      case Invalid(_) => valid(())
+    }
 
     combineErrors(compilationResult, additionalValidationResult)
   }
@@ -328,12 +327,16 @@ class NodeCompiler(
     val compilationResult: NodeCompilationResult[expression.Expression] =
       compileExpression(filter.expression, ctx, expectedType = Typed[Boolean], outputVar = None)
 
-    val additionalValidationResult = BaseComponentsValidator.validateFailFast(
-      filter.expression,
-      compilationResult.expressionType,
-      DefaultExpressionId,
-      List(MandatoryParameterValidator, NotBlankParameterValidator, NotNullParameterValidator)
-    )
+    val additionalValidationResult = compilationResult.compiledObject match {
+      case Valid(_) =>
+        ParameterValidatorAdapter.validate(
+          filter.expression,
+          compilationResult.expressionType,
+          DefaultExpressionId,
+          NotNullParameterValidator
+        )
+      case Invalid(_) => valid(())
+    }
 
     combineErrors(compilationResult, additionalValidationResult)
   }
@@ -350,12 +353,16 @@ class NodeCompiler(
       )
 
     val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
-      BaseComponentsValidator.validateFailFast(
-        variable.value,
-        compilationResult.expressionType,
-        DefaultExpressionId,
-        List(MandatoryParameterValidator, NotBlankParameterValidator)
-      )
+      compilationResult.compiledObject match {
+        case Valid(a) =>
+          ParameterValidatorAdapter.validate(
+            variable.value,
+            compilationResult.expressionType,
+            DefaultExpressionId,
+            MandatoryParameterValidator
+          )
+        case Invalid(e) => valid(())
+      }
 
     combineErrors(compilationResult, additionalValidationResult)
   }
@@ -388,24 +395,25 @@ class NodeCompiler(
         .map(result => CompiledRecordField(field, index, result))
     }
 
-    val recordValuesCompilationResult = compliedRecordFields
-      .map(a =>
-        a.map { c =>
+    val recordValuesCompilationResult = compliedRecordFields.traverse { validatedField =>
+      validatedField.andThen { compiledField =>
+        Valid(
           ExpressionCompilation(
-            c.field.name,
-            Some(c.typedExpression),
-            Valid(compiledgraph.variable.Field(c.field.name, c.typedExpression.expression))
+            compiledField.field.name,
+            Some(compiledField.typedExpression),
+            Valid(compiledgraph.variable.Field(compiledField.field.name, compiledField.typedExpression.expression))
           )
-        }
-      )
-      .sequence
+        )
+      }
+    }
 
-    val additionalValidationResult = BaseComponentsValidator.validateRecord(
-      compliedRecordFields
-        .map(a => a.map(c => TypedField(c.field, c.index, Some(c.typedExpression.returnType))))
-        .collect { case Valid(typedField) =>
-          typedField
-        }
+    val typedFieldsValidations = compliedRecordFields.map { validatedField =>
+      validatedField.map { compiledField =>
+        TypedField(compiledField.field, compiledField.index, Some(compiledField.typedExpression.returnType))
+      }
+    }
+    val additionalValidationResult = RecordValidator.validateRecord(
+      typedFieldsValidations.collect { case Valid(typedField) => typedField }
     )
 
     val typedObject = recordValuesCompilationResult
