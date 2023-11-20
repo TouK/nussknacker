@@ -57,7 +57,7 @@ object FragmentParameterValidator {
         }
 
         val unsupportedFixedValuesTypeResponse =
-          if (!List(FragmentClazzRef[Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ))
+          if (!List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ))
             List(
               UnsupportedFixedValuesType(
                 fragmentParameter.name,

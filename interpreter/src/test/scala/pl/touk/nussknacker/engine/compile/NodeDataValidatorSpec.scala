@@ -654,7 +654,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
           List(
             FragmentParameter(
               "param1",
-              FragmentClazzRef[Boolean],
+              FragmentClazzRef[java.lang.Boolean],
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
@@ -682,7 +682,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
           List(
             FragmentParameter(
               "param1",
-              FragmentClazzRef[Boolean],
+              FragmentClazzRef[java.lang.Boolean],
               required = false,
               initialValue = None,
               hintText = None,
