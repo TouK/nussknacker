@@ -491,7 +491,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                 ),
                 FragmentParameter(
                   "subParam2",
-                  FragmentClazzRef[Boolean],
+                  FragmentClazzRef[java.lang.Boolean],
                   required = false,
                   initialValue = None,
                   hintText = None,
