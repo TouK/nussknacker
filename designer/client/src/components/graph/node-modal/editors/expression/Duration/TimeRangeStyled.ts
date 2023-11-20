@@ -5,12 +5,11 @@ export const TimeRangeStyled = styled("div")(
     ({ theme }) => css`
         min-width: 60%;
         flex: 1;
-        display: flex;
-        flex-direction: column;
-
+        display: inline-block;
         .time-range-component {
             display: inline-flex;
             margin-right: 1em;
+            line-height: inherit;
         }
 
         .time-range-component:after {
