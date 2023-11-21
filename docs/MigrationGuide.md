@@ -29,6 +29,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
   from fragment id
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) `Validator.isValid` method 
+  now takes `expression: Expression, value: Option[Any]` instead of `value: String` which was not really value, but expression.
+  Straight-forward migration is to change method definition and now use `expression.expression` instead of `value` if your validator depends on raw expression. 
+  If validator was doing quasi-evaluation, for example trimming `'` to get string, you can just take `value` and cast it to desired class.
+  * `LiteralNumberValidator` is removed, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Number` type,
+  * `LiteralIntegerValidator` is considered deprecated and will be removed in the future, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Integer` type,
+  * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`
+  * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type

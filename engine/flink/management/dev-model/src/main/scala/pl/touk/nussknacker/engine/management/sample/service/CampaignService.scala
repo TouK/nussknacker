@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 import javax.annotation.Nullable
 import javax.validation.constraints.NotBlank
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.validation.Literal
+import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
 import scala.concurrent.Future
@@ -30,7 +30,7 @@ object CampaignService extends Service with Serializable {
       businessConfig: String,
       @ParamName("Product Counts")
       @RawEditor
-      @Literal
+      @CompileTimeEvaluableValue
       productCounts: Int,
       @ParamName("CampaignType")
       @SimpleEditor(
