@@ -19,16 +19,16 @@ interface InitialValue {
     errors: Error[];
 }
 
-export default function InitialValue({ onChange, item, path, options = [], readOnly, variableTypes, errors = [] }: InitialValue) {
+export default function InitialValue({ onChange, item, path, options, readOnly, variableTypes, errors = [] }: InitialValue) {
     const { t } = useTranslation();
 
     const emptyOption = { label: "", value: null };
-    const optionsToDisplay: Option[] = [emptyOption, ...options.map(({ label }) => ({ label, value: label }))];
+    const optionsToDisplay: Option[] = [emptyOption, ...(options ?? []).map(({ label }) => ({ label, value: label }))];
 
     return (
         <SettingRow>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
-            {options.length > 0 ? (
+            {options ? (
                 <TypeSelect
                     onChange={(value) => {
                         const selectedOption = options.find((option) => option.label === value);
