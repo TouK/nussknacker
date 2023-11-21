@@ -3,6 +3,7 @@ import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import {
+    GroupedFieldsErrors,
     InputMode,
     isAnyValueParameter,
     isAnyValueWithSuggestionsParameter,
@@ -21,9 +22,10 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
+    fieldsErrors: GroupedFieldsErrors;
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly }: Props) => {
+export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly, fieldsErrors }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -49,7 +51,14 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
             </SettingRow>
             <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} readOnly={readOnly} />
             {isAnyValueParameter(item) && (
-                <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} readOnly={readOnly} />
+                <AnyValueVariant
+                    item={item}
+                    onChange={onChange}
+                    path={path}
+                    variableTypes={variableTypes}
+                    readOnly={readOnly}
+                    fieldsErrors={fieldsErrors}
+                />
             )}
             {isFixedListParameter(item) && (
                 <FixedListVariant
@@ -59,6 +68,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
                     variableTypes={variableTypes}
+                    fieldsErrors={fieldsErrors}
                 />
             )}
             {isAnyValueWithSuggestionsParameter(item) && (
@@ -69,6 +79,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     variableTypes={variableTypes}
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
+                    fieldsErrors={fieldsErrors}
                 />
             )}
         </SettingsWrapper>

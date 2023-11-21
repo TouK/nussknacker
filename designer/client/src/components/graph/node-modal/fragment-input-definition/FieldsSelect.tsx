@@ -3,7 +3,9 @@ import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types"
 import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
-import { Item, onChangeType, FragmentInputParameter } from "./item";
+import { Item, onChangeType, FragmentInputParameter, GroupedFieldsErrors } from "./item";
+import { Error } from "../editors/Validators";
+import { chain } from "lodash";
 
 export interface Option {
     value: string;
@@ -22,6 +24,7 @@ interface FieldsSelectProps {
     showValidation?: boolean;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
+    fieldErrors: Error[];
 }
 
 export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
@@ -37,10 +40,21 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
         readOnly,
         showValidation,
         fixedValuesPresets,
+        fieldErrors,
     } = props;
 
     const ItemElement = useCallback(
-        ({ index, item, validators }: { index: number; item: FragmentInputParameter; validators: Validator[] }) => {
+        ({
+            index,
+            item,
+            validators,
+            fieldsErrors,
+        }: {
+            index: number;
+            item: FragmentInputParameter;
+            validators: Validator[];
+            fieldsErrors: GroupedFieldsErrors;
+        }) => {
             return (
                 <Item
                     index={index}
@@ -53,6 +67,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     variableTypes={variableTypes}
                     showValidation={showValidation}
                     fixedValuesPresets={fixedValuesPresets}
+                    fieldsErrors={fieldsErrors}
                 />
             );
         },
@@ -72,9 +87,19 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     ),
                 ];
 
-                return { item, el: <ItemElement key={index} index={index} item={item} validators={validators} /> };
+                const fieldsErrors: Record<string, Error[]> = chain(fieldErrors)
+                    .filter((fieldError) => fieldError.fieldName.includes(`$param.${item.name}`))
+                    .groupBy("fieldName")
+                    .mapKeys((_, key) => key.replace(`$param.${item.name}.$`, ""))
+                    .mapValues((errors, key) => errors.map((error) => ({ ...error, fieldName: key })))
+                    .value();
+
+                return {
+                    item,
+                    el: <ItemElement key={index} index={index} item={item} validators={validators} fieldsErrors={fieldsErrors} />,
+                };
             }),
-        [ItemElement, fields],
+        [ItemElement, fieldErrors, fields],
     );
 
     return (

@@ -6,6 +6,8 @@ import { Option, TypeSelect } from "../../../TypeSelect";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { EditableEditor } from "../../../../editors/EditableEditor";
 import { VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
+import { EditorType } from "../../../../editors/expression/Editor";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -14,9 +16,10 @@ interface InitialValue {
     options?: FixedValuesOption[];
     readOnly: boolean;
     variableTypes: VariableTypes;
+    errors: Error[];
 }
 
-export default function InitialValue({ onChange, item, path, options = [], readOnly, variableTypes }: InitialValue) {
+export default function InitialValue({ onChange, item, path, options = [], readOnly, variableTypes, errors = [] }: InitialValue) {
     const { t } = useTranslation();
 
     const emptyOption = { label: "", value: null };
@@ -43,6 +46,9 @@ export default function InitialValue({ onChange, item, path, options = [], readO
                     onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
+                    errors={errors}
+                    param={{ validators: [], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                    showValidation
                 />
             )}
         </SettingRow>

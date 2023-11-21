@@ -8,7 +8,7 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter } from "./";
+import { onChangeType, FragmentInputParameter, GroupedFieldsErrors } from "./";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
@@ -24,10 +24,23 @@ interface ItemProps {
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     fixedValuesPresets: FixedValuesPresets;
+    fieldsErrors: GroupedFieldsErrors;
 }
 
 export function Item(props: ItemProps): JSX.Element {
-    const { index, item, validators, namespace, variableTypes, readOnly, showValidation, onChange, options, fixedValuesPresets } = props;
+    const {
+        index,
+        item,
+        validators,
+        namespace,
+        variableTypes,
+        readOnly,
+        showValidation,
+        onChange,
+        options,
+        fixedValuesPresets,
+        fieldsErrors,
+    } = props;
     const { getIsOpen, toggleIsOpen } = useFieldsContext();
 
     const isOpen = getIsOpen(item.uuid);
@@ -80,6 +93,7 @@ export function Item(props: ItemProps): JSX.Element {
                     variableTypes={variableTypes}
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
+                    fieldsErrors={fieldsErrors}
                 />
             )}
         </div>

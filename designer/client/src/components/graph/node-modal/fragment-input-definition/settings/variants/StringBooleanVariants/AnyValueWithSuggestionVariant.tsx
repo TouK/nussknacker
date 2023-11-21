@@ -2,22 +2,31 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, GroupedFieldsErrors, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 
-interface Props {
-    item: AnyValueWithSuggestionsParameterVariant;
+interface Props<T> {
+    item: T;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
+    fieldsErrors: GroupedFieldsErrors<T>;
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets, readOnly }: Props) => {
+export const AnyValueWithSuggestionVariant = <T extends AnyValueWithSuggestionsParameterVariant = AnyValueWithSuggestionsParameterVariant>({
+    item,
+    path,
+    onChange,
+    variableTypes,
+    fixedValuesPresets,
+    readOnly,
+    fieldsErrors,
+}: Props<T>) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -48,6 +57,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                errors={fieldsErrors.initialValue}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

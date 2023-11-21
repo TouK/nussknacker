@@ -1,4 +1,5 @@
 import { Expression, ReturnedType } from "../../../../../types";
+import { Error } from "../../editors/Validators";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[];
 
@@ -73,6 +74,8 @@ export type StringOrBooleanParameterVariant =
     | AnyValueParameterVariant;
 
 export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;
+
+export type GroupedFieldsErrors<T = any> = Record<keyof T, Error[]>;
 
 export function isFixedListParameter(item: StringOrBooleanParameterVariant): item is FixedListParameterVariant {
     return item.inputConfig.inputMode === InputMode.FixedList;

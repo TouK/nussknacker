@@ -1,27 +1,41 @@
 import React from "react";
-import { ValidationsFields } from "../fields/ValidationsFields";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueParameterVariant, onChangeType } from "../../../item";
+import { AnyValueParameterVariant, GroupedFieldsErrors, onChangeType } from "../../../item";
 import { VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 
-interface Props {
-    item: AnyValueParameterVariant;
+interface Props<T> {
+    item: T;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
+    fieldsErrors: GroupedFieldsErrors<T>;
 }
 
-export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes }: Props) => {
+export const AnyValueVariant = <T extends AnyValueParameterVariant = AnyValueParameterVariant>({
+    item,
+    path,
+    onChange,
+    readOnly,
+    variableTypes,
+    fieldsErrors,
+}: Props<T>) => {
     const { t } = useTranslation();
 
     return (
         <>
             {/*<ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />*/}
-            <InitialValue path={path} item={item} onChange={onChange} readOnly={readOnly} variableTypes={variableTypes} />
+            <InitialValue
+                path={path}
+                item={item}
+                onChange={onChange}
+                readOnly={readOnly}
+                variableTypes={variableTypes}
+                errors={fieldsErrors.initialValue}
+            />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

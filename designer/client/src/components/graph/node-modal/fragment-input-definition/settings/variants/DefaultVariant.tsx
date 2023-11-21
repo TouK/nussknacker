@@ -2,21 +2,28 @@ import React from "react";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DefaultParameterVariant, onChangeType } from "../../item";
+import { DefaultParameterVariant, GroupedFieldsErrors, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
-import { ValidationsFields } from "./fields/ValidationsFields";
 import InitialValue from "./fields/InitialValue";
 
-interface Props {
-    item: DefaultParameterVariant;
+interface Props<T> {
+    item: T;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
+    fieldsErrors: GroupedFieldsErrors<T>;
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }: Props) => {
+export const DefaultVariant = <T extends DefaultParameterVariant>({
+    item,
+    onChange,
+    path,
+    variableTypes,
+    readOnly,
+    fieldsErrors,
+}: Props<T>) => {
     const { t } = useTranslation();
 
     return (
@@ -29,7 +36,14 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }
                 />
             </SettingRow>
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
-            <InitialValue onChange={onChange} item={item} path={path} readOnly={readOnly} variableTypes={variableTypes} />
+            <InitialValue
+                onChange={onChange}
+                item={item}
+                path={path}
+                readOnly={readOnly}
+                variableTypes={variableTypes}
+                errors={fieldsErrors.initialValue}
+            />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus
