@@ -175,6 +175,7 @@ class ProcessesResources(
             processService.getProcessWithDetails(
               processId,
               versionId,
+              // TODO: disable fetching state when FE is ready
               GetScenarioWithDetailsOptions(FetchScenarioGraph(!skipValidateAndResolve), fetchState = true)
             )
           }
