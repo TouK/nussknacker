@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
   FixedExpressionValue,
   FixedValuesValidator,
-  LiteralRegExpParameterValidator,
   MandatoryParameterValidator,
-  Parameter
+  Parameter,
+  RegExpParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
@@ -176,7 +176,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
     parameter.map(_.validators) shouldBe Some(
       List(
         MandatoryParameterValidator,
-        LiteralRegExpParameterValidator(".*", "has to match...", "really has to match...")
+        RegExpParameterValidator(".*", "has to match...", "really has to match...")
       )
     )
   }

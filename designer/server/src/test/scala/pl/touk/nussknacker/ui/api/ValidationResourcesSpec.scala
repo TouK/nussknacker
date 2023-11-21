@@ -58,7 +58,7 @@ class ValidationResourcesSpec
         "maxEvents" -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator)),
+          Some(List(CompileTimeEvaluableValueValidator)),
           Some("label")
         )
       )

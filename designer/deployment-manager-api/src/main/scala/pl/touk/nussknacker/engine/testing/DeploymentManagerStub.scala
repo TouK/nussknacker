@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
+  CompileTimeEvaluableValueValidator,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   FixedValuesValidator,
-  LiteralIntegerValidator,
   MinimalNumberValidator,
   StringParameterEditor
 }
@@ -132,7 +132,7 @@ object FlinkStreamingPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(CompileTimeEvaluableValueValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism")
     )
 
@@ -169,7 +169,7 @@ object FlinkStreamingPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(CompileTimeEvaluableValueValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds")
     )
 

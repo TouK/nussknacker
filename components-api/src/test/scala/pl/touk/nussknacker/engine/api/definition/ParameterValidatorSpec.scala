@@ -16,17 +16,17 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     forAll(
       Table(
         ("expression", "value", "isValid"),
-        ("", null, false),
-        ("  ", null, false),
-        ("\t", null, false),
-        (" \n ", null, false),
-        ("null", null, true),
-        ("#input.foo['bar']", null, true),
-        ("true", true, true),
-        ("''", "", true),
-        ("'foo'", "foo", true),
-        ("1", 1, true),
-        ("1 + 1", 2, true),
+        ("", Some(null), false),
+        ("  ", Some(null), false),
+        ("\t", Some(null), false),
+        (" \n ", Some(null), false),
+        ("null", Some(null), true),
+        ("#input.foo['bar']", None, true),
+        ("true", Some(true), true),
+        ("''", Some(""), true),
+        ("'foo'", Some("foo"), true),
+        ("1", Some(1), true),
+        ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
       MandatoryParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
@@ -37,17 +37,17 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     forAll(
       Table(
         ("expression", "value", "isValid"),
-        ("", null, false),
-        ("  ", null, false),
-        ("\t", null, false),
-        (" \n ", null, false),
-        ("null", null, false),
-        ("#input.foo['bar']", null, false),
-        ("true", true, true),
-        ("''", "", true),
-        ("'foo'", "foo", true),
-        ("1", 1, true),
-        ("1 + 1", 2, true),
+        ("", Some(null), false),
+        ("  ", Some(null), false),
+        ("\t", Some(null), false),
+        (" \n ", Some(null), false),
+        ("null", Some(null), false),
+        ("#input.foo['bar']", None, true),
+        ("true", Some(true), true),
+        ("''", Some(""), true),
+        ("'foo'", Some("foo"), true),
+        ("1", Some(1), true),
+        ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
       NotNullParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
@@ -57,47 +57,80 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
   test("NotBlankParameterValidator") {
     forAll(
       Table(
-        ("inputExpression", "isValid"),
-        (null, true),
-        ("", false),
-        ("  ", false),
-        ("\t", false),
-        (" \n ", false),
-        ("someString ", true),
-        ("'someString' ", true),
-        ("\"someString\" ", true),
-        ("\"someString\" + \"\"", true)
+        ("expression", "value", "isValid"),
+        ("null", Some(null), true),
+        ("", Some(null), true),
+        ("  ", Some(null), true),
+        ("\t", Some(null), true),
+        (" \n ", Some(null), true),
+        ("#input.foo['bar']", None, true),
+        ("' ' ", Some(" "), false),
+        ("' ' + ' '", Some("  "), false),
+        ("'\t'", Some("\t"), false),
+        ("'\n'", Some("\n"), false),
+        ("'someString' ", Some("someString"), true),
+        ("\"someString\" ", Some("someString"), true),
+        ("\"someString\" + \"\"", Some("someString"), true),
       )
-    ) { (expression, expected) =>
+    ) { (expression, value, expected) =>
       NotBlankParameterValidator
-        .isValid("dummy", Expression.spel(s"'$value'"), expression, None)
+        .isValid("dummy", Expression.spel(expression), value, None)
         .isValid shouldBe expected
     }
   }
 
   test("FixedValuesValidator") {
-    val validator = FixedValuesValidator(List(FixedExpressionValue("'a'", "a"), FixedExpressionValue("'b'", "b")))
+    val validator = FixedValuesValidator(
+      List(
+        FixedExpressionValue("'a'", "a"),
+        FixedExpressionValue("'b'", "b"),
+        FixedExpressionValue("'\n'", "New line"),
+      )
+    )
     forAll(
       Table(
-        ("inputExpression", "isValid"),
-        (null, true),
-        ("", false),
-        ("  ", false),
-        ("\t", false),
-        (" \n ", false),
-        ("someString ", false),
-        ("'someString' ", false),
-        ("\"someString\" ", false),
-        ("\"someString\" + \"\"", false),
-        ("a", true),
-        ("b", true),
-        ("c", false),
-        ("'a'", false),
-        ("'b'", false),
-        ("'c'", false),
+        ("expression", "value", "isValid"),
+        ("null", Some(null), false),
+        ("", Some(null), true),
+        ("  ", Some(null), false),
+        ("\t", Some(null), false),
+        ("\n''", Some(""), false),
+        ("#input.foo['bar']", None, false),
+        ("'someString' ", Some("someString"), false),
+        ("\"someString\" ", Some("someString"), false),
+        ("'a'", Some("a"), true),
+        ("'b'", Some("b"), true),
+        ("'c'", Some("c"), false),
       )
-    ) { (expression, expected) =>
-      validator.isValid("dummy", Expression.spel(s"'$value'"), expression, None).isValid shouldBe expected
+    ) { (expression, value, expected) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+    }
+  }
+
+  test("FixedValuesValidator for non-evaluable expressions") {
+    val validator = FixedValuesValidator(
+      List(
+        FixedExpressionValue("#AGG.first", "First"),
+        FixedExpressionValue("#AGG.last", "Last"),
+      )
+    )
+    forAll(
+      Table(
+        ("expression", "value", "isValid"),
+        ("null", Some(null), false),
+        ("", Some(null), true),
+        ("  ", Some(null), false),
+        ("\t", Some(null), false),
+        ("\n''", Some(""), false),
+        ("#input.foo['bar']", None, false),
+        ("'someString' ", Some("someString"), false),
+        ("\"someString\" ", Some("someString"), false),
+        ("#AGG.first", None, true),
+        ("#AGG.middle", None, false),
+        ("'c'", Some("c"), false),
+      )
+    ) { (expression, value, expected) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
     }
   }
 
@@ -110,22 +143,23 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'1'", "1", false),
         ("3.14", 3.14, false),
         ("1", 1, true),
+        ("'ala'", "ala", false),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
+      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
-  test("LiteralNumberValidator") {
-    val validator = LiteralNumberValidator
+  test("CompileTimeEvaluableValueValidator") {
+    val validator = CompileTimeEvaluableValueValidator
     forAll(
       Table(
         ("expression", "value", "isValid"),
-        ("", null, true),
-        ("'1'", "1", false),
-        ("3.14", 3.14, true),
-        ("1", 1, true),
-        ("'ala'", "ala", false),
+        ("", Some(null), true),
+        ("null", Some(null), true),
+        ("2+2", Some(4), true),
+        ("'foo' + 'bar'", Some("foobar"), true),
+        ("#input", None, false),
       )
     ) { (expression, value, isValid) =>
       validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
@@ -146,7 +180,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("21.37", 21.37, true),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
+      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
@@ -164,32 +198,28 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("21.37", 21.37, false),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
+      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
-  test("LiteralRegExpParameterValidator") {
-    val mailValidator = LiteralRegExpParameterValidator("^[^<>]+@nussknacker\\.io$", "", "")
-    val alaValidator  = LiteralRegExpParameterValidator("^ala$", "", "")
+  test("RegExpParameterValidator") {
+    val mailValidator = RegExpParameterValidator("^[^<>]+@nussknacker\\.io$", "", "")
+    val alaValidator  = RegExpParameterValidator("^ala$", "", "")
 
     forAll(
       Table(
-        ("inputValue", "validator", "isValid"),
-        (null, mailValidator, true),
-        ("''", mailValidator, false),
-        ("", mailValidator, false),
-        ("lcl@nussknacker.io", mailValidator, true),
-        ("'lcl@nussknacker.io", mailValidator, true),
-        ("lcl@nussknacker.io'", mailValidator, false),
-        ("lcl@nussknacker.ios", mailValidator, false),
-        ("lcl@nussknacker.ios", mailValidator, false),
-        ("lcl@nussknacker.ios", LiteralParameterValidator.numberValidator, false),
-        (0, LiteralParameterValidator.numberValidator, true),
-        ("ala", alaValidator, true),
-        ("kot'", alaValidator, false),
+        ("expression", "value", "validator", "isValid"),
+        ("", Some(null), mailValidator, true),
+        ("null", Some(null), mailValidator, true),
+        ("''", Some(""), mailValidator, false),
+        ("'lcl@nussknacker.io'", Some("lcl@nussknacker.io"), mailValidator, true),
+        ("\"lcl@nussknacker.io\"", Some("lcl@nussknacker.io"), mailValidator, true),
+        ("'lcl@nussknacker.ios'", Some("lcl@nussknacker.ios"), mailValidator, false),
+        ("'ala'", Some("ala"), alaValidator, true),
+        ("'kot'", Some("kot"), alaValidator, false),
       )
-    ) { (value, validator, expected) =>
-      validator.isValid("dummy", Expression.spel(s"'$value'"), value, None).isValid shouldBe expected
+    ) { (expression, value, validator, expected) =>
+      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
     }
   }
 

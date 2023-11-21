@@ -4,10 +4,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{
+  CompileTimeEvaluableValueValidator,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   FixedValuesValidator,
-  LiteralParameterValidator,
   MandatoryParameterValidator,
   StringParameterEditor
 }
@@ -29,13 +29,13 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
         reqFieldName -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
+          Some(List(CompileTimeEvaluableValueValidator, MandatoryParameterValidator)),
           Some(label)
         ),
         regexpFieldName -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.numberValidator)),
+          Some(List(CompileTimeEvaluableValueValidator)),
           Some(label)
         ),
         optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
