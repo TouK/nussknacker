@@ -1000,7 +1000,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               ),
               List(
                 ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
-                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("par1"), _)
+                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("fields-0-value"), _)
               )
             )
           ) =>
