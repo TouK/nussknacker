@@ -296,7 +296,7 @@ object Interpreter {
     override def monad: Monad[IO] = Monad[IO]
 
     override def fromFuture[T]: Future[T] => IO[Either[T, Throwable]] = {
-      implicit val ctx = SynchronousExecutionContext.ctx
+      implicit val ctx: ExecutionContext = SynchronousExecutionContext.ctx
       f => IO.fromFuture(IO(transform(f)))(IO.contextShift(ctx))
     }
 

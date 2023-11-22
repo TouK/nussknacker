@@ -17,6 +17,7 @@
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 
 1.12.4 (14 Nov 2023)
 ------------------------

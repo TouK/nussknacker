@@ -58,7 +58,7 @@ object AzureAvroSerializerFactory {
         schemaRegistryClient.getSchemaIdByContent(avroSchema)
       }
       override protected def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = {
-        if (!isKey) {
+        if (!this.isKey) {
           headers.add(AzureUtils.avroContentTypeHeader(schemaId))
         }
       }
