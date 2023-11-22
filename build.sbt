@@ -318,7 +318,8 @@ val scalaCheckV        = "1.17.0"
 val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
 val scalaTestPlusV     =
   "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
-val logbackV                = "1.2.11"
+val logbackV                = "1.3.11"
+// this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val circeV                  = "0.14.5"
 val circeGenericExtrasV     = "0.14.3"
