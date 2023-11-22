@@ -49,6 +49,8 @@ export const FixedListVariant = <T extends FixedListParameterVariant = FixedList
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                typ={item.typ}
             />
             <InitialValue
                 path={path}

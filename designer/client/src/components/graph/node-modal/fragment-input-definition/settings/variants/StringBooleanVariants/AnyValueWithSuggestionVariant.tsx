@@ -48,6 +48,8 @@ export const AnyValueWithSuggestionVariant = <T extends AnyValueWithSuggestionsP
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                typ={item.typ}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
