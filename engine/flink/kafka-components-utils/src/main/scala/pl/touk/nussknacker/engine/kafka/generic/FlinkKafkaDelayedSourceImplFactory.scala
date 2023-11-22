@@ -132,10 +132,10 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
         DelayedFlinkKafkaConsumer(
           preparedTopics,
           deserializationSchema,
-          kafkaConfig,
+          this.kafkaConfig,
           consumerGroupId,
           delayCalculator,
-          timestampAssigner,
+          this.timestampAssigner,
           flinkNodeContext
         )
 

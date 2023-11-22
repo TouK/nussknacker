@@ -24,6 +24,7 @@
   * `LiteralIntegerValidator` is considered deprecated and will be removed in the future.
   * new validator: `CompileTimeEvaluableValueValidator` that checks if value is valid at compile time and it should be used instead of literal validators
   * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 
 1.12.4 (14 Nov 2023)
 ------------------------

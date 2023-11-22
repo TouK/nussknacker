@@ -47,6 +47,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
+  (it's not required, new version is binary-compatible)
 
 ## In version 1.12.x
 

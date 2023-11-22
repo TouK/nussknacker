@@ -31,7 +31,7 @@ object NuRuntimeApp extends App with LazyLogging {
 
   val httpConfig = runtimeConfig.as[HttpBindingConfig]("http")
 
-  implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
+  implicit val system: ActorSystem = ActorSystem("nu-lite-runtime", runtimeConfig)
 
   import system.dispatcher
 

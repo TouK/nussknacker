@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
   PeriodicProcessDeploymentStatus,
   PeriodicProcessId
 }
-import slick.jdbc.JdbcProfile
+import slick.jdbc.{JdbcProfile, JdbcType}
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -18,7 +18,7 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
 
   import profile.api._
 
-  implicit val periodicProcessDeploymentStatusColumnTyped =
+  implicit val periodicProcessDeploymentStatusColumnTyped: JdbcType[PeriodicProcessDeploymentStatus] =
     MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
   class PeriodicProcessDeploymentsTable(tag: Tag)

@@ -57,8 +57,8 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
         case "2.13" =>
           s"""
             |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
-            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.0-assembly.jar
-            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.0-assembly.jar
+            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.1/flink-scala-2-13_2.13-1.1.1-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
+            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.1-assembly.jar
             |""".stripMargin
         case v => throw new IllegalStateException(s"unsupported scala version: $v")
       }

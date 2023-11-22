@@ -53,7 +53,7 @@ class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepo
 
   import espTables._
 
-  implicit val iec = ec
+  implicit val iec: ExecutionContext = ec
 
   // Fetches fragment in given version if specified, fetches latest version otherwise
   def listFragments(versions: Map[String, VersionId], category: Option[String]): Future[Set[FragmentDetails]] = {
