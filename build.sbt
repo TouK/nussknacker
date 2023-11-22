@@ -519,7 +519,6 @@ lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
 managerArtifacts := {
   List(
     (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
-    (requestResponseRuntime / assembly).value        -> "managers/nussknacker-request-response-manager.jar",
     (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
     (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
   )
@@ -570,19 +569,9 @@ def itSettings() = {
 }
 
 lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
-  .settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*)
-  .settings(publishAssemblySettings: _*)
   .settings(
-    name                        := "nussknacker-request-response-runtime",
-    IntegrationTest / Keys.test := (IntegrationTest / Keys.test)
-      .dependsOn(
-        liteRequestResponseComponents / Compile / assembly,
-        defaultModel / Compile / assembly,
-      )
-      .value,
+    name := "nussknacker-request-response-runtime",
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http"         % akkaHttpV,
@@ -596,7 +585,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
     liteEngineRuntime,
     requestResponseComponentsApi,
     httpUtils                      % "provided",
-    testUtils                      % "it,test",
+    testUtils                      % "test",
     componentsUtils                % "test",
     requestResponseComponentsUtils % "test",
     liteBaseComponents             % "test",
@@ -859,9 +848,7 @@ lazy val benchmarks = (project in file("benchmarks"))
   )
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
-  .configs(IntegrationTest)
   .settings(commonSettings)
-  .settings(itSettings())
   .settings(
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
@@ -1386,8 +1373,6 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
   .dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .enablePlugins()
   .settings(commonSettings)
   .settings(assemblyNoScala("lite-embedded-manager.jar"): _*)
@@ -1657,8 +1642,6 @@ lazy val openapiComponents = (project in component("openapi"))
   )
 
 lazy val sqlComponents = (project in component("sql"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
   .settings(assemblyNoScala("sql.jar"): _*)
   .settings(publishAssemblySettings: _*)
@@ -1669,18 +1652,18 @@ lazy val sqlComponents = (project in component("sql"))
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
       "org.apache.ignite" % "ignite-core"     % "2.10.0"   % Provided,
       "org.apache.ignite" % "ignite-indexing" % "2.10.0"   % Provided,
-      "org.scalatest"    %% "scalatest"       % scalaTestV % "it,test",
-      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "it,test",
+      "org.scalatest"    %% "scalatest"       % scalaTestV % "test",
+      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "test",
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     componentsApi                  % Provided,
     commonUtils                    % Provided,
-    requestResponseRuntime         % "test,it",
-    requestResponseComponentsUtils % "test,it",
-    flinkTestUtils                 % "it,test",
-    kafkaTestUtils                 % "it,test"
+    requestResponseRuntime         % "test",
+    requestResponseComponentsUtils % "test",
+    flinkTestUtils                 % "test",
+    kafkaTestUtils                 % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))
