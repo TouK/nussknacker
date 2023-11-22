@@ -14,14 +14,14 @@ import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, P
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.Comment
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
 
 class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
-  private implicit val ec                         = ExecutionContext.global
-  private implicit val user                       = LoggedUser("test user", "test user")
-  private implicit val actorSystem: ActorSystem   = ActorSystem(getClass.getSimpleName)
-  private implicit val materializer: Materializer = Materializer(actorSystem)
+  private implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  private implicit val user: LoggedUser             = LoggedUser("test user", "test user")
+  private implicit val actorSystem: ActorSystem     = ActorSystem(getClass.getSimpleName)
+  private implicit val materializer: Materializer   = Materializer(actorSystem)
   private val service = new ProcessAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
 
   test("should respect size limit") {

@@ -17,7 +17,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-val scala213 = "2.13.10"
+val scala213 = "2.13.12"
 
 val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
   case "2.12" => scala212
@@ -30,7 +30,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.12"
+lazy val silencerV      = "1.7.14"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -377,7 +377,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     "org.apache.flink" %% "flink-scala" % flinkV
   ), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   (2, 13) -> Seq(
-    "pl.touk" %% "flink-scala-2-13" % "1.1.0"
+    "pl.touk" %% "flink-scala-2-13" % "1.1.1"
   ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
