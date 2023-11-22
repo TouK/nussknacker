@@ -313,11 +313,11 @@ val avroV              = "1.11.1"
 val kafkaV             = "3.3.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV            = "5.2.23.RELEASE"
-val scalaTestV         = "3.2.16"
+val scalaTestV         = "3.2.17"
 val scalaCheckV        = "1.17.0"
 val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
 val scalaTestPlusV     =
-  "3.2.15.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
+  "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 val logbackV                = "1.2.11"
 val logbackJsonV            = "0.1.5"
 val circeV                  = "0.14.5"
@@ -1731,10 +1731,10 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     name := "nussknacker-deployment-manager-api",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-actor"  % akkaV,
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.github.ben-manes.caffeine"  % "caffeine"    % caffeineCacheV,
-        "org.scalatestplus"             %% "mockito-4-6" % scalaTestPlusV % "test"
+        "com.typesafe.akka"             %% "akka-actor"   % akkaV,
+        "com.softwaremill.sttp.client3" %% "core"         % sttpV,
+        "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
+        "org.scalatestplus"             %% "mockito-4-11" % scalaTestPlusV % "test"
       )
     }
   )
@@ -1835,7 +1835,7 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.slick"            %% "slick-testkit"                   % slickV               % "test",
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % "test",
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
-        "org.scalatestplus"             %% "mockito-4-6"                     % scalaTestPlusV       % "test",
+        "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % "test",
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
