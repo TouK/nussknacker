@@ -2,27 +2,20 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueParameterVariant, GroupedFieldsErrors, onChangeType } from "../../../item";
+import { AnyValueParameterVariant, FragmentFieldsErrors, onChangeType } from "../../../item";
 import { VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 
-interface Props<T> {
-    item: T;
+interface Props {
+    item: AnyValueParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: GroupedFieldsErrors<T>;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
-export const AnyValueVariant = <T extends AnyValueParameterVariant = AnyValueParameterVariant>({
-    item,
-    path,
-    onChange,
-    readOnly,
-    variableTypes,
-    fieldsErrors,
-}: Props<T>) => {
+export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, fieldsErrors }: Props) => {
     const { t } = useTranslation();
 
     return (

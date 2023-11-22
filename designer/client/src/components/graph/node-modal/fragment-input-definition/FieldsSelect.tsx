@@ -3,7 +3,7 @@ import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types"
 import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
-import { Item, onChangeType, FragmentInputParameter, GroupedFieldsErrors } from "./item";
+import { Item, onChangeType, FragmentInputParameter, FragmentFieldsErrors } from "./item";
 import { Error } from "../editors/Validators";
 import { chain } from "lodash";
 
@@ -53,7 +53,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             index: number;
             item: FragmentInputParameter;
             validators: Validator[];
-            fieldsErrors: GroupedFieldsErrors;
+            fieldsErrors: FragmentFieldsErrors;
         }) => {
             return (
                 <Item
@@ -87,7 +87,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     ),
                 ];
 
-                const fieldsErrors: Record<string, Error[]> = chain(fieldErrors)
+                const fieldsErrors = chain(fieldErrors)
                     .filter((fieldError) => fieldError.fieldName.includes(`$param.${item.name}`))
                     .groupBy("fieldName")
                     .mapKeys((_, key) => key.replace(`$param.${item.name}.$`, ""))

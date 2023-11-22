@@ -1,14 +1,7 @@
 import React from "react";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
-import {
-    FixedValuesType,
-    onChangeType,
-    FixedValuesOption,
-    FixedListParameterVariant,
-    GroupedFieldsErrors,
-    AnyValueParameterVariant,
-} from "../../../item";
+import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant, FragmentFieldsErrors } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { FixedValuesPresets, ReturnedType, VariableTypes } from "../../../../../../../types";
@@ -23,7 +16,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     fixedValuesListPresetId: string;
     readOnly: boolean;
     variableTypes: VariableTypes;
-    fieldsErrors: GroupedFieldsErrors<AnyValueParameterVariant | FixedListParameterVariant>;
+    fieldsErrors: FragmentFieldsErrors;
     typ: ReturnedType;
 }
 

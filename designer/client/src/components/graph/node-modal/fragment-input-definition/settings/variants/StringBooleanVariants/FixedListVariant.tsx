@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FixedListParameterVariant, FixedValuesType, GroupedFieldsErrors, onChangeType } from "../../../item";
+import { FixedListParameterVariant, FixedValuesType, FragmentFieldsErrors, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -8,25 +8,17 @@ import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponne
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 
-interface Props<T> {
-    item: T;
+interface Props {
+    item: FixedListParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     variableTypes: VariableTypes;
-    fieldsErrors: GroupedFieldsErrors<T>;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
-export const FixedListVariant = <T extends FixedListParameterVariant = FixedListParameterVariant>({
-    item,
-    path,
-    onChange,
-    fixedValuesPresets,
-    readOnly,
-    variableTypes,
-    fieldsErrors,
-}: Props<T>) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, fieldsErrors }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];

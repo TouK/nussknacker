@@ -3,7 +3,7 @@ import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import {
-    GroupedFieldsErrors,
+    FragmentFieldsErrors,
     InputMode,
     isAnyValueParameter,
     isAnyValueWithSuggestionsParameter,
@@ -22,7 +22,7 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: GroupedFieldsErrors;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
 export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly, fieldsErrors }: Props) => {

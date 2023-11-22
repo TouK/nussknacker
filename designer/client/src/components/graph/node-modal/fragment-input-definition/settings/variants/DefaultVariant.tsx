@@ -2,28 +2,21 @@ import React from "react";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DefaultParameterVariant, GroupedFieldsErrors, onChangeType } from "../../item";
+import { DefaultParameterVariant, FragmentFieldsErrors, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import InitialValue from "./fields/InitialValue";
 
-interface Props<T> {
-    item: T;
+interface Props {
+    item: DefaultParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: GroupedFieldsErrors<T>;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
-export const DefaultVariant = <T extends DefaultParameterVariant>({
-    item,
-    onChange,
-    path,
-    variableTypes,
-    readOnly,
-    fieldsErrors,
-}: Props<T>) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, fieldsErrors }: Props) => {
     const { t } = useTranslation();
 
     return (

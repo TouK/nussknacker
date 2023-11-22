@@ -8,7 +8,7 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter, GroupedFieldsErrors } from "./";
+import { onChangeType, FragmentInputParameter, FragmentFieldsErrors } from "./";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
@@ -24,7 +24,7 @@ interface ItemProps {
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     fixedValuesPresets: FixedValuesPresets;
-    fieldsErrors: GroupedFieldsErrors;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
 export function Item(props: ItemProps): JSX.Element {

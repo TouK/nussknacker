@@ -75,7 +75,7 @@ export type StringOrBooleanParameterVariant =
 
 export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;
 
-export type GroupedFieldsErrors<T = any> = Record<keyof T, Error[]>;
+export type FragmentFieldsErrors = Partial<{ fixedValuesList: Error[]; initialValue: Error[] }>;
 
 export function isFixedListParameter(item: StringOrBooleanParameterVariant): item is FixedListParameterVariant {
     return item.inputConfig.inputMode === InputMode.FixedList;

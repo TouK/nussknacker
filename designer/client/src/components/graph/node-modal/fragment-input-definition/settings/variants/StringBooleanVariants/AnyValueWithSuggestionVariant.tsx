@@ -2,23 +2,23 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, GroupedFieldsErrors, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, FragmentFieldsErrors, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 
-interface Props<T> {
-    item: T;
+interface Props {
+    item: AnyValueWithSuggestionsParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: GroupedFieldsErrors<T>;
+    fieldsErrors: FragmentFieldsErrors;
 }
 
-export const AnyValueWithSuggestionVariant = <T extends AnyValueWithSuggestionsParameterVariant = AnyValueWithSuggestionsParameterVariant>({
+export const AnyValueWithSuggestionVariant = ({
     item,
     path,
     onChange,
@@ -26,7 +26,7 @@ export const AnyValueWithSuggestionVariant = <T extends AnyValueWithSuggestionsP
     fixedValuesPresets,
     readOnly,
     fieldsErrors,
-}: Props<T>) => {
+}: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
