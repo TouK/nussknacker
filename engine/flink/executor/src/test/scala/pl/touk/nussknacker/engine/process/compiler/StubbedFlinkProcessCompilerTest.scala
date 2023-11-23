@@ -72,8 +72,10 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
   test("stubbing for verification purpose should stub all sources") {
+    val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator)
     val verificationCompiler = new VerificationFlinkProcessCompiler(
       scenarioWithMultipleSources,
+      modelData,
       SampleConfigCreator,
       minimalFlinkConfig,
       DefaultNamespacedObjectNaming
@@ -146,6 +148,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
     val testCompiler = new TestFlinkProcessCompiler(
+      modelData,
       modelData.configCreator,
       modelData.processConfig,
       ResultsCollectingListenerHolder.registerRun(identity),

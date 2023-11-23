@@ -31,6 +31,15 @@ object ExpressionCompiler {
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, typeDefinitionSet)
 
+  def withOptimization(modelData: ModelData): ExpressionCompiler = {
+    withOptimization(
+      modelData.modelClassLoader.classLoader,
+      modelData.uiDictServices.dictRegistry,
+      modelData.modelDefinition.expressionConfig,
+      modelData.modelDefinitionWithTypes.typeDefinitions
+    )
+  }
+
   def withoutOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,

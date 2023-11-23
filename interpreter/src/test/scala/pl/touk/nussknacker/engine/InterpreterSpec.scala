@@ -47,6 +47,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
@@ -196,7 +197,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty(), configCreator))
     ProcessCompilerData.prepare(
       process,
       definitionsWithTypes,

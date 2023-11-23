@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
 import scala.reflect.ClassTag
 
 class FlinkProcessCompilerWithTestComponents(
+    modelData: ModelData,
     creator: ProcessConfigCreator,
     processConfig: Config,
     diskStateBackendSupport: Boolean,
@@ -31,7 +32,14 @@ class FlinkProcessCompilerWithTestComponents(
     componentUseCase: ComponentUseCase,
     testExtensionsHolder: TestExtensionsHolder,
     resultsCollectingListener: ResultsCollectingListener,
-) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
+) extends FlinkProcessCompiler(
+      modelData,
+      creator,
+      processConfig,
+      diskStateBackendSupport,
+      objectNaming,
+      componentUseCase
+    ) {
 
   override protected def definitions(
       processObjectDependencies: ProcessObjectDependencies,
@@ -133,6 +141,7 @@ class FlinkProcessCompilerWithTestComponents(
       modelData: ModelData,
       componentUseCase: ComponentUseCase
   ) = this(
+    modelData,
     modelData.configCreator,
     modelData.processConfig,
     false,

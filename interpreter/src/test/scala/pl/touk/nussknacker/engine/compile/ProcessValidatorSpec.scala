@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   ComponentUseCase,
+  EmptyProcessConfigCreator,
   LanguageConfiguration,
   WithCategories
 }
@@ -51,7 +52,7 @@ import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.{LocalModelData, ProcessDefinitionBuilder}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.{ObjectProcessDefinition, objectDefinition}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
@@ -1638,7 +1639,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       process: CanonicalProcess,
       definitions: ProcessDefinition[ObjectWithMethodDef]
   ): CompilationResult[Unit] = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
+      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator())
+    )
     ProcessValidator
       .default(
         ModelDefinitionWithTypes(definitions),

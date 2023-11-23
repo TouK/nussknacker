@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDef
 import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, InterpretationResult, api}
@@ -72,8 +73,9 @@ class InterpreterSetup[T: ClassTag] {
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader))
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
+
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty(), configCreator))
 
     ProcessCompilerData.prepare(
       process,

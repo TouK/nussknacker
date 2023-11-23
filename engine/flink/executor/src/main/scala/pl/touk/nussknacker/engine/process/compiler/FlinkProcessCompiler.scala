@@ -30,6 +30,7 @@ import scala.concurrent.duration.FiniteDuration
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
 class FlinkProcessCompiler(
+    val modelData: ModelData,
     creator: ProcessConfigCreator,
     val processConfig: Config,
     val diskStateBackendSupport: Boolean,
@@ -41,6 +42,7 @@ class FlinkProcessCompiler(
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def this(modelData: ModelData) = this(
+    modelData,
     modelData.configCreator,
     modelData.processConfig,
     diskStateBackendSupport = true,
@@ -75,7 +77,7 @@ class FlinkProcessCompiler(
     val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val fragmentDefinitionExtractor         = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor         = FragmentComponentDefinitionExtractor(modelData)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
       ProcessCompilerData.prepare(
