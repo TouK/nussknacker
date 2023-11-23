@@ -174,7 +174,7 @@ jobs:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
       SCALA_VERSION: ${{ matrix.scalaVersion }}
-      TESTS_WITH_COVERAGE: ${{ github.ref == 'refs/heads/staging' && scalaVersion == '2.13' }}
+      TESTS_WITH_COVERAGE: ${{ github.ref == 'refs/heads/staging' && matrix.scalaVersion == '2.13' }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -203,11 +203,11 @@ jobs:
           restore-keys: sbt
       - name: Backend tests with coverage
         shell: bash
-        if: ${{ TESTS_WITH_COVERAGE == 'true' }}
+        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
         run: ./ciRunSbt.sh coverage test coverageReport
       - name: Backend tests without coverage
         shell: bash
-        if: ${{ TESTS_WITH_COVERAGE != 'true' }}
+        if: ${{ env.TESTS_WITH_COVERAGE != 'true' }}
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
@@ -217,7 +217,7 @@ jobs:
           path: '**/test-reports/*.xml'
       - name: Upload Coverage data to Coveralls
         shell: bash
-        if: ${{ TESTS_WITH_COVERAGE == 'true' }}
+        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
