@@ -108,7 +108,6 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
                 }}
                 variableTypes={variableTypes}
                 readOnly={readOnly}
-                data-testid={"add-list-item"}
                 ref={(ref: AceEditor | null) => {
                     if (ref?.editor) {
                         ref.editor.commands.addCommand(aceEditorEnterCommand);

@@ -21,7 +21,7 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValues
             <RadioGroup
                 value={fixedValuesType}
                 onChange={(event) => {
-                    onChange(`${path}.initialValue`, null);
+                    onChange(`${path}.initialValue`, "");
                     onChange(`${path}.fixedValuesType`, event.target.value);
                 }}
             >

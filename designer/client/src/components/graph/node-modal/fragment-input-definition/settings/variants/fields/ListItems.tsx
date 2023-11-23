@@ -20,16 +20,14 @@ export const ListItems = ({ items, handleDelete, errors = [] }: ListItemsProps) 
                     const hasError = errors.some((error) => error.description.includes(`: ${item.label}`));
 
                     return (
-                        <>
-                            <Chip
-                                color={hasError ? "error" : undefined}
-                                variant="outlined"
-                                sx={{ marginRight: "10px", marginBottom: "10px" }}
-                                key={index}
-                                label={item.label}
-                                onDelete={handleDelete && (() => handleDelete(index))}
-                            />
-                        </>
+                        <Chip
+                            color={hasError ? "error" : undefined}
+                            variant="outlined"
+                            sx={{ marginRight: "10px", marginBottom: "10px" }}
+                            key={index}
+                            label={item.label}
+                            onDelete={handleDelete && (() => handleDelete(index))}
+                        />
                     );
                 })}
                 {errors?.map((error, index) => {
