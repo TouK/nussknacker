@@ -22,7 +22,7 @@ interface InitialValue {
 export default function InitialValue({ onChange, item, path, options, readOnly, variableTypes, errors = [] }: InitialValue) {
     const { t } = useTranslation();
 
-    const emptyOption = { label: "", value: null };
+    const emptyOption = { label: "", value: "" };
     const optionsToDisplay: Option[] = [emptyOption, ...(options ?? []).map(({ label }) => ({ label, value: label }))];
 
     return (
