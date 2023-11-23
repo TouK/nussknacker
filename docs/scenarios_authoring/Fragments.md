@@ -9,14 +9,24 @@ Fragments are a way to share processing logic - if many scenarios require identi
 Once a fragment is created using Designer (see Fragments tab) it can be used in other scenarios in the same category.
 
 ## Inputs
-Fragment can have one input. You can define parameters of a fragment:
+Fragment must have exactly one input. You can define parameters of a fragment:
 
-![fragment input](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs0.png)
+![fragment input_base](img/fragment_input_simple.png)
+
+Clicking the "Show advanced configuration" button opens up an additional form.
+
+For types other than `String` and `Boolean` this allows configuration as seen here:
+
+![fragment input](img/fragment_input_advanced_Long.png)
+
+While for parameters of type `String` or `Boolean`, on top of that it also allows choosing an input mode from `Any`, `Any with suggestions`, `Fixed list` and, if applicable, setting the items of the list.
+
+![fragment input](img/fragment_input_advanced_String.png)
 
 ## Outputs
 Fragment can define zero, one or more outputs. Each of them has a name (which should be unique), main scenario can then choose appropriate output. Below you can see fragment with two outputs:
 
-![fragment output](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs1.png)
+![fragment output](img/fragment_output.png)
 
 ## Limitations of fragments
 - They cannot access variables from the main scenario if they are not passed as parameters.
