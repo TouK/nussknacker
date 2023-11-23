@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
-import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
 import java.util.Optional
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
+import scala.annotation.nowarn
 
 /**
   * Wrapper for ConsumerRecord fields used for test data serialization, eg. json serialization.
@@ -27,7 +28,7 @@ case class SerializableConsumerRecord[K, V](
   /**
     * Converts SerializableConsumerRecord to ConsumerRecord, uses default values in case of missing attributes.
     */
-  @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
+  @nowarn("cat=deprecation") // using deprecated constructor for Flink 1.14/15 compatibility
   def toKafkaConsumerRecord(
       formatterTopic: String,
       serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])

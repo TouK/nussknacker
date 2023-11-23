@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.api
 
-import com.github.ghik.silencer.silent
 import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe._
 
 import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
+import scala.annotation.{nowarn, tailrec}
 import scala.jdk.CollectionConverters._
 
 object CirceUtil {
@@ -72,7 +71,7 @@ object CirceUtil {
 
   implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
 
-    @silent("deprecated")
+    @nowarn("cat=deprecation")
     def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
       val keysSet = keys.toSet
       cursor
