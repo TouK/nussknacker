@@ -37,7 +37,7 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
   protected implicit val processCategoryService: ProcessCategoryService =
     TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
-  protected def createProcessS(
+  protected def createSavedProcess(
       process: CanonicalProcess,
       category: String,
       processingType: ProcessingType
@@ -84,7 +84,6 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
     saveAndGetId(withNameSet, category, isFragment)
   }
 
-// here API changes
   private def saveAndGetId(
       process: CanonicalProcess,
       category: String,

@@ -408,14 +408,6 @@ trait NuResourcesTest
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
-  protected def createProcess(
-      process: CanonicalProcess,
-      category: String,
-      processingType: ProcessingType
-  ): ProcessId = {
-    saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
-  }
-
   private def prepareValidProcess(
       processName: ProcessName,
       category: String,
@@ -481,7 +473,7 @@ trait NuResourcesTest
 
   protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = TestCat): ProcessId = {
     (for {
-      id <- Future(createProcess(process, category, processingType = Streaming))
+      id <- Future(createSavedProcess(process, category, processingType = Streaming))
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }
