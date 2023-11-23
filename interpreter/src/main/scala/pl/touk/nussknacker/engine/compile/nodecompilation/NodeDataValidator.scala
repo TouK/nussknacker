@@ -5,20 +5,27 @@ import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  FragmentOutputNotDefined,
+  PresetIdNotFoundInProvidedPresets,
+  UnknownFragmentOutput
+}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, Parameter}
 import pl.touk.nussknacker.engine.api.expression.TypedValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.nodecompilation.ParameterInputConfigResolved.resolveInputConfigIgnoreValidation
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -47,7 +54,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       nodeData: NodeData,
       validationContext: ValidationContext,
       branchContexts: Map[String, ValidationContext],
-      outgoingEdges: List[OutgoingEdge]
+      outgoingEdges: List[OutgoingEdge],
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
@@ -104,8 +112,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput           => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case a: FragmentInputDefinition => validateFragmentInputDefinition(compiler, validationContext, a)
+        case a: FragmentInput =>
+          validateFragment(validationContext, outgoingEdges, compiler, a, fixedValuesPresetProvider)
+        case a: FragmentInputDefinition =>
+          validateFragmentInputDefinition(compiler, validationContext, a, fixedValuesPresetProvider)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -126,7 +136,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
       compiler: NodeCompiler,
-      a: FragmentInput
+      a: FragmentInput,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit nodeId: NodeId) = {
     fragmentResolver
       .resolveInput(a)
@@ -159,10 +170,17 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           .swap
           .map(_.toList)
           .valueOr(_ => List.empty)
+
+        val presets = fixedValuesPresetProvider.getAll
+        // missingPresetIdErrors is validated in validateFragmentInputDefinition, but here it is also needed, in case the preset has since been removed
+        val missingPresetIdErrors = validateMissingPresetIds(definition.fragmentParameters, presets, a.id)
+
+        val paramsWithEffectivePresets = definition.fragmentParameters.map(fillEffectivePreset(_, presets))
+
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithEffectivePresets)), validationContext)
         )
-        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
+        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors ++ missingPresetIdErrors)
       }
       .valueOr(errors => ValidationPerformed(errors.toList, None, None))
   }
@@ -171,12 +189,17 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       compiler: NodeCompiler,
       validationContext: ValidationContext,
       definition: FragmentInputDefinition,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit nodeId: NodeId) = {
-    val errors = compiler.loadParametersTypeMap(definition.parameters) match {
+    val presets                    = fixedValuesPresetProvider.getAll
+    val missingPresetIdErrors      = validateMissingPresetIds(definition.parameters, presets, nodeId.id)
+    val paramsWithEffectivePresets = definition.parameters.map(fillEffectivePreset(_, presets))
+
+    val fragmentParameterErrors = compiler.loadParametersTypeMap(paramsWithEffectivePresets) match {
       case Valid(variables) =>
         val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)
 
-        definition.parameters.flatMap { param =>
+        paramsWithEffectivePresets.flatMap { param =>
           FragmentParameterValidator.validate(
             param,
             definition.id,
@@ -189,11 +212,43 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
     }
 
     ValidationPerformed(
-      errors,
+      missingPresetIdErrors ++ fragmentParameterErrors,
       None,
       None
     )
   }
+
+  private def validateMissingPresetIds(
+      parameters: List[FragmentParameter],
+      presets: Map[String, List[FixedExpressionValue]],
+      nodeId: String
+  ) = parameters.flatMap { param =>
+    resolveInputConfigIgnoreValidation(param.inputConfig) match {
+      case Some(p: ParameterInputConfigResolvedPreset) =>
+        if (!presets.contains(p.fixedValuesListPresetId))
+          List(PresetIdNotFoundInProvidedPresets(p.fixedValuesListPresetId, Set(nodeId)))
+        else List.empty
+      case _ => List.empty
+    }
+  }
+
+  private def fillEffectivePreset(
+      param: FragmentParameter,
+      presets: Map[String, List[FixedExpressionValue]],
+  ) =
+    resolveInputConfigIgnoreValidation(param.inputConfig) match {
+      case Some(p: ParameterInputConfigResolvedPreset) =>
+        param.copy(
+          inputConfig = param.inputConfig.copy(
+            resolvedPresetFixedValuesList = presets.get(p.fixedValuesListPresetId) match {
+              case Some(fixedValueList) =>
+                Some(fixedValueList.map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label)))
+              case None => None
+            }
+          )
+        )
+      case _ => param
+    }
 
   private def toValidationResponse[T <: TypedValue](
       nodeCompilationResult: NodeCompilationResult[_]

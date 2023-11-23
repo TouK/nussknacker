@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.{Preset, UserDefinedList}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
@@ -324,6 +325,18 @@ object node {
       val InputModeFixedList: Value          = Value("InputModeFixedList")
     }
 
+    object FixedValuesType extends Enumeration {
+      type FixedValuesType = Value
+
+      implicit val typeEncoder: Encoder[FixedValuesType.Value] =
+        Encoder.encodeEnumeration(FixedValuesType)
+      implicit val typeDecoder: Decoder[FixedValuesType.Value] =
+        Decoder.decodeEnumeration(FixedValuesType)
+
+      val Preset: Value          = Value("Preset")
+      val UserDefinedList: Value = Value("UserDefinedList")
+    }
+
     object FragmentParameter {
 
       implicit def encoder: Encoder[FragmentParameter] = deriveConfiguredEncoder[FragmentParameter]
@@ -335,8 +348,11 @@ object node {
 
       private val defaultInputConfig: Json = Json.fromJsonObject(
         JsonObject(
-          "inputMode"       -> Json.fromString(InputModeAny.toString),
-          "fixedValuesList" -> Json.Null
+          "inputMode"                     -> Json.fromString(InputModeAny.toString),
+          "fixedValuesType"               -> Json.Null,
+          "fixedValuesList"               -> Json.Null,
+          "fixedValuesListPresetId"       -> Json.Null,
+          "resolvedPresetFixedValuesList" -> Json.Null,
         )
       )
 
@@ -372,7 +388,7 @@ object node {
           required = false,
           initialValue = None,
           hintText = None,
-          inputConfig = ParameterInputConfig(InputModeAny, None)
+          inputConfig = ParameterInputConfig.inputConfigAny
         )
       }
 
@@ -385,24 +401,43 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         inputConfig: ParameterInputConfig,
-    ) {
-      def withName(name: String): FragmentParameter = copy(name = name)
-    }
+    )
 
     @JsonCodec
     case class ParameterInputConfig(
         inputMode: ParameterInputMode.Value,
+        fixedValuesType: Option[FixedValuesType.Value],
         fixedValuesList: Option[
           List[FixedExpressionValue]
-        ] // don't access directly, use effectiveFixedValuesList instead
+        ], // don't access directly, use effectiveFixedValuesList instead
+        fixedValuesListPresetId: Option[String],
+        resolvedPresetFixedValuesList: Option[
+          List[FixedExpressionValue]
+        ] // updated by BE at process save and used only by BE, don't access directly, use effectiveFixedValuesList instead
     ) {
 
       val effectiveFixedValuesList: Option[List[FixedExpressionValue]] =
         inputMode match {
-          case InputModeAny =>
-            None // allow for saving the list for UX purposes, don't use it in BE unless inputMode is changed
-          case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList
+          case InputModeAny => None
+          case InputModeAnyWithSuggestions | InputModeFixedList =>
+            fixedValuesType match {
+              case Some(UserDefinedList) => fixedValuesList
+              case Some(Preset)          => resolvedPresetFixedValuesList
+              case _                     => None // invalid case, fails in FragmentParameterValidator
+            }
         }
+
+    }
+
+    object ParameterInputConfig {
+
+      val inputConfigAny: ParameterInputConfig = ParameterInputConfig(
+        inputMode = InputModeAny,
+        fixedValuesType = None,
+        fixedValuesList = None,
+        fixedValuesListPresetId = None,
+        resolvedPresetFixedValuesList = None
+      )
 
     }
 
@@ -427,6 +462,7 @@ object node {
   val InputModeFieldName       = "$inputMode"
   val TypFieldName             = "$typ"
   val FixedValuesListFieldName = "$fixedValuesList"
+  val PresetIdFieldName        = "$fixedValuesPresetId"
 
   def qualifiedParamFieldName(
       paramName: String,

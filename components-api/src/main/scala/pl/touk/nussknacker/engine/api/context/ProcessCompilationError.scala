@@ -262,10 +262,22 @@ object ProcessCompilationError {
   final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
+  final case class PresetIdNotFoundInProvidedPresets(presetId: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
   final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
   final case class MissingFixedValuesList(paramName: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class MissingFixedValuesPresetId(paramName: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class InvalidFixedValuesType(
+      paramName: String,
+      fixedValuesType: Option[String],
+      inputMode: String,
+      nodeIds: Set[String]
+  ) extends ProcessCompilationError
 
   final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
       extends ProcessCompilationError

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
@@ -213,6 +214,17 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       .mapValuesNow(createUIScenarioPropertyConfig)
   }
 
+  test("should return fixedValuesPresets given by FixedValuesPresetProvider") {
+    val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.fixedValuesPresets.mapValuesNow(
+      _.map(v => FixedExpressionValue(v.expression, v.label))
+    ) shouldBe TestFixedValuesPresetProvider.fixedValuesPresets
+  }
+
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
     val staticObjectsDefinition =
       ToStaticObjectDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
@@ -226,7 +238,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming,
-      TestAdditionalUIConfigProvider
+      TestAdditionalUIConfigProvider,
+      TestFixedValuesPresetProvider
     )
   }
 

@@ -1,14 +1,8 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  ExpressionParserCompilationError,
-  ExpressionParserCompilationErrorInFragmentDefinition,
-  InitialValueNotPresentInPossibleValues,
-  MissingFixedValuesList,
-  RequireValueFromEmptyFixedList,
-  UnsupportedFixedValuesType
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
@@ -27,33 +21,40 @@ import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialV
 object FragmentParameterValidator {
 
   def validate(
-      fragmentParameter: FragmentParameter,
+      fragmentParameterWithResolvedPresets: FragmentParameter,
       fragmentInputId: String,
       compiler: NodeCompiler,
       validationContext: ValidationContext // localVariables must include this and other FragmentParameters
   )(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    val inputConfigResponse = validateInputConfig(fragmentParameter, fragmentInputId)
+    val inputConfigResponse = validateInputConfig(fragmentParameterWithResolvedPresets, fragmentInputId)
 
     val fixedExpressionsResponses = validateFixedExpressionValues(
-      fragmentParameter.initialValue,
-      fragmentParameter.inputConfig.effectiveFixedValuesList.getOrElse(List.empty),
+      fragmentParameterWithResolvedPresets.initialValue,
+      fragmentParameterWithResolvedPresets.inputConfig.effectiveFixedValuesList.getOrElse(List.empty),
       compiler,
       validationContext,
-      fragmentParameter.name
+      fragmentParameterWithResolvedPresets.name
     )
 
-    val fixedValuesListResponses = validateFixedValuesList(fragmentParameter, fragmentInputId)
+    val fixedValuesListResponses = validateFixedValuesList(fragmentParameterWithResolvedPresets, fragmentInputId)
 
     inputConfigResponse ++ fixedValuesListResponses ++ fixedExpressionsResponses
   }
 
-  private def validateInputConfig(fragmentParameter: FragmentParameter, fragmentInputId: String) =
+  private def validateInputConfig(
+      fragmentParameter: FragmentParameter,
+      fragmentInputId: String
+  ) =
     fragmentParameter.inputConfig.inputMode match {
       case InputModeAny => List.empty
       case InputModeAnyWithSuggestions | InputModeFixedList =>
-        val missingFixedValuesResponse = fragmentParameter.inputConfig.fixedValuesList match {
-          case Some(_) => List.empty
-          case None    => List(MissingFixedValuesList(fragmentParameter.name, Set(fragmentInputId)))
+        val resolutionResponse = ParameterInputConfigResolved.resolveInputConfig(
+          fragmentParameter.inputConfig,
+          fragmentParameter.name,
+          fragmentInputId
+        ) match {
+          case Valid(_)   => List.empty
+          case Invalid(e) => e.toList
         }
 
         val unsupportedFixedValuesTypeResponse =
@@ -68,7 +69,7 @@ object FragmentParameterValidator {
           else
             List.empty
 
-        missingFixedValuesResponse ++ unsupportedFixedValuesTypeResponse
+        resolutionResponse ++ unsupportedFixedValuesTypeResponse
     }
 
   private def validateFixedExpressionValues(

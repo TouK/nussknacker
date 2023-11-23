@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentGroupName}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.definition.{ComponentTemplate, UIProcessObjects}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
@@ -42,7 +43,9 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       user = NussknackerInternalUser.instance, // We need admin user to receive all components info
       fragments = Set.empty,
       additionalUIConfigProvider =
-        AdditionalUIConfigProvider.empty // this method is only used in ComponentIdProviderFactory, and because AdditionalUIConfigProvider can't change ComponentId, we don't need it
+        AdditionalUIConfigProvider.empty, // this method is only used in ComponentIdProviderFactory, and because AdditionalUIConfigProvider can't change ComponentId, we don't need it
+      fixedValuesPresetProvider =
+        FixedValuesPresetProvider.empty // this method is only used in ComponentIdProviderFactory, and FixedValuesPresetProvider doesn't impact ComponentId at all
     )
     ComponentObjects(uiProcessObjects)
   }
@@ -52,10 +55,18 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
       fragments: Set[FragmentDetails],
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): ComponentObjects = {
     val uiProcessObjects =
-      createUIProcessObjects(processingType, processingTypeData, user, fragments, additionalUIConfigProvider)
+      createUIProcessObjects(
+        processingType,
+        processingTypeData,
+        user,
+        fragments,
+        additionalUIConfigProvider,
+        fixedValuesPresetProvider
+      )
     ComponentObjects(uiProcessObjects)
   }
 
@@ -64,7 +75,8 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingTypeData: ProcessingTypeData,
       user: LoggedUser,
       fragments: Set[FragmentDetails],
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
@@ -76,7 +88,8 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processCategoryService = categoryService,
       scenarioPropertiesConfig = processingTypeData.scenarioPropertiesConfig,
       processingType = processingType,
-      additionalUIConfigProvider = additionalUIConfigProvider
+      additionalUIConfigProvider = additionalUIConfigProvider,
+      fixedValuesPresetProvider = fixedValuesPresetProvider
     )
   }
 

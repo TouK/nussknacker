@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedExpressionValue
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -25,7 +26,8 @@ package object definition {
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
       customActions: List[UICustomAction],
-      defaultAsyncInterpretation: Boolean
+      defaultAsyncInterpretation: Boolean,
+      fixedValuesPresets: Map[String, List[FixedExpressionValue]]
   )
 
   // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig

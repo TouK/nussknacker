@@ -6,12 +6,7 @@ import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, Process
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.{
-  InitialValueFieldName,
-  InputModeFieldName,
-  TypFieldName,
-  qualifiedParamFieldName
-}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
@@ -156,11 +151,24 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
+      case InvalidFixedValuesType(paramName, fixedValuesType, inputMode, _) =>
+        node(
+          s"FixedValuesType '$fixedValuesType' is invalid for inputMode '$inputMode' in definition of param $paramName ",
+          "Please check fragment definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
+        )
       case MissingFixedValuesList(paramName, _) =>
         node(
           s"Missing required fixed values list in input configuration of param $paramName ",
           "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
+          fieldName =
+            Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(FixedValuesListFieldName)))
+        )
+      case MissingFixedValuesPresetId(paramName, _) =>
+        node(
+          s"Missing required fixed values preset id in input configuration of param $paramName ",
+          "Please check fragment definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(PresetIdFieldName)))
         )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
@@ -185,6 +193,11 @@ object PrettyValidationErrors {
           s"Failed to parse expression: $message",
           s"There is a problem with expression: $originalExpr",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
+        )
+      case PresetIdNotFoundInProvidedPresets(presetId, _) =>
+        node(
+          s"The specified preset id '$presetId' is not defined",
+          "Please check fragment definition",
         )
     }
   }

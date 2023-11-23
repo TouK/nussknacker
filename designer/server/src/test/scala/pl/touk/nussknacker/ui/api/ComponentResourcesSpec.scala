@@ -7,6 +7,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultComponentIdProvider}
@@ -34,7 +35,8 @@ class ComponentResourcesSpec
     ComponentLinksConfigExtractor.extract(testDbConfig),
     testProcessingTypeDataProvider.mapCombined(_ => (defaultComponentIdProvider, processCategoryService)),
     processService,
-    TestAdditionalUIConfigProvider
+    TestAdditionalUIConfigProvider,
+    TestFixedValuesPresetProvider
   )
 
   private lazy val componentRoute = new ComponentResource(componentService)

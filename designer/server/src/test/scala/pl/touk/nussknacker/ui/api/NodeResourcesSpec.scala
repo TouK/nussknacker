@@ -8,15 +8,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  BlankId,
-  ExpressionParserCompilationError,
-  InvalidPropertyFixedValue,
-  NodeIdValidationError,
-  ScenarioIdError,
-  ScenarioNameValidationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -28,6 +22,7 @@ import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -35,9 +30,8 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class NodeResourcesSpec
     extends AnyFunSuite
@@ -73,7 +67,8 @@ class NodeResourcesSpec
         v.modelData.uiDictServices,
         v.modelData.modelClassLoader.classLoader
       )
-    )
+    ),
+    TestFixedValuesPresetProvider
   )
 
   private implicit val typingResultDecoder: Decoder[TypingResult] =

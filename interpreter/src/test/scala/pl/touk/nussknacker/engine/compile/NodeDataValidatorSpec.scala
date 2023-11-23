@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import scala.jdk.CollectionConverters._
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,6 +11,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.{
+  DefaultFixedValuesPresetProvider,
+  FixedValuesPresetProvider,
+  TestFixedValuesPresetProvider
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -30,8 +34,8 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.{Preset, UserDefinedList}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
   InputModeAnyWithSuggestions,
   InputModeFixedList
 }
@@ -50,6 +54,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.jdk.CollectionConverters._
+
 class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
@@ -58,6 +64,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     )
 
   private val defaultFragmentId: String = "fragment1"
+
+  private val fixedValuesPresetId = "presetString"
 
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
@@ -569,7 +577,92 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate fragment parameter input config ") {
+  test("should validate not found preset in FragmentInputDefinition") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              inputConfig = ParameterInputConfig(
+                inputMode = InputModeFixedList,
+                fixedValuesList = None,
+                fixedValuesType = Some(Preset),
+                fixedValuesListPresetId = Some(fixedValuesPresetId),
+                resolvedPresetFixedValuesList = None
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              PresetIdNotFoundInProvidedPresets(fixedValuesPresetId, nodes),
+              RequireValueFromEmptyFixedList(fixedValuesPresetId1, nodes1)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate missing preset id in FragmentInputDefinition") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    val nodes1         = nodes
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              inputConfig = ParameterInputConfig(
+                inputMode = InputModeFixedList,
+                fixedValuesList = None,
+                fixedValuesType = Some(Preset),
+                fixedValuesListPresetId = None, // should be defined
+                resolvedPresetFixedValuesList = None
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              MissingFixedValuesPresetId("param1", nodes),
+              RequireValueFromEmptyFixedList(fixedValuesPresetId, nodes1)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate fragment parameter input config") {
     val nodeId: String = "in"
     val nodes          = Set(nodeId)
     val nodes1         = Set(nodeId)
@@ -586,7 +679,11 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               hintText = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeAnyWithSuggestions,
-                fixedValuesList = None // must be defined if inputMode == InputModeAnyWithSuggestions
+                fixedValuesType = Some(UserDefinedList),
+                fixedValuesList =
+                  None, // must be defined if inputMode == InputModeAnyWithSuggestions && fixedValuesType == Some(UserDefinedList)
+                fixedValuesListPresetId = None,
+                resolvedPresetFixedValuesList = None
               )
             )
           ),
@@ -623,7 +720,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               hintText = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
-                fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                fixedValuesType = Some(UserDefinedList),
+                fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))),
+                fixedValuesListPresetId = None,
+                resolvedPresetFixedValuesList = None
               )
             )
           ),
@@ -658,7 +758,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              inputConfig = ParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig.inputConfigAny
             )
           ),
         ),
@@ -688,7 +788,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               hintText = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
-                fixedValuesList = Some(List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")))
+                fixedValuesType = Some(UserDefinedList),
+                fixedValuesList = Some(List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean"))),
+                fixedValuesListPresetId = None,
+                resolvedPresetFixedValuesList = None
               )
             )
           ),
@@ -718,7 +821,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = ParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig.inputConfigAny
             ),
             FragmentParameter(
               "param1",
@@ -726,7 +829,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              inputConfig = ParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig.inputConfigAny
             )
           ),
         ),
@@ -754,7 +857,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              inputConfig = ParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig.inputConfigAny
             )
           ),
         ),
@@ -783,7 +886,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              inputConfig = ParameterInputConfig(InputModeAny, None)
+              inputConfig = ParameterInputConfig.inputConfigAny
             )
           ),
         ),
@@ -816,10 +919,17 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       branchCtxs: Map[String, ValidationContext] = Map.empty,
       outgoingEdges: List[OutgoingEdge] = Nil,
       fragmentDefinition: CanonicalProcess = defaultFragmentDef,
-      aModelData: LocalModelData = modelData
+      aModelData: LocalModelData = modelData,
+      fixedValuesPresetProvider: FixedValuesPresetProvider = TestFixedValuesPresetProvider
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
-    new NodeDataValidator(aModelData, fragmentResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(
+    new NodeDataValidator(aModelData, fragmentResolver).validate(
+      nodeData,
+      ctx,
+      branchCtxs,
+      outgoingEdges,
+      fixedValuesPresetProvider
+    )(
       MetaData("id", StreamMetaData())
     )
   }

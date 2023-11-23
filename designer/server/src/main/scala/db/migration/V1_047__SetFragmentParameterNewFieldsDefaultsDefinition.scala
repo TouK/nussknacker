@@ -21,8 +21,11 @@ object V1_047__SetFragmentParameterNewFieldsDefaultsDefinition {
 
   private val defaultInputConfig: Json = Json.fromJsonObject(
     JsonObject(
-      "inputMode"       -> Json.fromString(InputModeAny.toString),
-      "fixedValuesList" -> Json.Null
+      "inputMode"                     -> Json.fromString(InputModeAny.toString),
+      "fixedValuesType"               -> Json.Null,
+      "fixedValuesList"               -> Json.Null,
+      "fixedValuesListPresetId"       -> Json.Null,
+      "resolvedPresetFixedValuesList" -> Json.Null,
     )
   )
 

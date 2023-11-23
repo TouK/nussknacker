@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingPar
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -59,7 +60,8 @@ class NodesResources(
     fragmentRepository: FragmentRepository,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
     processValidation: ProcessValidation,
-    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _]
+    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
+    fixedValuesPresetProvider: FixedValuesPresetProvider
 )(implicit val ec: ExecutionContext)
     extends ProcessDirectives
     with FailFastCirceSupport
@@ -85,7 +87,7 @@ class NodesResources(
             NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-              nodeValidator.validate(nodeData, modelData, process.id, fragmentRepository)
+              nodeValidator.validate(nodeData, modelData, process.id, fragmentRepository, fixedValuesPresetProvider)
             }
           }
         }
@@ -229,7 +231,8 @@ class NodeValidator {
       nodeData: NodeValidationRequest,
       modelData: ModelData,
       processId: String,
-      fragmentRepository: FragmentRepository
+      fragmentRepository: FragmentRepository,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): NodeValidationResult = {
     implicit val metaData: MetaData = nodeData.processProperties.toMetaData(processId)
 
@@ -242,7 +245,8 @@ class NodeValidator {
       nodeData.nodeData,
       validationContext,
       branchCtxs,
-      edges
+      edges,
+      fixedValuesPresetProvider
     ) match {
       case ValidationNotPerformed =>
         NodeValidationResult(

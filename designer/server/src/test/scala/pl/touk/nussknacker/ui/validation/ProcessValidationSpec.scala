@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -22,6 +23,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.UserDefinedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
@@ -36,11 +39,6 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeFixedList
-}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -437,7 +435,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputConfig = ParameterInputConfig(InputModeAny, None)
+                  inputConfig = ParameterInputConfig.inputConfigAny
                 )
               )
             )
@@ -468,7 +466,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates fragment input definition while validating fragment") {
+  test("validates fragment input definition while validating fragment") { // todo add preset?
     val fragmentWithInvalidParam =
       CanonicalProcess(
         MetaData("sub1", FragmentSpecificData()),
@@ -485,8 +483,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   hintText = None,
                   inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
+                    fixedValuesType = Some(UserDefinedList),
                     fixedValuesList =
-                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))),
+                    fixedValuesListPresetId = None,
+                    resolvedPresetFixedValuesList = None
                   )
                 ),
                 FragmentParameter(
@@ -497,8 +498,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                   hintText = None,
                   inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
+                    fixedValuesType = Some(UserDefinedList),
                     fixedValuesList =
-                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))),
+                    fixedValuesListPresetId = None,
+                    resolvedPresetFixedValuesList = None
                   )
                 )
               )
@@ -537,7 +541,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates fragment input definition while validating process that uses fragment") {
+  test("validates fragment input definition while validating process that uses fragment") { // todo add preset?
     val invalidFragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -573,7 +577,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates FragmentInput parameters according to FragmentInputDefinition") {
+  test("validates FragmentInput parameters according to FragmentInputDefinition") { // todo add preset?
     val fragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -589,7 +593,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                 None,
                 inputConfig = ParameterInputConfig(
                   inputMode = InputModeFixedList,
-                  fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                  fixedValuesType = Some(UserDefinedList),
+                  fixedValuesList =
+                    Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))),
+                  fixedValuesListPresetId = None,
+                  resolvedPresetFixedValuesList = None
                 )
               ),
             )

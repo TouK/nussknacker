@@ -14,9 +14,10 @@ import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.{Preset, UserDefinedList}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeAnyWithSuggestions
+  InputModeAnyWithSuggestions,
+  InputModeFixedList
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
@@ -191,7 +192,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
-          inputConfig = ParameterInputConfig(InputModeAny, None)
+          inputConfig = ParameterInputConfig.inputConfigAny
         )
       )
     )
@@ -222,7 +223,10 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           hintText = None,
           inputConfig = ParameterInputConfig(
             inputMode = InputModeAnyWithSuggestions,
-            fixedValuesList = Some(fixedValuesList)
+            fixedValuesType = Some(UserDefinedList),
+            fixedValuesList = Some(fixedValuesList),
+            fixedValuesListPresetId = None,
+            resolvedPresetFixedValuesList = None
           )
         )
       )
@@ -242,6 +246,51 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.validators should contain theSameElementsAs List()
     parameter.defaultValue shouldBe Some(Expression("spel", ""))
     parameter.hintText shouldBe None
+  }
+
+  test("should generate complex parameters for fragment input definition - FragmentParameterFixedListPreset") {
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+
+    val fixedValuesList =
+      List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
+
+    val presetId = "somePresetId"
+    val fragmentInputDefinition = FragmentInputDefinition(
+      "",
+      List(
+        FragmentParameter(
+          "name",
+          FragmentClazzRef[String],
+          required = true,
+          initialValue = Some(FragmentFixedExpressionValue("'bbb'", "bbb")),
+          hintText = Some("some hint text"),
+          inputConfig = ParameterInputConfig(
+            inputMode = InputModeFixedList,
+            fixedValuesType = Some(Preset),
+            fixedValuesList = None,
+            fixedValuesListPresetId = Some(presetId),
+            resolvedPresetFixedValuesList = Some(fixedValuesList)
+          )
+        )
+      )
+    )
+    val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
+    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+
+    parameter.name shouldBe "name"
+    parameter.typ shouldBe Typed[String]
+    parameter.editor shouldBe Some(
+      FixedValuesPresetParameterEditor(
+        presetId,
+        Some(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
+      )
+    )
+    parameter.validators should contain theSameElementsAs List(
+      MandatoryParameterValidator,
+      FixedValuesValidator(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
+    )
+    parameter.defaultValue shouldBe Some(Expression("spel", "'bbb'"))
+    parameter.hintText shouldBe Some("some hint text")
   }
 
 }
