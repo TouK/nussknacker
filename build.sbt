@@ -14,7 +14,9 @@ import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
-val scala212 = "2.12.18"
+// Warning: Flink doesn't work correctly with 2.12.11
+// Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
+val scala212 = "2.12.10"
 val scala213 = "2.13.12"
 
 val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
@@ -23,6 +25,13 @@ val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match
 }
 
 lazy val supportedScalaVersions = List(scala212, scala213)
+
+// Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
+// Silencer 1.7.x require Scala 2.12.11 (see warning above)
+// Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
+// https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
+lazy val silencerV      = "1.7.14"
+lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -181,6 +190,13 @@ lazy val commonSettings =
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
+      libraryDependencies += compilerPlugin(
+        "com.github.ghik" % "silencer-plugin" % forScalaVersion(
+          scalaVersion.value,
+          silencerV,
+          (2, 12) -> silencerV_2_12
+        ) cross CrossVersion.full
+      ),
       libraryDependencies ++= forScalaVersion(
         scalaVersion.value,
         Seq(),
@@ -195,15 +211,17 @@ lazy val commonSettings =
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
-        // Scala 2.12 will always emit Java 8 bytecode
         "-release",
         "11"
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
         (2, 12) -> Seq(
-          "-Xsource:2.13",
           "-Ypartial-unification",
+          // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
+          // -release option has no influence on class version so we at least setup target to 8 and check java version
+          // at the begining of our Apps
+          "-target:jvm-1.8",
         ),
         (2, 13) -> Seq(
           "-Ymacro-annotations"
@@ -223,6 +241,13 @@ lazy val commonSettings =
       coverageFailOnMinimum      := false,
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
+      libraryDependencies ++= Seq(
+        "com.github.ghik" % "silencer-lib" % forScalaVersion(
+          scalaVersion.value,
+          silencerV,
+          (2, 12) -> silencerV_2_12
+        )                 % Provided cross CrossVersion.full
+      ),
       // here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
         // currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version

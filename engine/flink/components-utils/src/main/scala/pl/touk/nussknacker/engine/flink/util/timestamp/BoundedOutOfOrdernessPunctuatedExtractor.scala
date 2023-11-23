@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.timestamp
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.watermark.Watermark
 
-import scala.annotation.nowarn
-
-@nowarn("cat=deprecation")
+@silent("deprecated")
 abstract class BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrdernessMillis: Long)
     extends AssignerWithPunctuatedWatermarks[T] {
 
