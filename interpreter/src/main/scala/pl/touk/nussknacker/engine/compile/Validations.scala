@@ -75,7 +75,7 @@ object Validations {
               )
             }
         }
-        paramWithValueAndExpressionList.collect { case (name: String, Some(value), expression) =>
+        paramWithValueAndExpressionList.map { case (name, value, expression) =>
           validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
         }
 

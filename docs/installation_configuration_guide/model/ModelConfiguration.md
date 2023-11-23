@@ -96,7 +96,7 @@ in most cases you should not need to defined these settings. The settings you ca
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
   * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
-  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `LiteralRegexpParameterValidator`
+  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
 
@@ -110,7 +110,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
             editor: "StringParameterEditor"
             validators: [ 
               {
-                type: "LiteralRegExpParameterValidator"
+                type: "RegExpParameterValidator"
                 pattern: "customerId-[0-9]*"
                 message: "has to match customer id format"
                 description: "really has to match..."

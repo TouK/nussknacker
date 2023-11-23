@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
   FixedValuesValidator,
-  LiteralParameterValidator,
+  LiteralIntegerValidator,
   MandatoryParameterValidator,
   StringParameterEditor
 }
@@ -29,13 +29,13 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
         reqFieldName -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator, MandatoryParameterValidator)),
+          Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
           Some(label)
         ),
         regexpFieldName -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.numberValidator)),
+          Some(List(LiteralIntegerValidator)),
           Some(label)
         ),
         optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),

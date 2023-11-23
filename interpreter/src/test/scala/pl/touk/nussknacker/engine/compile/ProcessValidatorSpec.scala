@@ -116,13 +116,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withNullableLiteralIntegerParam" -> (objectDefinition(
         List(
           Parameter[Integer]("nullableLiteralIntegerParam")
-            .copy(validators = List(LiteralParameterValidator.integerValidator))
+            .copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
       "withRegExpParam" -> (objectDefinition(
         List(
-          Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+          Parameter[Integer]("regExpParam").copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
@@ -1810,11 +1810,13 @@ class StartingWithACustomValidator extends CustomParameterValidator {
 
   import cats.data.Validated.{invalid, valid}
 
-  override def isValid(paramName: String, expression: Expression, value: Any, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
-      case s: String if s.startsWith("A") => valid(())
+      case None                                 => valid(())
+      case Some(null)                           => valid(())
+      case Some(s: String) if s.startsWith("A") => valid(())
       case _ =>
         invalid(
           CustomParameterValidationError(
