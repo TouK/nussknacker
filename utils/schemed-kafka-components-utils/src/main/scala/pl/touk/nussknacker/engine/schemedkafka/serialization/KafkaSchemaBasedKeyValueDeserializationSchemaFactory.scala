@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.serialization
 
-import com.github.ghik.silencer.silent
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
@@ -8,6 +7,7 @@ import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 
+import scala.annotation.nowarn
 import scala.reflect.ClassTag
 
 /**
@@ -47,7 +47,7 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
       @transient
       private lazy val valueDeserializer = createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
 
-      @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
+      @nowarn("cat=deprecation") // using deprecated constructor for Flink 1.14/15 compatibility
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
         val key   = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
         val value = valueDeserializer.deserialize(record.topic(), record.headers(), record.value())

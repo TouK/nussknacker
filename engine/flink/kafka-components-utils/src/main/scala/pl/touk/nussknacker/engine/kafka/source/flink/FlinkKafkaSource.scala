@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -39,6 +38,7 @@ import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
 import java.util.Properties
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
@@ -134,7 +134,7 @@ class FlinkKafkaSource[T](
 //       and moving deserialization logic to separate flatMap function that would produce Context.
 //       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
 //       It is done this way in lite engine implementation.
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class FlinkKafkaConsumerHandlingExceptions[T](
     topics: java.util.List[String],
     deserializationSchema: FlinkDeserializationSchemaWrapper[T],

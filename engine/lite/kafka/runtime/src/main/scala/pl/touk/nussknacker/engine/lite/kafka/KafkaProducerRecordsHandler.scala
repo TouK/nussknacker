@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
@@ -11,6 +10,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util
 import java.util.{Properties, UUID}
+import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
@@ -86,7 +86,7 @@ private class TransactionalProducerRecordsHandler private (
     producer.beginTransaction()
   }
 
-  @silent("deprecated")
+  @nowarn("cat=deprecation")
   override def onRecordsSuccessfullyProcessed(
       records: ConsumerRecords[Array[Byte], Array[Byte]],
       consumer: KafkaConsumer[_, _]

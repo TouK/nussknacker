@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime._
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.{
@@ -10,6 +9,7 @@ import org.apache.flink.streaming.api.functions.{
 }
 
 import java.time.Duration
+import scala.annotation.nowarn
 
 sealed trait TimestampWatermarkHandler[T] extends Serializable {
 
@@ -78,7 +78,7 @@ object StandardTimestampWatermarkHandler {
 
 }
 
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class LegacyTimestampWatermarkHandler[T](timestampAssigner: TimestampAssigner[T]) extends TimestampWatermarkHandler[T] {
 
   override def assignTimestampAndWatermarks(dataStream: DataStream[T]): DataStream[T] = {

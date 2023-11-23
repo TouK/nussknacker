@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -17,11 +16,12 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
+import scala.annotation.nowarn
 
 /**
  * This source in contrary to `CollectionSource` emit watermark after each element. It is important feature during tests if you want to make them deterministic.
  */
-@silent("deprecated")
+@nowarn("cat=deprecation")
 class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](
     list: Seq[T],
     timestampAssigner: AssignerWithPunctuatedWatermarks[T]

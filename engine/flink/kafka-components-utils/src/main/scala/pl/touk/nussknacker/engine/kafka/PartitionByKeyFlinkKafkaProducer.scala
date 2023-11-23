@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.kafka
 
-import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkSerializationSchema
 
-@silent("deprecated")
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](
