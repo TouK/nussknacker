@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.benchmarks.suggester
 
 import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
@@ -40,7 +41,7 @@ class ExpressionSuggesterBenchmarkSetup() {
   )
 
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true),
+    ProcessDefinitionBuilder.toExpressionDefinition(ProcessDefinitionBuilder.empty.expressionConfig),
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader
@@ -58,7 +59,8 @@ class ExpressionSuggesterBenchmarkSetup() {
       expressionSuggester.expressionSuggestions(
         Expression("spel", expression),
         CaretPosition2d(0, position),
-        variables
+        variables,
+        MetaData("foo", StreamMetaData())
       )(ExecutionContext.global),
       ScalaDuration("10s")
     )

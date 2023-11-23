@@ -1,5 +1,6 @@
 import HttpService from "../../../../../http/HttpService";
 import { ExpressionLang } from "./types";
+import { PropertiesType } from "../../../../../types";
 
 export type CaretPosition2d = { row: number; column: number };
 
@@ -19,6 +20,8 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
     constructor(
         private language: ExpressionLang | string,
         private variables: Record<string, any>,
+        private scenarioName: string,
+        private scenarioProperties: PropertiesType,
         private processingType: string,
         private httpService: typeof HttpService,
     ) {}
@@ -33,6 +36,8 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
                 },
                 caretPosition2d,
                 this.variables,
+                this.scenarioName,
+                this.scenarioProperties,
             )
             .then((response) => response.data);
 }

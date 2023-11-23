@@ -159,7 +159,7 @@ class ProcessValidation(
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
-    typingInfo.inputValidationContext.variables,
+    typingInfo.inputValidationContext.localVariables,
     typingInfo.parameters.map(_.map(UIProcessObjectsFactory.createUIParameter)),
     typingInfo.expressionsTypingInfo
   )

@@ -19,16 +19,15 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -203,45 +202,6 @@ class NodeResourcesSpec
           validationErrors = Nil,
           validationPerformed = true
         )
-      }
-    }
-  }
-
-  test("handles global variables in NodeValidationRequest") {
-    saveProcess(testProcess) {
-      val data = node.Join(
-        "id",
-        Some("output"),
-        "enrichWithAdditionalData",
-        List(
-          Parameter("additional data value", "#longValue")
-        ),
-        List(
-          BranchParameters("b1", List(Parameter("role", "'Events'"))),
-          BranchParameters("b2", List(Parameter("role", "'Additional data'")))
-        ),
-        None
-      )
-      val request = NodeValidationRequest(
-        data,
-        ProcessProperties(StreamMetaData()),
-        Map(),
-        Some(
-          Map(
-            // It's a bit tricky, because FE does not distinguish between global and local vars...
-            "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
-            "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
-          )
-        ),
-        None
-      )
-
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(
-        nodeRoute,
-        testPermissionRead
-      ) ~> check {
-        val res = responseAs[NodeValidationResult]
-        res.validationErrors shouldBe Nil
       }
     }
   }
