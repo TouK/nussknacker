@@ -17,6 +17,7 @@
  */
 package pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeutils.CompositeTypeSerializerUtil.delegateCompatibilityCheckToNewSnapshot
 import org.apache.flink.api.common.typeutils.TypeSerializerConfigSnapshot.SelfResolvingTypeSerializer
 import org.apache.flink.api.common.typeutils._
@@ -24,7 +25,6 @@ import org.apache.flink.api.java.typeutils.runtime.TupleSerializerConfigSnapshot
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer.lookupConstructor
 
 import java.io.ObjectInputStream
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe
 
@@ -52,8 +52,7 @@ class ScalaCaseClassSerializer[T <: Product](
     new ScalaCaseClassSerializerSnapshot[T](this)
   }
 
-  @nowarn("cat=deprecation")
-  override def resolveSchemaCompatibilityViaRedirectingToNewSnapshotClass(
+  @silent override def resolveSchemaCompatibilityViaRedirectingToNewSnapshotClass(
       s: TypeSerializerConfigSnapshot[T]
   ): TypeSerializerSchemaCompatibility[T] = {
 

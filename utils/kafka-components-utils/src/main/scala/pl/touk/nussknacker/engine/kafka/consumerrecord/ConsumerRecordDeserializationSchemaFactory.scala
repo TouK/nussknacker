@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
-
-import scala.annotation.nowarn
 
 /**
   * Produces deserialization schema that describes how to turn the Kafka raw [[org.apache.kafka.clients.consumer.ConsumerRecord]]
@@ -35,7 +34,7 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V]
       @transient
       private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
 
-      @nowarn("cat=deprecation") // using deprecated constructor for Flink 1.14/15 compatibility
+      @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
         val key   = keyDeserializer.deserialize(record.topic(), record.key())
         val value = valueDeserializer.deserialize(record.topic(), record.value())
