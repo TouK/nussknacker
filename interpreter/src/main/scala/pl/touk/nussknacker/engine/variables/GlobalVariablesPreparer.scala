@@ -24,11 +24,10 @@ class GlobalVariablesPreparer(
     prepareGlobalVariables(metaData).mapValuesNow(_.typ)
   )
 
-  def validationContextWithLocalVariables(
-      scenarioPropertiesNames: Iterable[String],
-      localVariables: Map[String, TypingResult]
+  def emptyLocalVariablesValidationContext(
+      scenarioPropertiesNames: Iterable[String]
   ): ValidationContext = ValidationContext(
-    localVariables,
+    Map.empty,
     prepareGlobalVariablesTypes(scenarioPropertiesNames)
   )
 

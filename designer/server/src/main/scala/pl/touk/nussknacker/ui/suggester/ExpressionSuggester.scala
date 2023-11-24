@@ -24,15 +24,15 @@ class ExpressionSuggester(
   private val spelExpressionSuggester =
     new SpelExpressionSuggester(expressionDefinition, typeDefinitions, uiDictServices, classLoader)
 
-  private val globalVariablesPreparer = GlobalVariablesPreparer(expressionDefinition)
+  private val validationContextGlobalVariablesOnly =
+    GlobalVariablesPreparer(expressionDefinition).emptyLocalVariablesValidationContext(scenarioPropertiesNames)
 
   def expressionSuggestions(
       expression: Expression,
       caretPosition2d: CaretPosition2d,
       localVariables: Map[String, TypingResult]
   )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
-    lazy val validationContext =
-      globalVariablesPreparer.validationContextWithLocalVariables(scenarioPropertiesNames, localVariables)
+    val validationContext = validationContextGlobalVariablesOnly.copy(localVariables = localVariables)
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
       case Language.Spel | Language.SpelTemplate =>

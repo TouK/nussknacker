@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._
 import cats.data.OptionT
-import cats.data.Validated.Invalid
 import cats.instances.future._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
@@ -13,14 +12,14 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver}
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{
   NodeDataValidator,
@@ -48,7 +47,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{ParametersValidator, ProcessValidation}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -59,7 +58,8 @@ class NodesResources(
     fragmentRepository: FragmentRepository,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
     processValidation: ProcessValidation,
-    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _]
+    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
+    typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
 )(implicit val ec: ExecutionContext)
     extends ProcessDirectives
     with FailFastCirceSupport
@@ -135,8 +135,8 @@ class NodesResources(
                 NodesResources.prepareParametersValidationDecoder(modelData)
               entity(as[ParametersValidationRequest]) { parametersToValidate =>
                 complete {
-                  val validationResults =
-                    NodesResources.validate(modelData, parametersToValidate, parametersToValidate.scenarioName)
+                  val validator         = typeToParametersValidator.forTypeUnsafe(processingType)
+                  val validationResults = validator.validate(parametersToValidate)
                   ParametersValidationResult(validationErrors = validationResults, validationPerformed = true)
                 }
               }
@@ -168,20 +168,6 @@ class NodesResources(
 }
 
 object NodesResources {
-
-  def validate(
-      modelData: ModelData,
-      request: ParametersValidationRequest,
-      processName: String
-  ): List[NodeValidationError] = {
-    implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
-    val context                     = prepareValidationContext(modelData)(request.variableTypes)
-    val expressionCompiler          = ExpressionCompiler.withoutOptimization(modelData)
-    request.parameters
-      .map(param => expressionCompiler.compile(param.expression, Some(param.name), context, param.typ)(NodeId("")))
-      .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
-      .flatten
-  }
 
   def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
     new TypingResultDecoder(name =>
@@ -325,11 +311,8 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     validationPerformed: Boolean
 )
 
-// TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
 @JsonCodec(encodeOnly = true) final case class ParametersValidationRequest(
-    scenarioName: String,
     parameters: List[UIValueParameter],
-    processProperties: ProcessProperties,
     variableTypes: Map[String, TypingResult]
 )
 
