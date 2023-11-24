@@ -8,14 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  BlankId,
-  ExpressionParserCompilationError,
-  InvalidPropertyFixedValue,
-  NodeIdValidationError,
-  ScenarioIdError,
-  ScenarioNameValidationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankId, ExpressionParserCompilationError, InvalidPropertyFixedValue, NodeIdValidationError, ScenarioIdError, ScenarioNameValidationError}
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -34,11 +27,11 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.validation.{ParametersValidator, ProcessValidation}
+import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
-class NodeResourcesSpec
+class NodesResourcesSpec
     extends AnyFunSuite
     with ScalatestRouteTest
     with FailFastCirceSupport
@@ -53,7 +46,7 @@ class NodeResourcesSpec
 
   private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
 
-  private val validation = ProcessValidation(
+  private val validation = UIProcessValidator(
     typeToConfig.mapValues(_.modelData),
     typeToConfig.mapValues(_.scenarioPropertiesConfig),
     typeToConfig.mapValues(_.additionalValidators),
@@ -62,9 +55,9 @@ class NodeResourcesSpec
 
   private val nodeRoute = new NodesResources(
     processService,
-    fragmentRepository,
     typeToConfig.mapValues(_.modelData),
     validation,
+    typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
     typeToConfig.mapValues(v =>
       new ExpressionSuggester(
         v.modelData.modelDefinition.expressionConfig,

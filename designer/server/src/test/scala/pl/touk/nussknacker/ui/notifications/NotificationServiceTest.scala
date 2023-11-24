@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.process.repository.{
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.net.URI
 import java.time.temporal.ChronoUnit
@@ -162,7 +162,7 @@ class NotificationServiceTest
       processRepository,
       actionRepository,
       dbioRunner,
-      mock[ProcessValidation],
+      mock[UIProcessValidator],
       mock[ScenarioResolver],
       mock[ProcessChangeListener],
       None,
