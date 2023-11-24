@@ -37,7 +37,7 @@ export const AnyValueWithSuggestionVariant = ({
 
     return (
         <>
-            <FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} readOnly={readOnly} />
+            {/*<FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} readOnly={readOnly} />*/}
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}

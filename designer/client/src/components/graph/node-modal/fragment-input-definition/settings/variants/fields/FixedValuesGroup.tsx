@@ -25,12 +25,12 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValues
                     onChange(`${path}.fixedValuesType`, event.target.value);
                 }}
             >
-                {/*<FormControlLabel*/}
-                {/*    sx={{ color: theme.custom.colors.secondaryColor }}*/}
-                {/*    value={FixedValuesType.Preset}*/}
-                {/*    control={<Radio />}*/}
-                {/*    label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}*/}
-                {/*/>*/}
+                <FormControlLabel
+                    sx={{ color: theme.custom.colors.secondaryColor }}
+                    value={FixedValuesType.Preset}
+                    control={<Radio />}
+                    label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}
+                />
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
                     value={FixedValuesType.UserDefinedList}

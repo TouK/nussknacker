@@ -30,7 +30,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
 
     return (
         <>
-            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />
+            {/*<FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />*/}
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
