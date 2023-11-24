@@ -19,7 +19,7 @@ export interface ExpressionSuggester {
 export class BackendExpressionSuggester implements ExpressionSuggester {
     constructor(
         private language: ExpressionLang | string,
-        private variables: Record<string, any>,
+        private variableTypes: Record<string, any>,
         private scenarioName: string,
         private scenarioProperties: PropertiesType,
         private processingType: string,
@@ -28,16 +28,15 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
 
     suggestionsFor = (inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]> =>
         this.httpService
-            .getExpressionSuggestions(
-                this.processingType,
-                {
+            .getExpressionSuggestions(this.processingType, {
+                expression: {
                     language: this.language,
                     expression: inputValue,
                 },
                 caretPosition2d,
-                this.variables,
-                this.scenarioName,
-                this.scenarioProperties,
-            )
+                variableTypes: this.variableTypes,
+                scenarioName: this.scenarioName,
+                processProperties: this.scenarioProperties,
+            })
             .then((response) => response.data);
 }

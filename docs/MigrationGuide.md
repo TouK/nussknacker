@@ -29,7 +29,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
   from fragment id
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
-* [#4539](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) `Validator.isValid` method 
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) `Validator.isValid` method 
   now takes `expression: Expression, value: Option[Any]` instead of `value: String` which was not really value, but expression.
   Straight-forward migration is to change method definition and now use `expression.expression` instead of `value` if your validator depends on raw expression. 
   If validator was doing quasi-evaluation, for example trimming `'` to get string, you can just take `value` and cast it to desired class.
@@ -46,7 +46,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/suggestions` request
     * Add `scenarioName` field 
     * Add `processProperties` field 
-    * `variables` field should have only local variables now
+    * `variables` field is renamed to `localVariables` and it should have only local variables now
   * `api/processes/**` response
     * `.json.validationResult.nodeResults.variableTypes` doesn't contain global variables types anymore
   * `api/processDefinitionData/*` response

@@ -150,7 +150,7 @@ class NodesResources(
                   expressionSuggester.expressionSuggestions(
                     expressionSuggestionRequest.expression,
                     expressionSuggestionRequest.caretPosition2d,
-                    expressionSuggestionRequest.variables,
+                    expressionSuggestionRequest.variableTypes,
                     expressionSuggestionRequest.processProperties.toMetaData(expressionSuggestionRequest.scenarioName)
                   )
                 }
@@ -341,6 +341,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     validationPerformed: Boolean
 )
 
+// TODO do not pass processProperties. Based on processingType prepare global variables
 @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
     nodeData: NodeData,
     processProperties: ProcessProperties,
@@ -357,12 +358,11 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     id: String
 )
 
+// TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
 final case class ExpressionSuggestionRequest(
     expression: Expression,
     caretPosition2d: CaretPosition2d,
-    // holds local variables
-    variables: Map[String, TypingResult],
-    // for global variables preparation purpose
+    variableTypes: Map[String, TypingResult],
     scenarioName: String,
     processProperties: ProcessProperties,
 )

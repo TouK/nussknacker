@@ -3,7 +3,6 @@ import { reject } from "lodash";
 
 const unknown = { display: "Unknown", params: [], type: "Unknown", refClazzName: "java.lang.Object" };
 
-//nodeId, process, processDefinition, fieldName  ==> (processDefinition, process) => (nodeId, parameterDefinition)
 describe("process available variables finder", () => {
     it("should find available variables with its types in process at the beginning of the process", () => {
         const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, process)("processVariables");

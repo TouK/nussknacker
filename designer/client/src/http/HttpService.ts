@@ -118,6 +118,14 @@ export interface PropertiesValidationRequest {
     additionalFields: ProcessAdditionalFields;
 }
 
+export interface ExpressionSuggestionRequest {
+    expression: Expression;
+    caretPosition2d: CaretPosition2d;
+    variableTypes: Record<string, any>;
+    scenarioName: string;
+    processProperties: PropertiesType;
+}
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
@@ -418,21 +426,8 @@ class HttpService {
         return promise;
     }
 
-    getExpressionSuggestions(
-        processingType: string,
-        expression: Expression,
-        caretPosition2d: CaretPosition2d,
-        variables: Record<string, any>,
-        scenarioName: string,
-        processProperties: PropertiesType,
-    ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, {
-            expression,
-            caretPosition2d,
-            variables,
-            scenarioName,
-            processProperties,
-        });
+    getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
