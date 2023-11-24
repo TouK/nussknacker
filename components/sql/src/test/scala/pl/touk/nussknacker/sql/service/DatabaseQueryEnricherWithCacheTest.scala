@@ -19,7 +19,11 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
   )
 
   override val service =
-    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseQueryEnricher(
+      hsqlDbPoolConfig,
+      new MetaDataProviderFactory().create(hsqlDbPoolConfig),
+      displayDbErrors = false
+    )
 
   test("DatabaseQueryEnricher#implementation with cache") {
     val query = "select * from persons where id = ?"
