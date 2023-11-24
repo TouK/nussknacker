@@ -235,7 +235,7 @@ class AkkaHttpBasedRouteProvider(
             fragmentRepository,
             typeToConfig.mapValues(_.modelData),
             processValidation,
-            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
+            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData, v.scenarioPropertiesConfig.keys))
           ),
           new ProcessesExportResources(
             futureProcessRepository,

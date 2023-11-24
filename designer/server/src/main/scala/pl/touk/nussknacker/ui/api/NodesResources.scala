@@ -150,8 +150,7 @@ class NodesResources(
                   expressionSuggester.expressionSuggestions(
                     expressionSuggestionRequest.expression,
                     expressionSuggestionRequest.caretPosition2d,
-                    expressionSuggestionRequest.variableTypes,
-                    expressionSuggestionRequest.processProperties.toMetaData(expressionSuggestionRequest.scenarioName)
+                    expressionSuggestionRequest.variableTypes
                   )
                 }
               }
@@ -216,8 +215,8 @@ object NodesResources {
   def prepareValidationContext(
       modelData: ModelData
   )(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
-    val emptyCtx = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(metaData)
-    emptyCtx.copy(localVariables = variableTypes)
+    GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
+      .validationContextWithLocalVariables(metaData, variableTypes)
   }
 
 }
@@ -341,7 +340,6 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     validationPerformed: Boolean
 )
 
-// TODO do not pass processProperties. Based on processingType prepare global variables
 @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
     nodeData: NodeData,
     processProperties: ProcessProperties,
@@ -358,13 +356,10 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     id: String
 )
 
-// TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
 final case class ExpressionSuggestionRequest(
     expression: Expression,
     caretPosition2d: CaretPosition2d,
-    variableTypes: Map[String, TypingResult],
-    scenarioName: String,
-    processProperties: ProcessProperties,
+    variableTypes: Map[String, TypingResult]
 )
 
 object ExpressionSuggestionRequest {

@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.ui.suggester
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
-import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
@@ -20,7 +17,8 @@ class ExpressionSuggester(
     expressionDefinition: ExpressionDefinition[ObjectWithMethodDef],
     typeDefinitions: TypeDefinitionSet,
     uiDictServices: UiDictServices,
-    classLoader: ClassLoader
+    classLoader: ClassLoader,
+    scenarioPropertiesNames: Iterable[String]
 ) {
 
   private val spelExpressionSuggester =
@@ -31,10 +29,10 @@ class ExpressionSuggester(
   def expressionSuggestions(
       expression: Expression,
       caretPosition2d: CaretPosition2d,
-      localVariables: Map[String, TypingResult],
-      metaData: MetaData
+      localVariables: Map[String, TypingResult]
   )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
-    lazy val validationContext = globalVariablesPreparer.validationContextWithLocalVariables(metaData, localVariables)
+    lazy val validationContext =
+      globalVariablesPreparer.validationContextWithLocalVariables(scenarioPropertiesNames, localVariables)
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
       case Language.Spel | Language.SpelTemplate =>
@@ -51,12 +49,13 @@ class ExpressionSuggester(
 
 object ExpressionSuggester {
 
-  def apply(modelData: ModelData): ExpressionSuggester = {
+  def apply(modelData: ModelData, scenarioPropertiesNames: Iterable[String]): ExpressionSuggester = {
     new ExpressionSuggester(
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithTypes.typeDefinitions,
       modelData.uiDictServices,
-      modelData.modelClassLoader.classLoader
+      modelData.modelClassLoader.classLoader,
+      scenarioPropertiesNames
     )
   }
 

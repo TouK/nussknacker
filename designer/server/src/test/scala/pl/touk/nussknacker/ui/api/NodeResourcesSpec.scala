@@ -70,7 +70,8 @@ class NodeResourcesSpec
         v.modelData.modelDefinition.expressionConfig,
         v.modelData.modelDefinitionWithTypes.typeDefinitions,
         v.modelData.uiDictServices,
-        v.modelData.modelClassLoader.classLoader
+        v.modelData.modelClassLoader.classLoader,
+        v.scenarioPropertiesConfig.keys
       )
     )
   )
