@@ -175,7 +175,7 @@ class DatabaseQueryEnricher(
   private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
     case e: SQLSyntaxErrorException =>
       e.getMessage
-    case e => // For some users full error msg can be significant. Allow to switch choose full error message in config
+    case e => // For some users full error msg can be significant. Allow to choose full error message in config
       val userErrorMessageDetails = if (displayDbErrors) e else e.getClass.getSimpleName
       logger.info(s"Failed to execute query: $query", e)
       s"Failed to execute query: $userErrorMessageDetails"
