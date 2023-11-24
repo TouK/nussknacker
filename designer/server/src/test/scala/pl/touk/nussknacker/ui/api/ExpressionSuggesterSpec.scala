@@ -116,7 +116,8 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     ProcessDefinitionBuilder.toExpressionDefinition(expressionConfig),
     clazzDefinitions,
     dictServices,
-    getClass.getClassLoader
+    getClass.getClassLoader,
+    List("scenarioProperty")
   )
 
   private val localVariables: Map[String, TypingResult] = Map(
@@ -139,8 +140,6 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     "dictBar"      -> DictInstance("dictBar", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
   )
 
-  private val metaData = MetaData("fooScenario", StreamMetaData())
-
   private def spelSuggestionsFor(input: String, row: Int = 0, column: Int = -1): List[ExpressionSuggestion] = {
     suggestionsFor(Expression.spel(input), row, column)
   }
@@ -154,8 +153,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       .expressionSuggestions(
         expression,
         CaretPosition2d(row, if (column == -1) expression.expression.length else column),
-        localVariables,
-        metaData
+        localVariables
       )(ExecutionContext.global)
       .futureValue
   }
@@ -284,6 +282,14 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     spelSuggestionsFor("#input.fo") shouldBe List(
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
+    )
+  }
+
+  test("should suggest global meta variable") {
+    spelSuggestionsFor("#meta.") shouldBe List(
+      ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
+      suggestion("processName", Typed[String]),
+      suggestion("properties", TypedObjectTypingResult(Map("scenarioProperty" -> Typed[String]))),
     )
   }
 
