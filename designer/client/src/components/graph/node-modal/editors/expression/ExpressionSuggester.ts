@@ -20,8 +20,6 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
     constructor(
         private language: ExpressionLang | string,
         private variableTypes: Record<string, any>,
-        private scenarioName: string,
-        private scenarioProperties: PropertiesType,
         private processingType: string,
         private httpService: typeof HttpService,
     ) {}
@@ -35,8 +33,6 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
                 },
                 caretPosition2d,
                 variableTypes: this.variableTypes,
-                scenarioName: this.scenarioName,
-                processProperties: this.scenarioProperties,
             })
             .then((response) => response.data);
 }

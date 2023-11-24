@@ -17,6 +17,7 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { GenericValidationRequest } from "../actions/nk/genericAction";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -122,8 +123,6 @@ export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
     variableTypes: Record<string, any>;
-    scenarioName: string;
-    processProperties: PropertiesType;
 }
 
 class HttpService {
@@ -418,7 +417,10 @@ class HttpService {
         return promise;
     }
 
-    validateGenericActionParameters(processingType: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
+    validateGenericActionParameters(
+        processingType: string,
+        validationRequest: GenericValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/parameters/${encodeURIComponent(processingType)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
