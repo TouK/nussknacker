@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{
@@ -60,7 +61,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
   }
 
-  private val processValidator: ProcessValidator = ProcessValidator.default(modelData(), None)
+  private val processValidator: ProcessValidator =
+    ProcessValidator.default(modelData(), None, TestFixedValuesPresetProvider)
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality", "#input.str", Typed[Long])

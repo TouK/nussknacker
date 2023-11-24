@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -73,7 +74,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   )
 
   private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    FragmentComponentDefinitionExtractor(
+      ConfigFactory.empty,
+      getClass.getClassLoader,
+      Some(TestFixedValuesPresetProvider)
+    )
 
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),

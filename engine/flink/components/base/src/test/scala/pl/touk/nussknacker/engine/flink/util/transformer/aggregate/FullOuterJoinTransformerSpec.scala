@@ -8,6 +8,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessObjectDependencies,
@@ -471,7 +472,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -521,7 +522,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }

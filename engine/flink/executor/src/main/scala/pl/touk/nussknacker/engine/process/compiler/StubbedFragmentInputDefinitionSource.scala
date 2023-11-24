@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentInputDefinitionSource(processConfig: Config, classLoader: ClassLoader) {
 
-  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, classLoader)
+  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, classLoader, None)
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
 
   def createSourceDefinition(frag: FragmentInputDefinition): StandardObjectWithMethodDef = {

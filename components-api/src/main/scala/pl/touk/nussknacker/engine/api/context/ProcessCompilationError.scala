@@ -106,6 +106,10 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
+  final case class PresetIdNotFoundInProvidedPresets(fieldName: String, presetId: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class MissingService(serviceId: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
@@ -260,9 +264,6 @@ object ProcessCompilationError {
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
-      extends ProcessCompilationError
-
-  final case class PresetIdNotFoundInProvidedPresets(presetId: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
   final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])

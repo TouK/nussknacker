@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -196,7 +197,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+      FragmentComponentDefinitionExtractor(
+        ConfigFactory.empty(),
+        getClass.getClassLoader,
+        Some(TestFixedValuesPresetProvider)
+      )
     ProcessCompilerData.prepare(
       process,
       definitionsWithTypes,

@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -109,7 +110,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       process,
       modelData.modelDefinitionWithTypes,
       modelData.engineDictRegistry,
-      FragmentComponentDefinitionExtractor(modelData),
+      FragmentComponentDefinitionExtractor(modelData, Some(TestFixedValuesPresetProvider)),
       Seq.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,

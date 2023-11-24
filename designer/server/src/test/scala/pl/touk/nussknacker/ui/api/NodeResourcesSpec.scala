@@ -14,11 +14,11 @@ import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetPr
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -52,7 +52,8 @@ class NodeResourcesSpec
     typeToConfig.mapValues(_.modelData),
     typeToConfig.mapValues(_.scenarioPropertiesConfig),
     typeToConfig.mapValues(_.additionalValidators),
-    new FragmentResolver(fragmentRepository)
+    new FragmentResolver(fragmentRepository),
+    TestFixedValuesPresetProvider
   )
 
   private val nodeRoute = new NodesResources(

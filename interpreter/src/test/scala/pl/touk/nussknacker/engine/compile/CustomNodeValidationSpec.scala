@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   InvalidTailOfBranch,
   MissingParameters
 }
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -77,7 +78,11 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   )
 
   private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    FragmentComponentDefinitionExtractor(
+      ConfigFactory.empty,
+      getClass.getClassLoader,
+      Some(TestFixedValuesPresetProvider)
+    )
 
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),

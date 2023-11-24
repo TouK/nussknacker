@@ -8,18 +8,13 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   FragmentParamClassLoadError,
-  MultipleOutputsForName
+  MultipleOutputsForName,
+  PresetIdNotFoundInProvidedPresets
 }
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.definition.{
-  DualParameterEditor,
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  FixedValuesPresetParameterEditor,
-  Parameter,
-  SimpleParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -78,16 +73,19 @@ case object EmptyFragmentError extends FragmentDefinitionError
 
 class FragmentComponentDefinitionExtractor(
     componentConfig: String => Option[SingleComponentConfig],
-    classLoader: ClassLoader
+    classLoader: ClassLoader,
+    fixedValuesPresetProvider: Option[FixedValuesPresetProvider]
 ) extends FragmentDefinitionExtractor {
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess
   ): Validated[FragmentDefinitionError, FragmentComponentDefinition] = {
     extractFragmentGraph(fragment).map { case (input, _, outputs) =>
-      val docsUrl    = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      val config     = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
-      val parameters = input.parameters.map(toParameter(config)(_)).sequence.value
+      val docsUrl = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
+      val config  = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
+      val fixedValuesPresets = fixedValuesPresetProvider.map(_.getAll)
+
+      val parameters = input.parameters.map(toParameter(config, fixedValuesPresets)(_)).sequence.value
       new FragmentComponentDefinition(parameters, config, outputs)
     }
   }
@@ -110,16 +108,19 @@ class FragmentComponentDefinitionExtractor(
   private def extractFragmentParametersDefinition(componentId: String, parameters: List[FragmentParameter])(
       implicit nodeId: NodeId
   ): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    val config             = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    val fixedValuesPresets = fixedValuesPresetProvider.map(_.getAll)
+
     parameters
-      .map(toParameter(config))
+      .map(toParameter(config, fixedValuesPresets))
       .sequence
-      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
+      .mapWritten(_.map(_.toError(nodeId.id)))
   }
 
   private def toParameter(
-      componentConfig: SingleComponentConfig
-  )(fragmentParameter: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
+      componentConfig: SingleComponentConfig,
+      fixedValuesPresets: Option[Map[String, List[FixedExpressionValue]]]
+  )(fragmentParameter: FragmentParameter): Writer[List[FragmentParameterErrorData], Parameter] = {
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))
@@ -129,53 +130,76 @@ class FragmentComponentDefinitionExtractor(
           .value[List[FragmentParamClassLoadErrorData], TypingResult](Unknown)
           .tell(List(FragmentParamClassLoadErrorData(fragmentParameter.name, fragmentParameter.typ.refClazzName)))
       )
-      .map(toParameter(componentConfig, _, fragmentParameter))
+      .mapBoth { (written, value) =>
+        val parameter = toParameter(componentConfig, value, fragmentParameter, fixedValuesPresets)
+        (written ++ parameter.written, parameter.value)
+      }
   }
 
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
-      fragmentParameter: FragmentParameter
+      fragmentParameter: FragmentParameter,
+      fixedValuesPresets: Option[Map[String, List[FixedExpressionValue]]]
   ) = {
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
 
-    val extractedEditor =
+    val extractedEditor: Writer[List[PresetIdNotFoundInProvidedPresetsErrorDara], Option[ParameterEditor]] =
       ParameterInputConfigResolved.resolveInputConfigIgnoreValidation(fragmentParameter.inputConfig) match {
         case Some(ParameterInputConfigResolvedUserDefinedList(inputMode, fixedValuesList)) =>
-          fixedValuesEditorWithInputMode(
-            inputMode,
-            FixedValuesParameterEditor(
-              fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+          Writer(
+            List.empty,
+            fixedValuesEditorWithInputMode(
+              inputMode,
+              FixedValuesParameterEditor(
+                fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+              )
             )
           )
         case Some(ParameterInputConfigResolvedPreset(inputMode, presetId, maybeFixedValuesList)) =>
-          fixedValuesEditorWithInputMode(
-            inputMode,
-            FixedValuesPresetParameterEditor(
-              presetId,
-              maybeFixedValuesList.map(_.map(v => FixedExpressionValue(v.expression, v.label)))
+          val (errors, fixedValues) = fixedValuesPresets
+            .map { presets =>
+              presets.get(presetId) match {
+                case Some(fixedValues) => (List.empty, Some(fixedValues))
+                case None =>
+                  (List(PresetIdNotFoundInProvidedPresetsErrorDara(fragmentParameter.name, presetId)), None)
+              }
+            }
+            .getOrElse((List.empty, maybeFixedValuesList.map(_.map(v => FixedExpressionValue(v.expression, v.label)))))
+
+          Writer(
+            errors,
+            fixedValuesEditorWithInputMode(
+              inputMode,
+              FixedValuesPresetParameterEditor(
+                presetId,
+                fixedValues
+              )
             )
           )
-        case _ => EditorExtractor.extract(parameterData, config)
+        case _ => Writer(List.empty, EditorExtractor.extract(parameterData, config))
       }
 
     val isOptional = !fragmentParameter.required
-    Parameter
-      .optional(fragmentParameter.name, typ)
-      .copy(
-        editor = extractedEditor,
-        validators = ValidatorsExtractor
-          .extract(ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)),
-        defaultValue = fragmentParameter.initialValue
-          .map(i => Expression.spel(i.expression))
-          .orElse(
-            DefaultValueDeterminerChain.determineParameterDefaultValue(
-              DefaultValueDeterminerParameters(parameterData, isOptional, config, extractedEditor)
-            )
-          ),
-        hintText = fragmentParameter.hintText
-      )
+    Writer(
+      extractedEditor.written,
+      Parameter
+        .optional(fragmentParameter.name, typ)
+        .copy(
+          editor = extractedEditor.value,
+          validators = ValidatorsExtractor
+            .extract(ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor.value)),
+          defaultValue = fragmentParameter.initialValue
+            .map(i => Expression.spel(i.expression))
+            .orElse(
+              DefaultValueDeterminerChain.determineParameterDefaultValue(
+                DefaultValueDeterminerParameters(parameterData, isOptional, config, extractedEditor.value)
+              )
+            ),
+          hintText = fragmentParameter.hintText
+        )
+    )
   }
 
   private def fixedValuesEditorWithInputMode(
@@ -192,13 +216,24 @@ class FragmentComponentDefinitionExtractor(
 
 object FragmentComponentDefinitionExtractor {
 
-  def apply(modelData: ModelData): FragmentComponentDefinitionExtractor = {
-    FragmentComponentDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
+  def apply(
+      modelData: ModelData,
+      fixedValuesPresetProvider: Option[FixedValuesPresetProvider]
+  ): FragmentComponentDefinitionExtractor = {
+    FragmentComponentDefinitionExtractor(
+      modelData.processConfig,
+      modelData.modelClassLoader.classLoader,
+      fixedValuesPresetProvider
+    )
   }
 
-  def apply(modelConfig: Config, classLoader: ClassLoader): FragmentComponentDefinitionExtractor = {
+  def apply(
+      modelConfig: Config,
+      classLoader: ClassLoader,
+      fixedValuesPresetProvider: Option[FixedValuesPresetProvider]
+  ): FragmentComponentDefinitionExtractor = {
     val componentsConfig = ComponentsUiConfigExtractor.extract(modelConfig)
-    new FragmentComponentDefinitionExtractor(componentsConfig.get, classLoader)
+    new FragmentComponentDefinitionExtractor(componentsConfig.get, classLoader, fixedValuesPresetProvider)
   }
 
 }
@@ -242,4 +277,17 @@ class FragmentGraphDefinition(
 
 }
 
-case class FragmentParamClassLoadErrorData(fieldName: String, refClazzName: String)
+sealed trait FragmentParameterErrorData {
+  def toError(nodeId: String): PartSubGraphCompilationError
+}
+
+case class FragmentParamClassLoadErrorData(fieldName: String, refClazzName: String) extends FragmentParameterErrorData {
+  override def toError(nodeId: String): FragmentParamClassLoadError =
+    FragmentParamClassLoadError(fieldName, refClazzName, nodeId)
+}
+
+case class PresetIdNotFoundInProvidedPresetsErrorDara(fieldName: String, presetId: String)
+    extends FragmentParameterErrorData {
+  override def toError(nodeId: String): PresetIdNotFoundInProvidedPresets =
+    PresetIdNotFoundInProvidedPresets(fieldName, presetId, nodeId)
+}

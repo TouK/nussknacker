@@ -5,9 +5,9 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
@@ -73,7 +73,11 @@ class InterpreterSetup[T: ClassTag] {
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+      FragmentComponentDefinitionExtractor(
+        ConfigFactory.empty(),
+        getClass.getClassLoader,
+        Some(TestFixedValuesPresetProvider)
+      )
 
     ProcessCompilerData.prepare(
       process,

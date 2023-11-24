@@ -109,17 +109,18 @@ class AkkaHttpBasedRouteProvider(
       val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val scenarioProperties = typeToConfig.mapValues(_.scenarioPropertiesConfig)
+      val scenarioProperties        = typeToConfig.mapValues(_.scenarioPropertiesConfig)
+      val fixedValuesPresetProvider = createFixedValuesPresetProvider(resolvedConfig, sttpBackend)
       val processValidation = ProcessValidation(
         modelData,
         scenarioProperties,
         typeToConfig.mapValues(_.additionalValidators),
-        fragmentResolver
+        fragmentResolver,
+        fixedValuesPresetProvider
       )
 
       val substitutorsByProcessType =
         modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
-      val fixedValuesPresetProvider = createFixedValuesPresetProvider(resolvedConfig, sttpBackend)
 
       val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 

@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessObjectDependencies,
@@ -151,7 +152,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
@@ -202,7 +203,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""

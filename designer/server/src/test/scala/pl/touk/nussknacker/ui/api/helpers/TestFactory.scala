@@ -6,6 +6,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.{CategoriesConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
@@ -167,7 +168,12 @@ object TestFactory extends TestPermissions {
     MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(
+        ConfigFactory.empty,
+        getClass.getClassLoader,
+        Some(TestFixedValuesPresetProvider)
+      )
     ProcessValidator.default(
       ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)),
       fragmentDefinitionExtractor,

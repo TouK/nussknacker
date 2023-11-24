@@ -64,7 +64,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       }
       val compiler = new NodeCompiler(
         modelData.modelDefinition,
-        FragmentComponentDefinitionExtractor(modelData),
+        FragmentComponentDefinitionExtractor(modelData, Some(fixedValuesPresetProvider)),
         expressionCompiler,
         modelData.modelClassLoader.classLoader,
         PreventInvocationCollector,
@@ -113,7 +113,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
             )
           )
         case a: FragmentInput =>
-          validateFragment(validationContext, outgoingEdges, compiler, a, fixedValuesPresetProvider)
+          validateFragment(validationContext, outgoingEdges, compiler, a)
         case a: FragmentInputDefinition =>
           validateFragmentInputDefinition(compiler, validationContext, a, fixedValuesPresetProvider)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
@@ -136,8 +136,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
       compiler: NodeCompiler,
-      a: FragmentInput,
-      fixedValuesPresetProvider: FixedValuesPresetProvider
+      a: FragmentInput
   )(implicit nodeId: NodeId) = {
     fragmentResolver
       .resolveInput(a)
@@ -171,16 +170,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           .map(_.toList)
           .valueOr(_ => List.empty)
 
-        val presets = fixedValuesPresetProvider.getAll
-        // missingPresetIdErrors is validated in validateFragmentInputDefinition, but here it is also needed, in case the preset has since been removed
-        val missingPresetIdErrors = validateMissingPresetIds(definition.fragmentParameters, presets, a.id)
-
-        val paramsWithEffectivePresets = definition.fragmentParameters.map(fillEffectivePreset(_, presets))
-
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithEffectivePresets)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), validationContext)
         )
-        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors ++ missingPresetIdErrors)
+        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
       }
       .valueOr(errors => ValidationPerformed(errors.toList, None, None))
   }
@@ -226,7 +219,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
     resolveInputConfigIgnoreValidation(param.inputConfig) match {
       case Some(p: ParameterInputConfigResolvedPreset) =>
         if (!presets.contains(p.fixedValuesListPresetId))
-          List(PresetIdNotFoundInProvidedPresets(p.fixedValuesListPresetId, Set(nodeId)))
+          List(PresetIdNotFoundInProvidedPresets(param.name, p.fixedValuesListPresetId, nodeId))
         else List.empty
       case _ => List.empty
     }

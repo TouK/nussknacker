@@ -86,7 +86,7 @@ object ScenarioInterpreterFactory {
         process,
         modelData.modelDefinitionWithTypes,
         modelData.engineDictRegistry,
-        FragmentComponentDefinitionExtractor(modelData),
+        FragmentComponentDefinitionExtractor(modelData, None),
         listeners,
         modelData.modelClassLoader.classLoader,
         resultCollector,

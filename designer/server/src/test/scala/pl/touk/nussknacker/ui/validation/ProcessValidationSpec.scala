@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -23,7 +24,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.UserDefinedList
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FixedValuesType.{Preset, UserDefinedList}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.InputModeFixedList
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
@@ -456,9 +457,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes("in") should matchPattern {
       case List(
             NodeValidationError(
-              "FailedToResolveFragmentParameterType",
-              "Failed to resolve type 'thisTypeDoesntExist' of parameter 'subParam1'",
-              _,
+              "FragmentParamClassLoadError",
+              "Invalid parameter type.",
+              "Failed to load thisTypeDoesntExist",
               Some("$param.subParam1.$typ"),
               NodeValidationErrorType.SaveAllowed
             )
@@ -466,7 +467,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates fragment input definition while validating fragment") { // todo add preset?
+  test("validates fragment input definition while validating fragment") {
     val fragmentWithInvalidParam =
       CanonicalProcess(
         MetaData("sub1", FragmentSpecificData()),
@@ -504,6 +505,20 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                     fixedValuesListPresetId = None,
                     resolvedPresetFixedValuesList = None
                   )
+                ),
+                FragmentParameter(
+                  "subParam3",
+                  FragmentClazzRef[java.lang.Boolean],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  inputConfig = ParameterInputConfig(
+                    inputMode = InputModeFixedList,
+                    fixedValuesType = Some(Preset),
+                    fixedValuesList = None,
+                    fixedValuesListPresetId = Some("thisPresetDoesNotExist"),
+                    resolvedPresetFixedValuesList = None
+                  )
                 )
               )
             )
@@ -524,6 +539,13 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes("in") should matchPattern {
       case List(
             NodeValidationError(
+              "PresetIdNotFoundInProvidedPresets",
+              "The specified preset id 'thisPresetDoesNotExist' used in subParam3 is not defined",
+              _,
+              Some("$param.subParam3.$fixedValuesPresetId"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
               "InitialValueNotPresentInPossibleValues",
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
               _,
@@ -541,11 +563,31 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates fragment input definition while validating process that uses fragment") { // todo add preset?
+  test("validates fragment input definition while validating process that uses fragment") {
     val invalidFragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                "param1",
+                FragmentClazzRef[Long],
+                required = false,
+                initialValue = None,
+                hintText = None,
+                inputConfig = ParameterInputConfig(
+                  inputMode = InputModeFixedList,
+                  fixedValuesType = Some(Preset),
+                  fixedValuesList = None,
+                  fixedValuesListPresetId = Some("thisPresetDoesNotExist"),
+                  resolvedPresetFixedValuesList = None
+                )
+              )
+            )
+          )
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -573,7 +615,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
-          if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
+          if invalidNodes("subIn").size == 2 && invalidNodes("subIn-subVar").size == 1 =>
     }
   }
 
@@ -1219,7 +1261,8 @@ private object ProcessValidationSpec {
             FragmentDetails(fragment, Category1),
           )
         )
-      )
+      ),
+      TestFixedValuesPresetProvider
     )
     processValidationWithConfig
   }

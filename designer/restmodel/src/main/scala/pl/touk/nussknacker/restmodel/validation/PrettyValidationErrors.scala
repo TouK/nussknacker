@@ -32,7 +32,11 @@ object PrettyValidationErrors {
           fieldName = fieldName
         )
       case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
-        node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
+        node(
+          "Invalid parameter type.",
+          s"Failed to load $refClazzName",
+          fieldName = Some(qualifiedParamFieldName(paramName = fieldName, subFieldName = Some(TypFieldName)))
+        )
       case DuplicatedNodeIds(ids) =>
         node(
           "Two nodes cannot have same id",
@@ -194,10 +198,11 @@ object PrettyValidationErrors {
           s"There is a problem with expression: $originalExpr",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
         )
-      case PresetIdNotFoundInProvidedPresets(presetId, _) =>
+      case PresetIdNotFoundInProvidedPresets(paramName, presetId, _) =>
         node(
-          s"The specified preset id '$presetId' is not defined",
+          s"The specified preset id '$presetId' used in $paramName is not defined",
           "Please check fragment definition",
+          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(PresetIdFieldName)))
         )
     }
   }

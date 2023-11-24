@@ -8,14 +8,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
@@ -30,9 +30,17 @@ object ProcessValidation {
       modelData: ProcessingTypeDataProvider[ModelData, _],
       scenarioProperties: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
       additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
-      fragmentResolver: FragmentResolver
+      fragmentResolver: FragmentResolver,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): ProcessValidation = {
-    new ProcessValidation(modelData, scenarioProperties, additionalValidators, fragmentResolver, None)
+    new ProcessValidation(
+      modelData,
+      scenarioProperties,
+      additionalValidators,
+      fragmentResolver,
+      None,
+      fixedValuesPresetProvider
+    )
   }
 
 }
@@ -42,7 +50,8 @@ class ProcessValidation(
     scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
     additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
     fragmentResolver: FragmentResolver,
-    expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]
+    expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]],
+    fixedValuesPresetProvider: FixedValuesPresetProvider
 ) {
 
   /**
@@ -60,7 +69,8 @@ class ProcessValidation(
     scenarioPropertiesConfig,
     additionalValidators,
     fragmentResolver,
-    None
+    None,
+    fixedValuesPresetProvider
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
@@ -68,13 +78,21 @@ class ProcessValidation(
     scenarioPropertiesConfig,
     additionalValidators,
     fragmentResolver,
-    Some(modify)
+    Some(modify),
+    fixedValuesPresetProvider
   )
 
   def withScenarioPropertiesConfig(
       scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ) =
-    new ProcessValidation(modelData, scenarioPropertiesConfig, additionalValidators, fragmentResolver, None)
+    new ProcessValidation(
+      modelData,
+      scenarioPropertiesConfig,
+      additionalValidators,
+      fragmentResolver,
+      None,
+      fixedValuesPresetProvider
+    )
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -128,7 +146,7 @@ class ProcessValidation(
       category: Category
   ): ValidationResult = {
     val processValidator = processValidatorCache.getOrCreate(ValidatorKey(modelData, category)) {
-      val modelCategoryValidator = ProcessValidator.default(modelData, Some(category))
+      val modelCategoryValidator = ProcessValidator.default(modelData, Some(category), fixedValuesPresetProvider)
 
       expressionParsers
         .map(modelCategoryValidator.withExpressionParsers)

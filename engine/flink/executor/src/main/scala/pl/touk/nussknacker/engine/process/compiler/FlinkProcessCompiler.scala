@@ -75,7 +75,7 @@ class FlinkProcessCompiler(
     val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val fragmentDefinitionExtractor         = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader, None)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
       ProcessCompilerData.prepare(

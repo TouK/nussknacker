@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ValidationContext
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   ComponentUseCase,
@@ -1638,7 +1639,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       process: CanonicalProcess,
       definitions: ProcessDefinition[ObjectWithMethodDef]
   ): CompilationResult[Unit] = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(
+        ConfigFactory.empty,
+        getClass.getClassLoader,
+        Some(TestFixedValuesPresetProvider)
+      )
     ProcessValidator
       .default(
         ModelDefinitionWithTypes(definitions),

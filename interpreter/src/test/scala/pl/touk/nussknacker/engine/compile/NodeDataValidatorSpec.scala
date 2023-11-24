@@ -611,8 +611,65 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     ) {
       case ValidationPerformed(
             List(
-              PresetIdNotFoundInProvidedPresets(fixedValuesPresetId, nodes),
-              RequireValueFromEmptyFixedList(fixedValuesPresetId1, nodes1)
+              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodeId),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate not found preset in FragmentInput") {
+    val fragmentId = "fragmentInputId"
+    val nodeToBeValidated = FragmentInput(
+      "nameOfTheNode",
+      FragmentRef(
+        fragmentId,
+        List(
+          Parameter("param1", ""),
+        ),
+        Map("out1" -> "test1")
+      )
+    )
+
+    val fragmentDefinitionWithPreset: CanonicalProcess = CanonicalProcess(
+      MetaData(fragmentId, FragmentSpecificData()),
+      List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                "param1",
+                FragmentClazzRef[String],
+                required = false,
+                initialValue = None,
+                hintText = None,
+                inputConfig = ParameterInputConfig(
+                  inputMode = InputModeFixedList,
+                  fixedValuesList = None,
+                  fixedValuesType = Some(Preset),
+                  fixedValuesListPresetId = Some(fixedValuesPresetId),
+                  resolvedPresetFixedValuesList = None
+                )
+              )
+            )
+          )
+        ),
+        FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+      )
+    )
+
+    validate(
+      nodeToBeValidated,
+      ValidationContext.empty,
+      outgoingEdges = defaultFragmentOutgoingEdges,
+      fragmentDefinition = fragmentDefinitionWithPreset,
+      fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+    ) should matchPattern {
+      case ValidationPerformed(
+            List(
+              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodeId),
             ),
             None,
             None
@@ -654,7 +711,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       case ValidationPerformed(
             List(
               MissingFixedValuesPresetId("param1", nodes),
-              RequireValueFromEmptyFixedList(fixedValuesPresetId, nodes1)
             ),
             None,
             None

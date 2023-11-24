@@ -150,31 +150,15 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
-      def withFragmentParameterErrors[T](
-          compiledObject: ValidatedNel[ProcessCompilationError, T],
-          validationContext: ValidationContext
-      ) = {
-        val paramValidationErrors = params.flatMap { param =>
-          FragmentParameterValidator.validate(param, id, this, validationContext)
-        }
+      val paramDefs                            = fragmentDefinitionExtractor.extractParametersDefinition(frag)
+      val variables: Map[String, TypingResult] = paramDefs.value.map(a => a.name -> a.typ).toMap
+      val validationContext = contextWithOnlyGlobalVariables.copy(localVariables =
+        contextWithOnlyGlobalVariables.globalVariables ++ variables
+      )
 
-        compiledObject.andThen(v =>
-          NonEmptyList.fromList(paramValidationErrors) match {
-            case Some(errors) => Invalid(errors)
-            case None         => Valid(v)
-          }
-        )
-      }
-
-      definitions.sourceFactories.get(id) match {
+      val compilationResult = definitions.sourceFactories.get(id) match {
         case Some(definition) =>
-          val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
-          val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val validationContext = contextWithOnlyGlobalVariables.copy(localVariables =
-            contextWithOnlyGlobalVariables.globalVariables ++ variables
-          )
-
-          val compilationResult = compileObjectWithTransformation[Source](
+          compileObjectWithTransformation[Source](
             Nil,
             Nil,
             Left(contextWithOnlyGlobalVariables),
@@ -183,36 +167,27 @@ class NodeCompiler(
             _ => Valid(validationContext)
           ).map(_._1)
 
-          compilationResult.copy(compiledObject =
-            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
-          )
-
         case None =>
-          loadParametersTypeMap(params) match {
-            case Valid(paramTypeMap) =>
-              val validationContext =
-                contextWithOnlyGlobalVariables.copy(localVariables = paramTypeMap)
-
-              val compilationResult = NodeCompilationResult(
-                Map.empty,
-                None,
-                Valid(validationContext),
-                Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
-              )
-
-              compilationResult.copy(compiledObject =
-                withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
-              )
-
-            case Invalid(errors) =>
-              NodeCompilationResult(
-                Map.empty,
-                None,
-                Invalid(errors),
-                Invalid(errors)
-              )
-          }
+          NodeCompilationResult(
+            Map.empty,
+            None,
+            Valid(validationContext),
+            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+          )
       }
+
+      val paramValidationErrors = params.flatMap { param =>
+        FragmentParameterValidator.validate(param, id, this, validationContext)
+      }
+
+      compilationResult.copy(compiledObject =
+        compilationResult.compiledObject.andThen(v =>
+          NonEmptyList.fromList(paramDefs.written ++ paramValidationErrors) match {
+            case Some(errors) => Invalid(errors)
+            case None         => Valid(v)
+          }
+        )
+      )
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(

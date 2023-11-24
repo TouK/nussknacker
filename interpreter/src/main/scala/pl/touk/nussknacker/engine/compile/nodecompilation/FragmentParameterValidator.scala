@@ -117,8 +117,10 @@ object FragmentParameterValidator {
   private def validateFixedValuesList(fragmentParameter: FragmentParameter, fragmentInputId: String) =
     if (fragmentParameter.inputConfig.inputMode == ParameterInputMode.InputModeFixedList) {
       List(
-        fragmentParameter.inputConfig.effectiveFixedValuesList.isEmpty
-          -> RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)),
+        fragmentParameter.inputConfig.effectiveFixedValuesList.exists(_.isEmpty) -> RequireValueFromEmptyFixedList(
+          fragmentParameter.name,
+          Set(fragmentInputId)
+        ),
         ((fragmentParameter.initialValue, fragmentParameter.inputConfig.effectiveFixedValuesList) match {
           case (Some(value), Some(fixedValuesList)) if !fixedValuesList.contains(value) => true
           case _                                                                        => false
