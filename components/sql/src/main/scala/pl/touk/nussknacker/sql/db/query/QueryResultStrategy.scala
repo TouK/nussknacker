@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.db.query
 
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 object QueryResultStrategy {
@@ -8,6 +8,7 @@ object QueryResultStrategy {
   def apply(name: String): Option[QueryResultStrategy] = name match {
     case ResultSetStrategy.`name`    => Some(ResultSetStrategy)
     case SingleResultStrategy.`name` => Some(SingleResultStrategy)
+    case UpdateResultStrategy.`name` => Some(UpdateResultStrategy)
     case _                           => None
   }
 
@@ -20,6 +21,7 @@ sealed trait QueryResultStrategy {
     this match {
       case ResultSetStrategy    => tableDef.resultSetType
       case SingleResultStrategy => tableDef.rowType
+      case UpdateResultStrategy => Typed[UpdateResultStrategy.updateResultType]
     }
 
 }
@@ -30,4 +32,9 @@ case object ResultSetStrategy extends QueryResultStrategy {
 
 case object SingleResultStrategy extends QueryResultStrategy {
   val name: String = "Single result"
+}
+
+case object UpdateResultStrategy extends QueryResultStrategy {
+  type updateResultType = Integer
+  val name: String = "Update result"
 }

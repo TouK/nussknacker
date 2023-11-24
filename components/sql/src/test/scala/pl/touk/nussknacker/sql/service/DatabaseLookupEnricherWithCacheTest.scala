@@ -14,7 +14,11 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
   import scala.concurrent.duration._
 
   override val service =
-    new DatabaseLookupEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseLookupEnricher(
+      hsqlDbPoolConfig,
+      new MetaDataProviderFactory().create(hsqlDbPoolConfig),
+      displayDbErrors = false
+    )
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",

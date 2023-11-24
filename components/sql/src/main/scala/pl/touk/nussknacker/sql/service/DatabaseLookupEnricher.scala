@@ -41,8 +41,11 @@ object DatabaseLookupEnricher {
 
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider)
-    extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider)
+class DatabaseLookupEnricher(
+    dBPoolConfig: DBPoolConfig,
+    dbMetaDataProvider: DbMetaDataProvider,
+    displayDbErrors: Boolean
+) extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider, displayDbErrors)
     with LazyLogging {
 
   protected def tableParam(): Parameter = {
