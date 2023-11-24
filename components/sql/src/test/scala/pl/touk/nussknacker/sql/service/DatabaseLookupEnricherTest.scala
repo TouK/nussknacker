@@ -29,7 +29,8 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
   private def provider: DBPoolConfig => JdbcMetaDataProvider = (conf: DBPoolConfig) =>
     new MetaDataProviderFactory().create(conf)
 
-  override val service = new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig))
+  override val service =
+    new DatabaseLookupEnricher(hsqlDbPoolConfig, provider(hsqlDbPoolConfig), displayDbErrors = false)
 
   test("DatabaseLookupEnricher#implementation without cache") {
     val query = "select * from persons where id = ?"
@@ -72,9 +73,10 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
   }
 
   test("should return empty list for not existing database") {
-    val newConfig                      = hsqlDbPoolConfig.copy(url = notExistingDbUrl)
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId        = NodeId("dummy")
+    val newConfig = hsqlDbPoolConfig.copy(url = notExistingDbUrl)
+    val serviceWithNotExistingDatabase =
+      new DatabaseLookupEnricher(newConfig, provider(newConfig), displayDbErrors = false)
+    implicit val nodeId: NodeId = NodeId("dummy")
     val definition =
       serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val result: serviceWithNotExistingDatabase.TransformationStepResult =
@@ -87,9 +89,10 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
   }
 
   test("should return empty list for unknown database") {
-    val newConfig                      = hsqlDbPoolConfig.copy(url = unknownDbUrl)
-    val serviceWithNotExistingDatabase = new DatabaseLookupEnricher(newConfig, provider(newConfig))
-    implicit val nodeId: NodeId        = NodeId("dummy")
+    val newConfig = hsqlDbPoolConfig.copy(url = unknownDbUrl)
+    val serviceWithNotExistingDatabase =
+      new DatabaseLookupEnricher(newConfig, provider(newConfig), displayDbErrors = false)
+    implicit val nodeId: NodeId = NodeId("dummy")
     val definition =
       serviceWithNotExistingDatabase.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val result: serviceWithNotExistingDatabase.TransformationStepResult =

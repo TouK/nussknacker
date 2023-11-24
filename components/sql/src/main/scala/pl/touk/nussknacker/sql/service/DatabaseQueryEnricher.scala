@@ -44,8 +44,9 @@ object DatabaseQueryEnricher {
   val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(editor = Some(SqlParameterEditor))
 
   val ResultStrategyParam: Parameter = {
-    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name).map { strategyName =>
-      FixedExpressionValue(s"'$strategyName'", strategyName)
+    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name).map {
+      strategyName =>
+        FixedExpressionValue(s"'$strategyName'", strategyName)
     }
     Parameter(ResultStrategyParamName, Typed[String]).copy(
       editor = Some(FixedValuesParameterEditor(strategyNames))
@@ -68,8 +69,11 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
  */
-class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
-    extends EagerService
+class DatabaseQueryEnricher(
+    val dbPoolConfig: DBPoolConfig,
+    val dbMetaDataProvider: DbMetaDataProvider,
+    displayDbErrors: Boolean
+) extends EagerService
     with TimeMeasuringService
     with SingleInputGenericNodeTransformation[ServiceInvoker]
     with LazyLogging {
@@ -168,14 +172,13 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     }
   }
 
-  // SyntaxErrorException should have message meaningful for users, for others (connection problem?) it's better
-  // to return generic message and log details...
   private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
     case e: SQLSyntaxErrorException =>
       e.getMessage
-    case e =>
+    case e => // For some users full error msg can be significant. Allow to switch choose full error message in config
+      val userErrorMessageDetails = if (displayDbErrors) e else e.getClass.getSimpleName
       logger.info(s"Failed to execute query: $query", e)
-      s"Failed to execute query: ${e.getClass.getSimpleName}"
+      s"Failed to execute query: $userErrorMessageDetails"
   }
 
   protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
