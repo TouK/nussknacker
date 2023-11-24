@@ -46,7 +46,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `api/parameters/*/suggestions` request
     * Add `scenarioName` field 
     * Add `processProperties` field 
-    * `variables` field is renamed to `localVariables` and it should have only local variables now
+    * `variables` field is renamed to `variableTypes` and it should have only local variables now
   * `api/processes/**` response
     * `.json.validationResult.nodeResults.variableTypes` doesn't contain global variables types anymore
   * `api/processDefinitionData/*` response
