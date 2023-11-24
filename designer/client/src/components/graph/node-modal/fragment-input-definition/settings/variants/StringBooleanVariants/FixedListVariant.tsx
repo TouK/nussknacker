@@ -1,12 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FixedListParameterVariant, FixedValuesType, FragmentFieldsErrors, onChangeType } from "../../../item";
+import { FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -15,7 +16,7 @@ interface Props {
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     variableTypes: VariableTypes;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
 export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, fieldsErrors }: Props) => {
@@ -43,6 +44,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 variableTypes={variableTypes}
                 fieldsErrors={fieldsErrors}
                 typ={item.typ}
+                name={item.name}
             />
             <InitialValue
                 path={path}
@@ -51,7 +53,8 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={fieldsErrors.initialValue}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

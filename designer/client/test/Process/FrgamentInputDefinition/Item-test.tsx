@@ -44,7 +44,7 @@ describe(Item.name, () => {
                             } as ReturnedType,
                         }}
                         variableTypes={{}}
-                        fieldsErrors={{}}
+                        fieldsErrors={[]}
                         onChange={mockOnChange}
                         validators={[]}
                         fixedValuesPresets={{}}

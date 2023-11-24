@@ -3,7 +3,6 @@ import { FormControlLabel } from "@mui/material";
 import InputModeSelect from "./fields/InputModeSelect";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import {
-    FragmentFieldsErrors,
     InputMode,
     isAnyValueParameter,
     isAnyValueWithSuggestionsParameter,
@@ -14,6 +13,7 @@ import {
 import { FixedValuesPresets, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
+import { Error } from "../../../editors/Validators";
 
 interface Props {
     item: StringOrBooleanParameterVariant;
@@ -22,10 +22,19 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly, fieldsErrors }: Props) => {
+export const StringBooleanVariant = ({
+    item,
+    path,
+    variableTypes,
+    onChange,
+    fixedValuesPresets,
+    readOnly,
+    fieldsErrors,
+    ...props
+}: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -35,7 +44,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
     const { t } = useTranslation();
 
     return (
-        <SettingsWrapper>
+        <SettingsWrapper {...props}>
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel

@@ -1,7 +1,8 @@
 import React from "react";
-import { onChangeType, FragmentInputParameter, isStringOrBooleanVariant, FragmentFieldsErrors } from "../item";
+import { onChangeType, FragmentInputParameter, isStringOrBooleanVariant } from "../item";
 import { FixedValuesPresets, VariableTypes } from "../../../../../types";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
+import { Error } from "../../editors/Validators";
 
 interface Settings {
     item: FragmentInputParameter;
@@ -10,7 +11,7 @@ interface Settings {
     onChange: (path: string, value: onChangeType) => void;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
 export function Settings(props: Settings) {

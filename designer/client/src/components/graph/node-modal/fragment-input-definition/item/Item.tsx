@@ -8,10 +8,11 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter, FragmentFieldsErrors, InputMode } from "./types";
+import { onChangeType, FragmentInputParameter, InputMode } from "./types";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
+import { Error } from "../../editors/Validators";
 
 interface ItemProps {
     index: number;
@@ -24,7 +25,7 @@ interface ItemProps {
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     fixedValuesPresets: FixedValuesPresets;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
 export function Item(props: ItemProps): JSX.Element {
@@ -95,6 +96,7 @@ export function Item(props: ItemProps): JSX.Element {
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
                     fieldsErrors={fieldsErrors}
+                    data-testid={`settings:${index}`}
                 />
             )}
         </div>

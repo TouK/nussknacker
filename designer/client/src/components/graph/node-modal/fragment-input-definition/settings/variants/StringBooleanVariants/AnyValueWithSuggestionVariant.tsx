@@ -2,11 +2,12 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, FragmentFieldsErrors, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -15,7 +16,7 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
 export const AnyValueWithSuggestionVariant = ({
@@ -50,6 +51,7 @@ export const AnyValueWithSuggestionVariant = ({
                 variableTypes={variableTypes}
                 fieldsErrors={fieldsErrors}
                 typ={item.typ}
+                name={item.name}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
@@ -59,7 +61,8 @@ export const AnyValueWithSuggestionVariant = ({
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={fieldsErrors.initialValue}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

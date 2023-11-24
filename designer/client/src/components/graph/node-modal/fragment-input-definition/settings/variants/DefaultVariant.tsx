@@ -2,10 +2,11 @@ import React from "react";
 import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from "./fields/StyledSettingsComponnets";
 import { FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DefaultParameterVariant, FragmentFieldsErrors, onChangeType } from "../../item";
+import { DefaultParameterVariant, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import InitialValue from "./fields/InitialValue";
+import { Error } from "../../../editors/Validators";
 
 interface Props {
     item: DefaultParameterVariant;
@@ -13,14 +14,14 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, fieldsErrors }: Props) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, fieldsErrors, ...props }: Props) => {
     const { t } = useTranslation();
 
     return (
-        <SettingsWrapper>
+        <SettingsWrapper {...props}>
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
@@ -35,7 +36,8 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 path={path}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={fieldsErrors.initialValue}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

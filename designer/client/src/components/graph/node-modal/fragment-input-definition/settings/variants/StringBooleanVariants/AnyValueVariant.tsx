@@ -2,9 +2,10 @@ import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { AnyValueParameterVariant, FragmentFieldsErrors, onChangeType } from "../../../item";
+import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
+import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueParameterVariant;
@@ -12,7 +13,7 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: FragmentFieldsErrors;
+    fieldsErrors: Error[];
 }
 
 export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, fieldsErrors }: Props) => {
@@ -27,7 +28,8 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                 onChange={onChange}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={fieldsErrors.initialValue}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

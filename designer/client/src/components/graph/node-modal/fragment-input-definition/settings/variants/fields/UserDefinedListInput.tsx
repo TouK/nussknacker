@@ -5,7 +5,7 @@ import AceEditor from "react-ace";
 import { ListItems } from "./ListItems";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FixedValuesOption, onChangeType } from "../../../item";
+import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
 import { ReturnedType, VariableTypes } from "../../../../../../../types";
 import { Error } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
@@ -24,12 +24,13 @@ interface Props {
     readOnly: boolean;
     errors: Error[];
     typ: ReturnedType;
+    name: string;
 }
 
-export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variableTypes, readOnly, errors, typ }: Props) => {
+export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variableTypes, readOnly, errors, typ, name }: Props) => {
     const [temporaryListItem, setTemporaryListItem] = useState("");
     const { t } = useTranslation();
-    const [temporaryValuesChecking, setTemporaryValuesChecking] = useState(true);
+    const [temporaryValuesTyping, setTemporaryValuesTyping] = useState(false);
 
     const [temporaryValueErrors, setTemporaryValueErrors] = useState<Error[]>([]);
 
@@ -44,7 +45,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
         const isUniqueValue = fixedValuesList.every((fixedValuesItem) => fixedValuesItem.label.trim() !== temporaryListItem.trim());
         const isEmptyValue = !temporaryListItem;
 
-        if (isUniqueValue && !isEmptyValue && temporaryValueErrors.length === 0 && !temporaryValuesChecking) {
+        if (isUniqueValue && !isEmptyValue && temporaryValueErrors.length === 0 && !temporaryValuesTyping) {
             const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
             onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
             setTemporaryListItem("");
@@ -64,13 +65,14 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
     const processProperties = useSelector(getProcessProperties);
     const scenarioName = useSelector(getProcessId);
     const { processingType } = useSelector(getProcessToDisplay);
+    const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
     const validateTemporaryListItem = useMemo(() => {
         return debounce(async (test: string) => {
             const genericValidationRequest: GenericValidationRequest = {
                 parameters: [
                     {
-                        name: "fixedValuesList",
+                        name: temporaryItemName,
                         typ: {
                             type: "TypedClass",
                             display: "",
@@ -91,7 +93,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
                 setTemporaryValueErrors(response.data.validationErrors);
             }
 
-            setTemporaryValuesChecking(false);
+            setTemporaryValuesTyping(false);
         }, 500);
     }, [processProperties, processingType, scenarioName, typ.refClazzName]);
 
@@ -99,11 +101,13 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
         <SettingRow>
             <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
             <EditableEditor
-                fieldName="fixedValuesList"
+                validationLabelInfo={temporaryValuesTyping && "Typing..."}
+                fieldName={temporaryItemName}
                 expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                 onValueChange={(value) => {
                     setTemporaryListItem(value);
-                    setTemporaryValuesChecking(true);
+                    setTemporaryValuesTyping(true);
+                    setTemporaryValueErrors([]);
                     validateTemporaryListItem(value);
                 }}
                 variableTypes={variableTypes}
@@ -118,7 +122,12 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
                 showValidation
             />
             {userDefinedListOptions?.length > 0 && (
-                <ListItems items={fixedValuesList} handleDelete={readOnly ? undefined : handleDeleteDefinedListItem} errors={errors} />
+                <ListItems
+                    items={fixedValuesList}
+                    handleDelete={readOnly ? undefined : handleDeleteDefinedListItem}
+                    errors={errors}
+                    fieldName={`$param.${name}.$fixedValuesList`}
+                />
             )}
         </SettingRow>
     );

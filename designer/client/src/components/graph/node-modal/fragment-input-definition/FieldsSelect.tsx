@@ -3,9 +3,8 @@ import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types"
 import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
-import { Item, onChangeType, FragmentInputParameter, FragmentFieldsErrors } from "./item";
+import { Item, onChangeType, FragmentInputParameter } from "./item";
 import { Error } from "../editors/Validators";
-import { chain } from "lodash";
 
 export interface Option {
     value: string;
@@ -53,7 +52,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             index: number;
             item: FragmentInputParameter;
             validators: Validator[];
-            fieldsErrors: FragmentFieldsErrors;
+            fieldsErrors: Error[];
         }) => {
             return (
                 <Item
@@ -87,18 +86,11 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     ),
                 ];
 
-                const fieldsErrors = chain(fieldErrors)
-                    .filter((fieldError) => fieldError.fieldName.includes(`$param.${item.name}`))
-                    .groupBy("fieldName")
-                    .mapKeys((_, key) => key.replace(`$param.${item.name}.$`, ""))
-                    .mapValues((errors, key) => errors.map((error) => ({ ...error, fieldName: key })))
-                    .value();
-
                 /*
                  * Display settings errors only when the name is correct, for now, the name is used in the fieldName to recognize the list item,
                  * but it can be a situation where that name is not unique or is empty in a few parameters, in this case, there is a problem with a correct error display
                  */
-                const displayableErrors = allValid(validators, item.name) ? fieldsErrors : {};
+                const displayableErrors = allValid(validators, item.name) ? fieldErrors : [];
                 return {
                     item,
                     el: <ItemElement key={index} index={index} item={item} validators={validators} fieldsErrors={displayableErrors} />,
