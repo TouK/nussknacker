@@ -32,7 +32,7 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
     Using.resource(getConnection()) { connection =>
       Using.resource(connection.prepareStatement(query)) { statement =>
         TableMetaData(
-          TableDefinition(statement.getMetaData),
+          Option(statement.getMetaData).fold(TableDefinition(Nil))(TableDefinition(_)),
           DbParameterMetaData(statement.getParameterMetaData.getParameterCount)
         )
       }

@@ -14,7 +14,11 @@ import java.time.Duration
 class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
 
   override val service =
-    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseQueryEnricher(
+      hsqlDbPoolConfig,
+      new MetaDataProviderFactory().create(hsqlDbPoolConfig),
+      displayDbErrors = false
+    )
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",

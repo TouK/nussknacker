@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
+import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
@@ -13,7 +13,11 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
   import scala.concurrent.duration._
 
   override val service =
-    new DatabaseQueryEnricher(hsqlDbPoolConfig, new MetaDataProviderFactory().create(hsqlDbPoolConfig))
+    new DatabaseQueryEnricher(
+      hsqlDbPoolConfig,
+      new MetaDataProviderFactory().create(hsqlDbPoolConfig),
+      displayDbErrors = false
+    )
 
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
@@ -45,6 +49,26 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
     )
+  }
+
+  test("DatabaseQueryEnricher#implementation update query") {
+    val query = "UPDATE persons SET name = 'Don' where id = ?"
+    val st    = conn.prepareStatement(query)
+    st.close()
+    val state = DatabaseQueryEnricher.TransformationState(
+      query = query,
+      argsCount = 1,
+      tableDef = TableDefinition(Nil),
+      strategy = UpdateResultStrategy
+    )
+    val invoker = service.implementation(Map.empty, dependencies = Nil, Some(state))
+    returnType(service, state).display shouldBe "Integer"
+    val resultF = invoker.invokeService(Map("arg1" -> 1))
+    val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
+    result shouldBe 1
+    val queryResultSet = conn.prepareStatement("SELECT * FROM persons WHERE id = 1").executeQuery()
+    queryResultSet.next()
+    queryResultSet.getObject("name") shouldBe "Don"
   }
 
 }
