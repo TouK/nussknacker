@@ -25,8 +25,6 @@ import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultCompon
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-
 class ComponentResourcesApiSpec
     extends AnyFreeSpecLike
     with NuItTest
@@ -305,8 +303,9 @@ class ComponentResourcesApiSpec
         .body()
         .jsonPath()
         .getList(column)
-        .asScala
+        .toArray()
         .toList
+        .asInstanceOf[List[String]]
     }
 
   }
