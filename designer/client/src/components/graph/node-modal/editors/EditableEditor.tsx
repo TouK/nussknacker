@@ -9,6 +9,7 @@ import { ParamType } from "./types";
 import { Error, PosibleValues, Validator } from "./Validators";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 import { cx } from "@emotion/css";
+import ErrorBoundary from "../../../common/ErrorBoundary";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -43,14 +44,16 @@ export function EditableEditor(props: Props): JSX.Element {
     );
 
     return (
-        <Editor
-            {...props}
-            editorConfig={param?.editor}
-            className={`${valueClassName ? valueClassName : "node-value"}`}
-            validators={mergedValidators}
-            formatter={formatter}
-            expressionInfo={validationLabelInfo}
-        />
+        <ErrorBoundary>
+            <Editor
+                {...props}
+                editorConfig={param?.editor}
+                className={`${valueClassName ? valueClassName : "node-value"}`}
+                validators={mergedValidators}
+                formatter={formatter}
+                expressionInfo={validationLabelInfo}
+            />
+        </ErrorBoundary>
     );
 }
 

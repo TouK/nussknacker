@@ -214,6 +214,7 @@ class ProcessUtils {
             case "Enricher":
             case "Processor":
                 return processDefinition.services;
+            case "TableNode":
             case "Join":
             case "CustomNode":
                 return processDefinition.customStreamTransformers;
@@ -237,6 +238,7 @@ class ProcessUtils {
             case "Processor": {
                 return node.service.id;
             }
+            case "TableNode":
             case "Join":
             case "CustomNode": {
                 return node.nodeType;
