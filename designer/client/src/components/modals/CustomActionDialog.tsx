@@ -16,6 +16,7 @@ import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ValidationLabel } from "../common/ValidationLabel";
 import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
+import ErrorBoundary from "../common/ErrorBoundary";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -49,21 +50,23 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                         <div className="node-label" title={fieldName}>
                             {fieldName}:
                         </div>
-                        <Editor
-                            editorConfig={param?.editor}
-                            className={"node-value"}
-                            validators={[]}
-                            formatter={null}
-                            expressionInfo={null}
-                            onValueChange={setParam(fieldName)}
-                            expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
-                            values={[]}
-                            readOnly={false}
-                            key={fieldName}
-                            showSwitch={false}
-                            showValidation={false}
-                            variableTypes={{}}
-                        />
+                        <ErrorBoundary>
+                            <Editor
+                                editorConfig={param?.editor}
+                                className={"node-value"}
+                                validators={[]}
+                                formatter={null}
+                                expressionInfo={null}
+                                onValueChange={setParam(fieldName)}
+                                expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
+                                values={[]}
+                                readOnly={false}
+                                key={fieldName}
+                                showSwitch={false}
+                                showValidation={false}
+                                variableTypes={{}}
+                            />
+                        </ErrorBoundary>
                     </NodeRow>
                 );
             })}

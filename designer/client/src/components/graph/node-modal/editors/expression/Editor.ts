@@ -16,10 +16,13 @@ import TextareaEditor from "./TextareaEditor";
 import JsonEditor from "./JsonEditor";
 import DualParameterEditor from "./DualParameterEditor";
 import SpelTemplateEditor from "./SpelTemplateEditor";
+import { TableEditor } from "./Table/TableEditor";
 
 export type EditorProps = {
+    expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     type?: EditorType;
+    editorConfig?: unknown;
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
@@ -51,6 +54,7 @@ export enum EditorType {
     JSON_PARAMETER_EDITOR = "JsonParameterEditor",
     SQL_PARAMETER_EDITOR = "SqlParameterEditor",
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
+    TABLE_EDITOR = "TableEditor",
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
@@ -93,4 +97,5 @@ export const editors = {
     [EditorType.TIME]: TimeEditor,
     [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
+    [EditorType.TABLE_EDITOR]: TableEditor,
 };

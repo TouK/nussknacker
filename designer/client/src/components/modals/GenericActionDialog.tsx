@@ -5,8 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessId } from "../../reducers/selectors/graph";
 import { Expression, UIParameter, VariableTypes } from "../../types";
-import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { editors, simpleEditorValidators } from "../graph/node-modal/editors/expression/Editor";
 import { NodeTable, NodeTableBody } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
@@ -17,6 +16,7 @@ import { getGenericActionValidation } from "../../reducers/selectors/genericActi
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
+import ErrorBoundary from "../common/ErrorBoundary";
 
 export type GenericActionLayout = {
     name: string;
@@ -100,22 +100,24 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                             return (
                                 <NodeRow key={param.name}>
                                     <FieldLabel nodeId={param.name} parameterDefinitions={action.parameters} paramName={param.name} />
-                                    <Editor
-                                        editorConfig={param?.editor}
-                                        className={"node-value"}
-                                        validators={validators[fieldName] || []}
-                                        formatter={formatter}
-                                        expressionInfo={null}
-                                        onValueChange={setParam(fieldName)}
-                                        expressionObj={value[fieldName]}
-                                        values={[]}
-                                        readOnly={false}
-                                        key={fieldName}
-                                        showSwitch={true}
-                                        showValidation={true}
-                                        variableTypes={action.variableTypes}
-                                        errors={{}}
-                                    />
+                                    <ErrorBoundary>
+                                        <Editor
+                                            editorConfig={param?.editor}
+                                            className={"node-value"}
+                                            validators={validators[fieldName] || []}
+                                            formatter={formatter}
+                                            expressionInfo={null}
+                                            onValueChange={setParam(fieldName)}
+                                            expressionObj={value[fieldName]}
+                                            values={[]}
+                                            readOnly={false}
+                                            key={fieldName}
+                                            showSwitch={true}
+                                            showValidation={true}
+                                            variableTypes={action.variableTypes}
+                                            errors={{}}
+                                        />
+                                    </ErrorBoundary>
                                 </NodeRow>
                             );
                         })}
