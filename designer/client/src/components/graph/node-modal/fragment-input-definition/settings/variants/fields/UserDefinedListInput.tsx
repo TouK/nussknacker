@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
 import { ReturnedType, VariableTypes } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
+import { Error, uniqueValueValidator, validators } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
 import { getProcessProperties } from "../../../../NodeDetailsContent/selectors";
@@ -41,11 +41,47 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
         onChange(`${path}.inputConfig.fixedValuesList`, filteredItemList);
     };
 
-    const handleAddNewListItem = () => {
-        const isUniqueValue = fixedValuesList.every((fixedValuesItem) => fixedValuesItem.label.trim() !== temporaryListItem.trim());
-        const isEmptyValue = !temporaryListItem;
+    const temporaryListItemTyp = useMemo(
+        () => ({
+            type: "TypedClass",
+            display: "",
+            refClazzName: typ.refClazzName,
+            params: [],
+        }),
+        [typ.refClazzName],
+    );
 
-        if (isUniqueValue && !isEmptyValue && temporaryValueErrors.length === 0 && !temporaryValuesTyping) {
+    const handleAddNewListItem = () => {
+        const isUniqueValueValidator = uniqueValueValidator(fixedValuesList.map((fixedValuesList) => fixedValuesList.label));
+        const mandatoryParameterValidator = validators.MandatoryParameterValidator();
+
+        if (!mandatoryParameterValidator.isValid(temporaryListItem)) {
+            setTemporaryValueErrors((prevState) => [
+                ...prevState,
+                {
+                    fieldName: temporaryItemName,
+                    typ: temporaryListItemTyp.refClazzName,
+                    description: mandatoryParameterValidator.description(),
+                    message: mandatoryParameterValidator.message(),
+                },
+            ]);
+            return;
+        }
+
+        if (!isUniqueValueValidator.isValid(temporaryListItem)) {
+            setTemporaryValueErrors((prevState) => [
+                ...prevState,
+                {
+                    fieldName: temporaryItemName,
+                    typ: temporaryListItemTyp.refClazzName,
+                    description: isUniqueValueValidator.description(),
+                    message: isUniqueValueValidator.message(),
+                },
+            ]);
+            return;
+        }
+
+        if (temporaryValueErrors.length === 0 && !temporaryValuesTyping) {
             const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
             onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
             setTemporaryListItem("");
@@ -73,12 +109,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
                 parameters: [
                     {
                         name: temporaryItemName,
-                        typ: {
-                            type: "TypedClass",
-                            display: "",
-                            refClazzName: typ.refClazzName,
-                            params: [],
-                        },
+                        typ: temporaryListItemTyp,
                         expression: { language: ExpressionLang.SpEL, expression: test },
                     },
                 ],
@@ -95,7 +126,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
 
             setTemporaryValuesTyping(false);
         }, 500);
-    }, [processProperties, processingType, scenarioName, typ.refClazzName]);
+    }, [processProperties, processingType, scenarioName, temporaryItemName, temporaryListItemTyp]);
 
     return (
         <SettingRow>
