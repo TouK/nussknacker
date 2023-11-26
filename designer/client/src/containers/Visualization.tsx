@@ -23,11 +23,12 @@ import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { Process } from "../types";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "../actions/nk";
+import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
+import { useWindowManager } from "@touk/window-manager";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -165,13 +166,15 @@ function Visualization() {
     useUnmountCleanup();
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
+    const { windows } = useWindowManager();
+
     return (
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts />
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
                             <Toolbars isReady={dataResolved} />
                         </SelectionContextProvider>
                     </GraphProvider>
