@@ -10,6 +10,7 @@ import { BASE_PATH } from "./config";
 import { css } from "@emotion/css";
 import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
+import { FixedPortal } from "./fixedPortal";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -23,17 +24,20 @@ const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/
 
 const Root = () => {
     return (
-        <NuThemeProvider>
-            <RootErrorBoundary>
-                <StoreProvider>
-                    <SettingsProvider>
-                        <NussknackerInitializer>
-                            <RouterProvider router={router} />
-                        </NussknackerInitializer>
-                    </SettingsProvider>
-                </StoreProvider>
-            </RootErrorBoundary>
-        </NuThemeProvider>
+        <>
+            <NuThemeProvider>
+                <RootErrorBoundary>
+                    <StoreProvider>
+                        <SettingsProvider>
+                            <NussknackerInitializer>
+                                <RouterProvider router={router} />
+                            </NussknackerInitializer>
+                        </SettingsProvider>
+                    </StoreProvider>
+                </RootErrorBoundary>
+            </NuThemeProvider>
+            <FixedPortal />
+        </>
     );
 };
 

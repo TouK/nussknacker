@@ -7,6 +7,7 @@ import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
 import { Validator } from "../Validators";
+import ErrorBoundary from "../../../../common/ErrorBoundary";
 
 type Props = {
     editorConfig: {
@@ -32,19 +33,12 @@ export default function DualParameterEditor(props: Props): JSX.Element {
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    const SimpleEditor = useMemo(
-        () =>
-            editors[editorConfig.simpleEditor.type] as SimpleEditor<{
-                onValueChange: (value: string) => void;
-                editorConfig?: unknown;
-            }>,
-        [editorConfig.simpleEditor.type],
-    );
+    const SimpleEditor = useMemo(() => editors[editorConfig.simpleEditor.type] as SimpleEditor, [editorConfig.simpleEditor.type]);
 
     const showSwitch = useMemo(() => props.showSwitch && SimpleEditor, [SimpleEditor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => SimpleEditor?.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
+        () => SimpleEditor?.isSwitchableTo?.(expressionObj, editorConfig.simpleEditor),
         [SimpleEditor, editorConfig.simpleEditor, expressionObj],
     );
 
@@ -71,10 +65,10 @@ export default function DualParameterEditor(props: Props): JSX.Element {
         }
 
         if (simpleEditorAllowsSwitch) {
-            return SimpleEditor?.switchableToHint();
+            return SimpleEditor?.switchableToHint?.();
         }
 
-        return SimpleEditor?.notSwitchableToHint();
+        return SimpleEditor?.notSwitchableToHint?.();
     }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, SimpleEditor, t]);
 
     const editorProps = useMemo(
@@ -93,7 +87,13 @@ export default function DualParameterEditor(props: Props): JSX.Element {
                 gap: 5,
             })}
         >
-            {displayRawEditor ? <RawEditor {...editorProps} /> : <SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
+            <ErrorBoundary>
+                {displayRawEditor ? (
+                    <RawEditor {...editorProps} />
+                ) : (
+                    <SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor} />
+                )}
+            </ErrorBoundary>
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
                     {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}
