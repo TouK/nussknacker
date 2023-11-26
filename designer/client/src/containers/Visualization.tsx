@@ -26,6 +26,7 @@ import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { Scenario } from "../components/Process/types";
+import { useWindowManager } from "@touk/window-manager";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -134,13 +135,15 @@ function Visualization() {
     useUnmountCleanup();
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
+    const { windows } = useWindowManager();
+
     return (
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts />
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
                             <Toolbars isReady={dataResolved} />
                         </SelectionContextProvider>
                     </GraphProvider>

@@ -17,6 +17,7 @@ import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
+import { TableEditor } from "./Table/TableEditor";
 
 export type EditorProps = {
     onValueChange?: (value: string) => void;
@@ -69,6 +70,7 @@ export enum EditorType {
     JSON_PARAMETER_EDITOR = "JsonParameterEditor",
     SQL_PARAMETER_EDITOR = "SqlParameterEditor",
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
+    TABLE_EDITOR = "TableEditor",
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
@@ -87,4 +89,5 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.TIME]: TimeEditor,
     [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
+    [EditorType.TABLE_EDITOR]: TableEditor,
 };

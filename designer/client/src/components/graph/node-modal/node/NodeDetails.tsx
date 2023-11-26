@@ -128,7 +128,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             buttons={buttons}
             components={components}
             classnames={{
-                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 } }),
+                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
             <ErrorBoundary>
