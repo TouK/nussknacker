@@ -23,17 +23,20 @@ const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/
 
 const Root = () => {
     return (
-        <NuThemeProvider>
-            <RootErrorBoundary>
-                <StoreProvider>
-                    <SettingsProvider>
-                        <NussknackerInitializer>
-                            <RouterProvider router={router} />
-                        </NussknackerInitializer>
-                    </SettingsProvider>
-                </StoreProvider>
-            </RootErrorBoundary>
-        </NuThemeProvider>
+        <>
+            <NuThemeProvider>
+                <RootErrorBoundary>
+                    <StoreProvider>
+                        <SettingsProvider>
+                            <NussknackerInitializer>
+                                <RouterProvider router={router} />
+                            </NussknackerInitializer>
+                        </SettingsProvider>
+                    </StoreProvider>
+                </RootErrorBoundary>
+            </NuThemeProvider>
+            <div id="portal" style={{ position: "fixed", left: 0, top: 0, zIndex: 9999 }} />
+        </>
     );
 };
 

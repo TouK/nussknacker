@@ -13,11 +13,7 @@ interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
 }
 
-export default function FragmentInputDefinition(props: Props): JSX.Element {
-    const { removeElement, addElement, ...passProps } = props;
-    const { node, setProperty, isEditMode, showValidation } = passProps;
-
-    const readOnly = !isEditMode;
+export function useTypeOptions() {
     const definitionData = useSelector(getProcessDefinitionData);
     const typeOptions = useMemo(
         () =>
@@ -31,6 +27,18 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const orderedTypeOptions = useMemo(() => orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);
 
     const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
+    return {
+        orderedTypeOptions,
+        defaultTypeOption,
+    };
+}
+
+export default function FragmentInputDefinition(props: Props): JSX.Element {
+    const { removeElement, addElement, ...passProps } = props;
+    const { node, setProperty, isEditMode, showValidation } = passProps;
+
+    const readOnly = !isEditMode;
+    const { orderedTypeOptions, defaultTypeOption } = useTypeOptions();
 
     const addField = useCallback(() => {
         addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);

@@ -7,6 +7,8 @@ import { WithId } from "../types/common";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { ToolbarsSide } from "./toolbars";
 import { WIP_TOOLBARS } from "../components/toolbarSettings/WIP_TOOLBARS";
+import { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
+import { DualEditorMode, EditorType } from "../components/graph/node-modal/editors/expression/Editor";
 
 export enum AuthStrategy {
     BROWSER = "Browser",
