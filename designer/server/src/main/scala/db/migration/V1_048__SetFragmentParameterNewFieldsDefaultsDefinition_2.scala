@@ -5,32 +5,24 @@ import io.circe._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.InputModeAny
 import pl.touk.nussknacker.ui.db.migration.ProcessJsonMigration
 
-trait V1_047__SetFragmentParameterNewFieldsDefaultsDefinition extends ProcessJsonMigration {
+// TODO after all PRs expanding FragmentParameter are merged, these migrations can be combined into one
+trait V1_048__SetFragmentParameterNewFieldsDefaultsDefinition_2 extends ProcessJsonMigration {
 
   override def updateProcessJson(jsonProcess: Json): Option[Json] =
-    V1_047__SetFragmentParameterNewFieldsDefaultsDefinition.updateProcessJson(jsonProcess)
+    V1_048__SetFragmentParameterNewFieldsDefaultsDefinition_2.updateProcessJson(jsonProcess)
 
 }
 
-object V1_047__SetFragmentParameterNewFieldsDefaultsDefinition {
+object V1_048__SetFragmentParameterNewFieldsDefaultsDefinition_2 {
 
-  private val fieldNameRequired     = "required"
-  private val fieldNameInitialValue = "initialValue"
-  private val fieldNameHintText     = "hintText"
-  private val fieldNameInputConfig  = "inputConfig"
-
-  private val defaultInputConfig: Json = Json.fromJsonObject(
-    JsonObject(
-      "inputMode"       -> Json.fromString(InputModeAny.toString),
-      "fixedValuesList" -> Json.Null
-    )
-  )
+  val fieldNameFixedValuesType               = "fixedValuesType"
+  val fieldNameFixedValuesListPresetId       = "fixedValuesListPresetId"
+  val fieldNameResolvedPresetFixedValuesList = "resolvedPresetFixedValuesList"
 
   private val defaultNewFieldValues = Map(
-    fieldNameRequired     -> Json.fromBoolean(false),
-    fieldNameInitialValue -> Json.Null,
-    fieldNameHintText     -> Json.Null,
-    fieldNameInputConfig  -> defaultInputConfig
+    fieldNameFixedValuesType               -> Json.Null,
+    fieldNameFixedValuesListPresetId       -> Json.Null,
+    fieldNameResolvedPresetFixedValuesList -> Json.Null,
   )
 
   private[migration] def updateProcessJson(jsonProcess: Json): Option[Json] = {
@@ -57,10 +49,14 @@ object V1_047__SetFragmentParameterNewFieldsDefaultsDefinition {
 
   private def updateFragmentParameters(array: Json): Json =
     fromValues(array.asArray.getOrElse(List()).map { a =>
-      Json.fromJsonObject(
-        List(fieldNameRequired, fieldNameInitialValue, fieldNameHintText, fieldNameInputConfig)
-          .foldLeft(a.asObject.get)((acc, fieldName) => setDefaultIfAbsent(acc, fieldName))
-      )
+      Json.fromJsonObject {
+        val updatedInputConfig =
+          List(fieldNameFixedValuesType, fieldNameFixedValuesListPresetId, fieldNameResolvedPresetFixedValuesList)
+            .foldLeft(a.asObject.get("inputConfig").get.asObject.get)((acc, fieldName) =>
+              setDefaultIfAbsent(acc, fieldName)
+            )
+        a.asObject.get.add("inputConfig", Json.fromJsonObject(updatedInputConfig))
+      }
     })
 
   private def updateNodes(array: Json, fun: Json => Json) = fromValues(array.asArray.getOrElse(List()).map(fun))

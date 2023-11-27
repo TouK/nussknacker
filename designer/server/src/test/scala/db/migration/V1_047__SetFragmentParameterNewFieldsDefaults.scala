@@ -113,10 +113,7 @@ class V1_047__SetFragmentParameterNewFieldsDefaults extends AnyFunSuite with Mat
       |          "hintText" : null,
       |          "inputConfig" : {
       |            "inputMode" : "InputModeAny",
-      |            "fixedValuesType" : null,
-      |            "fixedValuesList" : null,
-      |            "fixedValuesListPresetId" : null,
-      |            "resolvedPresetFixedValuesList" : null
+      |            "fixedValuesList" : null
       |          }
       |        },
       |        {
@@ -129,10 +126,7 @@ class V1_047__SetFragmentParameterNewFieldsDefaults extends AnyFunSuite with Mat
       |          "hintText" : null,
       |          "inputConfig" : {
       |            "inputMode" : "InputModeAny",
-      |            "fixedValuesType" : null,
-      |            "fixedValuesList" : null,
-      |            "fixedValuesListPresetId" : null,
-      |            "resolvedPresetFixedValuesList" : null
+      |            "fixedValuesList" : null
       |          }
       |        }
       |      ],
