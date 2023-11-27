@@ -197,6 +197,15 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
+      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+
+      val componentService = DefaultComponentService(
+        ComponentLinksConfigExtractor.extract(resolvedConfig),
+        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
+        processService,
+        additionalUIConfigProvider
+      )
+
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
@@ -205,16 +214,8 @@ class AkkaHttpBasedRouteProvider(
         modelData = modelData,
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
-        getProcessCategoryService = getProcessCategoryService
-      )
-
-      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
-
-      val componentService = DefaultComponentService(
-        ComponentLinksConfigExtractor.extract(resolvedConfig),
-        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
-        processService,
-        additionalUIConfigProvider
+        getProcessCategoryService = getProcessCategoryService,
+        componentService = componentService
       )
 
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)

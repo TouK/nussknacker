@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -11,13 +12,21 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.{AppApiEndpoints, ComponentResourceApiEndpoints}
+import pl.touk.nussknacker.ui.api.ComponentResourceApiEndpoints.Dtos.{
+  ComponentListElementDto,
+  ComponentUsageSuccessfulResponseDto,
+  ComponentUsagesInScenarioDto,
+  ComponentsListSuccessfulResponseDto
+}
+import pl.touk.nussknacker.ui.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppApiHttpService(
@@ -27,7 +36,8 @@ class AppApiHttpService(
     modelData: ProcessingTypeDataProvider[ModelData, _],
     processService: ProcessService,
     getProcessCategoryService: () => ProcessCategoryService,
-    shouldExposeConfig: Boolean
+    shouldExposeConfig: Boolean,
+    componentService: ComponentService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(config, getProcessCategoryService, authenticator)
     with LazyLogging {
@@ -145,6 +155,39 @@ class AppApiHttpService(
       .serverLogic { _ => _ =>
         Future(
           success(processingTypeDataReloader.reloadAll())
+        )
+      }
+  }
+
+  private val componentApiEndpoints = new ComponentResourceApiEndpoints(authenticator.authenticationMethod())
+
+  expose {
+    componentApiEndpoints.componentsListEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogicSuccess { user => _ =>
+        val componentList = Await.result(componentService.getComponentsList(user), Duration.Inf)
+        Future.successful(
+          ComponentsListSuccessfulResponseDto(
+            componentList.map(comp => ComponentListElementDto(comp))
+          )
+        )
+      }
+  }
+
+  expose {
+    componentApiEndpoints.componentUsageEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogicSuccess { user => componentId =>
+        val usages =
+          Await.result(componentService.getComponentUsages(ComponentId(componentId))(user), Duration.Inf)
+        Future.successful(
+          usages match {
+            case Left(_) => ComponentUsageSuccessfulResponseDto(List[ComponentUsagesInScenarioDto]())
+            case Right(value) =>
+              ComponentUsageSuccessfulResponseDto(
+                value.map(usage => ComponentUsagesInScenarioDto(usage))
+              )
+          }
         )
       }
   }
