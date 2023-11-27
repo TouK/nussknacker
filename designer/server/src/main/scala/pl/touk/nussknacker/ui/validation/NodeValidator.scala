@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.OptionT
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
@@ -15,17 +13,12 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
   ValidationNotPerformed,
   ValidationPerformed
 }
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
 
@@ -79,45 +72,6 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
   )(implicit metaData: MetaData): ValidationContext = {
     GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
       .validationContextWithLocalVariables(metaData, variableTypes)
-  }
-
-}
-
-class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
-
-  // TODO: do not load provider for each request...
-  private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
-    typeToConfig.mapValues(pt =>
-      ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
-        .headOption
-        .map(_.nodeAdditionalInfo(pt.processConfig))
-    )
-
-  private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] =
-    typeToConfig.mapValues(pt =>
-      ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
-        .headOption
-        .map(_.propertiesAdditionalInfo(pt.processConfig))
-    )
-
-  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AdditionalInfo]] = {
-    (for {
-      provider <- OptionT.fromOption[Future](nodeProviders.forType(processingType).flatten)
-      data     <- OptionT(provider(nodeData))
-    } yield data).value
-  }
-
-  def prepareAdditionalInfoForProperties(metaData: MetaData, processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AdditionalInfo]] = {
-    (for {
-      provider <- OptionT.fromOption[Future](propertiesProviders.forType(processingType).flatten)
-      data     <- OptionT(provider(metaData))
-    } yield data).value
   }
 
 }
