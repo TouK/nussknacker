@@ -1,6 +1,6 @@
 import HttpService from "../../../../../http/HttpService";
 import { ExpressionLang } from "./types";
-import { PropertiesType } from "../../../../../types";
+import { PropertiesType, TypingResult, VariableTypes } from "../../../../../types";
 
 export type CaretPosition2d = { row: number; column: number };
 
@@ -19,7 +19,7 @@ export interface ExpressionSuggester {
 export class BackendExpressionSuggester implements ExpressionSuggester {
     constructor(
         private language: ExpressionLang | string,
-        private variableTypes: Record<string, any>,
+        private variableTypes: VariableTypes,
         private scenarioName: string,
         private scenarioProperties: PropertiesType,
         private processingType: string,

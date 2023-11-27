@@ -14,6 +14,7 @@ import { EditorMode, ExpressionLang } from "./types";
 import { SerializedStyles } from "@emotion/react";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { cx } from "@emotion/css";
+import { VariableTypes } from "../../../../../types";
 
 interface InputProps {
     value: string;
@@ -34,7 +35,7 @@ interface Props {
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
-    variableTypes: Record<string, unknown>;
+    variableTypes: VariableTypes;
     editorMode?: EditorMode;
 }
 
