@@ -35,7 +35,6 @@ interface GenericAction extends GenericActionParameters {
     layout: GenericActionLayout;
     variableTypes: VariableTypes;
     onConfirmAction: (parmValues) => void;
-    scenarioName: string;
     processingType: string;
 }
 
@@ -50,8 +49,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
     const { value, setValue, action, setIsValid } = props;
     const dispatch = useDispatch();
     const validationResult = useSelector(getGenericActionValidation);
-    const processId = useSelector(getProcessId);
-    const processProperties = useSelector(getProcessProperties);
     const [validators, setValidators] = useState({});
     const setParam = useCallback(
         (name: string) => (value: any) => {
@@ -84,9 +81,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                         expression: value[uiParam.name],
                     };
                 }),
-                processProperties: processProperties,
                 variableTypes: action.variableTypes,
-                scenarioName: action.scenarioName,
             }),
         );
     }, [value]);

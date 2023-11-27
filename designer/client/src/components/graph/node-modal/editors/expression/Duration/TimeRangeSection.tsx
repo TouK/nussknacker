@@ -22,7 +22,7 @@ export default function TimeRangeSection(props: Props): JSX.Element {
     const { components, onComponentValueChange, readOnly, showValidation, validators, value, expression, isMarked } = props;
 
     return (
-        <TimeRangeStyled className={"time-range-section"}>
+        <TimeRangeStyled>
             <div className={"time-range-components"}>
                 {components.map((componentName) => (
                     <TimeRangeComponent

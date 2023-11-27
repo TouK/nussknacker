@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import javax.validation.constraints.NotBlank
 import pl.touk.nussknacker.engine.api.editor._
-import pl.touk.nussknacker.engine.api.validation.Literal
+import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 
 import scala.concurrent.Future
@@ -34,11 +34,11 @@ class SimpleTypesService extends Service with Serializable {
       rawParam: String,
       @ParamName("intParam")
       @SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR)
-      @Literal
+      @CompileTimeEvaluableValue
       intParam: Int,
       @ParamName("rawIntParam")
       @RawEditor
-      @Literal
+      @CompileTimeEvaluableValue
       rawIntParam: Int,
       @ParamName("fixedValuesStringParam")
       @SimpleEditor(

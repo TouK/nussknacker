@@ -28,8 +28,6 @@ env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-  #disable JVMCICompiler as of (https://github.com/playframework/playframework/issues/11137)
-  SBT_JOPTS: "-J-Xms2g -J-Xmx2g -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseJVMCICompiler"
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -174,6 +172,7 @@ jobs:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
       SCALA_VERSION: ${{ matrix.scalaVersion }}
+      TESTS_WITH_COVERAGE: ${{ github.ref == 'refs/heads/staging' && matrix.scalaVersion == '2.13' }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -202,11 +201,11 @@ jobs:
           restore-keys: sbt
       - name: Backend tests with coverage
         shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
+        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
         run: ./ciRunSbt.sh coverage test coverageReport
       - name: Backend tests without coverage
         shell: bash
-        if: ${{ github.ref != 'refs/heads/staging' }}
+        if: ${{ env.TESTS_WITH_COVERAGE != 'true' }}
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
@@ -216,7 +215,7 @@ jobs:
           path: '**/test-reports/*.xml'
       - name: Upload Coverage data to Coveralls
         shell: bash
-        if: ${{ github.ref == 'refs/heads/staging' }}
+        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
         run: ./ciRunSbt.sh coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -482,7 +481,7 @@ jobs:
           addDevArtifacts: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
       - name: Test docker
         if: ${{env.shouldBuildImage == 'true' }}
         shell: bash
@@ -632,12 +631,12 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
 
   trigger-external-build:
     runs-on: ubuntu-latest

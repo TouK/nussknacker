@@ -55,7 +55,9 @@ class CronSchedulePropertyExtractorTest
   }
 
   private def validate(expression: String) = {
-    CronParameterValidator.isValid("cron", Expression.spel(s"'$expression'"), expression, None)(NodeId("fooNodeId"))
+    CronParameterValidator.isValid("cron", Expression.spel(s"'$expression'"), Some(expression), None)(
+      NodeId("fooNodeId")
+    )
   }
 
 }

@@ -74,7 +74,7 @@ class ScenarioPropertiesValidator(
               .getOrElse(expression)
         }
         // FIXME: is this really Spel or just Literal expression? (currently we only have spel and spel template)
-        validator.isValid(property._1, Expression.spel(expression), value, config.label).toValidatedNel
+        validator.isValid(property._1, Expression.spel(expression), Some(value), config.label).toValidatedNel
       }
       .sequence
       .map(_ => ())

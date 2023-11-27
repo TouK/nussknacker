@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.validation.Literal
+import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
 import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -25,10 +25,13 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private val nullableNotBlankParam = getFirstParam("nullableNotBlankAnnotatedParam", classOf[String])
   private val notBlankParam         = getFirstParam("notBlankAnnotatedParam", classOf[String])
 
-  private val literalIntParam             = getFirstParam("literalIntAnnotatedParam", classOf[Int])
-  private val literalIntegerParam         = getFirstParam("literalIntegerAnnotatedParam", classOf[Integer])
-  private val literalNullableIntegerParam = getFirstParam("literalNullableIntegerAnnotatedParam", classOf[Integer])
-  private val literalStringParam          = getFirstParam("literalStringAnnotatedParam", classOf[String])
+  private val compileTimeEvaluableIntParam = getFirstParam("compileTimeEvaluableIntAnnotatedParam", classOf[Int])
+  private val compileTimeEvaluableIntegerParam =
+    getFirstParam("compileTimeEvaluableIntegerAnnotatedParam", classOf[Integer])
+  private val compileTimeEvaluableNullableIntegerParam =
+    getFirstParam("compileTimeEvaluableNullableIntegerAnnotatedParam", classOf[Integer])
+  private val compileTimeEvaluableStringParam =
+    getFirstParam("compileTimeEvaluableStringAnnotatedParam", classOf[String])
 
   private val minimalValueIntegerParam    = getFirstParam("minimalValueIntegerAnnotatedParam", classOf[Int])
   private val minimalValueBigDecimalParam = getFirstParam("minimalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
@@ -53,13 +56,15 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
 
   private def notBlankAnnotatedParam(@NotBlank notBlank: String) = ()
 
-  private def literalIntAnnotatedParam(@Literal intParam: Int) = ()
+  private def compileTimeEvaluableIntAnnotatedParam(@CompileTimeEvaluableValue intParam: Int) = ()
 
-  private def literalIntegerAnnotatedParam(@Literal integerParam: Integer) = ()
+  private def compileTimeEvaluableIntegerAnnotatedParam(@CompileTimeEvaluableValue integerParam: Integer) = ()
 
-  private def literalNullableIntegerAnnotatedParam(@Nullable @Literal integerParam: Integer) = ()
+  private def compileTimeEvaluableNullableIntegerAnnotatedParam(
+      @Nullable @CompileTimeEvaluableValue integerParam: Integer
+  ) = ()
 
-  private def literalStringAnnotatedParam(@Literal stringParam: String) = ()
+  private def compileTimeEvaluableStringAnnotatedParam(@CompileTimeEvaluableValue stringParam: String) = ()
 
   private def minimalValueIntegerAnnotatedParam(@Min(value = 0) minimalValue: Int) = ()
 
@@ -129,28 +134,31 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("extract literalIntParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalIntParam)) shouldBe List(
+  test("extract compileTimeEvaluableIntParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(compileTimeEvaluableIntParam)) shouldBe List(
       MandatoryParameterValidator,
-      LiteralParameterValidator.integerValidator
+      CompileTimeEvaluableValueValidator
     )
   }
 
-  test("extract literalIntegerParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalIntegerParam)) shouldBe List(
+  test("extract compileTimeEvaluableIntegerParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(compileTimeEvaluableIntegerParam)) shouldBe List(
       MandatoryParameterValidator,
-      LiteralParameterValidator.integerValidator
+      CompileTimeEvaluableValueValidator
     )
   }
 
-  test("extract literalOptionalIntegerParam value validator when @Nullable @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalNullableIntegerParam)) shouldBe List(
-      LiteralParameterValidator.integerValidator
+  test("extract compileTimeEvaluableOptionalIntegerParam value validator when @Nullable @Literal annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(compileTimeEvaluableNullableIntegerParam)) shouldBe List(
+      CompileTimeEvaluableValueValidator
     )
   }
 
-  test("should not extract literalStringParam value validator when @Literal annotation detected") {
-    ValidatorsExtractor.extract(validatorParams(literalStringParam)) shouldBe List(MandatoryParameterValidator)
+  test("should extract compileTimeEvaluableStringParam value validator when @Literal annotation detected") {
+    ValidatorsExtractor.extract(validatorParams(compileTimeEvaluableStringParam)) shouldBe List(
+      MandatoryParameterValidator,
+      CompileTimeEvaluableValueValidator
+    )
   }
 
   test("extract minimalValueIntegerParam value validator when @Min annotation detected") {

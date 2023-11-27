@@ -238,7 +238,6 @@ object UIProcessObjectsFactory {
       customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) =>
         (name, value)
       },
-      globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )
   }

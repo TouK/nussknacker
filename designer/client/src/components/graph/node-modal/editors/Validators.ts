@@ -27,7 +27,7 @@ export enum BackendValidator {
     MandatoryParameterValidator = "MandatoryParameterValidator",
     NotBlankParameterValidator = "NotBlankParameterValidator",
     FixedValuesValidator = "FixedValuesValidator",
-    LiteralRegExpParameterValidator = "LiteralRegExpParameterValidator",
+    RegExpParameterValidator = "RegExpParameterValidator",
     LiteralIntegerValidator = "LiteralIntegerValidator",
     MinimalNumberValidator = "MinimalNumberValidator",
     MaximalNumberValidator = "MaximalNumberValidator",
@@ -105,10 +105,10 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
     validatorType: ValidatorType.Frontend,
 });
 
-const literalRegExpPattern = (pattern: string) => new RegExp(pattern);
+const regExpPattern = (pattern: string) => new RegExp(pattern);
 
 export const notBlankValueValidator: Validator = {
-    isValid: (value) => !literalRegExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
+    isValid: (value) => !regExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
     message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
     description: () => i18next.t("validator.notBlank.description", "Please fill field value for this parameter"),
     handledErrorType: HandledErrorType.BlankParameter,
@@ -117,7 +117,7 @@ export const notBlankValueValidator: Validator = {
 
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
     //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || literalRegExpPattern(pattern).test(value.trim()),
+    isValid: (value) => isEmpty(value) || regExpPattern(pattern).test(value.trim()),
     message: () => message,
     description: () => description,
     handledErrorType: HandledErrorType.MismatchParameter,
@@ -126,7 +126,7 @@ export const regExpValueValidator = (pattern: string, message: string, descripti
 
 export const literalIntegerValueValidator: Validator = {
     //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
+    isValid: (value) => isEmpty(value) || regExpPattern("^-?[0-9]+$").test(value),
     message: () => i18next.t("literalIntegerValueValidator.message", "This field value has to be an integer number"),
     description: () => i18next.t("literalIntegerValueValidator.description", "Please fill field by proper integer type"),
     handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
@@ -207,8 +207,7 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
     [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
     [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
     [BackendValidator.FixedValuesValidator]: ({ possibleValues }) => fixedValueValidator(possibleValues),
-    [BackendValidator.LiteralRegExpParameterValidator]: ({ pattern, message, description }) =>
-        regExpValueValidator(pattern, message, description),
+    [BackendValidator.RegExpParameterValidator]: ({ pattern, message, description }) => regExpValueValidator(pattern, message, description),
     [BackendValidator.MinimalNumberValidator]: ({ minimalNumber }) => minimalNumberValidator(minimalNumber),
     [BackendValidator.MaximalNumberValidator]: ({ maximalNumber }) => maximalNumberValidator(maximalNumber),
     [BackendValidator.JsonValidator]: () => jsonValidator,

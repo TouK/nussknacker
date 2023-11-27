@@ -17,6 +17,14 @@
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) Braking change: `Validator.isValid` method now takes expression
+  and optional evaluated value, instead of just expression. Also:
+  * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`, 
+  * `LiteralNumberValidator` is removed,
+  * `LiteralIntegerValidator` is considered deprecated and will be removed in the future.
+  * new validator: `CompileTimeEvaluableValueValidator` that checks if value is valid at compile time and it should be used instead of literal validators
+  * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 
 1.12.4 (14 Nov 2023)
 ------------------------

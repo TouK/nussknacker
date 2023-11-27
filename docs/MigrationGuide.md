@@ -29,16 +29,36 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
   from fragment id
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) `Validator.isValid` method 
+  now takes `expression: Expression, value: Option[Any]` instead of `value: String` which was not really value, but expression.
+  Straight-forward migration is to change method definition and now use `expression.expression` instead of `value` if your validator depends on raw expression. 
+  If validator was doing quasi-evaluation, for example trimming `'` to get string, you can just take `value` and cast it to desired class.
+  * `LiteralNumberValidator` is removed, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Number` type,
+  * `LiteralIntegerValidator` is considered deprecated and will be removed in the future, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Integer` type,
+  * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`
+  * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
   * Replace `processProperties` with `additionalFields`
   * Add `id` field for scenario or fragment id
+* [#5039](https://github.com/TouK/nussknacker/pull/5039)[#5052](https://github.com/TouK/nussknacker/pull/5052) Changes in endpoints 
+  * `api/parameters/*/suggestions` request
+    * `variables` is renamed to `variableTypes` and it should have only local variables now
+  * `api/processes/**` response
+    * `.json.validationResult.nodeResults.variableTypes` doesn't contain global variables types anymore
+  * `api/processDefinitionData/*` response
+    * `.processDefinition.globalVariables` is removed
+  * `api/parameters/*/validate` request
+    * `scenarioName` is removed
+    * `processProperties` is removed
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
 * [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
+  (it's not required, new version is binary-compatible)
 
 ## In version 1.12.x
 
