@@ -82,9 +82,96 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
             };
         }
         case "PROCESS_DEFINITION_DATA": {
+            const { processDefinitionData } = action;
+            const { processDefinition, componentGroups } = processDefinitionData;
+            const { customStreamTransformers } = processDefinition;
             return {
                 ...state,
-                processDefinitionData: action.processDefinitionData,
+                processDefinitionData: {
+                    ...processDefinitionData,
+                    componentGroups: [
+                        ...componentGroups,
+                        {
+                            name: "_debug",
+                            components: [
+                                {
+                                    type: "customNode",
+                                    label: "decisionTableCustomNode",
+                                    node: {
+                                        id: "",
+                                        type: "CustomNode",
+                                        nodeType: "table",
+                                        parameters: [
+                                            // {
+                                            //     name: "tableData",
+                                            //     expression: {
+                                            //         language: ExpressionLang.SpEL,
+                                            //         expression: `
+                                            //                     {
+                                            //                         columns: {
+                                            //                             {'key', 'java.lang.String'},
+                                            //                             {'value', 'java.lang.Integer'}
+                                            //                         },
+                                            //                         rows: {
+                                            //                             {'a', '1'},
+                                            //                             {'b', '2'},
+                                            //                             {'c', '3'}
+                                            //                         }
+                                            //                     }
+                                            //                     `,
+                                            //     },
+                                            // },
+                                        ],
+                                    },
+                                    categories: ["Category1", "Category2", "DemoFeatures"],
+                                    branchParametersTemplate: [],
+                                },
+                            ],
+                        },
+                    ],
+                    processDefinition: {
+                        ...processDefinition,
+                        customStreamTransformers: {
+                            ...customStreamTransformers,
+                            table: {
+                                parameters: [
+                                    {
+                                        name: "tableData",
+                                        typ: {
+                                            display: "Unknown",
+                                            type: "Unknown",
+                                            refClazzName: "java.lang.Object",
+                                            params: [],
+                                        },
+                                        editor: {
+                                            simpleEditor: {
+                                                type: EditorType.TABLE_EDITOR,
+                                            },
+                                            defaultMode: DualEditorMode.SIMPLE,
+                                            type: EditorType.DUAL_PARAMETER_EDITOR,
+                                        },
+                                        validators: [],
+                                        defaultValue: {
+                                            language: ExpressionLang.SpEL,
+                                            expression: `
+{
+    columns: {{'key'}, {'value'}},
+    rows: {
+        {'', ''}
+    }
+}
+`,
+                                        },
+                                        additionalVariables: {},
+                                        variablesToHide: [],
+                                        branchParam: false,
+                                    },
+                                ],
+                                returnType: null,
+                            },
+                        },
+                    },
+                },
             };
         }
         case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
