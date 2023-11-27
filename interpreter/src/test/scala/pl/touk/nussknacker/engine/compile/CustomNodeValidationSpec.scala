@@ -79,12 +79,9 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
   )
 
-  private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, configCreator))
-
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
-    fragmentDefinitionExtractor,
+    ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )
