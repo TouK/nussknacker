@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
 class TestFlinkProcessCompiler(
-    modelData: ModelData,
     creator: ProcessConfigCreator,
     inputConfigDuringExecution: Config,
     collectingListener: ResultsCollectingListener,
@@ -30,7 +29,6 @@ class TestFlinkProcessCompiler(
     scenarioTestData: ScenarioTestData
 ) extends StubbedFlinkProcessCompiler(
       process,
-      modelData,
       creator,
       inputConfigDuringExecution,
       diskStateBackendSupport = false,
