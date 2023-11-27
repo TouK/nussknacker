@@ -13,6 +13,7 @@ import io.circe.parser._
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -274,7 +275,7 @@ case class ValidationExpressionParameterValidator(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
-    val context = Context("validator", Map("value" -> value), None)
+    val context = Context("validator", Map(variableName -> value), None)
     Try(validationExpression.evaluate[Boolean](context, Map())).fold(
       e =>
         invalid(
@@ -302,6 +303,8 @@ case class ValidationExpressionParameterValidator(
 
 object ValidationExpressionParameterValidator {
 
+  val variableName = "value"
+
   implicit val encoder: Encoder[ValidationExpressionParameterValidator] = deriveEncoder
   implicit val decoder: Decoder[ValidationExpressionParameterValidator] = deriveDecoder
 
@@ -310,17 +313,9 @@ object ValidationExpressionParameterValidator {
   }
 
   implicit val apiExpressionDecoder: Decoder[ApiExpression] = {
-    Decoder.forProduct2[ApiExpression, String, String]("language", "original")((l, o) => {
-      new ApiExpression() {
-        override def language: String = l
-
-        override def original: String = o
-
-        override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = throw new RuntimeException(
-          "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
-        )
-      }
-    })
+    Decoder.failedWithMessage(
+      "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
+    )
   }
 
 }

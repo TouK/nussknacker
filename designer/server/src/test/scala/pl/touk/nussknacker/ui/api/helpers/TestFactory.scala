@@ -167,12 +167,9 @@ object TestFactory extends TestPermissions {
     MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
-      LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator())
-    )
     ProcessValidator.default(
       ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)),
-      fragmentDefinitionExtractor,
+      ConfigFactory.empty(),
       new SimpleDictRegistry(Map.empty),
       CustomProcessValidatorLoader.emptyCustomProcessValidator
     )

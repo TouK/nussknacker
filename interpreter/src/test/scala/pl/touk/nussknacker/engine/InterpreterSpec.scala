@@ -196,13 +196,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader))
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
-    val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty(), configCreator))
     ProcessCompilerData.prepare(
       process,
+      ConfigFactory.empty(),
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
-      fragmentDefinitionExtractor,
       listeners,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,

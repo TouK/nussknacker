@@ -1639,13 +1639,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       process: CanonicalProcess,
       definitions: ProcessDefinition[ObjectWithMethodDef]
   ): CompilationResult[Unit] = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
-      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator())
-    )
     ProcessValidator
       .default(
         ModelDefinitionWithTypes(definitions),
-        fragmentDefinitionExtractor,
+        ConfigFactory.empty,
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator
       )
