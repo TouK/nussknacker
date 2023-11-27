@@ -59,6 +59,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
   (it's not required, new version is binary-compatible)
+* [#5077](https://github.com/TouK/nussknacker/pull/5077)In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
 
 ## In version 1.12.x
 
