@@ -452,7 +452,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val displayableFragment =
       ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
 
-    val validationResult = processValidation.validate(displayableFragment)
+    val validationResult = configuredValidator.validate(displayableFragment)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -514,7 +514,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val displayableFragment =
       ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
 
-    val validationResult = processValidation.validate(displayableFragment)
+    val validationResult = configuredValidator.validate(displayableFragment)
 
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
@@ -565,7 +565,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(invalidFragment)
-    val validationResult  = processValidator.validate(process)
+    val validationResult = processValidator.validate(process)
 
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
@@ -632,7 +632,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockedProcessValidation(fragment)
+    val processValidation = mockedProcessValidator(fragment)
     val validationResult  = processValidation.validate(process)
 
     validationResult.errors should not be empty
@@ -734,7 +734,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(fragment)
-    val validationResult  = processValidator.validate(process)
+    val validationResult = processValidator.validate(process)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
@@ -905,7 +905,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "123")))
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
     result.errors.globalErrors shouldBe Symbol("empty")
@@ -926,7 +926,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "")))
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -969,7 +969,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
