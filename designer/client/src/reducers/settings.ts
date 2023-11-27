@@ -80,9 +80,76 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
             };
         }
         case "PROCESS_DEFINITION_DATA": {
+            const { processDefinitionData } = action;
+            const { processDefinition, componentGroups } = processDefinitionData;
+            const { customStreamTransformers } = processDefinition;
             return {
                 ...state,
-                processDefinitionData: action.processDefinitionData,
+                processDefinitionData: {
+                    ...processDefinitionData,
+                    componentGroups: [
+                        ...componentGroups,
+                        {
+                            name: "_debug",
+                            components: [
+                                {
+                                    type: "customNode",
+                                    label: "decisionTableCustomNode",
+                                    node: {
+                                        id: "",
+                                        type: "CustomNode",
+                                        nodeType: "table",
+                                        parameters: [],
+                                    },
+                                    categories: ["Category1", "Category2", "DemoFeatures"],
+                                    branchParametersTemplate: [],
+                                },
+                            ],
+                        },
+                    ],
+                    processDefinition: {
+                        ...processDefinition,
+                        customStreamTransformers: {
+                            ...customStreamTransformers,
+                            table: {
+                                parameters: [
+                                    {
+                                        name: "tableData",
+                                        typ: {
+                                            display: "Unknown",
+                                            type: "Unknown",
+                                            refClazzName: "java.lang.Object",
+                                            params: [],
+                                        },
+                                        editor: {
+                                            simpleEditor: {
+                                                type: "TableEditor",
+                                            },
+                                            defaultMode: "SIMPLE",
+                                            type: "DualParameterEditor",
+                                        },
+                                        validators: [],
+                                        defaultValue: {
+                                            language: "spel",
+                                            expression: `
+{
+    columns: {{'key'}, {'value'}},
+    rows: {
+        {'', ''}
+    }
+}
+`,
+                                        },
+                                        additionalVariables: {},
+                                        variablesToHide: [],
+                                        branchParam: false,
+                                    },
+                                ],
+                                returnType: null,
+                            },
+                        },
+                    },
+                },
             };
         }
         case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
