@@ -36,7 +36,7 @@ myDatabasePool {
 ```
 
 | Parameter       | Required | Default | Description                     |
-| ----------      | -------- | ------- | -----------                     |
+|-----------------|----------|---------|---------------------------------|
 | url             | true     |         | URL with your database resource |
 | username        | true     |         | Authentication username         |
 | password        | true     |         | Authentication password         |
@@ -44,10 +44,18 @@ myDatabasePool {
 | timeout         | false    | 30s     | Connection timeout              |
 | maxTotal        | false    | 10      | Maximum pool size               |
 | initialSize     | false    | 0       | Minimum idle size               |
+| schema          | false    |         | Schema to be set on connections |
 
 > As a user you have to provide the database driver. 
 > It should be placed in Flink's /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).
 > Additionally it should be placed in Nussknacker's /lib folder (/opt/nussknacker/lib)
+
+:::caution
+
+Contrary to its name, SQL enricher is able to execute not only SELECT queries, but also modifying ones (INSERT, UPDATE, DELETE).
+It is recommended to connect with a user that has only read access to the database if you use it only for enrichment.
+
+:::
 
 Next you have to configure the component itself.
 

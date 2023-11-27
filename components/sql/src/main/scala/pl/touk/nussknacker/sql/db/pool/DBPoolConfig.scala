@@ -11,5 +11,6 @@ final case class DBPoolConfig(
     initialSize: Int = 0,
     maxTotal: Int = 10,
     timeout: Duration = FiniteDuration(30, TimeUnit.SECONDS),
+    schema: Option[String] = None,
     connectionProperties: Map[String, String] = Map.empty
 )
