@@ -83,7 +83,7 @@ class ComponentResourcesApiSpec
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
-            .extractToList("id")
+            .extractToStringsList("id")
 
         componentIdListForTestUser should contain theSameElementsAs correctListForTestUser
       }
@@ -168,7 +168,7 @@ class ComponentResourcesApiSpec
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
-            .extractToList("id")
+            .extractToStringsList("id")
 
         val componentIdListForAdminUser: List[String] =
           given()
@@ -178,7 +178,7 @@ class ComponentResourcesApiSpec
             .get(s"$nuDesignerHttpAddress/api/components")
             .Then()
             .statusCode(200)
-            .extractToList("id")
+            .extractToStringsList("id")
 
         componentIdListForAdminUser should contain theSameElementsAs correctListForAdminUser
 
@@ -296,14 +296,14 @@ class ComponentResourcesApiSpec
     }
   }
 
-  implicit class ExtractColumn[T <: ValidatableResponse](validatableResponse: T) {
+  implicit class ExtractRootKey[T <: ValidatableResponse](validatableResponse: T) {
 
-    def extractToList(column: String): List[String] = {
+    def extractToStringsList(key: String): List[String] = {
       validatableResponse
         .extract()
         .body()
         .jsonPath()
-        .getList(column)
+        .getList(key)
         .toArray()
         .toList
         .asInstanceOf[List[String]]
