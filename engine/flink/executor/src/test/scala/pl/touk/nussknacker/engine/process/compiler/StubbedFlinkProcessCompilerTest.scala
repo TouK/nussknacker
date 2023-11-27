@@ -75,7 +75,6 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator)
     val verificationCompiler = new VerificationFlinkProcessCompiler(
       scenarioWithMultipleSources,
-      modelData,
       SampleConfigCreator,
       minimalFlinkConfig,
       DefaultNamespacedObjectNaming
