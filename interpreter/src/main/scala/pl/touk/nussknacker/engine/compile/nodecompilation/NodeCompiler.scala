@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   JoinGenericNodeTransformation,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotNullParameterValidator, Parameter}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -20,15 +20,13 @@ import pl.touk.nussknacker.engine.api.expression.{
 }
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.compile.nodecompilation.RecordValidator.TypedField
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ExpressionCompiler,
   NodeValidationExceptionHandler,
   ProcessObjectFactory,
-  StubbedFragmentInputTestSource,
-  Validations
+  StubbedFragmentInputTestSource
 }
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
@@ -45,7 +43,7 @@ import pl.touk.nussknacker.engine.definition.{
 }
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node._
@@ -71,19 +69,6 @@ object NodeCompiler {
 
     def map[R](f: T => R): NodeCompilationResult[R] = copy(compiledObject = compiledObject.map(f))
 
-  }
-
-  private case class ExpressionCompilation[R](
-      fieldName: String,
-      typedExpression: Option[TypedExpression],
-      validated: ValidatedNel[ProcessCompilationError, R]
-  ) {
-
-    val typingResult: TypingResult =
-      typedExpression.map(_.returnType).getOrElse(Unknown)
-
-    val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      typedExpression.map(te => (fieldName, te.typingInfo)).toMap
   }
 
 }
@@ -121,6 +106,7 @@ class NodeCompiler(
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
+  private val baseNodeCompiler = new BaseNodeCompiler(objectParametersExpressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
@@ -267,97 +253,19 @@ class NodeCompiler(
   )(
       implicit nodeId: NodeId
   ): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
-
-    // the frontend uses empty string to delete deprecated expression.
-    val expression = expressionRaw.filterNot(_._1.isEmpty)
-
-    val expressionCompilation = expression.map { case (output, expression) =>
-      compileExpression(
-        expression,
-        ctx,
-        Unknown,
-        NodeExpressionId.DefaultExpressionId,
-        Some(OutputVar.switch(output))
-      )._2
-    }
-    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
-
-    val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
-    val caseExpressions = choices.map { case (outEdge, caseExpr) =>
-      compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)._2
-    }
-    val expressionTypingInfos = caseExpressions
-      .map(_.expressionTypingInfo)
-      .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)) {
-        _ ++ _
-      }
-
-    val objCases = caseExpressions.map(_.compiledObject).sequence
-
-    val additionalValidations = choices
-      .map { case (outEdge, caseExpr) =>
-        (outEdge, compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)._1)
-      }
-      .map { a =>
-        a._2.typedExpression match {
-          case Some(value) =>
-            validate(Parameter("stub", Typed[Boolean], List(NotNullParameterValidator)), TypedParameter(a._1, value))
-          case None => valid(())
-        }
-      }
-      .combineAll
-
-    val compilationResult = NodeCompilationResult(
-      expressionTypingInfos,
-      None,
-      expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
-      objExpression.product(objCases),
-      expressionCompilation.flatMap(_.expressionType)
-    )
-
-    combineErrors(compilationResult, additionalValidations)
+    baseNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
   }
 
   def compileFilter(filter: Filter, ctx: ValidationContext)(
       implicit nodeId: NodeId
   ): NodeCompilationResult[expression.Expression] = {
-    val (expressionCompilation, nodeCompilation) =
-      compileExpression(filter.expression, ctx, expectedType = Typed[Boolean], outputVar = None)
-
-    val additionalValidationResult = expressionCompilation.typedExpression match {
-      case Some(a) =>
-        validate(
-          Parameter(DefaultExpressionId, Typed[Boolean], List(NotNullParameterValidator)),
-          TypedParameter(DefaultExpressionId, a)
-        )
-      case None => valid(())
-    }
-
-    combineErrors(nodeCompilation, additionalValidationResult)
+    baseNodeCompiler.compileFilter(filter, ctx)
   }
 
   def compileVariable(variable: Variable, ctx: ValidationContext)(
       implicit nodeId: NodeId
   ): NodeCompilationResult[expression.Expression] = {
-    val (expressionCompilation, nodeCompilation) =
-      compileExpression(
-        variable.value,
-        ctx,
-        expectedType = Unknown,
-        outputVar = Some(OutputVar.variable(variable.varName))
-      )
-
-    val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
-      expressionCompilation.typedExpression match {
-        case Some(a) =>
-          validate(
-            Parameter("stub", Unknown, List(MandatoryParameterValidator)),
-            TypedParameter(DefaultExpressionId, a)
-          )
-        case None => valid(())
-      }
-
-    combineErrors(nodeCompilation, additionalValidationResult)
+    baseNodeCompiler.compileVariable(variable, ctx)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
@@ -375,91 +283,7 @@ class NodeCompiler(
       ctx: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-
-    final case class CompiledRecordField(
-        field: pl.touk.nussknacker.engine.graph.variable.Field,
-        index: Int,
-        typedExpression: TypedExpression
-    )
-
-    val compliedRecordFields = fields.zipWithIndex.map { case (field, index) =>
-      objectParametersExpressionCompiler
-        .compile(field.expression, Some(node.recordValueFieldName(index)), ctx, Unknown)
-        .map(result => CompiledRecordField(field, index, result))
-    }
-
-    val recordValuesCompilationResult = compliedRecordFields.traverse { validatedField =>
-      validatedField.andThen { compiledField =>
-        Valid(
-          ExpressionCompilation(
-            compiledField.field.name,
-            Some(compiledField.typedExpression),
-            Valid(compiledgraph.variable.Field(compiledField.field.name, compiledField.typedExpression.expression))
-          )
-        )
-      }
-    }
-
-    val typedFieldsValidations = compliedRecordFields.map { validatedField =>
-      validatedField.map { compiledField =>
-        TypedField(
-          TypedParameter(compiledField.field.name, compiledField.typedExpression),
-          compiledField.index
-        )
-      }
-    }
-    val additionalValidationResult = RecordValidator.validateRecord(
-      typedFieldsValidations.collect { case Valid(typedField) => typedField }
-    )
-
-    val typedObject = recordValuesCompilationResult
-      .map { fieldsComp =>
-        TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
-      }
-      .valueOr(_ => Unknown)
-
-    val fieldsTypingInfo = recordValuesCompilationResult
-      .map { compilations =>
-        compilations.flatMap(_.expressionTypingInfo).toMap
-      }
-      .getOrElse(Map.empty)
-
-    val compiledFields = recordValuesCompilationResult.andThen(_.map(_.validated).sequence)
-
-    val compilationResult = NodeCompilationResult(
-      expressionTypingInfo = fieldsTypingInfo,
-      parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
-      compiledObject = compiledFields,
-      expressionType = Some(typedObject)
-    )
-
-    combineErrors(compilationResult, additionalValidationResult)
-  }
-
-  private def compileExpression(
-      expr: Expression,
-      ctx: ValidationContext,
-      expectedType: TypingResult,
-      fieldName: String = DefaultExpressionId,
-      outputVar: Option[OutputVar]
-  )(
-      implicit nodeId: NodeId
-  ): (ExpressionCompilation[expression.Expression], NodeCompilationResult[expression.Expression]) = {
-    val expressionCompilation: ExpressionCompilation[expression.Expression] = objectParametersExpressionCompiler
-      .compile(expr, Some(fieldName), ctx, expectedType)
-      .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
-      .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
-
-    val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
-      expressionTypingInfo = expressionCompilation.expressionTypingInfo,
-      parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
-      compiledObject = expressionCompilation.validated,
-      expressionType = Some(expressionCompilation.typingResult)
-    )
-
-    (expressionCompilation, nodeCompilation)
+    baseNodeCompiler.compileFields(fields, ctx, outputVar)
   }
 
   def compileProcessor(
@@ -811,31 +635,6 @@ class NodeCompiler(
       NodeCompilationResult(nodeTypingInfo, None, outputCtx, serviceRef)
     }
 
-  }
-
-  private def combineErrors[T](
-      compilationResult: NodeCompilationResult[T],
-      additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit]
-  ): NodeCompilationResult[T] = {
-    val newCompiledObject: ValidatedNel[ProcessCompilationError, T] =
-      additionalValidationResult match {
-        case Validated.Invalid(validationErrors) =>
-          compilationResult.compiledObject match {
-            case Validated.Invalid(compilationErrors) =>
-              Validated.Invalid(compilationErrors ++ validationErrors.toList)
-            case _ =>
-              Validated.Invalid(validationErrors)
-          }
-        case Validated.Valid(_) =>
-          compilationResult.compiledObject
-      }
-    compilationResult.copy(compiledObject = newCompiledObject)
-
-  }
-
-  // TODO: make a more appropriate adapter?
-  private def validate(paramDefinition: Parameter, parameter: TypedParameter)(implicit nodeId: NodeId) = {
-    Validations.validate(paramDefinition, (parameter, ())).map(_ => ())
   }
 
 }
