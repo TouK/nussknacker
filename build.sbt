@@ -17,7 +17,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-val scala213 = "2.13.10"
+val scala213 = "2.13.12"
 
 val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
   case "2.12" => scala212
@@ -30,7 +30,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.12"
+lazy val silencerV      = "1.7.14"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -313,12 +313,13 @@ val avroV              = "1.11.1"
 val kafkaV             = "3.3.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV            = "5.2.23.RELEASE"
-val scalaTestV         = "3.2.16"
+val scalaTestV         = "3.2.17"
 val scalaCheckV        = "1.17.0"
 val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
 val scalaTestPlusV     =
-  "3.2.15.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
-val logbackV                = "1.2.11"
+  "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
+val logbackV                = "1.3.11"
+// this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val circeV                  = "0.14.5"
 val circeGenericExtrasV     = "0.14.3"
@@ -376,7 +377,7 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     "org.apache.flink" %% "flink-scala" % flinkV
   ), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   (2, 13) -> Seq(
-    "pl.touk" %% "flink-scala-2-13" % "1.1.0"
+    "pl.touk" %% "flink-scala-2-13" % "1.1.1"
   ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
@@ -519,7 +520,6 @@ lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
 managerArtifacts := {
   List(
     (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
-    (requestResponseRuntime / assembly).value        -> "managers/nussknacker-request-response-manager.jar",
     (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
     (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
   )
@@ -570,19 +570,9 @@ def itSettings() = {
 }
 
 lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
-  .settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*)
-  .settings(publishAssemblySettings: _*)
   .settings(
-    name                        := "nussknacker-request-response-runtime",
-    IntegrationTest / Keys.test := (IntegrationTest / Keys.test)
-      .dependsOn(
-        liteRequestResponseComponents / Compile / assembly,
-        defaultModel / Compile / assembly,
-      )
-      .value,
+    name := "nussknacker-request-response-runtime",
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http"         % akkaHttpV,
@@ -596,7 +586,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
     liteEngineRuntime,
     requestResponseComponentsApi,
     httpUtils                      % "provided",
-    testUtils                      % "it,test",
+    testUtils                      % "test",
     componentsUtils                % "test",
     requestResponseComponentsUtils % "test",
     liteBaseComponents             % "test",
@@ -859,9 +849,7 @@ lazy val benchmarks = (project in file("benchmarks"))
   )
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
-  .configs(IntegrationTest)
   .settings(commonSettings)
-  .settings(itSettings())
   .settings(
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
@@ -1386,8 +1374,6 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
   .dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .enablePlugins()
   .settings(commonSettings)
   .settings(assemblyNoScala("lite-embedded-manager.jar"): _*)
@@ -1657,8 +1643,6 @@ lazy val openapiComponents = (project in component("openapi"))
   )
 
 lazy val sqlComponents = (project in component("sql"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
   .settings(assemblyNoScala("sql.jar"): _*)
   .settings(publishAssemblySettings: _*)
@@ -1669,18 +1653,18 @@ lazy val sqlComponents = (project in component("sql"))
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
       "org.apache.ignite" % "ignite-core"     % "2.10.0"   % Provided,
       "org.apache.ignite" % "ignite-indexing" % "2.10.0"   % Provided,
-      "org.scalatest"    %% "scalatest"       % scalaTestV % "it,test",
-      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "it,test",
+      "org.scalatest"    %% "scalatest"       % scalaTestV % "test",
+      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "test",
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     componentsApi                  % Provided,
     commonUtils                    % Provided,
-    requestResponseRuntime         % "test,it",
-    requestResponseComponentsUtils % "test,it",
-    flinkTestUtils                 % "it,test",
-    kafkaTestUtils                 % "it,test"
+    requestResponseRuntime         % "test",
+    requestResponseComponentsUtils % "test",
+    flinkTestUtils                 % "test",
+    kafkaTestUtils                 % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))
@@ -1748,10 +1732,10 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     name := "nussknacker-deployment-manager-api",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-actor"  % akkaV,
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.github.ben-manes.caffeine"  % "caffeine"    % caffeineCacheV,
-        "org.scalatestplus"             %% "mockito-4-6" % scalaTestPlusV % "test"
+        "com.typesafe.akka"             %% "akka-actor"   % akkaV,
+        "com.softwaremill.sttp.client3" %% "core"         % sttpV,
+        "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
+        "org.scalatestplus"             %% "mockito-4-11" % scalaTestPlusV % "test"
       )
     }
   )
@@ -1852,7 +1836,7 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.slick"            %% "slick-testkit"                   % slickV               % "test",
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % "test",
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
-        "org.scalatestplus"             %% "mockito-4-6"                     % scalaTestPlusV       % "test",
+        "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % "test",
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",

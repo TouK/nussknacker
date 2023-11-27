@@ -50,7 +50,7 @@ class OAuth2AuthenticationResourcesSpec
   }
 
   protected lazy val badAuthenticationResources = {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
       .thenRespond(Response(Option.empty, StatusCode.BadRequest, "Bad Request"))
 
@@ -63,7 +63,7 @@ class OAuth2AuthenticationResourcesSpec
   }
 
   private def authenticationResources(config: OAuth2Configuration = defaultConfig) = {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(
         s""" {"access_token": "$accessToken", "token_type": "Bearer", "refresh_token": "yFLU8w5VZtqjYrdpD5K9s27JZdJuCRrL"} """

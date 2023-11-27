@@ -372,7 +372,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
           "field2" -> ScenarioPropertyConfig(
             None,
             None,
-            Some(List(LiteralParameterValidator.integerValidator)),
+            Some(List(LiteralIntegerValidator)),
             Some("label")
           )
         ) ++ FlinkStreamingPropertiesConfig.properties)
@@ -395,7 +395,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
           "field2" -> ScenarioPropertyConfig(
             None,
             None,
-            Some(List(LiteralParameterValidator.integerValidator)),
+            Some(List(CompileTimeEvaluableValueValidator)),
             Some("label")
           )
         ) ++ FlinkStreamingPropertiesConfig.properties)
@@ -1079,7 +1079,7 @@ private object ProcessValidationSpec {
         "maxEvents" -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator)),
+          Some(List(CompileTimeEvaluableValueValidator)),
           Some("label")
         )
       ) ++ FlinkStreamingPropertiesConfig.properties)

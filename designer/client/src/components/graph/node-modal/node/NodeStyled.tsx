@@ -11,6 +11,8 @@ export const NodeLabelStyled = styled("div")(
         margin-top: 9px;
         font-size: 12px;
         font-weight: 700;
+        overflow-wrap: anywhere;
+        padding-right: 8px;
         span {
             margin-top: 10px;
             margin-left: 10px;

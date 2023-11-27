@@ -162,19 +162,13 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ("config", "result"),
         (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger.toLong)),
         (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger.toLong)),
-        (
-          sConfig(null, nullSchema, longSchema, Input),
-          invalidTypes("actual: 'Null' expected: 'Long'")
-        ),
+        (sConfig(null, nullSchema, longSchema, Input), invalidTypes("actual: 'Null' expected: 'Long'")),
         (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Long'")),
         (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("actual: 'String' expected: 'Long'")),
         (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("actual: 'Float' expected: 'Long'")),
         (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("actual: 'Double' expected: 'Long'")),
         (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Long'")),
-        (
-          sConfig(sampleLong, longSchema, null),
-          invalidTypes("actual: 'Null' expected: 'Long'")
-        ),
+        (sConfig(sampleLong, longSchema, null), invalidTypes("actual: 'Null' expected: 'Long'")),
         (
           sConfig(sampleLong, longSchema, sampleString),
           invalidTypes(s"actual: '${typedStr.display}' expected: 'Long'")
@@ -208,20 +202,14 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger.toFloat)),
         (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong.toFloat)),
         (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong.toFloat)),
-        (
-          sConfig(null, nullSchema, floatSchema, Input),
-          invalidTypes("actual: 'Null' expected: 'Float'")
-        ),
+        (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("actual: 'Null' expected: 'Float'")),
         (
           sConfig(sampleBoolean, booleanSchema, floatSchema, Input),
           invalidTypes("actual: 'Boolean' expected: 'Float'")
         ),
         (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("actual: 'String' expected: 'Float'")),
         (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Float'")),
-        (
-          sConfig(sampleFloat, floatSchema, null),
-          invalidTypes("actual: 'Null' expected: 'Float'")
-        ),
+        (sConfig(sampleFloat, floatSchema, null), invalidTypes("actual: 'Null' expected: 'Float'")),
         (
           sConfig(sampleFloat, floatSchema, sampleString),
           invalidTypes(s"actual: '${typedStr.display}' expected: 'Float'")
@@ -244,10 +232,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger.toDouble)),
         (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong.toDouble)),
         (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong.toDouble)),
-        (
-          sConfig(null, nullSchema, doubleSchema, Input),
-          invalidTypes("actual: 'Null' expected: 'Double'")
-        ),
+        (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("actual: 'Null' expected: 'Double'")),
         (
           sConfig(sampleBoolean, booleanSchema, doubleSchema, Input),
           invalidTypes("actual: 'Boolean' expected: 'Double'")
@@ -257,10 +242,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
           sConfig(sampleBytes, bytesSchema, doubleSchema, Input),
           invalidTypes("actual: 'ByteBuffer' expected: 'Double'")
         ),
-        (
-          sConfig(sampleDouble, doubleSchema, null),
-          invalidTypes("actual: 'Null' expected: 'Double'")
-        ),
+        (sConfig(sampleDouble, doubleSchema, null), invalidTypes("actual: 'Null' expected: 'Double'")),
         (
           sConfig(sampleDouble, doubleSchema, sampleString),
           invalidTypes(s"actual: '${typedStr.display}' expected: 'Double'")

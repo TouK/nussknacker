@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.SttpBackendStub
 
 import java.net.URI
+import scala.concurrent.Future
 
 class OidcDiscoveryTest extends AnyFlatSpec with Matchers {
 
@@ -22,7 +23,7 @@ class OidcDiscoveryTest extends AnyFlatSpec with Matchers {
     responseTypesSupported = List("code")
   )
 
-  implicit private val sttp = SttpBackendStub.asynchronousFuture
+  implicit private val sttp: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
     .whenRequestMatches(_.uri.host.contains("exception"))
     .thenRespond(throw new Exception("fatal error"))
     .whenRequestMatches(_.uri.host.contains("client-error"))

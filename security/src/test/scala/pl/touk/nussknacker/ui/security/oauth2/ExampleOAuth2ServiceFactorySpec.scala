@@ -27,7 +27,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   val config = ExampleOAuth2ServiceFactory.testConfig
 
   def createErrorOAuth2Service(uri: URI, code: StatusCode) = {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
       .thenRespond(Response(Option.empty, code))
 
@@ -42,7 +42,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     )
     val userInfo      = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(Set("User")))
     val authorizeJson = tokenResponse.asJson.toString
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(authorizeJson)
       .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
