@@ -38,7 +38,6 @@ class FlinkProcessCompilerWithTestComponents(
       diskStateBackendSupport,
       objectNaming,
       componentUseCase,
-      modelData.modelClassLoader.classLoader
     ) {
 
   override protected def definitions(
