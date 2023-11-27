@@ -126,7 +126,6 @@ function TestWithFormButton(props: Props) {
             },
             ...sourceParameters[selectedSource],
             onConfirmAction,
-            scenarioName,
         });
     }, [testFormParameters, sourceParameters, selectedSource]);
 

@@ -34,7 +34,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{ParametersValidator, ProcessValidation}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
@@ -70,9 +70,11 @@ class NodeResourcesSpec
         v.modelData.modelDefinition.expressionConfig,
         v.modelData.modelDefinitionWithTypes.typeDefinitions,
         v.modelData.uiDictServices,
-        v.modelData.modelClassLoader.classLoader
+        v.modelData.modelClassLoader.classLoader,
+        v.scenarioPropertiesConfig.keys
       )
-    )
+    ),
+    typeToConfig.mapValues(v => new ParametersValidator(v.modelData, v.scenarioPropertiesConfig.keys))
   )
 
   private implicit val typingResultDecoder: Decoder[TypingResult] =

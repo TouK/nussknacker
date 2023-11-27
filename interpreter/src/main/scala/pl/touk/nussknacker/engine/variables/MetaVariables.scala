@@ -18,10 +18,14 @@ object MetaVariables {
     MetaVariables(metaData.id, properties(metaData))
 
   @Hidden
-  def typingResult(metaData: MetaData): TypingResult = TypedObjectTypingResult(
+  def typingResult(metaData: MetaData): TypingResult =
+    typingResult(metaData.additionalFields.properties.keys)
+
+  @Hidden
+  def typingResult(scenarioPropertiesNames: Iterable[String]): TypingResult = TypedObjectTypingResult(
     Map(
       "processName" -> Typed[String],
-      "properties"  -> propertiesType(metaData)
+      "properties"  -> propertiesType(scenarioPropertiesNames)
     )
   )
 
@@ -29,11 +33,9 @@ object MetaVariables {
     TypedMap(meta.additionalFields.properties)
   }
 
-  private def propertiesType(metaData: MetaData): TypedObjectTypingResult = {
-    val definedProperties = metaData.additionalFields.properties.toList.sortBy(_._1)
-
+  private def propertiesType(scenarioPropertiesNames: Iterable[String]): TypedObjectTypingResult = {
     val propertiesTyping = TypedObjectDefinition(
-      definedProperties.map { case (propertyName, _) => propertyName -> Typed[String] }.toMap
+      scenarioPropertiesNames.map(_ -> Typed[String]).toMap
     )
     TypedObjectTypingResult(propertiesTyping)
   }

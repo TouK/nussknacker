@@ -44,7 +44,8 @@ class ExpressionSuggesterBenchmarkSetup() {
     ProcessDefinitionBuilder.toExpressionDefinition(ProcessDefinitionBuilder.empty.expressionConfig),
     clazzDefinitions,
     dictServices,
-    getClass.getClassLoader
+    getClass.getClassLoader,
+    List.empty
   )
 
   private val variables: Map[String, TypingResult] = Map(
@@ -59,8 +60,7 @@ class ExpressionSuggesterBenchmarkSetup() {
       expressionSuggester.expressionSuggestions(
         Expression("spel", expression),
         CaretPosition2d(0, position),
-        variables,
-        MetaData("foo", StreamMetaData())
+        variables
       )(ExecutionContext.global),
       ScalaDuration("10s")
     )

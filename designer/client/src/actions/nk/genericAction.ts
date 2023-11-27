@@ -21,8 +21,6 @@ export interface UIValueParameter {
 export interface GenericValidationRequest {
     parameters: UIValueParameter[];
     variableTypes: VariableTypes;
-    processProperties: PropertiesType;
-    scenarioName: string;
 }
 
 function nodeGenericValidationDataUpdated(validationData: GenericValidationData): GenericActionValidationUpdated {
