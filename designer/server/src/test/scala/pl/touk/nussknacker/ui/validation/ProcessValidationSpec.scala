@@ -614,12 +614,40 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val validationResult  = processValidation.validate(process)
 
     validationResult should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
-          if invalidNodes("subIn").size == 2 && invalidNodes("subIn-subVar").size == 1 =>
+      case ValidationResult(ValidationErrors(_, Nil, Nil), ValidationWarnings.success, _) =>
+    }
+    validationResult.errors.invalidNodes("subIn") should matchPattern {
+      case List(
+            NodeValidationError(
+              "ExpressionParserCompilationError",
+              "Failed to parse expression: Bad expression type, expected: Long, found: String(someString)",
+              _,
+              Some("param1"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "PresetIdNotFoundInProvidedPresets",
+              "The specified preset id 'thisPresetDoesNotExist' used in param1 is not defined",
+              _,
+              Some("$param.param1.$fixedValuesPresetId"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+    validationResult.errors.invalidNodes("subIn-subVar") should matchPattern {
+      case List(
+            NodeValidationError(
+              "ExpressionParserCompilationError",
+              "Failed to parse expression: Unresolved reference 'nonExistingVar'",
+              _,
+              Some("$expression"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
     }
   }
 
-  test("validates FragmentInput parameters according to FragmentInputDefinition") { // todo add preset?
+  test("validates FragmentInput parameters according to FragmentInputDefinition") {
     val fragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -635,10 +663,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
                 None,
                 inputConfig = ParameterInputConfig(
                   inputMode = InputModeFixedList,
-                  fixedValuesType = Some(UserDefinedList),
-                  fixedValuesList =
-                    Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"))),
-                  fixedValuesListPresetId = None,
+                  fixedValuesType = Some(Preset),
+                  fixedValuesList = None,
+                  fixedValuesListPresetId = Some("presetString"),
                   resolvedPresetFixedValuesList = None
                 )
               ),

@@ -805,7 +805,7 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % "test")
+  .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % "test", componentsApi % "test->test")
 
 lazy val interpreter = (project in file("interpreter"))
   .settings(commonSettings)
@@ -855,7 +855,8 @@ lazy val benchmarks = (project in file("benchmarks"))
     flinkSchemedKafkaComponentsUtils,
     flinkExecutor,
     flinkBaseComponents,
-    testUtils % "test"
+    testUtils % "test",
+    componentsApi % "test->test"
   )
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
@@ -1215,7 +1216,7 @@ lazy val liteBaseComponents = (project in lite("components/base"))
   .settings(
     name := "nussknacker-lite-base-components",
   )
-  .dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test")
+  .dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test", componentsApi % "test->test")
 
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka"))
   .settings(commonSettings)
@@ -1273,7 +1274,7 @@ lazy val liteRequestResponseComponentsTests: Project = (project in lite("compone
       )
     },
   )
-  .dependsOn(requestResponseComponentsApi % Provided, liteComponentsTestkit % Test)
+  .dependsOn(requestResponseComponentsApi % Provided, liteComponentsTestkit % Test, componentsApi % "test->test")
 
 lazy val liteEngineRuntime = (project in lite("runtime"))
   .settings(commonSettings)
@@ -1704,7 +1705,8 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     flinkComponentsUtils   % Provided,
     componentsUtils        % Provided,
     flinkComponentsTestkit % "it, test",
-    kafkaTestUtils         % "it,test"
+    kafkaTestUtils         % "it,test",
+    componentsApi % "test->test"
   )
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))
