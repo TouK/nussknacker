@@ -1,11 +1,4 @@
 {
-    "TableNode": {
-        "name": "TableNode",
-        "styles": {
-            "fill": "#360000",
-            "color": "white"
-        }
-    },
     "Source": {
         "name": "Source",
         "styles": {
