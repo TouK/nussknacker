@@ -76,7 +76,7 @@ case object CronParameterEditor extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesPresetParameterEditor(
     presetId: String,
-    resolvedPresetPossibleValues: Option[List[FixedExpressionValue]]
+    possibleValues: Option[List[FixedExpressionValue]]
 ) extends SimpleParameterEditor
 
 @JsonCodec case class FixedExpressionValue(expression: String, label: String)
