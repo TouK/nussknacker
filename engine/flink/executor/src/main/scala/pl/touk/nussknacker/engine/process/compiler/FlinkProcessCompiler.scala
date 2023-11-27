@@ -34,7 +34,7 @@ class FlinkProcessCompiler(
     val processConfig: Config,
     val diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
-    val componentUseCase: ComponentUseCase
+    val componentUseCase: ComponentUseCase,
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
@@ -45,7 +45,7 @@ class FlinkProcessCompiler(
     modelData.processConfig,
     diskStateBackendSupport = true,
     modelData.objectNaming,
-    componentUseCase = ComponentUseCase.EngineRuntime
+    componentUseCase = ComponentUseCase.EngineRuntime,
   )
 
   def compileProcess(
@@ -75,7 +75,12 @@ class FlinkProcessCompiler(
     val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val fragmentDefinitionExtractor         = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
+      processConfig,
+      userCodeClassLoader,
+      dictRegistry,
+      definitionWithTypes.typeDefinitions
+    )
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
       ProcessCompilerData.prepare(

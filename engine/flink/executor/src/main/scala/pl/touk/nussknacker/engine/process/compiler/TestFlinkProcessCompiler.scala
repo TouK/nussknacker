@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
 class TestFlinkProcessCompiler(
+    modelData: ModelData,
     creator: ProcessConfigCreator,
     inputConfigDuringExecution: Config,
     collectingListener: ResultsCollectingListener,
@@ -29,6 +30,7 @@ class TestFlinkProcessCompiler(
     scenarioTestData: ScenarioTestData
 ) extends StubbedFlinkProcessCompiler(
       process,
+      modelData,
       creator,
       inputConfigDuringExecution,
       diskStateBackendSupport = false,

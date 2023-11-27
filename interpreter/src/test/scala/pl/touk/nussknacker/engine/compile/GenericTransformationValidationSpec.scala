@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDef
 import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
@@ -73,7 +74,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   )
 
   private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, MyProcessConfigCreator))
 
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
