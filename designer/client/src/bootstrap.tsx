@@ -10,6 +10,7 @@ import { BASE_PATH } from "./config";
 import { css } from "@emotion/css";
 import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
+import { FixedPortal } from "./fixedPortal";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -35,7 +36,7 @@ const Root = () => {
                     </StoreProvider>
                 </RootErrorBoundary>
             </NuThemeProvider>
-            <div id="portal" style={{ position: "fixed", left: 0, top: 0, zIndex: 9999 }} />
+            <FixedPortal />
         </>
     );
 };

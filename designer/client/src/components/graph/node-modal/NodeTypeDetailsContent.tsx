@@ -29,7 +29,6 @@ import { Split } from "./split";
 import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
-import { TableNode } from "./tableNode";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -259,21 +258,6 @@ export function NodeTypeDetailsContent({
         case "CustomNode":
             return (
                 <JoinCustomNode
-                    fieldErrors={fieldErrors}
-                    findAvailableVariables={findAvailableVariables}
-                    isEditMode={isEditMode}
-                    node={node}
-                    parameterDefinitions={parameterDefinitions}
-                    processDefinitionData={processDefinitionData}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    showSwitch={showSwitch}
-                    showValidation={showValidation}
-                />
-            );
-        case "TableNode":
-            return (
-                <TableNode
                     fieldErrors={fieldErrors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
