@@ -4,6 +4,10 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 
+/*
+ * TODO: Using fixed values presets is currently only supported for fragment parameters (resolved in FragmentComponentDefinitionExtractor.toParameter)
+ * Supporting presets in other types of parameters would require adding resolution logic in more places (or some one common place, though I think this would require serious refactoring)
+ */
 trait FixedValuesPresetProvider extends Serializable {
 
   def getAll: Map[String, FixedValuesPreset]
