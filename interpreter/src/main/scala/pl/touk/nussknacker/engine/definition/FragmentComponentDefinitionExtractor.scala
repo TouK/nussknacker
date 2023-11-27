@@ -63,8 +63,7 @@ case object EmptyFragmentError extends FragmentDefinitionError
 class FragmentComponentDefinitionExtractor(
     componentConfig: String => Option[SingleComponentConfig],
     classLoader: ClassLoader,
-    dictRegistry: DictRegistry,
-    typeDefinitionSet: TypeDefinitionSet,
+    expressionCompiler: ExpressionCompiler,
 ) extends FragmentDefinitionExtractor {
 
   def extractFragmentComponentDefinition(
@@ -128,9 +127,6 @@ class FragmentComponentDefinitionExtractor(
     val config          = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData   = ParameterData(typ, Nil)
     val extractedEditor = EditorExtractor.extract(parameterData, config)
-    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig
-    val expressionCompiler =
-      ExpressionCompiler.withOptimization(classLoader, dictRegistry, expressionConfig, typeDefinitionSet)
 
     val customExpressionValidator = fragmentParameter.validationExpression.flatMap(expr => {
       expressionCompiler
@@ -164,22 +160,32 @@ class FragmentComponentDefinitionExtractor(
 object FragmentComponentDefinitionExtractor {
 
   def apply(modelData: ModelData): FragmentComponentDefinitionExtractor = {
+    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig
+    val expressionCompiler = ExpressionCompiler.withOptimization(
+      modelData.modelClassLoader.classLoader,
+      modelData.engineDictRegistry,
+      expressionConfig,
+      modelData.modelDefinitionWithTypes.typeDefinitions
+    )
     FragmentComponentDefinitionExtractor(
       modelData.processConfig,
       modelData.modelClassLoader.classLoader,
-      modelData.engineDictRegistry,
-      modelData.modelDefinitionWithTypes.typeDefinitions
+      expressionCompiler
     )
   }
 
   def apply(
-      modelConfig: Config,
+      processConfig: Config,
       classLoader: ClassLoader,
-      dictRegistry: DictRegistry,
-      typeDefinitionSet: TypeDefinitionSet
+      expressionCompiler: ExpressionCompiler
   ): FragmentComponentDefinitionExtractor = {
-    val componentsConfig = ComponentsUiConfigExtractor.extract(modelConfig)
-    new FragmentComponentDefinitionExtractor(componentsConfig.get, classLoader, dictRegistry, typeDefinitionSet)
+    val componentsConfig = ComponentsUiConfigExtractor.extract(processConfig)
+
+    new FragmentComponentDefinitionExtractor(
+      componentsConfig.get,
+      classLoader,
+      expressionCompiler
+    )
   }
 
 }

@@ -73,12 +73,9 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
   )
 
-  private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, MyProcessConfigCreator))
-
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
-    fragmentDefinitionExtractor,
+    ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )

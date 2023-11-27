@@ -310,17 +310,9 @@ object ValidationExpressionParameterValidator {
   }
 
   implicit val apiExpressionDecoder: Decoder[ApiExpression] = {
-    Decoder.forProduct2[ApiExpression, String, String]("language", "original")((l, o) => {
-      new ApiExpression() {
-        override def language: String = l
-
-        override def original: String = o
-
-        override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = throw new RuntimeException(
-          "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
-        )
-      }
-    })
+    throw new RuntimeException(
+      "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
+    )
   }
 
 }
