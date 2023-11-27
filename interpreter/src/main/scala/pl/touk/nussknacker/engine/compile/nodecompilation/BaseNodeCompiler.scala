@@ -39,11 +39,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       )
 
     val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
-      expressionCompilation.typedExpression match {
-        case Some(a) =>
-          ValidationAdapter.validateVariable(a, DefaultExpressionId)
-        case None => valid(())
-      }
+      ValidationAdapter.validateMaybeVariable(expressionCompilation.typedExpression, DefaultExpressionId)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
@@ -59,11 +55,8 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         outputVar = None
       )
 
-    val additionalValidationResult = expressionCompilation.typedExpression match {
-      case Some(a) =>
-        ValidationAdapter.validateBoolean(a, DefaultExpressionId)
-      case None => valid(())
-    }
+    val additionalValidationResult =
+      ValidationAdapter.validateMaybeBoolean(expressionCompilation.typedExpression, DefaultExpressionId)
 
     combineErrors(nodeCompilation, additionalValidationResult)
   }
@@ -109,11 +102,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         (outEdge, ExpressionCompilerAdapter.compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)._1)
       }
       .map { a =>
-        a._2.typedExpression match {
-          case Some(value) =>
-            ValidationAdapter.validateBoolean(value, a._1)
-          case None => valid(())
-        }
+        ValidationAdapter.validateMaybeBoolean(a._2.typedExpression, a._1)
       }
       .combineAll
 
@@ -248,7 +237,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { field =>
         (
-          ValidationAdapter.validateVariable(field.value, recordValueFieldName(field.index)),
+          ValidationAdapter.validateMaybeVariable(Some(field.value), recordValueFieldName(field.index)),
           validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
         ).mapN { (_, _) => () }
       }.combineAll
@@ -276,33 +265,37 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
   private object ValidationAdapter {
 
-    def validateBoolean(
-        expression: TypedExpression,
+    def validateMaybeBoolean(
+        expression: Option[TypedExpression],
         fieldName: String
     )(
         implicit nodeId: NodeId
     ): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
-      validate(Typed[Boolean], NotNullParameterValidator, expression, fieldName)
+      validateOrValid(Typed[Boolean], NotNullParameterValidator, expression, fieldName)
     }
 
-    def validateVariable(
-        expression: TypedExpression,
+    def validateMaybeVariable(
+        expression: Option[TypedExpression],
         fieldName: String
     )(
         implicit nodeId: NodeId
     ): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
-      validate(Unknown, MandatoryParameterValidator, expression, fieldName)
+      validateOrValid(Unknown, MandatoryParameterValidator, expression, fieldName)
     }
 
-    private def validate(
+    private def validateOrValid(
         expectedType: TypingResult,
         validator: ParameterValidator,
-        expression: TypedExpression,
+        expression: Option[TypedExpression],
         fieldName: String
     )(implicit nodeId: NodeId): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
-      Validations
-        .validate(Parameter("stub", expectedType, List(validator)), (TypedParameter(fieldName, expression), ()))
-        .map(_ => ())
+      expression
+        .map { expr =>
+          Validations
+            .validate(Parameter("stub", expectedType, List(validator)), (TypedParameter(fieldName, expr), ()))
+            .map(_ => ())
+        }
+        .getOrElse(valid(()))
     }
 
   }
