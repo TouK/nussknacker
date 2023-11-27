@@ -7,8 +7,6 @@ import { WithId } from "../types/common";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { ToolbarsSide } from "./toolbars";
 import { WIP_TOOLBARS } from "../components/toolbarSettings/WIP_TOOLBARS";
-import { ExpressionLang } from "../components/graph/node-modal/editors/expression/types";
-import { DualEditorMode, EditorType } from "../components/graph/node-modal/editors/expression/Editor";
 
 export enum AuthStrategy {
     BROWSER = "Browser",
@@ -145,14 +143,14 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                                         },
                                         editor: {
                                             simpleEditor: {
-                                                type: EditorType.TABLE_EDITOR,
+                                                type: "TableEditor",
                                             },
-                                            defaultMode: DualEditorMode.SIMPLE,
-                                            type: EditorType.DUAL_PARAMETER_EDITOR,
+                                            defaultMode: "SIMPLE",
+                                            type: "DualParameterEditor",
                                         },
                                         validators: [],
                                         defaultValue: {
-                                            language: ExpressionLang.SpEL,
+                                            language: "spel",
                                             expression: `
 {
     columns: {{'key'}, {'value'}},
