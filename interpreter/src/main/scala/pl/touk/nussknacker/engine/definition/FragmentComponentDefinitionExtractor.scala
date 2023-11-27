@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Pro
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -119,7 +120,7 @@ class FragmentComponentDefinitionExtractor(
 
   private def toParameter(
       componentConfig: SingleComponentConfig,
-      fixedValuesPresets: Option[Map[String, List[FixedExpressionValue]]]
+      fixedValuesPresets: Option[Map[String, FixedValuesPreset]]
   )(fragmentParameter: FragmentParameter): Writer[List[FragmentParameterErrorData], Parameter] = {
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
@@ -140,7 +141,7 @@ class FragmentComponentDefinitionExtractor(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
       fragmentParameter: FragmentParameter,
-      fixedValuesPresets: Option[Map[String, List[FixedExpressionValue]]]
+      fixedValuesPresets: Option[Map[String, FixedValuesPreset]]
   ) = {
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
@@ -161,7 +162,7 @@ class FragmentComponentDefinitionExtractor(
           val (errors, fixedValues) = fixedValuesPresets
             .map { presets =>
               presets.get(presetId) match {
-                case Some(fixedValues) => (List.empty, Some(fixedValues))
+                case Some(preset) => (List.empty, Some(preset.values))
                 case None =>
                   (List(PresetIdNotFoundInProvidedPresetsErrorDara(fragmentParameter.name, presetId)), None)
               }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.fixedvaluespresets
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +17,7 @@ class DefaultFixedValuesPresetProviderFactory extends FixedValuesPresetProviderF
       implicit ec: ExecutionContext,
   ): FixedValuesPresetProvider = {
     val fixedValuesPresets = config
-      .getAs[Map[String, List[FixedExpressionValue]]](configPath)
+      .getAs[Map[String, FixedValuesPreset]](configPath)
       .getOrElse(Map.empty)
 
     new DefaultFixedValuesPresetProvider(fixedValuesPresets)

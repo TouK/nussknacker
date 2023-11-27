@@ -11,9 +11,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   UnknownFragmentOutput
 }
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, Parameter}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -213,7 +214,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
 
   private def validateMissingPresetIds(
       parameters: List[FragmentParameter],
-      presets: Map[String, List[FixedExpressionValue]],
+      presets: Map[String, FixedValuesPreset],
       nodeId: String
   ) = parameters.flatMap { param =>
     resolveInputConfigIgnoreValidation(param.inputConfig) match {
@@ -227,15 +228,17 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
 
   private def fillEffectivePreset(
       param: FragmentParameter,
-      presets: Map[String, List[FixedExpressionValue]],
+      presets: Map[String, FixedValuesPreset],
   ) =
     resolveInputConfigIgnoreValidation(param.inputConfig) match {
       case Some(p: ParameterInputConfigResolvedPreset) =>
         param.copy(
           inputConfig = param.inputConfig.copy(
             resolvedPresetFixedValuesList = presets.get(p.fixedValuesListPresetId) match {
-              case Some(fixedValueList) =>
-                Some(fixedValueList.map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label)))
+              case Some(fixedValuePreset) =>
+                Some(
+                  fixedValuePreset.values.map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+                )
               case None => None
             }
           )

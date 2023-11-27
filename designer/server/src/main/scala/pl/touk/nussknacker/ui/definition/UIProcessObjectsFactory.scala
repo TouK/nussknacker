@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -83,9 +82,6 @@ object UIProcessObjectsFactory {
         finalProcessDefinition
       ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ProcessDefinition doesn't contain configs for base components and fragments
 
-    // TODO maybe we have to update FixedValuesValidator based on presets - but FE should be going away from using validators on FE anyway
-    // TODO or introduce FixedValuesPresetValidator?
-
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
@@ -120,9 +116,7 @@ object UIProcessObjectsFactory {
       ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
       defaultAsyncInterpretation = getDefaultAsyncInterpretation(modelDataForType.processConfig),
-      fixedValuesPresets = fixedValuesPresetProvider.getAll.mapValuesNow(
-        _.map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
-      )
+      fixedValuesPresets = fixedValuesPresetProvider.getAll
     )
   }
 

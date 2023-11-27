@@ -220,9 +220,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
-    processObjects.fixedValuesPresets.mapValuesNow(
-      _.map(v => FixedExpressionValue(v.expression, v.label))
-    ) shouldBe TestFixedValuesPresetProvider.fixedValuesPresets
+    processObjects.fixedValuesPresets shouldBe TestFixedValuesPresetProvider.fixedValuesPresets
   }
 
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
