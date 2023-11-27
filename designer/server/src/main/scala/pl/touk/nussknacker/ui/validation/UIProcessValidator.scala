@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
@@ -24,20 +23,20 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-object ProcessValidation {
+object UIProcessValidator {
 
   def apply(
       modelData: ProcessingTypeDataProvider[ModelData, _],
       scenarioProperties: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
       additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
       fragmentResolver: FragmentResolver
-  ): ProcessValidation = {
-    new ProcessValidation(modelData, scenarioProperties, additionalValidators, fragmentResolver, None)
+  ): UIProcessValidator = {
+    new UIProcessValidator(modelData, scenarioProperties, additionalValidators, fragmentResolver, None)
   }
 
 }
 
-class ProcessValidation(
+class UIProcessValidator(
     modelData: ProcessingTypeDataProvider[ModelData, _],
     scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
     additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
@@ -55,7 +54,7 @@ class ProcessValidation(
 
   private val scenarioPropertiesValidator = new ScenarioPropertiesValidator(scenarioPropertiesConfig)
 
-  def withFragmentResolver(fragmentResolver: FragmentResolver) = new ProcessValidation(
+  def withFragmentResolver(fragmentResolver: FragmentResolver) = new UIProcessValidator(
     modelData,
     scenarioPropertiesConfig,
     additionalValidators,
@@ -63,7 +62,7 @@ class ProcessValidation(
     None
   )
 
-  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
+  def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new UIProcessValidator(
     modelData,
     scenarioPropertiesConfig,
     additionalValidators,
@@ -74,7 +73,7 @@ class ProcessValidation(
   def withScenarioPropertiesConfig(
       scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ) =
-    new ProcessValidation(modelData, scenarioPropertiesConfig, additionalValidators, fragmentResolver, None)
+    new UIProcessValidator(modelData, scenarioPropertiesConfig, additionalValidators, fragmentResolver, None)
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -134,7 +133,7 @@ class ProcessValidation(
         .map(modelCategoryValidator.withExpressionParsers)
         .getOrElse(modelCategoryValidator)
     }
-    // TODO: should we validate after resolving?
+    // TODO: should we validate after resolve?
     val additionalValidatorErrors = additionalValidators
       .map(_.validate(canonical))
       .sequence

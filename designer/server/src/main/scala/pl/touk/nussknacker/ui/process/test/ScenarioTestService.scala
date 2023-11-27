@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +25,7 @@ object ScenarioTestService {
   def apply(
       providers: ProcessingTypeDataProvider[ModelData, _],
       testDataSettings: TestDataSettings,
-      processResolving: UIProcessResolving,
+      processResolver: UIProcessResolver,
       processCounter: ProcessCounter,
       testExecutorService: ScenarioTestExecutorService,
   ): ScenarioTestService = {
@@ -33,7 +33,7 @@ object ScenarioTestService {
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
       new PreliminaryScenarioTestDataSerDe(testDataSettings),
-      processResolving,
+      processResolver,
       processCounter,
       testExecutorService,
     )
@@ -45,7 +45,7 @@ class ScenarioTestService(
     testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
     testDataSettings: TestDataSettings,
     preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
-    processResolving: UIProcessResolving,
+    processResolver: UIProcessResolver,
     processCounter: ProcessCounter,
     testExecutorService: ScenarioTestExecutorService,
 ) extends LazyLogging {
@@ -130,8 +130,8 @@ class ScenarioTestService(
   }
 
   private def toCanonicalProcess(displayableProcess: DisplayableProcess): CanonicalProcess = {
-    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess)
-    processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
+    val validationResult = processResolver.validateBeforeUiResolving(displayableProcess)
+    processResolver.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {

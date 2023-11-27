@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
@@ -46,7 +46,7 @@ class DeploymentServiceImpl(
     processRepository: FetchingProcessRepository[DB],
     actionRepository: DbProcessActionRepository[DB],
     dbioRunner: DBIOActionRunner,
-    processValidation: ProcessValidation,
+    processValidator: UIProcessValidator,
     scenarioResolver: ScenarioResolver,
     processChangeListener: ProcessChangeListener,
     scenarioStateTimeout: Option[FiniteDuration],
@@ -179,7 +179,7 @@ class DeploymentServiceImpl(
   }
 
   private def validateProcess(processDetails: ScenarioWithDetailsEntity[CanonicalProcess]): Unit = {
-    val validationResult = processValidation.processingTypeValidationWithTypingInfo(
+    val validationResult = processValidator.processingTypeValidationWithTypingInfo(
       processDetails.json,
       processDetails.processingType,
       processDetails.processCategory

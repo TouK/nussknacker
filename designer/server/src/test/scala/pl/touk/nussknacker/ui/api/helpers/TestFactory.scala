@@ -29,8 +29,8 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -61,16 +61,16 @@ object TestFactory extends TestPermissions {
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
-  val processValidation: ProcessValidation = ProcessTestData.processValidation.withFragmentResolver(sampleResolver)
+  val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
 
-  val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation
+  val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
     .withFragmentResolver(sampleResolver)
     .withScenarioPropertiesConfig(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
     )
 
-  val processResolving = new UIProcessResolving(
-    processValidation,
+  val processResolver = new UIProcessResolver(
+    processValidator,
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
     )

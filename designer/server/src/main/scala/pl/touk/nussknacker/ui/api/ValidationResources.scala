@@ -6,14 +6,14 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ValidationResources(
     protected val processService: ProcessService,
-    processResolving: UIProcessResolving
+    processResolver: UIProcessResolver
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -34,7 +34,7 @@ class ValidationResources(
   private def validate(displayable: DisplayableProcess) = {
     NuDesignerErrorToHttp.toResponseEither(
       FatalValidationError.renderNotAllowedAsError(
-        processResolving.validateBeforeUiResolving(displayable)
+        processResolver.validateBeforeUiResolving(displayable)
       )
     )
   }

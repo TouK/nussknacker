@@ -11,20 +11,20 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 /**
   * This class handles resolving of expression (e.g. dict labels resolved to keys) which should be done before
   * validation of process created in UI and before process save.
   * Also it handles "reverse" resolving process done before returning process to UI
   */
-class UIProcessResolving(
-    validation: ProcessValidation,
-    substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
+class UIProcessResolver(
+                          validator: UIProcessValidator,
+                          substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
 ) {
 
   def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
-    val v = validation.withExpressionParsers { case spel: SpelExpressionParser =>
+    val v = validator.withExpressionParsers { case spel: SpelExpressionParser =>
       spel.typingDictLabels
     }
     v.validate(displayable)
@@ -46,7 +46,7 @@ class UIProcessResolving(
       processingType: ProcessingType,
       category: Category
   ): ValidationResult =
-    validation.processingTypeValidationWithTypingInfo(canonical, processingType, category)
+    validator.processingTypeValidationWithTypingInfo(canonical, processingType, category)
 
   def reverseResolveExpressions(
       canonical: CanonicalProcess,
@@ -59,7 +59,7 @@ class UIProcessResolving(
       .map(_.reversed.substitute(canonical, validationResult.typingInfo))
       .getOrElse(canonical)
     val displayable   = ProcessConverter.toDisplayable(substituted, processingType, category)
-    val uiValidations = validation.uiValidation(displayable)
+    val uiValidations = validator.uiValidation(displayable)
     ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
   }
 

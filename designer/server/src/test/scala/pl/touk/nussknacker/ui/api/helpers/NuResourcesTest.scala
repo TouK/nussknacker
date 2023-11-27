@@ -104,7 +104,7 @@ trait NuResourcesTest
       fetchingProcessRepository,
       actionRepository,
       dbioRunner,
-      processValidation,
+      processValidator,
       scenarioResolver,
       processChangeListener,
       None
@@ -180,12 +180,12 @@ trait NuResourcesTest
       deploymentService,
       newProcessPreparer,
       () => processCategoryService,
-      processResolving,
+      processResolver,
       dbioRunner,
       futureFetchingProcessRepository,
       actionRepository,
       writeProcessRepository,
-      processValidation
+      processValidator
     )
 
   protected def createScenarioTestService(
@@ -195,7 +195,7 @@ trait NuResourcesTest
       testInfoProviders,
       featureTogglesConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-      processResolving,
+      processResolver,
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
       testExecutorService
     )

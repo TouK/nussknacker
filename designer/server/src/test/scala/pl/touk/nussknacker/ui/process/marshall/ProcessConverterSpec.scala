@@ -31,7 +31,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
@@ -39,7 +39,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
-  lazy val validation: ProcessValidation = {
+  lazy val validation: UIProcessValidator = {
 
     val processDefinition = ProcessDefinition[ObjectDefinition](
       services = Map("ref" -> objectDefinition(List.empty, Some(Unknown))),
@@ -65,7 +65,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       settings = ClassExtractionSettings.Default
     )
 
-    ProcessValidation(
+    UIProcessValidator(
       mapProcessingTypeDataProvider(
         TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
       ),

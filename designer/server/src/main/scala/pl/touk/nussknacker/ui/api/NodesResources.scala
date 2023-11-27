@@ -1,63 +1,41 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model._
-import cats.data.OptionT
-import cats.instances.future._
+import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.FragmentResolver
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  NodeDataValidator,
-  ValidationNotPerformed,
-  ValidationPerformed
-}
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
-import pl.touk.nussknacker.ui.api.NodesResources.{
-  preparePropertiesRequestDecoder,
-  prepareTypingResultDecoder,
-  prepareValidationContext
-}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
+import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
-import pl.touk.nussknacker.ui.validation.{ParametersValidator, ProcessValidation}
+import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /** This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
   */
 class NodesResources(
     protected val processService: ProcessService,
-    fragmentRepository: FragmentRepository,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
-    processValidation: ProcessValidation,
+    processValidator: UIProcessValidator,
+    typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
 )(implicit val ec: ExecutionContext)
@@ -66,7 +44,6 @@ class NodesResources(
     with RouteWithUser {
 
   private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
-  private val nodeValidator           = new NodeValidator
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -85,7 +62,8 @@ class NodesResources(
             NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-              nodeValidator.validate(nodeData, modelData, process.id, fragmentRepository)
+              val nodeValidator = typeToNodeValidator.forTypeUnsafe(process.processingType)
+              nodeValidator.validate(process.name, nodeData)
             }
           }
         }
@@ -96,7 +74,7 @@ class NodesResources(
           entity(as[ProcessProperties]) { processProperties =>
             complete {
               additionalInfoProviders.prepareAdditionalInfoForProperties(
-                processProperties.toMetaData(process.id),
+                processProperties.toMetaData(process.name),
                 process.processingType
               )
             }
@@ -114,7 +92,7 @@ class NodesResources(
                 process.processingType,
                 process.processCategory
               )
-              val result = processValidation.validate(scenario)
+              val result = processValidator.validate(scenario)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
@@ -196,102 +174,6 @@ object NodesResources {
   def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
     deriveConfiguredDecoder[PropertiesValidationRequest]
-  }
-
-  def prepareValidationContext(
-      modelData: ModelData
-  )(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
-    GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig)
-      .validationContextWithLocalVariables(metaData, variableTypes)
-  }
-
-}
-
-class NodeValidator {
-
-  def validate(
-      nodeData: NodeValidationRequest,
-      modelData: ModelData,
-      processId: String,
-      fragmentRepository: FragmentRepository
-  ): NodeValidationResult = {
-    implicit val metaData: MetaData = nodeData.processProperties.toMetaData(processId)
-
-    val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
-    val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext(modelData))
-
-    val edges            = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
-    val fragmentResolver = FragmentResolver(k => fragmentRepository.get(k).map(_.canonical))
-    new NodeDataValidator(modelData, fragmentResolver).validate(
-      nodeData.nodeData,
-      validationContext,
-      branchCtxs,
-      edges
-    ) match {
-      case ValidationNotPerformed =>
-        NodeValidationResult(
-          parameters = None,
-          expressionType = None,
-          validationErrors = Nil,
-          validationPerformed = false
-        )
-      case ValidationPerformed(errors, parameters, expressionType) =>
-        val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
-
-        // We don't return MissingParameter error when we are returning those missing parameters to be added - since
-        // it's not really exception ATM
-        def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
-          case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
-          case _                            => false
-        }
-
-        val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
-        NodeValidationResult(
-          parameters = uiParams,
-          expressionType = expressionType,
-          validationErrors = uiErrors,
-          validationPerformed = true
-        )
-    }
-  }
-
-}
-
-class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
-
-  // TODO: do not load provider for each request...
-  private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] =
-    typeToConfig.mapValues(pt =>
-      ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
-        .headOption
-        .map(_.nodeAdditionalInfo(pt.processConfig))
-    )
-
-  private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] =
-    typeToConfig.mapValues(pt =>
-      ScalaServiceLoader
-        .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader)
-        .headOption
-        .map(_.propertiesAdditionalInfo(pt.processConfig))
-    )
-
-  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AdditionalInfo]] = {
-    (for {
-      provider <- OptionT.fromOption[Future](nodeProviders.forType(processingType).flatten)
-      data     <- OptionT(provider(nodeData))
-    } yield data).value
-  }
-
-  def prepareAdditionalInfoForProperties(metaData: MetaData, processingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ): Future[Option[AdditionalInfo]] = {
-    (for {
-      provider <- OptionT.fromOption[Future](propertiesProviders.forType(processingType).flatten)
-      data     <- OptionT(provider(metaData))
-    } yield data).value
   }
 
 }

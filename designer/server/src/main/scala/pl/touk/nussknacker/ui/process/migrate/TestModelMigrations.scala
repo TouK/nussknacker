@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   ValidationErrors,
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
-    processValidation: ProcessValidation
+    processValidator: UIProcessValidator
 ) {
 
   def testMigrations(
@@ -30,7 +30,7 @@ class TestModelMigrations(
   ): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidation.withFragmentResolver(
+    val validation = processValidator.withFragmentResolver(
       new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
