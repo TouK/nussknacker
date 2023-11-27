@@ -9,7 +9,16 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessId } from "../types";
+import {
+    Expression,
+    Process,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ProcessId,
+    PropertiesType,
+    TypingResult,
+    VariableTypes,
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -17,6 +26,7 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { GenericValidationRequest } from "../actions/nk/genericAction";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -116,6 +126,12 @@ export interface TestProcessResponse {
 export interface PropertiesValidationRequest {
     id: string;
     additionalFields: ProcessAdditionalFields;
+}
+
+export interface ExpressionSuggestionRequest {
+    expression: Expression;
+    caretPosition2d: CaretPosition2d;
+    variableTypes: VariableTypes;
 }
 
 class HttpService {
@@ -410,7 +426,10 @@ class HttpService {
         return promise;
     }
 
-    validateGenericActionParameters(processingType: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
+    validateGenericActionParameters(
+        processingType: string,
+        validationRequest: GenericValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/parameters/${encodeURIComponent(processingType)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
@@ -418,17 +437,8 @@ class HttpService {
         return promise;
     }
 
-    getExpressionSuggestions(
-        processingType: string,
-        expression: Expression,
-        caretPosition2d: CaretPosition2d,
-        variables: Record<string, any>,
-    ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, {
-            expression,
-            caretPosition2d,
-            variables,
-        });
+    getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),

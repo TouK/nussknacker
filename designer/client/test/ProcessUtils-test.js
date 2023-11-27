@@ -3,22 +3,19 @@ import { reject } from "lodash";
 
 const unknown = { display: "Unknown", params: [], type: "Unknown", refClazzName: "java.lang.Object" };
 
-//nodeId, process, processDefinition, fieldName, processCategory  ==> (processDefinition, processCategory, process) => (nodeId, parameterDefinition)
 describe("process available variables finder", () => {
     it("should find available variables with its types in process at the beginning of the process", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", process)("processVariables");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, process)("processVariables");
         expect(availableVariables).toEqual({
             input: { refClazzName: "org.nussknacker.model.Transaction" },
-            date: { refClazzName: "java.time.LocalDate" },
         });
     });
 
     it("should find available variables with its types in process in the end of the process", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", process)("endEnriched");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, process)("endEnriched");
 
         expect(availableVariables).toEqual({
             input: { refClazzName: "org.nussknacker.model.Transaction" },
-            date: { refClazzName: "java.time.LocalDate" },
             parsedTransaction: { refClazzName: "org.nussknacker.model.Transaction" },
             aggregateResult: { refClazzName: "java.lang.String" },
             processVariables: unknown, //fixme how to handle variableBuilder here?
@@ -27,37 +24,26 @@ describe("process available variables finder", () => {
     });
 
     it("should find fragment parameters as variables with its types", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", fragment)("endEnriched");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, fragment)("endEnriched");
         expect(availableVariables).toEqual({
-            date: { refClazzName: "java.time.LocalDate" },
             fragmentParam: { refClazzName: "java.lang.String" },
         });
     });
 
-    it("should return only global variables for dangling node", () => {
+    it("should return only empty variables for dangling node", () => {
         const danglingNodeId = "someFilterNode";
         const newEdges = reject(process.edges, (edge) => {
             return edge.from == danglingNodeId || edge.to == danglingNodeId;
         });
         const processWithDanglingNode = { ...process, ...{ edges: newEdges } };
 
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category1",
-            processWithDanglingNode,
-        )("danglingNodeId");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithDanglingNode)("danglingNodeId");
 
-        expect(availableVariables).toEqual({
-            date: { refClazzName: "java.time.LocalDate" },
-        });
+        expect(availableVariables).toEqual({});
     });
 
     it("should use variables from validation results if exist", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category1",
-            processWithVariableTypes,
-        )("variableNode");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)("variableNode");
 
         expect(availableVariables).toEqual({
             input: { refClazzName: "java.lang.String" },
@@ -66,41 +52,7 @@ describe("process available variables finder", () => {
     });
 
     it("should fallback to variables decoded from graph if typing via validation fails", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category1",
-            processWithVariableTypes,
-        )("anonymousUserFilter");
-
-        expect(availableVariables).toEqual({
-            date: { refClazzName: "java.time.LocalDate" },
-            someVariableName: unknown,
-            processVariables: unknown,
-            input: { refClazzName: "org.nussknacker.model.Transaction" },
-        });
-    });
-
-    it("should filter globalVariables by Category3", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category3",
-            processWithVariableTypes,
-        )("anonymousUserFilter");
-
-        expect(availableVariables).toEqual({
-            date2: { refClazzName: "java.time.Date" },
-            someVariableName: unknown,
-            processVariables: unknown,
-            input: { refClazzName: "org.nussknacker.model.Transaction" },
-        });
-    });
-
-    it("should not fetch globalVariables for no defined category", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            null,
-            processWithVariableTypes,
-        )("anonymousUserFilter");
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)("anonymousUserFilter");
 
         expect(availableVariables).toEqual({
             someVariableName: unknown,
@@ -110,16 +62,14 @@ describe("process available variables finder", () => {
     });
 
     it("add additional variables to node if defined", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category1",
-            processWithVariableTypes,
-        )("aggregateId", paramWithAdditionalVariables);
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)(
+            "aggregateId",
+            paramWithAdditionalVariables,
+        );
 
         expect(availableVariables).toEqual({
             additional1: { refClazzName: "java.lang.String" },
             input: { refClazzName: "org.nussknacker.model.Transaction" },
-            date: { refClazzName: "java.time.LocalDate" },
             parsedTransaction: { refClazzName: "org.nussknacker.model.Transaction" },
             processVariables: unknown,
             someVariableName: unknown,
@@ -127,11 +77,10 @@ describe("process available variables finder", () => {
     });
 
     it("hide variables in parameter if defined", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(
-            processDefinition,
-            "Category1",
-            processWithVariableTypes,
-        )("aggregateId", paramWithVariablesToHide);
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, processWithVariableTypes)(
+            "aggregateId",
+            paramWithVariablesToHide,
+        );
 
         expect(availableVariables).toEqual({});
     });
@@ -144,7 +93,7 @@ const paramWithAdditionalVariables = {
 
 const paramWithVariablesToHide = {
     name: "withVariablesToHide",
-    variablesToHide: ["input", "date", "parsedTransaction", "processVariables", "someVariableName"],
+    variablesToHide: ["input", "parsedTransaction", "processVariables", "someVariableName"],
 };
 
 const processDefinition = {
@@ -185,12 +134,6 @@ const processDefinition = {
         parameters: [{ name: "errorsTopic", typ: { refClazzName: "java.lang.String" } }],
         returnType: { refClazzName: "org.nussknacker.process.espExceptionHandlerFactory" },
         categories: [],
-    },
-    globalVariables: {
-        date: { returnType: { refClazzName: "java.time.LocalDate" }, categories: ["Category1", "Category2"] },
-        wrong1: { returnType: null, categories: ["Category1", "Category2"] },
-        date2: { returnType: { refClazzName: "java.time.Date" }, categories: ["Category3"] },
-        date3: { returnType: { refClazzName: "java.time.Date" }, categories: [] },
     },
     typesInformation: [
         {

@@ -3,17 +3,19 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
+import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{Documentation, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
@@ -105,20 +107,25 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     )
   )
 
+  private val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[DefinitionExtractor.ObjectDefinition] =
+    ProcessDefinitionBuilder.empty
+      .withGlobalVariable("util", Typed[Util])
+      .expressionConfig
+
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true),
+    ProcessDefinitionBuilder.toExpressionDefinition(expressionConfig),
     clazzDefinitions,
     dictServices,
-    getClass.getClassLoader
+    getClass.getClassLoader,
+    List("scenarioProperty")
   )
 
-  private val variables: Map[String, TypingResult] = Map(
+  private val localVariables: Map[String, TypingResult] = Map(
     "input"      -> Typed[A],
     "other"      -> Typed[C],
     "ANOTHER"    -> Typed[A],
     "dynamicMap" -> Typed.fromInstance(Map("intField" -> 1, "aField" -> new A)),
     "listVar"    -> Typed[WithList],
-    "util"       -> Typed[Util],
     "union" -> Typed(
       Typed[A],
       Typed[B],
@@ -146,7 +153,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       .expressionSuggestions(
         expression,
         CaretPosition2d(row, if (column == -1) expression.expression.length else column),
-        variables
+        localVariables
       )(ExecutionContext.global)
       .futureValue
   }
@@ -171,7 +178,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     spelSuggestionsFor("") shouldBe List()
   }
 
-  test("should suggest all global variables if # specified") {
+  test("should suggest all local and global variables if # specified") {
     spelSuggestionsFor("#").map(_.methodName) shouldBe List(
       "#ANOTHER",
       "#dictBar",
@@ -180,6 +187,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       "#input",
       "#listOfUnions",
       "#listVar",
+      s"#${VariableConstants.MetaVariableName}",
       "#other",
       "#union",
       "#unionOfLists",
@@ -187,7 +195,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     )
   }
 
-  test("should suggest all global variables if # specified (multiline)") {
+  test("should suggest all local and global variables if # specified (multiline)") {
     spelSuggestionsFor("#foo.foo(\n#\n).bar", row = 1, column = 1).map(_.methodName) shouldBe List(
       "#ANOTHER",
       "#dictBar",
@@ -196,6 +204,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       "#input",
       "#listOfUnions",
       "#listVar",
+      s"#${VariableConstants.MetaVariableName}",
       "#other",
       "#union",
       "#unionOfLists",
@@ -204,26 +213,26 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   // TODO: add some score to each suggestion or sort them from most to least relevant
-  test("should filter global variables suggestions") {
+  test("should filter variables suggestions") {
     spelSuggestionsFor("#ot") shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
       suggestion("#other", Typed[C]),
     )
   }
 
-  test("should filter uppercase global variables suggestions") {
+  test("should filter uppercase variables suggestions") {
     spelSuggestionsFor("#ANO") shouldBe List(suggestion("#ANOTHER", Typed[A]))
   }
 
-  test("should suggest filtered global variable based not on beginning of the method") {
-    spelSuggestionsFor("#map") shouldBe List(suggestion("#dynamicMap", variables("dynamicMap")))
+  test("should suggest filtered variable based not on beginning of the method") {
+    spelSuggestionsFor("#map") shouldBe List(suggestion("#dynamicMap", localVariables("dynamicMap")))
   }
 
-  test("should suggest global variable") {
+  test("should suggest variable") {
     spelSuggestionsFor("#inpu") shouldBe List(suggestion("#input", Typed[A]))
   }
 
-  test("should suggest global variable methods") {
+  test("should suggest variable methods") {
     spelSuggestionsFor("#input.") shouldBe List(
       suggestion("barB", Typed[B]),
       suggestion("foo", Typed[A]),
@@ -269,14 +278,22 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     })
   }
 
-  test("should suggest filtered global variable methods") {
+  test("should suggest filtered variable methods") {
     spelSuggestionsFor("#input.fo") shouldBe List(
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
   }
 
-  test("should suggest filtered global variable methods based not on beginning of the method") {
+  test("should suggest global meta variable") {
+    spelSuggestionsFor("#meta.") shouldBe List(
+      ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
+      suggestion("processName", Typed[String]),
+      suggestion("properties", TypedObjectTypingResult(Map("scenarioProperty" -> Typed[String]))),
+    )
+  }
+
+  test("should suggest filtered variable methods based not on beginning of the method") {
     spelSuggestionsFor("#input.string") shouldBe List(
       suggestion("fooString", Typed[String]),
       suggestion("toString", Typed[String]),

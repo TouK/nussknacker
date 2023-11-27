@@ -24,7 +24,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec
     extends AnyFlatSpec
@@ -40,7 +40,7 @@ class ValidationResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidation = TestFactory.processValidation.withScenarioPropertiesConfig(
+  private val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> Map(
         "requiredStringProperty" -> ScenarioPropertyConfig(
@@ -68,7 +68,7 @@ class ValidationResourcesSpec
   private val route: Route = withPermissions(
     new ValidationResources(
       processService,
-      new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+      new UIProcessResolver(processValidator, emptyProcessingTypeDataProvider)
     ),
     testPermissionRead
   )
