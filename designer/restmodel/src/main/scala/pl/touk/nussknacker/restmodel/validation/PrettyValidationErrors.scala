@@ -186,12 +186,6 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
-      case FailedToResolveFragmentParameterType(paramName, typ, _) =>
-        node(
-          s"Failed to resolve type '$typ' of parameter '$paramName'",
-          "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
-        )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
         node(
           s"Failed to parse expression: $message",
