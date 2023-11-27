@@ -29,7 +29,11 @@ class MetaDataProviderFactory {
         dbPoolConfig.password
       )
     }
-    val getConnection: () => Connection = () => ds.getConnection
+    val getConnection: () => Connection = () => {
+      val conn = ds.getConnection
+      dbPoolConfig.schema.foreach(conn.setSchema)
+      conn
+    }
     dbPoolConfig.driverClassName match {
       case className if className.startsWith(igniteDriverPrefix) => new IgniteMetaDataProvider(getConnection)
       case _                                                     => new JdbcMetaDataProvider(getConnection)
