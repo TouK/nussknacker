@@ -38,9 +38,9 @@ class StandardRemoteEnvironmentSpec
     with FailFastCirceSupport
     with EitherValuesDetailedMessage {
 
-  implicit val system = ActorSystem("nussknacker-designer")
+  implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
 
-  implicit val user = LoggedUser("1", "test")
+  implicit val user: LoggedUser = LoggedUser("1", "test")
 
   trait MockRemoteEnvironment extends StandardRemoteEnvironment {
     override def environmentId = "testEnv"
@@ -50,7 +50,7 @@ class StandardRemoteEnvironmentSpec
       batchSize = 100
     )
 
-    override implicit val materializer = Materializer(system)
+    override implicit val materializer: Materializer = Materializer(system)
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2)),

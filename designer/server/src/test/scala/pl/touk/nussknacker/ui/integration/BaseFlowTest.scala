@@ -233,7 +233,7 @@ class BaseFlowTest
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
-        validators = List(LiteralParameterValidator.integerValidator),
+        validators = List(LiteralIntegerValidator),
         label = Some("Max events")
       ),
       "numberOfThreads" -> UiScenarioPropertyConfig(

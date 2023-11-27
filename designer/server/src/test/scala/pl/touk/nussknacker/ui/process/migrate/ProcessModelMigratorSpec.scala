@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.api.helpers.{
   TestProcessingTypes
 }
 import pl.touk.nussknacker.ui.process.repository.MigrationComment
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import shapeless.syntax.typeable.typeableOps
 
 class ProcessModelMigratorSpec
@@ -35,7 +36,7 @@ class ProcessModelMigratorSpec
 
   val processId = "fooProcess"
 
-  private implicit val user = TestFactory.adminUser("test1")
+  private implicit val user: LoggedUser = TestFactory.adminUser("test1")
 
   it should "return only migrations that changed process in migrationsApplied in MigrationResult" in {
 

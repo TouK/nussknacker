@@ -71,7 +71,7 @@ class TestInfoResourcesSpec
   test("generates data") {
     saveProcess(process) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
-        implicit val contentUnmarshaller = Unmarshaller.stringUnmarshaller
+        implicit val contentUnmarshaller: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
         val content = responseAs[String]
         content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""
