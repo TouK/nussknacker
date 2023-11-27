@@ -13,13 +13,11 @@ import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 
 class VerificationFlinkProcessCompiler(
     process: CanonicalProcess,
-    modelData: ModelData,
     creator: ProcessConfigCreator,
     processConfig: Config,
     objectNaming: ObjectNaming
 ) extends StubbedFlinkProcessCompiler(
       process,
-      modelData,
       creator,
       processConfig,
       diskStateBackendSupport = true,
@@ -56,7 +54,6 @@ object VerificationFlinkProcessCompiler {
   def apply(process: CanonicalProcess, modelData: ModelData): VerificationFlinkProcessCompiler = {
     new VerificationFlinkProcessCompiler(
       process,
-      modelData,
       modelData.configCreator,
       modelData.processConfig,
       modelData.objectNaming

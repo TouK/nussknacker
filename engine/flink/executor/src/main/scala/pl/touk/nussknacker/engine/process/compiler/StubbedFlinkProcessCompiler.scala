@@ -19,7 +19,6 @@ import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(
     process: CanonicalProcess,
-    modelData: ModelData,
     creator: ProcessConfigCreator,
     processConfig: Config,
     diskStateBackendSupport: Boolean,
@@ -31,7 +30,6 @@ abstract class StubbedFlinkProcessCompiler(
       diskStateBackendSupport,
       objectNaming,
       componentUseCase,
-      modelData.modelClassLoader.classLoader,
     ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
