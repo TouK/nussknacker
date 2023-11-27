@@ -1,5 +1,6 @@
 import { Dispatch, useEffect, useReducer, useState } from "react";
 import { getNextColumnName, longestRow, parseSpel, toSpel } from "./tableDataUtils";
+import { TaggedUnion } from "type-fest";
 
 export type DataColumn = string[];
 export type DataRow = string[];
@@ -14,65 +15,72 @@ const emptyValue: TableData = {
     rows: [],
 };
 
-type Action =
-    | {
-          type: "replace-data";
-          data: TableData;
-      }
-    | {
-          type: "expand";
-          rows: number;
-          columns: number;
-          dataType?: string;
-      }
-    | {
-          type: "edit-data";
-          dataChanges: {
-              row: number;
-              column: number;
-              value: string;
-          }[];
-          columnDataChanges?: {
-              column: number;
-              index: number;
-              value: string;
-          }[];
-      }
-    | {
-          type: "insert-data";
-          column: number;
-          row: number;
-          input: readonly (readonly string[])[];
-          dataType?: string;
-      }
-    | {
-          type: "delete-rows";
-          rows: number[];
-          columnData?: number[];
-      }
-    | {
-          type: "delete-columns";
-          columns: number[];
-      }
-    | {
-          type: "reset-columns-size";
-          columns: number[];
-      }
-    | {
-          type: "column-resize";
-          column: number;
-          size: number;
-      }
-    | {
-          type: "rename-column";
-          from: string;
-          to: string;
-      }
-    | {
-          type: "change-column-type";
-          column: number;
-          dataType: string;
-      };
+export const ActionTypes = {
+    expand: "expand",
+    replaceData: "replace-data",
+    editData: "edit-data",
+    insertData: "insert-data",
+    deleteRows: "delete-rows",
+    deleteColumns: "delete-columns",
+    resetColumnsSize: "reset-columns-size",
+    columnResize: "column-resize",
+    renameColumn: "rename-column",
+    changeColumnType: "change-column-type",
+} as const;
+
+type Actions = {
+    [ActionTypes.replaceData]: {
+        data: TableData;
+    };
+    [ActionTypes.expand]: {
+        rows: number;
+        columns: number;
+        dataType?: string;
+    };
+    [ActionTypes.editData]: {
+        dataChanges: {
+            row: number;
+            column: number;
+            value: string;
+        }[];
+        columnDataChanges?: {
+            column: number;
+            index: number;
+            value: string;
+        }[];
+    };
+    [ActionTypes.insertData]: {
+        column: number;
+        row: number;
+        input: readonly (readonly string[])[];
+        dataType?: string;
+        extraRowsCount?: number;
+    };
+    [ActionTypes.deleteRows]: {
+        rows: number[];
+        columnData?: number[];
+    };
+    [ActionTypes.deleteColumns]: {
+        columns: number[];
+    };
+    [ActionTypes.resetColumnsSize]: {
+        columns: number[];
+    };
+    [ActionTypes.columnResize]: {
+        column: number;
+        size: number;
+    };
+    [ActionTypes.renameColumn]: {
+        from: string;
+        to: string;
+    };
+    [ActionTypes.changeColumnType]: {
+        column: number;
+        dataType: string;
+    };
+};
+
+type Action = TaggedUnion<"type", Actions>;
 
 export function expandTable(state: TableData, rowsNum: number, colsNum: number, dataType?: string) {
     if (colsNum || rowsNum) {
@@ -94,9 +102,9 @@ export function expandTable(state: TableData, rowsNum: number, colsNum: number, 
 
 function reducer(state: TableData, action: Action): TableData {
     switch (action.type) {
-        case "insert-data": {
+        case ActionTypes.insertData: {
             const longestColumnLength = longestRow(state.columns).length;
-            const extraRowsCount = longestColumnLength - 3;
+            const extraRowsCount = action.extraRowsCount || 0;
             const newRowsNeeded = action.row + action.input.length - (extraRowsCount + state.rows.length);
             const newColsNeeded = action.column + longestRow(action.input).length - state.columns.length;
             const updatedData = expandTable(state, newRowsNeeded, newColsNeeded, action.dataType);
@@ -114,7 +122,7 @@ function reducer(state: TableData, action: Action): TableData {
 
             return updatedData;
         }
-        case "edit-data":
+        case ActionTypes.editData:
             return {
                 ...state,
                 rows: action.dataChanges.reduce((rows, { row, column, value }) => {
@@ -128,7 +136,7 @@ function reducer(state: TableData, action: Action): TableData {
                     return [...columns];
                 }, state.columns),
             };
-        case "rename-column":
+        case ActionTypes.renameColumn:
             // prevent duplicates
             if (state.columns.find(([name]) => name === action.to)) {
                 return state;
@@ -137,19 +145,19 @@ function reducer(state: TableData, action: Action): TableData {
                 ...state,
                 columns: state.columns.map(([name, ...col]) => [name === action.from ? action.to : name, ...col]),
             };
-        case "delete-columns":
+        case ActionTypes.deleteColumns:
             return {
                 ...state,
                 columns: state.columns.filter((_, i) => !action.columns.includes(i)),
                 rows: state.rows.map((r) => r.filter((_, i) => !action.columns.includes(i))),
             };
-        case "delete-rows":
+        case ActionTypes.deleteRows:
             return {
                 ...state,
                 rows: state.rows.filter((_, i) => !action.rows.includes(i)),
                 columns: state.columns.map((r) => r.filter((_, i) => !action.columnData?.includes(i))),
             };
-        case "change-column-type":
+        case ActionTypes.changeColumnType:
             if (!(action.column >= 0 && action.dataType)) {
                 return state;
             }
@@ -163,7 +171,7 @@ function reducer(state: TableData, action: Action): TableData {
                     return [name, action.dataType, ...rest];
                 }),
             };
-        case "column-resize":
+        case ActionTypes.columnResize:
             return {
                 ...state,
                 columns: state.columns.map?.((column, i) => {
@@ -174,14 +182,14 @@ function reducer(state: TableData, action: Action): TableData {
                     return [name, type, action.size.toString(), ...col];
                 }),
             };
-        case "reset-columns-size":
+        case ActionTypes.resetColumnsSize:
             return {
                 ...state,
                 columns: state.columns.map((c, i) => (!action.columns.includes(i) ? c : c.slice(0, 2))),
             };
-        case "expand":
+        case ActionTypes.expand:
             return expandTable(state, action.rows, action.columns, action.dataType);
-        case "replace-data":
+        case ActionTypes.replaceData:
             return action.data;
         default:
             return state;
@@ -199,8 +207,8 @@ export function useTableState(expression: string): [TableData, Dispatch<Action>,
                 return current;
             }
             dispatch({
-                type: "replace-data",
-                payload: parseSpel(expression, emptyValue),
+                type: ActionTypes.replaceData,
+                data: parseSpel(expression, emptyValue),
             });
             return expression;
         });
