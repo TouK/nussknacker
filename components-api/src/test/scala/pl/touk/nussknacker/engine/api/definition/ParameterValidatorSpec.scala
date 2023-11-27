@@ -230,20 +230,20 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     forAll(
       Table(
         ("validationExpression", "paramName", "inputExpression", "value", "isValid"),
-        ("#param > 10", "param", "", Some(null), true),
-        ("#param > 10", "param", "#input.foo", None, true),
-        ("#param > 10", "param", "-14", Some(-14), false),
+        ("#value > 10", "param", "", Some(null), true),
+        ("#value > 10", "param", "#input.foo", None, true),
+        ("#value > 10", "param", "-14", Some(-14), false),
         (
-          "#param.toLowerCase() == \"left\" || #param.toLowerCase() == \"right\"",
+          "#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"",
           "param",
           "'lEfT'",
           Some("lEfT"),
           true
         ),
-        ("#param.toLowerCase() == \"left\" || #param.toLowerCase() == \"right\"", "param", "'up'", Some("up"), false),
-        ("#param", "param", "'up'", Some("up"), false),
-        ("#fooBar", "param", "'up'", Some("up"), false),
-        ("#list.size() == 2 && #list[0] == 'foo'", "list", "{'foo', 'bar'}", Some(List("foo", "bar").asJava), true)
+        ("#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"", "param", "'up'", Some("up"), false),
+        ("#value", "param", "'up'", Some("up"), false),
+        ("#value", "param", "'up'", Some("up"), false),
+        ("#value.size() == 2 && #value[0] == 'foo'", "list", "{'foo', 'bar'}", Some(List("foo", "bar").asJava), true)
       )
     ) { (validationExpression, paramName, inputExpression, value, isValid) =>
       ValidationExpressionParameterValidator(new TestSpelExpression(validationExpression), None)

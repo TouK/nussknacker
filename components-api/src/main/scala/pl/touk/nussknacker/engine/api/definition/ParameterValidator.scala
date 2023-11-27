@@ -273,7 +273,8 @@ case class ValidationExpressionParameterValidator(
   private def validateValue(paramName: String, value: Any)(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
-    val context = Context("validator", Map(paramName -> value), None)
+    // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
+    val context = Context("validator", Map("value" -> value), None)
     Try(validationExpression.evaluate[Boolean](context, Map())).fold(
       e =>
         invalid(
