@@ -173,7 +173,6 @@ class DefaultComponentServiceSpec
        |
        |  components {
        |    $ProviderName {
-       |      categories: ["$CategoryMarketingTests"]
        |    }
        |    $disableKafkaLite
        |  }
@@ -215,7 +214,6 @@ class DefaultComponentServiceSpec
        |
        |  components {
        |    $ProviderName {
-       |      categories: ["$CategoryFraudTests"]
        |    }
        |    $disableKafkaLite
        |  }
@@ -238,7 +236,6 @@ class DefaultComponentServiceSpec
        |
        |  components {
        |    $ProviderName {
-       |      categories: ["$CategoryMarketingTests"]
        |    }
        |    $disableKafkaLite
        |  }
@@ -248,8 +245,8 @@ class DefaultComponentServiceSpec
   private val categoryService = ConfigProcessCategoryService(
     ConfigFactory.empty,
     Map(
-      Streaming -> CategoriesConfig(MarketingAllCategories),
-      Fraud     -> CategoriesConfig(FraudAllCategories)
+      Streaming -> CategoriesConfig(CategoryMarketing),
+      Fraud     -> CategoriesConfig(CategoryFraud)
     )
   )
 
@@ -269,35 +266,30 @@ class DefaultComponentServiceSpec
         SourceIcon,
         Source,
         SourcesGroupName,
-        List(CategoryMarketing) ++ FraudAllCategories
       ),
       sharedComponent(
         SharedSinkName,
         SinkIcon,
         Sink,
         executionGroupName,
-        List(CategoryMarketing) ++ FraudWithoutSupperCategories
       ),
       sharedComponent(
         SharedEnricherName,
         overriddenIcon,
         Enricher,
         EnrichersGroupName,
-        List(CategoryMarketing) ++ FraudWithoutSupperCategories
       ),
       sharedComponent(
         SharedProvidedComponentName,
         ProcessorIcon,
         Processor,
         executionGroupName,
-        List(CategoryMarketingTests, CategoryFraudTests)
       ),
       sharedComponent(
         KafkaAvroProvidedComponentName,
         SourceIcon,
         Source,
         SourcesGroupName,
-        List(CategoryMarketingTests, CategoryFraudTests),
         componentId = Some(overrideKafkaSourceComponentId)
       ),
       sharedComponent(
@@ -305,7 +297,6 @@ class DefaultComponentServiceSpec
         SinkIcon,
         Sink,
         executionGroupName,
-        List(CategoryMarketingTests, CategoryFraudTests),
         componentId = Some(overrideKafkaSinkComponentId)
       ),
     )
@@ -316,7 +307,6 @@ class DefaultComponentServiceSpec
       CustomNodeIcon,
       CustomNode,
       CustomGroupName,
-      MarketingWithoutSuperCategories,
       componentId = Some(customStreamComponentId)
     ),
     marketingComponent(
@@ -324,49 +314,45 @@ class DefaultComponentServiceSpec
       overriddenIcon,
       Enricher,
       responseGroupName,
-      List(CategoryMarketing),
       componentId = Some(customerDataEnricherComponentId)
     ),
     marketingComponent(
       FuseBlockServiceName,
       ProcessorIcon,
       Processor,
-      executionGroupName,
-      MarketingWithoutSuperCategories
+      executionGroupName
     ),
-    marketingComponent(MonitorName, SinkIcon, Sink, executionGroupName, MarketingAllCategories),
+    marketingComponent(MonitorName, SinkIcon, Sink, executionGroupName),
     marketingComponent(
       OptionalCustomStreamName,
       CustomNodeIcon,
       CustomNode,
-      OptionalEndingCustomGroupName,
-      MarketingWithoutSuperCategories
+      OptionalEndingCustomGroupName
     ),
-    marketingComponent(SuperMarketingSourceName, SourceIcon, Source, SourcesGroupName, List(CategoryMarketingSuper)),
+    marketingComponent(SuperMarketingSourceName, SourceIcon, Source, SourcesGroupName),
+    marketingComponent(NotSharedSourceName, SourceIcon, Source, SourcesGroupName),
     marketingComponent(
       SingleProvidedComponentName,
       ProcessorIcon,
       Processor,
-      executionGroupName,
-      List(CategoryMarketingTests)
+      executionGroupName
     ),
   )
 
   private def prepareFraudComponents(implicit user: LoggedUser): List[ComponentListElement] = List(
-    fraudComponent(CustomStreamName, CustomNodeIcon, CustomNode, CustomGroupName, FraudWithoutSupperCategories),
-    fraudComponent(CustomerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName, List(CategoryFraud)),
-    fraudComponent(FuseBlockServiceName, ProcessorIcon, Processor, executionGroupName, FraudWithoutSupperCategories),
+    fraudComponent(CustomStreamName, CustomNodeIcon, CustomNode, CustomGroupName),
+    fraudComponent(CustomerDataEnricherName, EnricherIcon, Enricher, EnrichersGroupName),
+    fraudComponent(FuseBlockServiceName, ProcessorIcon, Processor, executionGroupName),
     fraudComponent(
       OptionalCustomStreamName,
       CustomNodeIcon,
       CustomNode,
-      OptionalEndingCustomGroupName,
-      FraudWithoutSupperCategories
+      OptionalEndingCustomGroupName
     ),
-    fraudComponent(SecondMonitorName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
-    fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName, List(CategoryFraudTests)),
-    fraudComponent(NotSharedSourceName, SourceIcon, Source, SourcesGroupName, FraudAllCategories),
-    fraudComponent(FraudSinkName, SinkIcon, Sink, executionGroupName, FraudAllCategories),
+    fraudComponent(SecondMonitorName, SinkIcon, Sink, executionGroupName),
+    fraudComponent(SingleProvidedComponentName, ProcessorIcon, Processor, executionGroupName),
+    fraudComponent(NotSharedSourceName, SourceIcon, Source, SourcesGroupName),
+    fraudComponent(FraudSinkName, SinkIcon, Sink, executionGroupName),
   )
 
   private def sharedComponent(
@@ -374,35 +360,32 @@ class DefaultComponentServiceSpec
       icon: String,
       componentType: ComponentType,
       componentGroupName: ComponentGroupName,
-      categories: List[String],
       componentId: Option[ComponentId] = None
   )(implicit user: LoggedUser) = {
     val id         = componentId.getOrElse(ComponentId(name))
     val links      = createLinks(id, name, componentType)
     val usageCount = componentCount(id, user)
 
-    val availableCategories =
-      if (categories.isEmpty)
-        new UserCategoryService(categoryService).getUserCategories(user).sorted
-      else
-        categories.filter(user.can(_, Permission.Read)).sorted
+    val availableCategories = AllCategories.filter(user.can(_, Permission.Read)).sorted
 
     ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, links, usageCount)
   }
 
-  private val fragmentMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
+  private val fragmentMarketingComponents: List[ComponentListElement] = {
+    val cat         = CategoryMarketing
     val componentId = cid(Streaming, cat, Fragments)
     val icon        = DefaultsComponentIcon.fromComponentType(Fragments)
     val links       = createLinks(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
-  })
+    List(ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0))
+  }
 
-  private val fragmentFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
+  private val fragmentFraudComponents: List[ComponentListElement] = {
+    val cat         = CategoryFraud
     val componentId = cid(Fraud, cat, Fragments)
     val icon        = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     val links       = createLinks(componentId, cat, Fragments)
-    ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
-  })
+    List(ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0))
+  }
 
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
@@ -420,20 +403,18 @@ class DefaultComponentServiceSpec
       icon: String,
       componentType: ComponentType,
       componentGroupName: ComponentGroupName,
-      categories: List[String],
       componentId: Option[ComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Streaming, name, icon, componentType, componentGroupName, categories, componentId)
+    createComponent(Streaming, name, icon, componentType, componentGroupName, List(CategoryMarketing), componentId)
 
   private def fraudComponent(
       name: String,
       icon: String,
       componentType: ComponentType,
       componentGroupName: ComponentGroupName,
-      categories: List[String],
       componentId: Option[ComponentId] = None
   )(implicit user: LoggedUser) =
-    createComponent(Fraud, name, icon, componentType, componentGroupName, categories, componentId)
+    createComponent(Fraud, name, icon, componentType, componentGroupName, List(CategoryFraud), componentId)
 
   private def createComponent(
       processingType: String,
@@ -486,15 +467,8 @@ class DefaultComponentServiceSpec
 
     componentId match {
       // Order is matter, first should be condition with more number of categories
-      case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests, CategoryMarketing) =>
-        3
-      case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests, CategoryMarketing) => 3
-
-      case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests) => 2
-      case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryFraudTests)   => 2
-
-      case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraudTests) => 1
-      case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraudTests)   => 1
+      case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraud, CategoryMarketing) => 2
+      case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraud, CategoryMarketing)   => 2
 
       case _ @id if id == sourceComponentId && hasAccess(user, CategoryFraud) => 1
       case _ @id if id == sinkComponentId && hasAccess(user, CategoryFraud)   => 1
@@ -511,31 +485,24 @@ class DefaultComponentServiceSpec
 
   private val admin = TestFactory.adminUser()
 
-  private val marketingFullUser = TestFactory.userWithCategoriesReadPermission(
-    username = "marketingFullUser",
-    categories = MarketingWithoutSuperCategories
+  private val marketingUser = TestFactory.userWithCategoriesReadPermission(
+    username = "marketingUser",
+    categories = List(CategoryMarketing)
   )
 
-  private val marketingTestsUser = TestFactory.userWithCategoriesReadPermission(
-    username = "marketingTestsUser",
-    categories = List(CategoryMarketingTests)
-  )
-
-  private val fraudFullUser =
-    TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = FraudWithoutSupperCategories)
-  private val fraudTestsUser =
-    TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(CategoryFraudTests))
+  private val fraudUser =
+    TestFactory.userWithCategoriesReadPermission(username = "fraudUser", categories = List(CategoryFraud))
 
   private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
-    Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), MarketingAllCategories),
-    Fraud     -> (LocalModelData(fraudConfig, ComponentFraudTestConfigCreator), FraudAllCategories)
-  ).transform { case (_, (modelData, categories)) =>
+    Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), CategoryMarketing),
+    Fraud     -> (LocalModelData(fraudConfig, ComponentFraudTestConfigCreator), CategoryFraud)
+  ).transform { case (_, (modelData, category)) =>
     ProcessingTypeData.createProcessingTypeData(
       MockManagerProvider,
       new MockDeploymentManager,
       modelData,
       ConfigFactory.empty(),
-      CategoriesConfig(categories)
+      CategoriesConfig(category)
     )
   }
 
@@ -545,7 +512,7 @@ class DefaultComponentServiceSpec
   )
 
   it should "return components for each user" in {
-    val processes      = List(MarketingProcess, FraudProcess, FraudTestProcess, ArchivedFraudProcess)
+    val processes      = List(MarketingProcess, FraudProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService =
       DefaultComponentService(
@@ -561,19 +528,15 @@ class DefaultComponentServiceSpec
         .filter(seq => seq._2.nonEmpty)
         .map(seq => seq._1.copy(categories = seq._2))
 
-    val adminComponents          = prepareComponents(admin)
-    val marketingFullComponents  = filterUserComponents(marketingFullUser, MarketingWithoutSuperCategories)
-    val marketingTestsComponents = filterUserComponents(marketingTestsUser, List(CategoryMarketingTests))
-    val fraudFullComponents      = filterUserComponents(fraudFullUser, FraudWithoutSupperCategories)
-    val fraudTestsComponents     = filterUserComponents(fraudTestsUser, List(CategoryFraudTests))
+    val adminComponents     = prepareComponents(admin)
+    val marketingComponents = filterUserComponents(marketingUser, List(CategoryMarketing))
+    val fraudComponents     = filterUserComponents(fraudUser, List(CategoryFraud))
 
     val testingData = Table(
       ("user", "expectedComponents", "possibleCategories"),
-      (admin, adminComponents, AllCategories),
-      (marketingFullUser, marketingFullComponents, MarketingWithoutSuperCategories),
-      (marketingTestsUser, marketingTestsComponents, List(CategoryMarketingTests)),
-      (fraudFullUser, fraudFullComponents, FraudWithoutSupperCategories),
-      (fraudTestsUser, fraudTestsComponents, List(CategoryFraudTests)),
+      (marketingUser, marketingComponents, List(CategoryMarketing)),
+      (fraudUser, fraudComponents, List(CategoryFraud)),
+      (admin, adminComponents, AllCategories)
     )
 
     forAll(testingData) {
@@ -584,10 +547,11 @@ class DefaultComponentServiceSpec
 
         val returnedCounts = counts(components)
         val expectedCounts = counts(expectedComponents)
-        // we don't do exact matching, to avoid handling autoLoaded components here
-        returnedCounts.keySet should contain allElementsOf expectedCounts.keySet
-        returnedCounts should contain allElementsOf expectedCounts
-        components should contain allElementsOf expectedComponents
+        returnedCounts.keys.toList.sortBy(_.value) should contain theSameElementsAs expectedCounts.keys.toList.sortBy(
+          _.value
+        )
+        returnedCounts should contain theSameElementsAs expectedCounts
+        components should contain theSameElementsAs expectedComponents
 
         // Components should contain only user categories
         val componentsCategories = components.flatMap(_.categories).distinct.sorted
@@ -608,7 +572,7 @@ class DefaultComponentServiceSpec
           }
 
           // Base components from providers contain more links because of documentation
-          comp.links.map(_.id) should contain allElementsOf availableDocsLinksId ++ availableLinksId
+          comp.links.map(_.id) should contain theSameElementsAs availableDocsLinksId ++ availableLinksId
 
           comp.links
             .filter(l => availableLinksId.contains(l.id))
@@ -623,15 +587,15 @@ class DefaultComponentServiceSpec
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
     val badProcessingTypeDataMap = Map(
-      Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), MarketingAllCategories),
-      Fraud     -> (LocalModelData(wrongConfig, WronglyConfiguredConfigCreator), FraudAllCategories),
-    ).map { case (processingType, (modelData, categories)) =>
+      Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), CategoryMarketing),
+      Fraud     -> (LocalModelData(wrongConfig, WronglyConfiguredConfigCreator), CategoryFraud)
+    ).map { case (processingType, (modelData, category)) =>
       processingType -> ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
         new MockDeploymentManager,
         modelData,
         ConfigFactory.empty(),
-        CategoriesConfig(categories)
+        CategoriesConfig(category)
       )
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)
@@ -686,7 +650,7 @@ class DefaultComponentServiceSpec
       ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
     }.wrongConfigurations
 
-    wrongConfigurations.toList should contain allElementsOf expectedWrongConfigurations
+    wrongConfigurations.toList should contain theSameElementsAs expectedWrongConfigurations
   }
 
   it should "return components usage" in {

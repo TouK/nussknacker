@@ -24,9 +24,9 @@ class FragmentRepositorySpec
 
   it should "fetches fragment by its version" in {
     val sampleFragment =
-      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, Category1)
     val sampleFragment2 =
-      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, Category1)
     savefragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
@@ -37,18 +37,18 @@ class FragmentRepositorySpec
     ProcessTestData.sampleFragment.metaData.id shouldBe ProcessTestData.sampleFragment2.metaData.id
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2
 
-    fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, TestCat))
+    fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, Category1))
     val fragmentId = ProcessTestData.sampleFragment.metaData.id
     fragmentRepository.loadFragments(Map(fragmentId -> VersionId(1))) shouldBe Set(
-      FragmentDetails(ProcessTestData.emptyFragment, TestCat)
+      FragmentDetails(ProcessTestData.emptyFragment, Category1)
     )
     fragmentRepository.loadFragments(Map(fragmentId -> VersionId(2))) shouldBe Set(
-      FragmentDetails(ProcessTestData.sampleFragment, TestCat)
+      FragmentDetails(ProcessTestData.sampleFragment, Category1)
     )
     fragmentRepository.loadFragments(Map(fragmentId -> VersionId(3))) shouldBe Set(
-      FragmentDetails(ProcessTestData.sampleFragment2, TestCat)
+      FragmentDetails(ProcessTestData.sampleFragment2, Category1)
     )
-    fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, TestCat))
+    fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, Category1))
   }
 
 }

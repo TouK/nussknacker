@@ -32,15 +32,15 @@ final case class ProcessingTypeData private (
 
 // TODO: remove Option after fully switch to categories inside processing types configuration format -
 //       see ConfigProcessCategoryService for details
-case class CategoriesConfig(categories: Option[List[String]])
+case class CategoriesConfig(category: Option[String])
 
 object CategoriesConfig {
 
   def apply(processTypeConfig: ProcessingTypeConfig): CategoriesConfig = new CategoriesConfig(
-    processTypeConfig.categories
+    processTypeConfig.category
   )
 
-  def apply(categories: List[String]): CategoriesConfig = new CategoriesConfig(Some(categories))
+  def apply(category: String): CategoriesConfig = new CategoriesConfig(Some(category))
 
 }
 

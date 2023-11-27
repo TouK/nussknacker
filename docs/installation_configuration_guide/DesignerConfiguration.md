@@ -749,14 +749,23 @@ For example, in one Nussknacker installation you can have scenarios detecting fr
 
 ```
 scenarioTypes {
-  streaming {
+  streaming-marketing {
     deploymentConfig { 
       (...) 
     }
     modelConfig {
       (...)
     }
-    categories: ["Marketing", "Fraud Detection"]
+    category: "Marketing"
+  }
+  streaming-fraud-detection {
+    deploymentConfig { 
+      (...) 
+    }
+    modelConfig {
+      (...)
+    }
+    category: "Fraud Detection"
   }
 }
 ```

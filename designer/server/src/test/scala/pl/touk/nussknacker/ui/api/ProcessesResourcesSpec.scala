@@ -91,7 +91,7 @@ class ProcessesResourcesSpec
   }
 
   test("/processes and /processesDetails should return lighter details without history versions") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcess, Category1) {
       forScenariosReturned(ScenarioQuery.empty) { processes =>
         every(processes.map(_.history)) shouldBe empty
       }
@@ -156,9 +156,9 @@ class ProcessesResourcesSpec
   ignore("not allow to archive still used fragment") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
     val displayableFragment =
-      ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, Category1)
     savefragment(displayableFragment)(succeed)
-    saveProcess(processName, processWithFragment.process, TestCat)(succeed)
+    saveProcess(processName, processWithFragment.process, Category1)(succeed)
 
     archiveProcess(ProcessName(displayableFragment.id)) { status =>
       status shouldEqual StatusCodes.Conflict
@@ -178,9 +178,9 @@ class ProcessesResourcesSpec
   test("allow to archive fragment used in archived process") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
     val displayableFragment =
-      ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, Category1)
     savefragment(displayableFragment)(succeed)
-    saveProcess(processName, processWithFragment.process, TestCat)(succeed)
+    saveProcess(processName, processWithFragment.process, Category1)(succeed)
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -193,13 +193,13 @@ class ProcessesResourcesSpec
 
   test("or not allow to create new scenario named as archived one") {
     val process = ProcessTestData.validProcess
-    saveProcess(processName, process, TestCat)(succeed)
+    saveProcess(processName, process, Category1)(succeed)
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
     }
 
-    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/${processName.value}/$Category1?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
     }
@@ -318,11 +318,11 @@ class ProcessesResourcesSpec
   test("allow update category for existing process") {
     val processId = createEmptyProcess(processName)
 
-    changeProcessCategory(processName, TestCat2, isAdmin = true) { status =>
+    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
       status shouldEqual StatusCodes.OK
 
       val process = getProcessDetails(processId)
-      process.processCategory shouldBe TestCat2
+      process.processCategory shouldBe Category2
     }
   }
 
@@ -337,13 +337,13 @@ class ProcessesResourcesSpec
   test("not allow update category archived process") {
     createArchivedProcess(processName)
 
-    changeProcessCategory(processName, TestCat2, isAdmin = true) { status =>
+    changeProcessCategory(processName, Category2, isAdmin = true) { status =>
       status shouldEqual StatusCodes.Conflict
     }
   }
 
   test("return 404 on update process category for non existing process") {
-    changeProcessCategory(ProcessName("not-exists-process"), TestCat2, isAdmin = true) { status =>
+    changeProcessCategory(ProcessName("not-exists-process"), Category2, isAdmin = true) { status =>
       status shouldBe StatusCodes.NotFound
     }
   }
@@ -351,15 +351,15 @@ class ProcessesResourcesSpec
   test("return 403 on update process category for normal user") {
     createArchivedProcess(processName)
     // Verification of rejection is done on changeProcessCategory
-    changeProcessCategory(processName, TestCat2) { _ => }
+    changeProcessCategory(processName, Category2) { _ => }
   }
 
   test("return process if user has category") {
     val processId = createEmptyProcess(processName)
-    updateCategory(processId, TestCat2)
+    updateCategory(processId, Category1)
 
     forScenarioReturned(processName) { process =>
-      process.processCategory shouldBe TestCat2
+      process.processCategory shouldBe Category1
       process.processId shouldBe processId.value
     }
   }
@@ -367,7 +367,7 @@ class ProcessesResourcesSpec
   test("not return processes not in user categories") {
     val processId = createEmptyProcess(processName)
 
-    updateCategory(processId, Category1)
+    updateCategory(processId, Category2)
 
     tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
@@ -403,35 +403,36 @@ class ProcessesResourcesSpec
   }
 
   test("search processes by categories") {
-    createEmptyProcess(ProcessName("proc1"), TestCat)
-    createEmptyProcess(ProcessName("proc2"), TestCat2)
+    createEmptyProcess(ProcessName("proc1"), Category1)
+    createEmptyProcess(ProcessName("proc2"), Category2)
 
-    forScenariosReturned(ScenarioQuery.empty) { processes =>
+    forScenariosReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
       processes.size shouldBe 2
     }
-    forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
       processes.size shouldBe 2
     }
 
-    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(Category1)), isAdmin = true) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(Category1)), isAdmin = true) { processes =>
       processes.loneElement.name.value shouldBe "proc1"
     }
 
-    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat2))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(Category2)), isAdmin = true) { processes =>
       processes.loneElement.name shouldBe "proc2"
     }
-    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat2))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(Category2)), isAdmin = true) { processes =>
       processes.loneElement.name.value shouldBe "proc2"
     }
 
-    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(Category1, Category2)), isAdmin = true) { processes =>
       processes.size shouldBe 2
     }
-    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
-      processes.size shouldBe 2
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(Category1, Category2)), isAdmin = true) {
+      processes =>
+        processes.size shouldBe 2
     }
   }
 
@@ -471,14 +472,14 @@ class ProcessesResourcesSpec
   }
 
   test("search processes with multiple parameters") {
-    createEmptyProcess(ProcessName("proc1"), TestCat)
-    createEmptyProcess(ProcessName("proc2"), TestCat2)
+    createEmptyProcess(ProcessName("proc1"), Category1)
+    createEmptyProcess(ProcessName("proc2"), Category2)
     createArchivedProcess(ProcessName("proc3"))
 
     forScenariosReturned(
       ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
-        .categories(List(TestCat))
+        .categories(List(Category1))
         .processingTypes(List(Streaming))
         .unarchived()
     ) { processes =>
@@ -487,7 +488,7 @@ class ProcessesResourcesSpec
     forScenariosDetailsReturned(
       ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
-        .categories(List(TestCat))
+        .categories(List(Category1))
         .processingTypes(List(Streaming))
         .unarchived()
     ) { processes =>
@@ -496,7 +497,7 @@ class ProcessesResourcesSpec
     forScenariosReturned(
       ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
-        .categories(List(TestCat))
+        .categories(List(Category1))
         .processingTypes(List(Streaming))
         .archived()
     ) { processes =>
@@ -505,7 +506,7 @@ class ProcessesResourcesSpec
     forScenariosDetailsReturned(
       ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
-        .categories(List(TestCat))
+        .categories(List(Category1))
         .processingTypes(List(Streaming))
         .archived()
     ) { processes =>
@@ -579,7 +580,7 @@ class ProcessesResourcesSpec
   }
 
   test("save correct process json with ok status") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcess, Category1) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.validProcess.nodes.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
@@ -605,7 +606,7 @@ class ProcessesResourcesSpec
     val process = ProcessTestData.validProcess
     val comment = "Update the same version"
 
-    saveProcess(processName, process, TestCat) {
+    saveProcess(processName, process, Category1) {
       forScenarioReturned(processName) { process =>
         process.history.map(_.size) shouldBe Some(2)
       }
@@ -626,7 +627,7 @@ class ProcessesResourcesSpec
   }
 
   test("return details of process with empty expression") {
-    saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, Category1) {
       Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] should include(processName.value)
@@ -635,7 +636,7 @@ class ProcessesResourcesSpec
   }
 
   test("save invalid process json with ok status but with non empty invalid nodes") {
-    saveProcess(processName, ProcessTestData.invalidProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.invalidProcess, Category1) {
       status shouldEqual StatusCodes.OK
       checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.nodes.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
@@ -643,7 +644,7 @@ class ProcessesResourcesSpec
   }
 
   test("return one latest version for process") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcess, Category1) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -664,7 +665,7 @@ class ProcessesResourcesSpec
   }
 
   test("save process history") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcess, Category1) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -685,7 +686,7 @@ class ProcessesResourcesSpec
   }
 
   test("access process version and mark latest version") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcess, Category1) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -736,7 +737,7 @@ class ProcessesResourcesSpec
 
   test("not authorize user with read permissions to modify node") {
     Put(
-      s"/processes/$TestCat/${processName.value}",
+      s"/processes/$Category1/${processName.value}",
       posting.toEntityAsProcessToSave(ProcessTestData.validProcess)
     ) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
@@ -744,7 +745,7 @@ class ProcessesResourcesSpec
 
     val modifiedParallelism = 123
     val props               = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
-    Put(s"/processes/$TestCat/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
+    Put(s"/processes/$Category1/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
@@ -794,7 +795,7 @@ class ProcessesResourcesSpec
   }
 
   test("allow to delete process") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     val processName   = ProcessName(processToSave.id)
 
     createArchivedProcess(processName)
@@ -834,7 +835,7 @@ class ProcessesResourcesSpec
 
   test("save new process with empty json") {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$TestCat?isFragment=false") ~> withPermissions(
+    Post(s"/processes/$newProcessId/$Category1?isFragment=false") ~> withPermissions(
       processesRoute,
       testPermissionWrite |+| testPermissionRead
     ) ~> check {
@@ -843,17 +844,17 @@ class ProcessesResourcesSpec
       Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
         status shouldEqual StatusCodes.OK
         val loadedProcess = responseAs[ScenarioWithDetails]
-        loadedProcess.processCategory shouldBe TestCat
+        loadedProcess.processCategory shouldBe Category1
         loadedProcess.createdAt should not be null
       }
     }
   }
 
   test("not allow to save process if already exists") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$TestCat?isFragment=false") ~> routeWithWrite ~> check {
+      Post(s"/processes/${processToSave.id}/$Category1?isFragment=false") ~> routeWithWrite ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
@@ -871,8 +872,8 @@ class ProcessesResourcesSpec
     val firstProcessName  = ProcessName("firstProcessName")
     val secondProcessName = ProcessName("secondProcessName")
 
-    saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value), TestCat) {
-      saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), TestCat) {
+    saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value), Category1) {
+      saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), Category1) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ScenarioWithDetails]]
@@ -924,7 +925,7 @@ class ProcessesResourcesSpec
   }
 
   test("should return 400 for single fragment status") {
-    createEmptyProcess(processName, TestCat, isFragment = true)
+    createEmptyProcess(processName, Category1, isFragment = true)
 
     tryForScenarioStatus(processName) { (code, message) =>
       code shouldEqual StatusCodes.BadRequest
@@ -933,7 +934,7 @@ class ProcessesResourcesSpec
   }
 
   test("fetching scenario toolbar definitions") {
-    val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(TestCat))
+    val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(Category1))
     val id            = createEmptyProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
