@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.component.{
 }
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
-import sttp.model.StatusCode.Ok
+import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 import sttp.tapir.derevo.schema
@@ -65,14 +65,24 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
         )
       )
 
-  val componentUsageEndpoint: SecuredEndpoint[String, Unit, ComponentUsageSuccessfulResponseDto, Any] =
+  val componentUsageEndpoint: SecuredEndpoint[String, String, ComponentUsageSuccessfulResponseDto, Any] =
     baseNuApiEndpoint
       .summary("Show component usage")
       .tag("Components")
-      .withSecurity(auth)
       .get
       .in("componentss" / path[String]("id") / "usages")
-      .out(jsonBody[ComponentUsageSuccessfulResponseDto])
+      .out(
+        statusCode(Ok).and(
+          jsonBody[ComponentUsageSuccessfulResponseDto]
+        )
+      )
+      .errorOut(
+        statusCode(NotFound).and(
+          stringBody
+            .example("Component {id} not exist.")
+        )
+      )
+      .withSecurity(auth)
 
 }
 

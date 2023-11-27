@@ -15,6 +15,7 @@ import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.{AppApiEndpoints, ComponentResourceApiEndpoints}
 import pl.touk.nussknacker.ui.api.ComponentResourceApiEndpoints.Dtos.{
   ComponentListElementDto,
+  ComponentUsageErrorResponseDto,
   ComponentUsageSuccessfulResponseDto,
   ComponentUsagesInScenarioDto,
   ComponentsListSuccessfulResponseDto
@@ -176,16 +177,18 @@ class AppApiHttpService(
 
   expose {
     componentApiEndpoints.componentUsageEndpoint
-      .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogicSuccess { user => componentId =>
+      .serverSecurityLogic(authorizeKnownUser[String])
+      .serverLogic { user: LoggedUser => componentId: String =>
         val usages =
           Await.result(componentService.getComponentUsages(ComponentId(componentId))(user), Duration.Inf)
-        Future.successful(
+        Future(
           usages match {
-            case Left(_) => ComponentUsageSuccessfulResponseDto(List[ComponentUsagesInScenarioDto]())
+            case Left(_) => businessError(s"Component ${componentId} not exist.")
             case Right(value) =>
-              ComponentUsageSuccessfulResponseDto(
-                value.map(usage => ComponentUsagesInScenarioDto(usage))
+              success(
+                ComponentUsageSuccessfulResponseDto(
+                  value.map(usage => ComponentUsagesInScenarioDto(usage))
+                )
               )
           }
         )
