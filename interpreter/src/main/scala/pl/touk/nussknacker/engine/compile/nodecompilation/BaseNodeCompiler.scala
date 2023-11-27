@@ -86,9 +86,16 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
 
     val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
-    val caseExpressions = choices.map { case (outEdge, caseExpr) =>
-      ExpressionCompilerAdapter.compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)._2
-    }
+
+    val (additionalValidations, caseExpressions) = choices.map { case (outEdge, caseExpr) =>
+      val (expressionCompilation, nodeCompilation) =
+        ExpressionCompilerAdapter.compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
+      val typedExpression = expressionCompilation.typedExpression
+      val validation      = ValidationAdapter.validateMaybeBoolean(typedExpression, outEdge)
+      val caseExpression  = nodeCompilation
+      (validation, caseExpression)
+    }.unzip
+
     val expressionTypingInfos = caseExpressions
       .map(_.expressionTypingInfo)
       .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)) {
@@ -96,15 +103,6 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       }
 
     val objCases = caseExpressions.map(_.compiledObject).sequence
-
-    val additionalValidations = choices
-      .map { case (outEdge, caseExpr) =>
-        (outEdge, ExpressionCompilerAdapter.compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)._1)
-      }
-      .map { a =>
-        ValidationAdapter.validateMaybeBoolean(a._2.typedExpression, a._1)
-      }
-      .combineAll
 
     val compilationResult = NodeCompilationResult(
       expressionTypingInfos,
@@ -114,7 +112,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       expressionCompilation.flatMap(_.expressionType)
     )
 
-    combineErrors(compilationResult, additionalValidations)
+    combineErrors(compilationResult, additionalValidations.combineAll)
   }
 
   def compileFields(
@@ -132,7 +130,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     val compliedRecordFields = fields.zipWithIndex.map { case (field, index) =>
       objectParametersExpressionCompiler
         .compile(field.expression, Some(node.recordValueFieldName(index)), ctx, Unknown)
-        .map(result => CompiledRecordField(field, index, result))
+        .map(CompiledRecordField(field, index, _))
     }
 
     val recordValuesCompilationResult = compliedRecordFields.traverse { validatedField =>
