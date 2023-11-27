@@ -184,11 +184,9 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private def importSuccess(
       displayableProcess: DisplayableProcess
   ): Right[NuDesignerError, ValidatedDisplayableProcess] = {
-    val meta = MetaVariables.typingResult(displayableProcess.metaData)
-
     val nodeResults = Map(
-      "sinkId"   -> NodeTypingData(Map("input" -> Unknown, "meta" -> meta), Some(List.empty), Map.empty),
-      "sourceId" -> NodeTypingData(Map("meta" -> meta), Some(List.empty), Map.empty)
+      "sinkId"   -> NodeTypingData(Map("input" -> Unknown), Some(List.empty), Map.empty),
+      "sourceId" -> NodeTypingData(Map.empty, Some(List.empty), Map.empty)
     )
 
     Right(

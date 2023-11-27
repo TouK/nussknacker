@@ -9,7 +9,16 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessId } from "../types";
+import {
+    Expression,
+    Process,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ProcessId,
+    PropertiesType,
+    TypingResult,
+    VariableTypes,
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -116,6 +125,14 @@ export interface TestProcessResponse {
 export interface PropertiesValidationRequest {
     id: string;
     additionalFields: ProcessAdditionalFields;
+}
+
+export interface ExpressionSuggestionRequest {
+    expression: Expression;
+    caretPosition2d: CaretPosition2d;
+    variableTypes: VariableTypes;
+    scenarioName: string;
+    processProperties: PropertiesType;
 }
 
 class HttpService {
@@ -418,17 +435,8 @@ class HttpService {
         return promise;
     }
 
-    getExpressionSuggestions(
-        processingType: string,
-        expression: Expression,
-        caretPosition2d: CaretPosition2d,
-        variables: Record<string, any>,
-    ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, {
-            expression,
-            caretPosition2d,
-            variables,
-        });
+    getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),

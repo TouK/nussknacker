@@ -150,7 +150,8 @@ class NodesResources(
                   expressionSuggester.expressionSuggestions(
                     expressionSuggestionRequest.expression,
                     expressionSuggestionRequest.caretPosition2d,
-                    expressionSuggestionRequest.variables
+                    expressionSuggestionRequest.variableTypes,
+                    expressionSuggestionRequest.processProperties.toMetaData(expressionSuggestionRequest.scenarioName)
                   )
                 }
               }
@@ -216,9 +217,7 @@ object NodesResources {
       modelData: ModelData
   )(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
     val emptyCtx = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(metaData)
-    // It's a bit tricky, because FE does not distinguish between global and local vars...
-    val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
-    emptyCtx.copy(localVariables = localVars)
+    emptyCtx.copy(localVariables = variableTypes)
   }
 
 }
@@ -342,6 +341,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     validationPerformed: Boolean
 )
 
+// TODO do not pass processProperties. Based on processingType prepare global variables
 @JsonCodec(encodeOnly = true) final case class NodeValidationRequest(
     nodeData: NodeData,
     processProperties: ProcessProperties,
@@ -358,11 +358,13 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     id: String
 )
 
-// TODO like in 'validate' create globalVariables based on processingType on backend side. Do not pass them from FE.
+// TODO do not pass scenarioName, processProperties. Based on processingType prepare global variables
 final case class ExpressionSuggestionRequest(
     expression: Expression,
     caretPosition2d: CaretPosition2d,
-    variables: Map[String, TypingResult]
+    variableTypes: Map[String, TypingResult],
+    scenarioName: String,
+    processProperties: ProcessProperties,
 )
 
 object ExpressionSuggestionRequest {

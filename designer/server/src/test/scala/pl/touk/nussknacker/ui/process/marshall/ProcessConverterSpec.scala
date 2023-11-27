@@ -190,14 +190,14 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
           )
           .copy(nodeResults =
             Map(
-              "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), Some(List.empty), Map.empty),
+              "s" -> NodeTypingData(Map.empty, Some(List.empty), Map.empty),
               "v" -> NodeTypingData(
-                Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)),
+                Map("input" -> Unknown),
                 None,
                 Map.empty
               ),
               "e" -> NodeTypingData(
-                Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")),
+                Map("input" -> Unknown, "test" -> Typed.fromInstance("")),
                 None,
                 Map.empty
               )

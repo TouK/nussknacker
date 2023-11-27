@@ -14,6 +14,7 @@ import { EditorMode, ExpressionLang } from "./types";
 import { SerializedStyles } from "@emotion/react";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { cx } from "@emotion/css";
+import { VariableTypes } from "../../../../../types";
 
 interface InputProps {
     value: string;
@@ -34,7 +35,7 @@ interface Props {
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
-    variableTypes: Record<string, unknown>;
+    variableTypes: VariableTypes;
     editorMode?: EditorMode;
 }
 
@@ -43,14 +44,14 @@ function ExpressionSuggest(props: Props): JSX.Element {
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const { processingType } = useSelector(getProcessToDisplay);
+    const { processingType, id, properties } = useSelector(getProcessToDisplay);
 
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        return new BackendExpressionSuggester(language, variableTypes, processingType, HttpService);
-    }, [processingType, variableTypes, language]);
+        return new BackendExpressionSuggester(language, variableTypes, id, properties, processingType, HttpService);
+    }, [processingType, id, properties, variableTypes, language]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);

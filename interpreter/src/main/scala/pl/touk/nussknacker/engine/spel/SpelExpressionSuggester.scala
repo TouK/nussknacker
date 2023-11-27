@@ -22,18 +22,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
-    expressionConfig: ExpressionDefinition[_],
+    expressionDefinition: ExpressionDefinition[_],
     typeDefinitions: TypeDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader
 ) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
   private val typer =
-    Typer.default(classLoader, expressionConfig, new LabelsDictTyper(uiDictServices.dictRegistry), typeDefinitions)
+    Typer.default(classLoader, expressionDefinition, new LabelsDictTyper(uiDictServices.dictRegistry), typeDefinitions)
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
-  def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, variables: Map[String, TypingResult])(
+  def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, validationContext: ValidationContext)(
       implicit ec: ExecutionContext
   ): Future[List[ExpressionSuggestion]] = {
     val spelExpression = expression.expression
@@ -129,7 +129,7 @@ class SpelExpressionSuggester(
 
     val suggestions = for {
       (parsedSpelNode, adjustedPosition) <- nuSpelNodeParser
-        .parse(input, expression.language, normalizedCaretPosition, variables)
+        .parse(input, expression.language, normalizedCaretPosition, validationContext)
         .toOption
         .flatten
       nodeInPosition <- parsedSpelNode.findNodeInPosition(adjustedPosition)
@@ -148,7 +148,7 @@ class SpelExpressionSuggester(
             }
           }
           val filteredVariables = filterMapByName(
-            thisTypingResult.flatten.map("this" -> _).toMap ++ variables,
+            thisTypingResult.flatten.map("this" -> _).toMap ++ validationContext.variables,
             v.toStringAST.stripPrefix("#")
           )
           Future.successful(filteredVariables.map { case (variable, clazzRef) =>
@@ -253,7 +253,7 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
       input: String,
       language: String,
       position: Int,
-      variables: Map[String, TypingResult]
+      validationContext: ValidationContext
   ): Try[Option[(NuSpelNode, Int)]] = {
     val rawExpression = language match {
       case Expression.Language.Spel         => Try(parser.parseExpression(input, null))
@@ -265,7 +265,8 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
         parsedExpressions.find(e => e.start <= position && position <= e.end).flatMap { e =>
           e.expression match {
             case s: SpringSpelExpression =>
-              val collectedTypingResult = typer.doTypeExpression(s, ValidationContext(variables))._2
+              val collectedTypingResult =
+                typer.doTypeExpression(s, validationContext)._2
               Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.start))
             case _ => None
           }
