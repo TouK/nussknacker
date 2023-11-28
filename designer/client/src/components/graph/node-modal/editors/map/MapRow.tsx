@@ -27,7 +27,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 isMarked={isPropertyMarked("name")}
                 onChange={(value) => setItemProperty("name", value)}
                 value={name}
-                validators={[errorValidator(fieldErrors, `fields-${index}-key`)]}
+                validators={[errorValidator(fieldErrors, `$fields-${index}-key`)]}
             />
             <MapValue
                 readOnly={readOnly}
@@ -38,7 +38,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 validationLabelInfo={typeInfo}
                 errors={fieldErrors}
                 variableTypes={variableTypes}
-                validators={[errorValidator(fieldErrors, `fields-${index}-value`)]}
+                validators={[errorValidator(fieldErrors, `$fields-${index}-value`)]}
             />
         </>
     );

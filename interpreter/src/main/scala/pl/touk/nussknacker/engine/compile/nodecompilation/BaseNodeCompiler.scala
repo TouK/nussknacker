@@ -290,6 +290,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       expression
         .map { expr =>
           Validations
+            // The parameter definition name does not mean anything here
             .validate(Parameter("stub", expectedType, List(validator)), (TypedParameter(fieldName, expr), ()))
             .map(_ => ())
         }
