@@ -57,9 +57,9 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
         error
       )
     case error: OtherError =>
-      logger.debug(s"Fatal error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+      logger.debug(s"Other error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: FatalError =>
-      logger.error(s"Other error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+      logger.error(s"Fatal error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
   }
 
   private def returnedHttpStatusInfo(error: NuDesignerError) = {
