@@ -4,13 +4,18 @@ import java.util.ServiceLoader
 import java.util.regex.Pattern
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import io.circe.parser._
-import org.apache.commons.lang3.StringUtils
+
+import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.collection.concurrent.TrieMap
@@ -35,6 +40,7 @@ trait Validator {
 @ConfiguredJsonCodec sealed trait ParameterValidator extends Validator
 
 //TODO: These validators should be moved to separated module
+
 case object MandatoryParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
@@ -247,6 +253,70 @@ case object JsonValidator extends ParameterValidator {
       paramName,
       nodeId
     )
+
+}
+
+case class ValidationExpressionParameterValidator(
+    validationExpression: ApiExpression,
+    validationFailedMessage: Option[String]
+) extends ParameterValidator {
+
+  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    value match {
+      case None       => valid(())
+      case Some(null) => valid(())
+      case Some(v)    => validateValue(paramName, v)
+    }
+  }
+
+  private def validateValue(paramName: String, value: Any)(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
+    val context = Context("validator", Map(variableName -> value), None)
+    Try(validationExpression.evaluate[Boolean](context, Map())).fold(
+      e =>
+        invalid(
+          CustomParameterValidationError(
+            s"Evaluation of validation expression '${validationExpression.original}' of language ${validationExpression.language} failed: ${e.getMessage}",
+            s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
+            paramName,
+            nodeId.id
+          )
+        ),
+      result => if (result) valid(()) else invalid(error(paramName, nodeId.id))
+    )
+  }
+
+  private def error(paramName: String, nodeId: String): CustomParameterValidationError = CustomParameterValidationError(
+    validationFailedMessage.getOrElse(
+      s"This field has to satisfy the validation expression '${validationExpression.original}'"
+    ),
+    s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
+    paramName,
+    nodeId
+  )
+
+}
+
+object ValidationExpressionParameterValidator {
+
+  val variableName = "value"
+
+  implicit val encoder: Encoder[ValidationExpressionParameterValidator] = deriveEncoder
+  implicit val decoder: Decoder[ValidationExpressionParameterValidator] = deriveDecoder
+
+  implicit val apiExpressionEncoder: Encoder[ApiExpression] = {
+    Encoder.forProduct2("language", "original")(e => (e.language, e.original))
+  }
+
+  implicit val apiExpressionDecoder: Decoder[ApiExpression] = {
+    Decoder.failedWithMessage(
+      "Cannot evaluate Expression in ValidationExpressionParameterValidator as loading from config file is not supported"
+    )
+  }
 
 }
 

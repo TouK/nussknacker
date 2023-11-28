@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +22,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentClazzRef,
+  FragmentParameter,
+  ValidationExpression
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -442,7 +446,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(invalidFragment)
-    val validationResult  = processValidator.validate(process)
+    val validationResult = processValidator.validate(process)
 
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
@@ -524,7 +528,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(fragment)
-    val validationResult  = processValidator.validate(process)
+    val validationResult = processValidator.validate(process)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
@@ -695,7 +699,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "123")))
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
     result.errors.globalErrors shouldBe Symbol("empty")
@@ -716,7 +720,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "")))
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -759,7 +763,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidator.validate(processWithFragment)
+    val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -768,6 +772,72 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             List(
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
+            )
+          ) =>
+    }
+  }
+
+  test("validates scenario with fragment parameters - with spel validation expression and valid value") {
+    val fragmentId = "fragment1"
+    val paramName  = "name"
+
+    val fragmentDefinition: CanonicalProcess =
+      createFragmentDefinition(
+        fragmentId,
+        List(
+          FragmentParameter(
+            paramName,
+            FragmentClazzRef[String],
+            Some(ValidationExpression(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"))
+          )
+        )
+      )
+    val processWithFragment =
+      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Tomasz\"")))
+
+    val processValidation = mockedProcessValidator(fragmentDefinition, defaultConfig)
+    val result            = processValidation.validate(processWithFragment)
+    print(result)
+    result.hasErrors shouldBe false
+    result.errors.invalidNodes shouldBe Symbol("empty")
+    result.errors.globalErrors shouldBe Symbol("empty")
+    result.saveAllowed shouldBe true
+  }
+
+  test("validates scenario with fragment parameters - with spel validation expression and invalid value") {
+    val fragmentId = "fragment1"
+    val paramName  = "name"
+
+    val configWithValidators: Config = defaultConfig
+
+    val fragmentDefinition: CanonicalProcess =
+      createFragmentDefinition(
+        fragmentId,
+        List(
+          FragmentParameter(
+            paramName,
+            FragmentClazzRef[String],
+            Some(ValidationExpression(s"#$paramName.length() < 7"))
+          )
+        )
+      )
+    val processWithFragment =
+      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Barabasz\"")))
+
+    val processValidation = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val result            = processValidation.validate(processWithFragment)
+    result.hasErrors shouldBe true
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("subIn") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                _,
+                _,
+                Some(paramName),
+                NodeValidationErrorType.SaveAllowed
+              )
             )
           ) =>
     }

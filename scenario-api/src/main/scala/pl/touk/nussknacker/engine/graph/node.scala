@@ -298,13 +298,19 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec case class FragmentParameter(name: String, typ: FragmentClazzRef)
+    @JsonCodec case class FragmentParameter(
+        name: String,
+        typ: FragmentClazzRef,
+        validationExpression: Option[ValidationExpression] = None,
+    )
 
     object FragmentClazzRef {
 
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
+
+    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String] = None)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
