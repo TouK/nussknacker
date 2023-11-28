@@ -26,6 +26,7 @@ import { TypesMenu } from "./TypesMenu";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { tableTheme } from "./tableTheme";
 import { ColumnHeaderButton } from "./ColumnHeaderButton";
+import i18next from "i18next";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -416,5 +417,6 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
 };
 
 TableEditor.isSwitchableTo = (expressionObj, editorConfig) => true;
-TableEditor.switchableToHint = () => "";
-TableEditor.notSwitchableToHint = () => "";
+TableEditor.switchableToHint = () => i18next.t("editors.table.switchableToHint", "Switch to table mode");
+TableEditor.notSwitchableToHint = () =>
+    i18next.t("editors.table.notSwitchableToHint", "Expression must match schema to switch to table mode");
