@@ -16,12 +16,14 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   def nuDesignerErrorHandler: ExceptionHandler = {
     import akka.http.scaladsl.server.Directives._
     ExceptionHandler { case NonFatal(e) =>
-      complete(errorToHttp(e))
+      complete(errorToHttpResponse(e))
     }
   }
 
-  private def errorToHttp: PartialFunction[Throwable, HttpResponse] = {
-    case e: NuDesignerError => nuDesignerErrorToHttp(e)
+  private def errorToHttpResponse: PartialFunction[Throwable, HttpResponse] = {
+    case error: NuDesignerError =>
+      logError(error)
+      httpResponseFrom(error)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
@@ -32,21 +34,42 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {
     case Right(t)  => t
-    case Left(err) => nuDesignerErrorToHttp(err)
+    case Left(err) => httpResponseFrom(err)
   }
 
-  def nuDesignerErrorToHttp(error: NuDesignerError): HttpResponse = {
-    val statusCode = error match {
-      case _: NotFoundError         => StatusCodes.NotFound
-      case _: FatalError            => StatusCodes.InternalServerError
-      case _: BadRequestError       => StatusCodes.BadRequest
-      case _: IllegalOperationError => StatusCodes.Conflict
-      // unknown?
-      case _ =>
-        logger.error(s"Unknown NuDesignerError: ${error.getMessage}. Http status 500 will be returned.", error)
-        StatusCodes.InternalServerError
-    }
-    HttpResponse(status = statusCode, entity = error.getMessage)
+  def httpResponseFrom(error: NuDesignerError): HttpResponse = {
+    HttpResponse(
+      status = httpStatusCodeFrom(error),
+      entity = error.getMessage
+    )
+  }
+
+  private def logError(error: NuDesignerError): Unit = error match {
+    case error: NotFoundError =>
+      logger.debug(s"Not found error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+    case error: FatalError =>
+      logger.error(s"Fatal error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+    case error: BadRequestError =>
+      logger.debug(s"Bad request error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+    case error: IllegalOperationError =>
+      logger.error(
+        s"Illegal operation error: ${error.getMessage}. ${returnedHttpStatusInfo(error)} ",
+        error
+      )
+    case error: OtherError =>
+      logger.error(s"Other error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+  }
+
+  private def returnedHttpStatusInfo(error: NuDesignerError) = {
+    s"Http status ${httpStatusCodeFrom(error).intValue()} will be returned."
+  }
+
+  private def httpStatusCodeFrom(error: NuDesignerError): StatusCode = error match {
+    case _: NotFoundError         => StatusCodes.NotFound
+    case _: FatalError            => StatusCodes.InternalServerError
+    case _: BadRequestError       => StatusCodes.BadRequest
+    case _: IllegalOperationError => StatusCodes.Conflict
+    case _: OtherError            => StatusCodes.InternalServerError
   }
 
 }

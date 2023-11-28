@@ -6,7 +6,7 @@ object NuDesignerError {
 
 }
 
-abstract class NuDesignerError(message: String, cause: Throwable) extends Exception(message, cause) {
+sealed abstract class NuDesignerError(message: String, cause: Throwable) extends Exception(message, cause) {
   def this(message: String) = this(message, null)
 }
 
@@ -22,6 +22,12 @@ abstract class BadRequestError(message: String, cause: Throwable) extends NuDesi
   def this(message: String) = this(message, null)
 }
 
-abstract class IllegalOperationError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
+abstract class IllegalOperationError(message: String, val details: String, cause: Throwable)
+    extends NuDesignerError(message, cause) {
+
+  def this(message: String, details: String) = this(message, details, null)
+}
+
+abstract class OtherError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
   def this(message: String) = this(message, null)
 }

@@ -184,7 +184,9 @@ class DeploymentServiceImpl(
       processDetails.processingType,
       processDetails.processCategory
     )
-    if (validationResult.hasErrors) throw DeployingInvalidScenarioError
+    if (validationResult.hasErrors) {
+      throw DeployingInvalidScenarioError(validationResult.errors)
+    }
   }
 
   private def checkCanPerformActionAndAddInProgressAction[PS: ScenarioShapeFetchStrategy](
