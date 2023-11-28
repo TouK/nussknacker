@@ -53,7 +53,7 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
       logger.debug(s"Bad request error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: IllegalOperationError =>
       logger.error(
-        s"Illegal operation error: ${error.getMessage}. ${returnedHttpStatusInfo(error)} ",
+        s"Illegal operation error: ${error.getMessage}. ${returnedHttpStatusInfo(error)} Error details: [${error.details}].",
         error
       )
     case error: OtherError =>
