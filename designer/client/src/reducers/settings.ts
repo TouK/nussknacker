@@ -99,27 +99,7 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                                         id: "",
                                         type: "CustomNode",
                                         nodeType: "table",
-                                        parameters: [
-                                            // {
-                                            //     name: "tableData",
-                                            //     expression: {
-                                            //         language: ExpressionLang.SpEL,
-                                            //         expression: `
-                                            //                     {
-                                            //                         columns: {
-                                            //                             {'key', 'java.lang.String'},
-                                            //                             {'value', 'java.lang.Integer'}
-                                            //                         },
-                                            //                         rows: {
-                                            //                             {'a', '1'},
-                                            //                             {'b', '2'},
-                                            //                             {'c', '3'}
-                                            //                         }
-                                            //                     }
-                                            //                     `,
-                                            //     },
-                                            // },
-                                        ],
+                                        parameters: [],
                                     },
                                     categories: ["Category1", "Category2", "DemoFeatures"],
                                     branchParametersTemplate: [],

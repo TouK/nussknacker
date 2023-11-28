@@ -1,10 +1,5 @@
 function snapshot() {
-    cy.wait(500)
-        .get("@editor")
-        .matchImage({
-            maxDiffThreshold: 0.002,
-            screenshotConfig: { padding: [1] },
-        });
+    cy.get("[data-testid='window']").matchImage();
 }
 
 describe("Table editor", () => {
