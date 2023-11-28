@@ -10,10 +10,6 @@ sealed abstract class NuDesignerError(message: String, cause: Throwable) extends
   def this(message: String) = this(message, null)
 }
 
-abstract class FatalError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
-  def this(message: String) = this(message, null)
-}
-
 abstract class NotFoundError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
   def this(message: String) = this(message, null)
 }
@@ -29,5 +25,9 @@ abstract class IllegalOperationError(message: String, val details: String, cause
 }
 
 abstract class OtherError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
+  def this(message: String) = this(message, null)
+}
+
+abstract class FatalError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
   def this(message: String) = this(message, null)
 }

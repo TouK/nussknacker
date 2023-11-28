@@ -47,16 +47,18 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
   private def logError(error: NuDesignerError): Unit = error match {
     case error: NotFoundError =>
       logger.debug(s"Not found error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
-    case error: FatalError =>
-      logger.error(s"Fatal error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: BadRequestError =>
       logger.debug(s"Bad request error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: IllegalOperationError =>
-      logger.error(
+      // we decided to use WARN level here because we are not sure if the Illegal Operation Error is caused by client
+      // mistake or Nu malfunction (or Nu's dependency inconsistency - eg. external modification of Schema Registry)
+      logger.warn(
         s"Illegal operation error: ${error.getMessage}. ${returnedHttpStatusInfo(error)} Error details: [${error.details}].",
         error
       )
     case error: OtherError =>
+      logger.debug(s"Fatal error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+    case error: FatalError =>
       logger.error(s"Other error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
   }
 

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.ui.{NuDesignerError, OtherError}
+import pl.touk.nussknacker.ui.{FatalError, NuDesignerError, OtherError}
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
@@ -52,10 +52,10 @@ trait RemoteEnvironment {
 }
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
-    extends OtherError(message)
+    extends FatalError(message)
 
 final case class MigrationValidationError(errors: ValidationErrors)
-    extends OtherError({
+    extends FatalError({
       val messages = errors.globalErrors.map(_.message) ++
         errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
           s"$node - ${nerror.map(_.message).mkString(", ")}"
@@ -64,7 +64,7 @@ final case class MigrationValidationError(errors: ValidationErrors)
     })
 
 final case class MigrationToArchivedError(processName: ProcessName, environment: String)
-    extends OtherError(
+    extends FatalError(
       s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
     )
 
