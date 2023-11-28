@@ -37,8 +37,19 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
     const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     const handleDeleteDefinedListItem = (currentIndex: number) => {
-        const filteredItemList = fixedValuesList.filter((_, index) => index !== currentIndex);
-        onChange(`${path}.inputConfig.fixedValuesList`, filteredItemList);
+        const filteredItemsList = fixedValuesList.filter((_, index) => index !== currentIndex);
+        if (filteredItemsList) {
+            onChange(`${path}.inputConfig.fixedValuesList`, filteredItemsList);
+
+            const isUniqueValueValidator = uniqueValueValidator(filteredItemsList.map((filteredItemList) => filteredItemList.label));
+            if (isUniqueValueValidator.isValid(temporaryListItem)) {
+                const removeUniqueValidationError = temporaryValueErrors.filter(
+                    (temporaryValueError) => temporaryValueError.message !== isUniqueValueValidator.message(),
+                );
+
+                setTemporaryValueErrors(removeUniqueValidationError);
+            }
+        }
     };
 
     const temporaryListItemTyp = useMemo(
