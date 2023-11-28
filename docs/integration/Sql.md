@@ -35,19 +35,28 @@ myDatabasePool {
 }
 ```
 
-| Parameter       | Required | Default | Description                     |
-| ----------      | -------- | ------- | -----------                     |
-| url             | true     |         | URL with your database resource |
-| username        | true     |         | Authentication username         |
-| password        | true     |         | Authentication password         |
-| driverClassName | true     |         | Database driver class name      |
-| timeout         | false    | 30s     | Connection timeout              |
-| maxTotal        | false    | 10      | Maximum pool size               |
-| initialSize     | false    | 0       | Minimum idle size               |
+| Parameter            | Type                     | Required | Default | Description                              |
+|----------------------|--------------------------|----------|---------|------------------------------------------|
+| url                  | string                   | true     |         | URL with your database resource          |
+| username             | string                   | true     |         | Authentication username                  |
+| password             | string                   | true     |         | Authentication password                  |
+| driverClassName      | string                   | true     |         | Database driver class name               |
+| initialSize          | int                      | false    | 0       | Minimum idle size                        |
+| maxTotal             | int                      | false    | 10      | Maximum pool size                        |
+| timeout              | string (Duration format) | false    | 30s     | Connection timeout                       |
+| schema               | string                   | false    |         | Schema to be set on connections          |
+| dataSourceProperties | string-string map        | false    |         | DataSource or java.sql.Driver properties |
 
 > As a user you have to provide the database driver. 
 > It should be placed in Flink's /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).
 > Additionally it should be placed in Nussknacker's /lib folder (/opt/nussknacker/lib)
+
+:::caution
+
+Contrary to its name, SQL enricher is able to execute not only SELECT queries, but also modifying ones (INSERT, UPDATE, DELETE).
+It is recommended to connect with a user that has only read access to the database if you use it only for enrichment.
+
+:::
 
 Next you have to configure the component itself.
 
