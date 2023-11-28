@@ -52,7 +52,7 @@ object UIProcessObjectsFactory {
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
     val fragmentInputs =
-      extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
+      extractFragmentInputs(modelDataForType, fragmentsDetails)
 
     val combinedComponentsConfig =
       getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentInputs, processDefinition)
@@ -173,11 +173,10 @@ object UIProcessObjectsFactory {
   }
 
   private def extractFragmentInputs(
+      modelDataForType: ModelData,
       fragmentsDetails: Set[FragmentDetails],
-      classLoader: ClassLoader,
-      fixedComponentsConfig: Map[String, SingleComponentConfig]
   ): Map[String, FragmentObjectDefinition] = {
-    val definitionExtractor = new FragmentComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
+    val definitionExtractor = FragmentComponentDefinitionExtractor(modelDataForType)
     (for {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
@@ -238,7 +237,6 @@ object UIProcessObjectsFactory {
       customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) =>
         (name, value)
       },
-      globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )
   }

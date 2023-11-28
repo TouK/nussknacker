@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -28,9 +30,9 @@ object ProcessCompilerData {
 
   def prepare(
       process: CanonicalProcess,
+      processConfig: Config,
       definitionWithTypes: ModelDefinitionWithTypes,
       dictRegistry: EngineDictRegistry,
-      fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor,
       listeners: Seq[ProcessListener],
       userCodeClassLoader: ClassLoader,
       resultsCollector: ResultCollector,
@@ -46,6 +48,12 @@ object ProcessCompilerData {
       modelDefinition.expressionConfig,
       definitionWithTypes.typeDefinitions
     )
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
+      processConfig,
+      userCodeClassLoader,
+      expressionCompiler
+    )
+
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
       modelDefinition,

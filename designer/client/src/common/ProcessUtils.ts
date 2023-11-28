@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform } from "lodash";
 import {
-    GlobalVariables,
     NodeId,
     NodeObjectTypeDefinition,
     NodeResults,
@@ -106,40 +105,16 @@ class ProcessUtils {
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
-    //It's not pretty but works.. This should be done at backend with properly category hierarchy
-    _findGlobalVariablesWithMismatchCategory = (globalVariables: GlobalVariables, processCategory: string) => {
-        return keys(pickBy(globalVariables, (variable) => variable.categories.indexOf(processCategory) === -1));
-    };
-
-    //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
-    _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
-        const filteredGlobalVariables = pickBy(processDefinition.globalVariables, (variable) => variable.returnType !== null);
-        const globalVariables = mapValues(filteredGlobalVariables, (v) => {
-            return v.returnType;
-        });
-        const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
-        return {
-            ...globalVariables,
-            ...variablesDefinedBeforeNode,
-        };
-    };
-
     findAvailableVariables =
-        (processDefinition: ProcessDefinition, processCategory: string, process: Process) =>
+        (processDefinition: ProcessDefinition, process: Process) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
             const nodeResults = this.getNodeResults(process);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition);
+            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
-            const variables = { ...withoutVariablesToHide, ...additionalVariablesForParam };
-            //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
-            const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(
-                processDefinition.globalVariables,
-                processCategory,
-            );
-            return pickBy(variables, (_, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1);
+            return { ...withoutVariablesToHide, ...additionalVariablesForParam };
         };
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;

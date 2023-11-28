@@ -104,7 +104,7 @@ trait NuResourcesTest
       fetchingProcessRepository,
       actionRepository,
       dbioRunner,
-      processValidation,
+      processValidator,
       scenarioResolver,
       processChangeListener,
       None
@@ -180,12 +180,12 @@ trait NuResourcesTest
       deploymentService,
       newProcessPreparer,
       () => processCategoryService,
-      processResolving,
+      processResolver,
       dbioRunner,
       futureFetchingProcessRepository,
       actionRepository,
       writeProcessRepository,
-      processValidation
+      processValidator
     )
 
   protected def createScenarioTestService(
@@ -195,7 +195,7 @@ trait NuResourcesTest
       testInfoProviders,
       featureTogglesConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-      processResolving,
+      processResolver,
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
       testExecutorService
     )
@@ -408,14 +408,6 @@ trait NuResourcesTest
     HttpEntity(ContentTypes.`application/json`, jsonString)
   }
 
-  protected def createProcess(
-      process: CanonicalProcess,
-      category: String,
-      processingType: ProcessingType
-  ): ProcessId = {
-    saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
-  }
-
   private def prepareValidProcess(
       processName: ProcessName,
       category: String,
@@ -481,7 +473,7 @@ trait NuResourcesTest
 
   protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = TestCat): ProcessId = {
     (for {
-      id <- Future(createProcess(process, category, processingType = Streaming))
+      id <- Future(createSavedProcess(process, category, processingType = Streaming))
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }

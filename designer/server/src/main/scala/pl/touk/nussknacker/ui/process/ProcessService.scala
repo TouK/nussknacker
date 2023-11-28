@@ -28,8 +28,8 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.validation.{FatalValidationError, UIProcessValidator}
 import ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
@@ -138,12 +138,12 @@ class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparer: NewProcessPreparer,
     getProcessCategoryService: () => ProcessCategoryService,
-    processResolving: UIProcessResolving,
+    processResolver: UIProcessResolver,
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
     processActionRepository: ProcessActionRepository[DB],
     processRepository: ProcessRepository[DB],
-    processValidation: ProcessValidation
+    processValidator: UIProcessValidator
 )(implicit ec: ExecutionContext)
     extends ProcessService
     with LazyLogging {
@@ -264,8 +264,8 @@ class DBProcessService(
     ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
       val processingType = entity.processingType
       val validationResult =
-        processResolving.validateBeforeUiReverseResolving(canonical, processingType, entity.processCategory)
-      processResolving.reverseResolveExpressions(
+        processResolver.validateBeforeUiReverseResolving(canonical, processingType, entity.processCategory)
+      processResolver.reverseResolveExpressions(
         canonical,
         processingType,
         entity.processCategory,
@@ -370,8 +370,8 @@ class DBProcessService(
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
       val validation =
-        FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process))
-      val substituted = processResolving.resolveExpressions(action.process, validation.typingInfo)
+        FatalValidationError.saveNotAllowedAsError(processResolver.validateBeforeUiResolving(action.process))
+      val substituted = processResolver.resolveExpressions(action.process, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
         substituted,
@@ -401,7 +401,7 @@ class DBProcessService(
 
       val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
-      val validationResult = processResolving.validateBeforeUiReverseResolving(
+      val validationResult = processResolver.validateBeforeUiReverseResolving(
         canonical,
         displayable.processingType,
         process.processCategory
@@ -416,7 +416,7 @@ class DBProcessService(
       category: String
   ) = {
     val validationResult =
-      processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
+      processValidator.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors
 
   }

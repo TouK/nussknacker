@@ -385,6 +385,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         inputConfig: ParameterInputConfig,
+        validationExpression: Option[ValidationExpression] = None,
     ) {
       def withName(name: String): FragmentParameter = copy(name = name)
     }
@@ -411,6 +412,8 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
+
+    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String] = None)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 

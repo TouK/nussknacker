@@ -13,16 +13,7 @@ class GlobalVariablesPreparer(
     hideMetaVariable: Boolean
 ) {
 
-  def prepareGlobalVariables(metaData: MetaData): Map[String, ObjectWithType] = {
-    val globalVariablesWithType = globalVariablesWithMethodDef.mapValuesNow(toGlobalVariable(_, metaData))
-    if (hideMetaVariable) {
-      globalVariablesWithType
-    } else {
-      globalVariablesWithType + (VariableConstants.MetaVariableName -> MetaVariables.withType(metaData))
-    }
-  }
-
-  def emptyValidationContext(metaData: MetaData): ValidationContext =
+  def emptyLocalVariablesValidationContext(metaData: MetaData): ValidationContext =
     validationContextWithLocalVariables(metaData, Map.empty)
 
   def validationContextWithLocalVariables(
@@ -32,6 +23,33 @@ class GlobalVariablesPreparer(
     localVariables,
     prepareGlobalVariables(metaData).mapValuesNow(_.typ)
   )
+
+  def emptyLocalVariablesValidationContext(
+      scenarioPropertiesNames: Iterable[String]
+  ): ValidationContext = ValidationContext(
+    Map.empty,
+    prepareGlobalVariablesTypes(scenarioPropertiesNames)
+  )
+
+  def prepareGlobalVariables(metaData: MetaData): Map[String, ObjectWithType] = {
+    val globalVariablesWithType = globalVariablesWithMethodDef.mapValuesNow(toGlobalVariable(_, metaData))
+    if (hideMetaVariable) {
+      globalVariablesWithType
+    } else {
+      globalVariablesWithType + (VariableConstants.MetaVariableName -> MetaVariables.withType(metaData))
+    }
+  }
+
+  private def prepareGlobalVariablesTypes(scenarioPropertiesNames: Iterable[String]): Map[String, TypingResult] = {
+    val globalVariablesWithType = globalVariablesWithMethodDef.mapValuesNow(toGlobalVariableType)
+    if (hideMetaVariable) {
+      globalVariablesWithType
+    } else {
+      globalVariablesWithType + (VariableConstants.MetaVariableName -> MetaVariables.typingResult(
+        scenarioPropertiesNames
+      ))
+    }
+  }
 
   private def toGlobalVariable(objectWithMethodDef: ObjectWithMethodDef, metaData: MetaData): ObjectWithType = {
     objectWithMethodDef.obj match {
@@ -43,6 +61,17 @@ class GlobalVariablesPreparer(
           objectWithMethodDef.returnType.getOrElse(
             throw new IllegalStateException("Global variable with empty return type.")
           )
+        )
+    }
+  }
+
+  private def toGlobalVariableType(objectWithMethodDef: ObjectWithMethodDef): TypingResult = {
+    objectWithMethodDef.obj match {
+      case typedGlobalVariable: TypedGlobalVariable =>
+        typedGlobalVariable.initialReturnType
+      case _ =>
+        objectWithMethodDef.returnType.getOrElse(
+          throw new IllegalStateException("Global variable with empty return type.")
         )
     }
   }

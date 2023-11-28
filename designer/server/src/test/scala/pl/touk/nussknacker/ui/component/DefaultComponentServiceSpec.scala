@@ -801,12 +801,12 @@ class DefaultComponentServiceSpec
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       getProcessCategoryService = () => processCategoryService,
-      processResolving = TestFactory.processResolving,
+      processResolver = TestFactory.processResolver,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processValidator = TestFactory.processValidator
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =
