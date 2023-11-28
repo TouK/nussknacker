@@ -1,29 +1,29 @@
 import React from "react";
-import { Switch, Typography, styled, FormLabel } from "@mui/material";
+import { Switch, Typography, styled, FormLabel, css } from "@mui/material";
 import { NodeRow } from "../../../../NodeDetailsContent/NodeStyled";
 
 export const SettingsWrapper = styled("div")`
     padding: 10px;
     border: 1px solid #ffffff1f;
     width: 100%;
-    display: flex;
-    flex-direction: column;
+    display: block;
     margin-bottom: 20px;
 `;
 
 export const SettingLabelStyled = styled(FormLabel)(
-    ({ theme }) => `
-    font-family: Open Sans;
-    color: ${theme.custom.colors.baseColor};
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 16px;
-    letter-spacing: -0.01em;
-    text-align: left;
-    margin-top: 9px;
-    display: flex;
-    flex-basis: 30%;
-`,
+    ({ theme }) => css`
+        font-family: Open Sans;
+        color: ${theme.custom.colors.baseColor};
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 16px;
+        letter-spacing: -0.01em;
+        text-align: left;
+        vertical-align: top;
+        margin-top: 9px;
+        display: flex;
+        flex-basis: 30%;
+    `,
 );
 
 export const ListItemContainer = styled("div")`
@@ -58,9 +58,7 @@ export const ListItemWrapper = styled("div")`
     }
 `;
 
-export const SettingRow = styled(NodeRow)`
-    align-items: center;
-`;
+export const SettingRow = styled(NodeRow)``;
 
 export const CustomSwitch = styled(Switch)`
     input[type="checkbox"] {
