@@ -10,8 +10,7 @@ import { ReturnedType, VariableTypes } from "../../../../../../../types";
 import { Error, uniqueValueValidator, validators } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
-import { getProcessProperties } from "../../../../NodeDetailsContent/selectors";
-import { getProcessId, getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
+import { getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
 import { GenericValidationRequest } from "../../../../../../../actions/nk/genericAction";
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
@@ -109,8 +108,6 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
         },
     };
 
-    const processProperties = useSelector(getProcessProperties);
-    const scenarioName = useSelector(getProcessId);
     const { processingType } = useSelector(getProcessToDisplay);
     const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
@@ -124,9 +121,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
                         expression: { language: ExpressionLang.SpEL, expression: expressionVariable },
                     },
                 ],
-                processProperties,
                 variableTypes: {},
-                scenarioName,
             };
 
             const response = await HttpService.validateGenericActionParameters(processingType, genericValidationRequest);
@@ -137,7 +132,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
 
             setTemporaryValuesTyping(false);
         }, 500);
-    }, [processProperties, processingType, scenarioName, temporaryItemName, temporaryListItemTyp]);
+    }, [processingType, temporaryItemName, temporaryListItemTyp]);
 
     return (
         <SettingRow>
