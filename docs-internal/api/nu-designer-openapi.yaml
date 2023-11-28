@@ -282,6 +282,113 @@ paths:
                     resource
       security:
       - httpAuth: []
+  /api/components/{id}/usages:
+    get:
+      tags:
+      - Components
+      summary: Show component usage
+      operationId: getApiComponentsIdUsages
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComponentUsagesInScenarioDto'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Component this not exist.
+      security:
+      - httpAuth: []
+  /api/components:
+    get:
+      tags:
+      - Components
+      summary: Listing components
+      operationId: getApiComponents
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComponentListElementDto'
+              examples:
+                Example:
+                  summary: List of available components
+                  value:
+                  - id: streaming-dev-processor-accountservice
+                    name: accountService
+                    icon: /assets/components/Processor.svg
+                    componentType: processor
+                    componentGroupName: services
+                    categories:
+                    - Category1
+                    - Category2
+                    links:
+                    - id: documentation
+                      title: Documentation
+                      icon: /assets/icons/documentation.svg
+                      url: accountServiceDocs
+                    usageCount: 1
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
 components:
   schemas:
     BuildInfoDto:
@@ -305,6 +412,78 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
+    ComponentListElementDto:
+      required:
+      - id
+      - name
+      - icon
+      - componentType
+      - componentGroupName
+      - usageCount
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        componentType:
+          type: string
+        componentGroupName:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkDto'
+        usageCount:
+          type: integer
+          format: int64
+    ComponentUsagesInScenarioDto:
+      required:
+      - id
+      - name
+      - processId
+      - isFragment
+      - processCategory
+      - modificationDate
+      - modifiedAt
+      - modifiedBy
+      - createdAt
+      - createdBy
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        processId:
+          type: integer
+          format: int64
+        nodesUsagesData:
+          type: array
+          items:
+            $ref: '#/components/schemas/Map_String'
+        isFragment:
+          type: boolean
+        processCategory:
+          type: string
+        modificationDate:
+          type: string
+        modifiedAt:
+          type: string
+        modifiedBy:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        lastAction:
+          $ref: '#/components/schemas/ProcessActionDto'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -339,6 +518,22 @@ components:
           - 'null'
           items:
             type: string
+    LinkDto:
+      required:
+      - id
+      - title
+      - icon
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+        url:
+          type: string
     Map_Map_String_String:
       type: object
       additionalProperties:
@@ -347,6 +542,52 @@ components:
       type: object
       additionalProperties:
         type: string
+    ProcessActionDto:
+      required:
+      - id
+      - processId
+      - processVersionId
+      - user
+      - createdAt
+      - performedAt
+      - actionType
+      - state
+      - buildInfo
+      type: object
+      properties:
+        id:
+          type: string
+        processId:
+          type: integer
+          format: int64
+        processVersionId:
+          type: integer
+          format: int64
+        user:
+          type: string
+        createdAt:
+          type: string
+        performedAt:
+          type: string
+        actionType:
+          type: string
+        state:
+          type: string
+        failureMessage:
+          type:
+          - string
+          - 'null'
+        commentId:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          type:
+          - string
+          - 'null'
+        buildInfo:
+          $ref: '#/components/schemas/Map_String'
     Status:
       type: string
       enum:
