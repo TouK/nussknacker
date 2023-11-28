@@ -1,12 +1,13 @@
-import React, { PropsWithChildren, useCallback } from "react";
+import React, { useCallback } from "react";
 import { useSize } from "../../../../../../containers/hooks/useSize";
 import { Box } from "@mui/material";
+import { BoxProps } from "@mui/material/Box/Box";
 
-type SizerProps = PropsWithChildren<{
+type SizerProps = BoxProps & {
     overflowY?: boolean;
-}>;
+};
 
-export function Sizer({ children, overflowY }: SizerProps) {
+export function Sizer({ overflowY, ...props }: SizerProps) {
     const { observe, height } = useSize();
     const callback = useCallback(
         (instance) => {
@@ -26,8 +27,7 @@ export function Sizer({ children, overflowY }: SizerProps) {
                 maxHeight: overflowY ? "unset" : height * 0.8,
             }}
             ref={callback}
-        >
-            {children}
-        </Box>
+            {...props}
+        />
     );
 }
