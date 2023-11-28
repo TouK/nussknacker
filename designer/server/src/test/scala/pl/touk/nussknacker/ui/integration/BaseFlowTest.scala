@@ -117,7 +117,8 @@ class BaseFlowTest
               ),
               None,
               None
-            )
+            ),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
           )
         ),
         icon = Some("/assets/components/Filter.svg"),
@@ -128,21 +129,21 @@ class BaseFlowTest
       "multipleParamsService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "foo" -> ParameterConfig(
-              None,
-              Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
-              None,
-              None,
-              None
-            ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "baz" -> ParameterConfig(
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
               None,
               None,
+              None
+            ),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
+            "foo" -> ParameterConfig(
+              None,
+              Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+              None,
+              None,
               Some("some hint text")
-            )
+            ),
           )
         ),
         icon = None,

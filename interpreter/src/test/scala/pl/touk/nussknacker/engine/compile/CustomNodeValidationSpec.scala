@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
+import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.variables.MetaVariables
 
@@ -70,18 +71,17 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
+  private val configCreator = new MyProcessConfigCreator
+
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
-    new MyProcessConfigCreator,
+    configCreator,
     getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
   )
 
-  private val fragmentDefinitionExtractor =
-    FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-
   private val validator = ProcessValidator.default(
     ModelDefinitionWithTypes(objectWithMethodDef),
-    fragmentDefinitionExtractor,
+    ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator
   )

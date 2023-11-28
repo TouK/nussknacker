@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   FragmentParamClassLoadError,
@@ -16,15 +16,17 @@ import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
   Parameter,
-  SimpleParameterEditor
+  SimpleParameterEditor,
+  ValidationExpressionParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
-import pl.touk.nussknacker.engine.compile.Output
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, Output}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{
@@ -40,6 +42,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterIn
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
 // extract parts of definition that is used for graph resolution wheres FragmentComponentDefinitionExtractor is used
@@ -72,7 +75,8 @@ case object EmptyFragmentError extends FragmentDefinitionError
 
 class FragmentComponentDefinitionExtractor(
     componentConfig: String => Option[SingleComponentConfig],
-    classLoader: ClassLoader
+    classLoader: ClassLoader,
+    expressionCompiler: ExpressionCompiler,
 ) extends FragmentDefinitionExtractor {
 
   def extractFragmentComponentDefinition(
@@ -81,7 +85,7 @@ class FragmentComponentDefinitionExtractor(
     extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val docsUrl    = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
       val config     = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
-      val parameters = input.parameters.map(toParameter(config)(_)).sequence.value
+      val parameters = input.parameters.map(toParameter(config)(_)(NodeId(input.id))).sequence.value
       new FragmentComponentDefinition(parameters, config, outputs)
     }
   }
@@ -113,7 +117,9 @@ class FragmentComponentDefinitionExtractor(
 
   private def toParameter(
       componentConfig: SingleComponentConfig
-  )(fragmentParameter: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
+  )(
+      fragmentParameter: FragmentParameter
+  )(implicit nodeId: NodeId): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))
@@ -130,10 +136,9 @@ class FragmentComponentDefinitionExtractor(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
       fragmentParameter: FragmentParameter
-  ) = {
+  )(implicit nodeId: NodeId): Parameter = {
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-
     val extractedEditor = fragmentParameter.inputConfig.effectiveFixedValuesList
       .map { fixedValues =>
         fixedValuesEditorWithInputMode(
@@ -144,14 +149,28 @@ class FragmentComponentDefinitionExtractor(
         )
       }
       .getOrElse(EditorExtractor.extract(parameterData, config))
-
     val isOptional = !fragmentParameter.required
+
+    val customExpressionValidator = fragmentParameter.validationExpression.flatMap(expr => {
+      expressionCompiler
+        .compileWithoutContextValidation(expr.expression, fragmentParameter.name, Typed[Boolean])
+        .toOption
+        .map { expression =>
+          ValidationExpressionParameterValidator(
+            expression,
+            fragmentParameter.validationExpression.flatMap(_.failedMessage)
+          )
+        }
+    })
+
     Parameter
       .optional(fragmentParameter.name, typ)
       .copy(
         editor = extractedEditor,
         validators = ValidatorsExtractor
-          .extract(ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)),
+          .extract(
+            ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)
+          ) ++ customExpressionValidator,
         defaultValue = fragmentParameter.initialValue
           .map(i => Expression.spel(i.expression))
           .orElse(
@@ -178,12 +197,32 @@ class FragmentComponentDefinitionExtractor(
 object FragmentComponentDefinitionExtractor {
 
   def apply(modelData: ModelData): FragmentComponentDefinitionExtractor = {
-    FragmentComponentDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
+    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig
+    val expressionCompiler = ExpressionCompiler.withOptimization(
+      modelData.modelClassLoader.classLoader,
+      modelData.engineDictRegistry,
+      expressionConfig,
+      modelData.modelDefinitionWithTypes.typeDefinitions
+    )
+    FragmentComponentDefinitionExtractor(
+      modelData.processConfig,
+      modelData.modelClassLoader.classLoader,
+      expressionCompiler
+    )
   }
 
-  def apply(modelConfig: Config, classLoader: ClassLoader): FragmentComponentDefinitionExtractor = {
-    val componentsConfig = ComponentsUiConfigExtractor.extract(modelConfig)
-    new FragmentComponentDefinitionExtractor(componentsConfig.get, classLoader)
+  def apply(
+      processConfig: Config,
+      classLoader: ClassLoader,
+      expressionCompiler: ExpressionCompiler
+  ): FragmentComponentDefinitionExtractor = {
+    val componentsConfig = ComponentsUiConfigExtractor.extract(processConfig)
+
+    new FragmentComponentDefinitionExtractor(
+      componentsConfig.get,
+      classLoader,
+      expressionCompiler
+    )
   }
 
 }

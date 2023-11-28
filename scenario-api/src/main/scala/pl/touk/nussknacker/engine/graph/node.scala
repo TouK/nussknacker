@@ -309,6 +309,18 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
+    case class FragmentParameter(
+        name: String,
+        typ: FragmentClazzRef,
+        validationExpression: Option[ValidationExpression] = None,
+        required: Boolean,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        inputConfig: ParameterInputConfig,
+    ) {
+      def withName(name: String): FragmentParameter = copy(name = name)
+    }
+
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
     object ParameterInputMode extends Enumeration {
@@ -378,17 +390,6 @@ object node {
 
     }
 
-    case class FragmentParameter(
-        name: String,
-        typ: FragmentClazzRef,
-        required: Boolean,
-        initialValue: Option[FixedExpressionValue],
-        hintText: Option[String],
-        inputConfig: ParameterInputConfig,
-    ) {
-      def withName(name: String): FragmentParameter = copy(name = name)
-    }
-
     @JsonCodec
     case class ParameterInputConfig(
         inputMode: ParameterInputMode.Value,
@@ -411,6 +412,8 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
+
+    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String] = None)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 

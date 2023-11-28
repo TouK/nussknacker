@@ -46,12 +46,7 @@ class FlinkVerificationMain(
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      new VerificationFlinkProcessCompiler(
-        process,
-        modelData.configCreator,
-        modelData.processConfig,
-        modelData.objectNaming
-      ),
+      VerificationFlinkProcessCompiler(process, modelData),
       ExecutionConfigPreparer.defaultChain(modelData)
     )
   }

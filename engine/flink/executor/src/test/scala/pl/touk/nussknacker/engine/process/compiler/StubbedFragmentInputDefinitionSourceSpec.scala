@@ -10,10 +10,11 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.{Source, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Source, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers {
 
@@ -27,7 +28,8 @@ class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers
         FragmentParameter("age", FragmentClazzRef[Long]),
       )
     )
-    val stubbedSource = new StubbedFragmentInputDefinitionSource(ConfigFactory.empty, getClass.getClassLoader)
+    val stubbedSource =
+      new StubbedFragmentInputDefinitionSource(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()))
     val parameters: Seq[Parameter] = stubbedSource
       .createSourceDefinition(fragmentInputDefinition)
       .implementationInvoker
