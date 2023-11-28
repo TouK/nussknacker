@@ -62,7 +62,6 @@ export interface ProcessDefinition {
     sinkFactories?: Record<string, NodeObjectTypeDefinition>;
     customStreamTransformers?: Record<string, NodeObjectTypeDefinition>;
     fragmentInputs?: Record<string, NodeObjectTypeDefinition>;
-    globalVariables?: GlobalVariables;
     typesInformation?: ClassDefinition[];
 }
 
@@ -92,15 +91,6 @@ export type NodeTypeId = {
     type: string;
     id?: string;
 };
-
-export interface GlobalVariable {
-    returnType: ReturnedType | null;
-    categories: string[];
-    parameters: [];
-    componentConfig: Record<string, any>;
-}
-
-export type GlobalVariables = Record<string, GlobalVariable>;
 
 export type ClassDefinition = {
     clazzName: TypingResult;

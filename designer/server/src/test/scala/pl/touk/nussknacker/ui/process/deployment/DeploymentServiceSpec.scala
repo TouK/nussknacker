@@ -102,7 +102,7 @@ class DeploymentServiceSpec
       fetchingProcessRepository,
       actionRepository,
       dbioRunner,
-      processValidation,
+      processValidator,
       TestFactory.scenarioResolver,
       listener,
       scenarioStateTimeout = scenarioStateTimeout

@@ -42,6 +42,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
   * Replace `processProperties` with `additionalFields`
   * Add `id` field for scenario or fragment id
+* [#5039](https://github.com/TouK/nussknacker/pull/5039)[#5052](https://github.com/TouK/nussknacker/pull/5052) Changes in endpoints 
+  * `api/parameters/*/suggestions` request
+    * `variables` is renamed to `variableTypes` and it should have only local variables now
+  * `api/processes/**` response
+    * `.json.validationResult.nodeResults.variableTypes` doesn't contain global variables types anymore
+  * `api/processDefinitionData/*` response
+    * `.processDefinition.globalVariables` is removed
+  * `api/parameters/*/validate` request
+    * `scenarioName` is removed
+    * `processProperties` is removed
 
 ### Other changes
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`

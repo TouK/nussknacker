@@ -4,6 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -25,9 +26,9 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
 // Needed to build source based on FragmentInputDefinition. It allows fragment to be treated as scenario (when it comes to testing)
 // This source adds input parameters to context and allows testing with ad-hoc testing.
-class StubbedFragmentInputDefinitionSource(processConfig: Config, classLoader: ClassLoader) {
+class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
 
-  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, classLoader)
+  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(modelData)
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
 
   def createSourceDefinition(frag: FragmentInputDefinition): StandardObjectWithMethodDef = {

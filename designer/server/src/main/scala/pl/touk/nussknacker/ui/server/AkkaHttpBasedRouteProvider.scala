@@ -52,9 +52,9 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, Authent
 import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
@@ -106,7 +106,7 @@ class AkkaHttpBasedRouteProvider(
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
       val scenarioProperties = typeToConfig.mapValues(_.scenarioPropertiesConfig)
-      val processValidation = ProcessValidation(
+      val processValidator = UIProcessValidator(
         modelData,
         scenarioProperties,
         typeToConfig.mapValues(_.additionalValidators),
@@ -115,7 +115,7 @@ class AkkaHttpBasedRouteProvider(
 
       val substitutorsByProcessType =
         modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
-      val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
+      val processResolver = new UIProcessResolver(processValidator, substitutorsByProcessType)
 
       val dbioRunner        = DBIOActionRunner(dbRef)
       val actionRepository  = DbProcessActionRepository.create(dbRef, modelData)
@@ -139,7 +139,7 @@ class AkkaHttpBasedRouteProvider(
         processRepository,
         actionRepository,
         dbioRunner,
-        processValidation,
+        processValidator,
         scenarioResolver,
         processChangeListener,
         featureTogglesConfig.scenarioStateTimeout
@@ -177,17 +177,17 @@ class AkkaHttpBasedRouteProvider(
         deploymentService,
         newProcessPreparer,
         getProcessCategoryService,
-        processResolving,
+        processResolver,
         dbioRunner,
         futureProcessRepository,
         actionRepository,
         writeProcessRepository,
-        processValidation
+        processValidator
       )
       val scenarioTestService = ScenarioTestService(
         modelData,
         featureTogglesConfig.testDataSettings,
-        processResolving,
+        processResolver,
         counter,
         testExecutorService
       )
@@ -232,16 +232,17 @@ class AkkaHttpBasedRouteProvider(
           ),
           new NodesResources(
             processService,
-            fragmentRepository,
             typeToConfig.mapValues(_.modelData),
-            processValidation,
-            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
+            processValidator,
+            typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
+            typeToConfig.mapValues(v => ExpressionSuggester(v.modelData, v.scenarioPropertiesConfig.keys)),
+            typeToConfig.mapValues(v => new ParametersValidator(v.modelData, v.scenarioPropertiesConfig.keys)),
           ),
           new ProcessesExportResources(
             futureProcessRepository,
             processService,
             processActivityRepository,
-            processResolving
+            processResolver
           ),
           new ProcessActivityResource(processActivityRepository, processService, processAuthorizer),
           new ManagementResources(
@@ -255,7 +256,7 @@ class AkkaHttpBasedRouteProvider(
             scenarioTestService,
             typeToConfig.mapValues(_.modelData)
           ),
-          new ValidationResources(processService, processResolving),
+          new ValidationResources(processService, processResolver),
           new DefinitionResources(
             modelData,
             typeToConfig,
@@ -283,7 +284,7 @@ class AkkaHttpBasedRouteProvider(
             .map(migrationConfig =>
               new HttpRemoteEnvironment(
                 migrationConfig,
-                new TestModelMigrations(modelData.mapValues(_.migrations), processValidation),
+                new TestModelMigrations(modelData.mapValues(_.migrations), processValidator),
                 environment
               )
             )

@@ -21,16 +21,16 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
     category: String
 ) {
 
-  val metaData: MetaData = properties.toMetaData(id)
-
   val processName: ProcessName = ProcessName(id)
+
+  val metaData: MetaData = properties.toMetaData(processName)
 
 }
 
 final case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
-  def toMetaData(id: String): MetaData = MetaData(
-    id = id,
+  def toMetaData(scenarioName: ProcessName): MetaData = MetaData(
+    id = scenarioName.value,
     additionalFields = additionalFields
   )
 

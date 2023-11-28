@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 object ProcessTestData {
 
@@ -121,7 +121,7 @@ object ProcessTestData {
       : ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
     processDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
 
-  def processValidation: ProcessValidation = ProcessValidation(
+  def processValidator: UIProcessValidator = UIProcessValidator(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
     ),
@@ -166,7 +166,7 @@ object ProcessTestData {
       category: String = TestCategories.TestCat
   ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    ValidatedDisplayableProcess.withValidationResult(displayable, processValidation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(displayable, processValidator.validate(displayable))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(

@@ -54,7 +54,7 @@ class StandardRemoteEnvironmentSpec
 
     override def testModelMigrations: TestModelMigrations = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2)),
-      TestFactory.processValidation
+      TestFactory.processValidator
     )
 
   }
