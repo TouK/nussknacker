@@ -24,6 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
+import "cypress-real-events";
 import "@4tw/cypress-drag-drop";
 import "@frsource/cypress-plugin-visual-regression-diff/dist/support";
 import "./tools";
