@@ -27,6 +27,10 @@
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 * [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
+* [#4953](https://github.com/TouK/nussknacker/pull/4953) Add stricter validation in base components:
+  * Boolean expressions in Switch and Filter nodes now require not null values
+  * Variable values in MapVariable, FragmentOutput and Variable are now mandatory
+  * Field names in MapVariable, FragmentOutput are required to be unique
 
 1.12.4 (14 Nov 2023)
 ------------------------
