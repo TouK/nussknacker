@@ -331,7 +331,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
     return (
         <NuThemeProvider>
             <ErrorBoundary>
-                <Sizer overflowY={overflowY}>
+                <Sizer overflowY={overflowY} data-testid="table-container">
                     <DataEditor
                         ref={ref}
                         className={overrideGroupRenameInput}
