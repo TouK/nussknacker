@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -15,9 +16,18 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
+    fieldsErrors: Error[];
 }
 
-export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets, readOnly }: Props) => {
+export const AnyValueWithSuggestionVariant = ({
+    item,
+    path,
+    onChange,
+    variableTypes,
+    fixedValuesPresets,
+    readOnly,
+    fieldsErrors,
+}: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -28,7 +38,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
 
     return (
         <>
-            <FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} readOnly={readOnly} />
+            {/*<FixedValuesGroup path={path} onChange={onChange} fixedValuesType={fixedValuesType} readOnly={readOnly} />*/}
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
@@ -39,6 +49,9 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                typ={item.typ}
+                name={item.name}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
@@ -48,6 +61,8 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

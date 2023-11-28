@@ -89,3 +89,5 @@ export function isAnyValueParameter(item: StringOrBooleanParameterVariant): item
 export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {
     return item.typ.refClazzName.includes("String") || item.typ.refClazzName.includes("Boolean");
 }
+
+export type FieldName = `$param.${string}.$${string}`;

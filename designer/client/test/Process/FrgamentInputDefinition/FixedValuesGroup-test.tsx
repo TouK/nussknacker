@@ -2,10 +2,10 @@ import React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
-import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
-import { FixedValuesGroup } from "../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesGroup";
+import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";
+import { FixedValuesGroup } from "../../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesGroup";
 
-jest.mock("../../src/brace/theme/nussknacker.js", () => ({}));
+jest.mock("../../../src/brace/theme/nussknacker.js", () => ({}));
 
 jest.mock("react-cron-generator", () => (props) => <div {...props} />);
 
@@ -31,12 +31,13 @@ describe(FixedValuesGroup.name, () => {
                     // @ts-ignore
                     fixedValuesType={"Preset"}
                     setPresetType={mockSetPresetType}
+                    readOnly={false}
                 />
             </NuThemeProvider>,
         );
 
         fireEvent.click(screen.getByRole("radio", { name: "fragment.settings.userDefinedList" }));
 
-        expect(mockOnChange).toHaveBeenCalledWith("test.initialValue", null);
+        expect(mockOnChange).toHaveBeenCalledWith("test.initialValue", "");
     });
 });
