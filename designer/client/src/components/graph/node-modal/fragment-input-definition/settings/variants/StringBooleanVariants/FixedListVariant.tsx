@@ -7,6 +7,7 @@ import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -15,9 +16,10 @@ interface Props {
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     variableTypes: VariableTypes;
+    fieldsErrors: Error[];
 }
 
-export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, fieldsErrors }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -29,7 +31,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
 
     return (
         <>
-            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />
+            {/*<FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />*/}
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
@@ -40,6 +42,9 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                typ={item.typ}
+                name={item.name}
             />
             <InitialValue
                 path={path}
@@ -48,6 +53,8 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

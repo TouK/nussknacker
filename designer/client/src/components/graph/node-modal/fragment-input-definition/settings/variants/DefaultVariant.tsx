@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { DefaultParameterVariant, onChangeType } from "../../item";
 import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
-import { ValidationsFields } from "./fields/ValidationsFields";
 import InitialValue from "./fields/InitialValue";
+import { Error } from "../../../editors/Validators";
 
 interface Props {
     item: DefaultParameterVariant;
@@ -14,13 +14,14 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
+    fieldsErrors: Error[];
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }: Props) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, fieldsErrors, ...props }: Props) => {
     const { t } = useTranslation();
 
     return (
-        <SettingsWrapper>
+        <SettingsWrapper {...props}>
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
@@ -29,7 +30,15 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly }
                 />
             </SettingRow>
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
-            <InitialValue onChange={onChange} item={item} path={path} readOnly={readOnly} variableTypes={variableTypes} />
+            <InitialValue
+                onChange={onChange}
+                item={item}
+                path={path}
+                readOnly={readOnly}
+                variableTypes={variableTypes}
+                fieldsErrors={fieldsErrors}
+                fieldName={`$param.${item.name}.$initialValue`}
+            />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
                 <TextAreaNodeWithFocus

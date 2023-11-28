@@ -13,6 +13,7 @@ import {
 import { FixedValuesPresets, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
+import { Error } from "../../../editors/Validators";
 
 interface Props {
     item: StringOrBooleanParameterVariant;
@@ -21,9 +22,19 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
+    fieldsErrors: Error[];
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly }: Props) => {
+export const StringBooleanVariant = ({
+    item,
+    path,
+    variableTypes,
+    onChange,
+    fixedValuesPresets,
+    readOnly,
+    fieldsErrors,
+    ...props
+}: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -33,7 +44,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
     const { t } = useTranslation();
 
     return (
-        <SettingsWrapper>
+        <SettingsWrapper {...props}>
             <SettingRow>
                 <SettingLabelStyled required>{t("fragment.required", "Required:")}</SettingLabelStyled>
                 <FormControlLabel
@@ -49,7 +60,14 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
             </SettingRow>
             <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} readOnly={readOnly} />
             {isAnyValueParameter(item) && (
-                <AnyValueVariant item={item} onChange={onChange} path={path} variableTypes={variableTypes} readOnly={readOnly} />
+                <AnyValueVariant
+                    item={item}
+                    onChange={onChange}
+                    path={path}
+                    variableTypes={variableTypes}
+                    readOnly={readOnly}
+                    fieldsErrors={fieldsErrors}
+                />
             )}
             {isFixedListParameter(item) && (
                 <FixedListVariant
@@ -59,6 +77,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
                     variableTypes={variableTypes}
+                    fieldsErrors={fieldsErrors}
                 />
             )}
             {isAnyValueWithSuggestionsParameter(item) && (
@@ -69,6 +88,7 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     variableTypes={variableTypes}
                     fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
+                    fieldsErrors={fieldsErrors}
                 />
             )}
         </SettingsWrapper>

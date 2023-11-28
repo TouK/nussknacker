@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
-import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { FixedValuesPresets, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { UserDefinedListInput } from "./UserDefinedListInput";
+import { Error } from "../../../../editors/Validators";
 
 interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
@@ -16,6 +17,9 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     fixedValuesListPresetId: string;
     readOnly: boolean;
     variableTypes: VariableTypes;
+    fieldsErrors: Error[];
+    typ: ReturnedType;
+    name: string;
 }
 
 export function FixedValuesSetting({
@@ -27,6 +31,9 @@ export function FixedValuesSetting({
     fixedValuesList,
     readOnly,
     variableTypes,
+    fieldsErrors,
+    typ,
+    name,
 }: FixedValuesSetting) {
     const { t } = useTranslation();
 
@@ -50,7 +57,13 @@ export function FixedValuesSetting({
                         value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
                     />
-                    {selectedPresetValueExpressions?.length > 0 && <ListItems items={selectedPresetValueExpressions} />}
+                    {selectedPresetValueExpressions?.length > 0 && (
+                        <ListItems
+                            items={selectedPresetValueExpressions}
+                            errors={fieldsErrors}
+                            fieldName={`$param.${name}.$fixedValuesPresets`}
+                        />
+                    )}
                 </SettingRow>
             )}
             {fixedValuesType === FixedValuesType.UserDefinedList && (
@@ -60,6 +73,9 @@ export function FixedValuesSetting({
                     readOnly={readOnly}
                     onChange={onChange}
                     path={path}
+                    errors={fieldsErrors}
+                    typ={typ}
+                    name={name}
                 />
             )}
         </>
