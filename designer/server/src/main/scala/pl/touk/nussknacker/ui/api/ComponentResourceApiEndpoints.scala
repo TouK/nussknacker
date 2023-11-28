@@ -29,7 +29,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .tag("Components")
       .withSecurity(auth)
       .get
-      .in("componentss")
+      .in("components")
       .out(
         statusCode(Ok).and(
           jsonBody[ComponentsListSuccessfulResponseDto]
@@ -70,7 +70,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .summary("Show component usage")
       .tag("Components")
       .get
-      .in("componentss" / path[String]("id") / "usages")
+      .in("components" / path[String]("id") / "usages")
       .out(
         statusCode(Ok).and(
           jsonBody[ComponentUsageSuccessfulResponseDto]
@@ -79,7 +79,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .errorOut(
         statusCode(NotFound).and(
           stringBody
-            .example("Component {id} not exist.")
+            .example("Component this not exist.")
         )
       )
       .withSecurity(auth)
@@ -169,11 +169,6 @@ object ComponentResourceApiEndpoints {
     )
 
     object ComponentUsageSuccessfulResponseDto {
-      //      def apply(usages: List[ComponentUsagesInScenario]) = {
-      //        val value = usages.map(usage => ComponentUsagesInScenarioDto(usage))
-      //
-      //        new ComponentUsageSuccessfulResponseDto(value)
-      //      }
 
       implicit val componentUsagesSchema: Schema[ComponentUsageSuccessfulResponseDto] =
         implicitly[Schema[List[ComponentUsagesInScenarioDto]]].as
@@ -205,12 +200,6 @@ object ComponentResourceApiEndpoints {
     object ComponentUsagesInScenarioDto {
 
       def apply(usage: ComponentUsagesInScenario): ComponentUsagesInScenarioDto = {
-//        val lastAction: Option[ProcessAction] =
-//          usage.lastAction match  {
-//            case "None" => None
-//            case action => Option(action)
-//          }
-//        usage.lastAction
         new ComponentUsagesInScenarioDto(
           id = usage.id,
           name = usage.name.value,
