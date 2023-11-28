@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo } from "react";
 import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types";
-import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
+import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator, Error } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { Item, onChangeType, FragmentInputParameter } from "./item";
-import { Error } from "../editors/Validators";
 
 export interface Option {
     value: string;

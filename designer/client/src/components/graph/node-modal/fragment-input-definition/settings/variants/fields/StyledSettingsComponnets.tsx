@@ -20,7 +20,7 @@ export const SettingLabelStyled = styled(FormLabel)(
     line-height: 16px;
     letter-spacing: -0.01em;
     text-align: left;
-    align-items: center;
+    margin-top: 9px;
     display: flex;
     flex-basis: 30%;
 `,

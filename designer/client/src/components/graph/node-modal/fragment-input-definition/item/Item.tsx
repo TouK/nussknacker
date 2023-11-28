@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import { TypeSelect } from "../TypeSelect";
-import { Validator } from "../../editors/Validators";
+import { Validator, Error } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
 import { FixedValuesPresets, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
@@ -12,7 +12,6 @@ import { onChangeType, FragmentInputParameter, InputMode } from "./types";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
-import { Error } from "../../editors/Validators";
 
 interface ItemProps {
     index: number;

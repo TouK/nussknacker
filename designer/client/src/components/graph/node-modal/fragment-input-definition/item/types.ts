@@ -1,5 +1,4 @@
 import { Expression, ReturnedType } from "../../../../../types";
-import { Error } from "../../editors/Validators";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[];
 
