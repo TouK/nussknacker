@@ -30,17 +30,17 @@ describe("Table editor", () => {
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
         cy.get("@table").click(500, 15);
-        cy.realType("some name{enter}");
+        cy.realType("some name{enter}", { delay: 50 });
 
         cy.get("@table").click(100, 125);
-        cy.realType("hello world{enter}");
+        cy.realType("hello world{enter}", { delay: 50 });
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
-        cy.realType("foo");
+        cy.realType("foo", { delay: 50 });
         cy.focused().tab();
-        cy.wait(50).realType("bar{enter}");
-        cy.wait(50).realType("{enter}");
-        cy.wait(50).realType("xxx{enter}");
+        cy.wait(50).realType("bar{enter}", { delay: 50 });
+        cy.wait(50).realType("{enter}", { delay: 50 });
+        cy.wait(50).realType("xxx{enter}", { delay: 50 });
 
         cy.get("[title='Switch to expression mode']").should("be.enabled").click();
         cy.get("@table").should("not.exist");
