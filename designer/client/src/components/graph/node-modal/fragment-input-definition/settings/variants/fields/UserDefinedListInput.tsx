@@ -115,13 +115,13 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
     const temporaryItemName: FieldName = `$param.${name}.$fixedValuesListTemporaryItem`;
 
     const validateTemporaryListItem = useMemo(() => {
-        return debounce(async (test: string) => {
+        return debounce(async (expressionVariable: string) => {
             const genericValidationRequest: GenericValidationRequest = {
                 parameters: [
                     {
                         name: temporaryItemName,
                         typ: temporaryListItemTyp,
-                        expression: { language: ExpressionLang.SpEL, expression: test },
+                        expression: { language: ExpressionLang.SpEL, expression: expressionVariable },
                     },
                 ],
                 processProperties,
