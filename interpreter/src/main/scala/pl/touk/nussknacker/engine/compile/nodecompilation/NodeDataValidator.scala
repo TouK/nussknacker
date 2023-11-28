@@ -43,6 +43,19 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver) {
 
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+    case spel: SpelExpressionParser => spel.typingDictLabels
+  }
+
+  private val compiler = new NodeCompiler(
+    modelData.modelDefinition,
+    FragmentComponentDefinitionExtractor(modelData),
+    expressionCompiler,
+    modelData.modelClassLoader.classLoader,
+    PreventInvocationCollector,
+    ComponentUseCase.Validation
+  )
+
   def validate(
       nodeData: NodeData,
       validationContext: ValidationContext,
@@ -50,18 +63,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       outgoingEdges: List[OutgoingEdge]
   )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
-
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-        case spel: SpelExpressionParser => spel.typingDictLabels
-      }
-      val compiler = new NodeCompiler(
-        modelData.modelDefinition,
-        FragmentComponentDefinitionExtractor(modelData),
-        expressionCompiler,
-        modelData.modelClassLoader.classLoader,
-        PreventInvocationCollector,
-        ComponentUseCase.Validation
-      )
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
       val compilationErrors = nodeData match {

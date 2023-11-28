@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
@@ -26,7 +26,7 @@ class ProcessesExportResources(
     processRepository: FetchingProcessRepository[Future],
     protected val processService: ProcessService,
     processActivityRepository: ProcessActivityRepository,
-    processResolving: UIProcessResolving
+    processResolver: UIProcessResolver
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
@@ -88,8 +88,8 @@ class ProcessesExportResources(
   }
 
   private def exportResolvedProcess(processWithDictLabels: DisplayableProcess): HttpResponse = {
-    val validationResult = processResolving.validateBeforeUiResolving(processWithDictLabels)
-    val resolvedProcess  = processResolving.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
+    val validationResult = processResolver.validateBeforeUiResolving(processWithDictLabels)
+    val resolvedProcess  = processResolver.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
     fileResponse(resolvedProcess)
   }
 

@@ -4,9 +4,6 @@ import { alpha } from "../../../../../../containers/theme/helpers";
 export const CronEditorStyled = styled("div")(
     ({ theme }) => css`
         width: 70%;
-        * {
-            color: ${theme.custom.colors.secondaryColor} !important;
-        }
         .cron_builder_bordering {
             border-radius: none;
             border: none;
@@ -21,6 +18,9 @@ export const CronEditorStyled = styled("div")(
             background-color: ${theme.custom.colors.secondaryBackground};
             outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
             border: none;
+            * {
+                color: ${theme.custom.colors.secondaryColor};
+            }
         }
         .well {
             display: flex;

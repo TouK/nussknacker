@@ -468,7 +468,7 @@ class NodeCompiler(
   }).asInstanceOf[T]
 
   private def contextWithOnlyGlobalVariables(implicit metaData: MetaData): ValidationContext =
-    globalVariablesPreparer.emptyValidationContext(metaData)
+    globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
 
   private def defaultContextAfter(
       node: CustomNodeData,
