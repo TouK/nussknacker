@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._

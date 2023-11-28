@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
@@ -12,6 +13,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
+import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(
@@ -21,7 +24,13 @@ abstract class StubbedFlinkProcessCompiler(
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase
-) extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
+) extends FlinkProcessCompiler(
+      creator,
+      processConfig,
+      diskStateBackendSupport,
+      objectNaming,
+      componentUseCase,
+    ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
@@ -51,7 +60,9 @@ abstract class StubbedFlinkProcessCompiler(
       }
 
     def sourceDefForFragment(frag: FragmentInputDefinition): ObjectWithMethodDef = {
-      new StubbedFragmentInputDefinitionSource(processConfig, userCodeClassLoader).createSourceDefinition(frag)
+      new StubbedFragmentInputDefinitionSource(
+        LocalModelData(processConfig, creator, modelClassLoader = ModelClassLoader(userCodeClassLoader, List()))
+      ).createSourceDefinition(frag)
     }
 
     val stubbedSourceForFragment: Seq[(String, ObjectWithMethodDef)] = process.allStartNodes.map(_.head.data).collect {
