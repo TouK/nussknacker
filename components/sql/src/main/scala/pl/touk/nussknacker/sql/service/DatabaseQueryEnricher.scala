@@ -92,6 +92,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       )
     }
 
+  @transient
   protected var dataSource: HikariDataSource = _
 
   override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
