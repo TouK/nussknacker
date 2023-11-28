@@ -241,17 +241,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                 },
             }));
         },
-        [
-            () => {
-                dispatch({
-                    type: ActionTypes.expand,
-                    rows: 0,
-                    columns: 1,
-                    dataType: defaultTypeOption.value,
-                });
-            },
-            columns.length,
-        ],
+        [columns.length, defaultTypeOption.value, dispatch],
     );
 
     const closeCellMenu = () => {
@@ -331,7 +321,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
     return (
         <NuThemeProvider>
             <ErrorBoundary>
-                <Sizer overflowY={overflowY}>
+                <Sizer overflowY={overflowY} data-testid="table-container">
                     <DataEditor
                         ref={ref}
                         className={overrideGroupRenameInput}
