@@ -1,8 +1,10 @@
 function snapshot() {
-    cy.get("@editor").matchImage({
-        maxDiffThreshold: 0.002,
-        screenshotConfig: { padding: [1] },
-    });
+    cy.wait(500)
+        .get("@editor")
+        .matchImage({
+            maxDiffThreshold: 0.002,
+            screenshotConfig: { padding: [1] },
+        });
 }
 
 describe("Table editor", () => {

@@ -241,17 +241,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                 },
             }));
         },
-        [
-            () => {
-                dispatch({
-                    type: ActionTypes.expand,
-                    rows: 0,
-                    columns: 1,
-                    dataType: defaultTypeOption.value,
-                });
-            },
-            columns.length,
-        ],
+        [columns.length, defaultTypeOption.value, dispatch],
     );
 
     const closeCellMenu = () => {
