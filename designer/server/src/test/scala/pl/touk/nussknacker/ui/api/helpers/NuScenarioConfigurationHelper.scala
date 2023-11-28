@@ -27,9 +27,7 @@ import scala.concurrent.Future
 //       that are supposed to configure Nussknacker DB state (using repositories or through HTTP API).
 trait NuScenarioConfigurationHelper extends ScalaFutures {
   this: WithTestDb =>
-
-  private implicit val user: LoggedUser = TestFactory.adminUser("user")
-
+  private implicit val user: LoggedUser                       = TestFactory.adminUser("user")
   private val dbioRunner: DBIOActionRunner                    = newDBIOActionRunner(testDbRef)
   private val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
   private val writeProcessRepository: DBProcessRepository     = newWriteProcessRepository(testDbRef)
@@ -38,6 +36,14 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
 
   protected implicit val processCategoryService: ProcessCategoryService =
     TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
+
+  protected def createSavedProcess(
+      process: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType
+  ): ProcessId = {
+    saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
+  }
 
   def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {
