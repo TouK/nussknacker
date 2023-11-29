@@ -113,7 +113,7 @@ describe("Components list", () => {
     });
 
     it("should apply filters from query", () => {
-        cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&USAGES=-1");
+        cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&USAGES=-1");
         cy.contains(/^name$/i).should("be.visible");
         cy.get("[role=row]").should("have.length", 2);
         cy.contains("[role=row] *", /^Default$/).should("be.visible");
