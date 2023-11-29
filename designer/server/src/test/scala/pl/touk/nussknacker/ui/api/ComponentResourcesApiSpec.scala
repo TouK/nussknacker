@@ -77,6 +77,9 @@ class ComponentResourcesApiSpec
         "streaming-processor-meetingservice",
         "streaming-processor-multipleparamsservice",
         "streaming-processor-optionaltypesservice",
+        "streaming-processor-providedcomponent-component-v1",
+        "streaming-processor-providedcomponent-component-v2",
+        "streaming-processor-providedcomponent-component-v3",
         "streaming-processor-servicemodelservice",
         "streaming-processor-simpletypesservice",
         "streaming-processor-transactionservice",
@@ -115,7 +118,7 @@ class ComponentResourcesApiSpec
             .statusCode(200)
             .extractToStringsList("id")
 
-        componentIdListForTestUser should contain theSameElementsAs correctListForTestUser
+        componentIdListForTestUser.sorted should contain theSameElementsAs correctListForTestUser
       }
 
       "return different component lists for users(test, admin)" in {
@@ -158,6 +161,9 @@ class ComponentResourcesApiSpec
           "streaming2-processor-meetingservice",
           "streaming2-processor-multipleparamsservice",
           "streaming2-processor-optionaltypesservice",
+          "streaming2-processor-providedcomponent-component-v1",
+          "streaming2-processor-providedcomponent-component-v2",
+          "streaming2-processor-providedcomponent-component-v3",
           "streaming2-processor-servicemodelservice",
           "streaming2-processor-simpletypesservice",
           "streaming2-processor-transactionservice",
@@ -214,6 +220,9 @@ class ComponentResourcesApiSpec
           "streaming-processor-meetingservice",
           "streaming-processor-multipleparamsservice",
           "streaming-processor-optionaltypesservice",
+          "streaming-processor-providedcomponent-component-v1",
+          "streaming-processor-providedcomponent-component-v2",
+          "streaming-processor-providedcomponent-component-v3",
           "streaming-processor-servicemodelservice",
           "streaming-processor-simpletypesservice",
           "streaming-processor-transactionservice",
@@ -261,7 +270,7 @@ class ComponentResourcesApiSpec
             .statusCode(200)
             .extractToStringsList("id")
 
-        componentIdListForAdminUser should contain theSameElementsAs correctListForAdminUser
+        componentIdListForAdminUser.sorted should contain theSameElementsAs correctListForAdminUser
 
         componentIdListForAdminUser.length > componentIdListForTestUser.length shouldBe true
       }
