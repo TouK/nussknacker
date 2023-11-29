@@ -108,7 +108,6 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
             "paramDualEditor" -> ParameterConfig(
               None,
               None,
@@ -118,6 +117,7 @@ class BaseFlowTest
               None,
               None
             ),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
           )
         ),
         icon = Some("/assets/components/Filter.svg"),
@@ -133,7 +133,7 @@ class BaseFlowTest
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
               None,
               None,
-              None
+              Some("some hint text"),
             ),
             "foo" -> ParameterConfig(
               None,
