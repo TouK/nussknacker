@@ -31,7 +31,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       implicit nodeId: NodeId
   ): NodeCompilationResult[expression.Expression] = {
     val (expressionCompilation, nodeCompilation) =
-      ExpressionCompilerAdapter.compileExpression(
+      compileExpression(
         variable.value,
         ctx,
         expectedType = Unknown,
@@ -48,7 +48,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       implicit nodeId: NodeId
   ): NodeCompilationResult[expression.Expression] = {
     val (expressionCompilation, nodeCompilation) =
-      ExpressionCompilerAdapter.compileExpression(
+      compileExpression(
         filter.expression,
         ctx,
         expectedType = Typed[Boolean],
@@ -73,23 +73,21 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     val expression = expressionRaw.filterNot(_._1.isEmpty)
 
     val expressionCompilation = expression.map { case (output, expression) =>
-      ExpressionCompilerAdapter
-        .compileExpression(
-          expression,
-          ctx,
-          Unknown,
-          NodeExpressionId.DefaultExpressionId,
-          Some(OutputVar.switch(output))
-        )
-        ._2
+      compileExpression(
+        expression,
+        ctx,
+        Unknown,
+        NodeExpressionId.DefaultExpressionId,
+        Some(OutputVar.switch(output))
+      )._2
     }
-    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
+    val objExpression = expressionCompilation.map(_.compiledObject).sequence
 
     val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
 
     val (additionalValidations, caseExpressions) = choices.map { case (outEdge, caseExpr) =>
       val (expressionCompilation, nodeCompilation) =
-        ExpressionCompilerAdapter.compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
+        compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
       val typedExpression = expressionCompilation.typedExpression
       val validation      = ValidationAdapter.validateMaybeBoolean(typedExpression, outEdge)
       val caseExpression  = nodeCompilation
@@ -134,13 +132,11 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     }
 
     val recordValuesCompilationResult = compliedRecordFields.traverse { validatedField =>
-      validatedField.andThen { compiledField =>
-        Valid(
-          ExpressionCompilerAdapter.ExpressionCompilation(
-            compiledField.field.name,
-            Some(compiledField.typedExpression),
-            Valid(variable.Field(compiledField.field.name, compiledField.typedExpression.expression))
-          )
+      validatedField.map { compiledField =>
+        ExpressionCompilation(
+          compiledField.field.name,
+          Some(compiledField.typedExpression),
+          Valid(variable.Field(compiledField.field.name, compiledField.typedExpression.expression))
         )
       }
     }
@@ -183,46 +179,42 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     combineErrors(compilationResult, additionalValidationResult)
   }
 
-  private object ExpressionCompilerAdapter {
+  case class ExpressionCompilation[R](
+      fieldName: String,
+      typedExpression: Option[TypedExpression],
+      validated: ValidatedNel[ProcessCompilationError, R]
+  ) {
 
-    case class ExpressionCompilation[R](
-        fieldName: String,
-        typedExpression: Option[TypedExpression],
-        validated: ValidatedNel[ProcessCompilationError, R]
-    ) {
+    val typingResult: TypingResult =
+      typedExpression.map(_.returnType).getOrElse(Unknown)
 
-      val typingResult: TypingResult =
-        typedExpression.map(_.returnType).getOrElse(Unknown)
+    val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
+      typedExpression.map(te => (fieldName, te.typingInfo)).toMap
+  }
 
-      val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
-        typedExpression.map(te => (fieldName, te.typingInfo)).toMap
-    }
+  private def compileExpression(
+      expr: Expression,
+      ctx: ValidationContext,
+      expectedType: TypingResult,
+      fieldName: String = DefaultExpressionId,
+      outputVar: Option[OutputVar]
+  )(
+      implicit nodeId: NodeId
+  ): (ExpressionCompilation[expression.Expression], NodeCompilationResult[expression.Expression]) = {
+    val expressionCompilation: ExpressionCompilation[expression.Expression] = objectParametersExpressionCompiler
+      .compile(expr, Some(fieldName), ctx, expectedType)
+      .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
+      .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
 
-    def compileExpression(
-        expr: Expression,
-        ctx: ValidationContext,
-        expectedType: TypingResult,
-        fieldName: String = DefaultExpressionId,
-        outputVar: Option[OutputVar]
-    )(
-        implicit nodeId: NodeId
-    ): (ExpressionCompilation[expression.Expression], NodeCompilationResult[expression.Expression]) = {
-      val expressionCompilation: ExpressionCompilation[expression.Expression] = objectParametersExpressionCompiler
-        .compile(expr, Some(fieldName), ctx, expectedType)
-        .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
-        .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
+    val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
+      expressionTypingInfo = expressionCompilation.expressionTypingInfo,
+      parameters = None,
+      validationContext = outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
+      compiledObject = expressionCompilation.validated,
+      expressionType = Some(expressionCompilation.typingResult)
+    )
 
-      val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
-        expressionTypingInfo = expressionCompilation.expressionTypingInfo,
-        parameters = None,
-        validationContext =
-          outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
-        compiledObject = expressionCompilation.validated,
-        expressionType = Some(expressionCompilation.typingResult)
-      )
-
-      (expressionCompilation, nodeCompilation)
-    }
+    (expressionCompilation, nodeCompilation)
 
   }
 
@@ -268,8 +260,8 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         fieldName: String
     )(
         implicit nodeId: NodeId
-    ): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
-      validateOrValid(Typed[Boolean], NotNullParameterValidator, expression, fieldName)
+    ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+      validateOrValid(NotNullParameterValidator, expression, fieldName)
     }
 
     def validateMaybeVariable(
@@ -277,21 +269,19 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         fieldName: String
     )(
         implicit nodeId: NodeId
-    ): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
-      validateOrValid(Unknown, MandatoryParameterValidator, expression, fieldName)
+    ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+      validateOrValid(MandatoryParameterValidator, expression, fieldName)
     }
 
     private def validateOrValid(
-        expectedType: TypingResult,
         validator: ParameterValidator,
         expression: Option[TypedExpression],
         fieldName: String
-    )(implicit nodeId: NodeId): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] = {
+    )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
       expression
         .map { expr =>
           Validations
-            // The parameter definition name does not mean anything here
-            .validate(Parameter("stub", expectedType, List(validator)), (TypedParameter(fieldName, expr), ()))
+            .validate(List(validator), TypedParameter(fieldName, expr))
             .map(_ => ())
         }
         .getOrElse(valid(()))
