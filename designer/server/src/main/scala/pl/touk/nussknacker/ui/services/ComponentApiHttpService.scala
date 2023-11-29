@@ -4,10 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.ui.api.ComponentResourceApiEndpoints
-import pl.touk.nussknacker.ui.api.ComponentResourceApiEndpoints.Dtos.{
-  ComponentUsageSuccessfulResponseDto,
-  ComponentsListSuccessfulResponseDto
-}
 import pl.touk.nussknacker.ui.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
@@ -30,9 +26,7 @@ class ComponentApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogic { user => _ =>
         componentService.getComponentsList(user).map { componentList =>
-          success(
-            ComponentsListSuccessfulResponseDto(componentList)
-          )
+          success(componentList)
         }
       }
   }
@@ -44,7 +38,7 @@ class ComponentApiHttpService(
         componentService.getComponentUsages(ComponentId(componentId))(user).map {
           case Left(_) => businessError(s"Component $componentId not exist.")
           case Right(value) =>
-            success(ComponentUsageSuccessfulResponseDto(value))
+            success(value)
         }
       }
   }

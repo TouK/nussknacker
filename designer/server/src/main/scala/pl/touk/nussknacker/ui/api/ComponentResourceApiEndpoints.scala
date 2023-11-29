@@ -1,9 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import derevo.circe.decoder
-import derevo.derive
-import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
@@ -16,9 +12,9 @@ import java.net.URI
 
 class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import ComponentResourceApiEndpoints.Dtos._
+  implicit val uriSchema: Schema[URI] = Schema.string
 
-  val componentsListEndpoint: SecuredEndpoint[Unit, Unit, ComponentsListSuccessfulResponseDto, Any] =
+  val componentsListEndpoint: SecuredEndpoint[Unit, Unit, List[ComponentListElement], Any] =
     baseNuApiEndpoint
       .summary("Listing components")
       .tag("Components")
@@ -27,11 +23,11 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .in("components")
       .out(
         statusCode(Ok).and(
-          jsonBody[ComponentsListSuccessfulResponseDto]
+          jsonBody[List[ComponentListElement]]
         )
       )
 
-  val componentUsageEndpoint: SecuredEndpoint[String, String, ComponentUsageSuccessfulResponseDto, Any] =
+  val componentUsageEndpoint: SecuredEndpoint[String, String, List[ComponentUsagesInScenario], Any] =
     baseNuApiEndpoint
       .summary("Show component usage")
       .tag("Components")
@@ -39,7 +35,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .in("components" / path[String]("id") / "usages")
       .out(
         statusCode(Ok).and(
-          jsonBody[ComponentUsageSuccessfulResponseDto]
+          jsonBody[List[ComponentUsagesInScenario]]
         )
       )
       .errorOut(
@@ -49,59 +45,5 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
         )
       )
       .withSecurity(auth)
-
-}
-
-object ComponentResourceApiEndpoints {
-
-  object Dtos {
-
-    implicit val uriSchema: Schema[URI] = Schema.string
-
-    final case class ComponentsListSuccessfulResponseDto(
-        components: List[ComponentListElement]
-    )
-
-    object ComponentsListSuccessfulResponseDto {
-
-      implicit val responseSchema: Schema[ComponentsListSuccessfulResponseDto] = {
-        implicitly[Schema[List[ComponentListElement]]].as
-      }
-
-      implicit val circeDecoder: Decoder[ComponentsListSuccessfulResponseDto] = {
-        Decoder.instance { c =>
-          for {
-            list <- c.value.as[List[ComponentListElement]]
-          } yield ComponentsListSuccessfulResponseDto(list)
-        }
-      }
-
-      implicit val circeEncoder: Encoder[ComponentsListSuccessfulResponseDto] = {
-        Encoder.encodeJson.contramap { componentList =>
-          componentList.components.asJson
-        }
-      }
-
-    }
-
-    @derive(decoder)
-    final case class ComponentUsageSuccessfulResponseDto(
-        usages: List[ComponentUsagesInScenario]
-    )
-
-    object ComponentUsageSuccessfulResponseDto {
-
-      implicit val componentUsagesSchema: Schema[ComponentUsageSuccessfulResponseDto] =
-        implicitly[Schema[List[ComponentUsagesInScenario]]].as
-
-      implicit val circeEncoder: Encoder[ComponentUsageSuccessfulResponseDto] = {
-        Encoder.encodeJson.contramap { usagesList =>
-          usagesList.usages.asJson
-        }
-      }
-
-    }
-
-  }
 
 }

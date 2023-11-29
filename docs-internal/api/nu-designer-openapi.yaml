@@ -302,7 +302,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ComponentUsagesInScenarioDto'
+                  $ref: '#/components/schemas/ComponentUsagesInScenario'
         '401':
           description: ''
           content:
@@ -347,25 +347,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ComponentListElementDto'
-              examples:
-                Example:
-                  summary: List of available components
-                  value:
-                  - id: streaming-dev-processor-accountservice
-                    name: accountService
-                    icon: /assets/components/Processor.svg
-                    componentType: processor
-                    componentGroupName: services
-                    categories:
-                    - Category1
-                    - Category2
-                    links:
-                    - id: documentation
-                      title: Documentation
-                      icon: /assets/icons/documentation.svg
-                      url: accountServiceDocs
-                    usageCount: 1
+                  $ref: '#/components/schemas/ComponentListElement'
         '401':
           description: ''
           content:
@@ -412,7 +394,30 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
-    ComponentListElementDto:
+    ComponentGroupName:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+    ComponentLink:
+      required:
+      - id
+      - title
+      - icon
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+        url:
+          type: string
+    ComponentListElement:
       required:
       - id
       - name
@@ -429,9 +434,9 @@ components:
         icon:
           type: string
         componentType:
-          type: string
+          $ref: '#/components/schemas/ComponentType'
         componentGroupName:
-          type: string
+          $ref: '#/components/schemas/ComponentGroupName'
         categories:
           type: array
           items:
@@ -439,11 +444,27 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/LinkDto'
+            $ref: '#/components/schemas/ComponentLink'
         usageCount:
           type: integer
           format: int64
-    ComponentUsagesInScenarioDto:
+    ComponentType:
+      type: string
+      enum:
+      - filter
+      - split
+      - switch
+      - variable
+      - mapVariable
+      - processor
+      - enricher
+      - sink
+      - source
+      - fragments
+      - customNode
+      - input
+      - output
+    ComponentUsagesInScenario:
       required:
       - id
       - name
@@ -460,30 +481,42 @@ components:
         id:
           type: string
         name:
-          type: string
+          $ref: '#/components/schemas/ProcessName'
         processId:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ProcessId'
         nodesUsagesData:
           type: array
           items:
-            $ref: '#/components/schemas/Map_String'
+            $ref: '#/components/schemas/NodeUsageData'
         isFragment:
           type: boolean
         processCategory:
           type: string
         modificationDate:
           type: string
+          format: date-time
         modifiedAt:
           type: string
+          format: date-time
         modifiedBy:
           type: string
         createdAt:
           type: string
+          format: date-time
         createdBy:
           type: string
         lastAction:
-          $ref: '#/components/schemas/ProcessActionDto'
+          $ref: '#/components/schemas/ProcessAction'
+    FragmentUsageData:
+      required:
+      - fragmentNodeId
+      - nodeId
+      type: object
+      properties:
+        fragmentNodeId:
+          type: string
+        nodeId:
+          type: string
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -518,22 +551,6 @@ components:
           - 'null'
           items:
             type: string
-    LinkDto:
-      required:
-      - id
-      - title
-      - icon
-      - url
-      type: object
-      properties:
-        id:
-          type: string
-        title:
-          type: string
-        icon:
-          type: string
-        url:
-          type: string
     Map_Map_String_String:
       type: object
       additionalProperties:
@@ -542,7 +559,11 @@ components:
       type: object
       additionalProperties:
         type: string
-    ProcessActionDto:
+    NodeUsageData:
+      oneOf:
+      - $ref: '#/components/schemas/FragmentUsageData'
+      - $ref: '#/components/schemas/ScenarioUsageData'
+    ProcessAction:
       required:
       - id
       - processId
@@ -556,23 +577,23 @@ components:
       type: object
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/ProcessActionId'
         processId:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/ProcessId'
         processVersionId:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/VersionId'
         user:
           type: string
         createdAt:
           type: string
+          format: date-time
         performedAt:
           type: string
+          format: date-time
         actionType:
-          type: string
+          $ref: '#/components/schemas/ProcessActionType'
         state:
-          type: string
+          $ref: '#/components/schemas/ProcessActionState'
         failureMessage:
           type:
           - string
@@ -588,6 +609,52 @@ components:
           - 'null'
         buildInfo:
           $ref: '#/components/schemas/Map_String'
+    ProcessActionId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+          format: uuid
+    ProcessActionState:
+      type: string
+      enum:
+      - IN_PROGRESS
+      - FINISHED
+      - FAILED
+      - EXECUTION_FINISHED
+    ProcessActionType:
+      type: string
+      enum:
+      - DEPLOY
+      - CANCEL
+      - ARCHIVE
+      - UNARCHIVE
+      - PAUSE
+      - RENAME
+    ProcessId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int64
+    ProcessName:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+    ScenarioUsageData:
+      required:
+      - nodeId
+      type: object
+      properties:
+        nodeId:
+          type: string
     Status:
       type: string
       enum:
@@ -596,6 +663,14 @@ components:
       type: string
       enum:
       - ERROR
+    VersionId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int64
   securitySchemes:
     httpAuth:
       type: http
