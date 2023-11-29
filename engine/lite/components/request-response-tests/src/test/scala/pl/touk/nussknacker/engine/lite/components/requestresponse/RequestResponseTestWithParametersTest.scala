@@ -199,7 +199,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           hintText = None,
           inputConfig = ParameterInputConfig(InputModeAny, None),
           validationExpression =
-            Some(ValidationExpression(Expression.spel("#name.length() < 100"), Some("some validation error")))
+            Some(ValidationExpression(Expression.spel("#value.length() < 100"), Some("some validation error")))
         )
       )
     )
@@ -209,12 +209,15 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed(classOf[String])
     parameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
-    parameter.validators.head should matchPattern {
-      case ValidationExpressionParameterValidator(_, Some("some validation error")) =>
+    parameter.validators should matchPattern {
+      case List(
+            MandatoryParameterValidator,
+            ValidationExpressionParameterValidator(_, Some("some validation error"))
+          ) =>
     }
     val validationExpression =
-      parameter.validators.head.asInstanceOf[ValidationExpressionParameterValidator].validationExpression
-    validationExpression.original shouldBe "#name.length() < 100"
+      parameter.validators.last.asInstanceOf[ValidationExpressionParameterValidator].validationExpression
+    validationExpression.original shouldBe "#value.length() < 100"
     validationExpression.language shouldBe "spel"
   }
 
