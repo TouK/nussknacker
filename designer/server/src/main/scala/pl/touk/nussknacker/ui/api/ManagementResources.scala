@@ -12,17 +12,17 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
-import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -135,7 +135,7 @@ class ManagementResources(
     entity(as[Option[String]]).flatMap { comment =>
       DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
-        case Invalid(exc) => complete(NuDesignerErrorToHttp.nuDesignerErrorToHttp(ValidationError(exc.getMessage)))
+        case Invalid(exc) => complete(NuDesignerErrorToHttp.httpResponseFrom(ValidationError(exc.getMessage)))
       }
     }
   }
@@ -231,7 +231,7 @@ class ManagementResources(
                               Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                             }
                         case Left(error) =>
-                          Future.failed(UnmarshallError(error.toString))
+                          Future.failed(ProcessUnmarshallingError(error.toString))
                       }
                     }
                   }
@@ -248,7 +248,7 @@ class ManagementResources(
                       complete {
                         measureTime("generateAndTest", metricRegistry) {
                           scenarioTestService.generateData(displayableProcess, testSampleSize) match {
-                            case Left(error) => Future.failed(UnmarshallError(error))
+                            case Left(error) => Future.failed(ProcessUnmarshallingError(error))
                             case Right(rawScenarioTestData) =>
                               scenarioTestService
                                 .performTest(

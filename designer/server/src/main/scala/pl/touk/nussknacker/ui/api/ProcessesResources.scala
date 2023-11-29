@@ -288,6 +288,6 @@ class ProcessesResources(
 }
 
 object ProcessesResources {
-  final case class UnmarshallError(message: String) extends FatalError(message)
+  final case class ProcessUnmarshallingError(message: String) extends OtherError(message)
 
 }
