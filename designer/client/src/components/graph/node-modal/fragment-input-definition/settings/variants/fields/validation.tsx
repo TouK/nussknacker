@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { t } from "i18next";
 import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
@@ -6,7 +6,7 @@ import { onChangeType, AnyValueWithSuggestionsParameterVariant, AnyValueParamete
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { VariableTypes } from "../../../../../../../types";
 
-interface ValidationsFields {
+interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
@@ -14,9 +14,10 @@ interface ValidationsFields {
     readOnly: boolean;
 }
 
-export function ValidationsFields(props: ValidationsFields) {
+export function ValidationsFields(props: Validation) {
     const { onChange, path, variableTypes, item, readOnly } = props;
-    const [validation, setValidation] = useState(true);
+
+    const validation = item.validationExpression.validation;
 
     return (
         <>
@@ -27,7 +28,7 @@ export function ValidationsFields(props: ValidationsFields) {
                         <CustomSwitch
                             disabled={readOnly}
                             checked={validation}
-                            onChange={(event) => setValidation(event.currentTarget.checked)}
+                            onChange={(event) => onChange(`${path}.validationExpression.validation`, event.currentTarget.checked)}
                         />
                     }
                     label=""
@@ -36,7 +37,7 @@ export function ValidationsFields(props: ValidationsFields) {
                     <SettingLabelStyled style={{ flexBasis: "70%", minWidth: "70%" }}>
                         {t(
                             "fragment.validation.validationWarning",
-                            "When validation is enabled, the parameter's value will be evaluated and validated at deployment time. In run-time, Nussknacker will use this precalculated value for each processed data record.",
+                            "When validation is enabled, only literal values and operations on them are allowed in the parameter's value (i.e. the value passed to the fragment when it is used). This is because Nussknacker has to be able to evaluate it at deployment time.",
                         )}
                     </SettingLabelStyled>
                 </div>
@@ -45,8 +46,8 @@ export function ValidationsFields(props: ValidationsFields) {
                 <ValidationFields
                     path={path}
                     onChange={onChange}
-                    validationErrorMessage={item.validationErrorMessage}
-                    validationExpression={item.validationExpression}
+                    failedMessage={item.validationExpression.failedMessage}
+                    expression={item.validationExpression.expression}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                 />

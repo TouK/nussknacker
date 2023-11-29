@@ -7,6 +7,7 @@ import { VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import InitialValue from "./fields/InitialValue";
 import { Error } from "../../../editors/Validators";
+import { ValidationsFields } from "./fields/validation";
 
 interface Props {
     item: DefaultParameterVariant;
@@ -29,7 +30,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     label=""
                 />
             </SettingRow>
-            {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
+            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} readOnly={readOnly} />
             <InitialValue
                 onChange={onChange}
                 item={item}

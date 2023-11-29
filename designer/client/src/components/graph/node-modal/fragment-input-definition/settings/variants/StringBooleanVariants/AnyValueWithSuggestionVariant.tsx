@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 import { Error } from "../../../../editors/Validators";
+import { ValidationsFields } from "../fields/validation";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -53,7 +54,7 @@ export const AnyValueWithSuggestionVariant = ({
                 name={item.name}
                 initialValue={item.initialValue}
             />
-            {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
+            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} readOnly={readOnly} />
             <InitialValue
                 path={path}
                 item={item}

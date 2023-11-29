@@ -1,12 +1,10 @@
 import { Expression, ReturnedType } from "../../../../../types";
+import { ExpressionLang } from "../../editors/expression/types";
 
 export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[];
 
-//TODO: Makes values required when backend ready
 export interface FragmentValidation {
-    validation?: boolean;
-    validationErrorMessage?: string;
-    validationExpression?: string;
+    validationExpression?: { validation: boolean; expression: { expression: string; language: ExpressionLang }; failedMessage: string };
 }
 
 export enum FixedValuesType {

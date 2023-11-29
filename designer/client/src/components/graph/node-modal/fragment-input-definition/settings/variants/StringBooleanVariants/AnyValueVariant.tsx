@@ -6,6 +6,7 @@ import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { Error } from "../../../../editors/Validators";
+import { ValidationsFields } from "../fields/validation";
 
 interface Props {
     item: AnyValueParameterVariant;
@@ -21,7 +22,7 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
 
     return (
         <>
-            {/*<ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} />*/}
+            <ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} readOnly={readOnly} />
             <InitialValue
                 path={path}
                 item={item}
