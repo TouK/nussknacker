@@ -21,7 +21,7 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         validationExpression: {
             validation: true,
             expression: {
-                expression: null,
+                expression: "",
                 language: ExpressionLang.SpEL,
             },
             failedMessage: "There was a problem with expression validation",

@@ -54,7 +54,14 @@ export const AnyValueWithSuggestionVariant = ({
                 name={item.name}
                 initialValue={item.initialValue}
             />
-            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} readOnly={readOnly} />
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                fieldErrors={fieldsErrors}
+            />
             <InitialValue
                 path={path}
                 item={item}

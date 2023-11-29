@@ -22,7 +22,14 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
 
     return (
         <>
-            <ValidationsFields path={path} item={item} onChange={onChange} variableTypes={variableTypes} readOnly={readOnly} />
+            <ValidationsFields
+                path={path}
+                item={item}
+                onChange={onChange}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                fieldErrors={fieldsErrors}
+            />
             <InitialValue
                 path={path}
                 item={item}

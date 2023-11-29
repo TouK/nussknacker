@@ -5,6 +5,7 @@ import ValidationFields from "./ValidationFields";
 import { onChangeType, AnyValueWithSuggestionsParameterVariant, AnyValueParameterVariant, DefaultParameterVariant } from "../../../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { VariableTypes } from "../../../../../../../types";
+import { Error } from "../../../../editors/Validators";
 
 interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
@@ -12,10 +13,11 @@ interface Validation {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
+    fieldErrors: Error[];
 }
 
 export function ValidationsFields(props: Validation) {
-    const { onChange, path, variableTypes, item, readOnly } = props;
+    const { onChange, path, variableTypes, item, readOnly, fieldErrors } = props;
 
     const validation = item.validationExpression.validation;
 
@@ -50,6 +52,8 @@ export function ValidationsFields(props: Validation) {
                     expression={item.validationExpression.expression}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
+                    fieldsErrors={fieldErrors}
+                    validationExpressionFieldName={`$param.${item.name}.$validationExpression.expression`}
                 />
             )}
         </>

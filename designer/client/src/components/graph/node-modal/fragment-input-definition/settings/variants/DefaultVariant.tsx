@@ -30,7 +30,14 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     label=""
                 />
             </SettingRow>
-            <ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} readOnly={readOnly} />
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                fieldErrors={fieldsErrors}
+            />
             <InitialValue
                 onChange={onChange}
                 item={item}
