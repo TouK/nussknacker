@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -33,6 +34,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.temporal.ChronoField
 import java.time.{Clock, LocalDate, LocalDateTime}
+import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -255,7 +257,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     f.periodicProcessService
-      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess)
+      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess, randomDeploymentId)
       .futureValue
 
     val processEntity = f.repository.processEntities.loneElement
@@ -332,7 +334,9 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     def tryToSchedule(schedule: ScheduleProperty): Unit =
-      f.periodicProcessService.schedule(schedule, ProcessVersion.empty, canonicalProcess).futureValue
+      f.periodicProcessService
+        .schedule(schedule, ProcessVersion.empty, canonicalProcess, randomDeploymentId)
+        .futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
     tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
@@ -425,4 +429,5 @@ class PeriodicProcessServiceTest
     }
   }
 
+  private def randomDeploymentId = DeploymentId(UUID.randomUUID().toString)
 }
