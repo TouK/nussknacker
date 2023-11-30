@@ -14,6 +14,7 @@ object LocalModelData {
   def apply(
       inputConfig: Config,
       configCreator: ProcessConfigCreator,
+      category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
@@ -22,6 +23,7 @@ object LocalModelData {
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
       modelConfigLoader,
+      category,
       configCreator,
       migrations,
       modelClassLoader,
@@ -33,6 +35,7 @@ object LocalModelData {
 case class LocalModelData(
     inputConfigDuringExecution: InputConfigDuringExecution,
     modelConfigLoader: ModelConfigLoader,
+    category: Option[String],
     configCreator: ProcessConfigCreator,
     migrations: ProcessMigrations,
     modelClassLoader: ModelClassLoader,

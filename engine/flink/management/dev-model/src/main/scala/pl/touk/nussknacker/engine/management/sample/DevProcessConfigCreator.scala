@@ -305,9 +305,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       additionalClasses,
       LanguageConfiguration(List()),
       dictionaries = Map(
-        TestDictionary.id           -> categories(TestDictionary.definition),
-        RGBDictionary.id            -> categories(RGBDictionary.definition),
-        BusinessConfigDictionary.id -> categories(BusinessConfigDictionary.definition)
+        TestDictionary.id           -> TestDictionary.definition,
+        RGBDictionary.id            -> RGBDictionary.definition,
+        BusinessConfigDictionary.id -> BusinessConfigDictionary.definition
       )
     )
   }

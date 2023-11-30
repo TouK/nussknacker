@@ -20,25 +20,34 @@ import java.net.URL
 object ModelData extends LazyLogging {
 
   def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
-    ModelData(processingTypeConfig.modelConfig, ModelClassLoader(processingTypeConfig.classPath))
+    ModelData(
+      processingTypeConfig.modelConfig,
+      ModelClassLoader(processingTypeConfig.classPath),
+      processingTypeConfig.category
+    )
   }
 
-  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader): ModelData = {
-    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader)
+  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
+    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader, category)
   }
 
-  def apply(inputConfig: ConfigWithUnresolvedVersion, modelClassLoader: ModelClassLoader): ModelData = {
+  def apply(
+      inputConfig: ConfigWithUnresolvedVersion,
+      modelClassLoader: ModelClassLoader,
+      category: Option[String]
+  ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
       modelConfigLoader =>
         modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
-      modelClassLoader
+      modelClassLoader,
+      category
     )
   }
 
   // Used on Flink, where we start already with resolved config so we should not resolve it twice.
   def duringExecution(inputConfig: Config): ModelData = {
-    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
+    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil), None)
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
@@ -49,7 +58,8 @@ object ModelData extends LazyLogging {
 
 case class ClassLoaderModelData private (
     private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
-    modelClassLoader: ModelClassLoader
+    modelClassLoader: ModelClassLoader,
+    override val category: Option[String]
 ) extends ModelData {
 
   // this is not lazy, to be able to detect if creator can be created...
@@ -86,12 +96,16 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def configCreator: ProcessConfigCreator
 
+  // It won't be necessary after we get rid of ProcessConfigCreator API
+  def category: Option[String]
+
   lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = {
     val processDefinitions = withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(
         configCreator,
         modelClassLoader.classLoader,
-        ProcessObjectDependencies(processConfig, objectNaming)
+        ProcessObjectDependencies(processConfig, objectNaming),
+        category
       )
     }
     ModelDefinitionWithTypes(processDefinitions)

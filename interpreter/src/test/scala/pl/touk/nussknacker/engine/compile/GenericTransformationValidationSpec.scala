@@ -35,32 +35,32 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "genericParameters" -> WithCategories(GenericParametersTransformer),
-      "genericJoin"       -> WithCategories(DynamicParameterJoinTransformer),
-      "twoStepsInOne"     -> WithCategories(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
-      "paramsLoop"        -> WithCategories(ParamsLoopNode)
+      "genericParameters" -> WithCategories.anyCategory(GenericParametersTransformer),
+      "genericJoin"       -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
+      "twoStepsInOne"     -> WithCategories.anyCategory(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
+      "paramsLoop"        -> WithCategories.anyCategory(ParamsLoopNode)
     )
 
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] = Map(
-      "mySource"                -> WithCategories(SimpleStringSource),
-      "genericParametersSource" -> WithCategories(new GenericParametersSource)
+      "mySource"                -> WithCategories.anyCategory(SimpleStringSource),
+      "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
     )
 
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink"              -> WithCategories(SinkFactory.noParam(new Sink {})),
-      "genericParametersSink"  -> WithCategories(GenericParametersSink),
-      "optionalParametersSink" -> WithCategories(OptionalParametersSink),
+      "dummySink"              -> WithCategories.anyCategory(SinkFactory.noParam(new Sink {})),
+      "genericParametersSink"  -> WithCategories.anyCategory(GenericParametersSink),
+      "optionalParametersSink" -> WithCategories.anyCategory(OptionalParametersSink),
     )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
-        "genericParametersProcessor"         -> WithCategories(GenericParametersProcessor),
-        "genericParametersEnricher"          -> WithCategories(GenericParametersEnricher),
-        "genericParametersThrowingException" -> WithCategories(GenericParametersThrowingException)
+        "genericParametersProcessor"         -> WithCategories.anyCategory(GenericParametersProcessor),
+        "genericParametersEnricher"          -> WithCategories.anyCategory(GenericParametersEnricher),
+        "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException)
       )
 
   }
@@ -70,7 +70,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
     MyProcessConfigCreator,
     getClass.getClassLoader,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
+    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)),
+    category = None
   )
 
   private val validator = ProcessValidator.default(

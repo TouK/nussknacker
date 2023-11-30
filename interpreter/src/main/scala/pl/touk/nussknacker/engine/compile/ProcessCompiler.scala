@@ -317,11 +317,9 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(modelData: ModelData, categoryOpt: Option[String]): ProcessValidator = {
+  def default(modelData: ModelData): ProcessValidator = {
     default(
-      categoryOpt
-        .map(category => modelData.modelDefinitionWithTypes.filter(_.availableForCategory(category)))
-        .getOrElse(modelData.modelDefinitionWithTypes),
+      modelData.modelDefinitionWithTypes,
       modelData.processConfig,
       modelData.uiDictServices.dictRegistry,
       modelData.customProcessValidator,

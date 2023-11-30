@@ -19,15 +19,16 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
   * Also it handles "reverse" resolving process done before returning process to UI
   */
 class UIProcessResolver(
-                          validator: UIProcessValidator,
-                          substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
+    validator: UIProcessValidator,
+    substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
 ) {
 
+  private val beforeUiResolvingValidator = validator.withExpressionParsers { case spel: SpelExpressionParser =>
+    spel.typingDictLabels
+  }
+
   def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
-    val v = validator.withExpressionParsers { case spel: SpelExpressionParser =>
-      spel.typingDictLabels
-    }
-    v.validate(displayable)
+    beforeUiResolvingValidator.validate(displayable)
   }
 
   def resolveExpressions(

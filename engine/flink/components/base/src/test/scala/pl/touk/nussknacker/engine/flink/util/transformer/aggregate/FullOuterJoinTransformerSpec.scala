@@ -471,7 +471,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -521,7 +521,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -572,7 +572,7 @@ object FullOuterJoinTransformerSpec {
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(customElementName -> WithCategories(new FullOuterJoinTransformer(None) {
+      Map(customElementName -> WithCategories.anyCategory(new FullOuterJoinTransformer(None) {
 
         override protected def prepareAggregatorFunction(
             aggregator: Aggregator,
@@ -607,14 +607,14 @@ object FullOuterJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-main"   -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories(SourceFactory.noParam[OneRecord](joinedRecordsSource))
+        "start-main"   -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](mainRecordsSource)),
+        "start-joined" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](joinedRecordsSource))
       )
 
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
+      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
 
   }
 

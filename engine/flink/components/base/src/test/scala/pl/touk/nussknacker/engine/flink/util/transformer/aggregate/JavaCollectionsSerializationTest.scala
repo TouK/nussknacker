@@ -105,7 +105,7 @@ class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[SourceFactory]] = {
     val inputType = Typed.fromDetailedType[List[Record]]
     Map(
-      "start" -> WithCategories(
+      "start" -> WithCategories.anyCategory(
         SourceFactory.noParam[Record](
           CollectionSource[Record](input, None, inputType)(TypeInformation.of(classOf[Record]))
         )
@@ -116,7 +116,7 @@ class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
   override def customStreamTransformers(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("delay" -> WithCategories(new DelayTransformer))
+    Map("delay" -> WithCategories.anyCategory(new DelayTransformer))
   }
 
 }
