@@ -584,7 +584,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeAnyWithSuggestions,
                 fixedValuesList = None // must be defined if inputMode == InputModeAnyWithSuggestions
@@ -622,7 +621,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
                 fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
@@ -660,7 +658,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
@@ -689,7 +686,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(
                 inputMode = InputModeFixedList,
                 fixedValuesList = Some(List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")))
@@ -722,7 +718,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(InputModeAny, None)
             ),
             FragmentParameter(
@@ -731,7 +726,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
@@ -760,7 +754,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),
@@ -790,7 +783,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
               required = false,
               initialValue = None,
               hintText = None,
-              validationExpression = None,
               inputConfig = ParameterInputConfig(InputModeAny, None)
             )
           ),

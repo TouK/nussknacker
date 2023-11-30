@@ -315,7 +315,6 @@ object node {
         required: Boolean,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        validationExpression: Option[ValidationExpression],
         inputConfig: ParameterInputConfig,
     ) {
       def withName(name: String): FragmentParameter = copy(name = name)
@@ -340,11 +339,10 @@ object node {
 
       implicit def encoder: Encoder[FragmentParameter] = deriveConfiguredEncoder[FragmentParameter]
 
-      private val fieldNameRequired             = "required"
-      private val fieldNameValidationExpression = "validationExpression"
-      private val fieldNameInitialValue         = "initialValue"
-      private val fieldNameHintText             = "hintText"
-      private val fieldNameInputConfig          = "inputConfig"
+      private val fieldNameRequired     = "required"
+      private val fieldNameInitialValue = "initialValue"
+      private val fieldNameHintText     = "hintText"
+      private val fieldNameInputConfig  = "inputConfig"
 
       private val defaultInputConfig: Json = Json.fromJsonObject(
         JsonObject(
@@ -354,11 +352,10 @@ object node {
       )
 
       private val defaultNewFieldValues = Map(
-        fieldNameRequired             -> Json.fromBoolean(false),
-        fieldNameValidationExpression -> Json.Null,
-        fieldNameInitialValue         -> Json.Null,
-        fieldNameHintText             -> Json.Null,
-        fieldNameInputConfig          -> defaultInputConfig
+        fieldNameRequired     -> Json.fromBoolean(false),
+        fieldNameInitialValue -> Json.Null,
+        fieldNameHintText     -> Json.Null,
+        fieldNameInputConfig  -> defaultInputConfig
       )
 
       private def setDefaultIfAbsent(obj: JsonObject, fieldName: String): JsonObject =
@@ -384,7 +381,6 @@ object node {
           name,
           typ,
           required = false,
-          validationExpression = None,
           initialValue = None,
           hintText = None,
           inputConfig = ParameterInputConfig(InputModeAny, None)
@@ -415,8 +411,6 @@ object node {
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
-
-    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String] = None)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
