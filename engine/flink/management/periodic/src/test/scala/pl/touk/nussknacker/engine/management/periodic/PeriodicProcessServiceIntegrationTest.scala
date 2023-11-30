@@ -14,7 +14,11 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessingTypeDeploymentService,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -121,6 +125,10 @@ class PeriodicProcessServiceIntegrationTest
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
+
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
 
     def periodicProcessService(currentTime: Instant, processingType: String = processingType) =
       new PeriodicProcessService(

@@ -14,7 +14,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   ProcessActionId,
   ProcessActionState,
   ProcessActionType,
-  StateStatus,
+  ProcessingTypeDeploymentService,
+  ProcessingTypeDeploymentServiceStub,
   StatusDetails
 }
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
@@ -65,6 +66,10 @@ class PeriodicDeploymentManagerTest
     val repository                    = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub                = new JarManagerStub
+
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
