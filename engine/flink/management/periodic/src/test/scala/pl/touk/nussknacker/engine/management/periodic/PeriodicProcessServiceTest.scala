@@ -212,6 +212,23 @@ class PeriodicProcessServiceTest
     )
   }
 
+  test("handleFinished - should not mark ExecutionFinished process during deploy") {
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
+    val deploymentId =
+      f.repository.addActiveProcess(
+        processName,
+        PeriodicProcessDeploymentStatus.Deployed,
+        processActionId = Some(processActionId)
+      )
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.DuringDeploy, Some(deploymentId))
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    f.deploymentService.sentActionIds shouldBe Nil
+
+  }
+
   test("handleFinished - should deactivate process if there are no future schedules") {
     val f               = new Fixture
     val processActionId = randomProcessActionId

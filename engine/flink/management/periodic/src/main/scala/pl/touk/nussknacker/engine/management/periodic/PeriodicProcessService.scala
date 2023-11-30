@@ -171,27 +171,15 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
-    def markActionExecutionFinished(rescheduledProcesses: Set[ProcessName])(
-        processName: ProcessName,
-        processActionIdOpt: Option[ProcessActionId]
-    ): Future[Boolean] = {
-      processActionIdOpt
-        .filterNot(_ => rescheduledProcesses(processName))
-        .map(deploymentService.markActionExecutionFinished)
-        .getOrElse(successful(false))
-    }
-
-    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Option[ProcessName]] = {
+    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
       synchronizeDeploymentsStates(processName, schedules)
         .flatMap { case (_, needRescheduleDeploymentIds) =>
-          val (rescheduled, callbacks) = schedules.groupedByPeriodicProcess.collect {
+          val callbacks = schedules.groupedByPeriodicProcess.collect {
             case processScheduleData
                 if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
               reschedule(processScheduleData, needRescheduleDeploymentIds)
-          }.unzip
-
-          val processWasRescheduled = rescheduled.exists(identity)
-          callbacks.sequence.runWithCallbacks.as(if (processWasRescheduled) Some(processName) else None)
+          }
+          callbacks.sequence.runWithCallbacks
         }
     }
 
@@ -203,14 +191,7 @@ class PeriodicProcessService(
         .run
       schedulesToCheck = schedules.groupByProcessName.toList
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
-      rescheduledProcesses <- Future.sequence(schedulesToCheck.map(handleSingleProcess _ tupled))
-      _ <- Future.sequence(
-        schedulesToCheck
-          .map { case (processName, schedulesState) =>
-            processName -> schedulesState.groupedByPeriodicProcess.flatMap(_.process.processActionId).headOption
-          }
-          .map(markActionExecutionFinished(rescheduledProcesses.flatten.toSet) _ tupled)
-      )
+      _ <- Future.sequence(schedulesToCheck.map(handleSingleProcess _ tupled))
     } yield ()
   }
 
@@ -268,7 +249,7 @@ class PeriodicProcessService(
   private def reschedule(
       processScheduleData: PeriodicProcessScheduleData,
       needRescheduleDeploymentIds: Set[PeriodicProcessDeploymentId]
-  ): (Boolean, RepositoryAction[Callback]) = {
+  ): RepositoryAction[Callback] = {
     import processScheduleData._
     val scheduleActions = deployments.map { deployment =>
       if (needRescheduleDeploymentIds.contains(deployment.id))
@@ -297,9 +278,12 @@ class PeriodicProcessService(
 
     if (scheduleActions.forall(_.isEmpty)) {
       logger.info(s"No scheduled deployments for periodic process: ${process.id.value}. Deactivating")
-      (false, deactivateAction(process))
+      deactivateAction(process).flatMap { _ =>
+        markProcessActionExecutionFinished(processScheduleData.process.processActionId)
+      }
+
     } else
-      (true, scheduleActions.flatten.sequence.as(emptyCallback))
+      scheduleActions.flatten.sequence.as(emptyCallback)
   }
 
   private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): RepositoryAction[Unit] = {
@@ -363,6 +347,16 @@ class PeriodicProcessService(
       // have process without jar
     } yield () => jarManager.deleteJar(process.deploymentData.jarFileName)
   }
+
+  private def markProcessActionExecutionFinished(
+      processActionIdOption: Option[ProcessActionId]
+  ): RepositoryAction[Callback] =
+    scheduledProcessesRepository.monad.pure { () =>
+      processActionIdOption match {
+        case Some(actionId) => deploymentService.markActionExecutionFinished(actionId).map(_ => ())
+        case _              => Future.successful(())
+      }
+    }
 
   def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
     // TODO: set status before deployment?
