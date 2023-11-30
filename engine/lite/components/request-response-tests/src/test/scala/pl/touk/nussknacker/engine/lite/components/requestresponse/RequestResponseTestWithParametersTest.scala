@@ -185,7 +185,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   }
 
   test("should generate parameters for expanded fragment input definition without fixed values") {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
@@ -211,7 +212,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   }
 
   test("should generate complex parameters for expanded fragment input definition with fixed values") {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
 
     val fixedValuesList =
       List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
