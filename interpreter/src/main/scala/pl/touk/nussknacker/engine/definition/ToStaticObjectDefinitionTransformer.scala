@@ -37,7 +37,7 @@ class ToStaticObjectDefinitionTransformer(
       case standard: StandardObjectWithMethodDef => standard.objectDefinition
       case generic: GenericNodeTransformationMethodDef =>
         val parameters = determineInitialParameters(generic)
-        ObjectDefinition(parameters, generic.returnType, generic.categories, generic.componentConfig)
+        ObjectDefinition(parameters, generic.returnType, generic.componentConfig)
     }
   }
 

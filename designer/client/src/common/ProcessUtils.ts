@@ -248,18 +248,6 @@ class ProcessUtils {
             return [nodeEdge.from].concat(previousNodes);
         }
     };
-
-    //Remove if it doesn't use
-    prepareFilterCategories = (categories, loggedUser) =>
-        map(
-            (categories || []).filter((c) => loggedUser.canRead(c)),
-            (e) => {
-                return {
-                    value: e,
-                    label: e,
-                };
-            },
-        );
 }
 
 export default new ProcessUtils();

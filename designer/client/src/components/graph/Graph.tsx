@@ -336,11 +336,7 @@ export class Graph extends React.Component<Props> {
     }
 
     canAddNode(node: NodeType): boolean {
-        return (
-            this.props.capabilities.editFrontend &&
-            NodeUtils.isNode(node) &&
-            NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
-        );
+        return this.props.capabilities.editFrontend && NodeUtils.isNode(node);
     }
 
     addNode(node: NodeType, position: Position): void {

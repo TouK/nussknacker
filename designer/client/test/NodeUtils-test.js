@@ -127,106 +127,6 @@ describe("can make link", () => {
     });
 });
 
-describe("isAvailable", () => {
-    let processDefinitionData;
-    let component;
-
-    beforeAll(() => {
-        processDefinitionData = {
-            componentGroups: [
-                {
-                    name: "base",
-                    components: [
-                        {
-                            type: "filter",
-                            label: "filter",
-                            node: {
-                                type: "Filter",
-                                id: "",
-                                expression: {
-                                    language: "spel",
-                                    expression: "true",
-                                },
-                            },
-                            categories: ["Category2", "Default", "RequestResponseCategory1", "Technical", "Category1"],
-                            branchParametersTemplate: [],
-                        },
-                    ],
-                },
-                {
-                    name: "enrichers",
-                    components: [
-                        {
-                            type: "enricher",
-                            label: "clientHttpService",
-                            node: {
-                                type: "Enricher",
-                                id: "",
-                                service: {
-                                    id: "clientHttpService",
-                                    parameters: [
-                                        {
-                                            name: "id",
-                                            expression: {
-                                                language: "spel",
-                                                expression: "''",
-                                            },
-                                        },
-                                    ],
-                                },
-                                output: "output",
-                            },
-                            categories: ["Category2", "Category1"],
-                            branchParametersTemplate: [],
-                        },
-                    ],
-                },
-            ],
-        };
-
-        component = {
-            service: {
-                parameters: [
-                    {
-                        expression: {
-                            expression: "'parameter'",
-                            language: "spel",
-                        },
-                        name: "id",
-                    },
-                ],
-                id: "clientHttpService",
-            },
-            id: "clientWithParameters",
-            additionalFields: {
-                description: "some description",
-            },
-            output: "output-changed",
-            type: "Enricher",
-        };
-    });
-
-    it("should be available", () => {
-        const available = NodeUtils.isAvailable(component, processDefinitionData, "Category1");
-
-        expect(available).toBe(true);
-    });
-
-    it("should not be available for node in other category", () => {
-        const available = NodeUtils.isAvailable(component, processDefinitionData, "Technical");
-
-        expect(available).toBe(false);
-    });
-
-    it("should not be available for unknown node", () => {
-        const unknownComponentModel = { ...component, service: { ...component.service, id: "unknown" } };
-
-        const available = NodeUtils.isAvailable(unknownComponentModel, processDefinitionData, "Category1");
-
-        expect(available).toBe(false);
-    });
-});
-
 const processDefinitionData = {
     edgesForNodes: [
         {
@@ -239,29 +139,6 @@ const processDefinitionData = {
         },
     ],
 };
-
-const createProcess = (groups) => ({
-    properties: { additionalFields: { groups: groups || [] } },
-    nodes: [
-        { id: "node1" },
-        { id: "node2" },
-        { id: "node3" },
-        { id: "node4" },
-        { id: "node5" },
-        { id: "node6" },
-        { id: "node7" },
-        { id: "node8" },
-    ],
-    edges: [
-        { from: "node1", to: "node2" },
-        { from: "node2", to: "node3" },
-        { from: "node3", to: "node4" },
-        { from: "node3", to: "node5" },
-        { from: "node4", to: "node6" },
-        { from: "node5", to: "node7" },
-        { from: "node6", to: "node8" },
-    ],
-});
 
 const simpleProcessDefinition = () => {
     return {

@@ -32,13 +32,14 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
 
   def createSourceDefinition(frag: FragmentInputDefinition): StandardObjectWithMethodDef = {
-    val objDef          = ObjectDefinition(Nil, Some(fragmentReturnType), None, SingleComponentConfig.zero)
+    val objDef          = ObjectDefinition(Nil, Some(fragmentReturnType), SingleComponentConfig.zero)
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
 
     StandardObjectWithMethodDef(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),
       null,
       objDef,
+      None,
       fragmentReturnType.klass
     )
   }

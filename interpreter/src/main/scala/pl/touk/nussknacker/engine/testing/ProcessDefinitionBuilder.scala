@@ -98,6 +98,7 @@ object ProcessDefinitionBuilder {
       ComponentImplementationInvoker.nullImplementationInvoker,
       null,
       objectDefinition,
+      None,
       realType
     )
 
@@ -125,16 +126,6 @@ object ProcessDefinitionBuilder {
         definition.sourceFactories + (typ -> objectDefinition(params.toList, Some(Unknown)))
       )
 
-    def withSourceFactory(typ: String, category: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(sourceFactories =
-        definition.sourceFactories + (typ -> ObjectDefinition(
-          params.toList,
-          Some(Unknown),
-          Some(List(category)),
-          SingleComponentConfig.zero
-        ))
-      )
-
     def withSinkFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(sinkFactories = definition.sinkFactories + (typ -> objectDefinition(params.toList, None)))
 
@@ -151,7 +142,7 @@ object ProcessDefinitionBuilder {
   }
 
   def objectDefinition(parameters: List[Parameter], returnType: Option[TypingResult]): ObjectDefinition = {
-    ObjectDefinition(parameters, returnType, None, SingleComponentConfig.zero)
+    ObjectDefinition(parameters, returnType, SingleComponentConfig.zero)
   }
 
 }

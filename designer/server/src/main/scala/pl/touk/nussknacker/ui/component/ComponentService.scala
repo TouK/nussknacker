@@ -212,7 +212,7 @@ class DefaultComponentService private (
           icon = icon,
           componentType = com.`type`,
           componentGroupName = groupName,
-          categories = com.categories,
+          categories = List.empty, // FIXME!!!
           links = links,
           usageCount = -1 // It will be enriched in the next step, after merge of components definitions
         )

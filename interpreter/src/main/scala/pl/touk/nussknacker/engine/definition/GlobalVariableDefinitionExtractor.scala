@@ -26,7 +26,6 @@ object GlobalVariableDefinitionExtractor {
     val objectDef = ObjectDefinition(
       parameters = Nil,
       returnType = Some(returnType),
-      categories = varWithCategories.categories,
       componentConfig = varWithCategories.componentConfig
     )
     StandardObjectWithMethodDef(
@@ -35,6 +34,7 @@ object GlobalVariableDefinitionExtractor {
       ComponentImplementationInvoker.nullImplementationInvoker,
       varWithCategories.value,
       objectDef,
+      varWithCategories.categories,
       // Used only for services
       classOf[Any]
     )

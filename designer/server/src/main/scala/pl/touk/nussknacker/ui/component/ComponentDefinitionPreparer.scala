@@ -20,13 +20,10 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
 import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.collection.immutable.ListMap
 
@@ -38,24 +35,13 @@ object ComponentDefinitionPreparer {
   import cats.syntax.semigroup._
 
   def prepareComponentsGroupList(
-      user: LoggedUser,
       processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
       fragmentInputs: Map[String, FragmentObjectDefinition],
       isFragment: Boolean,
       componentsConfig: ComponentsUiConfig,
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-      processCategoryService: ProcessCategoryService,
       customTransformerAdditionalData: Map[ComponentId, CustomTransformerAdditionalData],
-      processingType: ProcessingType
   ): List[ComponentGroup] = {
-    val userCategoryService          = new UserCategoryService(processCategoryService)
-    val userCategories               = userCategoryService.getUserCategories(user)
-    val processingTypeCategories     = List(processCategoryService.getProcessingTypeCategoryUnsafe(processingType))
-    val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
-
-    def filterCategories(objectDefinition: ObjectDefinition): List[String] = userProcessingTypeCategories.intersect(
-      objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
-    )
 
     def objDefParams(objDefinition: ObjectDefinition): List[Parameter] =
       EvaluatedParameterPreparer.prepareEvaluatedParameter(objDefinition.parameters)
@@ -74,18 +60,16 @@ object ComponentDefinitionPreparer {
       BaseGroupName,
       List(
         ComponentTemplate
-          .create(ComponentType.Filter, Filter("", Expression.spel("true")), userProcessingTypeCategories),
-        ComponentTemplate.create(ComponentType.Split, Split(""), userProcessingTypeCategories),
-        ComponentTemplate.create(ComponentType.Switch, Switch(""), userProcessingTypeCategories).copy(label = "choice"),
+          .create(ComponentType.Filter, Filter("", Expression.spel("true"))),
+        ComponentTemplate.create(ComponentType.Split, Split("")),
+        ComponentTemplate.create(ComponentType.Switch, Switch("")).copy(label = "choice"),
         ComponentTemplate.create(
           ComponentType.Variable,
           Variable("", "varName", Expression.spel("'value'")),
-          userProcessingTypeCategories
         ),
         ComponentTemplate.create(
           ComponentType.MapVariable,
           VariableBuilder("", "mapVarName", List(Field("varName", Expression.spel("'value'")))),
-          userProcessingTypeCategories
         ),
       )
     )
@@ -98,8 +82,7 @@ object ComponentDefinitionPreparer {
           ComponentTemplate(
             ComponentType.Processor,
             idWithName.name,
-            Processor("", serviceRef(idWithName, objDefinition)),
-            filterCategories(objDefinition)
+            Processor("", serviceRef(idWithName, objDefinition))
           )
         }
     )
@@ -113,7 +96,6 @@ object ComponentDefinitionPreparer {
             ComponentType.Enricher,
             idWithName.name,
             Enricher("", serviceRef(idWithName, objDefinition), "output"),
-            filterCategories(objDefinition)
           )
         }
     )
@@ -137,7 +119,6 @@ object ComponentDefinitionPreparer {
               objDefParams(objectDefinition),
               List.empty
             ),
-            filterCategories(objectDefinition),
             objDefBranchParams(objectDefinition)
           )
         case (idWithName, (objectDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
@@ -149,8 +130,7 @@ object ComponentDefinitionPreparer {
               if (objectDefinition.hasNoReturn) None else Some("outputVar"),
               idWithName.name,
               objDefParams(objectDefinition)
-            ),
-            filterCategories(objectDefinition)
+            )
           )
       }
     )
@@ -167,8 +147,7 @@ object ComponentDefinitionPreparer {
               if (objectDefinition.hasNoReturn) None else Some("outputVar"),
               idWithName.name,
               objDefParams(objectDefinition)
-            ),
-            filterCategories(objectDefinition)
+            )
           )
       }
     )
@@ -179,8 +158,7 @@ object ComponentDefinitionPreparer {
         ComponentTemplate(
           ComponentType.Sink,
           idWithName.name,
-          Sink("", SinkRef(idWithName.name, objDefParams(objectDefinition))),
-          filterCategories(objectDefinition)
+          Sink("", SinkRef(idWithName.name, objDefParams(objectDefinition)))
         )
       }
     )
@@ -192,8 +170,7 @@ object ComponentDefinitionPreparer {
           ComponentTemplate(
             ComponentType.Source,
             idWithName.name,
-            Source("", SourceRef(idWithName.name, objDefParams(objDefinition))),
-            filterCategories(objDefinition)
+            Source("", SourceRef(idWithName.name, objDefParams(objDefinition)))
           )
         }
       )
@@ -202,11 +179,10 @@ object ComponentDefinitionPreparer {
         FragmentsDefinitionGroupName,
         List(
           ComponentTemplate
-            .create(ComponentType.FragmentInput, FragmentInputDefinition("", List()), userProcessingTypeCategories),
+            .create(ComponentType.FragmentInput, FragmentInputDefinition("", List())),
           ComponentTemplate.create(
             ComponentType.FragmentOutput,
-            FragmentOutputDefinition("", "output", List.empty),
-            userProcessingTypeCategories
+            FragmentOutputDefinition("", "output", List.empty)
           )
         )
       )
@@ -220,14 +196,10 @@ object ComponentDefinitionPreparer {
           fragmentInputs.map { case (id, definition) =>
             val nodes   = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.objectDefinition.parameters)
             val outputs = definition.outputsDefinition.map(name => (name, name)).toMap
-            val categories = userProcessingTypeCategories.intersect(
-              definition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
-            )
             ComponentTemplate(
               ComponentType.Fragments,
               id,
-              FragmentInput("", FragmentRef(id, nodes, outputs)),
-              categories
+              FragmentInput("", FragmentRef(id, nodes, outputs))
             )
           }.toList
         )

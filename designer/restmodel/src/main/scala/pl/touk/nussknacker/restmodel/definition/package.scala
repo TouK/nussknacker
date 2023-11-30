@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.net.URI
 
@@ -62,8 +61,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
       parameters: List[UIParameter],
-      returnType: Option[TypingResult],
-      categories: List[String],
+      returnType: Option[TypingResult]
   ) {
 
     def hasNoReturn: Boolean = returnType.isEmpty
@@ -73,12 +71,8 @@ package object definition {
   @JsonCodec(encodeOnly = true) final case class UIFragmentObjectDefinition(
       parameters: List[UIParameter],
       outputParameters: List[String],
-      returnType: Option[TypingResult],
-      categories: List[String]
-  ) {
-    def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories)
-  }
+      returnType: Option[TypingResult]
+  )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
@@ -98,10 +92,9 @@ package object definition {
     def create(
         `type`: ComponentType,
         node: NodeData,
-        categories: List[String],
         branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
     ): ComponentTemplate =
-      ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
+      ComponentTemplate(`type`, `type`.toString, node, branchParametersTemplate)
 
   }
 
@@ -109,7 +102,6 @@ package object definition {
       `type`: ComponentType,
       label: String,
       node: NodeData,
-      categories: List[String],
       branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
   )
 

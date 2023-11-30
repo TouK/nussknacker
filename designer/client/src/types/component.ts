@@ -15,7 +15,6 @@ export type SingleComponentConfig = {
 };
 export type Component = {
     branchParametersTemplate: BranchParametersTemplate;
-    categories: Category[];
     node: NodeType;
     label: string;
     type: string;

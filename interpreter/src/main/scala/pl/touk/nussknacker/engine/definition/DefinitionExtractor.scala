@@ -34,11 +34,16 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       val objectDefinition = ObjectDefinition(
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
-        objWithCategories.categories,
         mergedComponentConfig
       )
       val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
-      StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
+      StandardObjectWithMethodDef(
+        implementationInvoker,
+        obj,
+        objectDefinition,
+        objWithCategories.categories,
+        methodDef.runtimeClass
+      )
     }
 
     (obj match {
@@ -174,6 +179,7 @@ object DefinitionExtractor {
       implementationInvoker: ComponentImplementationInvoker,
       obj: Any,
       objectDefinition: ObjectDefinition,
+      override val categories: Option[List[String]],
       // TODO: it should be removed - instead implementationInvoker should be transformed
       runtimeClass: Class[_]
   ) extends ObjectWithMethodDef {
@@ -183,8 +189,6 @@ object DefinitionExtractor {
     def parameters: List[Parameter] = objectDefinition.parameters
 
     override def returnType: Option[TypingResult] = objectDefinition.returnType
-
-    override protected[definition] def categories: Option[List[String]] = objectDefinition.categories
 
     override def componentConfig: SingleComponentConfig = objectDefinition.componentConfig
 
@@ -210,7 +214,6 @@ object DefinitionExtractor {
   case class ObjectDefinition(
       parameters: List[Parameter],
       returnType: Option[TypingResult],
-      categories: Option[List[String]],
       componentConfig: SingleComponentConfig
   ) {
 

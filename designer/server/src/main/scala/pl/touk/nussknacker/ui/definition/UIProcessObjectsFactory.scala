@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   ProcessDefinitionWithComponentIds,
   mapByName
 }
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.definition.{DefaultComponentIdProvider, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -29,9 +29,7 @@ import pl.touk.nussknacker.ui.definition.scenarioproperty.{
   ScenarioPropertyValidatorDeterminerChain,
   UiScenarioPropertyEditorDeterminer
 }
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjectsFactory {
 
@@ -41,10 +39,8 @@ object UIProcessObjectsFactory {
       modelDataForType: ModelData,
       processDefinition: ProcessDefinition[ObjectDefinition],
       deploymentManager: DeploymentManager,
-      user: LoggedUser,
       fragmentsDetails: Set[FragmentDetails],
       isFragment: Boolean,
-      processCategoryService: ProcessCategoryService,
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType,
       additionalUIConfigProvider: AdditionalUIConfigProvider
@@ -77,23 +73,19 @@ object UIProcessObjectsFactory {
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
-        user = user,
         processDefinition = finalProcessDefinition,
         fragmentInputs = fragmentInputs,
         isFragment = isFragment,
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.processConfig),
-        processCategoryService = processCategoryService,
         customTransformerAdditionalData = finalProcessDefinition.customStreamTransformers.map {
           case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-        }.toMap,
-        processingType
+        }.toMap
       ),
       processDefinition = createUIProcessDefinition(
         finalProcessDefinition,
         fragmentInputs,
-        modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition),
-        processCategoryService
+        modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
       ),
       componentsConfig = finalComponentsConfig,
       scenarioPropertiesConfig =
@@ -184,7 +176,6 @@ object UIProcessObjectsFactory {
       val objectDefinition = ObjectDefinition(
         definition.parameters,
         Some(Typed[java.util.Map[String, Any]]),
-        Some(List(details.category)),
         definition.config
       )
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
@@ -194,39 +185,33 @@ object UIProcessObjectsFactory {
   final case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
   private def createUIObjectDefinition(
-      objectDefinition: ObjectDefinition,
-      processCategoryService: ProcessCategoryService
+      objectDefinition: ObjectDefinition
   ): UIObjectDefinition = {
     UIObjectDefinition(
       parameters = objectDefinition.parameters.map(createUIParameter),
-      returnType = objectDefinition.returnType,
-      categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
+      returnType = objectDefinition.returnType
     )
   }
 
   private def createUIFragmentObjectDefinition(
-      fragmentObjectDefinition: FragmentObjectDefinition,
-      processCategoryService: ProcessCategoryService
+      fragmentObjectDefinition: FragmentObjectDefinition
   ): UIFragmentObjectDefinition = {
     UIFragmentObjectDefinition(
       parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
       outputParameters = fragmentObjectDefinition.outputsDefinition,
-      returnType = fragmentObjectDefinition.objectDefinition.returnType,
-      categories =
-        fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
+      returnType = fragmentObjectDefinition.objectDefinition.returnType
     )
   }
 
   def createUIProcessDefinition(
       processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
       fragmentInputs: Map[String, FragmentObjectDefinition],
-      types: Set[UIClazzDefinition],
-      processCategoryService: ProcessCategoryService
+      types: Set[UIClazzDefinition]
   ): UIProcessDefinition = {
-    def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
+    def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef)
 
     def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) =
-      createUIFragmentObjectDefinition(objDef, processCategoryService)
+      createUIFragmentObjectDefinition(objDef)
 
     val transformed = processDefinition.transform(createUIObjectDef)
     UIProcessDefinition(

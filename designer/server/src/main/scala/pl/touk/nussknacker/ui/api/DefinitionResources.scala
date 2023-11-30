@@ -50,10 +50,8 @@ class DefinitionResources(
                     processingTypeData.modelData,
                     processingTypeData.staticObjectsDefinition,
                     processingTypeData.deploymentManager,
-                    user,
                     fragments,
                     isFragment,
-                    getProcessCategoryService(),
                     processingTypeData.scenarioPropertiesConfig,
                     processingType,
                     additionalUIConfigProvider

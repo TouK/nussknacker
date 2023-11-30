@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
  */
 trait ProcessingTypeDataProvider[+T, +C] {
 
+  // FIXME: check if user has access
   def forType(typ: ProcessingType): Option[T]
 
   // TODO: replace with proper forType handling

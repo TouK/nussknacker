@@ -256,17 +256,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
-      user = TestFactory.adminUser("aa"),
       processDefinition = processDefinition,
       fragmentInputs = fragmentInputs,
       isFragment = false,
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
-      processCategoryService = processCategoryService,
       customTransformerAdditionalData = processDefinition.customStreamTransformers.map {
         case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
-      TestProcessingTypes.Streaming
+      }.toMap
     )
     groups
   }
@@ -276,17 +273,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       .foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
       .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
-      user = TestFactory.adminUser("aa"),
       processDefinition = processDefinition,
       fragmentInputs = Map.empty,
       isFragment = false,
       componentsConfig = Map(),
       componentsGroupMapping = Map(),
-      processCategoryService = processCategoryService,
       customTransformerAdditionalData = processDefinition.customStreamTransformers.map {
         case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
-      TestProcessingTypes.Streaming
+      }.toMap
     )
     groups
   }
