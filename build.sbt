@@ -1716,9 +1716,15 @@ lazy val prepareItLibs = taskKey[Unit]("Prepare jar libraries needed for integra
 lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-restmodel"
+    name := "nussknacker-restmodel",
+    libraryDependencies ++= {
+      Seq(
+        "com.softwaremill.sttp.tapir" %% "tapir-core"       % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV
+      )
+    }
   )
-  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
+  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test", security)
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)
