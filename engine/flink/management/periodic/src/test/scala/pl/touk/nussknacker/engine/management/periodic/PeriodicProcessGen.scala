@@ -22,6 +22,7 @@ object PeriodicProcessGen {
       scheduleProperty = CronScheduleProperty("0 0 * * * ?"),
       active = true,
       createdAt = LocalDateTime.now(),
+      None
     )
   }
 
