@@ -8,7 +8,11 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessingTypeDeploymentService,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -69,6 +73,10 @@ class PeriodicProcessServiceTest
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
+
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
