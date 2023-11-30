@@ -180,7 +180,7 @@ const VersionsForm = () => {
                     <FormRow>
                         <p>Difference to pick</p>
                         <SelectNodeWithFocus
-                            id="differentVersion"
+                            id="otherVersion"
                             className="selectNode"
                             value={state.currentDiffId || ""}
                             onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
