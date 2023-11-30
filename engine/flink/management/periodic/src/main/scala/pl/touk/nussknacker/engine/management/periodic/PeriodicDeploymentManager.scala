@@ -127,6 +127,7 @@ class PeriodicDeploymentManager private[periodic] (
           scheduleProperty,
           processVersion,
           canonicalProcess,
+          deploymentData.deploymentId,
           cancel(processVersion.processName, deploymentData.user)
         )
         .map(_ => None)
