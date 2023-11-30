@@ -173,15 +173,15 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
-    def updateProcessAction(notFinishedProcesses: Set[ProcessName])(
+    def updateProcessAction(runningProcesses: Set[ProcessName])(
         processName: ProcessName,
-        periodicProcessOpt: Option[PeriodicProcess]
-    ): Future[Boolean] =
-      periodicProcessOpt
-        .filter(_ => notFinishedProcesses(processName))
-        .flatMap(_.processActionId)
-        .map(processAction => deploymentService.markActionExecutionFinished(processAction))
+        processActionIdOpt: Option[ProcessActionId]
+    ): Future[Boolean] = {
+      processActionIdOpt
+        .filter(_ => !runningProcesses(processName))
+        .map(deploymentService.markActionExecutionFinished)
         .getOrElse(successful(false))
+    }
 
     def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
       synchronizeDeploymentsStates(processName, schedules).flatMap { case (_, needRescheduleDeploymentIds) =>
@@ -207,7 +207,7 @@ class PeriodicProcessService(
       schedulesToCheck = schedules.groupByProcessName.toList
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
       _ <- Future.sequence(schedulesToCheck.map(handleSingleProcess _ tupled))
-      notInTerminalStateSchedules <- scheduledProcessesRepository
+      nextSchedules <- scheduledProcessesRepository
         .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
           Set(
             PeriodicProcessDeploymentStatus.Deployed,
@@ -216,13 +216,13 @@ class PeriodicProcessService(
           )
         )
         .run
-      notInTerminalStateProcesses = notInTerminalStateSchedules.groupByProcessName.keySet
+      runningProcesses = nextSchedules.groupByProcessName.keySet
       _ <- Future.sequence(
         schedulesToCheck
           .map { case (processName, schedulesState) =>
-            processName -> schedulesState.groupedByPeriodicProcess.map(_.process).headOption
+            processName -> schedulesState.groupedByPeriodicProcess.flatMap(_.process.processActionId).headOption
           }
-          .map(updateProcessAction(notInTerminalStateProcesses) _ tupled)
+          .map(updateProcessAction(runningProcesses) _ tupled)
       )
     } yield ()
   }
