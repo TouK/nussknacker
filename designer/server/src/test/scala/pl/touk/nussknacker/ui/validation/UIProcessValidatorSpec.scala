@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -22,6 +23,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
+  InputModeAny,
+  InputModeFixedList
+}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
@@ -37,11 +42,6 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeFixedList
-}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -65,8 +65,8 @@ import scala.jdk.CollectionConverters._
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   import ProcessTestData._
-  import UIProcessValidatorSpec._
   import TestCategories._
+  import UIProcessValidatorSpec._
   import spel.Implicits._
 
   test("check for not unique edge types") {
@@ -438,6 +438,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
+                  validationExpression = None,
                   inputConfig = ParameterInputConfig(InputModeAny, None)
                 )
               )
@@ -484,6 +485,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
+                  validationExpression = None,
                   inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
                     fixedValuesList =
@@ -496,6 +498,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
+                  validationExpression = None,
                   inputConfig = ParameterInputConfig(
                     inputMode = InputModeFixedList,
                     fixedValuesList =

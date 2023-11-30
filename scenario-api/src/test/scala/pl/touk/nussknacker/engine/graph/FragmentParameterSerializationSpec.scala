@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.jawn.decode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
   InputModeAny,
@@ -12,18 +13,20 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ParameterInputConfig
+  ParameterInputConfig,
+  ValidationExpression
 }
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
   test(
-    "should deserialize FragmentParameter without required, initialValue, hintText, inputConfig [backwards compatibility test]"
+    "should deserialize FragmentParameter without validationExpression, required, initialValue, hintText, inputConfig [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
       "paramString",
       FragmentClazzRef("java.lang.String"),
       required = false,
+      validationExpression = None,
       initialValue = None,
       hintText = None,
       inputConfig = ParameterInputConfig(InputModeAny, None)
@@ -42,6 +45,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |    "refClazzName" : "java.lang.String"
         |  },
         |  "required" : false,
+        |  "validationExpression" : null,
         |  "initialValue" : null,
         |  "hintText" : null,
         |  "inputConfig" : {
@@ -58,6 +62,13 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         "refClazzName" : "java.lang.String"
       },
       "required" : true,
+      "validationExpression" : {
+          "expression" : {
+            "expression" : "#value.length() < 7",
+            "language" : "spel"
+          },
+          "failedMessage" : "some failed message"
+      },
       "initialValue" : {
         "expression" : "'someValue'",
         "label" : "someValue"
@@ -81,6 +92,8 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         "paramString",
         FragmentClazzRef[String],
         required = true,
+        validationExpression =
+          Some(ValidationExpression(Expression.spel("#value.length() < 7"), Some("some failed message"))),
         initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
         hintText = Some("some hint text"),
         inputConfig = ParameterInputConfig(

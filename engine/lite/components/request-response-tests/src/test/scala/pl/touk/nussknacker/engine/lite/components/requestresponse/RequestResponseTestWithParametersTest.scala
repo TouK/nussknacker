@@ -196,6 +196,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
+          validationExpression = None,
           inputConfig = ParameterInputConfig(InputModeAny, None)
         )
       )
@@ -226,6 +227,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = false,
           initialValue = None,
           hintText = None,
+          validationExpression = None,
           inputConfig = ParameterInputConfig(
             inputMode = InputModeAnyWithSuggestions,
             fixedValuesList = Some(fixedValuesList)
