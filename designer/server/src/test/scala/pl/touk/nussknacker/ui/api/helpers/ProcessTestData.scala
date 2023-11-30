@@ -38,10 +38,9 @@ object ProcessTestData {
   import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
 
-  val existingSourceFactory       = "barSource"
-  val otherExistingSourceFactory  = "fooSource"
-  val secretExistingSourceFactory = "secretSource"
-  val csvSourceFactory            = "csv-source"
+  val existingSourceFactory      = "barSource"
+  val otherExistingSourceFactory = "fooSource"
+  val csvSourceFactory           = "csv-source"
 
   val existingSinkFactory            = "barSink"
   val existingSinkFactory2           = "barSink2"
@@ -75,7 +74,6 @@ object ProcessTestData {
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
       .withSourceFactory(csvSourceFactory)
-      .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
       .withSinkFactory(otherExistingSinkFactory)
       .withSinkFactory(existingSinkFactory)
       .withSinkFactory(

@@ -80,7 +80,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories(TestService))
+          Map("enricher" -> WithCategories.anyCategory(TestService))
       }
     )
 
@@ -106,10 +106,12 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
           Map(
-            "enricher" -> WithCategories(TestService),
-            "hiddenEnricher" -> WithCategories(TestService).withComponentConfig(
-              SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenCategory")))
-            )
+            "enricher" -> WithCategories.anyCategory(TestService),
+            "hiddenEnricher" -> WithCategories
+              .anyCategory(TestService)
+              .withComponentConfig(
+                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("hiddenCategory")))
+              )
           )
       }
     )
@@ -128,9 +130,11 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] =
           Map(
-            "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withComponentConfig(
-              SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory")))
-            )
+            "someGenericNode" -> WithCategories
+              .anyCategory(SampleGenericNodeTransformation)
+              .withComponentConfig(
+                SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory")))
+              )
           )
       }
     )
@@ -172,7 +176,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories(TestService))
+          Map("enricher" -> WithCategories.anyCategory(TestService))
       }
     )
 
@@ -191,7 +195,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories(TestService))
+          Map("enricher" -> WithCategories.anyCategory(TestService))
       }
     )
 

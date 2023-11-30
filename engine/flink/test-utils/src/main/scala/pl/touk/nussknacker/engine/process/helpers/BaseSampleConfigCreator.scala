@@ -23,14 +23,14 @@ class BaseSampleConfigCreator[T: ClassTag: TypeTag: TypeInformation](sourceList:
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    "source" -> WithCategories(
+    "source" -> WithCategories.anyCategory(
       SourceFactory.noParam[T](new CollectionSource[T](sourceList, None, Typed.fromDetailedType[T]))
     ),
-    "noopSource" -> WithCategories(
+    "noopSource" -> WithCategories.anyCategory(
       SourceFactory.noParam[T](new CollectionSource[T](List.empty, None, Typed.fromDetailedType[T]))
     )
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-    Map("mockService" -> WithCategories(new MockService))
+    Map("mockService" -> WithCategories.anyCategory(new MockService))
 }

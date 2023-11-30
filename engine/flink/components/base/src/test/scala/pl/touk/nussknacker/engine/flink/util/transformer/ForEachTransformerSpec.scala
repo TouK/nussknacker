@@ -59,7 +59,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
     val testProcess =
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model)
 
     val forEachResultValidationContext = processValidator.validate(testProcess).typing(forEachNodeResultId)
     forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])
@@ -132,7 +132,7 @@ class Creator(input: List[TestRecord], collectingListener: ResultsCollectingList
   ): Map[String, WithCategories[SourceFactory]] = {
     implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
     Map(
-      "start" -> WithCategories(
+      "start" -> WithCategories.anyCategory(
         SourceFactory.noParam[TestRecord](
           EmitWatermarkAfterEachElementCollectionSource
             .create[TestRecord](input, _.timestamp, Duration.ofHours(1))

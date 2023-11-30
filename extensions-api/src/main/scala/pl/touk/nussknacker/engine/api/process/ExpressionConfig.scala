@@ -11,7 +11,7 @@ import java.util.UUID
 //TODO: how to make this config less spel-centric?, move globalImports and optimizeCompilation to spel configuration
 case class ExpressionConfig(
     globalProcessVariables: Map[String, WithCategories[AnyRef]],
-    globalImports: List[WithCategories[String]],
+    globalImports: List[String],
     additionalClasses: List[Class[_]] = defaultAdditionalClasses,
     languages: LanguageConfiguration = LanguageConfiguration.default,
     optimizeCompilation: Boolean = true,
@@ -19,7 +19,7 @@ case class ExpressionConfig(
     // TODO After moving categories on root level of all objects, we should consider replacing
     //      this map with list and adding dictId into DictDefinition. Then we will be sure that
     //      DictInstance have the same dictId as DictDefinition
-    dictionaries: Map[String, WithCategories[DictDefinition]] = Map.empty,
+    dictionaries: Map[String, DictDefinition] = Map.empty,
     hideMetaVariable: Boolean = false,
     strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
     staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
