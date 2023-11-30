@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -13,13 +13,17 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.net.URI
 
 class ProcessStateDefinitionService(
-    processingTypeDataProvider: ProcessingTypeDataProvider[_, StatusNameToStateDefinitionsMapping],
-    categoryService: ProcessCategoryService
+    processingTypeDataProvider: ProcessingTypeDataProvider[
+      _,
+      (StatusNameToStateDefinitionsMapping, ProcessCategoryService)
+    ],
 ) {
 
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val userAccessibleCategories = categoryService.getUserCategories(user)
-    processingTypeDataProvider.combined
+    val (stateDefinitionsMapping, categoryService) = processingTypeDataProvider.combined
+    val userCategoryService                        = new UserCategoryService(categoryService)
+    val userAccessibleCategories                   = userCategoryService.getUserCategories(user)
+    stateDefinitionsMapping
       .map { case (statusName, (stateDefinition, processingTypes)) =>
         val categoriesWhereStateAppears = processingTypes.flatMap { processingType =>
           categoryService

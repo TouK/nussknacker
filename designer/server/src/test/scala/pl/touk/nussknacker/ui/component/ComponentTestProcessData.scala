@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import java.time.Instant
 import java.util.UUID
@@ -62,28 +62,28 @@ object ComponentTestProcessData {
       buildInfo = Map.empty
     )
 
-  val MarketingProcess: ProcessDetails = displayableToProcess(
+  val MarketingProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),
     category = CategoryMarketing
   )
 
-  val FraudProcess: ProcessDetails = displayableToProcess(
+  val FraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = createSimpleDisplayableProcess("fraudProcess", Fraud, SharedSourceConf, SharedSinkConf),
     category = CategoryFraud
   )
 
-  val FraudProcessWithNotSharedSource: ProcessDetails = displayableToProcess(
+  val FraudProcessWithNotSharedSource: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable =
       createSimpleDisplayableProcess("fraudProcessWithNotSharedSource", Fraud, NotSharedSourceConf, SharedSinkConf),
     category = CategoryFraud
   )
 
-  val FraudTestProcess: ProcessDetails = displayableToProcess(
+  val FraudTestProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = createSimpleDisplayableProcess("fraudTestProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
     category = CategoryFraudTests
   )
 
-  val DeployedFraudProcessWith2Filters: ProcessDetails = displayableToProcess(
+  val DeployedFraudProcessWith2Filters: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = {
       val process = ScenarioBuilder
         .streaming(DeployedFraudProcessName)
@@ -97,7 +97,7 @@ object ComponentTestProcessData {
     category = CategoryFraud
   ).copy(lastAction = Some(deployedAction))
 
-  val CanceledFraudProcessWith2Enrichers: ProcessDetails = displayableToProcess(
+  val CanceledFraudProcessWith2Enrichers: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = {
       val process = ScenarioBuilder
         .streaming(CanceledFraudProcessName)
@@ -111,13 +111,13 @@ object ComponentTestProcessData {
     category = CategoryFraud
   ).copy(lastAction = Some(canceledAction))
 
-  val ArchivedFraudProcess: ProcessDetails = displayableToProcess(
+  val ArchivedFraudProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = createSimpleDisplayableProcess("archivedFraudProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
     isArchived = true,
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
-  val FraudFragment: ProcessDetails = displayableToProcess(
+  val FraudFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = {
       val scenario = ScenarioBuilder
         .fragment(FraudFragmentName, "in" -> classOf[String])
@@ -129,7 +129,7 @@ object ComponentTestProcessData {
     isFragment = true,
   )
 
-  val FraudProcessWithFragment: ProcessDetails = displayableToProcess(
+  val FraudProcessWithFragment: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     toDisplayable(
       ScenarioBuilder
         .streaming(FraudProcessWithFragmentName)
@@ -147,11 +147,6 @@ object ComponentTestProcessData {
       Fraud
     ),
     category = CategoryFraud
-  )
-
-  val WrongCategoryProcess: ProcessDetails = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("wrongCategory", Fraud, SharedSourceConf, SharedSinkConf),
-    category = "wrongCategory"
   )
 
   private def createSimpleDisplayableProcess(

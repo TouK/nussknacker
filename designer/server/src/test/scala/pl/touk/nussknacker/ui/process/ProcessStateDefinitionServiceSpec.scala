@@ -3,37 +3,27 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{MetaDataInitializer, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
-  private val categoryConfig = ConfigFactory.parseString(s"""
-       |{
-       |  categoriesConfig: {
-       |    "$Category1": "$Streaming",
-       |    "$Category2": "$Streaming",
-       |    "$TestCat": "$Fraud",
-       |    "$TestCat2": "$Fraud"
-       |  }
-       |}
-       |""".stripMargin)
-
-  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
+  private val categoryService = ConfigProcessCategoryService(
+    ConfigFactory.empty,
+    Map(Streaming -> CategoriesConfig(List(Category1, Category2)), Fraud -> CategoriesConfig(List(TestCat, TestCat2)))
+  )
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager =
@@ -155,9 +145,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   ): List[UIStateDefinition] = {
     val processingTypeDataMap =
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
-    val stateDefinitions           = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
-    val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, stateDefinitions)
-    val service                    = new ProcessStateDefinitionService(processingTypeDataProvider, categoryService)
+    val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
+    val service = new ProcessStateDefinitionService(
+      new MapBasedProcessingTypeDataProvider(Map.empty, (stateDefinitions, categoryService))
+    )
     service.fetchStateDefinitions(user)
   }
 
@@ -190,7 +181,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         MockManagerProvider,
         deploymentManager,
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        ConfigFactory.empty()
+        ConfigFactory.empty(),
+        CategoriesConfig(List.empty)
       )
     }
   }

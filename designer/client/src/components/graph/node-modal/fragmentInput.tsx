@@ -4,12 +4,12 @@ import React, { useCallback } from "react";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { DisableField } from "./DisableField";
-import ParameterList from "./ParameterList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
+import { useParametersList } from "./useParametersList";
 
-interface FragmentInmput {
+interface FragmentInput {
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
@@ -22,7 +22,7 @@ interface FragmentInmput {
     showValidation?: boolean;
 }
 
-export function FragmentInput(props: FragmentInmput): JSX.Element {
+export function FragmentInput(props: FragmentInput): JSX.Element {
     const {
         fieldErrors,
         findAvailableVariables,
@@ -36,6 +36,8 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
         showValidation,
     } = props;
     const setNodeState = useCallback((newParams) => setProperty("ref.parameters", newParams), [setProperty]);
+    const parameters = useParametersList(node, processDefinitionData, isEditMode, setNodeState);
+
     return (
         <NodeTableBody>
             <IdField
@@ -44,6 +46,7 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <DisableField
                 node={node}
@@ -52,27 +55,22 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
             />
-            <ParameterList
-                processDefinitionData={processDefinitionData}
-                editedNode={node}
-                setNodeState={setNodeState}
-                isEditMode={isEditMode}
-                ListField={({ param, path }) => (
-                    <ParameterExpressionField
-                        showSwitch={showSwitch}
-                        findAvailableVariables={findAvailableVariables}
-                        parameterDefinitions={parameterDefinitions}
-                        fieldErrors={fieldErrors}
-                        node={node}
-                        isEditMode={isEditMode}
-                        showValidation={showValidation}
-                        renderFieldLabel={renderFieldLabel}
-                        setProperty={setProperty}
-                        parameter={param}
-                        listFieldPath={path}
-                    />
-                )}
-            />
+            {parameters.map((param, index) => (
+                <ParameterExpressionField
+                    key={`${param.name}-${index}`}
+                    showSwitch={showSwitch}
+                    findAvailableVariables={findAvailableVariables}
+                    parameterDefinitions={parameterDefinitions}
+                    fieldErrors={fieldErrors}
+                    node={node}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    parameter={param}
+                    listFieldPath={`ref.parameters[${index}]`}
+                />
+            ))}
             <OutputParametersList
                 editedNode={node}
                 fieldErrors={fieldErrors}

@@ -182,20 +182,10 @@ class GenericNodeTransformationValidator(
           .sequence
         params
           .andThen { branchParams =>
-            branchParams
-              .map { case (branchId, expression) =>
-                Validations.validate(
-                  parameter,
-                  evaluatedparam.Parameter(ParameterNaming.getNameForBranchParameter(parameter, branchId), expression)
-                )
-              }
-              .sequence
-              .map(_ => branchParams)
-          }
-          .andThen { branchParams =>
             expressionCompiler
               .compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
               .map((_, None))
+              .andThen(Validations.validate(parameter, _))
           }
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
@@ -203,17 +193,14 @@ class GenericNodeTransformationValidator(
             evaluatedparam.Parameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
           (paramToAdd, Some(paramToAdd))
         }
-        Validations
-          .validate(parameter, singleParam)
-          .map(_ => singleParam)
-          .andThen { singleParam =>
-            val ctxToUse = inputContext match {
-              case e: ValidationContext => e
-              case _                    => globalVariablesPreparer.emptyValidationContext(metaData)
-            }
-            expressionCompiler.compileParam(singleParam, ctxToUse, parameter, eager = false)
-          }
+        val ctxToUse = inputContext match {
+          case e: ValidationContext => e
+          case _                    => globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
+        }
+        expressionCompiler
+          .compileParam(singleParam, ctxToUse, parameter, eager = false)
           .map((_, extraNodeParamOpt))
+          .andThen(Validations.validate(parameter, _))
       }
     }
 

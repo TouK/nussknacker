@@ -1,40 +1,46 @@
 import { ComponentType, SVGProps } from "react";
 import { lighten, styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
 import { Link } from "react-router-dom";
-import { alpha } from "../../containers/theme";
+import { alpha } from "../../containers/theme/helpers";
 
-export const LinkStyled = styled(Link)`
-    color: ${variables.warningColor};
+export const LinkStyled = styled(Link)(
+    ({ theme }) => `
+    color: ${theme.custom.colors.warning};
     font-weight: 600;
     white-space: normal !important;
     &:hover {
-        color: ${lighten(variables.warningColor, 0.25)};
+        color: ${lighten(theme.custom.colors.warning, 0.25)};
     }
     &:focus {
-        color: ${variables.warningColor};
+        color: ${theme.custom.colors.warning};
         text-decoration: none;
     }
-`;
+`,
+);
 
-export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) => styled(Icon)`
+export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) =>
+    styled(Icon)(
+        ({ theme }) => `
     width: 16px;
     height: 16px;
-    color: ${variables.okColor};
+    color: ${theme.custom.colors.ok};
     float: left;
     margin-right: 5px;
     margin-top: 2px;
-`;
+`,
+    );
 
-export const TipPanelStyled = styled("div")((props: { isHighlighted: boolean }) => ({
+export const TipPanelStyled = styled("div")<{
+    isHighlighted: boolean;
+}>(({ isHighlighted, theme }) => ({
     height: "75px",
-    backgroundColor: props.isHighlighted ? alpha(variables.errorColor, 0.1) : variables.panelBackground,
+    backgroundColor: isHighlighted ? alpha(theme.custom.colors.error, 0.1) : theme.custom.colors.primaryBackground,
     padding: "8px 10px 8px 10px",
     fontWeight: "lighter",
     fontSize: "14px",
-    color: props.isHighlighted && variables.defaultTextColor,
-    ...(props.isHighlighted && {
-        outline: `2px solid ${variables.errorColor}`,
+    color: isHighlighted && theme.custom.colors.secondaryColor,
+    ...(isHighlighted && {
+        outline: `2px solid ${theme.custom.colors.error}`,
         outlineOffset: "-2px",
     }),
 }));

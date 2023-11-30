@@ -5,7 +5,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.api.MetaDataTestData.{fullMetaDataCases, nonTypeSpecificProperties}
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 class ProcessPropertiesTest extends AnyFunSuite with Matchers {
 
@@ -29,14 +30,14 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
     forAll(fullMetaDataCases) {
       (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         {
-          val metaData = ProcessProperties(typeSpecificData).toMetaData(id)
+          val metaData = ProcessProperties(typeSpecificData).toMetaData(ProcessName(id))
           metaData.typeSpecificData shouldBe typeSpecificData
           metaData.additionalFields shouldBe ProcessAdditionalFields(None, fullProperties, metaDataName)
         }
     }
   }
 
-  test("construct ProcessProperties from TypeSpecificData and additional properties") {
+  test("construct ProcessProperties from TypeSpecificData and scenario properties") {
     forAll(fullMetaDataCases) {
       (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
         {

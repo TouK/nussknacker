@@ -1,0 +1,63 @@
+{
+    "metaData": {
+        "id": "e2e-1697890614036-fragment2-test-process",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "docsUrl": ""
+            },
+            "metaDataType": "FragmentSpecificData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "input",
+            "parameters": [
+                {
+                    "name": "i111",
+                    "typ": {
+                        "refClazzName": "java.lang.String"
+                    }
+                },
+                {
+                    "name": "i222",
+                    "typ": {
+                        "refClazzName": "int"
+                    }
+                },
+                {
+                    "name": "i333",
+                    "typ": {
+                        "refClazzName": "boolean"
+                    }
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "FragmentInputDefinition"
+        },
+        {
+            "id": "dead-end",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 0
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}

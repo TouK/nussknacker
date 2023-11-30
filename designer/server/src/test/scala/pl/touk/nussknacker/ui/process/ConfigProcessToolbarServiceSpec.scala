@@ -4,10 +4,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.processtoolbar._
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
@@ -78,7 +78,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   )
 
   private val categories = List("Category1", "Category2", "Category3")
-  private val service    = new ConfigProcessToolbarService(config, categories)
+  private val service    = new ConfigProcessToolbarService(config, () => categories)
 
   it should "verify all toolbar condition cases" in {
     val process          = createProcess("process", "Category1", isFragment = false, isArchived = false)
@@ -162,9 +162,10 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true)
     )
 
-    forAll(testingData) { (process: BaseProcessDetails[_], condition: Option[ToolbarCondition], expected: Boolean) =>
-      val result = ToolbarHelper.verifyCondition(condition, process)
-      result shouldBe expected
+    forAll(testingData) {
+      (process: ScenarioWithDetailsEntity[_], condition: Option[ToolbarCondition], expected: Boolean) =>
+        val result = ToolbarHelper.verifyCondition(condition, process)
+        result shouldBe expected
     }
   }
 
@@ -196,18 +197,18 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       processCategory3
     )
 
-    forAll(testingData) { (process: BaseProcessDetails[_]) =>
+    forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
       val result   = service.getProcessToolbarSettings(process)
       val expected = createProcessToolbarSettings(process)
       result shouldBe expected
     }
   }
 
-  private def createProcessToolbarSettings(process: BaseProcessDetails[_]): ProcessToolbarSettings = {
+  private def createProcessToolbarSettings(process: ScenarioWithDetailsEntity[_]): ProcessToolbarSettings = {
     val processToolbarConfig = ProcessToolbarsConfigProvider.create(config, Some(process.processCategory))
     val id                   = ToolbarHelper.createProcessToolbarId(processToolbarConfig, process)
 
-    def processName(process: BaseProcessDetails[_]) = UriUtils.encodeURIComponent(process.name)
+    def processName(process: ScenarioWithDetailsEntity[_]) = UriUtils.encodeURIComponent(process.name.value)
 
     (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") =>

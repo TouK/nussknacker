@@ -4,25 +4,23 @@ import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
@@ -30,10 +28,10 @@ import pl.touk.nussknacker.ui.api.helpers.spel._
 import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
-import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.{ProcessToolbarSettings, ScenarioQuery, ToolbarButton, ToolbarPanel}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -53,9 +51,10 @@ class ProcessesResourcesSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import io.circe._, io.circe.parser._
-  import TestCategories._
   import ProcessesQueryEnrichments.RichProcessesQuery
+  import TestCategories._
+  import io.circe._
+  import io.circe.parser._
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
@@ -91,6 +90,17 @@ class ProcessesResourcesSpec
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.NotDeployed))
   }
 
+  test("/processes and /processesDetails should return lighter details without history versions") {
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      forScenariosReturned(ScenarioQuery.empty) { processes =>
+        every(processes.map(_.history)) shouldBe empty
+      }
+      forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
+        every(processes.map(_.history)) shouldBe empty
+      }
+    }
+  }
+
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
@@ -116,7 +126,7 @@ class ProcessesResourcesSpec
     createDeployedProcessFromProcess(SampleSpelTemplateProcess.process)
 
     Get(s"/processes/${SampleSpelTemplateProcess.processName.value}") ~> routeWithRead ~> check {
-      val newProcessDetails = responseAs[ValidatedProcessDetails]
+      val newProcessDetails = responseAs[ScenarioWithDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
 
       responseAs[String] should include("validationResult")
@@ -125,18 +135,20 @@ class ProcessesResourcesSpec
   }
 
   test("return validated and non-validated process") {
-    createDeployedProcess(processName)
+    createEmptyProcess(processName)
 
     Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[ValidatedProcessDetails].name shouldBe processName.value
+      val validated = responseAs[ScenarioWithDetails]
+      validated.name shouldBe processName
+      validated.validationResult.value.errors should not be empty
     }
 
     Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[ProcessDetails].name shouldBe processName.value
-      responseAs[String] should not include "validationResult"
-      Unmarshal(response).to[ValidatedProcessDetails].failed.futureValue shouldBe a[DecodingFailure]
+      val validated = responseAs[ScenarioWithDetails]
+      validated.name shouldBe processName
+      validated.validationResult shouldBe empty
     }
   }
 
@@ -274,11 +286,11 @@ class ProcessesResourcesSpec
     createArchivedProcess(archivedFragmentName, isFragment = true)
 
     verifyListOfProcesses(
-      ProcessesQuery.empty,
+      ScenarioQuery.empty,
       List(processName, fragmentName, archivedProcessName, archivedFragmentName)
     )
-    verifyListOfProcesses(ProcessesQuery.empty.unarchived(), List(processName, fragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.archived(), List(archivedFragmentName, archivedFragmentName))
+    verifyListOfProcesses(ScenarioQuery.empty.unarchived(), List(processName, fragmentName))
+    verifyListOfProcesses(ScenarioQuery.empty.archived(), List(archivedProcessName, archivedFragmentName))
   }
 
   test("return list of all fragments") {
@@ -287,9 +299,9 @@ class ProcessesResourcesSpec
     createArchivedProcess(archivedProcessName)
     createArchivedProcess(archivedFragmentName, isFragment = true)
 
-    verifyListOfProcesses(ProcessesQuery.empty.fragment(), List(fragmentName, archivedFragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.fragment().unarchived(), List(fragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.fragment().archived(), List(archivedFragmentName))
+    verifyListOfProcesses(ScenarioQuery.empty.fragment(), List(fragmentName, archivedFragmentName))
+    verifyListOfProcesses(ScenarioQuery.empty.fragment().unarchived(), List(fragmentName))
+    verifyListOfProcesses(ScenarioQuery.empty.fragment().archived(), List(archivedFragmentName))
   }
 
   test("should return list of processes") {
@@ -298,9 +310,9 @@ class ProcessesResourcesSpec
     createArchivedProcess(archivedProcessName)
     createArchivedProcess(archivedFragmentName, isFragment = true)
 
-    verifyListOfProcesses(ProcessesQuery.empty.process(), List(processName, archivedProcessName))
-    verifyListOfProcesses(ProcessesQuery.empty.process().unarchived(), List(processName))
-    verifyListOfProcesses(ProcessesQuery.empty.process().archived(), List(archivedProcessName))
+    verifyListOfProcesses(ScenarioQuery.empty.process(), List(processName, archivedProcessName))
+    verifyListOfProcesses(ScenarioQuery.empty.process().unarchived(), List(processName))
+    verifyListOfProcesses(ScenarioQuery.empty.process().archived(), List(archivedProcessName))
   }
 
   test("allow update category for existing process") {
@@ -361,10 +373,13 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.NotFound
     }
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ScenarioQuery.empty) { processes =>
       processes.isEmpty shouldBe true
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
+      processes.isEmpty shouldBe true
+    }
+    forScenariosDetailsReturned(ScenarioQuery.empty.copy(categories = Some(List(Category1)))) { processes =>
       processes.isEmpty shouldBe true
     }
   }
@@ -379,10 +394,10 @@ class ProcessesResourcesSpec
       process.processCategory shouldEqual category
     }
 
-    forScenariosReturned(ProcessesQuery.empty, isAdmin = true) { processes =>
+    forScenariosReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
       processes.exists(_.processId == processId.value) shouldBe true
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty, isAdmin = true) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty, isAdmin = true) { processes =>
       processes.exists(_.processId.value == processId.value) shouldBe true
     }
   }
@@ -391,31 +406,31 @@ class ProcessesResourcesSpec
     createEmptyProcess(ProcessName("proc1"), TestCat)
     createEmptyProcess(ProcessName("proc2"), TestCat2)
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ScenarioQuery.empty) { processes =>
       processes.size shouldBe 2
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
       processes.size shouldBe 2
     }
 
-    forScenariosReturned(ProcessesQuery.empty.categories(List(TestCat))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat))) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.categories(List(TestCat))) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat))) { processes =>
+      processes.loneElement.name.value shouldBe "proc1"
     }
 
-    forScenariosReturned(ProcessesQuery.empty.categories(List(TestCat2))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat2))) { processes =>
       processes.loneElement.name shouldBe "proc2"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.categories(List(TestCat2))) { processes =>
-      processes.loneElement.name shouldBe "proc2"
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat2))) { processes =>
+      processes.loneElement.name.value shouldBe "proc2"
     }
 
-    forScenariosReturned(ProcessesQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
       processes.size shouldBe 2
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.categories(List(TestCat, TestCat2))) { processes =>
       processes.size shouldBe 2
     }
   }
@@ -423,16 +438,16 @@ class ProcessesResourcesSpec
   test("search processes by processing types") {
     createEmptyProcess(processName)
 
-    forScenariosReturned(ProcessesQuery.empty.processingTypes(List(Streaming))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.processingTypes(List(Streaming))) { processes =>
       processes.size shouldBe 1
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.processingTypes(List(Streaming))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.processingTypes(List(Streaming))) { processes =>
       processes.size shouldBe 1
     }
-    forScenariosReturned(ProcessesQuery.empty.processingTypes(List(Fraud))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.processingTypes(List(Fraud))) { processes =>
       processes.size shouldBe 0
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.processingTypes(List(Fraud))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.processingTypes(List(Fraud))) { processes =>
       processes.size shouldBe 0
     }
   }
@@ -441,16 +456,16 @@ class ProcessesResourcesSpec
     createEmptyProcess(ProcessName("proc1"))
     createEmptyProcess(ProcessName("proc2"))
 
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc1"))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.names(List("proc1"))) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1"))) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+    forScenariosDetailsReturned(ScenarioQuery.empty.names(List("proc1"))) { processes =>
+      processes.loneElement.name.value shouldBe "proc1"
     }
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc3"))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.names(List("proc3"))) { processes =>
       processes.size shouldBe 0
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc3"))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.names(List("proc3"))) { processes =>
       processes.size shouldBe 0
     }
   }
@@ -461,7 +476,7 @@ class ProcessesResourcesSpec
     createArchivedProcess(ProcessName("proc3"))
 
     forScenariosReturned(
-      ProcessesQuery.empty
+      ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
         .categories(List(TestCat))
         .processingTypes(List(Streaming))
@@ -470,16 +485,16 @@ class ProcessesResourcesSpec
       processes.loneElement.name shouldBe "proc1"
     }
     forScenariosDetailsReturned(
-      ProcessesQuery.empty
+      ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
         .categories(List(TestCat))
         .processingTypes(List(Streaming))
         .unarchived()
     ) { processes =>
-      processes.loneElement.name shouldBe "proc1"
+      processes.loneElement.name.value shouldBe "proc1"
     }
     forScenariosReturned(
-      ProcessesQuery.empty
+      ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
         .categories(List(TestCat))
         .processingTypes(List(Streaming))
@@ -488,18 +503,18 @@ class ProcessesResourcesSpec
       processes.loneElement.name shouldBe "proc3"
     }
     forScenariosDetailsReturned(
-      ProcessesQuery.empty
+      ScenarioQuery.empty
         .names(List("proc1", "proc3", "procNotExisting"))
         .categories(List(TestCat))
         .processingTypes(List(Streaming))
         .archived()
     ) { processes =>
-      processes.loneElement.name shouldBe "proc3"
+      processes.loneElement.name.value shouldBe "proc3"
     }
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
+    forScenariosReturned(ScenarioQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
       processes.size shouldBe 0
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
+    forScenariosDetailsReturned(ScenarioQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
       processes.size shouldBe 0
     }
   }
@@ -515,25 +530,25 @@ class ProcessesResourcesSpec
 
     deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
-        forScenariosReturned(ProcessesQuery.empty) { processes =>
+        forScenariosReturned(ScenarioQuery.empty) { processes =>
           processes.size shouldBe 3
           val status = processes.find(_.name == firstProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.NotDeployed.name)
         }
-        forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+        forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
           processes.size shouldBe 3
         }
 
-        forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
+        forScenariosReturned(ScenarioQuery.empty.deployed()) { processes =>
           processes.size shouldBe 1
           val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.Running.name)
         }
-        forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
+        forScenariosDetailsReturned(ScenarioQuery.empty.deployed()) { processes =>
           processes.size shouldBe 1
         }
 
-        forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+        forScenariosReturned(ScenarioQuery.empty.notDeployed()) { processes =>
           processes.size shouldBe 2
 
           val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
@@ -542,7 +557,7 @@ class ProcessesResourcesSpec
           val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.state.map(_.name))
           canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
         }
-        forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+        forScenariosDetailsReturned(ScenarioQuery.empty.notDeployed()) { processes =>
           processes.size shouldBe 2
         }
       }
@@ -636,15 +651,15 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ScenarioQuery.empty) { processes =>
       val process = processes.find(_.name == SampleProcess.process.id)
 
       withClue(process) {
         process.isDefined shouldBe true
       }
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.name == SampleProcess.process.id) shouldBe true
+    forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
+      processes.exists(_.name.value == SampleProcess.process.id) shouldBe true
     }
   }
 
@@ -662,9 +677,9 @@ class ProcessesResourcesSpec
     }
 
     getProcess(processName) ~> check {
-      val processDetails = responseAs[ProcessDetails]
-      processDetails.name shouldBe SampleProcess.process.id
-      processDetails.history.length shouldBe 3
+      val processDetails = responseAs[ScenarioWithDetails]
+      processDetails.name.value shouldBe SampleProcess.process.id
+      processDetails.historyUnsafe.length shouldBe 3
       // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
   }
@@ -679,44 +694,41 @@ class ProcessesResourcesSpec
     }
 
     Get(s"/processes/${SampleProcess.process.id}/1") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/2") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(2)
       processDetails.isLatestVersion shouldBe false
     }
 
     Get(s"/processes/${SampleProcess.process.id}/3") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ValidatedProcessDetails]
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId(3)
       processDetails.isLatestVersion shouldBe true
     }
   }
 
   test("return non-validated process version") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
-      status shouldEqual StatusCodes.OK
-    }
+    createEmptyProcess(processName)
 
-    Get(s"/processes/${SampleProcess.process.id}/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
-      val processDetails = responseAs[ProcessDetails]
+    Get(s"/processes/$processName/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
+      val processDetails = responseAs[ScenarioWithDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
-      responseAs[String] should not include "validationResult"
-      Unmarshal(response).to[ValidatedProcessDetails].failed.futureValue shouldBe a[DecodingFailure]
+      processDetails.validationResult shouldBe empty
     }
   }
 
   test("perform idempotent process save") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
     Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-      val processHistoryBeforeDuplicatedWrite = responseAs[ProcessDetails].history
+      val processHistoryBeforeDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
       updateProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)
       Get(s"/processes/${SampleProcess.process.id}") ~> routeWithAllPermissions ~> check {
-        val processHistoryAfterDuplicatedWrite = responseAs[ProcessDetails].history
+        val processHistoryAfterDuplicatedWrite = responseAs[ScenarioWithDetails].historyUnsafe
         processHistoryAfterDuplicatedWrite shouldBe processHistoryBeforeDuplicatedWrite
       }
     }
@@ -830,7 +842,7 @@ class ProcessesResourcesSpec
 
       Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
         status shouldEqual StatusCodes.OK
-        val loadedProcess = responseAs[ValidatedProcessDetails]
+        val loadedProcess = responseAs[ScenarioWithDetails]
         loadedProcess.processCategory shouldBe TestCat
         loadedProcess.createdAt should not be null
       }
@@ -863,11 +875,10 @@ class ProcessesResourcesSpec
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), TestCat) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
-          val processes = responseAs[List[ProcessDetails]]
+          val processes = responseAs[List[ScenarioWithDetails]]
           processes should have size 2
-          processes.map(_.name) should contain only (firstProcessName.value, secondProcessName.value)
-          responseAs[String] should not include "validationResult"
-          Unmarshal(response).to[List[ValidatedProcessDetails]].failed.futureValue shouldBe a[DecodingFailure]
+          processes.map(_.name) should contain only (firstProcessName, secondProcessName)
+          every(processes.map(_.validationResult)) shouldBe empty
         }
       }
     }
@@ -967,31 +978,24 @@ class ProcessesResourcesSpec
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
     deploymentManager.withProcessRunning(processName) {
-      forScenariosReturned(ProcessesQuery.empty) { processes =>
+      forScenariosReturned(ScenarioQuery.empty) { processes =>
         val process = processes.find(_.name == expectedName.value).value
         process.state.map(_.name) shouldBe expectedStatus.map(_.name)
       }
 
-      forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-        val process = processes.find(_.name == expectedName.value).value
+      forScenariosDetailsReturned(ScenarioQuery.empty) { processes =>
+        val process = processes.find(_.name.value == expectedName.value).value
         process.state shouldBe None
       }
     }
   }
 
-  private def verifyListOfProcesses(query: ProcessesQuery, expectedNames: List[ProcessName]): Unit = {
+  private def verifyListOfProcesses(query: ScenarioQuery, expectedNames: List[ProcessName]): Unit = {
     forScenariosReturned(query) { processes =>
-      processes.size shouldBe expectedNames.size
-      expectedNames.foreach { name =>
-        assert(processes.exists(_.name == name.value), s"Missing name: ${name.value} for query: $query.")
-      }
+      processes.map(_.name) should contain theSameElementsAs expectedNames.map(_.value)
     }
-
     forScenariosDetailsReturned(query) { processes =>
-      processes.size shouldBe expectedNames.size
-      expectedNames.foreach { name =>
-        assert(processes.exists(_.name == name.value), s"Missing name: ${name.value} for query: $query.")
-      }
+      processes.map(_.name) should contain theSameElementsAs expectedNames
     }
   }
 
@@ -1066,7 +1070,7 @@ class ProcessesResourcesSpec
       callback(status)
     }
 
-  private def updateCategory(processId: ProcessId, category: String): XError[Unit] =
+  private def updateCategory(processId: ProcessId, category: String): Unit =
     dbioRunner.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
 
   private def forScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(

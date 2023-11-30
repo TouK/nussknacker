@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, Output}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
@@ -32,6 +32,7 @@ case class ValidationPerformed(
     expressionType: Option[TypingResult]
 ) extends ValidationResponse
 
+// TODO: Remove ValidationNotPerformed
 case object ValidationNotPerformed extends ValidationResponse
 
 object NodeDataValidator {
@@ -42,6 +43,19 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver) {
 
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+    case spel: SpelExpressionParser => spel.typingDictLabels
+  }
+
+  private val compiler = new NodeCompiler(
+    modelData.modelDefinition,
+    FragmentComponentDefinitionExtractor(modelData),
+    expressionCompiler,
+    modelData.modelClassLoader.classLoader,
+    PreventInvocationCollector,
+    ComponentUseCase.Validation
+  )
+
   def validate(
       nodeData: NodeData,
       validationContext: ValidationContext,
@@ -49,21 +63,9 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       outgoingEdges: List[OutgoingEdge]
   )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
-
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-        case spel: SpelExpressionParser => spel.typingDictLabels
-      }
-      val compiler = new NodeCompiler(
-        modelData.modelDefinition,
-        FragmentComponentDefinitionExtractor(modelData),
-        expressionCompiler,
-        modelData.modelClassLoader.classLoader,
-        PreventInvocationCollector,
-        ComponentUseCase.Validation
-      )
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
-      nodeData match {
+      val compilationErrors = nodeData match {
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
         case a: CustomNode =>
           toValidationResponse(compiler.compileCustomNodeObject(a, Left(validationContext), ending = false))
@@ -104,7 +106,18 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
             )
           )
         case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case _                => ValidationNotPerformed
+        case Split(_, _) | FragmentUsageOutput(_, _, _, _) | FragmentInputDefinition(_, _, _) | BranchEndData(_) =>
+          ValidationNotPerformed
+      }
+
+      val nodeIdErrors = IdValidator.validateNodeId(nodeData.id) match {
+        case Validated.Valid(_)   => List.empty
+        case Validated.Invalid(e) => e.toList
+      }
+
+      compilationErrors match {
+        case e: ValidationPerformed => e.copy(errors = e.errors ++ nodeIdErrors)
+        case ValidationNotPerformed => ValidationPerformed(nodeIdErrors, None, None)
       }
     }
   }

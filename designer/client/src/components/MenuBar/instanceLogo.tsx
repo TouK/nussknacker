@@ -1,8 +1,8 @@
 import React, { ComponentProps, ReactNode, useState } from "react";
 import { absoluteBePath } from "../../common/UrlUtils";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
-const Logo = styled.img({
+const Logo = styled("img")({
     height: "1.5em",
     maxWidth: 150,
 });

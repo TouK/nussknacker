@@ -6,6 +6,9 @@ import { resolve } from "path";
 import { Configuration, DefinePlugin } from "webpack";
 import pkg from "../../package.json";
 import { hash } from "../../../client/version";
+import { config } from "dotenv";
+
+config({ path: resolve(__dirname, "../../.env") });
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { contextPath, name, version } = require(path.join(process.cwd(), "package.json"));
@@ -112,6 +115,10 @@ export const commonConfig: Configuration = {
             PACKAGE_NAME: JSON.stringify(name),
             PACKAGE_VERSION: JSON.stringify(version),
             BUILD_HASH: JSON.stringify(hash),
+            "process.env": {
+                NU_FE_CORE_URL: JSON.stringify(process.env.NU_FE_CORE_URL),
+                PROXY_PATH: JSON.stringify(process.env.PROXY_PATH),
+            },
         }),
     ],
     optimization: {

@@ -3,6 +3,14 @@ package pl.touk.nussknacker.engine.testing
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig.{
+  defaultAdditionalClasses,
+  defaultDynamicPropertyAccessAllowed,
+  defaultMethodExecutionForUnknownAllowed,
+  defaultStaticMethodInvocationsChecking,
+  defaultStrictMethodsChecking,
+  defaultStrictTypeChecking
+}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
@@ -31,16 +39,16 @@ object ProcessDefinitionBuilder {
       ExpressionDefinition(
         Map.empty,
         List.empty,
-        List.empty,
-        languages = LanguageConfiguration(List.empty),
+        defaultAdditionalClasses,
+        languages = LanguageConfiguration.default,
         optimizeCompilation = true,
-        strictTypeChecking = true,
+        strictTypeChecking = defaultStrictTypeChecking,
         dictionaries = Map.empty,
         hideMetaVariable = false,
-        strictMethodsChecking = true,
-        staticMethodInvocationsChecking = false,
-        methodExecutionForUnknownAllowed = false,
-        dynamicPropertyAccessAllowed = false,
+        strictMethodsChecking = defaultStrictMethodsChecking,
+        staticMethodInvocationsChecking = defaultStaticMethodInvocationsChecking,
+        methodExecutionForUnknownAllowed = defaultMethodExecutionForUnknownAllowed,
+        dynamicPropertyAccessAllowed = defaultDynamicPropertyAccessAllowed,
         spelExpressionExcludeList = SpelExpressionExcludeList.default,
         customConversionsProviders = List.empty
       ),
@@ -62,7 +70,9 @@ object ProcessDefinitionBuilder {
     )
   }
 
-  private def toExpressionDefinition(expressionConfig: ExpressionDefinition[ObjectDefinition]) =
+  def toExpressionDefinition(
+      expressionConfig: ExpressionDefinition[ObjectDefinition]
+  ): ExpressionDefinition[ObjectWithMethodDef] =
     ExpressionDefinition(
       expressionConfig.globalVariables.mapValuesNow(makeDummyDefinition(_)),
       expressionConfig.globalImports,
@@ -92,6 +102,13 @@ object ProcessDefinitionBuilder {
     )
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
+
+    def withGlobalVariable(name: String, typ: TypingResult): ProcessDefinition[ObjectDefinition] =
+      definition.copy(expressionConfig =
+        definition.expressionConfig.copy(globalVariables =
+          definition.expressionConfig.globalVariables + (name -> objectDefinition(List.empty, Some(typ)))
+        )
+      )
 
     def withService(
         id: String,

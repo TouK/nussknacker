@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   CreateProcessAction,
@@ -33,6 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class DBFetchingProcessRepositorySpec
     extends AnyFunSuite
     with Matchers
+    with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
@@ -77,14 +78,14 @@ class DBFetchingProcessRepositorySpec
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
     val processes = fetching
-      .fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(
-        ProcessShapeFetchStrategy.NotFetch,
+      .fetchProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
+        ScenarioShapeFetchStrategy.NotFetch,
         c1Reader,
         implicitly[ExecutionContext]
       )
       .futureValue
 
-    processes.map(_.name) shouldEqual "categorized-c1" :: Nil
+    processes.map(_.name.value) shouldEqual "categorized-c1" :: Nil
   }
 
   test("should rename process") {
@@ -114,7 +115,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -141,7 +142,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName) shouldBe Symbol("right")
+    renameProcess(oldName, newName)
 
     val comments = fetching
       .fetchProcessId(newName)
@@ -175,7 +176,9 @@ class DBFetchingProcessRepositorySpec
     processExists(oldName) shouldBe true
     processExists(existingName) shouldBe true
 
-    renameProcess(oldName, existingName) shouldBe ProcessAlreadyExists(existingName.value).asLeft
+    (the[TestFailedException] thrownBy {
+      renameProcess(oldName, existingName)
+    }).cause.value shouldBe ProcessAlreadyExists(existingName.value)
   }
 
   test("should generate new process version id based on latest version id") {
@@ -190,7 +193,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val details: BaseProcessDetails[CanonicalProcess] = fetchLatestProcessDetails(processName)
+    val details: ScenarioWithDetailsEntity[CanonicalProcess] = fetchLatestProcessDetails(processName)
     details.processVersionId shouldBe VersionId.initialVersionId
 
     // change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
@@ -292,9 +295,7 @@ class DBFetchingProcessRepositorySpec
       forwardedUserName = None
     )
 
-    val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processUpdated shouldBe Symbol("right")
-    processUpdated.toOption.get
+    dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
   }
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
@@ -308,7 +309,7 @@ class DBFetchingProcessRepositorySpec
       forwardedUserName = None
     )
 
-    dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
+    dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue
   }
 
   private def renameProcess(processName: ProcessName, newName: ProcessName) = {
@@ -321,7 +322,7 @@ class DBFetchingProcessRepositorySpec
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
       fetching
-        .fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived)
+        .fetchProcessesDetails[DisplayableProcess](ScenarioQuery.unarchived)
         .futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)
@@ -329,9 +330,9 @@ class DBFetchingProcessRepositorySpec
     }
   }
 
-  private def fetchLatestProcessDetails[PS: ProcessShapeFetchStrategy](
+  private def fetchLatestProcessDetails[PS: ScenarioShapeFetchStrategy](
       name: ProcessName
-  ): processdetails.BaseProcessDetails[PS] = {
+  ): ScenarioWithDetailsEntity[PS] = {
     val fetchedProcess = fetching
       .fetchProcessId(name)
       .futureValue

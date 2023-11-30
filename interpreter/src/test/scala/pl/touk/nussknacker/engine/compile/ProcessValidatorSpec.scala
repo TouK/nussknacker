@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   ComponentUseCase,
+  EmptyProcessConfigCreator,
   LanguageConfiguration,
   WithCategories
 }
@@ -31,12 +33,7 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
-  ComponentImplementationInvoker,
-  ObjectDefinition,
-  ObjectWithMethodDef,
-  StandardObjectWithMethodDef
-}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   CustomTransformerAdditionalData,
   ExpressionDefinition,
@@ -50,11 +47,12 @@ import pl.touk.nussknacker.engine.definition.{
 }
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.{LocalModelData, ProcessDefinitionBuilder}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.{ObjectProcessDefinition, objectDefinition}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
@@ -119,13 +117,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       "withNullableLiteralIntegerParam" -> (objectDefinition(
         List(
           Parameter[Integer]("nullableLiteralIntegerParam")
-            .copy(validators = List(LiteralParameterValidator.integerValidator))
+            .copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
       "withRegExpParam" -> (objectDefinition(
         List(
-          Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+          Parameter[Integer]("regExpParam").copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
@@ -452,6 +450,54 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
+  test("should handle all cases of scenario id validation") {
+    forAll(IdValidationTestData.scenarioIdErrorCases) {
+      (scenarioId: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val scenario = ScenarioBuilder
+            .streaming(scenarioId)
+            .source("sourceId", "source")
+            .emptySink("sinkId", "sink")
+          validate(scenario, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+          }
+        }
+    }
+  }
+
+  test("should handle all cases of fragment id validation") {
+    forAll(IdValidationTestData.fragmentIdErrorCases) {
+      (fragmentId: String, expectedErrors: List[ProcessCompilationError]) =>
+        {
+          val fragment = ScenarioBuilder
+            .fragmentWithInputNodeId(fragmentId, "sourceId")
+            .emptySink("sinkId", "sink")
+          validate(fragment, baseDefinition).result match {
+            case Valid(_)   => expectedErrors shouldBe empty
+            case Invalid(e) => e.toList shouldBe expectedErrors
+
+          }
+        }
+    }
+  }
+
+  test("should handle all cases node id validation") {
+    forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
+      {
+        val scenario = ScenarioBuilder
+          .streaming("scenarioId")
+          .source(nodeId, "source")
+          .emptySink("sinkId", "sink")
+        validate(scenario, baseDefinition).result match {
+          case Valid(_)   => expectedErrors shouldBe empty
+          case Invalid(e) => e.toList shouldBe expectedErrors
+
+        }
+      }
+    }
+  }
+
   test("find duplicated ids") {
     val duplicatedId = "id1"
     val processWithDuplicatedIds =
@@ -572,10 +618,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
-              List(
-                InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
-              )
+              ExpressionParserCompilationError(_, "customNodeId", Some("nullableLiteralIntegerParam"), "as"),
+              List(ExpressionParserCompilationError(_, "customNodeId2", Some("nullableLiteralIntegerParam"), "1.23"))
             )
           ) =>
     }
@@ -593,7 +637,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(
             NonEmptyList(
-              MismatchParameter(_, _, "regExpParam", "customNodeId"),
+              ExpressionParserCompilationError(_, "customNodeId", Some("regExpParam"), "as"),
               _
             )
           ) =>
@@ -1595,11 +1639,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       process: CanonicalProcess,
       definitions: ProcessDefinition[ObjectWithMethodDef]
   ): CompilationResult[Unit] = {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
     ProcessValidator
       .default(
         ModelDefinitionWithTypes(definitions),
-        fragmentDefinitionExtractor,
+        ConfigFactory.empty,
         new SimpleDictRegistry(Map.empty),
         CustomProcessValidatorLoader.emptyCustomProcessValidator
       )
@@ -1767,18 +1810,23 @@ class StartingWithACustomValidator extends CustomParameterValidator {
 
   import cats.data.Validated.{invalid, valid}
 
-  override def isValid(paramName: String, value: String, label: Option[String])(
+  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] =
-    if (value.stripPrefix("'").startsWith("A")) valid(())
-    else
-      invalid(
-        CustomParameterValidationError(
-          s"Value $value does not starts with 'A'",
-          "Value does not starts with 'A'",
-          paramName,
-          nodeId.id
+  ): Validated[PartSubGraphCompilationError, Unit] = {
+    value match {
+      case None                                 => valid(())
+      case Some(null)                           => valid(())
+      case Some(s: String) if s.startsWith("A") => valid(())
+      case _ =>
+        invalid(
+          CustomParameterValidationError(
+            s"Value $value does not starts with 'A'",
+            "Value does not starts with 'A'",
+            paramName,
+            nodeId.id
+          )
         )
-      )
+    }
+  }
 
 }

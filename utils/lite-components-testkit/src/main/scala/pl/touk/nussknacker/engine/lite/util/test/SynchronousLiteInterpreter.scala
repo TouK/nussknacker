@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
+import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -48,13 +49,13 @@ object SynchronousLiteInterpreter {
       componentUseCase: ComponentUseCase,
       runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): SynchronousResult = {
-
+    val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
     ScenarioInterpreterFactory
       .createInterpreter[Id, Any, AnyRef](
         scenario,
         modelData,
         Nil,
-        ProductionServiceInvocationCollector,
+        testScenarioCollectorHandler.resultCollector,
         componentUseCase
       )
       .map { interpreter =>
@@ -63,6 +64,7 @@ object SynchronousLiteInterpreter {
           val value: Id[ResultType[EndResult[AnyRef]]] = interpreter.invoke(data)
           value.run
         } finally {
+          testScenarioCollectorHandler.close()
           interpreter.close()
         }
       }

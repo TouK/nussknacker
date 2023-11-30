@@ -4,10 +4,12 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
@@ -15,8 +17,7 @@ import pl.touk.nussknacker.restmodel.component.{
   ComponentUsagesInScenario,
   NodeUsageData
 }
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -34,9 +35,16 @@ import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
+import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+import pl.touk.nussknacker.ui.process.{
+  ConfigProcessCategoryService,
+  DBProcessService,
+  ProcessCategoryService,
+  UserCategoryService
+}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefaultComponentServiceSpec
@@ -237,20 +245,13 @@ class DefaultComponentServiceSpec
        |}
        |""".stripMargin)
 
-  private val categoryConfig = ConfigFactory.parseString(s"""
-       |{
-       |  categoriesConfig: {
-       |    "$CategoryMarketing": "$Streaming",
-       |    "$CategoryMarketingTests": "$Streaming",
-       |    "$CategoryMarketingSuper": "$Streaming",
-       |    "$CategoryFraud": "$Fraud",
-       |    "$CategoryFraudTests": "$Fraud",
-       |    "$CategoryFraudSuper": "$Fraud"
-       |  }
-       |}
-       |""".stripMargin)
-
-  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
+  private val categoryService = ConfigProcessCategoryService(
+    ConfigFactory.empty,
+    Map(
+      Streaming -> CategoriesConfig(MarketingAllCategories),
+      Fraud     -> CategoriesConfig(FraudAllCategories)
+    )
+  )
 
   private val baseComponents: List[ComponentListElement] =
     List(
@@ -382,7 +383,7 @@ class DefaultComponentServiceSpec
 
     val availableCategories =
       if (categories.isEmpty)
-        categoryService.getUserCategories(user).sorted
+        new UserCategoryService(categoryService).getUserCategories(user).sorted
       else
         categories.filter(user.can(_, Permission.Read)).sorted
 
@@ -526,27 +527,33 @@ class DefaultComponentServiceSpec
     TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(CategoryFraudTests))
 
   private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
-    Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
-    Fraud     -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
-  ).transform { case (_, modelData) =>
+    Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), MarketingAllCategories),
+    Fraud     -> (LocalModelData(fraudConfig, ComponentFraudTestConfigCreator), FraudAllCategories)
+  ).transform { case (_, (modelData, categories)) =>
     ProcessingTypeData.createProcessingTypeData(
       MockManagerProvider,
       new MockDeploymentManager,
       modelData,
-      ConfigFactory.empty()
+      ConfigFactory.empty(),
+      CategoriesConfig(categories)
     )
   }
 
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(
     processingTypeDataMap,
-    DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService)
+    (ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService), categoryService)
   )
 
   it should "return components for each user" in {
-    val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
+    val processes      = List(MarketingProcess, FraudProcess, FraudTestProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        TestAdditionalUIConfigProvider
+      )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -616,18 +623,20 @@ class DefaultComponentServiceSpec
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
     val badProcessingTypeDataMap = Map(
-      Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
-      Fraud     -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
-    ).map { case (processingType, modelData) =>
+      Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), MarketingAllCategories),
+      Fraud     -> (LocalModelData(wrongConfig, WronglyConfiguredConfigCreator), FraudAllCategories),
+    ).map { case (processingType, (modelData, categories)) =>
       processingType -> ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
         new MockDeploymentManager,
         modelData,
-        ConfigFactory.empty()
+        ConfigFactory.empty(),
+        CategoriesConfig(categories)
       )
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)
-    val componentObjectsMap     = badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentObjectsMap =
+      badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragmentsAndAdditionalUIConfigs)
     val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform {
       case (_, componentsObjects) => componentsObjects.config
     })
@@ -700,7 +709,12 @@ class DefaultComponentServiceSpec
 
     val processService = createDbProcessService(categoryService, processes)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        TestAdditionalUIConfigProvider
+      )
 
     val testingData = Table(
       ("user", "componentId", "expected"),
@@ -742,20 +756,24 @@ class DefaultComponentServiceSpec
           (FraudFragment, List(ScenarioUsageData(FragmentFilterName))),
           (
             FraudProcessWithFragment,
-            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))
+            List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name.value, FragmentFilterName))
           ),
         )
       ),
     )
 
     forAll(testingData) {
-      (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])]) =>
+      (
+          user: LoggedUser,
+          componentId: ComponentId,
+          expected: List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]
+      ) =>
         val result = defaultComponentService
           .getComponentUsages(componentId)(user)
           .futureValue
           .map(_.map(n => n.copy(nodesUsagesData = n.nodesUsagesData.sorted)))
         val componentProcesses = expected.map { case (process, nodesUsagesData) =>
-          ComponentUsagesInScenario(process, nodesUsagesData.sorted)
+          DefaultComponentService.toComponentUsagesInScenario(process, nodesUsagesData.sorted)
         }
         result shouldBe Right(componentProcesses)
     }
@@ -764,7 +782,12 @@ class DefaultComponentServiceSpec
   it should "return return error when component doesn't exist" in {
     val processService = createDbProcessService(categoryService)
     val defaultComponentService =
-      DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
+      DefaultComponentService(
+        componentLinksConfig,
+        processingTypeDataProvider,
+        processService,
+        TestAdditionalUIConfigProvider
+      )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))
@@ -772,18 +795,18 @@ class DefaultComponentServiceSpec
 
   private def createDbProcessService(
       processCategoryService: ProcessCategoryService,
-      processes: List[ProcessDetails] = Nil
+      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
   ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
-      processCategoryService = processCategoryService,
-      processResolving = TestFactory.processResolving,
+      getProcessCategoryService = () => processCategoryService,
+      processResolver = TestFactory.processResolver,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processValidator = TestFactory.processValidator
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

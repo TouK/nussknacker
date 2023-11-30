@@ -25,7 +25,7 @@ object RunFlinkStreamingModelLocally extends IOApp.Simple {
 
   override def run: IO[Unit] = {
     LocalNussknackerWithSingleModel
-      .run(modelData, provider, managerConfig, Set("Default"))
+      .run(modelData, provider, managerConfig)
       .use(_ => IO.never)
   }
 

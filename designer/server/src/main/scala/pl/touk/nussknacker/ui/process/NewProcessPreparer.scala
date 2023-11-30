@@ -1,21 +1,21 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.NewProcessPreparer.initialFragmentFields
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {
 
   def apply(
-      processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _],
-      additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+      processingTypesData: ProcessingTypeDataProvider[ProcessingTypeData, _],
+      additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ): NewProcessPreparer =
-    new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
+    new NewProcessPreparer(processingTypesData.mapValues(_.metaDataInitializer), additionalFields)
 
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
     None,
@@ -27,7 +27,7 @@ object NewProcessPreparer {
 
 class NewProcessPreparer(
     emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
-    additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]
+    additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
 ) {
 
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {

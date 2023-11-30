@@ -11,13 +11,12 @@ import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
 import sttp.tapir.EndpointIO.Example
-import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
 import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
-class AppApiEndpoints(auth: Auth[AuthCredentials, _]) extends BaseEndpointDefinitions {
+class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos._
 

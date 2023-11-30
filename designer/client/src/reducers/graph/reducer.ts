@@ -21,6 +21,7 @@ import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
 import { NestedKeyOf } from "./nestedKeyOf";
 import ProcessUtils from "../../common/ProcessUtils";
+import { correctFetchedDetails } from "./correctFetchedDetails";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -90,6 +91,24 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 fetchedProcessDetails,
                 graphLoading: false,
                 layout: LayoutUtils.fromMeta(processToDisplay),
+            };
+        }
+        case "CORRECT_INVALID_SCENARIO": {
+            const fetchedProcessDetails = correctFetchedDetails(state.fetchedProcessDetails, action.processDefinitionData);
+            const processToDisplay = fetchedProcessDetails.json;
+            return {
+                ...state,
+                processToDisplay,
+                fetchedProcessDetails,
+            };
+        }
+        case "ARCHIVED": {
+            return {
+                ...state,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    isArchived: true,
+                },
             };
         }
         case "PROCESS_VERSIONS_LOADED": {
@@ -308,23 +327,13 @@ const omitKeys: NestedKeyOf<GraphState>[] = [
 const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["processToDisplay.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
-const undoableReducer = undoable<GraphState>(reducer, {
+const undoableReducer = undoable<GraphState, Action>(reducer, {
     ignoreInitialState: true,
     clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
-    filter: combineFilters(
-        excludeAction([
-            "VALIDATION_RESULT",
-            "DISPLAY_PROCESS",
-            "UPDATE_IMPORTED_PROCESS",
-            "PROCESS_STATE_LOADED",
-            "UPDATE_TEST_CAPABILITIES",
-            "UPDATE_BACKEND_NOTIFICATIONS",
-        ]),
-        (action, nextState, prevState) => {
-            return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
-        },
-    ),
+    filter: combineFilters((action, nextState, prevState) => {
+        return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
+    }, excludeAction(["VALIDATION_RESULT", "DISPLAY_PROCESS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "DISPLAY_PROCESS_ACTIVITY", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
 });
 
 // apply only undoable changes for undo actions

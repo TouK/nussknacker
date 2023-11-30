@@ -4,7 +4,6 @@ import { getFetchedProcessDetails } from "../../reducers/selectors/graph";
 import SpinnerWrapper from "../spinner/SpinnerWrapper";
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer";
 import { useToolbarConfig } from "../toolbarSettings/useToolbarConfig";
-import { MuiThemeProvider } from "../../containers/muiThemeProvider";
 
 type Props = {
     isReady: boolean;
@@ -16,11 +15,9 @@ function Toolbars(props: Props) {
     const [toolbars, toolbarsConfigId] = useToolbarConfig();
 
     return (
-        <MuiThemeProvider>
-            <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
-                <ToolbarsLayer toolbars={toolbars} configId={toolbarsConfigId} />
-            </SpinnerWrapper>
-        </MuiThemeProvider>
+        <SpinnerWrapper isReady={isReady && !!fetchedProcessDetails}>
+            <ToolbarsLayer toolbars={toolbars} configId={toolbarsConfigId} />
+        </SpinnerWrapper>
     );
 }
 

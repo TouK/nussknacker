@@ -9,8 +9,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -18,13 +20,11 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 class ValidationResourcesSpec
     extends AnyFlatSpec
@@ -40,25 +40,25 @@ class ValidationResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+  private val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> Map(
-        "requiredStringProperty" -> AdditionalPropertyConfig(
+        "requiredStringProperty" -> ScenarioPropertyConfig(
           None,
           Some(StringParameterEditor),
           Some(List(MandatoryParameterValidator)),
           Some("label")
         ),
-        "numberOfThreads" -> AdditionalPropertyConfig(
+        "numberOfThreads" -> ScenarioPropertyConfig(
           None,
           Some(FixedValuesParameterEditor(possibleValues)),
           Some(List(FixedValuesValidator(possibleValues))),
           None
         ),
-        "maxEvents" -> AdditionalPropertyConfig(
+        "maxEvents" -> ScenarioPropertyConfig(
           None,
           None,
-          Some(List(LiteralParameterValidator.integerValidator)),
+          Some(List(LiteralIntegerValidator)),
           Some("label")
         )
       )
@@ -67,8 +67,8 @@ class ValidationResourcesSpec
 
   private val route: Route = withPermissions(
     new ValidationResources(
-      futureFetchingProcessRepository,
-      new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+      processService,
+      new UIProcessResolver(processValidator, emptyProcessingTypeDataProvider)
     ),
     testPermissionRead
   )
@@ -98,7 +98,7 @@ class ValidationResourcesSpec
   }
 
   it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
+    createAndValidateScenario(ProcessTestData.processWithInvalidScenarioProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Configured property requiredStringProperty (label) is missing")
@@ -112,7 +112,23 @@ class ValidationResourcesSpec
     createAndValidateScenario(ProcessTestData.invalidProcessWithWrongFixedExpressionValue) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("Property expression has invalid value")
+      entity should include("Failed to parse expression")
+    }
+  }
+
+  it should "find errors in scenario id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Scenario name cannot be blank")
+    }
+  }
+
+  it should "find errors in node id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithNodeId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Node name cannot be blank")
     }
   }
 
@@ -129,11 +145,11 @@ class ValidationResourcesSpec
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Node f1\"' contains invalid characters")
+      entity should include("Node name contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess(
-      "p1",
+      "p2",
       List(
         Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
         node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)

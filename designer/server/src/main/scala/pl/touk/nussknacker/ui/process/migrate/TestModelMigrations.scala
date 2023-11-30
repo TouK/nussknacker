@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   ValidationErrors,
@@ -14,46 +15,47 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
-    processValidation: ProcessValidation
+    processValidator: UIProcessValidator
 ) {
 
   def testMigrations(
-      processes: List[ValidatedProcessDetails],
-      fragments: List[ValidatedProcessDetails]
+      processes: List[ScenarioWithDetails],
+      fragments: List[ScenarioWithDetails]
   ): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidation.withFragmentResolver(
+    val validation = processValidator.withFragmentResolver(
       new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
       val validationResult = validation.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
-        new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult),
+        ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
         newErrors,
         migrationDetails.shouldFail
       )
     }
   }
 
-  private def migrateProcess(process: ValidatedProcessDetails): Option[MigratedProcessDetails] = {
+  private def migrateProcess(process: ScenarioWithDetails): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
-        process.mapProcess(_.toDisplayable),
+        process.toEntityWithScenarioGraphUnsafe,
         skipEmptyMigrations = false
       )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
       MigratedProcessDetails(
         displayable,
-        process.json.validationResult,
+        process.validationResultUnsafe,
         migrations.exists(_.failOnNewValidationError),
         process.processCategory
       )

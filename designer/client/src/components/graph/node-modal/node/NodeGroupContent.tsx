@@ -23,7 +23,15 @@ export function NodeGroupContent({ node, edges, onChange }: Props): JSX.Element 
     return (
         <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
             <ContentSize>
-                <NodeDetailsContent node={node} edges={edges} onChange={onChange} nodeErrors={errors} showValidation showSwitch />
+                <NodeDetailsContent
+                    node={node}
+                    edges={edges}
+                    onChange={onChange}
+                    nodeErrors={errors}
+                    showValidation
+                    showSwitch
+                    showTestResults
+                />
             </ContentSize>
             {NodeUtils.nodeIsFragment(node) && <FragmentContent nodeToDisplay={node} />}
         </div>

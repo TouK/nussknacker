@@ -1,4 +1,4 @@
-import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useState } from "react";
 import { Dialog } from "@mui/material";
 import { ConnectionErrorContent } from "./ConnectionErrorContent";
 import { CloudOff, WifiOff } from "@mui/icons-material";

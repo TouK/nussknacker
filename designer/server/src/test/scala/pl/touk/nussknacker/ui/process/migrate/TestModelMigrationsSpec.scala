@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
@@ -8,7 +9,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult,
@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 
 import scala.reflect.ClassTag
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
@@ -145,7 +146,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),
-      TestFactory.flinkProcessValidation
+      TestFactory.flinkProcessValidator
     )
 
     val process =
@@ -165,8 +166,8 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.newErrors.hasErrors shouldBe false
     processMigrationResult.newErrors.hasWarnings shouldBe false
-    processMigrationResult.converted.validationResult.hasErrors shouldBe false
-    processMigrationResult.converted.validationResult.hasWarnings shouldBe false
+    processMigrationResult.converted.validationResult.value.hasErrors shouldBe false
+    processMigrationResult.converted.validationResult.value.hasWarnings shouldBe false
   }
 
   private def getFirst[T: ClassTag](result: TestMigrationResult): T =
@@ -176,6 +177,6 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes.mapValuesNow(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
-    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.processValidation)
+    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.processValidator)
 
 }

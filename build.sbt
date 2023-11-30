@@ -17,7 +17,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-val scala213 = "2.13.10"
+val scala213 = "2.13.12"
 
 val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
   case "2.12" => scala212
@@ -30,7 +30,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.12"
+lazy val silencerV      = "1.7.14"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -47,13 +47,14 @@ val nexusUrlFromProps  = propOrEnv("nexusUrl")
 val nexusHostFromProps = nexusUrlFromProps.map(_.replaceAll("http[s]?://", "").replaceAll("[:/].*", ""))
 
 //Docker release configuration
-val dockerTagName          = propOrEnv("dockerTagName")
-val dockerPort             = propOrEnv("dockerPort", "8080").toInt
-val dockerUserName         = Option(propOrEnv("dockerUserName", "touk"))
-val dockerPackageName      = propOrEnv("dockerPackageName", "nussknacker")
-val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val addDevArtifacts        = propOrEnv("addDevArtifacts", "false").toBoolean
-val addManagerArtifacts    = propOrEnv("addManagerArtifacts", "false").toBoolean
+val dockerTagName                = propOrEnv("dockerTagName")
+val dockerPort                   = propOrEnv("dockerPort", "8080").toInt
+val dockerUserName               = Option(propOrEnv("dockerUserName", "touk"))
+val dockerPackageName            = propOrEnv("dockerPackageName", "nussknacker")
+val dockerUpLatestFromProp       = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
+val dockerUpBranchLatestFromProp = propOrEnv("dockerUpBranchLatest", "true").toBoolean
+val addDevArtifacts              = propOrEnv("addDevArtifacts", "false").toBoolean
+val addManagerArtifacts          = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort  = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -114,16 +115,18 @@ def modelMergeStrategy: String => MergeStrategy = {
 }
 
 def designerMergeStrategy: String => MergeStrategy = {
-  case PathList(ps @ _*) if ps.last == "module-info.class"              => MergeStrategy.discard
-  case PathList(ps @ _*) if ps.last == "NumberUtils.class"              => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList("org", "apache", "commons", "logging", _ @_*)           => MergeStrategy.first // TODO: shade Spring EL?
-  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"   =>
+  case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+    MergeStrategy.singleOrError // https://tapir.softwaremill.com/en/latest/docs/openapi.html#using-swaggerui-with-sbt-assembly
+  case PathList(ps @ _*) if ps.last == "module-info.class"                          => MergeStrategy.discard
+  case PathList(ps @ _*) if ps.last == "NumberUtils.class"                          => MergeStrategy.first // TODO: shade Spring EL?
+  case PathList("org", "apache", "commons", "logging", _ @_*)                       => MergeStrategy.first // TODO: shade Spring EL?
+  case PathList(ps @ _*) if ps.last == "io.netty.versions.properties"               =>
     MergeStrategy.first // Netty has buildTime here, which is different for different modules :/
-  case PathList("com", "sun", "el", _ @_*)                              => MergeStrategy.first // Some legacy batik stuff
-  case PathList("org", "w3c", "dom", "events", _ @_*)                   => MergeStrategy.first // Some legacy batik stuff
-  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema" =>
+  case PathList("com", "sun", "el", _ @_*)                                          => MergeStrategy.first // Some legacy batik stuff
+  case PathList("org", "w3c", "dom", "events", _ @_*)                               => MergeStrategy.first // Some legacy batik stuff
+  case PathList(ps @ _*) if ps.head == "draftv4" && ps.last == "schema"             =>
     MergeStrategy.first // Due to swagger-parser dependencies having different schema definitions
-  case x                                                                => MergeStrategy.defaultMergeStrategy(x)
+  case x                                                                            => MergeStrategy.defaultMergeStrategy(x)
 }
 
 def requestResponseMergeStrategy: String => MergeStrategy = {
@@ -301,21 +304,23 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV                  = "1.16.2"
-val flinkCommonsLang3V      = "3.12.0"
-val flinkCommonsTextV       = "1.10.0"
-val flinkCommonsIOV         = "2.11.0"
-val avroV                   = "1.11.1"
+val flinkV             = "1.16.2"
+val flinkCommonsLang3V = "3.12.0"
+val flinkCommonsTextV  = "1.10.0"
+val flinkCommonsIOV    = "2.11.0"
+val avroV              = "1.11.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV                  = "3.3.2"
+val kafkaV             = "3.3.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV                 = "5.2.23.RELEASE"
-val scalaTestV              = "3.2.16"
-val scalaCheckV             = "1.17.0"
-val scalaCheckVshort        = scalaCheckV.take(4).replace(".", "-")
-//has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
-val scalaTestPlusV          = "3.2.15.0"
-val logbackV                = "1.2.11"
+val springV            = "5.2.23.RELEASE"
+val scalaTestV         = "3.2.17"
+val scalaCheckV        = "1.17.0"
+val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV     =
+  "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
+// note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
+val logbackV                = "1.2.12"
+// this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
 val circeV                  = "0.14.5"
 val circeGenericExtrasV     = "0.14.3"
@@ -373,13 +378,13 @@ def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = Non
     "org.apache.flink" %% "flink-scala" % flinkV
   ), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   (2, 13) -> Seq(
-    "pl.touk" %% "flink-scala-2-13" % "1.1.0"
+    "pl.touk" %% "flink-scala-2-13" % "1.1.1"
   ) // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude ("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage    := forScalaVersion(
+    dockerBaseImage       := forScalaVersion(
       scalaVersion.value,
       "eclipse-temurin:17-jre-jammy",
       (
@@ -387,34 +392,27 @@ lazy val commonDockerSettings = {
         12
       ) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
     ),
-    dockerUsername     := dockerUserName,
-    dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
-    dockerBuildCommand := {
-      if (sys.props("os.arch") != "amd64") {
-        //         use buildx with platform to build supported amd64 images on other CPU architectures
-        //         this may require that you have first run 'docker buildx create' to set docker buildx up
-        dockerExecCommand.value ++ Seq(
-          "buildx",
-          "build",
-          "--platform=linux/amd64",
-          "--load"
-        ) ++ dockerBuildOptions.value :+ "."
-      } else dockerBuildCommand.value
-    },
-    dockerAliases      := {
+    dockerUsername        := dockerUserName,
+    dockerUpdateLatest    := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
+    dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64"), // not used in case of Docker/publishLocal
+    dockerAliases         := {
       // https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")
 
       val alias = dockerAlias.value
 
-      val updateLatest  = if (dockerUpdateLatest.value) Some("latest") else None
-      val dockerVersion = Some(version.value)
-      // TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
-      // other option would be to reset source branch to checkout out commit
-      val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
-      val latestBranch  = Some(currentBranch + "-latest")
+      val updateLatest       = if (dockerUpdateLatest.value) Some("latest") else None
+      val updateBranchLatest = if (dockerUpBranchLatestFromProp) {
+        // TODO: handle it more nicely, checkout actions in CI are not checking out actual branch
+        // other option would be to reset source branch to checkout out commit
+        val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
+        Some(currentBranch + "-latest")
+      } else {
+        None
+      }
+      val dockerVersion      = Some(version.value)
 
-      val tags                = List(dockerVersion, updateLatest, latestBranch, dockerTagName).flatten
+      val tags                = List(dockerVersion, updateLatest, updateBranchLatest, dockerTagName).flatten
       val scalaSuffix         = s"_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}"
       val tagsWithScalaSuffix = tags.map(t => s"$t$scalaSuffix")
 
@@ -523,7 +521,6 @@ lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
 managerArtifacts := {
   List(
     (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
-    (requestResponseRuntime / assembly).value        -> "managers/nussknacker-request-response-manager.jar",
     (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
     (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
   )
@@ -541,7 +538,8 @@ lazy val dist = sbt
             Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
           else Nil)
       ++ (if (addDevArtifacts) (root / devArtifacts).value: @sbtUnchecked
-          else (root / modelArtifacts).value: @sbtUnchecked),
+          else (root / modelArtifacts).value: @sbtUnchecked)
+      ++ (flinkExecutor / additionalBundledArtifacts).value,
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
       // we don't want docker-* stuff in .tgz
@@ -573,19 +571,9 @@ def itSettings() = {
 }
 
 lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
-  .settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*)
-  .settings(publishAssemblySettings: _*)
   .settings(
-    name                        := "nussknacker-request-response-runtime",
-    IntegrationTest / Keys.test := (IntegrationTest / Keys.test)
-      .dependsOn(
-        liteRequestResponseComponents / Compile / assembly,
-        defaultModel / Compile / assembly,
-      )
-      .value,
+    name := "nussknacker-request-response-runtime",
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http"         % akkaHttpV,
@@ -599,7 +587,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime"))
     liteEngineRuntime,
     requestResponseComponentsApi,
     httpUtils                      % "provided",
-    testUtils                      % "it,test",
+    testUtils                      % "test",
     componentsUtils                % "test",
     requestResponseComponentsUtils % "test",
     liteBaseComponents             % "test",
@@ -627,19 +615,18 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"                 %% "cats-core"                        % catsV                % "provided",
-        "org.apache.flink"               % "flink-streaming-java"             % flinkV               % flinkScope
+        "org.typelevel"          %% "cats-core"                      % catsV                % "provided",
+        "org.apache.flink"        % "flink-streaming-java"           % flinkV               % flinkScope
           excludeAll (
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"               % "flink-statebackend-rocksdb"       % flinkV               % flinkScope,
-        "com.softwaremill.retry"        %% "retry"                            % "0.3.6",
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"         % "wiremock-jre8"                    % wireMockV            % Test
+        "org.apache.flink"        % "flink-statebackend-rocksdb"     % flinkV               % flinkScope,
+        "com.softwaremill.retry" %% "retry"                          % "0.3.6",
+        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
+        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -771,18 +758,43 @@ lazy val defaultModel = (project in (file("defaultModel")))
 
 lazy val flinkExecutor = (project in flink("executor"))
   .settings(commonSettings)
+  .settings(itSettings())
   .settings(assemblyNoScala("flinkExecutor.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
-    name := "nussknacker-flink-executor",
+    name                        := "nussknacker-flink-executor",
+    IntegrationTest / Keys.test := (IntegrationTest / Keys.test)
+      .dependsOn(
+        ThisScope / prepareItLibs
+      )
+      .value,
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java"       % flinkV % "provided",
         "org.apache.flink" % "flink-runtime"              % flinkV % "provided",
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided",
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV,
+        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV % "provided",
       )
-    }
+    },
+    prepareItLibs               := {
+      val workTarget = (ThisScope / baseDirectory).value / "target" / "it-libs"
+      val artifacts  = (ThisScope / additionalBundledArtifacts).value
+      IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
+    },
+    additionalBundledArtifacts  := {
+      createClasspathBasedMapping(
+        (Compile / managedClasspath).value,
+        "org.apache.flink",
+        "flink-metrics-dropwizard",
+        "flink-dropwizard-metrics-deps/flink-metrics-dropwizard.jar"
+      ) ++
+        createClasspathBasedMapping(
+          (Compile / managedClasspath).value,
+          "io.dropwizard.metrics",
+          "metrics-core",
+          "flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar"
+        )
+    }.toList,
   )
   .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % "test")
 
@@ -814,6 +826,14 @@ lazy val benchmarks = (project in file("benchmarks"))
         "org.apache.flink" % "flink-runtime"        % flinkV
       )
     },
+    Jmh / run / javaOptions ++= (
+      if (System.getProperty("os.name").startsWith("Windows")) {
+        // Allow long classpath on Windows, JMH requires that classpath and temp directory have common root path,
+        // so we're always setting it in sbt's target directory (https://github.com/sbt/sbt-jmh/issues/241)
+        Seq("-Djmh.separateClasspathJAR=true", "\"-Djava.io.tmpdir=" + target.value + "\"")
+      } else
+        Seq.empty
+    ),
     // To avoid Intellij message that jmh generated classes are shared between main and test
     Jmh / classDirectory                 := (Test / classDirectory).value,
     Jmh / dependencyClasspath            := (Test / dependencyClasspath).value,
@@ -830,9 +850,7 @@ lazy val benchmarks = (project in file("benchmarks"))
   )
 
 lazy val kafkaUtils = (project in utils("kafka-utils"))
-  .configs(IntegrationTest)
   .settings(commonSettings)
-  .settings(itSettings())
   .settings(
     name := "nussknacker-kafka-utils",
     libraryDependencies ++= {
@@ -1001,7 +1019,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
       )
     }
   )
-  .dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
+  .dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils, defaultHelpers % "test")
 
 //this should be only added in scope test - 'module % "test"'
 lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
@@ -1014,7 +1032,8 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
     requestResponseRuntime,
     liteEngineRuntime,
     liteKafkaComponents,
-    liteRequestResponseComponents
+    liteRequestResponseComponents,
+    defaultHelpers % "test"
   )
 
 lazy val commonUtils = (project in utils("utils"))
@@ -1279,9 +1298,8 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       )
       .value,
     libraryDependencies ++= Seq(
-      "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it",
-      "com.dimafeng"                  %% "testcontainers-scala-kafka"       % testContainersScalaV % "it",
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it"
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka"     % testContainersScalaV % "it"
     )
   )
   .dependsOn(
@@ -1358,8 +1376,6 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app"))
   .dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .enablePlugins()
   .settings(commonSettings)
   .settings(assemblyNoScala("lite-embedded-manager.jar"): _*)
@@ -1441,7 +1457,7 @@ lazy val liteDeploymentManager = (project in lite("deploymentManager"))
   )
   .dependsOn(
     liteEngineKafkaRuntime,       // for tests mechanism purpose
-    requestResponseComponentsApi, // for rr additional properties
+    requestResponseComponentsApi, // for rr scenario properties
     deploymentManagerApi % "provided"
   )
 
@@ -1451,16 +1467,18 @@ lazy val componentsApi = (project in file("components-api"))
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons"          % "commons-text"            % flinkCommonsTextV,
-        "org.typelevel"              %% "cats-core"               % catsV,
-        "com.typesafe.scala-logging" %% "scala-logging"           % scalaLoggingV,
-        "com.typesafe"                % "config"                  % configV,
-        "com.vdurmont"                % "semver4j"                % "3.1.0",
-        "javax.validation"            % "validation-api"          % javaxValidationApiV,
-        "org.scala-lang.modules"     %% "scala-collection-compat" % scalaCollectionsCompatV,
-        "com.iheart"                 %% "ficus"                   % ficusV,
-        "org.springframework"         % "spring-core"             % springV,
-        "com.google.code.findbugs"    % "jsr305"                  % findBugsV,
+        "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
+        "org.typelevel"                 %% "cats-core"                        % catsV,
+        "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
+        "com.typesafe"                   % "config"                           % configV,
+        "com.vdurmont"                   % "semver4j"                         % "3.1.0",
+        "javax.validation"               % "validation-api"                   % javaxValidationApiV,
+        "org.scala-lang.modules"        %% "scala-collection-compat"          % scalaCollectionsCompatV,
+        "com.iheart"                    %% "ficus"                            % ficusV,
+        "org.springframework"            % "spring-core"                      % springV,
+        "org.springframework"            % "spring-expression"                % springV % "test",
+        "com.google.code.findbugs"       % "jsr305"                           % findBugsV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV
       )
     }
   )
@@ -1532,11 +1550,10 @@ lazy val security = (project in file("security"))
       "com.typesafe.scala-logging" %% "scala-logging"     % scalaLoggingV,
       "com.auth0"                   % "jwks-rsa"          % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
 
-      "com.softwaremill.sttp.tapir"   %% "tapir-core"                       % tapirV,
-      "com.softwaremill.sttp.tapir"   %% "tapir-json-circe"                 % tapirV,
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
-      "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-      "com.github.dasniko"             % "testcontainers-keycloak"          % "2.5.0"              % "it,test" excludeAll (
+      "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
+      "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+      "com.github.dasniko"           % "testcontainers-keycloak"        % "2.5.0"              % "it,test" excludeAll (
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
       )
@@ -1577,10 +1594,9 @@ lazy val processReports = (project in file("designer/processReports"))
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV                % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-scalatest"   % testContainersScalaV % "it,test",
-        "com.dimafeng"                  %% "testcontainers-scala-influxdb"    % testContainersScalaV % "it,test",
-        "org.influxdb"                   % "influxdb-java"                    % "2.23"               % "it,test"
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb"  % testContainersScalaV % "it,test",
+        "org.influxdb"  % "influxdb-java"                  % "2.23"               % "it,test"
       )
     }
   )
@@ -1592,12 +1608,9 @@ lazy val httpUtils = (project in utils("http-utils"))
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client3" %% "core"                             % sttpV,
-        "com.softwaremill.sttp.client3" %% "json-common"                      % sttpV,
-        "com.softwaremill.sttp.client3" %% "circe"                            % sttpV,
-        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
-          ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
-        ),
+        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe"       % sttpV,
       )
     }
   )
@@ -1615,16 +1628,13 @@ lazy val openapiComponents = (project in component("openapi"))
   .settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3"             % "swagger-integration"              % swaggerIntegrationV excludeAll (
+      "io.swagger.core.v3" % "swagger-integration"          % swaggerIntegrationV excludeAll (
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
-        ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
-      ),
-      "io.netty"                       % "netty-transport-native-epoll"     % nettyV,
-      "org.apache.flink"               % "flink-streaming-java"             % flinkV     % Provided,
-      "org.scalatest"                 %% "scalatest"                        % scalaTestV % "it,test"
+      "io.netty"           % "netty-transport-native-epoll" % nettyV,
+      "org.apache.flink"   % "flink-streaming-java"         % flinkV     % Provided,
+      "org.scalatest"     %% "scalatest"                    % scalaTestV % "it,test"
     ),
   )
   .dependsOn(
@@ -1636,8 +1646,6 @@ lazy val openapiComponents = (project in component("openapi"))
   )
 
 lazy val sqlComponents = (project in component("sql"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
   .settings(assemblyNoScala("sql.jar"): _*)
   .settings(publishAssemblySettings: _*)
@@ -1648,18 +1656,18 @@ lazy val sqlComponents = (project in component("sql"))
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
       "org.apache.ignite" % "ignite-core"     % "2.10.0"   % Provided,
       "org.apache.ignite" % "ignite-indexing" % "2.10.0"   % Provided,
-      "org.scalatest"    %% "scalatest"       % scalaTestV % "it,test",
-      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "it,test",
+      "org.scalatest"    %% "scalatest"       % scalaTestV % "test",
+      "org.hsqldb"        % "hsqldb"          % hsqldbV    % "test",
     ),
   )
   .dependsOn(
     componentsUtils                % Provided,
     componentsApi                  % Provided,
     commonUtils                    % Provided,
-    requestResponseRuntime         % "test,it",
-    requestResponseComponentsUtils % "test,it",
-    flinkTestUtils                 % "it,test",
-    kafkaTestUtils                 % "it,test"
+    requestResponseRuntime         % "test",
+    requestResponseComponentsUtils % "test",
+    flinkTestUtils                 % "test",
+    kafkaTestUtils                 % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))
@@ -1703,6 +1711,10 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
 
+lazy val additionalBundledArtifacts = taskKey[List[(File, String)]]("additional artifacts to include in the bundle")
+
+lazy val prepareItLibs = taskKey[Unit]("Prepare jar libraries needed for integration tests")
+
 lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
@@ -1715,7 +1727,7 @@ lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(
     name := "nussknacker-listener-api",
   )
-  .dependsOn(restmodel)
+  .dependsOn(extensionsApi)
 
 lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
@@ -1723,10 +1735,10 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     name := "nussknacker-deployment-manager-api",
     libraryDependencies ++= {
       Seq(
-        "com.typesafe.akka"             %% "akka-actor"  % akkaV,
-        "com.softwaremill.sttp.client3" %% "core"        % sttpV,
-        "com.github.ben-manes.caffeine"  % "caffeine"    % caffeineCacheV,
-        "org.scalatestplus"             %% "mockito-4-6" % scalaTestPlusV % "test"
+        "com.typesafe.akka"             %% "akka-actor"   % akkaV,
+        "com.softwaremill.sttp.client3" %% "core"         % sttpV,
+        "com.github.ben-manes.caffeine"  % "caffeine"     % caffeineCacheV,
+        "org.scalatestplus"             %% "mockito-4-11" % scalaTestPlusV % "test"
       )
     }
   )
@@ -1827,18 +1839,20 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.slick"            %% "slick-testkit"                   % slickV               % "test",
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % "test",
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
-        "org.scalatestplus"             %% "mockito-4-6"                     % scalaTestPlusV       % "test",
+        "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % "test",
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
+        "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % "test"
       ) ++ forScalaVersion(scalaVersion.value, Seq(), (2, 13) -> Seq("org.scala-lang.modules" %% "scala-xml" % "2.1.0"))
     }
   )
   .dependsOn(
-    interpreter, // TODO: remove dependency to interpreter - see BaseModelData for details
+    interpreter,
     processReports,
     security,
     deploymentManagerApi,
+    restmodel,
     listenerApi,
     testUtils                         % "test",
     // TODO: this is unfortunately needed to run without too much hassle in Intellij...
@@ -2003,7 +2017,8 @@ lazy val prepareDev = taskKey[Unit]("Prepare components and model for running fr
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  = componentArtifacts.value ++ devArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
-    Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value
+    Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value ++
+    (flinkExecutor / additionalBundledArtifacts).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
 }
@@ -2018,4 +2033,24 @@ buildClient := {
   } else {
     throw new IllegalStateException("Frontend build failed!")
   }
+}
+
+def createClasspathBasedMapping(
+    classpath: Classpath,
+    organizationName: String,
+    packageName: String,
+    targetFilename: String
+): Option[(File, String)] = {
+  classpath.toSet
+    .find(attr =>
+      attr
+        .get(sbt.Keys.moduleID.key)
+        .exists(moduleID =>
+          moduleID.organization.equalsIgnoreCase(organizationName) && moduleID.name.equalsIgnoreCase(packageName)
+        )
+    )
+    .map { attribute =>
+      val file = attribute.data
+      file -> targetFilename
+    }
 }

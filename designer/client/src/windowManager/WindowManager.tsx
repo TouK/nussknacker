@@ -1,9 +1,30 @@
 import React, { PropsWithChildren } from "react";
-import { useTheme } from "@emotion/react";
+import { useTheme } from "@mui/material";
 import { WindowManagerProvider } from "@touk/window-manager";
 import { contentGetter } from "./ContentGetter";
 
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
-    const theme = useTheme();
-    return <WindowManagerProvider theme={theme} contentGetter={contentGetter} {...props} />;
+    const {
+        zIndex,
+        custom: { spacing, colors },
+    } = useTheme();
+    return (
+        <WindowManagerProvider
+            theme={{
+                spacing: {
+                    baseUnit: spacing.baseUnit,
+                },
+                colors: {
+                    borderColor: colors.borderColor,
+                    focusColor: colors.focusColor,
+                    mutedColor: colors.mutedColor,
+                    primaryBackground: colors.primaryBackground,
+                    secondaryBackground: colors.secondaryBackground,
+                },
+                zIndex: zIndex.modal,
+            }}
+            contentGetter={contentGetter}
+            {...props}
+        />
+    );
 }

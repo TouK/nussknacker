@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, displayablenode}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 
 object ProcessConverter {
 

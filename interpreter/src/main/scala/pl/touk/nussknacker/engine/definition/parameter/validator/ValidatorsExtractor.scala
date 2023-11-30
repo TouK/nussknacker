@@ -18,7 +18,7 @@ object ValidatorsExtractor {
       MandatoryValidatorExtractor,
       EditorBasedValidatorExtractor,
       AnnotationValidatorExtractor[JsonValidator](definition.JsonValidator),
-      LiteralValidatorExtractor,
+      CompileTimeEvaluableValueValidatorExtractor,
       AnnotationValidatorExtractor[NotBlank](NotBlankParameterValidator),
       AnnotationValidatorExtractor[Min]((annotation: Min) => MinimalNumberValidator(annotation.value())),
       AnnotationValidatorExtractor[Max]((annotation: Max) => MaximalNumberValidator(annotation.value()))

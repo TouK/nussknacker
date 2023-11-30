@@ -6,7 +6,6 @@ import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
-import { variables } from "../../../../stylesheets/variables";
 import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
@@ -23,16 +22,18 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                 <NodeLabelStyled>
                     <NodeTip
                         title={"Variables in test case"}
-                        icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
+                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
                     />
                 </NodeLabelStyled>
             </NodeRow>
-            {Object.keys(results.testResultsToShow.context.variables).map((key, ikey) => (
-                <NodeRow key={ikey}>
-                    <div className="node-label">{key}:</div>
-                    <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
-                </NodeRow>
-            ))}
+            {Object.keys(results.testResultsToShow.context.variables)
+                .sort((a, b) => a.localeCompare(b))
+                .map((key, ikey) => (
+                    <NodeRow key={ikey}>
+                        <div className="node-label">{key}:</div>
+                        <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
+                    </NodeRow>
+                ))}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext)
                 ? results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (
                       <span key={index} className="testResultDownload">

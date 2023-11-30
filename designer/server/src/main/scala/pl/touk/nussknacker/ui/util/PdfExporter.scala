@@ -13,14 +13,14 @@ import org.apache.commons.io.IOUtils
 import org.apache.fop.apps.FopConfParser
 import org.apache.fop.apps.io.ResourceResolverFactory
 import org.apache.xmlgraphics.util.MimeConstants
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import scala.xml.{Elem, NodeSeq, XML}
 
@@ -32,7 +32,11 @@ object PdfExporter extends LazyLogging {
     ResourceResolverFactory.createDefaultResourceResolver
   ).getFopFactoryBuilder.build
 
-  def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity): Array[Byte] = {
+  def exportToPdf(
+      svg: String,
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processActivity: ProcessActivity
+  ): Array[Byte] = {
 
     // initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
     initFontsIfNeeded()
@@ -85,12 +89,12 @@ object PdfExporter extends LazyLogging {
 
   private def prepareFopXml(
       svg: String,
-      processDetails: ProcessDetails,
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       processActivity: ProcessActivity,
       displayableProcess: DisplayableProcess
   ) = {
     val diagram        = XML.loadString(svg)
-    val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
+    val currentVersion = processDetails.history.get.find(_.processVersionId == processDetails.processVersionId).get
 
     <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en">
 

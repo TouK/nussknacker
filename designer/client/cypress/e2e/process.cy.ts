@@ -132,7 +132,13 @@ describe("Process", () => {
             cy.layoutScenario();
             cy.get("[data-testid='component:customFilter']")
                 .should("be.visible")
-                .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
+                .drag("#nk-graph-main", {
+                    target: {
+                        x: 580,
+                        y: 450,
+                    },
+                    force: true,
+                });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
             cy.contains(/^save\*$/i).click();
@@ -151,8 +157,51 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
+        // This test is for  deploy scenario dialog snapshot comparing only (equal snapshot).
+        // For some reason cypress does not have a valid snapshot comparison inside another test case.
+        it("should make a deploy of the new version", () => {
+            cy.viewport("macbook-15");
+
+            cy.deployScenario(undefined, true);
+        });
+
+        it("should display question mark when renaming a node and updating the count", () => {
+            cy.intercept("GET", "/api/processCounts/*", {
+                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
+                enricher: { all: 120, errors: 10, fragmentCounts: {} },
+                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
+                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
+            });
+
+            cy.contains(/^counts$/i).click();
+            cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+            cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick");
+            cy.get("[model-id=dynamicService]").contains("dynamicService").should("be.visible");
+            cy.get("[data-testid=window]").find("input[type=text]").type("12").click();
+            cy.get("[data-testid=window]")
+                .contains(/^apply$/i)
+                .click();
+
+            cy.intercept("GET", "/api/processCounts/*", {
+                boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
+                enricher: { all: 120, errors: 10, fragmentCounts: {} },
+                dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
+                sendSms: { all: 60, errors: 0, fragmentCounts: {} },
+            });
+
+            cy.contains(/^counts$/i).click();
+
+            cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+            cy.getNode("enricher")
+                .parent()
+                .matchImage({ screenshotConfig: { padding: 16 } });
+        });
+
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
+
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
             cy.get("@button").click();
@@ -172,7 +221,6 @@ describe("Process", () => {
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-
             cy.cancelScenario();
 
             cy.deployScenario();
@@ -231,9 +279,10 @@ describe("Process", () => {
         const x = 900;
         const y = 630;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 
@@ -285,9 +334,10 @@ describe("Process", () => {
         const x = 700;
         const y = 600;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
-            x,
-            y,
-            position: "right",
+            target: {
+                x,
+                y,
+            },
             force: true,
         });
 
@@ -339,5 +389,39 @@ describe("Process", () => {
             .click()
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
+    });
+
+    it("should zoom/restore node window with test data", () => {
+        cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
+        cy.viewport(1500, 800);
+        cy.layoutScenario();
+
+        cy.contains("button", "ad hoc").should("be.enabled").click();
+        cy.get("[data-testid=window]").should("be.visible").find(".ace_editor").type("10");
+        cy.get("[data-testid=window]")
+            .contains(/^test$/i)
+            .should("be.enabled")
+            .click();
+        cy.getNode("request").dblclick();
+
+        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]")
+            .should("contain.text", "Test case")
+            .then(($win) => {
+                const width = $win.width();
+                const height = $win.height();
+
+                // maximize (one way)
+                cy.wrap($win)
+                    .contains(/^source$/i)
+                    .dblclick();
+                // restore (second way)
+                cy.wrap($win).get("button[name=zoom]").click();
+
+                cy.wrap($win).should(($current) => {
+                    expect($current.width()).to.equal(width);
+                    expect($current.height()).to.equal(height);
+                });
+            });
     });
 });

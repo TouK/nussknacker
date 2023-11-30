@@ -6,9 +6,12 @@ import { FragmentNodeType, Process } from "../../../../types";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
 import { fragmentGraph as BareGraph } from "../../fragmentGraph";
+import { correctFetchedDetails } from "../../../../reducers/graph/correctFetchedDetails";
+import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 
 export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNodeType }): JSX.Element {
     const processCounts = useSelector(getProcessCounts);
+    const processDefinitionData = useSelector(getProcessDefinitionData);
 
     const [fragmentContent, setFragmentContent] = useState<Process>(null);
 
@@ -16,10 +19,11 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
         if (NodeUtils.nodeIsFragment(nodeToDisplay)) {
             const id = nodeToDisplay?.ref.id;
             HttpService.fetchProcessDetails(id).then((response) => {
-                setFragmentContent(response.data.json);
+                const fetchedProcessDetails = correctFetchedDetails(response.data, processDefinitionData);
+                setFragmentContent(fetchedProcessDetails.json);
             });
         }
-    }, [nodeToDisplay]);
+    }, [nodeToDisplay, processDefinitionData]);
 
     const fragmentCounts = (processCounts[nodeToDisplay.id] || {}).fragmentCounts || {};
 

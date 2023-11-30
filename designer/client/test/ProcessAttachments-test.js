@@ -5,10 +5,10 @@ import thunk from "redux-thunk";
 import { Provider } from "react-redux";
 import * as selectors from "../src/reducers/selectors/other";
 import { render } from "@testing-library/react";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore([thunk]);
 
-jest.mock("../src/containers/theme");
 jest.spyOn(selectors, "getCapabilities").mockReturnValue({ write: true });
 
 jest.mock("react-i18next", () => ({
@@ -37,9 +37,11 @@ describe("ProcessAttachments suite", () => {
         });
 
         const { container } = render(
-            <Provider store={store}>
-                <ProcessAttachments />
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <ProcessAttachments />
+                </Provider>
+            </NuThemeProvider>,
         );
 
         expect(container.getElementsByClassName("download-attachment").length).toBe(3);

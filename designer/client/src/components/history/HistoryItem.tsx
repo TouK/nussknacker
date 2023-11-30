@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import Date from "../common/Date";
 import { ActionType, ProcessVersionType } from "../Process/types";
 import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
+import WarningAmber from "@mui/icons-material/WarningAmber";
+import { Box } from "@mui/material";
 
 type HistoryItemProps = {
     isLatest?: boolean;
@@ -46,13 +48,12 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
             <div>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
-                    <small>
-                        <span
-                            style={{ margin: "0 3px" }}
-                            title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
-                            className="glyphicon glyphicon-warning-sign"
-                        />
-                    </small>
+                    <Box
+                        title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
+                        sx={{ display: "inline-flex", verticalAlign: "middle" }}
+                    >
+                        <WarningAmber sx={{ margin: "0 2px 1px", fontSize: "small" }} />
+                    </Box>
                 )}
                 <br />
                 <HDate date={createDate} />

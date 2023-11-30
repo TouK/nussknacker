@@ -1,19 +1,17 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
+import styles from "jointjs/dist/joint.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
 import { findDOMNode } from "react-dom";
-import "../../stylesheets/graph.styl";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
-import styles from "./graphTheme.styl";
 import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
-import "./svg-export/export.styl";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import * as GraphUtils from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";

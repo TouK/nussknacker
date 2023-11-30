@@ -3,20 +3,20 @@ package pl.touk.nussknacker.ui.process.test
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +25,7 @@ object ScenarioTestService {
   def apply(
       providers: ProcessingTypeDataProvider[ModelData, _],
       testDataSettings: TestDataSettings,
-      processResolving: UIProcessResolving,
+      processResolver: UIProcessResolver,
       processCounter: ProcessCounter,
       testExecutorService: ScenarioTestExecutorService,
   ): ScenarioTestService = {
@@ -33,7 +33,7 @@ object ScenarioTestService {
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
       new PreliminaryScenarioTestDataSerDe(testDataSettings),
-      processResolving,
+      processResolver,
       processCounter,
       testExecutorService,
     )
@@ -45,7 +45,7 @@ class ScenarioTestService(
     testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
     testDataSettings: TestDataSettings,
     preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
-    processResolving: UIProcessResolving,
+    processResolver: UIProcessResolver,
     processCounter: ProcessCounter,
     testExecutorService: ScenarioTestExecutorService,
 ) extends LazyLogging {
@@ -130,8 +130,8 @@ class ScenarioTestService(
   }
 
   private def toCanonicalProcess(displayableProcess: DisplayableProcess): CanonicalProcess = {
-    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess)
-    processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
+    val validationResult = processResolver.validateBeforeUiResolving(displayableProcess)
+    processResolver.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
@@ -148,7 +148,10 @@ class ScenarioTestService(
 
   private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
-      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
+      key -> RawCount(
+        nresults.size.toLong,
+        results.exceptions.find(_.nodeComponentInfo.map(_.nodeId).contains(key)).size.toLong
+      )
     }
     processCounter.computeCounts(canonical, counts.get)
   }

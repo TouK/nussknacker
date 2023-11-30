@@ -11,7 +11,7 @@ import sttp.client3.Response
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
 
 class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite {
@@ -35,7 +35,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     GitHubProfileResponse(id = 3, email = Some("userWithAdminTab@email.com"), login = "userWithAdminTab")
 
   it should ("properly parse data from authentication") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -50,7 +50,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("handling BadRequest response from authenticate request") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(Response(None, StatusCode.BadRequest))
     val service = DefaultOAuth2ServiceFactory.service(config)
@@ -64,7 +64,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("should InternalServerError response from authenticate request") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(Response(None, StatusCode.InternalServerError))
     val service = DefaultOAuth2ServiceFactory.service(config)
@@ -79,7 +79,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile type User") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -105,7 +105,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile type UserWithAdminTab") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -135,7 +135,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile type Admin") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -166,7 +166,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("properly parse data from profile for profile without email") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -192,7 +192,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("handling BadRequest response from profile request") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))
@@ -212,7 +212,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
   }
 
   it should ("should InternalServerError response from profile request") in {
-    implicit val testingBackend = SttpBackendStub.asynchronousFuture
+    implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(validAuthorizationData.asJson.toString())
       .whenRequestMatches(_.uri.equals((Uri(config.profileUri))))

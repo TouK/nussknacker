@@ -16,23 +16,23 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.{
 }
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
+import pl.touk.nussknacker.ui.process.repository.{ScenarioComponentsUsagesHelper, ScenarioWithDetailsEntity}
 
 import java.time.Instant
 import java.util.UUID
@@ -240,9 +240,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   test("should compute components usage") {
-    val table: TableFor2[List[ProcessDetails], Map[ComponentId, List[
-      (BaseProcessDetails[DisplayableProcess], List[NodeUsageData])
-    ]]] = Table(
+    val table: TableFor2[
+      List[ScenarioWithDetailsEntity[DisplayableProcess]],
+      Map[ComponentId, List[
+        (ScenarioWithDetailsEntity[DisplayableProcess], List[NodeUsageData])
+      ]]
+    ] = Table(
       ("processesDetails", "expected"),
       (List.empty, Map.empty),
       (
@@ -329,7 +332,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       val result = ComponentsUsageHelper
         .computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
         .mapValuesNow(_.map { case (baseProcessDetails, nodeIds) =>
-          (baseProcessDetails.mapProcess(_ => ()), nodeIds)
+          (baseProcessDetails.mapScenario(_ => ()), nodeIds)
         })
 
       result should have size expected.size
@@ -351,18 +354,18 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private def oid(overriddenName: String) = ComponentId(overriddenName)
 
   private def withComponentsUsages(
-      processesDetails: List[ProcessDetails]
-  ): List[BaseProcessDetails[ScenarioComponentsUsages]] = {
+      processesDetails: List[ScenarioWithDetailsEntity[DisplayableProcess]]
+  ): List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]] = {
     processesDetails.map { details =>
-      details.mapProcess(p => ScenarioComponentsUsagesHelper.compute(toCanonical(p)))
+      details.mapScenario(p => ScenarioComponentsUsagesHelper.compute(toCanonical(p)))
     }
   }
 
   private def withEmptyProcess(
-      usagesMap: Map[ComponentId, List[(BaseProcessDetails[_], List[NodeUsageData])]]
-  ): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeUsageData])]] = {
+      usagesMap: Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]]
+  ): Map[ComponentId, List[(ScenarioWithDetailsEntity[Unit], List[NodeUsageData])]] = {
     usagesMap.transform { case (_, usages) =>
-      usages.map { case (processDetails, nodeIds) => (processDetails.mapProcess(_ => ()), nodeIds) }
+      usages.map { case (processDetails, nodeIds) => (processDetails.mapScenario(_ => ()), nodeIds) }
     }
   }
 

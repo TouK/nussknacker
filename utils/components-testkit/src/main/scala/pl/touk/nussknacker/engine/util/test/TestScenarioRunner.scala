@@ -7,6 +7,12 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.{
+  ResultsCollectingListener,
+  ResultsCollectingListenerHolder,
+  TestServiceInvocationCollector
+}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
 import scala.reflect.ClassTag
@@ -50,9 +56,35 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
   def withExtraComponents(components: List[ComponentDefinition]): B
 
+  def withExtraGlobalVariables(globalVariables: Map[String, AnyRef]): B
+
   def inTestRuntimeMode: B
 
   def build(): R
+
+}
+
+object TestScenarioCollectorHandler {
+
+  def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
+
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
+      new TestServiceInvocationCollector(resultsCollectingListener.runId)
+    } else {
+      ProductionServiceInvocationCollector
+    }
+
+    new TestScenarioCollectorHandler(resultCollector, resultsCollectingListener)
+  }
+
+  final class TestScenarioCollectorHandler(
+      val resultCollector: ResultCollector,
+      val resultsCollectingListener: ResultsCollectingListener
+  ) extends AutoCloseable {
+    def close(): Unit = resultsCollectingListener.close()
+  }
 
 }
 

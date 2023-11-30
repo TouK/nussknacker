@@ -6,9 +6,10 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
@@ -17,9 +18,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  NodeDataValidator,
+  ValidationNotPerformed,
+  ValidationPerformed,
+  ValidationResponse
+}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -542,6 +547,15 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
             None,
             Some(Unknown)
           ) =>
+    }
+  }
+
+  test("should validate node id in all cases") {
+    forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
+      validate(Variable(nodeId, "varName", "1", None), ValidationContext()) match {
+        case ValidationPerformed(errors, _, _) => errors shouldBe expectedErrors
+        case ValidationNotPerformed            => fail("should not happen")
+      }
     }
   }
 

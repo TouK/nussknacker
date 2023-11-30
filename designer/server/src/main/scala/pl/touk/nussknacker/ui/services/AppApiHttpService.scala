@@ -4,22 +4,18 @@ import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -29,13 +25,11 @@ class AppApiHttpService(
     authenticator: AuthenticationResources,
     processingTypeDataReloader: ProcessingTypeDataReload,
     modelData: ProcessingTypeDataProvider[ModelData, _],
-    processRepository: FetchingProcessRepository[Future],
-    processValidation: ProcessValidation,
-    deploymentService: DeploymentService,
-    processCategoryService: ProcessCategoryService,
+    processService: ProcessService,
+    getProcessCategoryService: () => ProcessCategoryService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, processCategoryService, authenticator)
+    extends BaseHttpService(config, getProcessCategoryService, authenticator)
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
@@ -61,7 +55,7 @@ class AppApiHttpService(
               businessError(
                 HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
-                  processes = Some(set.keys.toSet)
+                  processes = Some(set.keys.map(_.value).toSet)
                 )
               )
             }
@@ -139,7 +133,8 @@ class AppApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { loggedUser => _ =>
         Future {
-          UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(loggedUser))
+          val userCategoryService = new UserCategoryService(getProcessCategoryService())
+          UserCategoriesWithProcessingTypesDto(userCategoryService.getUserCategoriesWithType(loggedUser))
         }
       }
   }
@@ -154,10 +149,13 @@ class AppApiHttpService(
       }
   }
 
-  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[ProcessName, ProcessState]] = {
     for {
-      processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
-      statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)
+      processes <- processService.getProcessesWithDetails(
+        ScenarioQuery.deployed,
+        GetScenarioWithDetailsOptions.detailsOnly.copy(fetchState = true)
+      )
+      statusMap = processes.flatMap(process => process.state.map(process.name -> _)).toMap
       withProblem = statusMap.collect {
         case (name, processStatus @ ProcessState(_, _ @ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) =>
           (name, processStatus)
@@ -165,21 +163,15 @@ class AppApiHttpService(
     } yield withProblem
   }
 
-  private def mapNameToProcessState(
-      processes: Seq[BaseProcessDetails[_]]
-  )(implicit user: LoggedUser): Seq[Future[(String, ProcessState)]] = {
-    // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))
-  }
-
   private def processesWithValidationErrors(implicit user: LoggedUser): Future[List[String]] = {
-    processRepository
-      .fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchivedProcesses)
+    processService
+      .getProcessesWithDetails(
+        ScenarioQuery.unarchivedProcesses,
+        GetScenarioWithDetailsOptions.withsScenarioGraph.withValidation
+      )
       .map { processes =>
         processes
-          .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json)))
-          .filter(process => !process.validationResult.errors.isEmpty)
+          .filterNot(_.validationResultUnsafe.errors.isEmpty)
           .map(_.id)
       }
   }

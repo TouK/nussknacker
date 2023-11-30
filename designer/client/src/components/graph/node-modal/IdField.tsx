@@ -1,10 +1,11 @@
-import { allValid, mandatoryValueValidator, uniqueScenarioValueValidator, Validator } from "./editors/Validators";
+import { allValid, Error, errorValidator, uniqueScenarioValueValidator } from "./editors/Validators";
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import NodeUtils from "../NodeUtils";
 
 interface IdFieldProps {
     isEditMode?: boolean;
@@ -12,7 +13,7 @@ interface IdFieldProps {
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
-    additionalValidators?: Validator[];
+    errors?: Error[];
 }
 
 // wise decision to treat a name as an id forced me to do so.
@@ -25,18 +26,14 @@ export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NA
     return { ...editedNode, id: name ?? id };
 }
 
-export function IdField({
-    isEditMode,
-    node,
-    renderFieldLabel,
-    setProperty,
-    showValidation,
-    additionalValidators,
-}: IdFieldProps): JSX.Element {
+export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
     const nodes = useSelector(getProcessNodesIds);
     const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
 
-    const validators = (additionalValidators || []).concat(mandatoryValueValidator, uniqueScenarioValueValidator(otherNodes));
+    const validators = [
+        errorValidator(errors, "$id"),
+        ...(!NodeUtils.nodeIsProperties(node) ? [uniqueScenarioValueValidator(otherNodes)] : []),
+    ];
     const [isMarked] = useDiffMark();
     const propName = `id`;
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName]);

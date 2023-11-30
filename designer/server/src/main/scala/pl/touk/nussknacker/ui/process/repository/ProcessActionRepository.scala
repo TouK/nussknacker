@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
@@ -262,6 +262,23 @@ abstract class DbProcessActionRepository[F[_]](
       .map(_.actionType)
       .distinct
     run(query.result.map(_.toSet))
+  }
+
+  def getInProgressActionTypes(
+      allowedActionTypes: Set[ProcessActionType]
+  ): F[Map[ProcessId, Set[ProcessActionType]]] = {
+    val query = processActionsTable
+      .filter(action =>
+        action.state === ProcessActionState.InProgress &&
+          action.actionType
+            .inSet(allowedActionTypes)
+      )
+      .map(pa => (pa.processId, pa.actionType))
+    run(
+      query.result
+        .map(_.groupBy { case (process_id, _) => process_id }
+          .mapValuesNow(_.map(_._2).toSet))
+    )
   }
 
   def getUserActionsAfter(

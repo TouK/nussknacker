@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessState
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.IllegalOperationError
 
-final case class ProcessIllegalAction(message: String) extends Exception(message) with IllegalOperationError
+final case class ProcessIllegalAction(message: String) extends IllegalOperationError(message, details = "")
 
 object ProcessIllegalAction {
 

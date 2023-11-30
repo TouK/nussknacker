@@ -107,7 +107,7 @@ export function canInjectNode(
         processWithConnectedSourceAndMiddleMan,
         processDefinitionData,
     );
-    return canConnectSourceToMiddleMan && canConnectMiddleManToTarget;
+    return canConnectSourceToMiddleMan || canConnectMiddleManToTarget;
 }
 
 function deleteEdge(process: Process, fromId: NodeId, toId: NodeId): Process {

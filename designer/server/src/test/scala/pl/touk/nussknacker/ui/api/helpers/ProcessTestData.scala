@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -19,16 +19,19 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
-import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 object ProcessTestData {
 
@@ -60,7 +63,14 @@ object ProcessTestData {
   val otherExistingStreamTransformer2          = "otherTransformer2"
   val optionalEndingStreamTransformer          = "optionalEndingTransformer"
 
-  val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
+  class SimpleTestComponentIdProvider extends ComponentIdProvider {
+    def createComponentId(processingType: String, name: Option[String], componentType: ComponentType): ComponentId =
+      ComponentId.default(processingType, name.getOrElse(""), componentType)
+
+    def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
+  }
+
+  private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
     ProcessDefinitionBuilder.empty
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
@@ -107,7 +117,11 @@ object ProcessTestData {
         CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true)
       )
 
-  def processValidation: ProcessValidation = ProcessValidation(
+  val processDefinitionWithIds
+      : ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
+    processDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+
+  def processValidator: UIProcessValidator = UIProcessValidator(
     mapProcessingTypeDataProvider(
       TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
     ),
@@ -123,9 +137,9 @@ object ProcessTestData {
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
-  val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
+  val validProcessDetails: ScenarioWithDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
-  val archivedValidProcessDetails: ValidatedProcessDetails =
+  val archivedValidProcessDetails: ScenarioWithDetails =
     TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
   def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
@@ -133,6 +147,11 @@ object ProcessTestData {
     .source("source", existingSourceFactory)
     .processor("processor", existingServiceId)
     .customNode("custom", "out1", existingStreamTransformer)
+    .emptySink("sink", existingSinkFactory)
+
+  def validProcessWithNodeId(nodeId: String): CanonicalProcess = ScenarioBuilder
+    .streaming("fooProcess")
+    .source(nodeId, existingSourceFactory)
     .emptySink("sink", existingSinkFactory)
 
   def validProcessWithParam(id: String, param: (String, Expression)): CanonicalProcess = ScenarioBuilder
@@ -147,7 +166,7 @@ object ProcessTestData {
       category: String = TestCategories.TestCat
   ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
+    ValidatedDisplayableProcess.withValidationResult(displayable, processValidator.validate(displayable))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(
@@ -235,7 +254,7 @@ object ProcessTestData {
       .emptySink("sink", existingSinkFactory)
   }
 
-  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
+  val processWithInvalidScenarioProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
     properties = ProcessProperties.combineTypeSpecificProperties(
       StreamMetaData(Some(2)),

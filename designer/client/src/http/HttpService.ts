@@ -3,13 +3,22 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { SettingsData, ValidationData } from "../actions/nk";
+import { SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessDefinitionData, ProcessId } from "../types";
+import {
+    Expression,
+    Process,
+    ProcessAdditionalFields,
+    ProcessDefinitionData,
+    ProcessId,
+    PropertiesType,
+    TypingResult,
+    VariableTypes,
+} from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -17,6 +26,7 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { GenericValidationRequest } from "../actions/nk/genericAction";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -111,6 +121,17 @@ type NotificationActions = {
 export interface TestProcessResponse {
     results: TestResults;
     counts: ProcessCounts;
+}
+
+export interface PropertiesValidationRequest {
+    id: string;
+    additionalFields: ProcessAdditionalFields;
+}
+
+export interface ExpressionSuggestionRequest {
+    expression: Expression;
+    caretPosition2d: CaretPosition2d;
+    variableTypes: VariableTypes;
 }
 
 class HttpService {
@@ -397,7 +418,7 @@ class HttpService {
         });
     }
 
-    validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
+    validateNode(processId: string, node: ValidationRequest): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"), error, true),
@@ -405,7 +426,10 @@ class HttpService {
         return promise;
     }
 
-    validateGenericActionParameters(processingType: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
+    validateGenericActionParameters(
+        processingType: string,
+        validationRequest: GenericValidationRequest,
+    ): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/parameters/${encodeURIComponent(processingType)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
@@ -413,17 +437,8 @@ class HttpService {
         return promise;
     }
 
-    getExpressionSuggestions(
-        processingType: string,
-        expression: Expression,
-        caretPosition2d: CaretPosition2d,
-        variables: Record<string, any>,
-    ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, {
-            expression,
-            caretPosition2d,
-            variables,
-        });
+    getExpressionSuggestions(processingType: string, request: ExpressionSuggestionRequest): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, request);
         promise.catch((error) =>
             this.#addError(
                 i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
@@ -434,8 +449,8 @@ class HttpService {
         return promise;
     }
 
-    validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
-        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, { processProperties });
+    validateProperties(processId: string, propertiesRequest: PropertiesValidationRequest): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, propertiesRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"), error, true),
         );
@@ -523,9 +538,11 @@ class HttpService {
     }
 
     archiveProcess(processId) {
-        return api
-            .post(`/archive/${encodeURIComponent(processId)}`)
-            .catch((error) => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true));
+        const promise = api.post(`/archive/${encodeURIComponent(processId)}`);
+        promise.catch((error) =>
+            this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true),
+        );
+        return promise;
     }
 
     unArchiveProcess(processId) {
@@ -656,13 +673,18 @@ class HttpService {
             return;
         }
 
-        const errorResponseData = error?.response?.data || error.message;
+        const errorResponseData = error?.response?.data;
         const errorMessage =
             errorResponseData instanceof Blob
                 ? await errorResponseData.text()
                 : typeof errorResponseData === "string"
                 ? errorResponseData
                 : JSON.stringify(errorResponseData);
+
+        console.error(
+            `Error with --> \n StatusText: ${error.response.statusText} \n Status: ${error.response.status}  \n Message: ${error.message} \n Server: ${error.response.headers.server}`,
+        );
+
         this.#addErrorMessage(message, errorMessage, showErrorText);
         return Promise.resolve(error);
     }

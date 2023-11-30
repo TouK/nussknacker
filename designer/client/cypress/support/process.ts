@@ -1,4 +1,5 @@
 import Chainable = Cypress.Chainable;
+import { padStart } from "lodash";
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -24,8 +25,11 @@ declare global {
     }
 }
 
+const processIndexes = {};
 function createTestProcessName(name?: string) {
-    return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`);
+    processIndexes[name] = ++processIndexes[name] || 1;
+    const index = padStart(processIndexes[name].toString(), 3, "0");
+    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
 
 function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
@@ -190,9 +194,12 @@ function layoutScenario(waitTime = 400) {
     cy.wait(waitTime); //wait for graph view (zoom, pan) to settle
 }
 
-function deployScenario(comment = "issues/123") {
+function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
     cy.contains(/^deploy$/i).click();
     cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
+    if (withScreenshot) {
+        cy.get("[data-testid=window]").matchImage();
+    }
     cy.get("[data-testid=window] textarea").click().type(comment);
     cy.contains(/^ok$/i).should("be.enabled").click();
     cy.wait(["@deploy", "@fetch"], {

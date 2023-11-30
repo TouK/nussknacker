@@ -62,6 +62,7 @@ export function Switch({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             {showExpression ? (
                 <StaticExpressionField

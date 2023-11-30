@@ -1,4 +1,3 @@
-import cn from "classnames";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TreeView from "react-treeview";
@@ -6,6 +5,7 @@ import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
 import { getOpenedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
+import { cx } from "@emotion/css";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
     return componentGroup.components.length == 0;
@@ -73,7 +73,7 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
         <>{elements}</>
     ) : (
         <TreeView
-            itemClassName={cn(isEmpty && "disabled")}
+            itemClassName={cx(isEmpty && "disabled")}
             nodeLabel={label}
             collapsed={collapsed}
             onClick={highlighted ? toggleForceCollapsed : toggle}

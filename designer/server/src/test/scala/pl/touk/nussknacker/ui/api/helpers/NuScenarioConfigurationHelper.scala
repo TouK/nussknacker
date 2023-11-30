@@ -5,7 +5,7 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
   newActionProcessRepository,
@@ -27,9 +27,7 @@ import scala.concurrent.Future
 //       that are supposed to configure Nussknacker DB state (using repositories or through HTTP API).
 trait NuScenarioConfigurationHelper extends ScalaFutures {
   this: WithTestDb =>
-
-  private implicit val user: LoggedUser = TestFactory.adminUser("user")
-
+  private implicit val user: LoggedUser                       = TestFactory.adminUser("user")
   private val dbioRunner: DBIOActionRunner                    = newDBIOActionRunner(testDbRef)
   private val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
   private val writeProcessRepository: DBProcessRepository     = newWriteProcessRepository(testDbRef)
@@ -37,7 +35,15 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
     newFutureFetchingProcessRepository(testDbRef)
 
   protected implicit val processCategoryService: ProcessCategoryService =
-    new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+    TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
+
+  protected def createSavedProcess(
+      process: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType
+  ): ProcessId = {
+    saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
+  }
 
   def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {

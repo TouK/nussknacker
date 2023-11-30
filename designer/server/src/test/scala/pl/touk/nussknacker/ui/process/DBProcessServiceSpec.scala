@@ -1,35 +1,37 @@
 package pl.touk.nussknacker.ui.process
 
+import org.scalatest.OptionValues
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.NuDesignerError.XError
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
+class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with OptionValues {
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
-  // These users were created based on categoriesConfig at designer.conf
+  // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
   private val categoriesUser =
     TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
@@ -48,7 +50,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val reqRespArchivedfragment =
     createBasicProcess("reqRespArchivedfragment", isArchived = true, category = ReqRes)
 
-  private val processes: List[ProcessDetails] = List(
+  private val processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = List(
     category1Process,
     category2ArchivedProcess,
     testfragment,
@@ -60,14 +62,14 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val fragmentTest      = createFragment("fragmentTest", category = TestCat)
   private val fragmentReqResp   = createFragment("fragmentReqResp", category = ReqRes)
 
-  private val fragments = Set(
+  private val fragments = List(
     fragmentCategory1,
     fragmentCategory2,
     fragmentTest,
     fragmentReqResp
   )
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
+  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)
@@ -80,10 +82,12 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(testfragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(false)))
+        .futureValue
       result shouldBe expected
     }
   }
@@ -99,29 +103,35 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(reqRespArchivedfragment)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getArchivedProcessesAndFragments[DisplayableProcess].futureValue
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](ScenarioQuery(isArchived = Some(true)))
+        .futureValue
       result shouldBe expected
     }
   }
 
   it should "return user fragments" in {
-    val dBProcessService = createDbProcessService(fragments.toList)
+    val dBProcessService = createDbProcessService(fragments)
 
     val testingData = Table(
       ("user", "fragments"),
       (adminUser, fragments),
-      (categoriesUser, Set(fragmentCategory1, fragmentCategory2)),
-      (testUser, Set(fragmentTest)),
-      (testReqRespUser, Set(fragmentTest, fragmentReqResp)),
+      (categoriesUser, List(fragmentCategory1, fragmentCategory2)),
+      (testUser, List(fragmentTest)),
+      (testReqRespUser, List(fragmentTest, fragmentReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails]) =>
-      val result          = dBProcessService.getFragmentsDetails(None)(user).futureValue
-      val fragmentDetails = expected.map(convertBasicProcessToFragmentDetails)
-      result shouldBe fragmentDetails
+    forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
+      implicit val implicitUser: LoggedUser = user
+      val result = dBProcessService
+        .getRawProcessesWithDetails[DisplayableProcess](
+          ScenarioQuery(isFragment = Some(true), isArchived = Some(false))
+        )
+        .futureValue
+      result shouldBe expected
     }
   }
 
@@ -129,7 +139,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val dBProcessService = createDbProcessService(processes)
 
     val categoryDisplayable =
-      ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name, category = Category1)
+      ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name.value, category = Category1)
     val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
     val baseProcessData    = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
 
@@ -153,43 +163,53 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (
         category1Process.idWithName,
         "bad-string",
-        Left(UnmarshallError("expected json value got 'bad-st...' (line 1, column 1)"))
+        Left(ProcessUnmarshallingError("expected json value got 'bad-st...' (line 1, column 1)"))
       ),
     )
 
     forAll(testingData) {
       (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
-        val result = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
+        def doImport() = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
 
-        result shouldBe expected
+        expected match {
+          case Right(expectedValue) => doImport() shouldEqual expectedValue
+          case Left(expectedError) =>
+            (the[TestFailedException] thrownBy {
+              doImport()
+            }).cause.value shouldEqual expectedError
+        }
     }
   }
 
-  private def convertBasicProcessToFragmentDetails(process: ProcessDetails) =
-    FragmentDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
-
-  private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
-    val meta = MetaVariables.typingResult(displayableProcess.metaData)
-
+  private def importSuccess(
+      displayableProcess: DisplayableProcess
+  ): Right[NuDesignerError, ValidatedDisplayableProcess] = {
     val nodeResults = Map(
-      "sinkId"   -> NodeTypingData(Map("input" -> Unknown, "meta" -> meta), Some(List.empty), Map.empty),
-      "sourceId" -> NodeTypingData(Map("meta" -> meta), Some(List.empty), Map.empty)
+      "sinkId"   -> NodeTypingData(Map("input" -> Unknown), Some(List.empty), Map.empty),
+      "sourceId" -> NodeTypingData(Map.empty, Some(List.empty), Map.empty)
     )
 
-    Right(new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
+    Right(
+      ValidatedDisplayableProcess.withValidationResult(
+        displayableProcess,
+        ValidationResult.success.copy(nodeResults = nodeResults)
+      )
+    )
   }
 
-  private def createDbProcessService(processes: List[ProcessDetails] = Nil): DBProcessService =
+  private def createDbProcessService(
+      processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = Nil
+  ): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
-      processCategoryService = processCategoryService,
-      processResolving = TestFactory.processResolving,
+      getProcessCategoryService = () => processCategoryService,
+      processResolver = TestFactory.processResolver,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processValidator = TestFactory.processValidator
     )
 
 }

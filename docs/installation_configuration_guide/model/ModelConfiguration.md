@@ -80,6 +80,12 @@ Below you can see typical component configuration, each section describes config
   }
 ```
 
+Common configuration options that area available for component providers:
+* `providerType` - type of provider
+* `disabled` - allow to disable given component provider (default `false`)
+* `componentPrefix` - prefix that will be added to components provided by provider (default empty string)
+* `categories` - lists of categories in which components will be visible; when missing, components will be visible in every category configured for given scenario type
+
 ### Configuration of UI attributes of components
 
 In model configuration you can also define some UI attributes of components. This can be useful for tweaking of appearance of generated components (like from OpenAPI), 
@@ -90,7 +96,7 @@ in most cases you should not need to defined these settings. The settings you ca
 * in which toolbox panel the component should appear (`componentGroup` property)  
 * `params` configuration (allows to override default component settings):
   * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
-  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `LiteralRegexpParameterValidator`
+  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
 
@@ -104,7 +110,7 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
             editor: "StringParameterEditor"
             validators: [ 
               {
-                type: "LiteralRegExpParameterValidator"
+                type: "RegExpParameterValidator"
                 pattern: "customerId-[0-9]*"
                 message: "has to match customer id format"
                 description: "really has to match..."
@@ -141,7 +147,7 @@ Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$compon
 
 You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.)                |
 
-## Scenario's additional properties              
+## Scenario properties              
 
 It's possible to add additional properties for scenario. 
 They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.), 
@@ -150,7 +156,7 @@ they can also be used in various Nussknacker extensions:
 Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L61) for more examples):
 
 ```
-additionalPropertiesConfig {
+scenarioPropertiesConfig {
   campaignType: {
     editor: { type: "StringParameterEditor" }
     validators: [ { type: "MandatoryParameterValidator" } ]

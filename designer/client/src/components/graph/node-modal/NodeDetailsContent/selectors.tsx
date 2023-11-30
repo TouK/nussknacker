@@ -1,17 +1,17 @@
 import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
-import { getProcessCategory, getProcessToDisplay } from "../../../../reducers/selectors/graph";
+import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { RootState } from "../../../../reducers";
-import { AdditionalPropertiesConfig, NodeId, NodeType, NodeValidationError, UIParameter } from "../../../../types";
+import { NodeId, NodeType, NodeValidationError, ScenarioPropertiesConfig, UIParameter } from "../../../../types";
 import { isEqual } from "lodash";
 
 const createDeepEqualSelector = createSelectorCreator(defaultMemoize, isEqual);
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, (s) => s.processDefinition);
-export const getAdditionalPropertiesConfig = createSelector(
+export const getScenarioPropertiesConfig = createSelector(
     getProcessDefinitionData,
-    (s) => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig,
+    (s) => (s.scenarioPropertiesConfig || {}) as ScenarioPropertiesConfig,
 );
 const getNodeResults = createSelector(getProcessToDisplay, (process) => ProcessUtils.getNodeResults(process));
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
@@ -71,12 +71,8 @@ export const getDynamicParameterDefinitions = createSelector(
         },
 );
 
-export const getFindAvailableVariables = createSelector(
-    getProcessDefinition,
-    getProcessCategory,
-    getProcessToDisplay,
-    (processDefinition, processCategory, processToDisplay) =>
-        ProcessUtils.findAvailableVariables(processDefinition, processCategory, processToDisplay),
+export const getFindAvailableVariables = createSelector(getProcessDefinition, getProcessToDisplay, (processDefinition, processToDisplay) =>
+    ProcessUtils.findAvailableVariables(processDefinition, processToDisplay),
 );
 export const getVariableTypes = createSelector(
     getNodeResults,

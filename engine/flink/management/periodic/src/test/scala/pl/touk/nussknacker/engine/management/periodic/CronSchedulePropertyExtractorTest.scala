@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 
@@ -54,7 +55,9 @@ class CronSchedulePropertyExtractorTest
   }
 
   private def validate(expression: String) = {
-    CronParameterValidator.isValid("cron", expression, None)(NodeId("fooNodeId"))
+    CronParameterValidator.isValid("cron", Expression.spel(s"'$expression'"), Some(expression), None)(
+      NodeId("fooNodeId")
+    )
   }
 
 }

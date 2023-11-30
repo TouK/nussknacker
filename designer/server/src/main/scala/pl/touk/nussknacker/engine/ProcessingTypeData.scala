@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -17,15 +17,30 @@ final case class ProcessingTypeData private (
     modelData: ModelData,
     staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
     metaDataInitializer: MetaDataInitializer,
-    additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
-    usageStatistics: ProcessingTypeUsageStatistics
+    usageStatistics: ProcessingTypeUsageStatistics,
+    categoriesConfig: CategoriesConfig
 ) {
 
   def close(): Unit = {
     modelData.close()
     deploymentManager.close()
   }
+
+}
+
+// TODO: remove Option after fully switch to categories inside processing types configuration format -
+//       see ConfigProcessCategoryService for details
+case class CategoriesConfig(categories: Option[List[String]])
+
+object CategoriesConfig {
+
+  def apply(processTypeConfig: ProcessingTypeConfig): CategoriesConfig = new CategoriesConfig(
+    processTypeConfig.categories
+  )
+
+  def apply(categories: List[String]): CategoriesConfig = new CategoriesConfig(Some(categories))
 
 }
 
@@ -41,13 +56,19 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val managerConfig = processTypeConfig.deploymentConfig
-    createProcessingTypeData(deploymentManagerProvider, ModelData(processTypeConfig), managerConfig)
+    createProcessingTypeData(
+      deploymentManagerProvider,
+      ModelData(processTypeConfig),
+      managerConfig,
+      CategoriesConfig(processTypeConfig)
+    )
   }
 
   def createProcessingTypeData(
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
-      managerConfig: Config
+      managerConfig: Config,
+      categoriesConfig: CategoriesConfig
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -55,20 +76,21 @@ object ProcessingTypeData {
       deploymentService: ProcessingTypeDeploymentService
   ): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig)
+    createProcessingTypeData(deploymentManagerProvider, manager, modelData, managerConfig, categoriesConfig)
   }
 
   def createProcessingTypeData(
       deploymentManagerProvider: DeploymentManagerProvider,
       manager: DeploymentManager,
       modelData: ModelData,
-      managerConfig: Config
+      managerConfig: Config,
+      categoriesConfig: CategoriesConfig
   ): ProcessingTypeData = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
-    val additionalProperties =
-      deploymentManagerProvider.additionalPropertiesConfig(managerConfig) ++ modelData.processConfig
-        .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
+    val scenarioProperties =
+      deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.processConfig
+        .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
 
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
     val staticObjectsDefinition =
@@ -79,9 +101,10 @@ object ProcessingTypeData {
       modelData,
       staticObjectsDefinition,
       metaDataInitializer,
-      additionalProperties,
+      scenarioProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),
-      ProcessingTypeUsageStatistics(managerConfig)
+      ProcessingTypeUsageStatistics(managerConfig),
+      categoriesConfig
     )
   }
 

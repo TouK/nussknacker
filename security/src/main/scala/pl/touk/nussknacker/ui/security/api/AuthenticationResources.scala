@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import sttp.client3.SttpBackend
-import sttp.tapir.EndpointInput.Auth
+import sttp.tapir.EndpointInput
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +24,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   // interpreter) or create our own.
   def authenticate(): Directive1[AuthenticatedUser]
 
-  def authenticationMethod(): Auth[AuthCredentials, _]
+  def authenticationMethod(): EndpointInput[AuthCredentials]
 
   def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
 

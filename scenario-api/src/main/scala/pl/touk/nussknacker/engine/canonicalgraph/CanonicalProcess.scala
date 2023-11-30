@@ -15,6 +15,8 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
+  val IdFieldName = "$id"
+
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
       case nodeData: Disableable if nodeData.isDisabled.contains(true) => true

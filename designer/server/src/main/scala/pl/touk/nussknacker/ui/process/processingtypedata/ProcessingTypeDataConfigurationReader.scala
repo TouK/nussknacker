@@ -8,16 +8,8 @@ object ProcessingTypeDataConfigurationReader extends LazyLogging {
   import scala.jdk.CollectionConverters._
 
   def readProcessingTypeConfig(config: ConfigWithUnresolvedVersion): Map[String, ProcessingTypeConfig] = {
-    val processTypesOption  = read(config, "processTypes")
-    val scenarioTypesOption = read(config, "scenarioTypes")
-    (scenarioTypesOption, processTypesOption) match {
-      case (Some(scenarioTypes), _) => scenarioTypes
-      case (None, Some(processTypes)) =>
-        logger.warn(
-          "ScenarioTypes configuration is missing - falling back to old processTypes configuration - processTypes will be removed in next version"
-        )
-        processTypes
-      case (None, None) => throw new RuntimeException("No scenario types configuration provided")
+    read(config, "scenarioTypes").getOrElse {
+      throw new RuntimeException("No scenario types configuration provided")
     }
   }
 

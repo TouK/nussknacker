@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.testmode.TestRunId
+import pl.touk.nussknacker.engine.testmode.{TestRunId, TestServiceInvocationCollector}
 
 object FlinkVerificationMain extends FlinkRunner {
 
@@ -36,20 +36,17 @@ class FlinkVerificationMain(
 ) extends FlinkStubbedRunner {
 
   def runTest(): Unit = {
-    val env       = createEnv
-    val registrar = prepareRegistrar()
-    registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
+    val resultCollector = new TestServiceInvocationCollector(TestRunId("dummy"))
+    val registrar       = prepareRegistrar()
+    val env             = createEnv
+
+    registrar.register(env, process, processVersion, deploymentData, resultCollector)
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      new VerificationFlinkProcessCompiler(
-        process,
-        modelData.configCreator,
-        modelData.processConfig,
-        modelData.objectNaming
-      ),
+      VerificationFlinkProcessCompiler(process, modelData),
       ExecutionConfigPreparer.defaultChain(modelData)
     )
   }

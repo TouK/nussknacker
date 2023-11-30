@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{
@@ -17,7 +18,6 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestInfoProvider,
   TestingCapabilities
 }
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
@@ -64,14 +64,14 @@ class TestInfoResourcesSpec
 
   private def route(additionalDataSize: Int = 0) = new TestInfoResources(
     processAuthorizer,
-    futureFetchingProcessRepository,
+    processService,
     createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize)))
   )
 
   test("generates data") {
     saveProcess(process) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
-        implicit val contentUnmarshaller = Unmarshaller.stringUnmarshaller
+        implicit val contentUnmarshaller: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
         val content = responseAs[String]
         content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""

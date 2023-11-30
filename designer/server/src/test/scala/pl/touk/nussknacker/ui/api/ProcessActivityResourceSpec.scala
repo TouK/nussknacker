@@ -8,8 +8,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterEach}
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withAllPermissions
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
@@ -33,7 +33,7 @@ class ProcessActivityResourceSpec
 
   private val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
   private val attachmentsRoute =
-    new AttachmentResources(attachmentService, futureFetchingProcessRepository, processAuthorizer)
+    new AttachmentResources(attachmentService, processService, processAuthorizer)
   private val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess

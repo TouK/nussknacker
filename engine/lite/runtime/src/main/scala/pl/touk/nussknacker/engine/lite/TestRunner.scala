@@ -48,13 +48,14 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     // in tests we don't send metrics anywhere
     val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
+    val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener.runId)
 
     // FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](
       process,
       modelData,
       additionalListeners = List(collectingListener),
-      new TestServiceInvocationCollector(collectingListener.runId),
+      testServiceInvocationCollector,
       componentUseCase
     )(
       implicitly[Monad[F]],
@@ -86,7 +87,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
 
       val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
 
-      collectSinkResults(collectingListener.runId, results)
+      collectSinkResults(testServiceInvocationCollector, results)
       collectingListener.results
     } finally {
       collectingListener.clean()
@@ -101,11 +102,16 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     JobData(process.metaData, processVersion)
   }
 
-  private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {
+  private def collectSinkResults(
+      testServiceInvocationCollector: TestServiceInvocationCollector,
+      results: ResultType[EndResult[Res]]
+  ): Unit = {
     val successfulResults = results.value
     successfulResults.foreach { result =>
       val node = result.nodeId.id
-      SinkInvocationCollector(runId, node, node).collect(result.context, result.result)
+      testServiceInvocationCollector
+        .createSinkInvocationCollector(node, node)
+        .collect(result.context, result.result)
     }
   }
 

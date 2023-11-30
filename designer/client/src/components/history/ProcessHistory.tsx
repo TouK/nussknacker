@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { Scrollbars } from "react-custom-scrollbars";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProcessToDisplay } from "../../actions/nk/process";
+import { displayScenarioVersion } from "../../actions/nk/process";
 import { unsavedProcessChanges } from "../../common/DialogMessages";
 import { getFetchedProcessDetails, isSaveDisabled } from "../../reducers/selectors/graph";
 import { useWindows } from "../../windowManager";
@@ -19,7 +19,7 @@ export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.El
 
     const doChangeVersion = useCallback(
         (version: ProcessVersionType) => {
-            dispatch(fetchProcessToDisplay(name, version.processVersionId));
+            dispatch(displayScenarioVersion(name, version.processVersionId));
         },
         [dispatch, name],
     );

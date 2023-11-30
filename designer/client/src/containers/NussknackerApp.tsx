@@ -6,12 +6,11 @@ import { VersionInfo } from "../components/versionInfo";
 import { getLoggedUser } from "../reducers/selectors/settings";
 import { isEmpty } from "lodash";
 import { Outlet } from "react-router-dom";
-import { GlobalCSSVariables, NkThemeProvider } from "./theme";
 import { Notifications } from "./Notifications";
 import { UsageReportingImage } from "./UsageReportingImage";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
-import { MuiThemeProvider } from "./muiThemeProvider";
+import { NuThemeProvider } from "./theme/nuThemeProvider";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
@@ -21,8 +20,7 @@ export function NussknackerApp() {
     }
 
     return (
-        <NkThemeProvider>
-            <GlobalCSSVariables />
+        <>
             <WindowManager
                 className={css({
                     flex: 1,
@@ -45,14 +43,11 @@ export function NussknackerApp() {
                 </div>
             </WindowManager>
 
-            {/*TODO: Since we only listen to notifications, we can declare Theme this way, however, it's a problem with MuiThemeProvider and WindowManager styles, with dialog visibility, probably something with a z-index. It should be fixed when we remove stylus and refactor mui themes */}
-            <MuiThemeProvider>
-                <ConnectionErrorProvider>
-                    <Notifications />
-                </ConnectionErrorProvider>
-            </MuiThemeProvider>
+            <ConnectionErrorProvider>
+                <Notifications />
+            </ConnectionErrorProvider>
             <VersionInfo />
             <UsageReportingImage />
-        </NkThemeProvider>
+        </>
     );
 }

@@ -3,6 +3,7 @@ import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store";
 import { ProcessHistoryComponent } from "../src/components/history/ProcessHistory";
 import { render, within } from "@testing-library/react";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore();
 jest.mock("../src/windowManager", () => ({
@@ -34,9 +35,11 @@ describe("ProcessHistory suite", () => {
         });
         //when
         const { container } = render(
-            <Provider store={store}>
-                <ProcessHistoryComponent />,
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <ProcessHistoryComponent />,
+                </Provider>
+            </NuThemeProvider>,
         );
         //then
         const currentProcessHistoryEntry = container.getElementsByClassName("current");
