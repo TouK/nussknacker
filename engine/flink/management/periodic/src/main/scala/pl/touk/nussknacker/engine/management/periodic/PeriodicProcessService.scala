@@ -176,12 +176,18 @@ class PeriodicProcessService(
     def updateProcessAction(notFinishedProcesses: Set[ProcessName])(
         processName: ProcessName,
         periodicProcessOpt: Option[PeriodicProcess]
-    ): Future[Boolean] =
+    ): Future[Boolean] = {
+      logger.info(s"""updateProcessAction
+           | notFinishedProcesses= $notFinishedProcesses
+           | processName = $processName
+           | periodicProcessOpt = $periodicProcessOpt
+           |""".stripMargin)
       periodicProcessOpt
         .filter(_ => notFinishedProcesses(processName))
         .flatMap(_.processActionId)
         .map(processAction => deploymentService.markActionExecutionFinished(processAction))
         .getOrElse(successful(false))
+    }
 
     def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
       synchronizeDeploymentsStates(processName, schedules).flatMap { case (_, needRescheduleDeploymentIds) =>
@@ -216,7 +222,10 @@ class PeriodicProcessService(
           )
         )
         .run
+      _ <- successful(logger.info(s"schedulesToCheck = $schedulesToCheck"))
       notInTerminalStateProcesses = notInTerminalStateSchedules.groupByProcessName.keySet
+      _ <- successful(logger.info(s"notInTerminalStateSchedules = $notInTerminalStateSchedules"))
+      _ <- successful(logger.info(s"notInTerminalStateProcesses = $notInTerminalStateProcesses"))
       _ <- Future.sequence(
         schedulesToCheck
           .map { case (processName, schedulesState) =>
