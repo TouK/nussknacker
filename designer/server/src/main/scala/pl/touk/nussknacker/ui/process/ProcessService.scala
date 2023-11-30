@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
@@ -397,7 +397,7 @@ class DBProcessService(
     withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
       val jsonCanonicalProcess = ProcessMarshaller
         .fromJson(jsonString)
-        .valueOr(msg => throw UnmarshallError(msg))
+        .valueOr(msg => throw ProcessUnmarshallingError(msg))
 
       val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
