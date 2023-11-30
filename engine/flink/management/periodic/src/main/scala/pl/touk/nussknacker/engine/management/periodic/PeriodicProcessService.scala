@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -38,7 +39,7 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
     extends LazyLogging {
 
   import cats.syntax.all._
@@ -172,6 +173,16 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
+    def updateProcessAction(notFinishedProcesses: Set[ProcessName])(
+        processName: ProcessName,
+        periodicProcessOpt: Option[PeriodicProcess]
+    ): Future[Boolean] =
+      periodicProcessOpt
+        .filter(_ => notFinishedProcesses(processName))
+        .flatMap(_.processActionId)
+        .map(processAction => deploymentService.markActionExecutionFinished(processAction))
+        .getOrElse(successful(false))
+
     def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
       synchronizeDeploymentsStates(processName, schedules).flatMap { case (_, needRescheduleDeploymentIds) =>
         schedules.groupedByPeriodicProcess
@@ -193,9 +204,26 @@ class PeriodicProcessService(
           Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
         )
         .run
-
+      schedulesToCheck = schedules.groupByProcessName.toList
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
-      _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
+      _ <- Future.sequence(schedulesToCheck.map(handleSingleProcess _ tupled))
+      notInTerminalStateSchedules <- scheduledProcessesRepository
+        .findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(
+          Set(
+            PeriodicProcessDeploymentStatus.Deployed,
+            PeriodicProcessDeploymentStatus.Scheduled,
+            PeriodicProcessDeploymentStatus.RetryingDeploy
+          )
+        )
+        .run
+      notInTerminalStateProcesses = notInTerminalStateSchedules.groupByProcessName.keySet
+      _ <- Future.sequence(
+        schedulesToCheck
+          .map { case (processName, schedulesState) =>
+            processName -> schedulesState.groupedByPeriodicProcess.map(_.process).headOption
+          }
+          .map(updateProcessAction(notInTerminalStateProcesses) _ tupled)
+      )
     } yield ()
   }
 
