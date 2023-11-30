@@ -162,7 +162,7 @@ class NodeCompiler(
         compiledObject.andThen(v =>
           paramValidationErrors match {
             case Invalid(errors) => Invalid(errors)
-            case Valid(_)         => Valid(v)
+            case Valid(_)        => Valid(v)
           }
         )
       }

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.JsonKey
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
@@ -11,11 +11,6 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeAnyWithSuggestions,
-  InputModeFixedList
-}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -309,72 +304,28 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
+    @JsonCodec
+    sealed trait ValueInputWithFixedValues {
+      def allowOtherValue: Boolean
+      def fixedValuesList: List[FixedExpressionValue]
+    }
+
+    case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
+        extends ValueInputWithFixedValues
+
+    @ConfiguredJsonCodec
     case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
-        required: Boolean,
+        required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        inputConfig: ParameterInputConfig,
-    ) {
-      def withName(name: String): FragmentParameter = copy(name = name)
-    }
+        valueEditor: Option[ValueInputWithFixedValues]
+    )
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
-    object ParameterInputMode extends Enumeration {
-      type ParameterInputMode = Value
-
-      implicit val typeEncoder: Encoder[ParameterInputMode.Value] =
-        Encoder.encodeEnumeration(ParameterInputMode)
-      implicit val typeDecoder: Decoder[ParameterInputMode.Value] =
-        Decoder.decodeEnumeration(ParameterInputMode)
-
-      val InputModeAny: Value                = Value("InputModeAny")
-      val InputModeAnyWithSuggestions: Value = Value("InputModeAnyWithSuggestions")
-      val InputModeFixedList: Value          = Value("InputModeFixedList")
-    }
-
     object FragmentParameter {
-
-      implicit def encoder: Encoder[FragmentParameter] = deriveConfiguredEncoder[FragmentParameter]
-
-      private val fieldNameRequired     = "required"
-      private val fieldNameInitialValue = "initialValue"
-      private val fieldNameHintText     = "hintText"
-      private val fieldNameInputConfig  = "inputConfig"
-
-      private val defaultInputConfig: Json = Json.fromJsonObject(
-        JsonObject(
-          "inputMode"       -> Json.fromString(InputModeAny.toString),
-          "fixedValuesList" -> Json.Null
-        )
-      )
-
-      private val defaultNewFieldValues = Map(
-        fieldNameRequired     -> Json.fromBoolean(false),
-        fieldNameInitialValue -> Json.Null,
-        fieldNameHintText     -> Json.Null,
-        fieldNameInputConfig  -> defaultInputConfig
-      )
-
-      private def setDefaultIfAbsent(obj: JsonObject, fieldName: String): JsonObject =
-        if (!obj.contains(fieldName)) {
-          obj.add(fieldName, defaultNewFieldValues(fieldName))
-        } else {
-          obj
-        }
-
-      private def setAbsentNewFieldsToDefaults(aCursor: ACursor): ACursor = {
-        aCursor.withFocus(_.mapObject { jsonObject =>
-          List(fieldNameRequired, fieldNameInitialValue, fieldNameHintText, fieldNameInputConfig)
-            .foldLeft(jsonObject)((acc, fieldName) => setDefaultIfAbsent(acc, fieldName))
-        })
-      }
-
-      // Needed for compatibility
-      implicit def decoder: Decoder[FragmentParameter] =
-        deriveConfiguredDecoder[FragmentParameter].prepare(setAbsentNewFieldsToDefaults)
 
       def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
         FragmentParameter(
@@ -383,26 +334,9 @@ object node {
           required = false,
           initialValue = None,
           hintText = None,
-          inputConfig = ParameterInputConfig(InputModeAny, None)
+          valueEditor = None
         )
       }
-
-    }
-
-    @JsonCodec
-    case class ParameterInputConfig(
-        inputMode: ParameterInputMode.Value,
-        fixedValuesList: Option[
-          List[FixedExpressionValue]
-        ] // don't access directly, use effectiveFixedValuesList instead
-    ) {
-
-      val effectiveFixedValuesList: Option[List[FixedExpressionValue]] =
-        inputMode match {
-          case InputModeAny =>
-            None // allow for saving the list for UX purposes, don't use it in BE unless inputMode is changed
-          case InputModeAnyWithSuggestions | InputModeFixedList => fixedValuesList
-        }
 
     }
 

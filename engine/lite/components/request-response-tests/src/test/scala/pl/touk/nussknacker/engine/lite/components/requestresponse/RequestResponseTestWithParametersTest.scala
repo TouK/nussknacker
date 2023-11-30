@@ -15,15 +15,11 @@ import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeAnyWithSuggestions
-}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ParameterInputConfig
+  ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
@@ -195,7 +191,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
-          inputConfig = ParameterInputConfig(InputModeAny, None)
+          valueEditor = None
         )
       )
     )
@@ -225,9 +221,11 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = false,
           initialValue = None,
           hintText = None,
-          inputConfig = ParameterInputConfig(
-            inputMode = InputModeAnyWithSuggestions,
-            fixedValuesList = Some(fixedValuesList)
+          valueEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              allowOtherValue = true,
+              fixedValuesList = fixedValuesList
+            )
           )
         )
       )
@@ -240,7 +238,9 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(
       DualParameterEditor(
-        FixedValuesParameterEditor(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))),
+        FixedValuesParameterEditor(
+          FixedExpressionValue("", "") +: fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+        ),
         DualEditorMode.SIMPLE
       )
     )

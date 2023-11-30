@@ -156,12 +156,6 @@ object PrettyValidationErrors {
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
-      case MissingFixedValuesList(paramName, _) =>
-        node(
-          s"Missing required fixed values list in input configuration of param $paramName ",
-          "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
-        )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
           s"Fixed values list can only be be provided for type String or Boolean, found: $typ",

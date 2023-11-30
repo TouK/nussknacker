@@ -265,8 +265,6 @@ object ProcessCompilationError {
   final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
       extends ProcessCompilationError
 
-  final case class MissingFixedValuesList(paramName: String, nodeIds: Set[String]) extends ProcessCompilationError
-
   final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
       extends ProcessCompilationError
 

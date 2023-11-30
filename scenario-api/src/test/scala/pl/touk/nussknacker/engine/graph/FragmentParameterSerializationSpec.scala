@@ -3,17 +3,12 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.jawn.decode
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeFixedList
-}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ParameterInputConfig
+  ValueInputWithFixedValuesProvided
 }
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
@@ -27,7 +22,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       required = false,
       initialValue = None,
       hintText = None,
-      inputConfig = ParameterInputConfig(InputModeAny, None)
+      valueEditor = None
     )
 
     decode[FragmentParameter]("""{
@@ -45,10 +40,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |  "required" : false,
         |  "initialValue" : null,
         |  "hintText" : null,
-        |  "inputConfig" : {
-        |    "inputMode" : "InputModeAny",
-        |    "fixedValuesList" : null
-        |  }
+        |  "valueEditor" : null
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
@@ -64,18 +56,20 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         "label" : "someValue"
       },
       "hintText" : "some hint text",
-      "inputConfig" : {
-        "inputMode" : "InputModeFixedList",
-        "fixedValuesList" : [
-          {
-            "expression" : "'someValue'",
-            "label" : "someValue"
-          },
-          {
-            "expression" : "'someOtherValue'",
-            "label" : "someOtherValue"
-          }
-        ]
+      "valueEditor" : {
+        "ValueInputWithFixedValuesProvided" : {
+          "allowOtherValue" : true,
+          "fixedValuesList" : [
+            {
+              "expression" : "'someValue'",
+              "label" : "someValue"
+            },
+            {
+              "expression" : "'someOtherValue'",
+              "label" : "someOtherValue"
+            }
+          ]
+        }
       }
     }""") shouldBe Right(
       FragmentParameter(
@@ -84,13 +78,13 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         required = true,
         initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
         hintText = Some("some hint text"),
-        inputConfig = ParameterInputConfig(
-          inputMode = InputModeFixedList,
-          fixedValuesList = Some(
-            List(
+        valueEditor = Some(
+          ValueInputWithFixedValuesProvided(
+            fixedValuesList = List(
               FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue"),
               FragmentInputDefinition.FixedExpressionValue("'someOtherValue'", "someOtherValue")
-            )
+            ),
+            allowOtherValue = true
           )
         )
       )

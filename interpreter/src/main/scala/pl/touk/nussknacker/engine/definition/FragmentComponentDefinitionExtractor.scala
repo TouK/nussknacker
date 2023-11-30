@@ -29,10 +29,6 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeFixedList,
-  ParameterInputMode
-}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
@@ -133,12 +129,12 @@ class FragmentComponentDefinitionExtractor(
   )(implicit nodeId: NodeId): Parameter = {
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = fragmentParameter.inputConfig.effectiveFixedValuesList
-      .map { fixedValues =>
-        fixedValuesEditorWithInputMode(
-          fragmentParameter.inputConfig.inputMode,
+    val extractedEditor = fragmentParameter.valueEditor
+      .map { valueEditor =>
+        fixedValuesEditorWithAllowOtherValue(
+          valueEditor.allowOtherValue,
           FixedValuesParameterEditor(
-            nullFixedValue +: fixedValues.map(v => FixedExpressionValue(v.expression, v.label))
+            nullFixedValue +: valueEditor.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
           )
         )
       }
@@ -164,13 +160,14 @@ class FragmentComponentDefinitionExtractor(
       )
   }
 
-  private def fixedValuesEditorWithInputMode(
-      inputMode: ParameterInputMode,
-      fixedValuesEditor: SimpleParameterEditor
+  private def fixedValuesEditorWithAllowOtherValue(
+      allowOtherValue: Boolean,
+      fixedValuesEditor: SimpleParameterEditor,
   ) = {
-    inputMode match {
-      case InputModeFixedList => Some(fixedValuesEditor)
-      case _                  => Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
+    if (allowOtherValue) {
+      Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
+    } else {
+      Some(fixedValuesEditor)
     }
   }
 

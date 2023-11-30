@@ -23,14 +23,10 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.ParameterInputMode.{
-  InputModeAny,
-  InputModeFixedList
-}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  ParameterInputConfig
+  ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -437,7 +433,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputConfig = ParameterInputConfig(InputModeAny, None)
+                  valueEditor = None
                 )
               )
             )
@@ -483,10 +479,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
-                  inputConfig = ParameterInputConfig(
-                    inputMode = InputModeFixedList,
-                    fixedValuesList =
-                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
                   )
                 ),
                 FragmentParameter(
@@ -495,10 +492,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   required = false,
                   initialValue = None,
                   hintText = None,
-                  inputConfig = ParameterInputConfig(
-                    inputMode = InputModeFixedList,
-                    fixedValuesList =
-                      Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
                   )
                 )
               )
@@ -587,10 +585,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                 required = true,
                 initialValue = None,
                 hintText = None,
-                inputConfig = ParameterInputConfig(
-                  inputMode = InputModeFixedList,
-                  fixedValuesList = Some(List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")))
-                ),
+                valueEditor = Some(
+                  ValueInputWithFixedValuesProvided(
+                    fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                    allowOtherValue = false
+                  )
+                )
               ),
             )
           )
