@@ -241,7 +241,7 @@ object DefinitionExtractor {
     }
 
     def withEmptyConfig[T](obj: T, methodExtractor: MethodDefinitionExtractor[T]): ObjectWithMethodDef = {
-      new DefinitionExtractor(methodExtractor).extract(WithCategories(obj), SingleComponentConfig.zero)
+      new DefinitionExtractor(methodExtractor).extract(WithCategories.anyCategory(obj), SingleComponentConfig.zero)
     }
 
   }

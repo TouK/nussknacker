@@ -149,8 +149,8 @@ object UnionTransformersTestModeSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "union"      -> WithCategories(new UnionTransformer(None)),
-        "union-memo" -> WithCategories(new UnionWithMemoTransformer(None)),
+        "union"      -> WithCategories.anyCategory(new UnionTransformer(None)),
+        "union-memo" -> WithCategories.anyCategory(new UnionWithMemoTransformer(None)),
       )
 
     override def sourceFactories(
@@ -159,7 +159,7 @@ object UnionTransformersTestModeSpec {
       implicit val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 
       Map(
-        "start" -> WithCategories(
+        "start" -> WithCategories.anyCategory(
           SourceFactory.noParam[String](
             CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])
           )
@@ -170,7 +170,7 @@ object UnionTransformersTestModeSpec {
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] = {
-      Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
+      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
     }
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =

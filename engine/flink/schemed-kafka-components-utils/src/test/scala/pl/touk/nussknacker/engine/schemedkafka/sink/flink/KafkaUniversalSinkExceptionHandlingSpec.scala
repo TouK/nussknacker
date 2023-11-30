@@ -56,7 +56,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
         val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
         val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
         Map(
-          "kafka" -> WithCategories(
+          "kafka" -> WithCategories.anyCategory(
             new UniversalKafkaSinkFactory(
               schemaRegistryClientFactory,
               universalProvider,

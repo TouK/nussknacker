@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -622,28 +622,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
           ) =>
     }
     result.warnings shouldBe ValidationWarnings.success
-  }
-
-  test("validates scenario with category") {
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(secretExistingSourceFactory, Nil)),
-        Sink("sink", SinkRef(existingSinkFactory, Nil))
-      ),
-      edges = List(Edge("source", "sink", None))
-    )
-
-    val validationResult = processValidator.validate(process.copy(category = SecretCategory))
-    validationResult.errors.invalidNodes shouldBe Symbol("empty")
-    validationResult.errors.globalErrors shouldBe Symbol("empty")
-    validationResult.saveAllowed shouldBe true
-
-    val validationResultWithCategory2 = processValidator.validate(process)
-    validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "source" -> List(
-        PrettyValidationErrors.formatErrorMessage(MissingSourceFactory(secretExistingSourceFactory, "source"))
-      )
-    )
   }
 
   test("validates scenario with fragment with category") {

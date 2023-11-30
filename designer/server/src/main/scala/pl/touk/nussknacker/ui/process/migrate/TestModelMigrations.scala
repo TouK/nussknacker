@@ -30,11 +30,11 @@ class TestModelMigrations(
   ): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidator.withFragmentResolver(
+    val validator = processValidator.withFragmentResolver(
       new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
-      val validationResult = validation.validate(migrationDetails.newProcess)
+      val validationResult = validator.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
         ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
