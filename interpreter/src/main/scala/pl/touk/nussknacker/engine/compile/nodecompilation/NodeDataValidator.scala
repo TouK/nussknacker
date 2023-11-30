@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
+import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
@@ -69,8 +69,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
         case a: CustomNode =>
           toValidationResponse(compiler.compileCustomNodeObject(a, Left(validationContext), ending = false))
-        case a: Source => toValidationResponse(compiler.compileSource(a))
-        case a: Sink   => toValidationResponse(compiler.compileSink(a, validationContext))
+        case a: SourceNodeData => toValidationResponse(compiler.compileSource(a))
+        case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
         case a: Enricher =>
           toValidationResponse(
             compiler.compileEnricher(a, validationContext, outputVar = Some(OutputVar.enricher(a.output)))
@@ -105,8 +105,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput           => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case a: FragmentInputDefinition => validateFragmentInputDefinition(compiler, validationContext, a)
+        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -166,34 +165,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
         parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
       }
       .valueOr(errors => ValidationPerformed(errors.toList, None, None))
-  }
-
-  private def validateFragmentInputDefinition(
-      compiler: NodeCompiler,
-      validationContext: ValidationContext,
-      definition: FragmentInputDefinition,
-  )(implicit nodeId: NodeId) = {
-    val errors = compiler.loadParametersTypeMap(definition.parameters) match {
-      case Valid(variables) =>
-        val updatedContext = validationContext.copy(localVariables = validationContext.globalVariables ++ variables)
-
-        definition.parameters.flatMap { param =>
-          FragmentParameterValidator.validate(
-            param,
-            definition.id,
-            compiler,
-            updatedContext
-          )
-        }
-
-      case Invalid(e) => e.toList
-    }
-
-    ValidationPerformed(
-      errors,
-      None,
-      None
-    )
   }
 
   private def toValidationResponse[T <: TypedValue](

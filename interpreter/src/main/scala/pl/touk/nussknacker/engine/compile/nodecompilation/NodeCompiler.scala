@@ -120,6 +120,7 @@ class NodeCompiler(
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
+  private val fragmentParameterValidator = new FragmentParameterValidator(objectParametersExpressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
@@ -154,14 +155,14 @@ class NodeCompiler(
           compiledObject: ValidatedNel[ProcessCompilationError, T],
           validationContext: ValidationContext
       ) = {
-        val paramValidationErrors = params.flatMap { param =>
-          FragmentParameterValidator.validate(param, id, this, validationContext)
-        }
+        def paramValidationErrors = params.map { param =>
+          fragmentParameterValidator.validate(param, id, validationContext)
+        }.sequence
 
         compiledObject.andThen(v =>
-          NonEmptyList.fromList(paramValidationErrors) match {
-            case Some(errors) => Invalid(errors)
-            case None         => Valid(v)
+          paramValidationErrors match {
+            case Invalid(errors) => Invalid(errors)
+            case Valid(_)         => Valid(v)
           }
         )
       }
@@ -170,9 +171,7 @@ class NodeCompiler(
         case Some(definition) =>
           val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val validationContext = contextWithOnlyGlobalVariables.copy(localVariables =
-            contextWithOnlyGlobalVariables.globalVariables ++ variables
-          )
+          val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
           val compilationResult = compileObjectWithTransformation[Source](
             Nil,

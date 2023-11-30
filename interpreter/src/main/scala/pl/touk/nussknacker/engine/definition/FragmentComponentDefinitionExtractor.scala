@@ -124,6 +124,8 @@ class FragmentComponentDefinitionExtractor(
       .map(toParameter(componentConfig, _, fragmentParameter))
   }
 
+  private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
+
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
@@ -136,7 +138,7 @@ class FragmentComponentDefinitionExtractor(
         fixedValuesEditorWithInputMode(
           fragmentParameter.inputConfig.inputMode,
           FixedValuesParameterEditor(
-            fixedValues.map(v => FixedExpressionValue(v.expression, v.label))
+            nullFixedValue +: fixedValues.map(v => FixedExpressionValue(v.expression, v.label))
           )
         )
       }

@@ -791,7 +791,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Map.empty,
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
-    ) { case ValidationPerformed((error: FailedToResolveFragmentParameterType) :: Nil, None, None) =>
+    ) { case ValidationPerformed((error: FailedToResolveFragmentParameterType) :: _, None, None) =>
       error.paramName shouldBe paramName
       error.typ shouldBe invalidType
       error.nodeIds shouldBe Set(nodeId)
