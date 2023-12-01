@@ -30,10 +30,11 @@ final case class DeployedScenarioData(
 )
 
 class ProcessingTypeDeploymentServiceStub(
-    deployedScenarios: List[DeployedScenarioData],
+    deployedScenarios: List[DeployedScenarioData]
 ) extends ProcessingTypeDeploymentService {
 
-  protected val actionIds: scala.collection.mutable.Buffer[ProcessActionId] = scala.collection.mutable.Buffer.empty
+  @volatile
+  var actionIds: List[ProcessActionId] = List.empty
 
   override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] =
     Future.successful(deployedScenarios)
@@ -46,15 +47,13 @@ class ProcessingTypeDeploymentServiceStub(
   override def markActionExecutionFinished(
       actionId: ProcessActionId
   )(implicit ec: ExecutionContext): Future[Boolean] = {
-    actionIds.append(actionId)
+    actionIds = actionId :: actionIds
     Future.successful(true)
   }
 
   override def getLastStateAction(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] =
     Future.successful(None)
 
-}
+  def sentActionIds: List[ProcessActionId] = actionIds
 
-trait ActionIdChecker {
-  def sentActionIds: List[ProcessActionId]
 }
