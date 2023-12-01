@@ -24,8 +24,12 @@ object ProcessCategoryService {
   type Category = String
 
   class CategoryNotFoundError(category: Category) extends BadRequestError(s"Category: $category not found")
+
   class ProcessingTypeNotFoundError(processingType: ProcessingType)
-      extends BadRequestError(s"Processing type: $processingType not found or no categories configured for it")
+      extends BadRequestError(
+        s"Processing type [$processingType] not found, or there are no categories configured for it"
+      )
+
 }
 
 trait ProcessCategoryService {
@@ -80,7 +84,7 @@ object ConfigProcessCategoryService extends LazyLogging {
       }
     } else if (notDefinedCategoryProcessingTypes.nonEmpty) {
       throw new IllegalArgumentException(
-        s"Illegal categories configuration format. Some scenario types has no category configured: $notDefinedCategoryProcessingTypes"
+        s"Illegal categories configuration. These scenario types have no category configured: $notDefinedCategoryProcessingTypes"
       )
     } else {
       new ProcessingTypeCategoryService(processingTypesWithDefinedCategory)
@@ -127,13 +131,13 @@ object ConfigProcessCategoryService extends LazyLogging {
   private[process] final case class CategoryToProcessingTypeMappingAmbiguousException(
       ambiguousCategoryToProcessingTypeMappings: Map[Category, Set[ProcessingType]]
   ) extends IllegalStateException(
-        s"Ambiguous category to scenario type mapping detected for categories: $ambiguousCategoryToProcessingTypeMappings"
+        s"These categories are configured in more than one scenario type, which is not allowed now: $ambiguousCategoryToProcessingTypeMappings"
       )
 
   private[process] final case class ProcessingTypeToCategoryMappingAmbiguousException(
       ambiguousProcessingTypeToCategoryMappings: Map[ProcessingType, Set[Category]]
   ) extends IllegalStateException(
-        s"Ambiguous scenario type to category mapping detected for categories: $ambiguousProcessingTypeToCategoryMappings"
+        s"These scenario types have more than one category configured, which is not allowed now: $ambiguousProcessingTypeToCategoryMappings"
       )
 
 }
