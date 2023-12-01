@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
+import cats.implicits.{catsSyntaxSemigroup, catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   NotNullParameterValidator,
-  Parameter,
   ParameterValidator
 }
 import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
@@ -18,8 +17,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseNodeCompiler.combineErrors
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.compiledgraph.variable
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node
@@ -113,60 +112,43 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     combineErrors(compilationResult, additionalValidations.combineAll)
   }
 
+  case class CompiledIndexedRecordField(
+      field: compiledgraph.variable.Field,
+      index: Int,
+      typedExpression: TypedExpression
+  )
+
   def compileFields(
       fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
       ctx: ValidationContext,
       outputVar: Option[OutputVar]
-  )(implicit nodeId: NodeId): NodeCompilationResult[List[variable.Field]] = {
+  )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
 
-    final case class CompiledRecordField(
-        field: pl.touk.nussknacker.engine.graph.variable.Field,
-        index: Int,
-        typedExpression: TypedExpression
-    )
-
-    val compliedRecordFields = fields.zipWithIndex.map { case (field, index) =>
-      objectParametersExpressionCompiler
-        .compile(field.expression, Some(node.recordValueFieldName(index)), ctx, Unknown)
-        .map(CompiledRecordField(field, index, _))
+    val (compiledRecord, indexedFields) = {
+      val compiledFields = fields.zipWithIndex.map { case (field, index) =>
+        val compiledField = objectParametersExpressionCompiler
+          .compile(field.expression, Some(node.recordValueFieldName(index)), ctx, Unknown)
+          .map(result =>
+            CompiledIndexedRecordField(compiledgraph.variable.Field(field.name, result.expression), index, result)
+          )
+        val indexedKeys = RecordValidator.IndexedFieldKey(field.name, index)
+        (compiledField, indexedKeys)
+      }
+      (compiledFields.map(_._1).sequence, compiledFields.map(_._2))
     }
 
-    val recordValuesCompilationResult = compliedRecordFields.traverse { validatedField =>
-      validatedField.map { compiledField =>
-        ExpressionCompilation(
-          compiledField.field.name,
-          Some(compiledField.typedExpression),
-          Valid(variable.Field(compiledField.field.name, compiledField.typedExpression.expression))
-        )
-      }
+    val typedObject = compiledRecord match {
+      case Valid(fields) =>
+        TypedObjectTypingResult(fields.map(f => (f.field.name, typedExprToTypingResult(Some(f.typedExpression)))).toMap)
+      case Invalid(_) => Unknown
     }
 
-    val typedFieldsValidations = compliedRecordFields.map { validatedField =>
-      validatedField.map { compiledField =>
-        RecordValidator.IndexedField(
-          compiledField.field.name,
-          compiledField.typedExpression,
-          compiledField.index
-        )
-      }
+    val fieldsTypingInfo: Map[String, ExpressionTypingInfo] = compiledRecord match {
+      case Valid(fields) => fields.flatMap(a => typingExprToTypingInfo(Some(a.typedExpression), a.field.name)).toMap
+      case Invalid(_)    => Map.empty
     }
-    val additionalValidationResult = RecordValidator.validateRecord(
-      typedFieldsValidations.collect { case Valid(typedField) => typedField }
-    )
 
-    val typedObject = recordValuesCompilationResult
-      .map { fieldsComp =>
-        TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
-      }
-      .valueOr(_ => Unknown)
-
-    val fieldsTypingInfo = recordValuesCompilationResult
-      .map { compilations =>
-        compilations.flatMap(_.expressionTypingInfo).toMap
-      }
-      .getOrElse(Map.empty)
-
-    val compiledFields = recordValuesCompilationResult.andThen(_.map(_.validated).sequence)
+    val compiledFields = compiledRecord.map(_.map(_.field))
 
     val compilationResult = NodeCompilationResult(
       expressionTypingInfo = fieldsTypingInfo,
@@ -176,7 +158,17 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       expressionType = Some(typedObject)
     )
 
+    val additionalValidationResult = RecordValidator.validate(compiledRecord, indexedFields)
+
     combineErrors(compilationResult, additionalValidationResult)
+  }
+
+  private def typedExprToTypingResult(expr: Option[TypedExpression]) = {
+    expr.map(_.returnType).getOrElse(Unknown)
+  }
+
+  private def typingExprToTypingInfo(expr: Option[TypedExpression], fieldName: String) = {
+    expr.map(te => (fieldName, te.typingInfo)).toMap
   }
 
   case class ExpressionCompilation[R](
@@ -218,18 +210,35 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
   }
 
-  private object RecordValidator {
+  object RecordValidator {
 
-    case class IndexedField(key: String, value: TypedExpression, index: Int)
+    case class IndexedFieldKey(key: String, index: Int)
 
-    def validateRecord(
-        fields: List[IndexedField]
+    def validate(
+        compiledRecord: Validated[NonEmptyList[PartSubGraphCompilationError], List[CompiledIndexedRecordField]],
+        indexedFields: List[IndexedFieldKey]
+    )(implicit nodeId: NodeId) = {
+      val emptyValuesResult: ValidatedNel[ProcessCompilationError, Unit] = compiledRecord match {
+        case Valid(a)   => validateRecordEmptyValues(a)
+        case Invalid(_) => valid(())
+      }
+      val uniqueKeysResult = validateUniqueKeys(indexedFields)
+      (emptyValuesResult, uniqueKeysResult).mapN((_, _) => ())
+    }
+
+    private def validateUniqueKeys(
+        fields: List[IndexedFieldKey]
     )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { field =>
-        (
-          ValidationAdapter.validateMaybeVariable(Some(field.value), recordValueFieldName(field.index)),
-          validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
-        ).mapN { (_, _) => () }
+        validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
+      }.combineAll
+    }
+
+    private def validateRecordEmptyValues(
+        fields: List[CompiledIndexedRecordField]
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+      fields.map { field =>
+        ValidationAdapter.validateMaybeVariable(Some(field.typedExpression), recordValueFieldName(field.index))
       }.combineAll
     }
 
@@ -302,7 +311,7 @@ object BaseNodeCompiler {
         case Validated.Invalid(validationErrors) =>
           compilationResult.compiledObject match {
             case Validated.Invalid(compilationErrors) =>
-              Validated.Invalid(compilationErrors ++ validationErrors.toList)
+              Validated.Invalid(compilationErrors |+| validationErrors)
             case _ =>
               Validated.Invalid(validationErrors)
           }

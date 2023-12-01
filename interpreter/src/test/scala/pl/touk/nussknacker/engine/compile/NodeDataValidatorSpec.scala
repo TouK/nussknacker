@@ -351,7 +351,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
-  test("should not allow overriding fields in variable builder") {
+  test("should not allow duplicated field names in variable builder") {
     inside(
       validate(
         VariableBuilder("mapVariable", "var1", Field("field", "null") :: Field("field", "null") :: Nil),
@@ -359,6 +359,37 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
+            CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-0-key",
+              "mapVariable"
+            ) :: CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-1-key",
+              "mapVariable"
+            ) :: Nil,
+            None,
+            _
+          ) =>
+    }
+  }
+
+  test("should not allow duplicated field names in variable builder when cannot compile") {
+    inside(
+      validate(
+        VariableBuilder("mapVariable", "var1", Field("field", "unresolvedReference") :: Field("field", "null") :: Nil),
+        ValidationContext.empty
+      )
+    ) {
+      case ValidationPerformed(
+            ExpressionParserCompilationError(
+              "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
+              "mapVariable",
+              Some("$fields-0-value"),
+              "unresolvedReference"
+            ) ::
             CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
