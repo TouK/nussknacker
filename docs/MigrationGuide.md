@@ -60,7 +60,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
   (it's not required, new version is binary-compatible)
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
-* [#5059](https://github.com/TouK/nussknacker/pull/5059)[#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
   If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
   Because of this change configuration of categories was also removed from Components configuration
 
