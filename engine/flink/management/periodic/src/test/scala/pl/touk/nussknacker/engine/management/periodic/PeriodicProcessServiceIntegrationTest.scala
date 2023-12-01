@@ -16,6 +16,7 @@ import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
+  ProcessActionId,
   ProcessingTypeDeploymentService,
   ProcessingTypeDeploymentServiceStub
 }
@@ -24,7 +25,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.model.{
@@ -32,7 +32,6 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
   PeriodicProcessDeploymentStatus,
   ScheduleData,
   ScheduleDeploymentData,
-  ScheduleId,
   SchedulesState
 }
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -167,14 +166,19 @@ class PeriodicProcessServiceIntegrationTest
     val otherProcessName           = ProcessName("other")
 
     service
-      .schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess, randomDeploymentId)
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
     service
       .schedule(
         cronEvery30Minutes,
         ProcessVersion.empty.copy(processName = every30MinutesProcessName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
     service
@@ -182,7 +186,7 @@ class PeriodicProcessServiceIntegrationTest
         cronEvery4Hours,
         ProcessVersion.empty.copy(processName = every4HoursProcessName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
     otherProcessingTypeService
@@ -190,7 +194,7 @@ class PeriodicProcessServiceIntegrationTest
         cronEveryHour,
         ProcessVersion.empty.copy(processName = otherProcessName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
 
@@ -259,7 +263,12 @@ class PeriodicProcessServiceIntegrationTest
 
     def service = f.periodicProcessService(currentTime)
     service
-      .schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess, randomDeploymentId)
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
 
     currentTime = timeToTriggerCheck
@@ -296,7 +305,7 @@ class PeriodicProcessServiceIntegrationTest
         ),
         ProcessVersion.empty.copy(processName = processName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
 
@@ -311,7 +320,7 @@ class PeriodicProcessServiceIntegrationTest
         ),
         ProcessVersion.empty.copy(processName = ProcessName("other")),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
 
@@ -358,7 +367,7 @@ class PeriodicProcessServiceIntegrationTest
         ),
         ProcessVersion.empty.copy(processName = processName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
 
@@ -409,7 +418,7 @@ class PeriodicProcessServiceIntegrationTest
         ),
         ProcessVersion.empty.copy(processName = processName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
       .futureValue
 
@@ -501,7 +510,7 @@ class PeriodicProcessServiceIntegrationTest
         cronEveryHour,
         ProcessVersion.empty.copy(processName = processName),
         sampleProcess,
-        randomDeploymentId
+        randomProcessActionId
       )
     }
 
@@ -527,7 +536,12 @@ class PeriodicProcessServiceIntegrationTest
     def service = f.periodicProcessService(currentTime)
 
     service
-      .schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess, randomDeploymentId)
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
     currentTime = timeToTriggerCheck
     val toDeploy = service.findToBeDeployed.futureValue.toList
@@ -544,7 +558,7 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 
-  private def randomDeploymentId = DeploymentId(UUID.randomUUID().toString)
+  private def randomProcessActionId = ProcessActionId(UUID.randomUUID())
 
   private def convertDateToCron(date: LocalDateTime): String = {
     CronBuilder
