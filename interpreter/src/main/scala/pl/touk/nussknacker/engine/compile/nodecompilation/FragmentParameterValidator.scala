@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -23,39 +24,40 @@ class FragmentParameterValidator(
       fragmentInputId: String,
       validationContext: ValidationContext // localVariables must include this and other FragmentParameters
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    val unsupportedFixedValuesTypeResponse = validateFixedValuesSupportedType(fragmentParameter, fragmentInputId)
+    val unsupportedFixedValuesValidationResult = validateFixedValuesSupportedType(fragmentParameter, fragmentInputId)
 
-    val fixedExpressionsResponses = validateFixedExpressionValues(
+    val fixedValuesListValidationResult = validateFixedValuesList(fragmentParameter, fragmentInputId)
+
+    val fixedExpressionsValidationResult = validateFixedExpressionValues(
       fragmentParameter.initialValue,
       fragmentParameter.valueEditor.map(_.fixedValuesList).getOrElse(List.empty),
       validationContext,
       fragmentParameter.name
     )
 
-    val fixedValuesListResponses = validateFixedValuesList(fragmentParameter, fragmentInputId)
-
-    toValidatedNel(unsupportedFixedValuesTypeResponse ++ fixedValuesListResponses ++ fixedExpressionsResponses)
-  }
-
-  private def toValidatedNel(errors: Iterable[ProcessCompilationError]) = errors.toList match {
-    case head :: tail => Invalid(NonEmptyList(head, tail))
-    case Nil          => Valid(())
+    List(
+      unsupportedFixedValuesValidationResult,
+      fixedValuesListValidationResult,
+      fixedExpressionsValidationResult
+    ).sequence.map(_ => ())
   }
 
   private def validateFixedValuesSupportedType(fragmentParameter: FragmentParameter, fragmentInputId: String) =
     fragmentParameter.valueEditor match {
       case Some(_) =>
-        if (!List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ))
-          List(
-            UnsupportedFixedValuesType(
-              fragmentParameter.name,
-              fragmentParameter.typ.refClazzName,
-              Set(fragmentInputId)
+        if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ)) {
+          Valid(())
+        } else
+          Invalid(
+            NonEmptyList.of(
+              UnsupportedFixedValuesType(
+                fragmentParameter.name,
+                fragmentParameter.typ.refClazzName,
+                Set(fragmentInputId)
+              )
             )
           )
-        else
-          List.empty
-      case None => List.empty
+      case None => Valid(())
     }
 
   private def validateFixedExpressionValues(
@@ -67,49 +69,62 @@ class FragmentParameterValidator(
     def fixedExpressionsCompilationErrors(
         fixedExpressions: Iterable[FixedExpressionValue],
         subFieldName: Option[String],
-    ) = fixedExpressions
-      .flatMap { fixedExpressionValue =>
-        expressionCompiler.compile(
-          Expression.spel(fixedExpressionValue.expression),
-          fieldName = Some(paramName),
-          validationCtx = validationContext,
-          expectedType = validationContext(paramName),
-        ) match {
-          case Valid(_)   => List.empty
-          case Invalid(e) => e.toList
-        }
-      }
-      .map {
-        case e: ExpressionParserCompilationError =>
-          ExpressionParserCompilationErrorInFragmentDefinition(
-            e.message,
-            nodeId.id,
-            paramName,
-            subFieldName,
-            e.originalExpr
+    ) = {
+      fixedExpressions
+        .map { fixedExpressionValue =>
+          expressionCompiler.compile(
+            Expression.spel(fixedExpressionValue.expression),
+            fieldName = Some(paramName),
+            validationCtx = validationContext,
+            expectedType = validationContext(paramName),
           )
-        case e => e
-      }
+        }
+        .toList
+        .sequence
+        .leftMap(_.map {
+          case e: ExpressionParserCompilationError =>
+            ExpressionParserCompilationErrorInFragmentDefinition(
+              e.message,
+              nodeId.id,
+              paramName,
+              subFieldName,
+              e.originalExpr
+            )
+          case e => e
+        })
+    }
 
-    fixedExpressionsCompilationErrors(
-      initialValue,
-      Some(InitialValueFieldName)
-    ) ++ fixedExpressionsCompilationErrors(
-      fixedValuesList,
-      Some(FixedValuesListFieldName)
-    )
+    List(
+      fixedExpressionsCompilationErrors(
+        initialValue,
+        Some(InitialValueFieldName)
+      ),
+      fixedExpressionsCompilationErrors(
+        fixedValuesList,
+        Some(FixedValuesListFieldName)
+      )
+    ).sequence.map(_ => ())
   }
 
-  private def validateFixedValuesList(fragmentParameter: FragmentParameter, fragmentInputId: String) =
+  private def validateFixedValuesList(
+      fragmentParameter: FragmentParameter,
+      fragmentInputId: String
+  ): ValidatedNel[ProcessCompilationError, Unit] =
     fragmentParameter.valueEditor match {
       case Some(valueEditor) if !valueEditor.allowOtherValue =>
-        (if (valueEditor.fixedValuesList.isEmpty)
-           List(RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)))
-         else List.empty) ++
-          (if (initialValueNotPresentInPossibleValues(fragmentParameter))
-             List(InitialValueNotPresentInPossibleValues(fragmentParameter.name, Set(fragmentInputId)))
-           else List.empty)
-      case _ => List.empty
+        List(
+          if (valueEditor.fixedValuesList.isEmpty)
+            Invalid(
+              NonEmptyList.of(RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)))
+            )
+          else Valid(()),
+          if (initialValueNotPresentInPossibleValues(fragmentParameter))
+            Invalid(
+              NonEmptyList.of(InitialValueNotPresentInPossibleValues(fragmentParameter.name, Set(fragmentInputId)))
+            )
+          else Valid(())
+        ).sequence.map(_ => ())
+      case _ => Valid(())
     }
 
   private def initialValueNotPresentInPossibleValues(
