@@ -3,14 +3,11 @@ package pl.touk.nussknacker.engine.api.displayedgraph
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.{Decoder, Encoder, HCursor}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode._
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import displayablenode._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 //it would be better to have two classes but it would either to derive from each other, which is not easy for final case classes
 //or we'd have to do composition which would break many things in client
