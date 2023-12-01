@@ -207,6 +207,9 @@ describe("Components list", () => {
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
             maxDiffThreshold: 0.02,
+            screenshotConfig: {
+                blackout: ['div:not(:first-child) > div[data-field="modificationDate"][role="cell"] span'],
+            },
         });
 
         cy.get("@options")
