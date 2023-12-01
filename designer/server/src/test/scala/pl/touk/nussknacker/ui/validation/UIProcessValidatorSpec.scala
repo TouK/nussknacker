@@ -446,7 +446,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
       )
 
     val displayableFragment =
-      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
 
     val validationResult = configuredValidator.validate(displayableFragment)
 
@@ -510,7 +510,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
       )
 
     val displayableFragment =
-      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, TestCat)
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
 
     val validationResult = configuredValidator.validate(displayableFragment)
 
