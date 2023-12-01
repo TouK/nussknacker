@@ -187,14 +187,12 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
   )(
       implicit nodeId: NodeId
   ): (CompiledExpression, NodeCompilationResult[expression.Expression]) = {
-    val temp = objectParametersExpressionCompiler
+    val expressionCompilation = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
-
-    val expressionCompilation = temp
       .map(expr => CompiledExpression(fieldName, Valid(expr)))
       .valueOr(err => CompiledExpression(fieldName, Invalid(err)))
 
-    val typingResult = typedExprToTypingResult(temp.toOption)
+    val typingResult = typedExprToTypingResult(expressionCompilation.typedExpression.toOption)
 
     val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
       expressionTypingInfo = typedExprToTypingInfo(expressionCompilation.typedExpression.toOption, fieldName),
