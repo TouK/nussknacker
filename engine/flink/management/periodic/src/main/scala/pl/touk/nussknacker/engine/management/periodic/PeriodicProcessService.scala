@@ -177,10 +177,10 @@ class PeriodicProcessService(
         processName: ProcessName,
         periodicProcessOpt: Option[PeriodicProcess]
     ): Future[Boolean] = {
-      logger.info(s"""updateProcessAction
+      logger.debug(s"""updateProcessAction
            | notFinishedProcesses= $notFinishedProcesses
            | processName = $processName
-           | periodicProcessOpt = $periodicProcessOpt
+           | processActionId = ${periodicProcessOpt.map(_.processActionId)}
            |""".stripMargin)
       periodicProcessOpt
         .filter(_ => notFinishedProcesses(processName))
