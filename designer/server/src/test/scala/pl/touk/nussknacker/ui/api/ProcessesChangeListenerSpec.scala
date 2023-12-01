@@ -36,25 +36,25 @@ class ProcessesChangeListenerSpec
   private val processName = ProcessName(SampleProcess.process.id)
 
   test("listen to category change") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
-    Post(s"/processes/category/${processName.value}/$TestCat2") ~> routeWithAdminPermissions ~> checkEventually {
+    Post(s"/processes/category/${processName.value}/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
-        case OnCategoryChanged(`processId`, TestCat, TestCat2) =>
+        case OnCategoryChanged(`processId`, Category1, Category2) =>
       }
     }
   }
 
   test("listen to process create") {
     Post(
-      s"/processes/${processName.value}/$TestCat?isFragment=false"
+      s"/processes/${processName.value}/$Category1?isFragment=false"
     ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
   }
 
   test("listen to process update") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
     updateProcess(processName, ProcessTestData.validProcess) {
       eventually {
@@ -64,7 +64,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to process archive / unarchive") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
     Post(s"/archive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnArchived(`processId`) => }
@@ -75,7 +75,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to process rename") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
     val newName   = ProcessName("new_name")
 
     Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> checkEventually {
@@ -97,7 +97,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment success") {
-    val processId = createValidProcess(processName, TestCat, false)
+    val processId = createValidProcess(processName, Category1, false)
     val comment   = Some("deployComment")
 
     deployProcess(
@@ -112,7 +112,7 @@ class ProcessesChangeListenerSpec
   }
 
   test("listen to deployment failure") {
-    val processId = createValidProcess(processName, TestCat, false)
+    val processId = createValidProcess(processName, Category1, false)
 
     deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName.value) ~> checkEventually {

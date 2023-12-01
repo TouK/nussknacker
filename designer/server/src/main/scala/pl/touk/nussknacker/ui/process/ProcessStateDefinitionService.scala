@@ -26,8 +26,10 @@ class ProcessStateDefinitionService(
     stateDefinitionsMapping
       .map { case (statusName, (stateDefinition, processingTypes)) =>
         val categoriesWhereStateAppears = processingTypes.flatMap { processingType =>
-          categoryService
-            .getProcessingTypeCategories(processingType)
+          List(
+            categoryService
+              .getProcessingTypeCategoryUnsafe(processingType)
+          )
             .intersect(userAccessibleCategories)
         }
         // TODO: Here we switch icon to non-animated version, in rather not sophisticated manner. We should be able to handle

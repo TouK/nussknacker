@@ -3,15 +3,26 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.CategoriesConfig
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService.CategoryToProcessingTypeMappingAmbiguousException
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
+import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService.{
+  CategoryToProcessingTypeMappingAmbiguousException,
+  ProcessingTypeToCategoryMappingAmbiguousException
+}
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataConfigurationReader
 
+import java.nio.file.Path
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Try}
 
 class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
 
-  private val oneToOneProcessingType = "oneToOneProcessingType"
-  private val oneToOneCategory       = "OneToOneCategory"
+  private val oneToOneProcessingType1 = "oneToOneProcessingType1"
+  private val oneToOneCategory1       = "OneToOneCategory1"
+  private val oneToOneProcessingType2 = "oneToOneProcessingType2"
+  private val oneToOneCategory2       = "OneToOneCategory2"
 
   private val oneToManyProcessingType = "oneToManyProcessingType"
   private val oneToManyCategory1      = "OneToManyCategory1"
@@ -28,14 +39,33 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
   test("legacy categories to processing types mapping") {
     val configWithLegacyCategoriesConfig =
       s"""categoriesConfig {
-         |  $oneToOneCategory: $oneToOneProcessingType
+         |  $oneToOneCategory1: $oneToOneProcessingType1
+         |  $oneToOneCategory2: $oneToOneProcessingType2
+         |}
+         |scenarioTypes {
+         |  $oneToOneProcessingType1 {
+         |    $processingTypeBasicConfig
+         |  }
+         |  $oneToOneProcessingType2 {
+         |    $processingTypeBasicConfig
+         |  }
+         |}
+         |""".stripMargin
+    val config          = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
+    val categoryService = TestFactory.createCategoryService(config)
+
+    categoryService.getAllCategories shouldEqual List(oneToOneCategory1, oneToOneCategory2)
+    categoryService.getTypeForCategoryUnsafe(oneToOneCategory1) shouldEqual oneToOneProcessingType1
+    categoryService.getTypeForCategoryUnsafe(oneToOneCategory2) shouldEqual oneToOneProcessingType2
+  }
+
+  test("legacy ambiguous processing type to category mapping") {
+    val configWithLegacyCategoriesConfig =
+      s"""categoriesConfig {
          |  $oneToManyCategory1: $oneToManyProcessingType
          |  $oneToManyCategory2: $oneToManyProcessingType
          |}
          |scenarioTypes {
-         |  $oneToOneProcessingType {
-         |    $processingTypeBasicConfig
-         |  }
          |  $oneToManyProcessingType {
          |    $processingTypeBasicConfig
          |  }
@@ -44,51 +74,45 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
          |  }
          |}
          |""".stripMargin
-    val config          = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
-    val categoryService = TestFactory.createCategoryService(config)
+    val config = ConfigFactory.parseString(configWithLegacyCategoriesConfig)
 
-    categoryService.getAllCategories shouldEqual List(oneToManyCategory1, oneToManyCategory2, oneToOneCategory)
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory) shouldEqual oneToOneProcessingType
-    verifyOneToMany(categoryService)
+    val expectedMap = Map(oneToManyProcessingType -> Set(oneToManyCategory1, oneToManyCategory2))
+    Try(TestFactory.createCategoryService(config)) should matchPattern {
+      case Failure(ProcessingTypeToCategoryMappingAmbiguousException(`expectedMap`)) =>
+    }
   }
 
   test("categories inside scenario types configuration format") {
     val configWithCategoriesConfigInsideScenrioTypes =
-      s"""categoriesConfig {
-         |  $oneToOneCategory: $oneToOneProcessingType
-         |  $oneToManyCategory1: $oneToManyProcessingType
-         |  $oneToManyCategory2: $oneToManyProcessingType
-         |}
-         |scenarioTypes {
-         |  $oneToOneProcessingType {
+      s"""scenarioTypes {
+         |  $oneToOneProcessingType1 {
          |    $processingTypeBasicConfig
-         |    categories: [$oneToOneCategory]
+         |    category: $oneToOneCategory1
          |  }
-         |  $oneToManyProcessingType {
+         |  $oneToOneProcessingType2 {
          |    $processingTypeBasicConfig
-         |    categories: [$oneToManyCategory1, $oneToManyCategory2]  
+         |    category: $oneToOneCategory2
          |  }
          |}""".stripMargin
     val config          = ConfigFactory.parseString(configWithCategoriesConfigInsideScenrioTypes)
     val categoryService = TestFactory.createCategoryService(config)
 
-    categoryService.getAllCategories shouldEqual List(oneToManyCategory1, oneToManyCategory2, oneToOneCategory)
-    categoryService.getTypeForCategoryUnsafe(oneToOneCategory) shouldEqual oneToOneProcessingType
-    verifyOneToMany(categoryService)
+    categoryService.getAllCategories shouldEqual List(oneToOneCategory1, oneToOneCategory2)
+    categoryService.getTypeForCategoryUnsafe(oneToOneCategory1) shouldEqual oneToOneProcessingType1
+    categoryService.getTypeForCategoryUnsafe(oneToOneCategory2) shouldEqual oneToOneProcessingType2
   }
 
   test("mixed categories inside scenario types and legacy categories to processing types mapping") {
-    val scenarioTypeLegacy  = "scenarioTypeLegacy"
-    val scenarioTypeNew     = "scenarioTypeNew"
-    val scenarioTypeMixed   = "scenarioTypeMixed"
-    val categoryLegacy      = "LegacyCategory"
-    val categoryNew         = "NewCategory"
-    val categoryLegacyMixed = "LegacyMixedCategory"
-    val categoryNewMixed    = "NewMixedCategory"
+    val scenarioTypeLegacy = "scenarioTypeLegacy"
+    val scenarioTypeNew    = "scenarioTypeNew"
+    val scenarioTypeMixed  = "scenarioTypeMixed"
+    val categoryLegacy     = "LegacyCategory"
+    val categoryNew        = "NewCategory"
+    val categoryMixed      = "MixedCategory"
     val configWithMixedCategoriesConfig =
       s"""categoriesConfig {
          |  $categoryLegacy: $scenarioTypeLegacy
-         |  $categoryLegacyMixed: $scenarioTypeMixed
+         |  $categoryMixed: $scenarioTypeMixed
          |}
          |scenarioTypes {
          |  $scenarioTypeLegacy {
@@ -96,11 +120,11 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
          |  }
          |  $scenarioTypeNew {
          |    $processingTypeBasicConfig
-         |    categories: [$categoryNew]
+         |    category: $categoryNew
          |  }
          |  $scenarioTypeMixed {
          |    $processingTypeBasicConfig
-         |    categories: [$categoryNewMixed]
+         |    category: $categoryMixed
          |  }
          |}""".stripMargin
     val config          = ConfigFactory.parseString(configWithMixedCategoriesConfig)
@@ -109,13 +133,11 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
     categoryService.getAllCategories.toSet shouldEqual Set(
       categoryLegacy,
       categoryNew,
-      categoryLegacyMixed,
-      categoryNewMixed
+      categoryMixed
     )
     categoryService.getTypeForCategoryUnsafe(categoryLegacy) shouldEqual scenarioTypeLegacy
     categoryService.getTypeForCategoryUnsafe(categoryNew) shouldEqual scenarioTypeNew
-    categoryService.getTypeForCategoryUnsafe(categoryLegacyMixed) shouldEqual scenarioTypeMixed
-    categoryService.getTypeForCategoryUnsafe(categoryNewMixed) shouldEqual scenarioTypeMixed
+    categoryService.getTypeForCategoryUnsafe(categoryMixed) shouldEqual scenarioTypeMixed
   }
 
   // TODO: this is temporary, after fully switch to paradigms we should replace restriction that category
@@ -129,15 +151,15 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
       s"""scenarioTypes {
          |  $scenarioTypeA {
          |    $processingTypeBasicConfig
-         |    categories: [$categoryUsedMoreThanOnce]
+         |    category: $categoryUsedMoreThanOnce
          |  }
          |  $scenarioTypeB {
          |    $processingTypeBasicConfig
-         |    categories: [$categoryUsedMoreThanOnce]
+         |    category: $categoryUsedMoreThanOnce
          |  }
-         |  $oneToOneProcessingType {
+         |  $oneToOneProcessingType1 {
          |    $processingTypeBasicConfig
-         |    categories: [$oneToOneCategory]
+         |    category: $oneToOneCategory1
          |  }
          |}""".stripMargin
 
@@ -149,13 +171,31 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def verifyOneToMany(categoryService: ProcessCategoryService) = {
-    categoryService.getProcessingTypeCategories(oneToManyProcessingType) shouldEqual List(
-      oneToManyCategory1,
-      oneToManyCategory2
+  test("Development purpose config") {
+    val targetTestClassesDir    = Path.of(getClass.getResource("/").toURI)
+    val designerServerModuleDir = targetTestClassesDir.getParent.getParent.getParent
+    val distModuleDir           = designerServerModuleDir.getParent.getParent.resolve("nussknacker-dist")
+    val devApplicationConfFile  = distModuleDir.resolve("src/universal/conf/dev-application.conf").toFile
+
+    val variables = ConfigFactory.parseMap(
+      Map(
+        "SQL_ENRICHER_URL"    -> "dummy:5432",
+        "SCHEMA_REGISTRY_URL" -> "http://dummy:8888",
+        "KAFKA_ADDRESS"       -> "dummy:9092",
+        "OPENAPI_SERVICE_URL" -> "http://dummy:5000",
+      ).asJava
     )
-    categoryService.getTypeForCategoryUnsafe(oneToManyCategory1) shouldEqual oneToManyProcessingType
-    categoryService.getTypeForCategoryUnsafe(oneToManyCategory2) shouldEqual oneToManyProcessingType
+    val designerConfig = DesignerConfigLoader.load(
+      ConfigFactory.parseFile(devApplicationConfFile).withFallback(variables),
+      getClass.getClassLoader
+    )
+
+    ConfigProcessCategoryService(
+      designerConfig.resolved,
+      ProcessingTypeDataConfigurationReader
+        .readProcessingTypeConfig(designerConfig)
+        .mapValuesNow(CategoriesConfig(_))
+    )
   }
 
 }

@@ -749,14 +749,23 @@ For example, in one Nussknacker installation you can have scenarios detecting fr
 
 ```
 scenarioTypes {
-  streaming {
+  streaming-marketing {
     deploymentConfig { 
       (...) 
     }
     modelConfig {
       (...)
     }
-    categories: ["Marketing", "Fraud Detection"]
+    category: "Marketing"
+  }
+  streaming-fraud-detection {
+    deploymentConfig { 
+      (...) 
+    }
+    modelConfig {
+      (...)
+    }
+    category: "Fraud Detection"
   }
 }
 ```
@@ -764,7 +773,7 @@ scenarioTypes {
 Scenario type configuration consists of parts:
 - `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
-- `categories` - list of categories handled by given scenario type
+- `category` - category handled by given scenario type
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components

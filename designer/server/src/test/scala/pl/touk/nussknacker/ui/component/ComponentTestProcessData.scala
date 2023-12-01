@@ -78,11 +78,6 @@ object ComponentTestProcessData {
     category = CategoryFraud
   )
 
-  val FraudTestProcess: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
-    displayable = createSimpleDisplayableProcess("fraudTestProcess", Fraud, SecondSharedSourceConf, SharedSinkConf),
-    category = CategoryFraudTests
-  )
-
   val DeployedFraudProcessWith2Filters: ScenarioWithDetailsEntity[DisplayableProcess] = displayableToProcess(
     displayable = {
       val process = ScenarioBuilder

@@ -163,7 +163,7 @@ object ProcessTestData {
 
   def toValidatedDisplayable(
       espProcess: CanonicalProcess,
-      category: String = TestCategories.TestCat
+      category: String = TestCategories.Category1
   ): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
     ValidatedDisplayableProcess.withValidationResult(displayable, processValidator.validate(displayable))
@@ -271,7 +271,7 @@ object ProcessTestData {
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
-    TestCategories.TestCat
+    TestCategories.Category1
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
@@ -295,7 +295,7 @@ object ProcessTestData {
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
       processingType = TestProcessingTypes.Streaming,
-      TestCategories.TestCat
+      TestCategories.Category1
     )
   }
 

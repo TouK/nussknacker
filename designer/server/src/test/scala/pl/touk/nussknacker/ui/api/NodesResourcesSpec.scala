@@ -44,7 +44,7 @@ class NodesResourcesSpec
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.Category1)
 
   private val validation = UIProcessValidator(
     typeToConfig.mapValues(_.modelData),
