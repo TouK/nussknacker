@@ -32,10 +32,10 @@ export const useParametersList = (
 
     // Don't return parameters until node state updated
     useEffect(() => {
-        if (leaveRedundant) {
-            return;
+        if (!leaveRedundant) {
+            setNodeState(parameters);
         }
-        setNodeState(parameters);
+
         setInitialized(true);
     }, [leaveRedundant, parameters, setNodeState]);
 
