@@ -34,7 +34,7 @@ describe("Table editor", () => {
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.realType("foo", { delay });
-        cy.focused().tab();
+        cy.realPress("Tab");
         cy.wait(delay).realType("bar{enter}", { delay });
         cy.wait(delay).realType("{enter}", { delay });
         cy.wait(delay).realType("xxx{enter}", { delay });

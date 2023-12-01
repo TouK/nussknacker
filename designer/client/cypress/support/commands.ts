@@ -25,7 +25,6 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
 import "cypress-real-events";
-import "cypress-plugin-tab";
 import "@4tw/cypress-drag-drop";
 import "@frsource/cypress-plugin-visual-regression-diff/dist/support";
 import "./tools";
