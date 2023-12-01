@@ -171,12 +171,12 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
-    def markActionExecutionFinished(runningProcesses: Set[ProcessName])(
+    def markActionExecutionFinished(rescheduledProcesses: Set[ProcessName])(
         processName: ProcessName,
         processActionIdOpt: Option[ProcessActionId]
     ): Future[Boolean] = {
       processActionIdOpt
-        .filter(_ => !runningProcesses(processName))
+        .filterNot(_ => rescheduledProcesses(processName))
         .map(deploymentService.markActionExecutionFinished)
         .getOrElse(successful(false))
     }
