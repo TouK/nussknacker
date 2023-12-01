@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, TypedExpression}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper._
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseNodeCompiler._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
@@ -157,11 +158,6 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     combineErrors(compilationResult, additionalValidationResult)
   }
 
-  private case class CompiledExpression(
-      fieldName: String,
-      typedExpression: ValidatedNel[ProcessCompilationError, TypedExpression],
-  )
-
   private def compileExpression(
       expr: Expression,
       ctx: ValidationContext,
@@ -194,13 +190,18 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
 object BaseNodeCompiler {
 
-  final case class CompiledIndexedRecordField(
-      field: compiledgraph.variable.Field,
-      index: Int,
-      typedExpression: TypedExpression
+  private case class CompiledExpression(
+      fieldName: String,
+      typedExpression: ValidatedNel[ProcessCompilationError, TypedExpression],
   )
 
-  final case class IndexedFieldKey(key: String, index: Int)
+  private def typedExprToTypingResult(expr: Option[TypedExpression]) = {
+    expr.map(_.returnType).getOrElse(Unknown)
+  }
+
+  private def typedExprToTypingInfo(expr: Option[TypedExpression], fieldName: String) = {
+    expr.map(te => (fieldName, te.typingInfo)).toMap
+  }
 
   private def combineErrors[T](
       compilationResult: NodeCompilationResult[T],
@@ -211,6 +212,18 @@ object BaseNodeCompiler {
     }
     compilationResult.copy(compiledObject = newCompiledObject)
   }
+
+}
+
+object BaseComponentValidationHelper {
+
+  final case class CompiledIndexedRecordField(
+      field: compiledgraph.variable.Field,
+      index: Int,
+      typedExpression: TypedExpression
+  )
+
+  final case class IndexedFieldKey(key: String, index: Int)
 
   def validateBoolean(
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
@@ -244,14 +257,6 @@ object BaseNodeCompiler {
       .getOrElse(valid(()))
   }
 
-  private def typedExprToTypingResult(expr: Option[TypedExpression]) = {
-    expr.map(_.returnType).getOrElse(Unknown)
-  }
-
-  private def typedExprToTypingInfo(expr: Option[TypedExpression], fieldName: String) = {
-    expr.map(te => (fieldName, te.typingInfo)).toMap
-  }
-
 }
 
 object RecordValidator {
@@ -272,7 +277,7 @@ object RecordValidator {
       fields: List[CompiledIndexedRecordField]
   )(implicit nodeId: NodeId) = {
     fields.map { field =>
-      BaseNodeCompiler.validateVariableValue(Valid(field.typedExpression), recordValueFieldName(field.index))
+      validateVariableValue(Valid(field.typedExpression), recordValueFieldName(field.index))
     }.combineAll
   }
 
