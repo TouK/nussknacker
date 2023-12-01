@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.Validated.{Valid, invalidNel}
+import cats.data.ValidatedNel
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -48,13 +48,11 @@ class FragmentParameterValidator(
         if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ)) {
           Valid(())
         } else
-          Invalid(
-            NonEmptyList.of(
-              UnsupportedFixedValuesType(
-                fragmentParameter.name,
-                fragmentParameter.typ.refClazzName,
-                Set(fragmentInputId)
-              )
+          invalidNel(
+            UnsupportedFixedValuesType(
+              fragmentParameter.name,
+              fragmentParameter.typ.refClazzName,
+              Set(fragmentInputId)
             )
           )
       case None => Valid(())
@@ -114,14 +112,10 @@ class FragmentParameterValidator(
       case Some(valueEditor) if !valueEditor.allowOtherValue =>
         List(
           if (valueEditor.fixedValuesList.isEmpty)
-            Invalid(
-              NonEmptyList.of(RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)))
-            )
+            invalidNel(RequireValueFromEmptyFixedList(fragmentParameter.name, Set(fragmentInputId)))
           else Valid(()),
           if (initialValueNotPresentInPossibleValues(fragmentParameter))
-            Invalid(
-              NonEmptyList.of(InitialValueNotPresentInPossibleValues(fragmentParameter.name, Set(fragmentInputId)))
-            )
+            invalidNel(InitialValueNotPresentInPossibleValues(fragmentParameter.name, Set(fragmentInputId)))
           else Valid(())
         ).sequence.map(_ => ())
       case _ => Valid(())
