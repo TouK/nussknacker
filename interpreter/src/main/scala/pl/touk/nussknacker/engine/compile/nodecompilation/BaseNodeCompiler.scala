@@ -37,7 +37,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         outputVar = Some(OutputVar.variable(variable.varName))
       )
 
-    val additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit] =
+    val additionalValidationResult =
       ValidationAdapter.validateMaybeVariable(expressionCompilation.typedExpression, DefaultExpressionId)
 
     combineErrors(nodeCompilation, additionalValidationResult)
