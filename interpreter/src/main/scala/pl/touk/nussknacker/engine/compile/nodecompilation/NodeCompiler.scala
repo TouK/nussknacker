@@ -563,10 +563,10 @@ class NodeCompiler(
       )
       .leftMap { _ =>
         NonEmptyList(
-          FailedToResolveFragmentParameterType(
+          FragmentParamClassLoadError(
             fragmentParameter.name,
             fragmentParameter.typ.refClazzName,
-            Set(nodeId.id)
+            nodeId.id
           ),
           Nil
         )

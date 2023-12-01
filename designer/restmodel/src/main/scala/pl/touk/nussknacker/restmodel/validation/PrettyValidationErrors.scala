@@ -37,7 +37,11 @@ object PrettyValidationErrors {
           fieldName = fieldName
         )
       case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
-        node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
+        node(
+          "Invalid parameter type.",
+          s"Failed to load $refClazzName",
+          fieldName = Some(qualifiedParamFieldName(paramName = fieldName, subFieldName = Some(TypFieldName)))
+        )
       case DuplicatedNodeIds(ids) =>
         node(
           "Two nodes cannot have same id",
@@ -167,12 +171,6 @@ object PrettyValidationErrors {
           s"Required parameter '$paramName' cannot be a member of an empty fixed list",
           "Please check fragment definition",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
-        )
-      case FailedToResolveFragmentParameterType(paramName, typ, _) =>
-        node(
-          s"Failed to resolve type '$typ' of parameter '$paramName'",
-          "Please check fragment definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
         node(

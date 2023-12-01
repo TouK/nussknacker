@@ -454,9 +454,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes("in") should matchPattern {
       case List(
             NodeValidationError(
-              "FailedToResolveFragmentParameterType",
-              "Failed to resolve type 'thisTypeDoesntExist' of parameter 'subParam1'",
-              _,
+              "FragmentParamClassLoadError",
+              "Invalid parameter type.",
+              "Failed to load thisTypeDoesntExist",
               Some("$param.subParam1.$typ"),
               NodeValidationErrorType.SaveAllowed
             )

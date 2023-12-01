@@ -22,7 +22,12 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationErrors,
+  ValidationResult
+}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
@@ -314,9 +319,17 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     response2.code shouldEqual StatusCode.Ok
-    response2.body.rightValue.errors.invalidNodes("input1").map(_.message) shouldBe List(
-      "Failed to resolve type 'i.do.not.exist' of parameter 'badParam'"
-    )
+    response2.body.rightValue.errors.invalidNodes("input1") should matchPattern {
+      case List(
+            NodeValidationError(
+              "FragmentParamClassLoadError",
+              "Invalid parameter type.",
+              "Failed to load i.do.not.exist",
+              Some("$param.badParam.$typ"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
 
     val response3 = httpClient.send(
       quickRequest
