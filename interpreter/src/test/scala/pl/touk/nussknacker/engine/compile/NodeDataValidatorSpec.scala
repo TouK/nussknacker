@@ -367,12 +367,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
-              "$fields-0-key",
+              "$fields-0-$key",
               "mapVariable"
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
-              "$fields-1-key",
+              "$fields-1-$key",
               "mapVariable"
             ) :: Nil,
             None,
@@ -392,18 +392,18 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             ExpressionParserCompilationError(
               "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
               "mapVariable",
-              Some("$fields-0-value"),
+              Some("$fields-0-$value"),
               "unresolvedReference"
             ) ::
             CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
-              "$fields-0-key",
+              "$fields-0-$key",
               "mapVariable"
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
-              "$fields-1-key",
+              "$fields-1-$key",
               "mapVariable"
             ) :: Nil,
             None,
@@ -424,12 +424,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               EmptyMandatoryParameter(
                 "This field is mandatory and can not be empty",
                 _,
-                "$fields-0-value",
+                "$fields-0-$value",
                 "mapVariable"
               ) :: EmptyMandatoryParameter(
                 "This field is mandatory and can not be empty",
                 _,
-                "$fields-1-value",
+                "$fields-1-$value",
                 "mapVariable"
               ) :: Nil,
               None,
