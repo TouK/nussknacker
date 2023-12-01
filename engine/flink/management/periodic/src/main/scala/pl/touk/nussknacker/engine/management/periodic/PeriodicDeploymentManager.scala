@@ -127,7 +127,9 @@ class PeriodicDeploymentManager private[periodic] (
           scheduleProperty,
           processVersion,
           canonicalProcess,
-          deploymentData.deploymentId,
+          deploymentData.deploymentId.toActionIdOpt.getOrElse(
+            throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
+          ),
           cancel(processVersion.processName, deploymentData.user)
         )
         .map(_ => None)

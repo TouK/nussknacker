@@ -10,14 +10,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
-  ProcessingTypeDeploymentService,
+  ProcessActionId,
   ProcessingTypeDeploymentServiceStub
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -183,13 +182,13 @@ class PeriodicProcessServiceTest
   }
 
   test("handleFinished - should reschedule for finished Flink job") {
-    val f              = new Fixture
-    val nuDeploymentId = randomDeploymentId
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
     val deploymentId =
       f.repository.addActiveProcess(
         processName,
         PeriodicProcessDeploymentStatus.Deployed,
-        processActionId = nuDeploymentId.toActionIdOpt
+        processActionId = Some(processActionId)
       )
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
@@ -214,19 +213,19 @@ class PeriodicProcessServiceTest
   }
 
   test("handleFinished - should deactivate process if there are no future schedules") {
-    val f              = new Fixture
-    val nuDeploymentId = randomDeploymentId
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
     val deploymentId = f.repository.addActiveProcess(
       processName,
       PeriodicProcessDeploymentStatus.Deployed,
       scheduleProperty = cronInPast,
-      processActionId = nuDeploymentId.toActionIdOpt
+      processActionId = Some(processActionId)
     )
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe List(nuDeploymentId.toActionIdOpt.get)
+    f.deploymentService.sentActionIds shouldBe List(processActionId)
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe false
@@ -279,7 +278,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     f.periodicProcessService
-      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess, randomDeploymentId)
+      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess, randomProcessActionId)
       .futureValue
 
     val processEntity = f.repository.processEntities.loneElement
@@ -357,7 +356,7 @@ class PeriodicProcessServiceTest
 
     def tryToSchedule(schedule: ScheduleProperty): Unit =
       f.periodicProcessService
-        .schedule(schedule, ProcessVersion.empty, canonicalProcess, randomDeploymentId)
+        .schedule(schedule, ProcessVersion.empty, canonicalProcess, randomProcessActionId)
         .futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
@@ -451,5 +450,5 @@ class PeriodicProcessServiceTest
     }
   }
 
-  private def randomDeploymentId = DeploymentId(UUID.randomUUID().toString)
+  private def randomProcessActionId = ProcessActionId(UUID.randomUUID())
 }

@@ -61,13 +61,13 @@ class PeriodicProcessService(
       schedule: ScheduleProperty,
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      deploymentId: DeploymentId,
+      processActionId: ProcessActionId,
       beforeSchedule: => Future[Unit] = Future.unit
   ): Future[Unit] = {
     prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
         beforeSchedule.flatMap(_ =>
-          scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates, deploymentId)
+          scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates, processActionId)
         )
       case Left(error) =>
         Future.failed(error)
@@ -99,7 +99,7 @@ class PeriodicProcessService(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentId: DeploymentId
+      processActionId: ProcessActionId
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
@@ -113,7 +113,7 @@ class PeriodicProcessService(
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, deploymentId)
+      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, processActionId)
     } yield ()
   }
 
@@ -121,10 +121,10 @@ class PeriodicProcessService(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
       deploymentWithJarData: DeploymentWithJarData,
-      deploymentId: DeploymentId
+      processActionId: ProcessActionId
   ): Future[Unit] = {
     scheduledProcessesRepository
-      .create(deploymentWithJarData, scheduleMap, deploymentId)
+      .create(deploymentWithJarData, scheduleMap, processActionId)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
