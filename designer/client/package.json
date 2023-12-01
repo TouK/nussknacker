@@ -41,7 +41,7 @@
         "@emotion/css": "11.11.2",
         "@emotion/react": "11.11.1",
         "@emotion/styled": "11.11.0",
-        "@glideapps/glide-data-grid": "5.3.0",
+        "@glideapps/glide-data-grid": "5.3.1",
         "@juggle/resize-observer": "3.3.1",
         "@loadable/component": "5.15.2",
         "@mui/icons-material": "5.6.2",
