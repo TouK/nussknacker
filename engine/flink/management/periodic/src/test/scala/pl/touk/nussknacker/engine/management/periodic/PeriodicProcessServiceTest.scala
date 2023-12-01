@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
-  ActionIdChecker,
   DataFreshnessPolicy,
   ProcessingTypeDeploymentService,
   ProcessingTypeDeploymentServiceStub
@@ -75,12 +74,9 @@ class PeriodicProcessServiceTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
-    implicit val deploymentService: ProcessingTypeDeploymentService with ActionIdChecker =
-      new ProcessingTypeDeploymentServiceStub(
-        List.empty
-      ) with ActionIdChecker {
-        override def sentActionIds = actionIds.toList
-      }
+    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
