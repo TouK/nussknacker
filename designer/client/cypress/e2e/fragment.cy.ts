@@ -116,6 +116,7 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
         cy.contains(/^apply/i).should("be.enabled");
+        cy.wait(500);
         cy.get("[data-testid=window]").matchImage({
             maxDiffThreshold: 0.01,
         });
