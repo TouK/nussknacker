@@ -19,8 +19,8 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
   * Also it handles "reverse" resolving process done before returning process to UI
   */
 class UIProcessResolver(
-                          validator: UIProcessValidator,
-                          substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
+    validator: UIProcessValidator,
+    substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
 ) {
 
   def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {

@@ -28,6 +28,7 @@
 * [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
 * [#5059](https://github.com/TouK/nussknacker/pull/5059) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
+* [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 
 1.12.4 (14 Nov 2023)
 ------------------------
