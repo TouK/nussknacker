@@ -28,13 +28,10 @@ class UsersResourcesSpec
         "username" -> fromString("user"),
         "isAdmin"  -> fromBoolean(false),
         "categories" -> arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
+          List("Category1").map(fromString): _*
         ),
         "categoryPermissions" -> obj(
-          "TESTCAT" -> arr(
-            List("Deploy", "Read", "Write").map(fromString): _*
-          ),
-          "TESTCAT2" -> arr(
+          "Category1" -> arr(
             List("Deploy", "Read", "Write").map(fromString): _*
           )
         ),
@@ -51,7 +48,7 @@ class UsersResourcesSpec
         "username" -> fromString("admin"),
         "isAdmin"  -> fromBoolean(true),
         "categories" -> arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
+          List("Category1", "Category2").map(fromString): _*
         ),
         "categoryPermissions" -> obj(),
         "globalPermissions"   -> arr()

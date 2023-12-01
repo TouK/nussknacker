@@ -34,7 +34,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |    modelConfig {
         |      classPath: []
         |    }
-        |    categories: ["Default"]
+        |    category: "Default"
         |  }
         |  bar {
         |    deploymentConfig {
@@ -43,7 +43,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |    modelConfig {
         |      classPath: []
         |    }
-        |    categories: ["Default"]
+        |    category: "Default"
         |  }
         |}
         |""".stripMargin)
@@ -69,7 +69,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None),
-        CategoriesConfig(List.empty)
+        CategoriesConfig(typeConfig.category)
       )
     }
 

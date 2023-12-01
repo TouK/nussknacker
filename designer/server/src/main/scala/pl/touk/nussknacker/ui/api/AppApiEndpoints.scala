@@ -189,7 +189,7 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
                 value = UserCategoriesWithProcessingTypesDto(
                   Map(
                     "Category1" -> "streaming",
-                    "Category2" -> "streaming"
+                    "Category2" -> "streaming2"
                   )
                 )
               )

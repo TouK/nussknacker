@@ -50,7 +50,7 @@ object ComponentDefinitionPreparer {
   ): List[ComponentGroup] = {
     val userCategoryService          = new UserCategoryService(processCategoryService)
     val userCategories               = userCategoryService.getUserCategories(user)
-    val processingTypeCategories     = processCategoryService.getProcessingTypeCategories(processingType)
+    val processingTypeCategories     = List(processCategoryService.getProcessingTypeCategoryUnsafe(processingType))
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
     def filterCategories(objectDefinition: ObjectDefinition): List[String] = userProcessingTypeCategories.intersect(

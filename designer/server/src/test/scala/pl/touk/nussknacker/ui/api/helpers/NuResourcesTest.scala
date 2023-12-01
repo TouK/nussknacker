@@ -33,6 +33,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -129,12 +130,14 @@ trait NuResourcesTest
     }
 
   protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
-    Streaming -> ModelData(processingTypeConfig)
+    Streaming  -> ModelData(processingTypeConfig),
+    Streaming2 -> ModelData(processingTypeConfig)
   )
 
   protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     mapProcessingTypeDataProvider(
-      Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
+      Streaming  -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig),
+      Streaming2 -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
     )
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
@@ -225,7 +228,7 @@ trait NuResourcesTest
   protected def saveProcessAndAssertSuccess(
       processId: String,
       process: CanonicalProcess,
-      category: String = TestCat
+      category: String = Category1
   ): Assertion =
     saveProcess(ProcessName(processId), process, category) {
       status shouldEqual StatusCodes.OK
@@ -250,7 +253,7 @@ trait NuResourcesTest
     }
   }
 
-  protected def createProcessRequest(processName: ProcessName, category: String = TestCat)(
+  protected def createProcessRequest(processName: ProcessName, category: String = Category1)(
       callback: StatusCode => Assertion
   ): Assertion =
     Post(s"/processes/${processName.value}/$category?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
@@ -258,7 +261,7 @@ trait NuResourcesTest
     }
 
   protected def savefragment(process: CanonicalProcess)(testCode: => Assertion): Assertion = {
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCat)
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
     savefragment(displayable)(testCode)
   }
 
@@ -447,21 +450,21 @@ trait NuResourcesTest
 
   protected def createEmptyProcess(
       processName: ProcessName,
-      category: String = TestCat,
+      category: String = Category1,
       isFragment: Boolean = false
   ): ProcessId =
     prepareEmptyProcess(processName, category, isFragment).futureValue
 
   protected def createValidProcess(
       processName: ProcessName,
-      category: String = TestCat,
+      category: String = Category1,
       isFragment: Boolean = false
   ): ProcessId =
     prepareValidProcess(processName, category, isFragment).futureValue
 
   protected def createArchivedProcess(processName: ProcessName, isFragment: Boolean = false): ProcessId = {
     (for {
-      id <- prepareValidProcess(processName, TestCat, isFragment)
+      id <- prepareValidProcess(processName, Category1, isFragment)
       _ <- dbioRunner.runInTransaction(
         DBIOAction.seq(
           writeProcessRepository.archive(processId = id, isArchived = true),
@@ -471,7 +474,7 @@ trait NuResourcesTest
     } yield id).futureValue
   }
 
-  protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = TestCat): ProcessId = {
+  protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = Category1): ProcessId = {
     (for {
       id <- Future(createSavedProcess(process, category, processingType = Streaming))
       _  <- prepareDeploy(id)

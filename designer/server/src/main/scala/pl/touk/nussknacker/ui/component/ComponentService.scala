@@ -151,7 +151,7 @@ class DefaultComponentService private (
   ): Future[List[ComponentListElement]] = {
     val userCategoryService          = new UserCategoryService(categoryService)
     val userCategories               = userCategoryService.getUserCategories(user)
-    val processingTypeCategories     = categoryService.getProcessingTypeCategories(processingType)
+    val processingTypeCategories     = List(categoryService.getProcessingTypeCategoryUnsafe(processingType))
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
     // When user has no access to the model then it makes no sense to extract data.

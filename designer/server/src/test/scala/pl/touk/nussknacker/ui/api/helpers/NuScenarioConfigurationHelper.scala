@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{
   newActionProcessRepository,
   newDBIOActionRunner,
@@ -45,14 +45,14 @@ trait NuScenarioConfigurationHelper extends ScalaFutures {
     saveAndGetId(process, category, process.metaData.isFragment, processingType).futureValue
   }
 
-  def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
+  def createDeployedProcess(processName: ProcessName, category: String = Category1): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, category, isFragment = false)
       _  <- prepareDeploy(id)
     } yield id).futureValue
   }
 
-  def createDeployedCanceledProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
+  def createDeployedCanceledProcess(processName: ProcessName, category: String = Category1): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, category, isFragment = false)
       _  <- prepareDeploy(id)

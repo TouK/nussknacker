@@ -8,7 +8,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{BlankId, ExpressionParserCompilationError, InvalidPropertyFixedValue, NodeIdValidationError, ScenarioIdError, ScenarioNameValidationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  BlankId,
+  ExpressionParserCompilationError,
+  InvalidPropertyFixedValue,
+  NodeIdValidationError,
+  ScenarioIdError,
+  ScenarioNameValidationError
+}
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -44,7 +51,7 @@ class NodesResourcesSpec
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.Category1)
 
   private val validation = UIProcessValidator(
     typeToConfig.mapValues(_.modelData),
