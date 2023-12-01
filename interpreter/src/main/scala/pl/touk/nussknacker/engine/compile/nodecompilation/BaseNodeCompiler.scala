@@ -146,7 +146,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     }
 
     val fieldsTypingInfo: Map[String, ExpressionTypingInfo] = compiledRecord match {
-      case Valid(fields) => fields.flatMap(a => typingExprToTypingInfo(Some(a.typedExpression), a.field.name)).toMap
+      case Valid(fields) => fields.flatMap(a => typedExprToTypingInfo(Some(a.typedExpression), a.field.name)).toMap
       case Invalid(_)    => Map.empty
     }
 
@@ -169,7 +169,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     expr.map(_.returnType).getOrElse(Unknown)
   }
 
-  private def typingExprToTypingInfo(expr: Option[TypedExpression], fieldName: String) = {
+  private def typedExprToTypingInfo(expr: Option[TypedExpression], fieldName: String) = {
     expr.map(te => (fieldName, te.typingInfo)).toMap
   }
 
@@ -197,7 +197,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     val typingResult = typedExprToTypingResult(temp.toOption)
 
     val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
-      expressionTypingInfo = typingExprToTypingInfo(expressionCompilation.typedExpression.toOption, fieldName),
+      expressionTypingInfo = typedExprToTypingInfo(expressionCompilation.typedExpression.toOption, fieldName),
       parameters = None,
       validationContext = outputVar.map(ctx.withVariable(_, typingResult)).getOrElse(Valid(ctx)),
       compiledObject = expressionCompilation.typedExpression.map(_.expression),
