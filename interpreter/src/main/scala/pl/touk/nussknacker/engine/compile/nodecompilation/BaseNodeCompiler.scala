@@ -171,17 +171,16 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     expr.map(te => (fieldName, te.typingInfo)).toMap
   }
 
-  case class ExpressionCompilation[R](
+  case class ExpressionCompilation(
       fieldName: String,
-      typedExpression: Option[TypedExpression],
-      validated: ValidatedNel[ProcessCompilationError, R]
+      typedExpression: ValidatedNel[ProcessCompilationError, TypedExpression],
   ) {
 
     val typingResult: TypingResult =
-      typedExpression.map(_.returnType).getOrElse(Unknown)
+      typedExprToTypingResult(typedExpression.toOption)
 
     val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      typedExpression.map(te => (fieldName, te.typingInfo)).toMap
+      typingExprToTypingInfo(typedExpression.toOption, fieldName)
   }
 
   private def compileExpression(
@@ -192,17 +191,17 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       outputVar: Option[OutputVar]
   )(
       implicit nodeId: NodeId
-  ): (ExpressionCompilation[expression.Expression], NodeCompilationResult[expression.Expression]) = {
-    val expressionCompilation: ExpressionCompilation[expression.Expression] = objectParametersExpressionCompiler
+  ): (ExpressionCompilation, NodeCompilationResult[expression.Expression]) = {
+    val expressionCompilation = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
-      .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
-      .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
+      .map(expr => ExpressionCompilation(fieldName, Valid(expr)))
+      .valueOr(err => ExpressionCompilation(fieldName, Invalid(err)))
 
     val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
-      expressionTypingInfo = expressionCompilation.expressionTypingInfo,
+      expressionTypingInfo = typingExprToTypingInfo(expressionCompilation.typedExpression.toOption, fieldName),
       parameters = None,
       validationContext = outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
-      compiledObject = expressionCompilation.validated,
+      compiledObject = expressionCompilation.typedExpression.map(_.expression),
       expressionType = Some(expressionCompilation.typingResult)
     )
 
@@ -215,9 +214,9 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     case class IndexedFieldKey(key: String, index: Int)
 
     def validate(
-        compiledRecord: Validated[NonEmptyList[PartSubGraphCompilationError], List[CompiledIndexedRecordField]],
+        compiledRecord: ValidatedNel[PartSubGraphCompilationError, List[CompiledIndexedRecordField]],
         indexedFields: List[IndexedFieldKey]
-    )(implicit nodeId: NodeId) = {
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       val emptyValuesResult: ValidatedNel[ProcessCompilationError, Unit] = compiledRecord match {
         case Valid(a)   => validateRecordEmptyValues(a)
         case Invalid(_) => valid(())
@@ -238,7 +237,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         fields: List[CompiledIndexedRecordField]
     )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { field =>
-        ValidationAdapter.validateMaybeVariable(Some(field.typedExpression), recordValueFieldName(field.index))
+        ValidationAdapter.validateMaybeVariable(Valid(field.typedExpression), recordValueFieldName(field.index))
       }.combineAll
     }
 
@@ -265,7 +264,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
   private object ValidationAdapter {
 
     def validateMaybeBoolean(
-        expression: Option[TypedExpression],
+        expression: ValidatedNel[ProcessCompilationError, TypedExpression],
         fieldName: String
     )(
         implicit nodeId: NodeId
@@ -274,7 +273,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     }
 
     def validateMaybeVariable(
-        expression: Option[TypedExpression],
+        expression: ValidatedNel[ProcessCompilationError, TypedExpression],
         fieldName: String
     )(
         implicit nodeId: NodeId
@@ -284,7 +283,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
     private def validateOrValid(
         validator: ParameterValidator,
-        expression: Option[TypedExpression],
+        expression: ValidatedNel[ProcessCompilationError, TypedExpression],
         fieldName: String
     )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
       expression
@@ -308,14 +307,14 @@ object BaseNodeCompiler {
   ): NodeCompilationResult[T] = {
     val newCompiledObject: ValidatedNel[ProcessCompilationError, T] =
       additionalValidationResult match {
-        case Validated.Invalid(validationErrors) =>
+        case Invalid(validationErrors) =>
           compilationResult.compiledObject match {
-            case Validated.Invalid(compilationErrors) =>
-              Validated.Invalid(compilationErrors |+| validationErrors)
+            case Invalid(compilationErrors) =>
+              Invalid(compilationErrors |+| validationErrors)
             case _ =>
-              Validated.Invalid(validationErrors)
+              Invalid(validationErrors)
           }
-        case Validated.Valid(_) =>
+        case Valid(_) =>
           compilationResult.compiledObject
       }
     compilationResult.copy(compiledObject = newCompiledObject)
