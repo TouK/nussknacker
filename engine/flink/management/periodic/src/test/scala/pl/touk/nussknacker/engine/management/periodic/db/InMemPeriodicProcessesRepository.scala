@@ -5,7 +5,6 @@ import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentId
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
@@ -114,7 +113,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   override def create(
       deploymentWithJarData: DeploymentWithJarData,
       scheduleProperty: ScheduleProperty,
-      deploymentId: DeploymentId
+      processActionId: ProcessActionId
   ): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
@@ -128,7 +127,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
       createdAt = LocalDateTime.now(),
-      processActionId = deploymentId.toActionIdOpt
+      processActionId = Some(processActionId)
     )
     processEntities += periodicProcess
     PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
