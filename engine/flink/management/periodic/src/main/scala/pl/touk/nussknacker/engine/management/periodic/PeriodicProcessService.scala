@@ -53,9 +53,7 @@ class PeriodicProcessService(
       result.run.flatMap(callbacks => Future.sequence(callbacks.map(_()))).map(_ => ())
   }
 
-  private implicit class EmptyCallback(result: RepositoryAction[Unit]) {
-    def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
-  }
+  private val emptyCallback: Callback = () => Future.successful(())
 
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
@@ -115,7 +113,7 @@ class PeriodicProcessService(
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, deploymentId: DeploymentId)
+      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, deploymentId)
     } yield ()
   }
 
@@ -184,18 +182,17 @@ class PeriodicProcessService(
     }
 
     def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
-      synchronizeDeploymentsStates(processName, schedules).flatMap { case (_, needRescheduleDeploymentIds) =>
-        schedules.groupedByPeriodicProcess
-          .map { processScheduleData =>
-            if (processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id))) {
-              reschedule(processScheduleData, needRescheduleDeploymentIds)
-            } else {
-              scheduledProcessesRepository.monad.pure(()).emptyCallback
+      synchronizeDeploymentsStates(processName, schedules)
+        .flatMap { case (_, needRescheduleDeploymentIds) =>
+          schedules.groupedByPeriodicProcess
+            .collect {
+              case processScheduleData
+                  if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
+                reschedule(processScheduleData)
             }
-          }
-          .sequence
-          .runWithCallbacks
-      }
+            .sequence
+            .runWithCallbacks
+        }
     }
 
     for {
@@ -280,39 +277,32 @@ class PeriodicProcessService(
 
   private def reschedule(
       processScheduleData: PeriodicProcessScheduleData,
-      needRescheduleDeploymentIds: Set[PeriodicProcessDeploymentId]
   ): RepositoryAction[Callback] = {
     import processScheduleData._
-    val scheduleActions = deployments.map { deployment =>
-      if (needRescheduleDeploymentIds.contains(deployment.id)) {
-        deployment.nextRunAt(clock) match {
-          case Right(Some(futureDate)) =>
-            logger.info(s"Rescheduling ${deployment.display} to $futureDate")
-            val action = scheduledProcessesRepository
-              .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
-              .flatMap { data =>
-                handleEvent(ScheduledEvent(data, firstSchedule = false))
-              }
-            Some(action)
-          case Right(None) =>
-            logger.info(s"No next run of ${deployment.display}")
-            None
-          case Left(error) =>
-            logger.error(s"Wrong periodic property, error: $error for ${deployment.display}")
-            None
-        }
-      } else {
-        Option(deployment)
-          .filter(_.state.status == PeriodicProcessDeploymentStatus.Scheduled)
-          .map(_ => scheduledProcessesRepository.monad.pure(()))
+    val scheduleActions: List[Option[Action[Unit]]] = deployments.map { deployment =>
+      deployment.nextRunAt(clock) match {
+        case Right(Some(futureDate)) =>
+          logger.info(s"Rescheduling ${deployment.display} to $futureDate")
+          val action = scheduledProcessesRepository
+            .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
+            .flatMap { data =>
+              handleEvent(ScheduledEvent(data, firstSchedule = false))
+            }
+          Some(action)
+        case Right(None) =>
+          logger.info(s"No next run of ${deployment.display}")
+          None
+        case Left(error) =>
+          logger.error(s"Wrong periodic property, error: $error for ${deployment.display}")
+          None
       }
     }
-    if (!scheduleActions.exists(_.isDefined)) {
+
+    if (scheduleActions.forall(_.isEmpty)) {
       logger.info(s"No scheduled deployments for periodic process: ${process.id.value}. Deactivating")
       deactivateAction(process)
-    } else {
-      scheduleActions.flatten.sequence.map(_ => ()).emptyCallback
-    }
+    } else
+      scheduleActions.flatten.sequence.as(emptyCallback)
   }
 
   private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): RepositoryAction[Unit] = {
