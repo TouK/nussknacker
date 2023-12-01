@@ -28,13 +28,18 @@ import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
+  FragmentClazzRef,
+  FragmentParameter,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -701,6 +706,239 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         case ValidationPerformed(errors, _, _) => errors shouldBe expectedErrors
         case ValidationNotPerformed            => fail("should not happen")
       }
+    }
+  }
+
+  test("should validate fragment parameter fixed values are of supported type") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[Int],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              UnsupportedFixedValuesType("param1", "int", nodes),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value outside possible values in FragmentInputDefinition") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InitialValueNotPresentInPossibleValues("param1", nodes)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'someString'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
+    }
+  }
+
+  test("should validate fixed value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'someString'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
+    }
+
+  }
+
+  test("should allow expressions that reference other parameters in FragmentInputDefinition") {
+    val nodeId: String        = "in"
+    val referencingExpression = "#otherStringParam"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "otherStringParam",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None
+            ),
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("shouldn't allow expressions that reference unknown variables in FragmentInputDefinition") {
+    val nodeId: String               = "in"
+    val invalidReferencingExpression = "#unknownVar"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Unresolved reference 'unknownVar'")
+    }
+  }
+
+  test("should fail on unresolvable type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val invalidType    = "thisTypeDoesntExist"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef(invalidType),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: FragmentParamClassLoadError) :: _, None, None) =>
+      error.fieldName shouldBe paramName
+      error.refClazzName shouldBe invalidType
+      error.nodeIds shouldBe Set(nodeId)
     }
   }
 

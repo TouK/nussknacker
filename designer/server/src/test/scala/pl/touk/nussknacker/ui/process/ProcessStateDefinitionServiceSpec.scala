@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
@@ -22,7 +23,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
   private val categoryService = ConfigProcessCategoryService(
     ConfigFactory.empty,
-    Map(Streaming -> CategoriesConfig(List(Category1, Category2)), Fraud -> CategoriesConfig(List(TestCat, TestCat2)))
+    Map(Streaming -> CategoriesConfig(Category1), Fraud -> CategoriesConfig(Category2))
   )
 
   test("should fetch state definitions when definitions with the same name are unique") {
@@ -46,7 +47,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCommon.displayableName,
         icon = expectedCommon.icon,
         tooltip = expectedCommon.tooltip,
-        categories = List(Category1, Category2, TestCat, TestCat2)
+        categories = List(Category1, Category2)
       )
     )
 
@@ -57,7 +58,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCustomStreaming.displayableName,
         icon = expectedCustomStreaming.icon,
         tooltip = expectedCustomStreaming.tooltip,
-        categories = List(Category1, Category2)
+        categories = List(Category1)
       )
     )
 
@@ -68,7 +69,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         displayableName = expectedCustomFraud.displayableName,
         icon = expectedCustomFraud.icon,
         tooltip = expectedCustomFraud.tooltip,
-        categories = List(TestCat, TestCat2)
+        categories = List(Category2)
       )
     )
   }
@@ -161,30 +162,33 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       streaming: ProcessStateDefinitionManager,
       fraud: ProcessStateDefinitionManager
   ): Map[ProcessingType, ProcessingTypeData] = {
-    createProcessingTypeDataMap(
-      Map(
-        Streaming -> new MockDeploymentManager() {
+    Map(
+      Streaming -> createProcessingTypeData(
+        new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
         },
-        Fraud -> new MockDeploymentManager() {
+        Category1
+      ),
+      Fraud -> createProcessingTypeData(
+        new MockDeploymentManager() {
           override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
         },
-      )
+        Category1
+      ),
     )
   }
 
-  private def createProcessingTypeDataMap(
-      processingTypeToDeploymentManager: Map[ProcessingType, DeploymentManager]
-  ): Map[ProcessingType, ProcessingTypeData] = {
-    processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
-      ProcessingTypeData.createProcessingTypeData(
-        MockManagerProvider,
-        deploymentManager,
-        LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        ConfigFactory.empty(),
-        CategoriesConfig(List.empty)
-      )
-    }
+  private def createProcessingTypeData(
+      deploymentManager: DeploymentManager,
+      category: Category
+  ): ProcessingTypeData = {
+    ProcessingTypeData.createProcessingTypeData(
+      MockManagerProvider,
+      deploymentManager,
+      LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
+      ConfigFactory.empty(),
+      CategoriesConfig(category)
+    )
   }
 
 }

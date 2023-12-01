@@ -13,7 +13,7 @@
   * Add missing tests for passing global variables
   * Fix bug with passing components on RequestResponseTestScenarioRunner
   * Fix bug building source test context on LiteTestScenarioRunner
-* [#4854](https://github.com/TouK/nussknacker/pull/4854) Categories configuration redesign
+* [#4854](https://github.com/TouK/nussknacker/pull/4854)[#5059](https://github.com/TouK/nussknacker/pull/5059) Categories configuration redesign
 * [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
 * [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation
@@ -27,6 +27,8 @@
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 * [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
+* [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Add stricter validation in base components:
   * Boolean expressions in Switch and Filter nodes now require not null values
   * Variable values in MapVariable, FragmentOutput and Variable are now mandatory

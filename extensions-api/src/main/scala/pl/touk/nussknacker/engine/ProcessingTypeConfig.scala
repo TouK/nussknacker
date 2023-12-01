@@ -13,7 +13,7 @@ case class ProcessingTypeConfig(
     modelConfig: ConfigWithUnresolvedVersion,
     // TODO: remove Option after fully switch to categories inside processing types configuration format -
     //       see ConfigProcessCategoryService for details
-    categories: Option[List[String]]
+    category: Option[String]
 )
 
 object ProcessingTypeConfig {
@@ -34,7 +34,7 @@ object ProcessingTypeConfig {
       config.resolved.as[List[URL]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
-      config.resolved.getAs[List[String]]("categories")
+      config.resolved.getAs[String]("category")
     )
   }
 

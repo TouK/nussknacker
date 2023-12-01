@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.graph
 
+import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.{Configuration, JsonKey}
-import io.circe.{Decoder, Encoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
@@ -66,6 +67,11 @@ object node {
     def id: String
 
     def additionalFields: Option[UserDefinedAdditionalNodeFields]
+  }
+
+  object NodeData {
+    implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
+    implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
   }
 
   // this represents node that originates from real node on UI, in contrast with Branch
@@ -298,19 +304,47 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec case class FragmentParameter(
+    @JsonCodec
+    sealed trait ValueInputWithFixedValues {
+      def allowOtherValue: Boolean
+      def fixedValuesList: List[FixedExpressionValue]
+    }
+
+    case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
+        extends ValueInputWithFixedValues
+
+    @ConfiguredJsonCodec
+    case class FragmentParameter(
         name: String,
         typ: FragmentClazzRef,
-        validationExpression: Option[ValidationExpression] = None,
+        required: Boolean = false,
+        initialValue: Option[FixedExpressionValue],
+        hintText: Option[String],
+        valueEditor: Option[ValueInputWithFixedValues]
     )
+
+    @JsonCodec case class FixedExpressionValue(expression: String, label: String)
+
+    object FragmentParameter {
+
+      def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
+        FragmentParameter(
+          name,
+          typ,
+          required = false,
+          initialValue = None,
+          hintText = None,
+          valueEditor = None
+        )
+      }
+
+    }
 
     object FragmentClazzRef {
 
       def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
-
-    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String] = None)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
@@ -321,7 +355,21 @@ object node {
 
   }
 
-  val IdFieldName = "$id"
+  val IdFieldName              = "$id"
+  val ParameterFieldNamePrefix = "$param"
+  val InitialValueFieldName    = "$initialValue"
+  val InputModeFieldName       = "$inputMode"
+  val TypFieldName             = "$typ"
+  val FixedValuesListFieldName = "$fixedValuesList"
+
+  def qualifiedParamFieldName(
+      paramName: String,
+      subFieldName: Option[String]
+  ): String = // for example: "$param.P1.$initialValue"
+    subFieldName match {
+      case Some(subField) => ParameterFieldNamePrefix + "." + paramName + "." + subField
+      case None           => ParameterFieldNamePrefix + "." + paramName
+    }
 
   def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"
   def recordValueFieldName(index: Int) = s"$$fields-$index-$$value"
@@ -340,18 +388,5 @@ object node {
     nodeData.cast[FragmentInputDefinition]
 
   def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
-
-}
-
-// we don't do this is in NodeData because: https://circe.github.io/circe/codecs/known-issues.html#knowndirectsubclasses-error
-// seems our hierarchy is too complex for scala :)
-object NodeDataCodec {
-
-  import io.circe.generic.extras.semiauto._
-
-  private implicit val config: Configuration = CirceUtil.configuration
-
-  implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
-  implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
 
 }

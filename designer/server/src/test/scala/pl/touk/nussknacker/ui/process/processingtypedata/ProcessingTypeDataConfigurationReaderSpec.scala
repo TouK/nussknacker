@@ -22,7 +22,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
         |      classPath: ["test.jar"]
         |    }
         |
-        |    categories: ["Default"]
+        |    category: "Default"
         |  }
         |}
         |""".stripMargin
