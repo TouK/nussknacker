@@ -112,11 +112,13 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     combineErrors(compilationResult, additionalValidations.combineAll)
   }
 
-  case class CompiledIndexedRecordField(
+  private case class CompiledIndexedRecordField(
       field: compiledgraph.variable.Field,
       index: Int,
       typedExpression: TypedExpression
   )
+
+  private case class IndexedFieldKey(key: String, index: Int)
 
   def compileFields(
       fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
@@ -131,7 +133,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
           .map(result =>
             CompiledIndexedRecordField(compiledgraph.variable.Field(field.name, result.expression), index, result)
           )
-        val indexedKeys = RecordValidator.IndexedFieldKey(field.name, index)
+        val indexedKeys = IndexedFieldKey(field.name, index)
         (compiledField, indexedKeys)
       }
       (compiledFields.map(_._1).sequence, compiledFields.map(_._2))
@@ -208,13 +210,11 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
   object RecordValidator {
 
-    case class IndexedFieldKey(key: String, index: Int)
-
     def validate(
         compiledRecord: ValidatedNel[PartSubGraphCompilationError, List[CompiledIndexedRecordField]],
         indexedFields: List[IndexedFieldKey]
     )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-      val emptyValuesResult: ValidatedNel[ProcessCompilationError, Unit] = compiledRecord match {
+      val emptyValuesResult = compiledRecord match {
         case Valid(a)   => validateRecordEmptyValues(a)
         case Invalid(_) => valid(())
       }
@@ -224,7 +224,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
     private def validateRecordEmptyValues(
         fields: List[CompiledIndexedRecordField]
-    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    )(implicit nodeId: NodeId) = {
       fields.map { field =>
         ValidationAdapter.validateMaybeVariable(Valid(field.typedExpression), recordValueFieldName(field.index))
       }.combineAll
@@ -232,7 +232,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
 
     private def validateUniqueKeys(
         fields: List[IndexedFieldKey]
-    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    )(implicit nodeId: NodeId) = {
       fields.map { field =>
         validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
       }.combineAll
@@ -282,7 +282,7 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
         validator: ParameterValidator,
         expression: ValidatedNel[ProcessCompilationError, TypedExpression],
         fieldName: String
-    )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    )(implicit nodeId: NodeId) = {
       expression
         .map { expr =>
           Validations
@@ -302,7 +302,7 @@ object BaseNodeCompiler {
       compilationResult: NodeCompilationResult[T],
       additionalValidationResult: ValidatedNel[ProcessCompilationError, Unit]
   ): NodeCompilationResult[T] = {
-    val newCompiledObject: ValidatedNel[ProcessCompilationError, T] =
+    val newCompiledObject =
       additionalValidationResult match {
         case Invalid(validationErrors) =>
           compilationResult.compiledObject match {
