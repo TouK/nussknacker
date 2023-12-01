@@ -90,7 +90,7 @@ trait PeriodicProcessesRepository {
   def create(
       deploymentWithJarData: DeploymentWithJarData,
       scheduleProperty: ScheduleProperty,
-      deploymentId: DeploymentId
+      processActionId: ProcessActionId
   ): Action[PeriodicProcess]
 
   def getLatestDeploymentsForActiveSchedules(
@@ -161,7 +161,7 @@ class SlickPeriodicProcessesRepository(
   override def create(
       deploymentWithJarData: DeploymentWithJarData,
       scheduleProperty: ScheduleProperty,
-      deploymentId: DeploymentId
+      processActionId: ProcessActionId
   ): Action[PeriodicProcess] = {
     val processEntity = PeriodicProcessEntity(
       id = PeriodicProcessId(-1),
@@ -174,7 +174,7 @@ class SlickPeriodicProcessesRepository(
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
       createdAt = now(),
-      deploymentId.toActionIdOpt
+      Some(processActionId)
     )
     ((PeriodicProcesses returning PeriodicProcesses into ((_, id) => id)) += processEntity)
       .map(PeriodicProcessesRepository.createPeriodicProcess)
