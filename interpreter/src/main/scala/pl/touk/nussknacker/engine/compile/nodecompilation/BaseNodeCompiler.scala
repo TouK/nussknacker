@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxSemigroup, catsSyntaxTuple2Semigroupal, toFoldableOps, toTraverseOps}
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -171,17 +171,10 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
     expr.map(te => (fieldName, te.typingInfo)).toMap
   }
 
-  case class ExpressionCompilation(
+  private case class CompiledExpression(
       fieldName: String,
       typedExpression: ValidatedNel[ProcessCompilationError, TypedExpression],
-  ) {
-
-    val typingResult: TypingResult =
-      typedExprToTypingResult(typedExpression.toOption)
-
-    val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      typingExprToTypingInfo(typedExpression.toOption, fieldName)
-  }
+  )
 
   private def compileExpression(
       expr: Expression,
@@ -191,18 +184,22 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       outputVar: Option[OutputVar]
   )(
       implicit nodeId: NodeId
-  ): (ExpressionCompilation, NodeCompilationResult[expression.Expression]) = {
-    val expressionCompilation = objectParametersExpressionCompiler
+  ): (CompiledExpression, NodeCompilationResult[expression.Expression]) = {
+    val temp = objectParametersExpressionCompiler
       .compile(expr, Some(fieldName), ctx, expectedType)
-      .map(expr => ExpressionCompilation(fieldName, Valid(expr)))
-      .valueOr(err => ExpressionCompilation(fieldName, Invalid(err)))
+
+    val expressionCompilation = temp
+      .map(expr => CompiledExpression(fieldName, Valid(expr)))
+      .valueOr(err => CompiledExpression(fieldName, Invalid(err)))
+
+    val typingResult = typedExprToTypingResult(temp.toOption)
 
     val nodeCompilation: NodeCompilationResult[expression.Expression] = NodeCompilationResult(
       expressionTypingInfo = typingExprToTypingInfo(expressionCompilation.typedExpression.toOption, fieldName),
       parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
+      validationContext = outputVar.map(ctx.withVariable(_, typingResult)).getOrElse(Valid(ctx)),
       compiledObject = expressionCompilation.typedExpression.map(_.expression),
-      expressionType = Some(expressionCompilation.typingResult)
+      expressionType = Some(typingResult)
     )
 
     (expressionCompilation, nodeCompilation)
@@ -225,19 +222,19 @@ class BaseNodeCompiler(objectParametersExpressionCompiler: ExpressionCompiler) {
       (emptyValuesResult, uniqueKeysResult).mapN((_, _) => ())
     }
 
-    private def validateUniqueKeys(
-        fields: List[IndexedFieldKey]
-    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-      fields.map { field =>
-        validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
-      }.combineAll
-    }
-
     private def validateRecordEmptyValues(
         fields: List[CompiledIndexedRecordField]
     )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { field =>
         ValidationAdapter.validateMaybeVariable(Valid(field.typedExpression), recordValueFieldName(field.index))
+      }.combineAll
+    }
+
+    private def validateUniqueKeys(
+        fields: List[IndexedFieldKey]
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+      fields.map { field =>
+        validateUniqueRecordKey(fields.map(_.key), field.key, recordKeyFieldName(field.index))
       }.combineAll
     }
 
