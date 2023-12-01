@@ -31,14 +31,22 @@
 * [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
 
+1.12.5 (1 Dec 2023)
+------------------------
+* [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
+
 1.12.4 (14 Nov 2023)
 ------------------------
 * [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
 
 1.12.3 (26 Oct 2023)
 -------------------------
+[this version was skipped]
+
 1.12.2 (25 Oct 2023)
 -------------------------
+[this version was skipped]
+
 1.12.1 (25 Oct 2023)
 -------------------------
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
