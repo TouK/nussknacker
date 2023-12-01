@@ -14,6 +14,7 @@ describe("Table editor", () => {
     });
 
     it("should display rich table editor", () => {
+        cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table");
 
         cy.getNode("decisionTableCustomNode").dblclick();
