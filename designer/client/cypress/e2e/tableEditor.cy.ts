@@ -34,7 +34,7 @@ describe("Table editor", () => {
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.realType("foo").realPress("Tab");
-        cy.realType("bar").realPress("Enter");
+        cy.realType("bar").realPress("Enter").wait(delay);
         cy.realPress("Enter").realType("xxx");
 
         cy.get("[title='Switch to expression mode']").should("be.enabled").click();
