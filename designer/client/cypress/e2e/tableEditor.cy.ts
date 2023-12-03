@@ -33,8 +33,10 @@ describe("Table editor", () => {
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.realType("foo").realPress("Tab");
-        cy.realType("bar").realPress("Enter").wait(1000);
-        cy.realPress("Enter").realType("xxx").wait(1000);
+        cy.realType("bar").realPress("Enter");
+        cy.realPress("Enter");
+        cy.get("#portal textarea").should("be.visible");
+        cy.realType("xxx");
 
         cy.get("[title='Switch to expression mode']").should("be.enabled").click();
         cy.get("@table").should("not.exist");
