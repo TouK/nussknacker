@@ -23,19 +23,18 @@ describe("Table editor", () => {
         cy.get("[data-testid='table-container']").should("be.visible").as("table");
         snapshot();
 
-        const delay = 100;
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
         cy.get("@table").click(500, 15);
-        cy.realType("some name{enter}", { delay });
+        cy.realType("some name{enter}");
 
         cy.get("@table").click(100, 125);
-        cy.realType("hello world{enter}", { delay });
+        cy.realType("hello world{enter}");
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.realType("foo").realPress("Tab");
-        cy.realType("bar").realPress("Enter").wait(delay);
-        cy.realPress("Enter").realType("xxx");
+        cy.realType("bar").realPress("Enter").wait(1000);
+        cy.realPress("Enter").realType("xxx").wait(1000);
 
         cy.get("[title='Switch to expression mode']").should("be.enabled").click();
         cy.get("@table").should("not.exist");
