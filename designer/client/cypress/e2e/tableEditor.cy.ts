@@ -29,7 +29,8 @@ describe("Table editor", () => {
         cy.realType("some name{enter}");
 
         cy.get("@table").click(100, 125);
-        cy.realType("hello world{enter}");
+        cy.realType("hello world");
+        cy.realPress("Enter");
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
         cy.realType("foo").realPress("Tab");
