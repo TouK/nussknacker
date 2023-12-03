@@ -26,14 +26,17 @@ describe("Table editor", () => {
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
         cy.get("@table").click(500, 15);
+        cy.get("#portal textarea").should("be.visible");
         cy.realType("some name", { delay: 50 });
         cy.realPress("Enter", { pressDelay: 50 });
 
         cy.get("@table").click(100, 125);
+        cy.get("#portal textarea").should("be.visible");
         cy.realType("hello world", { delay: 50 });
         cy.realPress("Enter", { pressDelay: 50 });
         cy.get("@table").click(550, 25).click(550, 25);
         cy.get("@table").click(350, 125).click(350, 125);
+        cy.get("#portal textarea").should("be.visible");
         cy.realType("foo", { delay: 50 }).realPress("Tab", { pressDelay: 50 });
         cy.realType("bar", { delay: 50 }).realPress("Enter", { pressDelay: 50 });
         cy.realPress("Enter", { pressDelay: 50 });
