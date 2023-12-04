@@ -1,9 +1,29 @@
 import { SpelExpressionEvaluator } from "spel2js";
 import { DataColumn, DataRow } from "./tableState";
+import { ExpressionLang } from "../types";
+
+export const parsers = {
+    [ExpressionLang.SpEL]: parseSpel,
+    [ExpressionLang.JSON]: parseJson,
+} as const;
+
+export const stringifiers = {
+    [ExpressionLang.SpEL]: toSpel,
+    [ExpressionLang.JSON]: toJson,
+} as const;
 
 export function parseSpel<T>(expression: string, emptyValue?: T): T {
     try {
         return SpelExpressionEvaluator.eval(expression);
+    } catch (error) {
+        console.warn(error);
+        return emptyValue;
+    }
+}
+
+export function parseJson<T>(expression: string, emptyValue?: T): T {
+    try {
+        return JSON.parse(expression);
     } catch (error) {
         console.warn(error);
         return emptyValue;
@@ -38,6 +58,10 @@ function stringifyList(rows: string[][]) {
 
 export function toSpel({ columns, rows }: { columns: DataColumn[]; rows: DataRow[] }): string {
     return `{\n columns:{\n${stringifyList(columns)}\n },\n rows:{\n${stringifyList(rows)}\n }\n}`;
+}
+
+export function toJson(data: { columns: DataColumn[]; rows: DataRow[] }): string {
+    return JSON.stringify(data, null, 2);
 }
 
 export function longestRow<T>(matrix: readonly (readonly T[])[]) {
