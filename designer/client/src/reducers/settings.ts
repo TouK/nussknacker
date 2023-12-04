@@ -130,13 +130,13 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                                         },
                                         validators: [],
                                         defaultValue: {
-                                            language: "spel",
+                                            language: "json",
                                             expression: `
 {
-    columns: {{'key'}, {'value'}},
-    rows: {
-        {'', ''}
-    }
+    "columns": [["key"], ["value"]],
+    "rows": [
+        ["", ""]
+    ]
 }
 `,
                                         },
