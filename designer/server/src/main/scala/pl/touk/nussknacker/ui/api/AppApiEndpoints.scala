@@ -7,9 +7,8 @@ import enumeratum._
 import io.circe.syntax.EncoderOps
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
-import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import pl.touk.nussknacker.restmodel.{AuthCredentials, BaseEndpointDefinitions}
 import BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._

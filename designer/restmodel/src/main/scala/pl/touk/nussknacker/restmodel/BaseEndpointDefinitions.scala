@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.restmodel
 
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
-import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._

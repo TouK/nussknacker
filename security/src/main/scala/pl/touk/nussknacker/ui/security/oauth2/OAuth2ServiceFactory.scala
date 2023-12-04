@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.restmodel.AuthenticatedUser
 import sttp.client3.SttpBackend
 
 import java.time.Instant

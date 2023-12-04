@@ -4,8 +4,7 @@ import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
-import pl.touk.nussknacker.ui.security.api.AuthCredentials
+import pl.touk.nussknacker.restmodel.{AuthCredentials, BaseEndpointDefinitions}
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI

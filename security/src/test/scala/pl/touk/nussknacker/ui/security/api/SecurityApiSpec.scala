@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.directives.RouteDirectives.reject
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.restmodel.AuthenticatedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

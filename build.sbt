@@ -1558,7 +1558,7 @@ lazy val security = (project in file("security"))
       )
     )
   )
-  .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
+  .dependsOn(utilsInternal, httpUtils, testUtils % "it,test", restmodel)
 
 lazy val flinkComponentsApi = (project in flink("components-api"))
   .settings(commonSettings)
@@ -1725,7 +1725,7 @@ lazy val restmodel = (project in file("designer/restmodel"))
       )
     }
   )
-  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test", security)
+  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)

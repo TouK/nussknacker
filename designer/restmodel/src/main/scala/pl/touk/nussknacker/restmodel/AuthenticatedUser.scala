@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.security.api
+package pl.touk.nussknacker.restmodel
 
 final case class AuthenticatedUser(id: String, username: String, roles: Set[String])
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.restmodel.SecurityError
+import pl.touk.nussknacker.restmodel.{AuthCredentials, SecurityError}
 import SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._

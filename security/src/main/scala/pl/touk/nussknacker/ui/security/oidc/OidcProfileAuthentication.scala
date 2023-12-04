@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oidc
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.restmodel.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2._
 
 import java.time.{Instant, LocalDate}

@@ -4,13 +4,8 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissing
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
-import pl.touk.nussknacker.ui.security.api.{
-  AnonymousAccess,
-  AuthCredentials,
-  AuthenticatedUser,
-  AuthenticationResources,
-  FrontendStrategySettings
-}
+import pl.touk.nussknacker.restmodel.{AuthCredentials, AuthenticatedUser}
+import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticationResources, FrontendStrategySettings}
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 
