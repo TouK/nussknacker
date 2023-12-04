@@ -7,7 +7,7 @@ import cats.instances.list._
 import cats.instances.option._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -58,9 +58,10 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
           toCompilationResult(Valid(compiledgraph.node.SplitNode(bareNode.id, nx)), Map.empty)
         )
 
-      case splittednode.FilterNode(f @ Filter(id, expression, _, _), nextTrue, nextFalse) =>
+      case splittednode.FilterNode(f @ Filter(id, _, _, _), nextTrue, nextFalse) =>
         val NodeCompilationResult(typingInfo, _, _, compiledExpression, _) =
-          nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean], outputVar = None)
+          nodeCompiler.compileFilter(f, ctx)
+
         CompilationResult.map3(
           f0 = toCompilationResult(compiledExpression, typingInfo),
           f1 = nextTrue.map(next => compile(next, ctx)).sequence,
@@ -179,14 +180,9 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
       CompilationResult(Map(data.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
 
     data match {
-      case Variable(id, varName, expression, _) =>
+      case variable @ Variable(id, varName, _, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, compiledExpression, t) =
-          nodeCompiler.compileExpression(
-            expression,
-            ctx,
-            expectedType = Unknown,
-            outputVar = Some(OutputVar.variable(varName))
-          )
+          nodeCompiler.compileVariable(variable, ctx)
         CompilationResult.map3(
           f0 = CompilationResult(newCtx),
           f1 = toCompilationResult(compiledExpression, typingInfo, parameters),

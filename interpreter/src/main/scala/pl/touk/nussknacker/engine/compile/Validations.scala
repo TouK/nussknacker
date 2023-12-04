@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.context._
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterValidator}
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
@@ -62,14 +62,20 @@ object Validations {
   def validate[T](paramDefinition: Parameter, parameter: (compiledgraph.evaluatedparam.TypedParameter, T))(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, (compiledgraph.evaluatedparam.TypedParameter, T)] = {
-    paramDefinition.validators
+    validate(paramDefinition.validators, parameter._1).map((_, parameter._2))
+  }
+
+  def validate(validators: List[ParameterValidator], parameter: compiledgraph.evaluatedparam.TypedParameter)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, compiledgraph.evaluatedparam.TypedParameter] = {
+    validators
       .flatMap { validator =>
-        val paramWithValueAndExpressionList = parameter._1.typedValue match {
-          case te: TypedExpression => List((parameter._1.name, te.typingInfo.typingResult.valueOpt, te.expression))
+        val paramWithValueAndExpressionList = parameter.typedValue match {
+          case te: TypedExpression => List((parameter.name, te.typingInfo.typingResult.valueOpt, te.expression))
           case tem: TypedExpressionMap =>
             tem.valueByKey.toList.map { case (branchName, expression) =>
               (
-                ParameterNaming.getNameForBranchParameter(parameter._1.name, branchName),
+                ParameterNaming.getNameForBranchParameter(parameter.name, branchName),
                 expression.returnType.valueOpt,
                 expression.expression
               )
@@ -78,7 +84,6 @@ object Validations {
         paramWithValueAndExpressionList.map { case (name, value, expression) =>
           validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
         }
-
       }
       .sequence
       .map(_ => parameter)

@@ -570,7 +570,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregateBy: String,
       emitWhen: TumblingWindowTrigger,
       additionalParams: Map[String, String] = Map.empty,
-      afterAggregateExpression: String = ""
+      afterAggregateExpression: String = "null"
   ) = {
     process(
       "aggregate-tumbling",
@@ -586,7 +586,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregator: String,
       aggregateBy: String,
       emitWhenEventLeft: Boolean,
-      afterAggregateExpression: String = ""
+      afterAggregateExpression: String = "null"
   ) = {
     process(
       "aggregate-sliding",
@@ -603,7 +603,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       aggregateBy: String,
       emitWhen: SessionWindowTrigger,
       endSessionCondition: String,
-      afterAggregateExpression: String = ""
+      afterAggregateExpression: String = "null"
   ) = {
     process(
       "aggregate-session",
@@ -746,7 +746,7 @@ case class AggregateData(
     timeoutParamName: String,
     additionalParams: Map[String, String],
     idSuffix: String = "",
-    afterAggregateExpression: String = ""
+    afterAggregateExpression: String = "null"
 )
 
 trait TestRecord {

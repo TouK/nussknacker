@@ -63,6 +63,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
   If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
   Because of this change configuration of categories was also removed from Components configuration
+* [#4953](https://github.com/TouK/nussknacker/pull/4953) Stricter validation in base components:
+  * Boolean expressions in `Switch` and `Filter` nodes are required not null values
+  * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
+  * Field names in `MapVariable`, `FragmentOutput` are required to be unique
 
 ## In version 1.12.x
 
