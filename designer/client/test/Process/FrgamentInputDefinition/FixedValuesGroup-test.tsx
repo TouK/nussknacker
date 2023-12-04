@@ -28,7 +28,7 @@ describe(FixedValuesGroup.name, () => {
                 <FixedValuesGroup
                     onChange={mockOnChange}
                     path={"test"}
-                    fixedValuesType={FixedValuesType.ValueInputWithFixedValuesProvided}
+                    fixedValuesType={FixedValuesType.ValueInputWithFixedValuesPreset}
                     readOnly={false}
                 />
             </NuThemeProvider>,
@@ -36,6 +36,7 @@ describe(FixedValuesGroup.name, () => {
 
         fireEvent.click(screen.getByRole("radio", { name: "fragment.settings.userDefinedList" }));
 
-        expect(mockOnChange).toHaveBeenCalledWith("test.initialValue", "");
+        expect(mockOnChange).toHaveBeenNthCalledWith(1, "test.initialValue", null);
+        expect(mockOnChange).toHaveBeenNthCalledWith(2, "test.valueEditor.type", "ValueInputWithFixedValuesProvided");
     });
 });

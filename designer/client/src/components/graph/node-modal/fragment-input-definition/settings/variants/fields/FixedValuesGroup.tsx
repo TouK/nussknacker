@@ -21,8 +21,8 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: 
             <RadioGroup
                 value={fixedValuesType}
                 onChange={(event) => {
-                    onChange(`${path}.initialValue`, "");
-                    onChange(`${path}.fixedValuesType`, event.target.value);
+                    onChange(`${path}.initialValue`, null);
+                    onChange(`${path}.valueEditor.type`, event.target.value);
                 }}
             >
                 <FormControlLabel
