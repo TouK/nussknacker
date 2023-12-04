@@ -4,8 +4,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
+
+  // TODO: tests for user privileges
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   it should "create new empty process" in {
     val processingType = "testProcessingType"

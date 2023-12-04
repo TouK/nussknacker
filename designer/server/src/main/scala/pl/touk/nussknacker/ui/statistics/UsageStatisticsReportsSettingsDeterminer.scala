@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 
 import java.io.File
@@ -32,12 +33,12 @@ object UsageStatisticsReportsSettingsDeterminer {
       config: UsageStatisticsReportsConfig,
       processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics, _]
   ): UsageStatisticsReportsSettingsDeterminer = {
-    UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics.all)
+    UsageStatisticsReportsSettingsDeterminer(config, processingTypeStatistics.all(_))
   }
 
   def apply(
       config: UsageStatisticsReportsConfig,
-      processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics]
+      processingTypeStatistics: LoggedUser => Map[ProcessingType, ProcessingTypeUsageStatistics]
   ): UsageStatisticsReportsSettingsDeterminer = {
     val fingerprintFile = new File(
       Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"),
@@ -58,7 +59,7 @@ object UsageStatisticsReportsSettingsDeterminer {
 
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
-    processingTypeStatistics: => Map[ProcessingType, ProcessingTypeUsageStatistics],
+    processingTypeStatistics: LoggedUser => Map[ProcessingType, ProcessingTypeUsageStatistics],
     fingerprintFile: File
 ) {
 
@@ -69,13 +70,16 @@ class UsageStatisticsReportsSettingsDeterminer(
   }
 
   private[statistics] def determineQueryParams(): ListMap[String, String] = {
-    val deploymentManagerTypes = processingTypeStatistics.values.map(_.deploymentManagerType).map {
+    // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
+    //       given user has no access.
+    val user = NussknackerInternalUser.instance
+    val deploymentManagerTypes = processingTypeStatistics(user).values.map(_.deploymentManagerType).map {
       case Some(dm) if knownDeploymentManagerTypes.contains(dm) => dm
       case _                                                    => aggregateForCustomValues
     }
     val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
 
-    val processingModes = processingTypeStatistics.values.map {
+    val processingModes = processingTypeStatistics(user).values.map {
       case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
       case ProcessingTypeUsageStatistics(Some(deploymentManagerType), None)
           if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) =>

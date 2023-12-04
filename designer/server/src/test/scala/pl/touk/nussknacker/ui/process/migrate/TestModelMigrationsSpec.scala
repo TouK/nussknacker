@@ -23,8 +23,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import scala.reflect.ClassTag
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
+
+  // TODO: tests for user privileges
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.{MetaDataInitializer, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.NewProcessPreparer.initialFragmentFields
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object NewProcessPreparer {
 
@@ -30,7 +31,9 @@ class NewProcessPreparer(
     additionalFields: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
 ) {
 
-  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {
+  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean)(
+      implicit user: LoggedUser
+  ): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val initialProperties = additionalFields.forTypeUnsafe(processingType).map { case (key, config) =>
       (key, config.defaultValue.getOrElse(""))

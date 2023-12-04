@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService, ScenarioQuery, UserCategoryService}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -97,8 +97,10 @@ class AppApiHttpService(
         Future {
           import net.ceedubs.ficus.Ficus._
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
+          // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
+          //       We should consider authorization of access to this data
           val modelDataInfo: Map[ProcessingType, Map[String, String]] =
-            modelData.all.mapValuesNow(_.configCreator.buildInfo())
+            modelData.all(NussknackerInternalUser.instance).mapValuesNow(_.configCreator.buildInfo())
           BuildInfoDto(
             BuildInfo.name,
             BuildInfo.gitCommit,

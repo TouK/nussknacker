@@ -5,7 +5,7 @@ import cats.instances.map._
 import cats.instances.set._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.CategoriesConfig
+import pl.touk.nussknacker.engine.CategoryConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
@@ -63,11 +63,11 @@ object ConfigProcessCategoryService extends LazyLogging {
 
   private[process] val categoryConfigPath = "categoriesConfig"
 
-  def apply(config: Config, processingCategories: Map[ProcessingType, CategoriesConfig]): ProcessCategoryService = {
+  def apply(config: Config, processingCategories: Map[ProcessingType, CategoryConfig]): ProcessCategoryService = {
     val (processingTypesWithDefinedCategory, notDefinedCategoryProcessingTypes) = processingCategories.toList.map {
-      case (processingType, CategoriesConfig(Some(category))) =>
+      case (processingType, CategoryConfig(Some(category))) =>
         (Map(processingType -> category), Set.empty[ProcessingType])
-      case (processingTypeWithoutCategory, CategoriesConfig(None)) =>
+      case (processingTypeWithoutCategory, CategoryConfig(None)) =>
         (Map.empty[ProcessingType, Category], Set(processingTypeWithoutCategory))
     }.combineAll
     val isLegacyConfigFormat = config.hasPath(categoryConfigPath)

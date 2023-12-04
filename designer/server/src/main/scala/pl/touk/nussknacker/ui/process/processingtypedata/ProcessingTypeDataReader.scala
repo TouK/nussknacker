@@ -8,14 +8,29 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.selectedScenarioTypeConfigurationPath
+import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.{
+  AnyUserPermission,
+  UserWithCategoryReadPermission,
+  ValueWithPermission
+}
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.{
+  selectedScenarioTypeConfigurationPath,
+  toValueWithPermission
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   val selectedScenarioTypeConfigurationPath = "selectedScenarioType"
+
+  def toValueWithPermission(processingTypeData: ProcessingTypeData): ValueWithPermission[ProcessingTypeData] = {
+    val accessPermission =
+      processingTypeData.categoryConfig.category.map(UserWithCategoryReadPermission).getOrElse(AnyUserPermission)
+    ValueWithPermission(processingTypeData, accessPermission)
+  }
 
 }
 
@@ -40,7 +55,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
     val combinedData = createCombinedData(processingTypesData, config)
 
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](
-      processingTypesData,
+      processingTypesData.mapValuesNow(toValueWithPermission),
       combinedData
     )
   }

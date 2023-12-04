@@ -78,9 +78,11 @@ class DeploymentServiceSpec
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
-      override def forType(typ: ProcessingType): Option[DeploymentManager] = all.get(typ)
+      override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[DeploymentManager] = all.get(typ)
 
-      override def all: Map[ProcessingType, DeploymentManager] = Map(TestProcessingTypes.Streaming -> deploymentManager)
+      override def all(implicit user: LoggedUser): Map[ProcessingType, DeploymentManager] = Map(
+        TestProcessingTypes.Streaming -> deploymentManager
+      )
 
       override def combined: Nothing = ???
     }
