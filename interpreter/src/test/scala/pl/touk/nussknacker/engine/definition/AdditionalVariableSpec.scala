@@ -13,13 +13,14 @@ import pl.touk.nussknacker.engine.api.definition.{
   NodeDependency,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
-import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -44,7 +45,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   test("doesn't allow LazyParameter with fixed value") {
     val modelData        = LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(new IncorrectService2))
     val fragmentResolver = FragmentResolver(List.empty)
-    val result = new NodeDataValidator(modelData, fragmentResolver).validate(
+    val result = new NodeDataValidator(modelData, fragmentResolver, TestFixedValuesPresetProvider).validate(
       node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
       ValidationContext.empty,
       Map.empty,

@@ -9,6 +9,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -39,7 +40,8 @@ class DefinitionResourcesSpec
     processingTypeDataProvider = testProcessingTypeDataProvider,
     fragmentRepository,
     () => processCategoryService,
-    TestAdditionalUIConfigProvider
+    TestAdditionalUIConfigProvider,
+    TestFixedValuesPresetProvider
   )
 
   it("should handle missing scenario type") {

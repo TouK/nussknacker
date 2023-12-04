@@ -4,27 +4,20 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
+import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
-import pl.touk.nussknacker.engine.api.context.{
-  ContextTransformation,
-  OutputVar,
-  PartSubGraphCompilationError,
-  ProcessCompilationError,
-  ValidationContext
-}
+import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   ComponentUseCase,
-  EmptyProcessConfigCreator,
   LanguageConfiguration,
   WithCategories
 }
@@ -40,11 +33,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
   ModelDefinitionWithTypes,
   ProcessDefinition
 }
-import pl.touk.nussknacker.engine.definition.{
-  DefinitionExtractor,
-  FragmentComponentDefinitionExtractor,
-  ProcessObjectDefinitionExtractor
-}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -52,8 +41,9 @@ import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.testing.{LocalModelData, ProcessDefinitionBuilder}
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.{ObjectProcessDefinition, objectDefinition}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -61,7 +51,6 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import java.util.Collections
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 

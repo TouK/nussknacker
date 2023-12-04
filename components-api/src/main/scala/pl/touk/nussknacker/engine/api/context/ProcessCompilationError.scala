@@ -106,6 +106,10 @@ object ProcessCompilationError {
       extends PartSubGraphCompilationError
       with InASingleNode
 
+  final case class PresetIdNotFoundInProvidedPresets(paramName: String, presetId: String, nodeId: String)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class MissingService(serviceId: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode

@@ -313,6 +313,14 @@ object node {
     case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
         extends ValueInputWithFixedValues
 
+    case class ValueInputWithFixedValuesPreset(
+        fixedValuesListPresetId: String,
+        allowOtherValue: Boolean,
+        resolvedFixedValuesListPreset: Option[List[FixedExpressionValue]] = None // TODO dont encode/decode?
+    ) extends ValueInputWithFixedValues {
+      override def fixedValuesList: List[FixedExpressionValue] = resolvedFixedValuesListPreset.getOrElse(List.empty)
+    }
+
     @ConfiguredJsonCodec
     case class FragmentParameter(
         name: String,
@@ -361,6 +369,7 @@ object node {
   val InputModeFieldName       = "$inputMode"
   val TypFieldName             = "$typ"
   val FixedValuesListFieldName = "$fixedValuesList"
+  val PresetIdFieldName        = "$fixedValuesPresetId"
 
   def qualifiedParamFieldName(
       paramName: String,

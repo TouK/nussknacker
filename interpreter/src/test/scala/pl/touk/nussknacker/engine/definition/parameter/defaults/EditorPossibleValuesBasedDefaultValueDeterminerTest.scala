@@ -40,6 +40,41 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
     determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
   }
 
+  test("determine default param value from first value from fixed values preset editor possible values") {
+    val fixedValuesEditor = Some(
+      FixedValuesPresetParameterEditor(
+        "presetId",
+        Some(
+          List(
+            FixedExpressionValue("expr1", "label1"),
+            FixedExpressionValue("expr2", "label2")
+          )
+        )
+      ),
+    )
+
+    determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
+  }
+
+  test("determine default param value from first value from fixed values preset editor possible values in dual mode") {
+    val fixedValuesEditor = Some(
+      DualParameterEditor(
+        FixedValuesPresetParameterEditor(
+          "presetId",
+          Some(
+            List(
+              FixedExpressionValue("expr1", "label1"),
+              FixedExpressionValue("expr2", "label2")
+            )
+          )
+        ),
+        DualEditorMode.SIMPLE
+      )
+    )
+
+    determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
+  }
+
   test("not determine default param value from editors without possible values") {
     val stringParam        = Some(StringParameterEditor)
     val booleanParam       = Some(BoolParameterEditor)

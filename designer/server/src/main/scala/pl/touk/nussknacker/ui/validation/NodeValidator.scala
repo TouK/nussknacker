@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.FragmentResolver
@@ -20,13 +21,20 @@ import pl.touk.nussknacker.ui.api.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 
-class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository) {
+class NodeValidator(
+    modelData: ModelData,
+    fragmentRepository: FragmentRepository,
+    fixedValuesPresetProvider: FixedValuesPresetProvider
+) {
 
   private val fragmentResolver = FragmentResolver(k => fragmentRepository.get(k).map(_.canonical))
 
-  private val nodeDataValidator = new NodeDataValidator(modelData, fragmentResolver)
+  private val nodeDataValidator = new NodeDataValidator(modelData, fragmentResolver, fixedValuesPresetProvider)
 
-  def validate(scenarioName: ProcessName, nodeData: NodeValidationRequest): NodeValidationResult = {
+  def validate(
+      scenarioName: ProcessName,
+      nodeData: NodeValidationRequest
+  ): NodeValidationResult = {
     implicit val metaData: MetaData = nodeData.processProperties.toMetaData(scenarioName)
 
     val validationContext = prepareValidationContext(nodeData.variableTypes)

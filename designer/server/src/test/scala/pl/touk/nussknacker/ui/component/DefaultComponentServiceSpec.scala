@@ -7,17 +7,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
-import pl.touk.nussknacker.restmodel.component.{
-  ComponentLink,
-  ComponentListElement,
-  ComponentUsagesInScenario,
-  NodeUsageData
-}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -39,12 +35,7 @@ import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{
-  ConfigProcessCategoryService,
-  DBProcessService,
-  ProcessCategoryService,
-  UserCategoryService
-}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefaultComponentServiceSpec
@@ -519,7 +510,8 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -677,7 +669,8 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
 
     val testingData = Table(
@@ -750,7 +743,8 @@ class DefaultComponentServiceSpec
         componentLinksConfig,
         processingTypeDataProvider,
         processService,
-        TestAdditionalUIConfigProvider
+        TestAdditionalUIConfigProvider,
+        TestFixedValuesPresetProvider
       )
     val notExistComponentId = ComponentId("not-exist")
     val result              = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue

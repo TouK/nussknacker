@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
+  ValueInputWithFixedValuesPreset,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -498,6 +499,19 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                       allowOtherValue = false
                     )
                   )
+                ),
+                FragmentParameter(
+                  "subParam3",
+                  FragmentClazzRef[java.lang.Boolean],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesPreset(
+                      fixedValuesListPresetId = "thisPresetDoesNotExist",
+                      allowOtherValue = true
+                    )
+                  )
                 )
               )
             )
@@ -517,6 +531,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
       case List(
+//            NodeValidationError( // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
+//              "PresetIdNotFoundInProvidedPresets",
+//              "The specified preset id 'thisPresetDoesNotExist' used in subParam3 is not defined",
+//              _,
+//              Some("$param.subParam3.$fixedValuesPresetId"),
+//              NodeValidationErrorType.SaveAllowed
+//            ),
             NodeValidationError(
               "InitialValueNotPresentInPossibleValues",
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
@@ -539,13 +560,31 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val invalidFragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                "param1",
+                FragmentClazzRef[java.lang.Boolean],
+                required = false,
+                initialValue = None,
+                hintText = None,
+                valueEditor = Some(
+                  ValueInputWithFixedValuesPreset(
+                    fixedValuesListPresetId = "thisPresetDoesNotExist",
+                    allowOtherValue = true
+                  )
+                )
+              )
+            )
+          )
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       additionalBranches = List.empty
     )
-
     val process = createProcess(
       nodes = List(
         Source("in", SourceRef(sourceTypeName, List())),
@@ -566,8 +605,36 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val validationResult = processValidator.validate(process)
 
     validationResult should matchPattern {
-      case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
-          if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
+      case ValidationResult(ValidationErrors(_, Nil, Nil), ValidationWarnings.success, _) =>
+    }
+    validationResult.errors.invalidNodes("subIn") should matchPattern {
+      case List(
+            NodeValidationError(
+              "ExpressionParserCompilationError",
+              "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someString)",
+              _,
+              Some("param1"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+//            NodeValidationError( // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
+//              "PresetIdNotFoundInProvidedPresets",
+//              "The specified preset id 'thisPresetDoesNotExist' used in param1 is not defined",
+//              _,
+//              Some("$param.param1.$fixedValuesPresetId"),
+//              NodeValidationErrorType.SaveAllowed
+//            )
+          ) =>
+    }
+    validationResult.errors.invalidNodes("subIn-subVar") should matchPattern {
+      case List(
+            NodeValidationError(
+              "ExpressionParserCompilationError",
+              "Failed to parse expression: Unresolved reference 'nonExistingVar'",
+              _,
+              Some("$expression"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
     }
   }
 

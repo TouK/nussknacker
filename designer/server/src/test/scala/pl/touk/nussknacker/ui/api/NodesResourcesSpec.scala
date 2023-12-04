@@ -10,6 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
@@ -57,7 +58,7 @@ class NodesResourcesSpec
     processService,
     typeToConfig.mapValues(_.modelData),
     validation,
-    typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
+    typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository, TestFixedValuesPresetProvider)),
     typeToConfig.mapValues(v =>
       new ExpressionSuggester(
         v.modelData.modelDefinition.expressionConfig,

@@ -20,19 +20,20 @@ class FragmentParameterValidator(
 ) {
 
   def validate(
-      fragmentParameter: FragmentParameter,
+      fragmentParameterWithResolvedPresets: FragmentParameter,
       fragmentInputId: String,
       validationContext: ValidationContext // localVariables must include this and other FragmentParameters
   )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-    val unsupportedFixedValuesValidationResult = validateFixedValuesSupportedType(fragmentParameter, fragmentInputId)
+    val unsupportedFixedValuesValidationResult =
+      validateFixedValuesSupportedType(fragmentParameterWithResolvedPresets, fragmentInputId)
 
-    val fixedValuesListValidationResult = validateFixedValuesList(fragmentParameter, fragmentInputId)
+    val fixedValuesListValidationResult = validateFixedValuesList(fragmentParameterWithResolvedPresets, fragmentInputId)
 
     val fixedExpressionsValidationResult = validateFixedExpressionValues(
-      fragmentParameter.initialValue,
-      fragmentParameter.valueEditor.map(_.fixedValuesList).getOrElse(List.empty),
+      fragmentParameterWithResolvedPresets.initialValue,
+      fragmentParameterWithResolvedPresets.valueEditor.map(_.fixedValuesList).getOrElse(List.empty),
       validationContext,
-      fragmentParameter.name
+      fragmentParameterWithResolvedPresets.name
     )
 
     List(

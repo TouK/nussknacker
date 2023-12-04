@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.engine.definition.parameter.validator
 
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
+import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
+import pl.touk.nussknacker.engine.types.EspTypeUtils
+
 import java.time.LocalDate
 import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.{Max, Min, NotBlank}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue
-import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
-import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
-import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
 
@@ -110,7 +111,7 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
       .shouldBe(List(FixedValuesValidator(possibleValues)))
   }
 
-  test("not determine fixed values validator when dual editor was passed") {
+  test("not determine fixed values validator when dual editor (with fixed value editor) was passed") {
     val possibleValues = List(FixedExpressionValue("a", "a"))
     ValidatorsExtractor
       .extract(
@@ -118,6 +119,38 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
           optionalParam,
           ParameterConfig.empty
             .copy(editor = Some(DualParameterEditor(FixedValuesParameterEditor(possibleValues), DualEditorMode.SIMPLE)))
+        )
+      )
+      .shouldBe(empty)
+  }
+
+  test("determine fixed values validator when simple fixed value preset editor passed") {
+    val possibleValues = List(FixedExpressionValue("a", "a"))
+    ValidatorsExtractor
+      .extract(
+        validatorParams(
+          optionalParam,
+          ParameterConfig.empty.copy(editor = Some(FixedValuesPresetParameterEditor("presetId", Some(possibleValues))))
+        )
+      )
+      .shouldBe(List(FixedValuesValidator(possibleValues)))
+  }
+
+  test("not determine fixed values validator when dual editor (with fixed value preset editor) was passed") {
+    val possibleValues = List(FixedExpressionValue("a", "a"))
+    ValidatorsExtractor
+      .extract(
+        validatorParams(
+          optionalParam,
+          ParameterConfig.empty
+            .copy(editor =
+              Some(
+                DualParameterEditor(
+                  FixedValuesPresetParameterEditor("presetId", Some(possibleValues)),
+                  DualEditorMode.SIMPLE
+                )
+              )
+            )
         )
       )
       .shouldBe(empty)

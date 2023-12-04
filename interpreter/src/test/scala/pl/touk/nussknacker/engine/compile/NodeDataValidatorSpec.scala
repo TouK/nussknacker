@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import scala.jdk.CollectionConverters._
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -12,6 +11,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.{
+  DefaultFixedValuesPresetProvider,
+  FixedValuesPresetProvider,
+  TestFixedValuesPresetProvider
+}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -34,6 +38,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ValueInputWithFixedValuesPreset,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -45,6 +50,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.jdk.CollectionConverters._
+
 class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with TableDrivenPropertyChecks {
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
@@ -54,11 +61,27 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   private val defaultFragmentId: String = "fragment1"
 
+  private val fixedValuesPresetId = "presetString"
+
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
     List(
       FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
       FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+    )
+  )
+
+  private val fragmentParameterWithStringPreset = FragmentParameter(
+    "param1",
+    FragmentClazzRef[String],
+    required = false,
+    initialValue = None,
+    hintText = None,
+    valueEditor = Some(
+      ValueInputWithFixedValuesPreset(
+        fixedValuesListPresetId = fixedValuesPresetId,
+        allowOtherValue = true
+      )
     )
   )
 
@@ -709,6 +732,71 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should validate not found preset in FragmentInput") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInput(
+          "frInput",
+          FragmentRef(defaultFragmentId, List(Parameter("param1", "'string'")), Map("out1" -> "test1"))
+        ),
+        ValidationContext.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fragmentDefinition = CanonicalProcess(
+          MetaData(defaultFragmentId, FragmentSpecificData()),
+          List(
+            FlatNode(
+              FragmentInputDefinition(
+                "in",
+                List(fragmentParameterWithStringPreset)
+              )
+            ),
+            FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+          )
+        ),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodes),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+//  test("should validate not found preset in FragmentInputDefinition") { // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
+//    val nodeId: String       = "in"
+//    val nodes                = Set(nodeId)
+//    val nodes1               = nodes
+//    val fixedValuesPresetId1 = fixedValuesPresetId
+//    inside(
+//      validate(
+//        FragmentInputDefinition(
+//          nodeId,
+//          List(fragmentParameterWithStringPreset)
+//        ),
+//        ValidationContext.empty,
+//        Map.empty,
+//        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+//        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+//      )
+//    ) {
+//      case ValidationPerformed(
+//            List(
+//              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodeId),
+//            ),
+//            None,
+//            None
+//          ) =>
+//    }
+//  }
+
   test("should validate fragment parameter fixed values are of supported type") {
     val nodeId: String = "in"
     val nodes          = Set(nodeId)
@@ -960,10 +1048,16 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       branchCtxs: Map[String, ValidationContext] = Map.empty,
       outgoingEdges: List[OutgoingEdge] = Nil,
       fragmentDefinition: CanonicalProcess = defaultFragmentDef,
-      aModelData: LocalModelData = modelData
+      aModelData: LocalModelData = modelData,
+      fixedValuesPresetProvider: FixedValuesPresetProvider = TestFixedValuesPresetProvider
   ): ValidationResponse = {
     val fragmentResolver = FragmentResolver(List(fragmentDefinition))
-    new NodeDataValidator(aModelData, fragmentResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(
+    new NodeDataValidator(aModelData, fragmentResolver, fixedValuesPresetProvider).validate(
+      nodeData,
+      ctx,
+      branchCtxs,
+      outgoingEdges
+    )(
       MetaData("id", StreamMetaData())
     )
   }

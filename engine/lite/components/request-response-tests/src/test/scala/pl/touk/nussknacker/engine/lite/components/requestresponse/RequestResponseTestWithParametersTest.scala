@@ -249,4 +249,49 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.hintText shouldBe None
   }
 
+//  test("should generate complex parameters for fragment input definition - FragmentParameterFixedListPreset") {
+//    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+//
+//    val fixedValuesList =
+//      List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
+//
+//    val presetId = "somePresetId"
+//    val fragmentInputDefinition = FragmentInputDefinition(
+//      "",
+//      List(
+//        FragmentParameter(
+//          "name",
+//          FragmentClazzRef[String],
+//          required = true,
+//          initialValue = Some(FragmentFixedExpressionValue("'bbb'", "bbb")),
+//          hintText = Some("some hint text"),
+//          inputConfig = ParameterInputConfig(
+//            inputMode = InputModeFixedList,
+//            fixedValuesType = Some(Preset),
+//            fixedValuesList = None,
+//            fixedValuesListPresetId = Some(presetId),
+//            resolvedPresetFixedValuesList = Some(fixedValuesList)
+//          )
+//        )
+//      )
+//    )
+//    val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
+//    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+//
+//    parameter.name shouldBe "name"
+//    parameter.typ shouldBe Typed[String]
+//    parameter.editor shouldBe Some(
+//      FixedValuesPresetParameterEditor(
+//        presetId,
+//        fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+//      )
+//    )
+//    parameter.validators should contain theSameElementsAs List(
+//      MandatoryParameterValidator,
+//      FixedValuesValidator(fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label)))
+//    )
+//    parameter.defaultValue shouldBe Some(Expression("spel", "'bbb'"))
+//    parameter.hintText shouldBe Some("some hint text")
+//  }
+
 }

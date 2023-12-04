@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
@@ -48,13 +49,15 @@ object DefaultComponentService {
         (ComponentIdProvider, ProcessCategoryService)
       ],
       processService: ProcessService,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit ec: ExecutionContext): DefaultComponentService = {
     new DefaultComponentService(
       componentLinksConfig,
       processingTypeDataProvider,
       processService,
-      additionalUIConfigProvider
+      additionalUIConfigProvider,
+      fixedValuesPresetProvider
     )
   }
 
@@ -100,7 +103,8 @@ class DefaultComponentService private (
       (ComponentIdProvider, ProcessCategoryService)
     ],
     processService: ProcessService,
-    additionalUIConfigProvider: AdditionalUIConfigProvider
+    additionalUIConfigProvider: AdditionalUIConfigProvider,
+    fixedValuesPresetProvider: FixedValuesPresetProvider
 )(implicit ec: ExecutionContext)
     extends ComponentService {
 
@@ -189,7 +193,8 @@ class DefaultComponentService private (
           processingTypeData,
           user,
           fragments,
-          additionalUIConfigProvider
+          additionalUIConfigProvider,
+          fixedValuesPresetProvider
         )
         createComponents(componentObjects, processingType, componentIdProvider)
       }

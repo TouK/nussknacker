@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeter
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
@@ -47,7 +48,8 @@ object UIProcessObjectsFactory {
       processCategoryService: ProcessCategoryService,
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
       processingType: ProcessingType,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
+      additionalUIConfigProvider: AdditionalUIConfigProvider,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): UIProcessObjects = {
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
@@ -74,6 +76,8 @@ object UIProcessObjectsFactory {
       toComponentsUiConfig(
         finalProcessDefinition
       ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ProcessDefinition doesn't contain configs for base components and fragments
+
+    // TODO maybe we have to update FixedValuesValidator based on presets - but FE should be going away from using validators on FE anyway
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
@@ -108,7 +112,8 @@ object UIProcessObjectsFactory {
         fragmentsDetails = fragmentsDetails
       ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
-      defaultAsyncInterpretation = getDefaultAsyncInterpretation(modelDataForType.processConfig)
+      defaultAsyncInterpretation = getDefaultAsyncInterpretation(modelDataForType.processConfig),
+      fixedValuesPresets = fixedValuesPresetProvider.getAll
     )
   }
 

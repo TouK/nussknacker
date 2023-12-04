@@ -50,11 +50,11 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object NodeCompiler {
 
@@ -139,29 +139,13 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
-      def withFragmentParameterErrors[T](
-          compiledObject: ValidatedNel[ProcessCompilationError, T],
-          validationContext: ValidationContext
-      ) = {
-        def paramValidationErrors = params.map { param =>
-          fragmentParameterValidator.validate(param, id, validationContext)
-        }.sequence
+      val paramDefs                            = fragmentDefinitionExtractor.extractParametersDefinition(frag)
+      val variables: Map[String, TypingResult] = paramDefs.value.map(a => a.name -> a.typ).toMap
+      val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
-        compiledObject.andThen(v =>
-          paramValidationErrors match {
-            case Invalid(errors) => Invalid(errors)
-            case Valid(_)        => Valid(v)
-          }
-        )
-      }
-
-      definitions.sourceFactories.get(id) match {
+      val compilationResult = definitions.sourceFactories.get(id) match {
         case Some(definition) =>
-          val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
-          val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
-
-          val compilationResult = compileObjectWithTransformation[Source](
+          compileObjectWithTransformation[Source](
             Nil,
             Nil,
             Left(contextWithOnlyGlobalVariables),
@@ -170,36 +154,28 @@ class NodeCompiler(
             _ => Valid(validationContext)
           ).map(_._1)
 
-          compilationResult.copy(compiledObject =
-            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
-          )
-
         case None =>
-          loadParametersTypeMap(params) match {
-            case Valid(paramTypeMap) =>
-              val validationContext =
-                contextWithOnlyGlobalVariables.copy(localVariables = paramTypeMap)
-
-              val compilationResult = NodeCompilationResult(
-                Map.empty,
-                None,
-                Valid(validationContext),
-                Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
-              )
-
-              compilationResult.copy(compiledObject =
-                withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
-              )
-
-            case Invalid(errors) =>
-              NodeCompilationResult(
-                Map.empty,
-                None,
-                Invalid(errors),
-                Invalid(errors)
-              )
-          }
+          NodeCompilationResult(
+            Map.empty,
+            None,
+            Valid(validationContext),
+            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+          )
       }
+
+      val paramValidation = params.map { param =>
+        fragmentParameterValidator.validate(param, id, validationContext)
+      }.sequence
+
+      val parameterExtractionValidation =
+        NonEmptyList // TODO this will contain PresetIdNotFoundInProvidedPresets errors
+          .fromList(paramDefs.written)
+          .map(invalid)
+          .getOrElse(valid(List.empty))
+
+      compilationResult.copy(compiledObject =
+        paramValidation.combine(parameterExtractionValidation).andThen(_ => compilationResult.compiledObject)
+      )
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(

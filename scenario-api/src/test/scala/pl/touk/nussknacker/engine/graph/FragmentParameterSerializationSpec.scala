@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ValueInputWithFixedValuesPreset,
   ValueInputWithFixedValuesProvided
 }
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
   test(
-    "should deserialize FragmentParameter without required, initialValue, hintText, inputConfig [backwards compatibility test]"
+    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
       "paramString",
@@ -44,7 +45,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
-  test("should deserialize FragmentParameter") {
+  test("should deserialize FragmentParameter - ValueInputWithFixedValuesProvided") {
     decode[FragmentParameter]("""{
       "name" : "paramString",
       "typ" : {
@@ -84,6 +85,40 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
               FragmentInputDefinition.FixedExpressionValue("'someOtherValue'", "someOtherValue")
             ),
             allowOtherValue = true
+          )
+        )
+      )
+    )
+  }
+
+  test("should deserialize FragmentParameter - ValueInputWithFixedValuesPreset") {
+    decode[FragmentParameter]("""{
+      "name" : "paramString",
+      "typ" : {
+        "refClazzName" : "java.lang.String"
+      },
+      "required" : true,
+      "initialValue" : {
+        "expression" : "'someValue'",
+        "label" : "someValue"
+      },
+      "hintText" : "some hint text",
+      "valueEditor" : {
+        "type": "ValueInputWithFixedValuesPreset",
+        "allowOtherValue" : false,
+        "fixedValuesListPresetId" : "presetId"
+      }
+    }""") shouldBe Right(
+      FragmentParameter(
+        "paramString",
+        FragmentClazzRef[String],
+        required = true,
+        initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
+        hintText = Some("some hint text"),
+        valueEditor = Some(
+          ValueInputWithFixedValuesPreset(
+            fixedValuesListPresetId = "presetId",
+            allowOtherValue = false
           )
         )
       )

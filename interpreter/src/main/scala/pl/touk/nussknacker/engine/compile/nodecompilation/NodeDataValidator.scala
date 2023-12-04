@@ -5,12 +5,17 @@ import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  FragmentOutputNotDefined,
+  PresetIdNotFoundInProvidedPresets,
+  UnknownFragmentOutput
+}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
@@ -19,6 +24,10 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver,
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentParameter,
+  ValueInputWithFixedValuesPreset
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -41,7 +50,11 @@ object NodeDataValidator {
 
 }
 
-class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver) {
+class NodeDataValidator(
+    modelData: ModelData,
+    fragmentResolver: FragmentResolver,
+    fixedValuesPresetProvider: FixedValuesPresetProvider
+) {
 
   private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
     case spel: SpelExpressionParser => spel.typingDictLabels
@@ -60,7 +73,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       nodeData: NodeData,
       validationContext: ValidationContext,
       branchContexts: Map[String, ValidationContext],
-      outgoingEdges: List[OutgoingEdge]
+      outgoingEdges: List[OutgoingEdge],
   )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
       implicit val nodeId: NodeId = NodeId(nodeData.id)
@@ -100,7 +113,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
               validationContext
             )
           )
-        case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
+        case a: FragmentInput =>
+          validateFragment(validationContext, outgoingEdges, compiler, a, fixedValuesPresetProvider)
         case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
@@ -121,7 +135,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
       validationContext: ValidationContext,
       outgoingEdges: List[OutgoingEdge],
       compiler: NodeCompiler,
-      a: FragmentInput
+      a: FragmentInput,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   )(implicit nodeId: NodeId) = {
     fragmentResolver
       .resolveInput(a)
@@ -154,12 +169,54 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
           .swap
           .map(_.toList)
           .valueOr(_ => List.empty)
+
+        val presets = fixedValuesPresetProvider.getAll
+        // missingPresetIdErrors are validated during Fragment creation, but here it is also needed, in case some used preset has since been removed
+        val missingPresetIdErrors = validateMissingPresetIds(definition.fragmentParameters, presets, a.id)
+
+        val paramsWithEffectivePresets = definition.fragmentParameters.map(fillEffectivePreset(_, presets))
+
         val parametersResponse = toValidationResponse(
-          compiler.compileFragmentInput(a.copy(fragmentParams = Some(definition.fragmentParameters)), validationContext)
+          compiler.compileFragmentInput(a.copy(fragmentParams = Some(paramsWithEffectivePresets)), validationContext)
         )
-        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
+        parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors ++ missingPresetIdErrors)
       }
       .valueOr(errors => ValidationPerformed(errors.toList, None, None))
+  }
+
+  private def validateMissingPresetIds(
+      parameters: List[FragmentParameter],
+      presets: Map[String, FixedValuesPreset],
+      nodeId: String
+  ) = parameters.flatMap { param =>
+    param.valueEditor match {
+      case Some(ValueInputWithFixedValuesPreset(fixedValuesListPresetId, _, _)) =>
+        if (!presets.contains(fixedValuesListPresetId))
+          List(PresetIdNotFoundInProvidedPresets(param.name, fixedValuesListPresetId, nodeId))
+        else List.empty
+      case _ => List.empty
+    }
+  }
+
+  private def fillEffectivePreset(
+      param: FragmentParameter,
+      presets: Map[String, FixedValuesPreset],
+  ) = param.valueEditor match {
+    case Some(ValueInputWithFixedValuesPreset(fixedValuesListPresetId, allowOtherValue, _)) =>
+      param.copy(
+        valueEditor = Some(
+          ValueInputWithFixedValuesPreset(
+            fixedValuesListPresetId,
+            allowOtherValue,
+            resolvedFixedValuesListPreset = presets
+              .get(fixedValuesListPresetId)
+              .map(fixedValuesList =>
+                fixedValuesList.values.map(v => FragmentInputDefinition.FixedExpressionValue(v.expression, v.label))
+              )
+          )
+        )
+      )
+    case _ => param
   }
 
   private def toValidationResponse[T <: TypedValue](
