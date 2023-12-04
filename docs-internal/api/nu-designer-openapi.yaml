@@ -51,7 +51,7 @@ paths:
             text/plain:
               schema:
                 type: string
-              example: Component this not exist.
+              example: Component {id} not exist.
       security:
       - httpAuth: []
   /api/components:
