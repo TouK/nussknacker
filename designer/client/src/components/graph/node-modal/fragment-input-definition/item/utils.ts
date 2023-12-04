@@ -1,4 +1,4 @@
-import { FragmentInputParameter, InputMode } from ".";
+import { FragmentInputParameter } from ".";
 import { ReturnedType } from "../../../../../types";
 import { v4 as uuid4 } from "uuid";
 
@@ -10,10 +10,7 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         hintText: "",
         initialValue: null,
         // fixedValuesType: FixedValuesType.UserDefinedList,
-        inputConfig: {
-            fixedValuesList: [],
-            inputMode: InputMode.AnyValue,
-        },
+        valueEditor: null,
         // fixedValuesListPresetId: "",
         // validationExpression: "test",
         // presetSelection: "",

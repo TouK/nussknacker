@@ -14,6 +14,7 @@ import { getProcessToDisplay } from "../../../../../../../reducers/selectors/gra
 import { GenericValidationRequest } from "../../../../../../../actions/nk/genericAction";
 import { debounce } from "lodash";
 import { EditorType } from "../../../../editors/expression/Editor";
+import { useSettings } from "../../SettingsProvider";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -24,21 +25,39 @@ interface Props {
     errors: Error[];
     typ: ReturnedType;
     name: string;
+    initialValue: FixedValuesOption;
 }
 
-export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variableTypes, readOnly, errors, typ, name }: Props) => {
-    const [temporaryListItem, setTemporaryListItem] = useState("");
+export const UserDefinedListInput = ({
+    fixedValuesList,
+    path,
+    onChange,
+    variableTypes,
+    readOnly,
+    errors,
+    typ,
+    name,
+    initialValue,
+}: Props) => {
     const { t } = useTranslation();
+    const [temporaryListItem, setTemporaryListItem] = useState("");
     const [temporaryValuesTyping, setTemporaryValuesTyping] = useState(false);
-
     const [temporaryValueErrors, setTemporaryValueErrors] = useState<Error[]>([]);
+
+    const { handleTemporaryUserDefinedList } = useSettings();
 
     const userDefinedListOptions = (fixedValuesList ?? []).map(({ label }) => ({ label, value: label }));
 
     const handleDeleteDefinedListItem = (currentIndex: number) => {
         const filteredItemsList = fixedValuesList.filter((_, index) => index !== currentIndex);
         if (filteredItemsList) {
-            onChange(`${path}.inputConfig.fixedValuesList`, filteredItemsList);
+            handleChangeFixedValuesList(filteredItemsList);
+
+            const initialValueOnTheList = filteredItemsList.find((filteredItemsList) => filteredItemsList.label !== initialValue.label);
+
+            if (!initialValueOnTheList) {
+                onChange(`${path}.initialValue`, null);
+            }
 
             const isUniqueValueValidator = uniqueValueValidator(filteredItemsList.map((filteredItemList) => filteredItemList.label));
             if (isUniqueValueValidator.isValid(temporaryListItem)) {
@@ -60,6 +79,11 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
         }),
         [typ.refClazzName],
     );
+
+    const handleChangeFixedValuesList = (fixedValuesList: FixedValuesOption[]) => {
+        onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
+        handleTemporaryUserDefinedList(fixedValuesList);
+    };
 
     const handleAddNewListItem = () => {
         const isUniqueValueValidator = uniqueValueValidator(fixedValuesList.map((fixedValuesList) => fixedValuesList.label));
@@ -93,7 +117,7 @@ export const UserDefinedListInput = ({ fixedValuesList, path, onChange, variable
 
         if (temporaryValueErrors.length === 0 && !temporaryValuesTyping) {
             const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
-            onChange(`${path}.inputConfig.fixedValuesList`, updatedList);
+            handleChangeFixedValuesList(updatedList);
             setTemporaryListItem("");
         }
     };

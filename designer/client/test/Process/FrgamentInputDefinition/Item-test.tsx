@@ -35,10 +35,7 @@ describe(Item.name, () => {
                             required: false,
                             hintText: "",
                             initialValue: null,
-                            inputConfig: {
-                                fixedValuesList: [],
-                                inputMode: InputMode.AnyValue,
-                            },
+                            valueEditor: null,
                             typ: {
                                 refClazzName: "java.lang.String",
                             } as ReturnedType,
@@ -69,6 +66,6 @@ describe(Item.name, () => {
         fireEvent.click(await screen.findByText("Boolean"));
 
         expect(mockOnChange).toHaveBeenNthCalledWith(1, "test[0].typ.refClazzName", "java.lang.Boolean");
-        expect(mockOnChange).toHaveBeenNthCalledWith(2, "test[0].inputConfig.inputMode", "InputModeAny");
+        expect(mockOnChange).toHaveBeenNthCalledWith(2, "test[0].valueEditor", null);
     });
 });

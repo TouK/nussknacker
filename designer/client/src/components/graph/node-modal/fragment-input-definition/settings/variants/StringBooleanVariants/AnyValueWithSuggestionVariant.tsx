@@ -4,7 +4,6 @@ import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponne
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
-import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
 import { Error } from "../../../../editors/Validators";
@@ -32,9 +31,9 @@ export const AnyValueWithSuggestionVariant = ({
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
 
-    const fixedValuesList = item.inputConfig.fixedValuesList ?? [];
+    const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
-    const fixedValuesType = item.fixedValuesType || FixedValuesType.UserDefinedList;
+    const fixedValuesType = item.valueEditor.type;
 
     return (
         <>
@@ -52,13 +51,14 @@ export const AnyValueWithSuggestionVariant = ({
                 fieldsErrors={fieldsErrors}
                 typ={item.typ}
                 name={item.name}
+                initialValue={item.initialValue}
             />
             {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
             <InitialValue
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
+                options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 fieldsErrors={fieldsErrors}
