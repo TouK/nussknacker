@@ -26,9 +26,9 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       system: ActorSystem
   ): RunnableScenarioInterpreter = {
     val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-    val modelData           = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
-    val metricRegistry      = prepareMetricRegistry(runtimeConfig)
-    val preparer            = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
+    val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")), category = None)
+    val metricRegistry = prepareMetricRegistry(runtimeConfig)
+    val preparer       = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     // TODO Pass correct ProcessVersion and DeploymentData
     val jobData = JobData(scenario.metaData, ProcessVersion.empty)
 

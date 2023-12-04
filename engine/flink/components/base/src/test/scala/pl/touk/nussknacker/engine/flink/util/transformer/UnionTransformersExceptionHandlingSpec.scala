@@ -27,7 +27,10 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("union" -> WithCategories(UnionTransformer), "union-memo" -> WithCategories(UnionWithMemoTransformer))
+      Map(
+        "union"      -> WithCategories.anyCategory(UnionTransformer),
+        "union-memo" -> WithCategories.anyCategory(UnionWithMemoTransformer)
+      )
 
   }
 

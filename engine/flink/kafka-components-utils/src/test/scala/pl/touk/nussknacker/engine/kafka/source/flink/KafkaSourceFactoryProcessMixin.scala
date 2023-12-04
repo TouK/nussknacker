@@ -45,7 +45,8 @@ trait KafkaSourceFactoryProcessMixin
       ProcessDefinitionExtractor.extractObjectWithMethods(
         creator,
         getClass.getClassLoader,
-        process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+        process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)),
+        category = None
       )
     )
 

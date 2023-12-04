@@ -23,11 +23,12 @@ class UIProcessResolver(
     substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
 ) {
 
+  private val beforeUiResolvingValidator = validator.withExpressionParsers { case spel: SpelExpressionParser =>
+    spel.typingDictLabels
+  }
+
   def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
-    val v = validator.withExpressionParsers { case spel: SpelExpressionParser =>
-      spel.typingDictLabels
-    }
-    v.validate(displayable)
+    beforeUiResolvingValidator.validate(displayable)
   }
 
   def resolveExpressions(

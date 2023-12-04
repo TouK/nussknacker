@@ -46,7 +46,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "stringSource" -> WithCategories(
+        "stringSource" -> WithCategories.anyCategory(
           SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
         )
       )
@@ -54,12 +54,12 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     override def services(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[Service]] = {
-      Map("service" -> WithCategories(new SomeService))
+      Map("service" -> WithCategories.anyCategory(new SomeService))
     }
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
       ExpressionConfig(
-        globalProcessVariables = Map("CONV" -> WithCategories(ConversionUtils)),
+        globalProcessVariables = Map("CONV" -> WithCategories.anyCategory(ConversionUtils)),
         globalImports = List.empty,
         customConversionsProviders = spelCustomConversionsProviderOpt.toList
       )
