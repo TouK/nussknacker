@@ -304,7 +304,7 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec
+    @ConfiguredJsonCodec
     sealed trait ValueInputWithFixedValues {
       def allowOtherValue: Boolean
       def fixedValuesList: List[FixedExpressionValue]

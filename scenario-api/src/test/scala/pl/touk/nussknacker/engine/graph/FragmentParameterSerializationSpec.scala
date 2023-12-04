@@ -57,19 +57,18 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       },
       "hintText" : "some hint text",
       "valueEditor" : {
-        "ValueInputWithFixedValuesProvided" : {
-          "allowOtherValue" : true,
-          "fixedValuesList" : [
-            {
-              "expression" : "'someValue'",
-              "label" : "someValue"
-            },
-            {
-              "expression" : "'someOtherValue'",
-              "label" : "someOtherValue"
-            }
-          ]
-        }
+        "type": "ValueInputWithFixedValuesProvided",
+        "allowOtherValue" : true,
+        "fixedValuesList" : [
+          {
+            "expression" : "'someValue'",
+            "label" : "someValue"
+          },
+          {
+            "expression" : "'someOtherValue'",
+            "label" : "someOtherValue"
+          }
+        ]
       }
     }""") shouldBe Right(
       FragmentParameter(
