@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
-    processValidator: UIProcessValidator
+    processValidator: ProcessingTypeDataProvider[UIProcessValidator, _]
 ) {
 
   def testMigrations(
@@ -31,12 +31,15 @@ class TestModelMigrations(
   )(implicit user: LoggedUser): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validator = processValidator.withFragmentResolver(
-      new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
+    val validator = processValidator.mapValues(
+      _.withFragmentResolver(
+        new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
+      )
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
-      val validationResult = validator.validate(migrationDetails.newProcess)
-      val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
+      val validationResult =
+        validator.forTypeUnsafe(migrationDetails.newProcess.processingType).validate(migrationDetails.newProcess)
+      val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
         ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
         newErrors,
