@@ -24,7 +24,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
 
-    const fixedValuesList = item.inputConfig.fixedValuesList ?? [];
+    const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
     //TODO: Remove optional value when backend ready
     const fixedValuesType = item.fixedValuesType || FixedValuesType.UserDefinedList;

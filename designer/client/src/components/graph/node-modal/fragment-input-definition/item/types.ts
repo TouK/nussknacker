@@ -37,34 +37,32 @@ export interface GenericParameterVariant {
     expression?: Expression;
 }
 
+interface ValueEditor {
+    fixedValuesList: FixedValuesOption[] | null;
+    allowOtherValue: boolean | null;
+    fixedValuesPresetId: string | null;
+}
+
 export interface DefaultParameterVariant extends GenericParameterVariant, FragmentValidation {
     name: string;
+    valueEditor: null;
 }
 
 export interface FixedListParameterVariant extends GenericParameterVariant {
-    inputConfig: {
-        inputMode: InputMode.FixedList;
-        fixedValuesList: FixedValuesOption[];
-    };
+    valueEditor: ValueEditor;
     fixedValuesListPresetId: string;
     presetSelection?: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputConfig: {
-        inputMode: InputMode.AnyValueWithSuggestions;
-        fixedValuesList: FixedValuesOption[];
-    };
+    valueEditor: ValueEditor;
     fixedValuesListPresetId: string;
     presetSelection?: string;
     fixedValuesType: FixedValuesType;
 }
 export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
-    inputConfig: {
-        inputMode: InputMode.AnyValue;
-        fixedValuesList: FixedValuesOption[];
-    };
     fixedValuesType: FixedValuesType;
+    valueEditor: null;
 }
 
 export type StringOrBooleanParameterVariant =
@@ -75,15 +73,15 @@ export type StringOrBooleanParameterVariant =
 export type FragmentInputParameter = StringOrBooleanParameterVariant | DefaultParameterVariant;
 
 export function isFixedListParameter(item: StringOrBooleanParameterVariant): item is FixedListParameterVariant {
-    return item.inputConfig.inputMode === InputMode.FixedList;
+    return item.valueEditor?.allowOtherValue === false;
 }
 
 export function isAnyValueWithSuggestionsParameter(item: StringOrBooleanParameterVariant): item is AnyValueWithSuggestionsParameterVariant {
-    return item.inputConfig.inputMode === InputMode.AnyValueWithSuggestions;
+    return item?.valueEditor?.allowOtherValue === true;
 }
 
 export function isAnyValueParameter(item: StringOrBooleanParameterVariant): item is AnyValueParameterVariant {
-    return item.inputConfig.inputMode === InputMode.AnyValue;
+    return item.valueEditor === null;
 }
 
 export function isStringOrBooleanVariant(item: FragmentInputParameter): item is StringOrBooleanParameterVariant {

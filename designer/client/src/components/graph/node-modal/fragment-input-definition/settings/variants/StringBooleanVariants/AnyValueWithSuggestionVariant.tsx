@@ -32,7 +32,7 @@ export const AnyValueWithSuggestionVariant = ({
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
 
-    const fixedValuesList = item.inputConfig.fixedValuesList ?? [];
+    const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
     const fixedValuesType = item.fixedValuesType || FixedValuesType.UserDefinedList;
 
