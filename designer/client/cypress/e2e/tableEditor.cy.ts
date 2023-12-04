@@ -39,7 +39,7 @@ describe("Table editor", () => {
         cy.realType("foo", { delay: 50 }).realPress("Tab", { pressDelay: 50 });
         cy.realType("bar", { delay: 50 }).realPress("Enter", { pressDelay: 50 });
         cy.realPress("Enter", { pressDelay: 50 });
-        cy.get("#portal textarea").should("be.visible");
+        cy.realPress("Escape", { pressDelay: 50 });
         cy.realType("xxx", { delay: 50 });
 
         cy.get("[title='Switch to expression mode']").should("be.enabled").click();
