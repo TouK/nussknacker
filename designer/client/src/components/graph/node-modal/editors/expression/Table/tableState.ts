@@ -1,6 +1,7 @@
-import { Dispatch, useEffect, useReducer, useState } from "react";
-import { getNextColumnName, longestRow, parseSpel, toSpel } from "./tableDataUtils";
+import { Dispatch, useEffect, useMemo, useReducer, useState } from "react";
+import { getNextColumnName, longestRow, parsers, stringifiers } from "./tableDataUtils";
 import { TaggedUnion } from "type-fest";
+import { ExpressionObj } from "../types";
 
 export type DataColumn = string[];
 export type DataRow = string[];
@@ -196,10 +197,18 @@ function reducer(state: TableData, action: Action): TableData {
     }
 }
 
-export function useTableState(expression: string): [TableData, Dispatch<Action>, string] {
+export function useTableState({ expression, language }: ExpressionObj): [TableData, Dispatch<Action>, string] {
     const [rawExpression, setRawExpression] = useState<string>(expression);
 
-    const [state, dispatch] = useReducer(reducer, emptyValue, (defaultValue) => parseSpel(expression, defaultValue));
+    const fromExpression = useMemo(() => {
+        return parsers[language];
+    }, [language]);
+
+    const toExpression = useMemo(() => {
+        return stringifiers[language];
+    }, [language]);
+
+    const [state, dispatch] = useReducer(reducer, emptyValue, (defaultValue) => fromExpression(expression, defaultValue));
 
     useEffect(() => {
         setRawExpression((current) => {
@@ -208,15 +217,15 @@ export function useTableState(expression: string): [TableData, Dispatch<Action>,
             }
             dispatch({
                 type: ActionTypes.replaceData,
-                data: parseSpel(expression, emptyValue),
+                data: fromExpression(expression, emptyValue),
             });
             return expression;
         });
-    }, [expression]);
+    }, [expression, fromExpression]);
 
     useEffect(() => {
-        setRawExpression(toSpel(state));
-    }, [state, setRawExpression]);
+        setRawExpression(toExpression(state));
+    }, [state, setRawExpression, toExpression]);
 
     return [state, dispatch, rawExpression];
 }
