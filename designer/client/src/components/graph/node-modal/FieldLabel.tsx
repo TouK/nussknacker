@@ -4,7 +4,9 @@ import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "./node";
+import NodeTip from "./NodeTip";
+import InfoIcon from "@mui/icons-material/Info";
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
     return definitions?.find((param) => param.name === paramName);
@@ -23,6 +25,9 @@ const Footer = styled("div")({
     overflow: "hidden",
 });
 
+const StyledNodeTip = styled(NodeTip)`
+    margin: 0 8px;
+`;
 export function FieldLabel({
     nodeId,
     paramName,
@@ -39,8 +44,14 @@ export function FieldLabel({
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);
 
     return (
-        <NodeLabelStyled title={paramName}>
-            {label}:{parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
-        </NodeLabelStyled>
+        <>
+            <NodeLabelStyled title={paramName}>
+                <div>
+                    <div>{label}:</div>
+                    {parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
+                </div>
+                {parameter?.hintText && <StyledNodeTip title={parameter?.hintText} icon={<InfoIcon />} />}
+            </NodeLabelStyled>
+        </>
     );
 }
