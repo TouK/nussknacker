@@ -99,7 +99,7 @@ case class ComponentExtractor(classLoader: ClassLoader, nussknackerVersion: Nuss
       val finalName = config.componentPrefix.map(_ + cd.name).getOrElse(cd.name)
       finalName -> WithCategories(
         cd.component,
-        config.categories,
+        None,
         SingleComponentConfig.zero.copy(docsUrl = cd.docsUrl, icon = cd.icon)
       )
     }

@@ -11,14 +11,12 @@ object SwaggerEnrichers {
       swaggerServices: List[SwaggerService],
       creator: SwaggerEnricherCreator
   ): Seq[SwaggerEnricherDefinition] = {
-    val additionalCategories = Nil
     // TODO: add configuration
     val fixedParameters = Map[String, () => AnyRef]()
     swaggerServices.map { swaggerService =>
       SwaggerEnricherDefinition(
         swaggerService.name,
         swaggerService.documentation,
-        swaggerService.categories ++ additionalCategories,
         creator.create(
           config.url,
           config.rootUrl,
@@ -35,6 +33,5 @@ object SwaggerEnrichers {
 final case class SwaggerEnricherDefinition(
     name: ServiceName,
     documentation: Option[String],
-    categories: List[String],
     service: EagerService
 )
