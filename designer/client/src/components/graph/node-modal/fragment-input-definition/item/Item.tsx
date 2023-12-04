@@ -8,10 +8,11 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter, InputMode } from "./types";
+import { onChangeType, FragmentInputParameter } from "./types";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
+import { SettingsProvider } from "../settings/SettingsProvider";
 
 interface ItemProps {
     index: number;
@@ -78,7 +79,7 @@ export function Item(props: ItemProps): JSX.Element {
                     readOnly={readOnly}
                     onChange={(value) => {
                         onChange(`${path}.typ.refClazzName`, value);
-                        onChange(`${path}.inputConfig.inputMode`, InputMode.AnyValue);
+                        onChange(`${path}.valueEditor`, null);
                     }}
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
@@ -86,18 +87,20 @@ export function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>
-            {isOpen && (
-                <Settings
-                    path={path}
-                    item={item}
-                    onChange={onChange}
-                    variableTypes={variableTypes}
-                    fixedValuesPresets={fixedValuesPresets}
-                    readOnly={readOnly}
-                    fieldsErrors={fieldsErrors}
-                    data-testid={`settings:${index}`}
-                />
-            )}
+            <SettingsProvider initialFixedValuesList={item?.valueEditor?.fixedValuesList}>
+                {isOpen && (
+                    <Settings
+                        path={path}
+                        item={item}
+                        onChange={onChange}
+                        variableTypes={variableTypes}
+                        fixedValuesPresets={fixedValuesPresets}
+                        readOnly={readOnly}
+                        fieldsErrors={fieldsErrors}
+                        data-testid={`settings:${index}`}
+                    />
+                )}
+            </SettingsProvider>
         </div>
     );
 }

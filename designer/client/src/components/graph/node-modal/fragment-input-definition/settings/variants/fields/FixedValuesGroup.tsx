@@ -11,7 +11,7 @@ interface FixedValuesGroup {
     readOnly: boolean;
 }
 
-export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValuesType.UserDefinedList, readOnly }: FixedValuesGroup) {
+export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: FixedValuesGroup) {
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -27,13 +27,13 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType = FixedValues
             >
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={FixedValuesType.Preset}
+                    value={FixedValuesType.ValueInputWithFixedValuesPreset}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}
                 />
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={FixedValuesType.UserDefinedList}
+                    value={FixedValuesType.ValueInputWithFixedValuesProvided}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</StyledFormControlLabel>}
                     disabled={readOnly}

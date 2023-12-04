@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
-import { FixedValuesGroup } from "../fields/FixedValuesGroup";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
@@ -24,10 +23,9 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
 
-    const fixedValuesList = item.inputConfig.fixedValuesList ?? [];
+    const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
-    //TODO: Remove optional value when backend ready
-    const fixedValuesType = item.fixedValuesType || FixedValuesType.UserDefinedList;
+    const fixedValuesType = item.valueEditor.type;
 
     return (
         <>
@@ -45,12 +43,13 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 fieldsErrors={fieldsErrors}
                 typ={item.typ}
                 name={item.name}
+                initialValue={item.initialValue}
             />
             <InitialValue
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={fixedValuesType === "UserDefinedList" ? fixedValuesList : presetListItemOptions}
+                options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 fieldsErrors={fieldsErrors}

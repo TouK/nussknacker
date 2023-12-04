@@ -58,7 +58,15 @@ export const StringBooleanVariant = ({
                     label=""
                 />
             </SettingRow>
-            <InputModeSelect path={path} onChange={onChange} item={item} inputModeOptions={inputModeOptions} readOnly={readOnly} />
+            <InputModeSelect
+                path={path}
+                onChange={onChange}
+                item={item}
+                inputModeOptions={inputModeOptions}
+                readOnly={readOnly}
+                fixedValuesPresets={fixedValuesPresets}
+                fieldsErrors={fieldsErrors}
+            />
             {isAnyValueParameter(item) && (
                 <AnyValueVariant
                     item={item}
