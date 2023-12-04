@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
@@ -148,7 +148,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val service = new ProcessStateDefinitionService(
-      new MapBasedProcessingTypeDataProvider(Map.empty, (stateDefinitions, categoryService))
+      ProcessingTypeDataProvider(Map.empty, (stateDefinitions, categoryService))
     )
     service.fetchStateDefinitions(user)
   }

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -58,8 +59,11 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val scenarioTypes = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
+    val scenarioTypes = provider
       .all(AdminUser("admin", "admin"))
 
     scenarioTypes.keySet shouldEqual Set("foo")
@@ -79,18 +83,24 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val provider = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 
-    provider.forType("foo")(fooCategoryUser) shouldBe defined
-    provider.forType("bar")(fooCategoryUser) shouldBe empty
+    provider.forType("foo")(fooCategoryUser)
+    an[UnauthorizedError] shouldBe thrownBy {
+      provider.forType("bar")(fooCategoryUser)
+    }
     provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
 
     val mappedProvider = provider.mapValues(_ => ())
-    mappedProvider.forType("foo")(fooCategoryUser) shouldBe defined
-    mappedProvider.forType("bar")(fooCategoryUser) shouldBe empty
+    mappedProvider.forType("foo")(fooCategoryUser)
+    an[UnauthorizedError] shouldBe thrownBy {
+      mappedProvider.forType("bar")(fooCategoryUser)
+    }
     mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
   }
 

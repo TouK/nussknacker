@@ -10,15 +10,11 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.{
-  AnyUserPermission,
-  UserWithCategoryReadPermission,
-  ValueWithPermission
-}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.{
   selectedScenarioTypeConfigurationPath,
   toValueWithPermission
 }
+import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessToCategory}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +24,7 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader {
 
   def toValueWithPermission(processingTypeData: ProcessingTypeData): ValueWithPermission[ProcessingTypeData] = {
     val accessPermission =
-      processingTypeData.categoryConfig.category.map(UserWithCategoryReadPermission).getOrElse(AnyUserPermission)
+      processingTypeData.categoryConfig.category.map(UserWithAccessToCategory).getOrElse(AnyUser)
     ValueWithPermission(processingTypeData, accessPermission)
   }
 
@@ -41,7 +37,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: DeploymentService
-  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
     val processingTypesData = processingTypesConfig
@@ -54,9 +50,11 @@ trait ProcessingTypeDataReader extends LazyLogging {
     // to assert the loaded configuration is correct (fail-fast approach).
     val combinedData = createCombinedData(processingTypesData, config)
 
-    new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](
+    ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithPermission),
-      combinedData
+      () => combinedData,
+      // We pass here new Object to enforce update of observers
+      new Object
     )
   }
 

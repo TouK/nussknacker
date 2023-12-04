@@ -38,15 +38,9 @@ import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataReader}
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.ValueWithPermission
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{
-  ConfigProcessCategoryService,
-  DBProcessService,
-  ProcessCategoryService,
-  UserCategoryService
-}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefaultComponentServiceSpec
@@ -508,7 +502,7 @@ class DefaultComponentServiceSpec
     )
   }
 
-  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(
+  private val processingTypeDataProvider = ProcessingTypeDataProvider(
     processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
     (ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService), categoryService)
   )
@@ -767,12 +761,11 @@ class DefaultComponentServiceSpec
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       getProcessCategoryService = () => processCategoryService,
-      processResolver = TestFactory.processResolver,
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidator = TestFactory.processValidator
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
@@ -120,13 +121,11 @@ object ProcessTestData {
       : ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
     processDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
 
-  def processValidator: UIProcessValidator = UIProcessValidator(
-    mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
-    ),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
-    new FragmentResolver(new StubFragmentRepository(Set()))
+  def processValidator: UIProcessValidator = new UIProcessValidator(
+    ProcessValidator.default(new StubModelDataWithProcessDefinition(processDefinition)),
+    Map.empty,
+    List.empty,
+    new FragmentResolver(new StubFragmentRepository(Set.empty))
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")

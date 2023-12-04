@@ -22,14 +22,10 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.{
-  AnyUserPermission,
-  ValueWithPermission
-}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
-  MapBasedProcessingTypeDataProvider,
   ProcessingTypeDataConfigurationReader,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataProvider,
+  ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -67,18 +63,20 @@ object TestFactory extends TestPermissions {
 
   val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
 
+  val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processValidator)
+
   val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
     .withFragmentResolver(sampleResolver)
-    .withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
-    )
+    .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
 
   val processResolver = new UIProcessResolver(
     processValidator,
-    mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
-    )
+    ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
   )
+
+  val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processResolver)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
@@ -166,13 +164,13 @@ object TestFactory extends TestPermissions {
 
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission(_, AnyUserPermission))
+    ProcessingTypeDataProvider.withEmptyCombinedData(
+      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
     )
   }
 
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+    ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
     ProcessValidator.default(

@@ -1,21 +1,8 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-
-trait ProcessingTypeDataReload {
-
-  def reloadAll(): Unit
-
-}
-
-trait Initialization {
-
-  def init(): Unit
-
-}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 
 /**
  * This implements *simplistic* reloading of ProcessingTypeData - treat it as experimental/working PoC
@@ -29,46 +16,31 @@ trait Initialization {
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class BasicProcessingTypeDataReload(
-    loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
-) extends ProcessingTypeDataReload
+class ProcessingTypeDataReload(
+    loadMethod: () => ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData]
+) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
     with LazyLogging {
 
-  @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] =
-    loadMethod()
+  @volatile private[processingtypedata] var state
+      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] =
+    // We init state with dumb value instead of calling loadMethod() to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
+    ProcessingTypeDataState(
+      Map.empty,
+      () => CombinedProcessingTypeData.create(Map.empty, ConfigWithUnresolvedVersion(ConfigFactory.empty())),
+      new Object
+    )
 
-  override def reloadAll(): Unit = synchronized {
-    logger.info("Closing old models")
-    current.all(NussknackerInternalUser.instance).values.foreach(_.close())
-    logger.info("Reloading scenario type data")
-    current = loadMethod()
-    logger.info("Scenario type data reloading finished")
-  }
-
-}
-
-object BasicProcessingTypeDataReload {
-
-  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]): (
-      ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData],
-      ProcessingTypeDataReload with Initialization
-  ) = {
-    // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
-    lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
-    val provider = new ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] {
-      override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[ProcessingTypeData] =
-        reloader.current.forType(typ)
-
-      override def all(implicit user: LoggedUser): Map[ProcessingType, ProcessingTypeData] = reloader.current.all
-
-      override def combined: CombinedProcessingTypeData = reloader.current.combined
-    }
-    val lazyInitializedReloader = new ProcessingTypeDataReload with Initialization {
-      override def init(): Unit = reloader
-
-      override def reloadAll(): Unit = reloader.reloadAll()
-    }
-    (provider, lazyInitializedReloader)
+  def reloadAll(): Unit = synchronized {
+    val beforeReload = state
+    logger.info(
+      s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
+    )
+    beforeReload.all.values.foreach(_.value.close())
+    logger.info("Reloading processing type data...")
+    state = loadMethod()
+    logger.info(
+      s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
+    )
   }
 
 }
