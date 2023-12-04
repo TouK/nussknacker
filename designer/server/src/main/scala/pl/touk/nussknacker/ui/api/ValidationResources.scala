@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -13,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ValidationResources(
     protected val processService: ProcessService,
-    processResolver: UIProcessResolver
+    processResolver: ProcessingTypeDataProvider[UIProcessResolver, _]
 )(implicit val ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -34,7 +35,7 @@ class ValidationResources(
   private def validate(displayable: DisplayableProcess)(implicit user: LoggedUser) = {
     NuDesignerErrorToHttp.toResponseEither(
       FatalValidationError.renderNotAllowedAsError(
-        processResolver.validateBeforeUiResolving(displayable)
+        processResolver.forTypeUnsafe(displayable.processingType).validateBeforeUiResolving(displayable)
       )
     )
   }

@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData}
-import pl.touk.nussknacker.ui.factory.{LocalProcessingTypeDataProviderFactory, NussknackerAppFactory}
+import pl.touk.nussknacker.ui.factory.{LocalProcessingTypeDataStateFactory, NussknackerAppFactory}
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -46,7 +46,7 @@ object LocalNussknackerWithSingleModel {
       appConfig: Config
   ): Resource[IO, Unit] = {
     // TODO: figure out how to perform e.g. hotswap
-    val local      = new LocalProcessingTypeDataProviderFactory(modelData, deploymentManagerProvider, managerConfig)
+    val local      = new LocalProcessingTypeDataStateFactory(modelData, deploymentManagerProvider, managerConfig)
     val appFactory = new NussknackerAppFactory(local)
     appFactory.createApp(appConfig)
   }

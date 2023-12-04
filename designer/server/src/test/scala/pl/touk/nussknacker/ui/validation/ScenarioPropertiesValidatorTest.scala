@@ -28,27 +28,25 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   private val validator = new ScenarioPropertiesValidator(
-    TestFactory.mapProcessingTypeDataProvider(
-      "streaming" -> Map(
-        reqFieldName -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
-          Some(label)
-        ),
-        regexpFieldName -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(LiteralIntegerValidator)),
-          Some(label)
-        ),
-        optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
-        optFixedFieldName -> ScenarioPropertyConfig(
-          None,
-          Some(FixedValuesParameterEditor(possibleValues)),
-          Some(List(FixedValuesValidator(possibleValues))),
-          Some(label)
-        )
+    Map(
+      reqFieldName -> ScenarioPropertyConfig(
+        None,
+        None,
+        Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
+        Some(label)
+      ),
+      regexpFieldName -> ScenarioPropertyConfig(
+        None,
+        None,
+        Some(List(LiteralIntegerValidator)),
+        Some(label)
+      ),
+      optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
+      optFixedFieldName -> ScenarioPropertyConfig(
+        None,
+        Some(FixedValuesParameterEditor(possibleValues)),
+        Some(List(FixedValuesValidator(possibleValues))),
+        Some(label)
       )
     )
   )
