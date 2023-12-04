@@ -7,6 +7,7 @@ import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
+import { v4 as uuid4 } from "uuid";
 
 interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionType" | "readOnly"> {
     isEditMode?: boolean;
@@ -21,7 +22,7 @@ function FragmentOutputDefinition<F extends Field>(props: Props<F>): JSX.Element
 
     const addField = useCallback(
         (namespace: string, field) => {
-            const newField: Field = { name: "", expression: { expression: "", language: ExpressionLang.SpEL } };
+            const newField: Field = { uuid: uuid4(), name: "", expression: { expression: "", language: ExpressionLang.SpEL } };
             addElement(namespace, field || newField);
         },
         [addElement],

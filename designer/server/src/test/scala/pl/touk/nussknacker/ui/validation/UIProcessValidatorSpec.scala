@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -25,7 +26,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression
+  ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -36,7 +37,6 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
   SaveAllowed,
@@ -60,8 +60,8 @@ import scala.jdk.CollectionConverters._
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   import ProcessTestData._
-  import UIProcessValidatorSpec._
   import TestCategories._
+  import UIProcessValidatorSpec._
   import spel.Implicits._
 
   test("check for not unique edge types") {
@@ -418,7 +418,124 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   }
 
-  test("validates fragment input definition") {
+  test("fails validation if cannot resolve fragment parameter type while validating fragment") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  "subParam1",
+                  FragmentClazzRef("thisTypeDoesntExist"),
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val displayableFragment =
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
+
+    val validationResult = configuredValidator.validate(displayableFragment)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "FragmentParamClassLoadError",
+              "Invalid parameter type.",
+              "Failed to load thisTypeDoesntExist",
+              Some("$param.subParam1.$typ"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition while validating fragment") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("sub1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  "subParam1",
+                  FragmentClazzRef[String],
+                  required = false,
+                  initialValue = Some(FragmentInputDefinition.FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
+                  )
+                ),
+                FragmentParameter(
+                  "subParam2",
+                  FragmentClazzRef[java.lang.Boolean],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
+                  )
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val displayableFragment =
+      ProcessConverter.toDisplayable(fragmentWithInvalidParam, TestProcessingTypes.Streaming, Category1)
+
+    val validationResult = configuredValidator.validate(displayableFragment)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "InitialValueNotPresentInPossibleValues",
+              "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
+              _,
+              Some("$param.subParam1.$initialValue"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "ExpressionParserCompilationErrorInFragmentDefinition",
+              "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
+              "There is a problem with expression: 'someValue'",
+              Some("$param.subParam2.$fixedValuesList"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition while validating process that uses fragment") {
     val invalidFragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
@@ -451,6 +568,95 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     validationResult should matchPattern {
       case ValidationResult(ValidationErrors(invalidNodes, Nil, Nil), ValidationWarnings.success, _)
           if invalidNodes("subIn").size == 1 && invalidNodes("subIn-subVar").size == 1 =>
+    }
+  }
+
+  test("validates FragmentInput parameters according to FragmentInputDefinition") {
+    val fragment = CanonicalProcess(
+      MetaData("sub1", FragmentSpecificData()),
+      nodes = List(
+        FlatNode(
+          FragmentInputDefinition(
+            "in",
+            List(
+              FragmentParameter(
+                "subParam1",
+                FragmentClazzRef[String],
+                required = true,
+                initialValue = None,
+                hintText = None,
+                valueEditor = Some(
+                  ValueInputWithFixedValuesProvided(
+                    fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                    allowOtherValue = false
+                  )
+                )
+              ),
+            )
+          )
+        ),
+        FlatNode(FragmentOutputDefinition("subOut1", "subOut1", List(Field("foo", "42L"))))
+      ),
+      additionalBranches = List.empty
+    )
+
+    val process = createProcess(
+      nodes = List(
+        Source("source", SourceRef(sourceTypeName, Nil)),
+        FragmentInput(
+          "subIn1",
+          FragmentRef(
+            fragment.id,
+            List(
+              evaluatedparam.Parameter("subParam1", "'outsideAllowedValues'"),
+            )
+          ),
+          isDisabled = Some(false)
+        ),
+        FragmentInput(
+          "subIn2",
+          FragmentRef(
+            fragment.id,
+            List(
+              evaluatedparam.Parameter("subParam1", ""),
+            )
+          ),
+          isDisabled = Some(false)
+        ),
+        Sink("sink1", SinkRef(sinkTypeName, Nil)),
+      ),
+      edges = List(
+        Edge("source", "subIn1", None),
+        Edge("subIn1", "subIn2", Some(EdgeType.FragmentOutput("subOut1"))),
+        Edge("subIn2", "sink1", Some(EdgeType.FragmentOutput("subOut1")))
+      )
+    )
+
+    val processValidation = mockedProcessValidator(fragment)
+    val validationResult  = processValidation.validate(process)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("subIn1") should matchPattern {
+      case List(
+            NodeValidationError(
+              "InvalidPropertyFixedValue",
+              _,
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
+    validationResult.errors.invalidNodes("subIn2") should matchPattern {
+      case List(
+            NodeValidationError(
+              "EmptyMandatoryParameter",
+              _,
+              _,
+              Some("subParam1"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
     }
   }
 
@@ -624,28 +830,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validates scenario with category") {
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(secretExistingSourceFactory, Nil)),
-        Sink("sink", SinkRef(existingSinkFactory, Nil))
-      ),
-      edges = List(Edge("source", "sink", None))
-    )
-
-    val validationResult = processValidator.validate(process.copy(category = SecretCategory))
-    validationResult.errors.invalidNodes shouldBe Symbol("empty")
-    validationResult.errors.globalErrors shouldBe Symbol("empty")
-    validationResult.saveAllowed shouldBe true
-
-    val validationResultWithCategory2 = processValidator.validate(process)
-    validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "source" -> List(
-        PrettyValidationErrors.formatErrorMessage(MissingSourceFactory(secretExistingSourceFactory, "source"))
-      )
-    )
-  }
-
   test("validates scenario with fragment with category") {
     val fragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
@@ -772,72 +956,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             List(
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
               NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
-            )
-          ) =>
-    }
-  }
-
-  test("validates scenario with fragment parameters - with spel validation expression and valid value") {
-    val fragmentId = "fragment1"
-    val paramName  = "name"
-
-    val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(
-        fragmentId,
-        List(
-          FragmentParameter(
-            paramName,
-            FragmentClazzRef[String],
-            Some(ValidationExpression(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"))
-          )
-        )
-      )
-    val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Tomasz\"")))
-
-    val processValidation = mockedProcessValidator(fragmentDefinition, defaultConfig)
-    val result            = processValidation.validate(processWithFragment)
-    print(result)
-    result.hasErrors shouldBe false
-    result.errors.invalidNodes shouldBe Symbol("empty")
-    result.errors.globalErrors shouldBe Symbol("empty")
-    result.saveAllowed shouldBe true
-  }
-
-  test("validates scenario with fragment parameters - with spel validation expression and invalid value") {
-    val fragmentId = "fragment1"
-    val paramName  = "name"
-
-    val configWithValidators: Config = defaultConfig
-
-    val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(
-        fragmentId,
-        List(
-          FragmentParameter(
-            paramName,
-            FragmentClazzRef[String],
-            Some(ValidationExpression(s"#$paramName.length() < 7"))
-          )
-        )
-      )
-    val processWithFragment =
-      createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Barabasz\"")))
-
-    val processValidation = mockedProcessValidator(fragmentDefinition, configWithValidators)
-    val result            = processValidation.validate(processWithFragment)
-    result.hasErrors shouldBe true
-    result.errors.globalErrors shouldBe empty
-    result.errors.invalidNodes.get("subIn") should matchPattern {
-      case Some(
-            List(
-              NodeValidationError(
-                "CustomParameterValidationError",
-                _,
-                _,
-                Some(paramName),
-                NodeValidationErrorType.SaveAllowed
-              )
             )
           ) =>
     }

@@ -155,7 +155,7 @@ object SingleSideJoinTransformerSpec {
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(customElementName -> WithCategories(new SingleSideJoinTransformer(None) {
+      Map(customElementName -> WithCategories.anyCategory(new SingleSideJoinTransformer(None) {
 
         override protected def prepareAggregatorFunction(
             aggregator: Aggregator,
@@ -190,8 +190,8 @@ object SingleSideJoinTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-main" -> WithCategories(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories(
+        "start-main" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](mainRecordsSource)),
+        "start-joined" -> WithCategories.anyCategory(
           SourceFactory.noParam[OneRecord](
             EmitWatermarkAfterEachElementCollectionSource
               .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
@@ -202,7 +202,7 @@ object SingleSideJoinTransformerSpec {
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
+      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
 
   }
 

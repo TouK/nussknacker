@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api.context
 
 import cats.Applicative
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -80,6 +80,15 @@ object ProcessCompilationError {
       message: String,
       nodeId: String,
       fieldName: Option[String],
+      originalExpr: String
+  ) extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class ExpressionParserCompilationErrorInFragmentDefinition(
+      message: String,
+      nodeId: String,
+      paramName: String,
+      subFieldName: Option[String],
       originalExpr: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
@@ -249,6 +258,15 @@ object ProcessCompilationError {
   }
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
+  final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
+      extends ProcessCompilationError
+
+  final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
+      extends ProcessCompilationError
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 

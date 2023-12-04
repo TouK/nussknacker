@@ -55,8 +55,8 @@ object TestFactory extends TestPermissions {
 
   // FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
-    TestCategories.TestCat  -> Permission.ALL_PERMISSIONS,
-    TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
+    TestCategories.Category1 -> Permission.ALL_PERMISSIONS,
+    TestCategories.Category2 -> Permission.ALL_PERMISSIONS
   )
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
@@ -82,7 +82,7 @@ object TestFactory extends TestPermissions {
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
-    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.TestCat))
+    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
   )
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)

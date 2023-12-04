@@ -2,7 +2,7 @@ import { Edge, EdgeKind, VariableTypes } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { NodeValue } from "./fragment-input-definition/NodeValue";
+import { NodeValue } from "./node";
 import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
 import { EditableEditor } from "./editors/EditableEditor";
 import { css, cx } from "@emotion/css";
@@ -13,7 +13,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import { Validator } from "./editors/Validators";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
-import { SelectNodeWithFocus } from "../../../components/withFocus";
+import { SelectNodeWithFocus } from "../../withFocus";
 
 interface Props {
     index: number;
@@ -101,6 +101,7 @@ export function EdgeFields(props: Props): JSX.Element {
     const showType = types.length > 1 || uniq(edges.map((e) => e.edgeType?.type)).length > 1;
     return (
         <FieldsRow
+            uuid={edge._id}
             index={index}
             className={cx(
                 "movable-row",

@@ -4,15 +4,15 @@ import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   FragmentParamClassLoadError,
   MultipleOutputsForName
 }
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ValidationExpressionParameterValidator}
-import pl.touk.nussknacker.engine.api.dict.DictRegistry
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{
 }
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
@@ -119,26 +120,26 @@ class FragmentComponentDefinitionExtractor(
       .map(toParameter(componentConfig, _, fragmentParameter))
   }
 
+  private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
+
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
       fragmentParameter: FragmentParameter
   )(implicit nodeId: NodeId): Parameter = {
-    val config          = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
-    val parameterData   = ParameterData(typ, Nil)
-    val extractedEditor = EditorExtractor.extract(parameterData, config)
-
-    val customExpressionValidator = fragmentParameter.validationExpression.flatMap(expr => {
-      expressionCompiler
-        .compileWithoutContextValidation(expr.expression, fragmentParameter.name, Typed[Boolean])
-        .toOption
-        .map { expression =>
-          ValidationExpressionParameterValidator(
-            expression,
-            fragmentParameter.validationExpression.flatMap(_.failedMessage)
+    val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
+    val parameterData = ParameterData(typ, Nil)
+    val extractedEditor = fragmentParameter.valueEditor
+      .map { valueEditor =>
+        fixedValuesEditorWithAllowOtherValue(
+          valueEditor.allowOtherValue,
+          FixedValuesParameterEditor(
+            nullFixedValue +: valueEditor.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
           )
-        }
-    })
+        )
+      }
+      .getOrElse(EditorExtractor.extract(parameterData, config))
+    val isOptional = !fragmentParameter.required
 
     Parameter
       .optional(fragmentParameter.name, typ)
@@ -146,13 +147,28 @@ class FragmentComponentDefinitionExtractor(
         editor = extractedEditor,
         validators = ValidatorsExtractor
           .extract(
-            ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)
-          ) ++ customExpressionValidator,
-        // TODO: ability to pick a default value from gui
-        defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(
-          DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)
-        )
+            ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)
+          ),
+        defaultValue = fragmentParameter.initialValue
+          .map(i => Expression.spel(i.expression))
+          .orElse(
+            DefaultValueDeterminerChain.determineParameterDefaultValue(
+              DefaultValueDeterminerParameters(parameterData, isOptional, config, extractedEditor)
+            )
+          ),
+        hintText = fragmentParameter.hintText
       )
+  }
+
+  private def fixedValuesEditorWithAllowOtherValue(
+      allowOtherValue: Boolean,
+      fixedValuesEditor: SimpleParameterEditor,
+  ) = {
+    if (allowOtherValue) {
+      Some(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
+    } else {
+      Some(fixedValuesEditor)
+    }
   }
 
 }

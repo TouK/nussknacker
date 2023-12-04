@@ -33,7 +33,7 @@ class LocalProcessingTypeDataProviderFactory(
     val deploymentService: DeploymentService = deploymentServiceSupplier.get()
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
       new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
-    val categoriesConfig = new CategoriesConfig(Some(List(category)))
+    val categoriesConfig = new CategoriesConfig(Some(category))
     val data =
       ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, categoriesConfig)
     val processingTypes = Map(typeName -> data)

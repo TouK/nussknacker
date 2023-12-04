@@ -1,13 +1,9 @@
-import { isEqual } from "lodash";
 import React, { useCallback, useMemo } from "react";
-import { Parameter } from "../../../../types";
-import MapKey from "../editors/map/MapKey";
-import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
+import { FixedValuesPresets, Parameter, VariableTypes } from "../../../../types";
+import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator, Error } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
-import { FieldsRow } from "./FieldsRow";
-import { NodeRowFields } from "./NodeRowFields";
-import { TypeSelect } from "./TypeSelect";
-import { useDiffMark } from "../PathsToMark";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider";
+import { Item, onChangeType, FragmentInputParameter } from "./item";
 
 export interface Option {
     value: string;
@@ -16,61 +12,71 @@ export interface Option {
 
 interface FieldsSelectProps {
     addField: () => void;
-    fields: Parameter[];
     label: string;
+    fields: Parameter[];
     namespace: string;
-    onChange: (path: string, value: any) => void;
+    onChange: (path: string, value: onChangeType) => void;
     options: Option[];
-    removeField: (path: string, index: number) => void;
+    removeField: (path: string, uuid: string) => void;
     readOnly?: boolean;
-
     showValidation?: boolean;
+    variableTypes: VariableTypes;
+    fixedValuesPresets: FixedValuesPresets;
+    fieldErrors: Error[];
 }
 
-function FieldsSelect(props: FieldsSelectProps): JSX.Element {
-    const { addField, fields, label, onChange, namespace, options, readOnly, removeField, showValidation } = props;
-    const [isMarked] = useDiffMark();
+export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
+    const {
+        fields,
+        label,
+        namespace,
+        options,
+        onChange,
+        variableTypes,
+        removeField,
+        addField,
+        readOnly,
+        showValidation,
+        fixedValuesPresets,
+        fieldErrors,
+    } = props;
 
-    const getCurrentOption = useCallback(
-        (field) => {
-            const fallbackValue = { label: field?.typ?.refClazzName, value: field?.typ?.refClazzName };
-            const foundValue = options.find((item) => isEqual(field?.typ?.refClazzName, item.value));
-            return foundValue || fallbackValue;
-        },
-        [options],
-    );
-
-    const Item = useCallback(
-        ({ index, item, validators }: { index: number; item; validators: Validator[] }) => {
-            const path = `${namespace}[${index}]`;
+    const ItemElement = useCallback(
+        ({
+            index,
+            item,
+            validators,
+            fieldsErrors,
+        }: {
+            index: number;
+            item: FragmentInputParameter;
+            validators: Validator[];
+            fieldsErrors: Error[];
+        }) => {
             return (
-                <FieldsRow index={index}>
-                    <MapKey
-                        readOnly={readOnly}
-                        showValidation={showValidation}
-                        isMarked={isMarked(`${path}.name`)}
-                        onChange={(value) => onChange(`${path}.name`, value)}
-                        value={item.name}
-                        validators={validators}
-                    />
-                    <TypeSelect
-                        readOnly={readOnly}
-                        onChange={(value) => onChange(`${path}.typ.refClazzName`, value)}
-                        value={getCurrentOption(item)}
-                        isMarked={isMarked(`${path}.typ.refClazzName`)}
-                        options={options}
-                    />
-                </FieldsRow>
+                <Item
+                    index={index}
+                    item={item}
+                    validators={validators}
+                    namespace={namespace}
+                    onChange={onChange}
+                    options={options}
+                    readOnly={readOnly}
+                    variableTypes={variableTypes}
+                    showValidation={showValidation}
+                    fixedValuesPresets={fixedValuesPresets}
+                    fieldsErrors={fieldsErrors}
+                />
             );
         },
-        [getCurrentOption, isMarked, namespace, onChange, options, readOnly, showValidation],
+        [namespace, onChange, options, readOnly, variableTypes, showValidation, fixedValuesPresets],
     );
 
     const changeOrder = useCallback((value) => onChange(namespace, value), [namespace, onChange]);
 
     const items = useMemo(
         () =>
-            fields.map((item, index, list) => {
+            fields.map((item: any, index, list) => {
                 const validators = [
                     mandatoryValueValidator,
                     uniqueListValueValidator(
@@ -79,16 +85,22 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     ),
                 ];
 
-                return { item, el: <Item key={index} index={index} item={item} validators={validators} /> };
+                /*
+                 * Display settings errors only when the name is correct, for now, the name is used in the fieldName to recognize the list item,
+                 * but it can be a situation where that name is not unique or is empty in a few parameters, in this case, there is a problem with a correct error display
+                 */
+                const displayableErrors = allValid(validators, item.name) ? fieldErrors : [];
+                return {
+                    item,
+                    el: <ItemElement key={index} index={index} item={item} validators={validators} fieldsErrors={displayableErrors} />,
+                };
             }),
-        [Item, fields],
+        [ItemElement, fieldErrors, fields],
     );
 
     return (
-        <NodeRowFields label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
+        <NodeRowFieldsProvider label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
             <DndItems disabled={readOnly} items={items} onChange={changeOrder} />
-        </NodeRowFields>
+        </NodeRowFieldsProvider>
     );
 }
-
-export default FieldsSelect;

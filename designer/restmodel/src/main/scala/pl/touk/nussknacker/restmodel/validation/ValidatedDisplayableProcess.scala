@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.restmodel.validation
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData._
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 
 @JsonCodec final case class ValidatedDisplayableProcess(
     id: String,

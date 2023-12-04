@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.definition.test.{
   TestingCapabilities
 }
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
@@ -32,7 +32,7 @@ class TestInfoResourcesSpec
     with PatientScalaFutures
     with EitherValuesDetailedMessage {
 
-  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 

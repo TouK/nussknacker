@@ -37,6 +37,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `LiteralIntegerValidator` is considered deprecated and will be removed in the future, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Integer` type,
   * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`
   * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5103](https://github.com/TouK/nussknacker/pull/5103) 
+  * Values of `ExpressionConfig.globalImports` and `ExpressionConfig.dictionaries` aren't wrapped with `WithCategories` anymore
+  * `WithCategories.apply` with `categories` varrag variant is replaced by version with head `category` and tail `categories` varrag
+    Previous version was commonly wrongly used as an "object without categories specified" but in fact it was "object with empty categories list"
+    which means that object should be never visible. To create "object without categories specified" use, `WithCategories.anyCategory`.
+    If you want to pass just a list of categories, use `WithCategories(value, Some(list), SingleComponentConfig.zero)`
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
@@ -59,7 +65,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
   (it's not required, new version is binary-compatible)
-* [#5077](https://github.com/TouK/nussknacker/pull/5077)In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
+* [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
+  If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
+  Because of this change configuration of categories was also removed from Components configuration
+* [#4953](https://github.com/TouK/nussknacker/pull/4953) Stricter validation in base components:
+  * Boolean expressions in `Switch` and `Filter` nodes are required not null values
+  * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
+  * Field names in `MapVariable`, `FragmentOutput` are required to be unique
 
 ## In version 1.12.x
 

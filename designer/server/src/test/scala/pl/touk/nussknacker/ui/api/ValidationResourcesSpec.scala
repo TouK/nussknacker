@@ -11,6 +11,7 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionVa
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -198,6 +199,29 @@ class ValidationResourcesSpec
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("MissingSourceFactory")
+    }
+  }
+
+  it should "find missing mandatory parameter errors in base components" in {
+    val emptyExpression = Expression.spel("")
+
+    val process =
+      ScenarioBuilder
+        .streaming("process")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .filter("filter", emptyExpression)
+        .buildSimpleVariable("variable", "varName", emptyExpression)
+        .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    createAndValidateScenario(process) {
+      status shouldEqual StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      validation.errors.invalidNodes("filter").head.message should include(
+        "This field is required and can not be null"
+      )
+      validation.errors.invalidNodes("variable").head.message should include(
+        "This field is mandatory and can not be empty"
+      )
     }
   }
 

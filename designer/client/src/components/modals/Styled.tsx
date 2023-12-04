@@ -38,7 +38,7 @@ export const FormRow = styled("div")(
         padding: 0 20px;
         display: inline-block;
         color: ${theme.custom.colors.secondaryColor};
-        background-color: ${theme.custom.colors.secondaryColor};
+        background-color: ${theme.custom.colors.secondaryBackground};
         border: none;
         font-size: 14px;
         font-weight: 400;

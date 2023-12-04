@@ -9,14 +9,14 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.node.NodeData._
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders

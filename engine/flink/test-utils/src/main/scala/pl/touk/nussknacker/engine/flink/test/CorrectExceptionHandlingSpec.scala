@@ -78,7 +78,7 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) 
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
     val inputType  = Typed.fromDetailedType[java.util.List[Int]]
     Map(
-      "source" -> WithCategories(
+      "source" -> WithCategories.anyCategory(
         SourceFactory.noParam(
           CollectionSource(
             samples,
@@ -101,7 +101,9 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] =
-    delegate.sinkFactories(processObjectDependencies) + ("empty" -> WithCategories(SinkFactory.noParam(EmptySink)))
+    delegate.sinkFactories(processObjectDependencies) + ("empty" -> WithCategories.anyCategory(
+      SinkFactory.noParam(EmptySink)
+    ))
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
     delegate.expressionConfig(processObjectDependencies)

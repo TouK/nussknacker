@@ -132,7 +132,10 @@ class FlinkProcessCompilerWithTestComponents(
   }
 
   private def testComponentsWithCategories[T <: Component: ClassTag] =
-    testExtensionsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
+    testExtensionsHolder
+      .components[T]
+      .map(cd => cd.name -> WithCategories.anyCategory(cd.component.asInstanceOf[T]))
+      .toMap
 
   def this(
       testExtensionsHolder: TestExtensionsHolder,

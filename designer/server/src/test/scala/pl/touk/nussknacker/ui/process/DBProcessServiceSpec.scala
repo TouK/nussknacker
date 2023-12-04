@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -33,40 +32,31 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
-  private val categoriesUser =
-    TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
-  private val testUser =
-    TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = TestCategories)
-
-  private val testReqRespUser = TestFactory.userWithCategoriesReadPermission(
-    username = "testReqRespUser",
-    categories = TestCategories ++ ReqResCategories
-  )
+  private val allCategoriesUser =
+    TestFactory.userWithCategoriesReadPermission(username = "allCategoriesUser", categories = AllCategories)
+  private val category1User =
+    TestFactory.userWithCategoriesReadPermission(username = "testUser", categories = List(Category1))
 
   private val category1Process = createBasicProcess("category1Process", category = Category1, lastAction = Some(Deploy))
+  private val category1Fragment = createFragment("category1Fragment", category = Category1)
+  private val category1ArchivedFragment =
+    createBasicProcess("category1ArchivedFragment", isArchived = true, category = Category1)
   private val category2ArchivedProcess =
     createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
-  private val testfragment = createFragment("testfragment", category = TestCat)
-  private val reqRespArchivedfragment =
-    createBasicProcess("reqRespArchivedfragment", isArchived = true, category = ReqRes)
 
   private val processes: List[ScenarioWithDetailsEntity[DisplayableProcess]] = List(
     category1Process,
+    category1Fragment,
+    category1ArchivedFragment,
     category2ArchivedProcess,
-    testfragment,
-    reqRespArchivedfragment
   )
 
   private val fragmentCategory1 = createFragment("fragmentCategory1", category = Category1)
   private val fragmentCategory2 = createFragment("fragmentCategory2", category = Category2)
-  private val fragmentTest      = createFragment("fragmentTest", category = TestCat)
-  private val fragmentReqResp   = createFragment("fragmentReqResp", category = ReqRes)
 
   private val fragments = List(
     fragmentCategory1,
     fragmentCategory2,
-    fragmentTest,
-    fragmentReqResp
   )
 
   private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
@@ -77,9 +67,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val testingData = Table(
       ("user", "expected"),
       (adminUser, processes.filter(_.isArchived == false)),
-      (categoriesUser, List(category1Process)),
-      (testUser, List(testfragment)),
-      (testReqRespUser, List(testfragment)),
+      (allCategoriesUser, processes.filter(_.isArchived == false)),
+      (category1User, List(category1Process, category1Fragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
@@ -98,9 +87,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val testingData = Table(
       ("user", "expected"),
       (adminUser, processes.filter(_.isArchived == true)),
-      (categoriesUser, List(category2ArchivedProcess)),
-      (testUser, Nil),
-      (testReqRespUser, List(reqRespArchivedfragment)),
+      (allCategoriesUser, processes.filter(_.isArchived == true)),
+      (category1User, List(category1ArchivedFragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
@@ -119,9 +107,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     val testingData = Table(
       ("user", "fragments"),
       (adminUser, fragments),
-      (categoriesUser, List(fragmentCategory1, fragmentCategory2)),
-      (testUser, List(fragmentTest)),
-      (testReqRespUser, List(fragmentTest, fragmentReqResp)),
+      (allCategoriesUser, fragments),
+      (category1User, List(fragmentCategory1)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ScenarioWithDetailsEntity[DisplayableProcess]]) =>
@@ -156,7 +143,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
         importSuccess(categoryDisplayable)
       ), // importing data with different id
       (
-        category2ArchivedProcess.idWithName,
+        category1ArchivedFragment.idWithName,
         baseProcessData,
         Left(ProcessIllegalAction("Import is not allowed for archived process."))
       ),

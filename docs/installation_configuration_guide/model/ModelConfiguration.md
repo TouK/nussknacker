@@ -84,7 +84,6 @@ Common configuration options that area available for component providers:
 * `providerType` - type of provider
 * `disabled` - allow to disable given component provider (default `false`)
 * `componentPrefix` - prefix that will be added to components provided by provider (default empty string)
-* `categories` - lists of categories in which components will be visible; when missing, components will be visible in every category configured for given scenario type
 
 ### Configuration of UI attributes of components
 

@@ -22,7 +22,12 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  ValidationErrors,
+  ValidationResult
+}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
@@ -108,15 +113,17 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
             "paramDualEditor" -> ParameterConfig(
               None,
               None,
               Some(
                 List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
               ),
+              None,
               None
             ),
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
           )
         ),
         icon = Some("/assets/components/Filter.svg"),
@@ -131,15 +138,17 @@ class BaseFlowTest
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
               None,
-              None
+              None,
+              Some("some hint text")
             ),
+            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "foo" -> ParameterConfig(
               None,
               Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
               None,
+              None,
               None
             ),
-            "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
           )
         ),
         icon = None,
@@ -157,7 +166,7 @@ class BaseFlowTest
       "sub1" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
           )
         ),
         icon = None,
@@ -168,8 +177,14 @@ class BaseFlowTest
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
-            "overriddenByDevConfigParam"  -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
+            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None, None),
+            "overriddenByDevConfigParam" -> ParameterConfig(
+              None,
+              None,
+              Some(List(MandatoryParameterValidator)),
+              None,
+              None
+            )
           )
         ),
         icon = None,
@@ -304,10 +319,17 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     response2.code shouldEqual StatusCode.Ok
-    // TODO: in the future should be more local error
-    response2.body.rightValue.errors.globalErrors.map(_.description) shouldBe List(
-      "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration"
-    )
+    response2.body.rightValue.errors.invalidNodes("input1") should matchPattern {
+      case List(
+            NodeValidationError(
+              "FragmentParamClassLoadError",
+              "Invalid parameter type.",
+              "Failed to load i.do.not.exist",
+              Some("$param.badParam.$typ"),
+              NodeValidationErrorType.SaveAllowed
+            )
+          ) =>
+    }
 
     val response3 = httpClient.send(
       quickRequest

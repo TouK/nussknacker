@@ -68,7 +68,7 @@ export default function Variable({
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
             <EditableEditor
-                fieldName="expression"
+                fieldName="$expression"
                 fieldLabel={"Expression"}
                 renderFieldLabel={renderFieldLabel}
                 expressionObj={node.value}

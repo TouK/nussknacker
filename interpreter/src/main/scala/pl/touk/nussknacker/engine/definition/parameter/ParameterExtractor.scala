@@ -61,7 +61,8 @@ object ParameterExtractor {
       branchParamName.isDefined,
       isLazyParameter = isLazyParameter,
       scalaOptionParameter = isScalaOptionParameter,
-      javaOptionalParameter = isJavaOptionalParameter
+      javaOptionalParameter = isJavaOptionalParameter,
+      hintText = None
     )
   }
 
