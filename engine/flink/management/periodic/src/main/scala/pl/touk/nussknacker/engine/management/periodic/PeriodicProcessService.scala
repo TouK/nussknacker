@@ -187,7 +187,7 @@ class PeriodicProcessService(
           val (rescheduled, callbacks) = schedules.groupedByPeriodicProcess.collect {
             case processScheduleData
                 if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
-              reschedule(processScheduleData)
+              reschedule(processScheduleData, needRescheduleDeploymentIds)
           }.unzip
 
           val processWasRescheduled = rescheduled.exists(identity)
@@ -267,25 +267,32 @@ class PeriodicProcessService(
 
   private def reschedule(
       processScheduleData: PeriodicProcessScheduleData,
+      needRescheduleDeploymentIds: Set[PeriodicProcessDeploymentId]
   ): (Boolean, RepositoryAction[Callback]) = {
     import processScheduleData._
-    val scheduleActions: List[Option[Action[Unit]]] = deployments.map { deployment =>
-      deployment.nextRunAt(clock) match {
-        case Right(Some(futureDate)) =>
-          logger.info(s"Rescheduling ${deployment.display} to $futureDate")
-          val action = scheduledProcessesRepository
-            .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
-            .flatMap { data =>
-              handleEvent(ScheduledEvent(data, firstSchedule = false))
-            }
-          Some(action)
-        case Right(None) =>
-          logger.info(s"No next run of ${deployment.display}")
-          None
-        case Left(error) =>
-          logger.error(s"Wrong periodic property, error: $error for ${deployment.display}")
-          None
-      }
+    val scheduleActions = deployments.map { deployment =>
+      if (needRescheduleDeploymentIds.contains(deployment.id))
+        deployment.nextRunAt(clock) match {
+          case Right(Some(futureDate)) =>
+            logger.info(s"Rescheduling ${deployment.display} to $futureDate")
+            val action = scheduledProcessesRepository
+              .schedule(process.id, deployment.scheduleName, futureDate, deploymentRetryConfig.deployMaxRetries)
+              .flatMap { data =>
+                handleEvent(ScheduledEvent(data, firstSchedule = false))
+              }
+            Some(action)
+          case Right(None) =>
+            logger.info(s"No next run of ${deployment.display}")
+            None
+          case Left(error) =>
+            logger.error(s"Wrong periodic property, error: $error for ${deployment.display}")
+            None
+        }
+      else
+        Option(deployment)
+          .filter(_.state.status == PeriodicProcessDeploymentStatus.Scheduled)
+          .map(_ => scheduledProcessesRepository.monad.pure(()))
+
     }
 
     if (scheduleActions.forall(_.isEmpty)) {
