@@ -66,6 +66,7 @@ class PeriodicDeploymentManagerTest
     val repository                    = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub                = new JarManagerStub
+    val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
     implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
       List.empty
@@ -246,7 +247,7 @@ class PeriodicDeploymentManagerTest
     val f = new Fixture
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities.loneElement.active shouldBe true
@@ -271,7 +272,7 @@ class PeriodicDeploymentManagerTest
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities should have size 2
@@ -299,7 +300,7 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -319,7 +320,7 @@ class PeriodicDeploymentManagerTest
 //    f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -339,7 +340,7 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -359,7 +360,7 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
