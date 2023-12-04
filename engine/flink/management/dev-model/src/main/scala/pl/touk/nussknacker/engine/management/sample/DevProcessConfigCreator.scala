@@ -73,16 +73,12 @@ object DevProcessConfigCreator {
   */
 class DevProcessConfigCreator extends ProcessConfigCreator {
 
-  private def features[T](value: T): WithCategories[T] = WithCategories(value, "DemoFeatures")
-
-  private def tests[T](value: T): WithCategories[T] = WithCategories(value, "TESTCAT")
-
   private def userCategories[T](value: T): WithCategories[T] = WithCategories(value, "UserCategory1")
 
   private def categories[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2")
 
   private def all[T](value: T): WithCategories[T] =
-    WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT", "DevelopmentTests", "Periodic")
+    WithCategories(value, "Category1", "Category2", "DevelopmentTests", "Periodic")
 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
@@ -200,10 +196,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   None,
                   Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
                   None,
+                  None,
                   None
                 ),
-                "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
-                "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
+                "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
+                "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
               )
             )
           )
@@ -213,7 +210,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           SingleComponentConfig.zero.copy(
             params = Some(
               Map(
-                "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None)
+                "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
               )
             )
           )
@@ -236,12 +233,14 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
                   None,
                   None,
                   Some(List(MandatoryParameterValidator)),
+                  None,
                   None
                 ),
                 "overriddenByFileConfigParam" -> ParameterConfig(
                   None,
                   None,
                   Some(List(MandatoryParameterValidator)),
+                  None,
                   None
                 )
               )
@@ -252,9 +251,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
       "datesTypesService" -> categories(new DatesTypesService)
         .withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
-      "campaignService"        -> features(CampaignService),
-      "configuratorService"    -> features(ConfiguratorService),
-      "meetingService"         -> features(MeetingService),
+      "campaignService"        -> WithCategories(CampaignService, "Category2"),
+      "configuratorService"    -> categories(ConfiguratorService),
+      "meetingService"         -> categories(MeetingService),
       "dynamicService"         -> categories(new DynamicService),
       "customValidatedService" -> categories(new CustomValidatedService),
       "modelConfigReader"      -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
@@ -264,7 +263,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def customStreamTransformers(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "noneReturnTypeTransformer" -> tests(NoneReturnTypeTransformer),
+    "noneReturnTypeTransformer" -> categories(NoneReturnTypeTransformer),
     "stateful"                  -> categories(StatefulTransformer),
     "customFilter"              -> categories(CustomFilter),
     "constantStateTransformer" -> categories(
@@ -291,7 +290,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "DATE"           -> all(DateProcessHelper),
       "DICT"           -> categories(TestDictionary.instance),
       "RGB"            -> all(RGBDictionary.instance),
-      "BusinessConfig" -> features(BusinessConfigDictionary.instance),
+      "BusinessConfig" -> categories(BusinessConfigDictionary.instance),
       "TypedConfig"    -> all(ConfigTypedGlobalVariable),
       "HelperFunction" -> all(GenericHelperFunction)
     )
@@ -311,7 +310,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       dictionaries = Map(
         TestDictionary.id           -> categories(TestDictionary.definition),
         RGBDictionary.id            -> categories(RGBDictionary.definition),
-        BusinessConfigDictionary.id -> features(BusinessConfigDictionary.definition)
+        BusinessConfigDictionary.id -> categories(BusinessConfigDictionary.definition)
       )
     )
   }

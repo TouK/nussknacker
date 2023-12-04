@@ -347,7 +347,7 @@ paths:
                   summary: Configured categories and their processing types
                   value:
                     Category1: streaming
-                    Category2: streaming
+                    Category2: streaming2
         '401':
           description: ''
           content:

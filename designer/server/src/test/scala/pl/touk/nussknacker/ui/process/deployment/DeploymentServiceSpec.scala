@@ -808,7 +808,7 @@ class DeploymentServiceSpec
       .emptySink("sink", existingSinkFactory)
     val action = CreateProcessAction(
       processName,
-      TestCat,
+      Category1,
       canonicalProcess,
       Streaming,
       isFragment = false,
@@ -824,7 +824,7 @@ class DeploymentServiceSpec
 
     val action = CreateProcessAction(
       processName,
-      TestCat,
+      Category1,
       canonicalProcess,
       Streaming,
       isFragment = true,

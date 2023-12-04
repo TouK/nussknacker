@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
@@ -82,10 +82,10 @@ class DefinitionResourcesSpec
     val displayablefragment = ProcessConverter.toDisplayable(
       processWithfragment.fragment,
       TestProcessingTypes.Streaming,
-      TestCategories.TestCat
+      TestCategories.Category1
     )
     savefragment(displayablefragment)(succeed)
-    saveProcess(processName, processWithfragment.process, TestCat)(succeed)
+    saveProcess(processName, processWithfragment.process, TestCategories.Category1)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK

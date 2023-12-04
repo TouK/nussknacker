@@ -54,13 +54,8 @@ export enum EditorType {
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
-    //It's for special nodes like Filter, Switch, etc.. These nodes don't have params and all fields are required
-    if (paramConfig == null) {
-        return [mandatoryValueValidator];
-    }
-
     //Try to create validators with args - all configuration is from BE. It's dynamic mapping
-    return (paramConfig.validators || [])
+    return (paramConfig?.validators || [])
         .map((v) => ({ fun: validators[v.type], args: omit(v, ["type"]) }))
         .filter((v) => v.fun != null)
         .map((v) => v.fun(v.args));

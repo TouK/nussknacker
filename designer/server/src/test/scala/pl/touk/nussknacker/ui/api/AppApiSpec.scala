@@ -289,6 +289,11 @@ class AppApiSpec
              |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$",
              |  "version": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+(?:-.+)*$$",
              |  "processingType": {
+             |    "streaming2": {
+             |      "process-version": "0.1",
+             |      "engine-version": "0.1",
+             |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}(?::\\\\d{2}\\\\.(?:\\\\d{9}|\\\\d{6}|\\\\d{3})|:\\\\d{2}|)$$"
+             |    },
              |    "streaming": {
              |      "process-version": "0.1",
              |      "engine-version": "0.1",
@@ -369,7 +374,7 @@ class AppApiSpec
             equalsJson(
               s"""{
                |  "Category1": "streaming",
-               |  "Category2": "streaming"
+               |  "Category2": "streaming2"
                |}""".stripMargin
             )
           )

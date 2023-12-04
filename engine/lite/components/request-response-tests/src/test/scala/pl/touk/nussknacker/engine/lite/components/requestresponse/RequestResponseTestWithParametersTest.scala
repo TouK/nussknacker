@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.TypingType.TypedUnion
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
@@ -17,9 +16,10 @@ import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtracto
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression
+  ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
@@ -179,7 +179,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameters.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
   }
 
-  test("should generate fragment parameter with spel expression validator") {
+  test("should generate parameters for expanded fragment input definition without fixed values") {
     val fragmentDefinitionExtractor =
       FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -188,8 +188,10 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
         FragmentParameter(
           "name",
           FragmentClazzRef[String],
-          validationExpression =
-            Some(ValidationExpression(Expression.spel("#name.length() < 100"), Some("some validation error")))
+          required = true,
+          initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
+          hintText = Some("some hint text"),
+          valueEditor = None
         )
       )
     )
@@ -197,15 +199,54 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
 
     parameter.name shouldBe "name"
-    parameter.typ shouldBe Typed(classOf[String])
+    parameter.typ shouldBe Typed[String]
     parameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
-    parameter.validators.head should matchPattern {
-      case ValidationExpressionParameterValidator(_, Some("some validation error")) =>
-    }
-    val validationExpression =
-      parameter.validators.head.asInstanceOf[ValidationExpressionParameterValidator].validationExpression
-    validationExpression.original shouldBe "#name.length() < 100"
-    validationExpression.language shouldBe "spel"
+    parameter.validators should contain theSameElementsAs List(MandatoryParameterValidator)
+    parameter.defaultValue shouldBe Some(Expression.spel("'Tomasz'"))
+    parameter.hintText shouldBe Some("some hint text")
+  }
+
+  test("should generate complex parameters for expanded fragment input definition with fixed values") {
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+
+    val fixedValuesList =
+      List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
+    val fragmentInputDefinition = FragmentInputDefinition(
+      "",
+      List(
+        FragmentParameter(
+          "name",
+          FragmentClazzRef[String],
+          required = false,
+          initialValue = None,
+          hintText = None,
+          valueEditor = Some(
+            ValueInputWithFixedValuesProvided(
+              allowOtherValue = true,
+              fixedValuesList = fixedValuesList
+            )
+          )
+        )
+      )
+    )
+
+    val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
+    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+
+    parameter.name shouldBe "name"
+    parameter.typ shouldBe Typed[String]
+    parameter.editor shouldBe Some(
+      DualParameterEditor(
+        FixedValuesParameterEditor(
+          FixedExpressionValue("", "") +: fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+        ),
+        DualEditorMode.SIMPLE
+      )
+    )
+    parameter.validators should contain theSameElementsAs List()
+    parameter.defaultValue shouldBe Some(Expression("spel", ""))
+    parameter.hintText shouldBe None
   }
 
 }
