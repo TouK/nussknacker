@@ -8,8 +8,6 @@ import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.circe.jsonBody
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 
-
-
 class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   val componentsListEndpoint: SecuredEndpoint[Unit, Unit, List[ComponentListElement], Any] =
@@ -39,7 +37,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       .errorOut(
         statusCode(NotFound).and(
           stringBody
-            .example("Component this not exist.")
+            .example(s"Component {id} not exist.")
         )
       )
       .withSecurity(auth)

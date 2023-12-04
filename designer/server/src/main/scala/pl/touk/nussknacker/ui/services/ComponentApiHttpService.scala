@@ -25,9 +25,9 @@ class ComponentApiHttpService(
     componentApiEndpoints.componentsListEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogic { user => _ =>
-        componentService.getComponentsList(user).map { componentList =>
-          success(componentList)
-        }
+        componentService
+          .getComponentsList(user)
+          .map { componentList => success(componentList) }
       }
   }
 
@@ -35,11 +35,12 @@ class ComponentApiHttpService(
     componentApiEndpoints.componentUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
       .serverLogic { user: LoggedUser => componentId: String =>
-        componentService.getComponentUsages(ComponentId(componentId))(user).map {
-          case Left(_) => businessError(s"Component $componentId not exist.")
-          case Right(value) =>
-            success(value)
-        }
+        componentService
+          .getComponentUsages(ComponentId(componentId))(user)
+          .map {
+            case Left(_)      => businessError(s"Component $componentId not exist.")
+            case Right(value) => success(value)
+          }
       }
   }
 
