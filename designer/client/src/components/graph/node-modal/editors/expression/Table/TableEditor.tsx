@@ -38,7 +38,7 @@ const SUPPORTED_TYPES = [
 ];
 
 export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
-    const tableDateContext = useTableState(expressionObj.expression);
+    const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
     useEffect(() => {
@@ -318,6 +318,15 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
         [dispatch, typesMenuData?.column, setTypesMenuData],
     );
 
+    const trailingRowOptions = useMemo(
+        () => ({
+            tint: true,
+            sticky: !overflowY,
+        }),
+        [overflowY],
+    );
+    const rightElement = useMemo(() => <ColumnHeaderButton onClick={onColumnAppend}>+</ColumnHeaderButton>, [onColumnAppend]);
+
     return (
         <NuThemeProvider>
             <ErrorBoundary>
@@ -333,7 +342,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                         getGroupDetails={getGroupDetails}
                         onPaste={pasteWithExpand}
                         onRowAppended={appendRow}
-                        rightElement={<ColumnHeaderButton onClick={onColumnAppend}>+</ColumnHeaderButton>}
+                        rightElement={rightElement}
                         rowMarkers="clickable-number"
                         columnSelect="multi"
                         rows={tableRows.length}
@@ -341,7 +350,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                         smoothScrollY
                         theme={tableTheme}
                         width="100%"
-                        trailingRowOptions={{ tint: true, sticky: !overflowY }}
+                        trailingRowOptions={trailingRowOptions}
                         gridSelection={selection}
                         onGridSelectionChange={setSelection}
                         onHeaderClicked={onDataEditorHeaderClicked}
