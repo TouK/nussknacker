@@ -34,9 +34,9 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[String])
-      .serverLogic { user: LoggedUser => componentId: String =>
+      .serverLogic { user: LoggedUser => componentId: ComponentId =>
         componentService
-          .getComponentUsages(ComponentId(componentId))(user)
+          .getComponentUsages(componentId)(user)
           .map {
             case Left(_)      => businessError(s"Component $componentId not exist.")
             case Right(value) => success(value)
