@@ -10,9 +10,8 @@ export interface FragmentValidation {
 }
 
 export enum FixedValuesType {
-    "Preset" = "Preset",
-    "UserDefinedList" = "UserDefinedList",
-    "None" = "None",
+    "ValueInputWithFixedValuesProvided" = "ValueInputWithFixedValuesProvided",
+    "ValueInputWithFixedValuesPreset" = "ValueInputWithFixedValuesPreset",
 }
 
 export enum InputMode {
@@ -38,6 +37,7 @@ export interface GenericParameterVariant {
 }
 
 interface ValueEditor {
+    type: FixedValuesType;
     fixedValuesList: FixedValuesOption[] | null;
     allowOtherValue: boolean | null;
     fixedValuesPresetId: string | null;
@@ -52,13 +52,11 @@ export interface FixedListParameterVariant extends GenericParameterVariant {
     valueEditor: ValueEditor;
     fixedValuesListPresetId: string;
     presetSelection?: string;
-    fixedValuesType: FixedValuesType;
 }
 export interface AnyValueWithSuggestionsParameterVariant extends GenericParameterVariant, FragmentValidation {
     valueEditor: ValueEditor;
     fixedValuesListPresetId: string;
     presetSelection?: string;
-    fixedValuesType: FixedValuesType;
 }
 export interface AnyValueParameterVariant extends GenericParameterVariant, FragmentValidation {
     fixedValuesType: FixedValuesType;

@@ -24,7 +24,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
 
 export function FixedValuesSetting({
     path,
-    fixedValuesType = FixedValuesType.UserDefinedList,
+    fixedValuesType,
     onChange,
     fixedValuesListPresetId,
     fixedValuesPresets,
@@ -45,7 +45,7 @@ export function FixedValuesSetting({
 
     return (
         <>
-            {fixedValuesType === FixedValuesType.Preset && (
+            {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesPreset && (
                 <SettingRow>
                     <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
@@ -66,7 +66,7 @@ export function FixedValuesSetting({
                     )}
                 </SettingRow>
             )}
-            {fixedValuesType === FixedValuesType.UserDefinedList && (
+            {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided && (
                 <UserDefinedListInput
                     fixedValuesList={fixedValuesList}
                     variableTypes={variableTypes}

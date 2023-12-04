@@ -2,7 +2,7 @@ import React from "react";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
+import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
 
@@ -43,10 +43,12 @@ export default function InputModeSelect(props: Props) {
                             onChange(`${path}.valueEditor.allowOtherValue`, true);
                             onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
                             onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
+                            onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
                         } else {
                             onChange(`${path}.valueEditor.allowOtherValue`, false);
                             onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
                             onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
+                            onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
                         }
                     }}
                     value={inputModeOptions.find((inputModeOption) => inputModeOption.value === value)}
