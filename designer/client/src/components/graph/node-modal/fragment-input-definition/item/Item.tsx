@@ -8,7 +8,7 @@ import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
 import { useDiffMark } from "../../PathsToMark";
-import { onChangeType, FragmentInputParameter, InputMode } from "./types";
+import { onChangeType, FragmentInputParameter } from "./types";
 import { useFieldsContext } from "../../node-row-fields-provider";
 import Input from "../../editors/field/Input";
 import { NodeValue } from "../../node";
@@ -87,7 +87,7 @@ export function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>
-            <SettingsProvider>
+            <SettingsProvider initialFixedValuesList={item?.valueEditor?.fixedValuesList}>
                 {isOpen && (
                     <Settings
                         path={path}

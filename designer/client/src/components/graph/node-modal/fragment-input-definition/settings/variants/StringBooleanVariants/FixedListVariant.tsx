@@ -43,6 +43,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 fieldsErrors={fieldsErrors}
                 typ={item.typ}
                 name={item.name}
+                initialValue={item.initialValue}
             />
             <InitialValue
                 path={path}

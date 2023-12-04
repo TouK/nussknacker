@@ -6,8 +6,11 @@ const SettingsContext = createContext<{
     handleTemporaryUserDefinedList: (listItem: FixedValuesOption[]) => void;
 }>(null);
 
-export const SettingsProvider = ({ children }: PropsWithChildren<{}>) => {
-    const [temporaryUserDefinedList, setTemporaryUserDefinedList] = useState<FixedValuesOption[]>([]);
+export const SettingsProvider = ({
+    initialFixedValuesList,
+    children,
+}: PropsWithChildren<{ initialFixedValuesList: FixedValuesOption[] }>) => {
+    const [temporaryUserDefinedList, setTemporaryUserDefinedList] = useState<FixedValuesOption[]>(initialFixedValuesList || []);
 
     const handleTemporaryUserDefinedList = (listItem: FixedValuesOption[]) => {
         setTemporaryUserDefinedList(listItem);

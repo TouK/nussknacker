@@ -20,6 +20,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     fieldsErrors: Error[];
     typ: ReturnedType;
     name: string;
+    initialValue: FixedValuesOption;
 }
 
 export function FixedValuesSetting({
@@ -34,6 +35,7 @@ export function FixedValuesSetting({
     fieldsErrors,
     typ,
     name,
+    initialValue,
 }: FixedValuesSetting) {
     const { t } = useTranslation();
 
@@ -76,6 +78,7 @@ export function FixedValuesSetting({
                     errors={fieldsErrors}
                     typ={typ}
                     name={name}
+                    initialValue={initialValue}
                 />
             )}
         </>
