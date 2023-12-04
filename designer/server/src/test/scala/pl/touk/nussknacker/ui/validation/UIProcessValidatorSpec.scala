@@ -830,28 +830,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validates scenario with category") {
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(secretExistingSourceFactory, Nil)),
-        Sink("sink", SinkRef(existingSinkFactory, Nil))
-      ),
-      edges = List(Edge("source", "sink", None))
-    )
-
-    val validationResult = processValidator.validate(process.copy(category = SecretCategory))
-    validationResult.errors.invalidNodes shouldBe Symbol("empty")
-    validationResult.errors.globalErrors shouldBe Symbol("empty")
-    validationResult.saveAllowed shouldBe true
-
-    val validationResultWithCategory2 = processValidator.validate(process)
-    validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "source" -> List(
-        PrettyValidationErrors.formatErrorMessage(MissingSourceFactory(secretExistingSourceFactory, "source"))
-      )
-    )
-  }
-
   test("validates scenario with fragment with category") {
     val fragment = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),

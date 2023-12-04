@@ -72,13 +72,13 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map(
-      "logService"                       -> WithCategories(new MockService),
-      "lifecycleService"                 -> WithCategories(LifecycleService),
-      "eagerLifecycleService"            -> WithCategories(EagerLifecycleService),
-      "enricherWithOpenService"          -> WithCategories(new EnricherWithOpenService),
-      "serviceAcceptingOptionalValue"    -> WithCategories(ServiceAcceptingScalaOption),
-      "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService),
-      "throwingNonTransientErrors" -> WithCategories(
+      "logService"                       -> WithCategories.anyCategory(new MockService),
+      "lifecycleService"                 -> WithCategories.anyCategory(LifecycleService),
+      "eagerLifecycleService"            -> WithCategories.anyCategory(EagerLifecycleService),
+      "enricherWithOpenService"          -> WithCategories.anyCategory(new EnricherWithOpenService),
+      "serviceAcceptingOptionalValue"    -> WithCategories.anyCategory(ServiceAcceptingScalaOption),
+      "returningComponentUseCaseService" -> WithCategories.anyCategory(ReturningComponentUseCaseService),
+      "throwingNonTransientErrors" -> WithCategories.anyCategory(
         new ThrowingService(NonTransientException("test input", "test msg"))
       ),
     )
@@ -86,35 +86,35 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    "input"                            -> WithCategories(SampleNodes.simpleRecordSource(data)),
-    "intInputWithParam"                -> WithCategories(new IntParamSourceFactory),
-    "genericParametersSource"          -> WithCategories(GenericParametersSource),
-    "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
+    "input"                            -> WithCategories.anyCategory(SampleNodes.simpleRecordSource(data)),
+    "intInputWithParam"                -> WithCategories.anyCategory(new IntParamSourceFactory),
+    "genericParametersSource"          -> WithCategories.anyCategory(GenericParametersSource),
+    "genericSourceWithCustomVariables" -> WithCategories.anyCategory(GenericSourceWithCustomVariables)
   )
 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = Map(
-    "monitor"                    -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
-    "sinkForInts"                -> WithCategories(SinkForInts.toSinkFactory),
-    "sinkForStrings"             -> WithCategories(SinkForStrings.toSinkFactory),
-    "eagerOptionalParameterSink" -> WithCategories(EagerOptionalParameterSinkFactory),
-    "genericParametersSink"      -> WithCategories(GenericParametersSink)
+    "monitor"                    -> WithCategories.anyCategory(SinkFactory.noParam(MonitorEmptySink)),
+    "sinkForInts"                -> WithCategories.anyCategory(SinkForInts.toSinkFactory),
+    "sinkForStrings"             -> WithCategories.anyCategory(SinkForStrings.toSinkFactory),
+    "eagerOptionalParameterSink" -> WithCategories.anyCategory(EagerOptionalParameterSinkFactory),
+    "genericParametersSink"      -> WithCategories.anyCategory(GenericParametersSink)
   )
 
   override def customStreamTransformers(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom"                       -> WithCategories(StateCustomNode),
-    "customFilter"                      -> WithCategories(CustomFilter),
-    "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
-    "customContextClear"                -> WithCategories(CustomContextClear),
-    "sampleJoin"                        -> WithCategories(CustomJoin),
-    "joinBranchExpression"              -> WithCategories(CustomJoinUsingBranchExpressions),
-    "transformWithNullable"             -> WithCategories(TransformerWithNullableParam),
-    "optionalEndingCustom"              -> WithCategories(OptionalEndingCustom),
-    "genericParametersNode"             -> WithCategories(GenericParametersNode),
-    "nodePassingStateToImplementation"  -> WithCategories(NodePassingStateToImplementation)
+    "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
+    "customFilter"                      -> WithCategories.anyCategory(CustomFilter),
+    "customFilterContextTransformation" -> WithCategories.anyCategory(CustomFilterContextTransformation),
+    "customContextClear"                -> WithCategories.anyCategory(CustomContextClear),
+    "sampleJoin"                        -> WithCategories.anyCategory(CustomJoin),
+    "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
+    "transformWithNullable"             -> WithCategories.anyCategory(TransformerWithNullableParam),
+    "optionalEndingCustom"              -> WithCategories.anyCategory(OptionalEndingCustom),
+    "genericParametersNode"             -> WithCategories.anyCategory(GenericParametersNode),
+    "nodePassingStateToImplementation"  -> WithCategories.anyCategory(NodePassingStateToImplementation)
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(CountingNodesListener)
@@ -123,15 +123,15 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
     val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
     val globalProcessVariables = Map(
-      "processHelper" -> WithCategories(ProcessHelper),
-      "enum"          -> WithCategories(DictInstance(dictId, dictDef)),
-      "typedMap"      -> WithCategories(TypedMap(Map("aField" -> "123")))
+      "processHelper" -> WithCategories.anyCategory(ProcessHelper),
+      "enum"          -> WithCategories.anyCategory(DictInstance(dictId, dictDef)),
+      "typedMap"      -> WithCategories.anyCategory(TypedMap(Map("aField" -> "123")))
     )
     ExpressionConfig(
       globalProcessVariables,
       List.empty,
       List.empty,
-      dictionaries = Map(dictId -> WithCategories(dictDef))
+      dictionaries = Map(dictId -> dictDef)
     )
   }
 

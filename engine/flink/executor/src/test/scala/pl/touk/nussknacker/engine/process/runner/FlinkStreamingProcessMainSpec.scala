@@ -55,16 +55,16 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[SinkFactory]] = Map(
     "monitor"      -> WithCategories(SinkFactory.noParam(MonitorEmptySink), "c2"),
     "valueMonitor" -> WithCategories(SinkForAny.toSinkFactory, "c2"),
-    "sinkForInts"  -> WithCategories(SinkForInts.toSinkFactory)
+    "sinkForInts"  -> WithCategories.anyCategory(SinkForInts.toSinkFactory)
   )
 
   override def customStreamTransformers(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom"                       -> WithCategories(StateCustomNode),
-    "transformWithTime"                 -> WithCategories(TransformerWithTime),
-    "joinBranchExpression"              -> WithCategories(CustomJoinUsingBranchExpressions),
-    "transformerAddingComponentUseCase" -> WithCategories(TransformerAddingComponentUseCase)
+    "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
+    "transformWithTime"                 -> WithCategories.anyCategory(TransformerWithTime),
+    "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
+    "transformerAddingComponentUseCase" -> WithCategories.anyCategory(TransformerAddingComponentUseCase)
   )
 
   override def sourceFactories(
@@ -73,7 +73,7 @@ class SimpleProcessConfigCreator extends EmptyProcessConfigCreator {
     "input"                            -> WithCategories(simpleRecordSource(Nil), "cat2"),
     "jsonInput"                        -> WithCategories(jsonSource, "cat2"),
     "typedJsonInput"                   -> WithCategories(TypedJsonSource, "cat2"),
-    "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
+    "genericSourceWithCustomVariables" -> WithCategories.anyCategory(GenericSourceWithCustomVariables)
   )
 
 }
