@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -60,7 +60,7 @@ class NotificationServiceTest
   private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
   private val actionRepository =
-    DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)
@@ -162,7 +162,7 @@ class NotificationServiceTest
       processRepository,
       actionRepository,
       dbioRunner,
-      mock[UIProcessValidator],
+      mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
       mock[ScenarioResolver],
       mock[ProcessChangeListener],
       None,

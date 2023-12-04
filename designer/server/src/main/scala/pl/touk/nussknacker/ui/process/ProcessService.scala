@@ -34,6 +34,7 @@ import ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -138,12 +139,11 @@ class DBProcessService(
     deploymentService: DeploymentService,
     newProcessPreparer: NewProcessPreparer,
     getProcessCategoryService: () => ProcessCategoryService,
-    processResolver: UIProcessResolver,
+    processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
     dbioRunner: DBIOActionRunner,
     fetchingProcessRepository: FetchingProcessRepository[Future],
     processActionRepository: ProcessActionRepository[DB],
-    processRepository: ProcessRepository[DB],
-    processValidator: UIProcessValidator
+    processRepository: ProcessRepository[DB]
 )(implicit ec: ExecutionContext)
     extends ProcessService
     with LazyLogging {
@@ -262,15 +262,9 @@ class DBProcessService(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
-      val processingType = entity.processingType
-      val validationResult =
-        processResolver.validateBeforeUiReverseResolving(canonical, processingType, entity.processCategory)
-      processResolver.reverseResolveExpressions(
-        canonical,
-        processingType,
-        entity.processCategory,
-        validationResult
-      )
+      val processingType  = entity.processingType
+      val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
+      processResolver.validateAndReverseResolve(canonical, processingType, entity.processCategory)
     })
   }
 
@@ -369,8 +363,11 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { _ =>
+      val processResolver = processResolverByProcessingType.forTypeUnsafe(action.process.processingType)
       val validation =
-        FatalValidationError.saveNotAllowedAsError(processResolver.validateBeforeUiResolving(action.process))
+        FatalValidationError.saveNotAllowedAsError(
+          processResolver.validateBeforeUiResolving(action.process)
+        )
       val substituted = processResolver.resolveExpressions(action.process, validation.typingInfo)
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
@@ -401,11 +398,12 @@ class DBProcessService(
 
       val canonical   = jsonCanonicalProcess.withProcessId(processId.name)
       val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
-      val validationResult = processResolver.validateBeforeUiReverseResolving(
-        canonical,
-        displayable.processingType,
-        process.processCategory
-      )
+      val validationResult = processResolverByProcessingType
+        .forTypeUnsafe(process.processingType)
+        .validateBeforeUiReverseResolving(
+          canonical,
+          process.processCategory
+        )
       Future.successful(ValidatedDisplayableProcess.withValidationResult(displayable, validationResult))
     }
   }
@@ -416,9 +414,13 @@ class DBProcessService(
       category: String
   )(implicit user: LoggedUser) = {
     val validationResult =
-      processValidator.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
+      processResolverByProcessingType
+        .forTypeUnsafe(processingType)
+        .validateBeforeUiReverseResolving(
+          canonicalProcess,
+          category
+        )
     validationResult.errors.processPropertiesErrors
-
   }
 
   private def doOnProcessStateVerification[T](process: ScenarioWithDetails, actionToCheck: ProcessActionType)(

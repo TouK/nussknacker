@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
@@ -41,35 +42,38 @@ class ValidationResourcesSpec
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-    mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> Map(
-        "requiredStringProperty" -> ScenarioPropertyConfig(
-          None,
-          Some(StringParameterEditor),
-          Some(List(MandatoryParameterValidator)),
-          Some("label")
-        ),
-        "numberOfThreads" -> ScenarioPropertyConfig(
-          None,
-          Some(FixedValuesParameterEditor(possibleValues)),
-          Some(List(FixedValuesValidator(possibleValues))),
-          None
-        ),
-        "maxEvents" -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(LiteralIntegerValidator)),
-          Some("label")
+  private val processValidatorByProcessingType = mapProcessingTypeDataProvider(
+    TestProcessingTypes.Streaming -> new UIProcessResolver(
+      processValidator.withScenarioPropertiesConfig(
+        Map(
+          "requiredStringProperty" -> ScenarioPropertyConfig(
+            None,
+            Some(StringParameterEditor),
+            Some(List(MandatoryParameterValidator)),
+            Some("label")
+          ),
+          "numberOfThreads" -> ScenarioPropertyConfig(
+            None,
+            Some(FixedValuesParameterEditor(possibleValues)),
+            Some(List(FixedValuesValidator(possibleValues))),
+            None
+          ),
+          "maxEvents" -> ScenarioPropertyConfig(
+            None,
+            None,
+            Some(List(LiteralIntegerValidator)),
+            Some("label")
+          )
         )
-      )
+      ),
+      ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
     )
   )
 
   private val route: Route = withPermissions(
     new ValidationResources(
       processService,
-      new UIProcessResolver(processValidator, emptyProcessingTypeDataProvider)
+      processValidatorByProcessingType
     ),
     testPermissionRead
   )

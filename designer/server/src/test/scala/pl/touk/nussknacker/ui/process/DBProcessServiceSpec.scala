@@ -191,12 +191,11 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       getProcessCategoryService = () => processCategoryService,
-      processResolver = TestFactory.processResolver,
+      processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidator = TestFactory.processValidator
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
 }
