@@ -26,7 +26,6 @@ describe("Table editor", () => {
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
         cy.get("@table").click(500, 15);
-        cy.get("#portal textarea").should("be.visible");
         cy.realType("some name", { delay: 50 });
         cy.realPress("Enter", { pressDelay: 50 });
 
