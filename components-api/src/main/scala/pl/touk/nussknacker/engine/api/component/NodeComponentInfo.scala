@@ -10,11 +10,14 @@ object NodeComponentInfo {
 
 }
 
-case class NodeComponentInfo(nodeId: String, componentInfo: Option[ComponentInfo])
+final case class NodeComponentInfo(nodeId: String, componentInfo: Option[ComponentInfo])
 
-case class ComponentInfo(componentName: String, componentType: RealComponentType)
+final case class ComponentInfo(componentName: String, componentType: RealComponentType) {
+  override def toString: String = componentType.toString + "-" + componentName
+}
 
-object BaseComponentNames {
+// These names are visible on pallet and used as a part of component identifiers (in urls and in stored component usages cache structure)
+object BuiltInComponentNames {
 
   val Filter = "filter"
   val Split  = "split"
@@ -22,6 +25,8 @@ object BaseComponentNames {
   val Choice   = "switch"
   val Variable = "variable"
   // FIXME: change to record-variable
-  val RecordVariable = "mapVariable"
+  val RecordVariable           = "mapVariable"
+  val FragmentInputDefinition  = "input"
+  val FragmentOutputDefinition = "output"
 
 }
