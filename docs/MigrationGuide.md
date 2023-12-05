@@ -37,6 +37,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `LiteralIntegerValidator` is considered deprecated and will be removed in the future, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Integer` type,
   * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`
   * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5079](https://github.com/TouK/nussknacker/pull/5079) Introduced dependency - `security` depends on `restmodel`
+  * `AuthenticatedUser` and `AuthCredentials` are moved to `pl.touk.nussknacker.restmodel.security`
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
