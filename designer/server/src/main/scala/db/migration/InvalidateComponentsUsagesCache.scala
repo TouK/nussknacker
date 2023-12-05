@@ -7,7 +7,7 @@ import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
-trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTables with LazyLogging {
+trait InvalidateComponentsUsagesCache extends SlickMigration with EspTables with LazyLogging {
 
   import profile.api._
   import slick.dbio.DBIOAction

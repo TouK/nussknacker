@@ -226,7 +226,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     RecordingExceptionConsumer.dataFor(runId) should have size 1
     val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
-    espExceptionInfo.nodeComponentInfo shouldBe Some(NodeComponentInfo("end", "flinkKafkaAvroSink", ComponentType.Sink))
+    espExceptionInfo.nodeComponentInfo shouldBe Some(
+      NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
+    )
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
     cause shouldBe a[AvroRuntimeException]

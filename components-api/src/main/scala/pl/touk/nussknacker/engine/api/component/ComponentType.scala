@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.component
 
 import io.circe.{Decoder, Encoder}
 
-//It's temporary solutions in future it should be part of designer module
+// ComponentType names and used as part of component identifiers (in urls and in stored component usages cache structure)
 object ComponentType extends Enumeration {
 
   implicit val typeEncoder: Encoder[ComponentType.Value] = Encoder.encodeEnumeration(ComponentType)
@@ -10,36 +10,13 @@ object ComponentType extends Enumeration {
 
   type ComponentType = Value
 
-  // Basic's component types
-  val Filter: Value      = Value("filter")
-  val Split: Value       = Value("split")
-  val Switch: Value      = Value("switch")
-  val Variable: Value    = Value("variable")
-  val MapVariable: Value = Value("mapVariable")
+  val Source: Value          = Value("source")
+  val Sink: Value            = Value("sink")
+  val Service: Value         = Value("service")
+  val CustomComponent: Value = Value("custom")
+  val Fragment: Value        = Value("fragment")
+  val BuiltIn: Value         = Value("builtin")
 
-  // Generic's component types
-  val Processor: Value  = Value("processor")
-  val Enricher: Value   = Value("enricher")
-  val Sink: Value       = Value("sink")
-  val Source: Value     = Value("source")
-  val Fragments: Value  = Value("fragments")
-  val CustomNode: Value = Value("customNode")
-
-  // Fragment's component types
-  val FragmentInput: Value  = Value("input")
-  val FragmentOutput: Value = Value("output")
-
-  private val BaseComponents: Set[ComponentType] = Set(
-    Filter,
-    Split,
-    Switch,
-    Variable,
-    MapVariable,
-    FragmentInput,
-    FragmentOutput
-  )
-
-  def isBaseComponent(componentType: ComponentType): Boolean =
-    BaseComponents.contains(componentType)
+  val NotBuiltInComponentTypes: List[Value] = List(Source, Sink, Service, CustomComponent, Fragment)
 
 }

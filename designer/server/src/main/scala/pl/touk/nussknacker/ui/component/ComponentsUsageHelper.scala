@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.definition.ComponentIdProvider
-import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
+import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ComponentsUsageHelper {
@@ -25,12 +24,12 @@ object ComponentsUsageHelper {
       processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]
   ): Map[ComponentId, List[(ScenarioWithDetailsEntity[_], List[NodeUsageData])]] = {
     def flattenUsages(processesDetails: List[ScenarioWithDetailsEntity[ScenarioComponentsUsages]]) = for {
-      processDetails       <- processesDetails
-      componentIdNodesPair <- processDetails.json.value.toList
-      (ComponentIdParts(componentName, componentType), nodeIds) = componentIdNodesPair
-      componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
+      processDetails    <- processesDetails
+      componentInfoNode <- processDetails.json.value.toList
+      (componentInfo, nodeIds) = componentInfoNode
+      componentId              = componentIdProvider.createComponentId(processDetails.processingType, componentInfo)
       nodeId <- nodeIds
-    } yield ScenarioComponentsUsage[NodeId](componentId, componentType, componentName, processDetails, nodeId)
+    } yield ScenarioComponentsUsage[NodeId](componentId, componentInfo, processDetails, nodeId)
 
     val scenariosComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == false))
     val fragmentsComponentUsages        = flattenUsages(processesDetails.filter(_.isFragment == true))
@@ -40,8 +39,7 @@ object ComponentsUsageHelper {
       scenariosComponentUsages.flatMap {
         case fragmentUsage @ ScenarioComponentsUsage(
               _,
-              ComponentType.Fragments,
-              Some(fragmentName),
+              ComponentInfo(ComponentType.Fragment, fragmentName),
               processDetails,
               fragmentNodeId
             ) =>
@@ -49,20 +47,20 @@ object ComponentsUsageHelper {
             fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
           val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] =
             groupedFragmentsComponentUsages.get(ProcessName(fragmentName)).toList.flatten.map {
-              case u @ ScenarioComponentsUsage(_, _, _, _, nodeId) =>
+              case u @ ScenarioComponentsUsage(_, _, _, nodeId: NodeId) =>
                 val refinedUsage: ScenarioComponentsUsage[NodeUsageData] =
                   u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
                 refinedUsage
             }
           fragmentUsageRefined :: fragmentsUsages
-        case usageOfOtherComponentType @ ScenarioComponentsUsage(_, _, _, _, nodeId) =>
+        case usageOfOtherComponentType @ ScenarioComponentsUsage(_, _, _, nodeId) =>
           val usageOfOtherComponentTypeRefined: ScenarioComponentsUsage[NodeUsageData] =
             usageOfOtherComponentType.copy(nodeUsageData = ScenarioUsageData(nodeId))
           List(usageOfOtherComponentTypeRefined)
       }
 
     val fragmentUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.flatMap {
-      case componentUsage @ ScenarioComponentsUsage(_, _, _, _, nodeId: NodeId) =>
+      case componentUsage @ ScenarioComponentsUsage(_, _, _, nodeId: NodeId) =>
         val usage: ScenarioComponentsUsage[NodeUsageData] =
           componentUsage.copy(nodeUsageData = ScenarioUsageData(nodeId))
         List(usage)
@@ -81,8 +79,7 @@ object ComponentsUsageHelper {
 
   private final case class ScenarioComponentsUsage[NodeUsageDataShape](
       componentId: ComponentId,
-      componentType: ComponentType,
-      componentName: Option[String],
+      componentInfo: ComponentInfo,
       processDetails: ScenarioWithDetailsEntity[_],
       nodeUsageData: NodeUsageDataShape
   )

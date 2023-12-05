@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
@@ -74,17 +74,17 @@ object ComponentDefinitionPreparer {
       BaseGroupName,
       List(
         ComponentTemplate
-          .create(ComponentType.Filter, Filter("", Expression.spel("true")), userProcessingTypeCategories),
-        ComponentTemplate.create(ComponentType.Split, Split(""), userProcessingTypeCategories),
-        ComponentTemplate.create(ComponentType.Switch, Switch(""), userProcessingTypeCategories).copy(label = "choice"),
+          .create(BuiltInComponentInfo.Filter, Filter("", Expression.spel("true")), userProcessingTypeCategories),
+        ComponentTemplate.create(BuiltInComponentInfo.Split, Split(""), userProcessingTypeCategories),
+        ComponentTemplate.create(BuiltInComponentInfo.Choice, Switch(""), userProcessingTypeCategories),
         ComponentTemplate.create(
-          ComponentType.Variable,
+          BuiltInComponentInfo.Variable,
           Variable("", "varName", Expression.spel("'value'")),
           userProcessingTypeCategories
         ),
         ComponentTemplate.create(
-          ComponentType.MapVariable,
-          VariableBuilder("", "mapVarName", List(Field("varName", Expression.spel("'value'")))),
+          BuiltInComponentInfo.RecordVariable,
+          VariableBuilder("", "varName", List(Field("fieldName", Expression.spel("'value'")))),
           userProcessingTypeCategories
         ),
       )
@@ -96,7 +96,7 @@ object ComponentDefinitionPreparer {
         .filter(returnsUnit)
         .map { case (idWithName, objDefinition) =>
           ComponentTemplate(
-            ComponentType.Processor,
+            ComponentType.Service,
             idWithName.name,
             Processor("", serviceRef(idWithName, objDefinition)),
             filterCategories(objDefinition)
@@ -110,10 +110,11 @@ object ComponentDefinitionPreparer {
         .filterNot(returnsUnit)
         .map { case (idWithName, objDefinition) =>
           ComponentTemplate(
-            ComponentType.Enricher,
+            ComponentType.Service,
             idWithName.name,
             Enricher("", serviceRef(idWithName, objDefinition), "output"),
-            filterCategories(objDefinition)
+            filterCategories(objDefinition),
+            isEnricher = Some(true)
           )
         }
     )
@@ -128,7 +129,7 @@ object ComponentDefinitionPreparer {
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
         case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).manyInputs =>
           ComponentTemplate(
-            ComponentType.CustomNode,
+            ComponentType.CustomComponent,
             idWithName.name,
             node.Join(
               "",
@@ -142,7 +143,7 @@ object ComponentDefinitionPreparer {
           )
         case (idWithName, (objectDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
           ComponentTemplate(
-            ComponentType.CustomNode,
+            ComponentType.CustomComponent,
             idWithName.name,
             CustomNode(
               "",
@@ -160,7 +161,7 @@ object ComponentDefinitionPreparer {
       processDefinition.customStreamTransformers.collect {
         case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).canBeEnding =>
           ComponentTemplate(
-            ComponentType.CustomNode,
+            ComponentType.CustomComponent,
             idWithName.name,
             CustomNode(
               "",
@@ -201,10 +202,13 @@ object ComponentDefinitionPreparer {
       ComponentGroup(
         FragmentsDefinitionGroupName,
         List(
-          ComponentTemplate
-            .create(ComponentType.FragmentInput, FragmentInputDefinition("", List()), userProcessingTypeCategories),
           ComponentTemplate.create(
-            ComponentType.FragmentOutput,
+            BuiltInComponentInfo.FragmentInputDefinition,
+            FragmentInputDefinition("", List()),
+            userProcessingTypeCategories
+          ),
+          ComponentTemplate.create(
+            BuiltInComponentInfo.FragmentOutputDefinition,
             FragmentOutputDefinition("", "output", List.empty),
             userProcessingTypeCategories
           )
@@ -224,7 +228,7 @@ object ComponentDefinitionPreparer {
               definition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
             )
             ComponentTemplate(
-              ComponentType.Fragments,
+              ComponentType.Fragment,
               id,
               FragmentInput("", FragmentRef(id, nodes, outputs)),
               categories
@@ -308,15 +312,20 @@ object ComponentDefinitionPreparer {
     }
 
     List(
-      NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(
-        NodeTypeId("Switch"),
+        NodeTypeId("Split", Some(BuiltInComponentInfo.Split.name)),
+        List(),
+        canChooseNodes = true,
+        isForInputDefinition = false
+      ),
+      NodeEdges(
+        NodeTypeId("Switch", Some(BuiltInComponentInfo.Choice.name)),
         List(EdgeType.NextSwitch(Expression.spel("true")), EdgeType.SwitchDefault),
         canChooseNodes = true,
         isForInputDefinition = false
       ),
       NodeEdges(
-        NodeTypeId("Filter"),
+        NodeTypeId("Filter", Some(BuiltInComponentInfo.Filter.name)),
         List(FilterTrue, FilterFalse),
         canChooseNodes = false,
         isForInputDefinition = false
