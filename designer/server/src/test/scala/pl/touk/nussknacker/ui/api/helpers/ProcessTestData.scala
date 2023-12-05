@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 object ProcessTestData {
@@ -163,7 +164,8 @@ object ProcessTestData {
       espProcess: CanonicalProcess,
       category: String = TestCategories.Category1
   ): ValidatedDisplayableProcess = {
-    val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
+    implicit val user: LoggedUser = AdminUser("admin", "admin")
+    val displayable               = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
     ValidatedDisplayableProcess.withValidationResult(displayable, processValidator.validate(displayable))
   }
 

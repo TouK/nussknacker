@@ -54,6 +54,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProv
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.jdk.CollectionConverters._
 
@@ -63,6 +64,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   import TestCategories._
   import UIProcessValidatorSpec._
   import spel.Implicits._
+
+  // TODO: tests for user privileges
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   test("check for not unique edge types") {
     val process = createProcess(

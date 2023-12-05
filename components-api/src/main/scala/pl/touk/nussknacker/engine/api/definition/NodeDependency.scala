@@ -125,7 +125,7 @@ case class Parameter(
     isLazyParameter: Boolean,
     scalaOptionParameter: Boolean,
     javaOptionalParameter: Boolean,
-    hintText: Option[String]
+    hintText: Option[String] = None
 ) extends NodeDependency {
 
   // we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...

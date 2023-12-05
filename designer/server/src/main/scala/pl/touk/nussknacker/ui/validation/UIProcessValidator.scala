@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessValidator {
 
@@ -75,7 +76,7 @@ class UIProcessValidator(
   ) =
     new UIProcessValidator(modelDataProvider, scenarioPropertiesConfig, additionalValidators, fragmentResolver, None)
 
-  def validate(displayable: DisplayableProcess): ValidationResult = {
+  def validate(displayable: DisplayableProcess)(implicit user: LoggedUser): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
 
     // there is no point in further validations if ui process structure is invalid
@@ -97,7 +98,7 @@ class UIProcessValidator(
       canonical: CanonicalProcess,
       processingType: ProcessingType,
       category: Category
-  ): ValidationResult = {
+  )(implicit user: LoggedUser): ValidationResult = {
     (validatorProvider.forType(processingType), additionalValidators.forType(processingType)) match {
       case (Some(validator), Some(validators)) =>
         validateUsingTypeValidator(canonical, validator, validators, category)
@@ -110,7 +111,7 @@ class UIProcessValidator(
   // is an error preventing graph canonization. For example we want to display node and scenario id errors for scenarios
   // that have loose nodes. If you want to achieve this result, you need to add these validations here and deduplicate
   // resulting errors later.
-  def uiValidation(displayable: DisplayableProcess): ValidationResult = {
+  def uiValidation(displayable: DisplayableProcess)(implicit user: LoggedUser): ValidationResult = {
     validateScenarioId(displayable)
       .add(validateNodesId(displayable))
       .add(validateDuplicates(displayable))
@@ -186,7 +187,9 @@ class UIProcessValidator(
     }
   }
 
-  private def validateScenarioProperties(displayable: DisplayableProcess): ValidationResult = {
+  private def validateScenarioProperties(
+      displayable: DisplayableProcess
+  )(implicit user: LoggedUser): ValidationResult = {
     if (displayable.metaData.isFragment) {
       ValidationResult.success
     } else {

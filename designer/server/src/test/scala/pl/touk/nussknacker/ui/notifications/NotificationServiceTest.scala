@@ -153,8 +153,8 @@ class NotificationServiceTest
     )
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
-    when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
-    when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)
+    when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
+    when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
     val config              = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
     val deploymentService = new DeploymentServiceImpl(

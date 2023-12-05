@@ -49,6 +49,8 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
       logger.debug(s"Not found error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: BadRequestError =>
       logger.debug(s"Bad request error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
+    case error: UnauthorizedError =>
+      logger.debug(s"Unauthorized error: ${error.getMessage}. ${returnedHttpStatusInfo(error)}", error)
     case error: IllegalOperationError =>
       // we decided to use WARN level here because we are not sure if the Illegal Operation Error is caused by client
       // mistake or Nu malfunction (or Nu's dependency inconsistency - eg. external modification of Schema Registry)
@@ -70,6 +72,7 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
     case _: NotFoundError         => StatusCodes.NotFound
     case _: FatalError            => StatusCodes.InternalServerError
     case _: BadRequestError       => StatusCodes.BadRequest
+    case _: UnauthorizedError     => StatusCodes.Unauthorized
     case _: IllegalOperationError => StatusCodes.Conflict
     case _: OtherError            => StatusCodes.InternalServerError
   }

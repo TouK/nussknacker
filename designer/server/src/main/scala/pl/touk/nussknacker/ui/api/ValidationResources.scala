@@ -31,7 +31,7 @@ class ValidationResources(
       }
     }
 
-  private def validate(displayable: DisplayableProcess) = {
+  private def validate(displayable: DisplayableProcess)(implicit user: LoggedUser) = {
     NuDesignerErrorToHttp.toResponseEither(
       FatalValidationError.renderNotAllowedAsError(
         processResolver.validateBeforeUiResolving(displayable)

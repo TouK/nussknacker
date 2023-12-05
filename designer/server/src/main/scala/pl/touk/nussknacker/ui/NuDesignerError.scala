@@ -18,6 +18,11 @@ abstract class BadRequestError(message: String, cause: Throwable) extends NuDesi
   def this(message: String) = this(message, null)
 }
 
+class UnauthorizedError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
+  def this() = this("The supplied user is not authorized to access this resource", null)
+  def this(message: String) = this(message, null)
+}
+
 abstract class IllegalOperationError(message: String, val details: String, cause: Throwable)
     extends NuDesignerError(message, cause) {
 

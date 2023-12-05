@@ -13,6 +13,7 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.util.Try
 
@@ -26,7 +27,7 @@ class ScenarioPropertiesValidator(
 
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
-  def validate(process: DisplayableProcess): ValidationResult =
+  def validate(process: DisplayableProcess)(implicit user: LoggedUser): ValidationResult =
     scenarioPropertiesConfig.forType(process.processingType) match {
       case None =>
         ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
