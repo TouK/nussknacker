@@ -63,7 +63,7 @@ describe("Fragment", () => {
         cy.get("[data-testid='settings:4']").find("[type='ERROR']").should("be.visible");
         cy.get("[data-testid='settings:4']").contains("This field has to be unique");
 
-        // Provide String Any with Suggestion Value inputMode
+        // Provide String Fixed value inputMode
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:5']").find("[placeholder='Field name']").type("name_string_fixed");
         toggleSettings(5);
