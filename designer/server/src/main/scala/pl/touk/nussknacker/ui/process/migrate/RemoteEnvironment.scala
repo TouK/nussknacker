@@ -46,7 +46,8 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, Unit]]
 
   def testMigration(processToInclude: ScenarioWithDetails => Boolean = _ => true)(
-      implicit ec: ExecutionContext
+      implicit ec: ExecutionContext,
+      user: LoggedUser
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
 }
@@ -205,7 +206,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   override def testMigration(
       processToInclude: ScenarioWithDetails => Boolean = _ => true
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)

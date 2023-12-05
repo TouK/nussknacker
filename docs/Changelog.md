@@ -30,6 +30,7 @@
 * [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) [#5103](https://github.com/TouK/nussknacker/pull/5103) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
 * [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
+* [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
 
 1.12.5 (1 Dec 2023)
 ------------------------

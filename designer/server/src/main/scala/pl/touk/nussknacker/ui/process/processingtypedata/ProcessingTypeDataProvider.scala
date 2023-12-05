@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.UnauthorizedError
+import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 /**
  *  NOTICE: This is probably *temporary* solution. We want to be able to:
@@ -20,23 +24,31 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
  */
 trait ProcessingTypeDataProvider[+T, +C] {
 
-  def forType(typ: ProcessingType): Option[T]
+  def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T]
 
   // TODO: replace with proper forType handling
-  def forTypeUnsafe(typ: ProcessingType): T = forType(typ)
-    .getOrElse(throw new IllegalArgumentException(s"Unknown typ: $typ, known types are: ${all.keys.mkString(", ")}"))
+  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): T = forType(processingType)
+    .getOrElse(
+      throw new IllegalArgumentException(
+        s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+      )
+    )
 
-  def all: Map[ProcessingType, T]
+  def all(implicit user: LoggedUser): Map[ProcessingType, T]
 
+  // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
+  //       Thanks to that we will be sure that no sensitive data leak
   def combined: C
 
   def mapValues[Y](fun: T => Y): ProcessingTypeDataProvider[Y, C] = {
 
     new ProcessingTypeDataProvider[Y, C] {
 
-      override def forType(typ: ProcessingType): Option[Y] = ProcessingTypeDataProvider.this.forType(typ).map(fun)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Y] =
+        ProcessingTypeDataProvider.this.forType(processingType).map(fun)
 
-      override def all: Map[ProcessingType, Y] = ProcessingTypeDataProvider.this.all.mapValuesNow(fun)
+      override def all(implicit user: LoggedUser): Map[ProcessingType, Y] =
+        ProcessingTypeDataProvider.this.all.mapValuesNow(fun)
 
       override def combined: C = ProcessingTypeDataProvider.this.combined
     }
@@ -47,9 +59,10 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
     new ProcessingTypeDataProvider[T, CC] {
 
-      override def forType(typ: ProcessingType): Option[T] = ProcessingTypeDataProvider.this.forType(typ)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] =
+        ProcessingTypeDataProvider.this.forType(processingType)
 
-      override def all: Map[ProcessingType, T] = ProcessingTypeDataProvider.this.all
+      override def all(implicit user: LoggedUser): Map[ProcessingType, T] = ProcessingTypeDataProvider.this.all
 
       override def combined: CC = fun(ProcessingTypeDataProvider.this.combined)
     }
@@ -58,12 +71,23 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
 }
 
-class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getCombined: => C)
+class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, ValueWithPermission[T]], getCombined: => C)
     extends ProcessingTypeDataProvider[T, C] {
 
-  override def forType(typ: ProcessingType): Option[T] = map.get(typ)
+  override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] = allAuthorized
+    .get(processingType)
+    .map(_.getOrElse(throw new UnauthorizedError()))
 
-  override def all: Map[ProcessingType, T] = map
+  override def all(implicit user: LoggedUser): Map[ProcessingType, T] = allAuthorized.collect { case (k, Some(v)) =>
+    (k, v)
+  }
+
+  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[T]] = map.map {
+    case (k, ValueWithPermission(v, AnyUser)) => (k, Some(v))
+    case (k, ValueWithPermission(v, UserWithAccessRightsToCategory(category))) if user.can(category, Permission.Read) =>
+      (k, Some(v))
+    case (k, _) => (k, None)
+  }
 
   override lazy val combined: C = getCombined
 
@@ -71,11 +95,28 @@ class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getC
 
 object MapBasedProcessingTypeDataProvider {
 
-  def withEmptyCombinedData[T](map: Map[ProcessingType, T]): ProcessingTypeDataProvider[T, Nothing] = {
+  def withEmptyCombinedData[T](
+      map: Map[ProcessingType, ValueWithPermission[T]]
+  ): ProcessingTypeDataProvider[T, Nothing] = {
     new MapBasedProcessingTypeDataProvider[T, Nothing](
       map,
       throw new IllegalStateException("Processing type data provider does not have combined data!")
     )
   }
 
+}
+
+final case class ValueWithPermission[+T](value: T, permission: ValueAccessPermission) {
+  def map[TT](fun: T => TT): ValueWithPermission[TT] = copy(value = fun(value))
+}
+
+object ValueWithPermission {
+  def anyUser[T](value: T): ValueWithPermission[T] = ValueWithPermission(value, AnyUser)
+}
+
+sealed trait ValueAccessPermission
+
+object ValueAccessPermission {
+  case object AnyUser                                               extends ValueAccessPermission
+  final case class UserWithAccessRightsToCategory(category: String) extends ValueAccessPermission
 }

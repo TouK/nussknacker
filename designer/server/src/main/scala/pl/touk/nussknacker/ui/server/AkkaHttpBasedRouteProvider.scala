@@ -48,7 +48,12 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{
+  AuthenticationConfiguration,
+  AuthenticationResources,
+  LoggedUser,
+  NussknackerInternalUser
+}
 import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -452,7 +457,7 @@ class AkkaHttpBasedRouteProvider(
         release = provider =>
           IO {
             val (processingTypeDataProvider, _) = provider
-            processingTypeDataProvider.all.values.foreach(_.close())
+            processingTypeDataProvider.all(NussknackerInternalUser.instance).values.foreach(_.close())
           }
       )
   }
