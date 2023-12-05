@@ -21,17 +21,19 @@ import pl.touk.nussknacker.engine.api.deployment.{
   StateStatus,
   StatusDetails
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider,
+  ProcessingTypeDataState,
   ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -75,13 +77,21 @@ class DeploymentServiceSpec
   private val actionRepository                         = newActionProcessRepository(testDbRef)
   private val activityRepository                       = newProcessActivityRepository(testDbRef)
 
-  private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] = {
-    ProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(
-        TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
-      )
-    )
-  }
+  private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
+    new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
+
+      override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
+        new ProcessingTypeDataState[DeploymentManager, Nothing] {
+
+          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
+            TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
+          )
+
+          override def getCombined: () => Nothing = noCombinedDataFun
+          override def stateIdentity: Any         = deploymentManager
+        }
+
+    }
 
   private val dmDispatcher =
     new DeploymentManagerDispatcher(processingTypeDataProvider, futureFetchingProcessRepository)

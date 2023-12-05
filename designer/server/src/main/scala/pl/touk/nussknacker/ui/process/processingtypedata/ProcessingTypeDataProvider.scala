@@ -76,6 +76,11 @@ class TransformingProcessingTypeDataProvider[T, C, TT, CC](
 
 object ProcessingTypeDataProvider {
 
+  val noCombinedDataFun: () => Nothing = () =>
+    throw new IllegalStateException(
+      "Processing type data provider does not have combined data!"
+    )
+
   def apply[T, C](stateValue: ProcessingTypeDataState[T, C]): ProcessingTypeDataProvider[T, C] =
     new ProcessingTypeDataProvider[T, C] {
       override private[processingtypedata] def state: ProcessingTypeDataState[T, C] = stateValue
@@ -102,10 +107,7 @@ object ProcessingTypeDataProvider {
 
       override private[processingtypedata] val state: ProcessingTypeDataState[T, Nothing] = ProcessingTypeDataState(
         allValues,
-        () =>
-          throw new IllegalStateException(
-            "Processing type data provider does not have combined data!"
-          ),
+        noCombinedDataFun,
         allValues
       )
 
