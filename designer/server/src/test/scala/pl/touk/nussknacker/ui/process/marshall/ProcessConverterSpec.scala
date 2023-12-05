@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
-import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
   NodeValidationError,
@@ -34,6 +33,7 @@ import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, T
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -82,7 +82,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
-    val canonical   = ProcessConverter.fromDisplayable(process)
+    implicit val user: LoggedUser = AdminUser("admin", "admin")
+    val canonical                 = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
     ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
   }

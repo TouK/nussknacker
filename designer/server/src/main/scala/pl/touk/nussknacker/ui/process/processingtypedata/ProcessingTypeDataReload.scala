@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 trait ProcessingTypeDataReload {
 
@@ -38,7 +39,7 @@ class BasicProcessingTypeDataReload(
 
   override def reloadAll(): Unit = synchronized {
     logger.info("Closing old models")
-    current.all.values.foreach(_.close())
+    current.all(NussknackerInternalUser.instance).values.foreach(_.close())
     logger.info("Reloading scenario type data")
     current = loadMethod()
     logger.info("Scenario type data reloading finished")
@@ -55,9 +56,10 @@ object BasicProcessingTypeDataReload {
     // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
     val provider = new ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] {
-      override def forType(typ: ProcessingType): Option[ProcessingTypeData] = reloader.current.forType(typ)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[ProcessingTypeData] =
+        reloader.current.forType(processingType)
 
-      override def all: Map[ProcessingType, ProcessingTypeData] = reloader.current.all
+      override def all(implicit user: LoggedUser): Map[ProcessingType, ProcessingTypeData] = reloader.current.all
 
       override def combined: CombinedProcessingTypeData = reloader.current.combined
     }

@@ -178,7 +178,9 @@ class DeploymentServiceImpl(
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
 
-  private def validateProcess(processDetails: ScenarioWithDetailsEntity[CanonicalProcess]): Unit = {
+  private def validateProcess(
+      processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
+  )(implicit user: LoggedUser): Unit = {
     val validationResult = processValidator.processingTypeValidationWithTypingInfo(
       processDetails.json,
       processDetails.processingType,
@@ -387,7 +389,7 @@ class DeploymentServiceImpl(
   private def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionTypes: Set[ProcessActionType]
-  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
+  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
       .map { manager =>

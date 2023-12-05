@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.CategoriesConfig
+import pl.touk.nussknacker.engine.CategoryConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
@@ -194,7 +194,7 @@ class ConfigProcessCategoryServiceTest extends AnyFunSuite with Matchers {
       designerConfig.resolved,
       ProcessingTypeDataConfigurationReader
         .readProcessingTypeConfig(designerConfig)
-        .mapValuesNow(CategoriesConfig(_))
+        .mapValuesNow(CategoryConfig(_))
     )
   }
 

@@ -60,7 +60,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
   }
 
-  private val processValidator: ProcessValidator = ProcessValidator.default(modelData(), None)
+  private val processValidator: ProcessValidator = ProcessValidator.default(modelData())
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality", "#input.str", Typed[Long])
@@ -728,7 +728,7 @@ class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
   ): Map[String, WithCategories[SourceFactory]] = {
     implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
     Map(
-      "start" -> WithCategories(
+      "start" -> WithCategories.anyCategory(
         SourceFactory.noParam[TestRecord](
           EmitWatermarkAfterEachElementCollectionSource
             .create[TestRecord](input, _.timestamp, Duration.ofHours(1))

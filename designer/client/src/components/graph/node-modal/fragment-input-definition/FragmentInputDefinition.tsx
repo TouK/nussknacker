@@ -3,18 +3,19 @@ import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
-import { Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
-import FieldsSelect from "./FieldsSelect";
+import { FieldsSelect } from "./FieldsSelect";
 import { find, head, orderBy } from "lodash";
+import { getDefaultFields } from "./item/utils";
+import { FragmentInputParameter } from "./item";
 
-interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
+interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly"> {
     isEditMode?: boolean;
 }
 
 export default function FragmentInputDefinition(props: Props): JSX.Element {
-    const { removeElement, addElement, ...passProps } = props;
+    const { removeElement, addElement, variableTypes, ...passProps } = props;
     const { node, setProperty, isEditMode, showValidation } = passProps;
 
     const readOnly = !isEditMode;
@@ -33,7 +34,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
     const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
 
     const addField = useCallback(() => {
-        addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);
+        addElement("parameters", getDefaultFields(defaultTypeOption.value));
     }, [addElement, defaultTypeOption.value]);
 
     const fields = useMemo(() => node.parameters || [], [node.parameters]);
@@ -50,6 +51,9 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 options={orderedTypeOptions}
                 showValidation={showValidation}
                 readOnly={readOnly}
+                variableTypes={variableTypes}
+                fixedValuesPresets={definitionData.fixedValuesPresets}
+                fieldErrors={passProps.fieldErrors}
             />
         </NodeCommonDetailsDefinition>
     );

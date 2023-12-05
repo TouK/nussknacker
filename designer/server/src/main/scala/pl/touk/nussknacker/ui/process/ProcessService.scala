@@ -237,7 +237,7 @@ class DBProcessService(
   private def validateAndReverseResolve(
       entity: ScenarioWithDetailsEntity[CanonicalProcess],
       validateAndResolve: Boolean
-  ): ScenarioWithDetails = {
+  )(implicit user: LoggedUser): ScenarioWithDetails = {
     if (validateAndResolve) {
       validateAndReverseResolve(entity)
     } else {
@@ -260,7 +260,7 @@ class DBProcessService(
 
   private def validateAndReverseResolve(
       entity: ScenarioWithDetailsEntity[CanonicalProcess]
-  ): ScenarioWithDetails = {
+  )(implicit user: LoggedUser): ScenarioWithDetails = {
     ScenarioWithDetailsConversions.fromEntity(entity.mapScenario { canonical: CanonicalProcess =>
       val processingType = entity.processingType
       val validationResult =
@@ -414,7 +414,7 @@ class DBProcessService(
       canonicalProcess: CanonicalProcess,
       processingType: ProcessingType,
       category: String
-  ) = {
+  )(implicit user: LoggedUser) = {
     val validationResult =
       processValidator.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors

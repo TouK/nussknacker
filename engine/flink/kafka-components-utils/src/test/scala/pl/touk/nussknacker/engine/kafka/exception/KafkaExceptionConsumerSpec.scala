@@ -74,13 +74,15 @@ class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    "source" -> WithCategories(SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date()) :: Nil))
+    "source" -> WithCategories.anyCategory(
+      SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date()) :: Nil)
+    )
   )
 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = Map(
-    "sink" -> WithCategories(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
+    "sink" -> WithCategories.anyCategory(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
   )
 
 }

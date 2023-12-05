@@ -151,7 +151,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
@@ -202,7 +202,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
@@ -241,7 +241,7 @@ object UnionWithMemoTransformerSpec {
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("union-memo-test" -> WithCategories(new UnionWithMemoTransformer(None)))
+      Map("union-memo-test" -> WithCategories.anyCategory(new UnionWithMemoTransformer(None)))
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
       Seq(collectingListener)
@@ -250,14 +250,14 @@ object UnionWithMemoTransformerSpec {
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start-foo" -> WithCategories(SourceFactory.noParam[OneRecord](sourceFoo)),
-        "start-bar" -> WithCategories(SourceFactory.noParam[OneRecord](sourceBar))
+        "start-foo" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](sourceFoo)),
+        "start-bar" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](sourceBar))
       )
 
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories(SinkFactory.noParam(EmptySink)))
+      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
 
   }
 

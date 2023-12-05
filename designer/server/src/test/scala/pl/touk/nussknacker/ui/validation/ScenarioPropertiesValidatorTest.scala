@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private val reqFieldName      = "propReq"
@@ -22,6 +23,9 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private val optFixedFieldName = "propOptFixed"
   private val possibleValues    = List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
   private val label             = "foo"
+
+  // TODO: tests for user privileges
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   private val validator = new ScenarioPropertiesValidator(
     TestFactory.mapProcessingTypeDataProvider(

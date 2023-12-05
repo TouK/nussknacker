@@ -87,7 +87,9 @@ class ProcessesExportResources(
     fileResponse(ProcessConverter.fromDisplayable(processDetails))
   }
 
-  private def exportResolvedProcess(processWithDictLabels: DisplayableProcess): HttpResponse = {
+  private def exportResolvedProcess(
+      processWithDictLabels: DisplayableProcess
+  )(implicit user: LoggedUser): HttpResponse = {
     val validationResult = processResolver.validateBeforeUiResolving(processWithDictLabels)
     val resolvedProcess  = processResolver.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
     fileResponse(resolvedProcess)

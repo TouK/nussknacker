@@ -2,7 +2,14 @@ import { css, cx } from "@emotion/css";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
 import Handlebars from "./handlebars.svg";
-import { useTheme } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
+
+const StyledHandleBars = styled(Handlebars)`
+    height: 35px;
+    width: 12px;
+    margin-left: 6px;
+    cursor: grab;
+`;
 
 const grabbing = css({ "*": { cursor: "grabbing !important" } });
 
@@ -56,11 +63,10 @@ export const DragHandle: React.FC<{ active?: boolean }> = ({ active }): React.JS
                 },
             })}
         >
-            <Handlebars
+            <StyledHandleBars
                 onMouseDown={onMouseDown}
                 onMouseUp={onMouseUp}
                 className={cx(
-                    "handle-bars",
                     css({
                         g: { fill: isActive ? theme.custom.colors.accent : theme.custom.colors.primary },
                     }),

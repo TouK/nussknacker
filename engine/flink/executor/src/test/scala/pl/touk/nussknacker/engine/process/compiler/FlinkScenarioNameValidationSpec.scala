@@ -24,7 +24,7 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
 
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, ConfigFactory.empty())
     val modelData                     = LocalModelData(config, creator)
-    val processValidator              = ProcessValidator.default(modelData, None)
+    val processValidator              = ProcessValidator.default(modelData)
 
     val validationResult = processValidator
       .validate(processWithInvalidName)

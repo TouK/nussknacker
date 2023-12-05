@@ -27,9 +27,14 @@
 * [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
 * [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
 * [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
-* [#5059](https://github.com/TouK/nussknacker/pull/5059) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) [#5103](https://github.com/TouK/nussknacker/pull/5103) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
 * [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
+* [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
+
+1.12.5 (1 Dec 2023)
+------------------------
+* [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
 
 1.12.4 (14 Nov 2023)
 ------------------------
@@ -37,8 +42,12 @@
 
 1.12.3 (26 Oct 2023)
 -------------------------
+[this version was skipped]
+
 1.12.2 (25 Oct 2023)
 -------------------------
+[this version was skipped]
+
 1.12.1 (25 Oct 2023)
 -------------------------
 * [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart

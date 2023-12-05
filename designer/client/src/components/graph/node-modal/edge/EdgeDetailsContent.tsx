@@ -3,7 +3,7 @@ import { Edge, EdgeKind, EdgeType } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
-import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "../node";
 
 interface Props {
     edge: Edge;

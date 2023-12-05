@@ -31,6 +31,8 @@ class StubModelDataWithProcessDefinition(
     configDuringExecution
   )
 
+  override def category: Option[String] = None
+
   override lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = ModelDefinitionWithTypes(
     ProcessDefinitionBuilder.withEmptyObjects(definition)
   )

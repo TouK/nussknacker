@@ -23,8 +23,8 @@ case class WithCategories[+T](value: T, categories: Option[List[String]], compon
 
 object WithCategories {
 
-  def apply[T](value: T, categories: String*): WithCategories[T] = {
-    WithCategories(value, Some(categories.toList), SingleComponentConfig.zero)
+  def apply[T](value: T, category: String, categories: String*): WithCategories[T] = {
+    WithCategories(value, Some(category :: categories.toList), SingleComponentConfig.zero)
   }
 
   def anyCategory[T](value: T): WithCategories[T] = {

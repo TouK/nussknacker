@@ -71,7 +71,7 @@ class NodesResourcesSpec
   )
 
   private implicit val typingResultDecoder: Decoder[TypingResult] =
-    NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
+    NodesResources.prepareTypingResultDecoder(typeToConfig.all(adminUser).head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter]       = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
 

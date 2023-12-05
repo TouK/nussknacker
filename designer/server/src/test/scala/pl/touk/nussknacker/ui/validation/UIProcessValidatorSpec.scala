@@ -54,6 +54,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProv
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.jdk.CollectionConverters._
 
@@ -63,6 +64,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   import TestCategories._
   import UIProcessValidatorSpec._
   import spel.Implicits._
+
+  // TODO: tests for user privileges
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   test("check for not unique edge types") {
     val process = createProcess(
@@ -828,28 +832,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
           ) =>
     }
     result.warnings shouldBe ValidationWarnings.success
-  }
-
-  test("validates scenario with category") {
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(secretExistingSourceFactory, Nil)),
-        Sink("sink", SinkRef(existingSinkFactory, Nil))
-      ),
-      edges = List(Edge("source", "sink", None))
-    )
-
-    val validationResult = processValidator.validate(process.copy(category = SecretCategory))
-    validationResult.errors.invalidNodes shouldBe Symbol("empty")
-    validationResult.errors.globalErrors shouldBe Symbol("empty")
-    validationResult.saveAllowed shouldBe true
-
-    val validationResultWithCategory2 = processValidator.validate(process)
-    validationResultWithCategory2.errors.invalidNodes shouldBe Map(
-      "source" -> List(
-        PrettyValidationErrors.formatErrorMessage(MissingSourceFactory(secretExistingSourceFactory, "source"))
-      )
-    )
   }
 
   test("validates scenario with fragment with category") {

@@ -36,6 +36,7 @@ const colors = {
     secondaryColor: l2,
     mutedColor: base,
     focusColor: d1,
+    baseColor: l4,
     evenBackground: d3,
     cobalt: "#0058A9",
     mineShaft: "#3e3e3e",
@@ -130,7 +131,7 @@ const globalStyles = {
         fontSize: "16px",
         overflow: "hidden",
         letterSpacing: "unset",
-        "-webkit-font-smoothing": "initial",
+        WebkitFontSmoothing: "initial",
         lineHeight: 1.428571429,
     },
     "input, button, select, textarea": {

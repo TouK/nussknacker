@@ -167,21 +167,23 @@ class InterpreterSpec extends AnyFunSuite with Matchers { // TODO new tests
       override def customStreamTransformers(
           processObjectDependencies: ProcessObjectDependencies
       ): Map[String, WithCategories[CustomStreamTransformer]] =
-        customStreamTransformersToUse.mapValuesNow(WithCategories(_))
+        customStreamTransformersToUse.mapValuesNow(WithCategories.anyCategory)
 
       override def services(
           processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories(_))
+      ): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories.anyCategory)
 
       override def sourceFactories(
           processObjectDependencies: ProcessObjectDependencies
       ): Map[String, WithCategories[SourceFactory]] =
-        Map("transaction-source" -> WithCategories(TransactionSource))
+        Map("transaction-source" -> WithCategories.anyCategory(TransactionSource))
 
       override def sinkFactories(
           processObjectDependencies: ProcessObjectDependencies
       ): Map[String, WithCategories[SinkFactory]] = Map(
-        "dummySink" -> WithCategories(SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {}))
+        "dummySink" -> WithCategories.anyCategory(
+          SinkFactory.noParam(new pl.touk.nussknacker.engine.api.process.Sink {})
+        )
       )
 
       override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = super
@@ -192,7 +194,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers { // TODO new tests
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(
       configCreator,
       getClass.getClassLoader,
-      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader))
+      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)),
+      category = None
     )
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     ProcessCompilerData.prepare(

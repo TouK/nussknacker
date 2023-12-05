@@ -8,6 +8,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{MigrationComment, ScenarioWithDetailsEntity}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.UpdateProcessAction
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 final case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[ProcessMigration]) {
 
@@ -28,7 +29,7 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
   def migrateProcess(
       processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
       skipEmptyMigrations: Boolean
-  ): Option[MigrationResult] = {
+  )(implicit user: LoggedUser): Option[MigrationResult] = {
     for {
       migrations <- migrations.forType(processDetails.processingType)
       displayable       = processDetails.json
