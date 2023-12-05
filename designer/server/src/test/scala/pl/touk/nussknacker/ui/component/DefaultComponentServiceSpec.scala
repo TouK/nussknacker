@@ -39,14 +39,8 @@ import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigE
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataReader}
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.ValueWithPermission
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.process.{
-  ConfigProcessCategoryService,
-  DBProcessService,
-  ProcessCategoryService,
-  UserCategoryService
-}
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class DefaultComponentServiceSpec

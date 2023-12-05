@@ -3,11 +3,8 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.{
-  AnyUserPermission,
-  UserWithCategoryReadPermission,
-  ValueWithPermission
-}
+import pl.touk.nussknacker.ui.UnauthorizedError
+import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 /**
@@ -77,16 +74,19 @@ trait ProcessingTypeDataProvider[+T, +C] {
 class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, ValueWithPermission[T]], getCombined: => C)
     extends ProcessingTypeDataProvider[T, C] {
 
-  override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] =
-    map.get(processingType).collect {
-      case ValueWithPermission(v, AnyUserPermission)                                                               => v
-      case ValueWithPermission(v, UserWithCategoryReadPermission(category)) if user.can(category, Permission.Read) => v
-    }
+  override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] = allAuthorized
+    .get(processingType)
+    .map(_.getOrElse(throw new UnauthorizedError()))
 
-  override def all(implicit user: LoggedUser): Map[ProcessingType, T] = map.collect {
-    case (k, ValueWithPermission(v, AnyUserPermission)) => (k, v)
-    case (k, ValueWithPermission(v, UserWithCategoryReadPermission(category))) if user.can(category, Permission.Read) =>
-      (k, v)
+  override def all(implicit user: LoggedUser): Map[ProcessingType, T] = allAuthorized.collect { case (k, Some(v)) =>
+    (k, v)
+  }
+
+  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[T]] = map.map {
+    case (k, ValueWithPermission(v, AnyUser)) => (k, Some(v))
+    case (k, ValueWithPermission(v, UserWithAccessRightsToCategory(category))) if user.can(category, Permission.Read) =>
+      (k, Some(v))
+    case (k, _) => (k, None)
   }
 
   override lazy val combined: C = getCombined
@@ -104,10 +104,19 @@ object MapBasedProcessingTypeDataProvider {
     )
   }
 
-  case class ValueWithPermission[T](value: T, permission: ValueAccessPermission)
+}
 
-  sealed trait ValueAccessPermission
-  case object AnyUserPermission                               extends ValueAccessPermission
-  case class UserWithCategoryReadPermission(category: String) extends ValueAccessPermission
+final case class ValueWithPermission[+T](value: T, permission: ValueAccessPermission) {
+  def map[TT](fun: T => TT): ValueWithPermission[TT] = copy(value = fun(value))
+}
 
+object ValueWithPermission {
+  def anyUser[T](value: T): ValueWithPermission[T] = ValueWithPermission(value, AnyUser)
+}
+
+sealed trait ValueAccessPermission
+
+object ValueAccessPermission {
+  case object AnyUser                                               extends ValueAccessPermission
+  final case class UserWithAccessRightsToCategory(category: String) extends ValueAccessPermission
 }

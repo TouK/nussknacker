@@ -22,14 +22,11 @@ import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider.{
-  AnyUserPermission,
-  ValueWithPermission
-}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   MapBasedProcessingTypeDataProvider,
   ProcessingTypeDataConfigurationReader,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataProvider,
+  ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -167,7 +164,7 @@ object TestFactory extends TestPermissions {
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
     MapBasedProcessingTypeDataProvider.withEmptyCombinedData(
-      Map(data: _*).mapValuesNow(ValueWithPermission(_, AnyUserPermission))
+      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
     )
   }
 
