@@ -135,7 +135,7 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
 
-        cy.wait(750);
+        cy.wait("@validation");
         cy.getNode("sendSms")
             .parent()
             .matchImage({
