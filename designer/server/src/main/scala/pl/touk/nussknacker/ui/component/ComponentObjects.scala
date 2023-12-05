@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 private[component] final case class ComponentObjects(
+    // TODO: We shouldn't base on ComponentTemplate here - it is final DTO which should be used only for encoding
     templates: List[(ComponentGroupName, ComponentTemplate)],
     config: ComponentsUiConfig
 )

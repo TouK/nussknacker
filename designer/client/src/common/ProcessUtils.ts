@@ -218,7 +218,7 @@ class ProcessUtils {
             }
             case "VariableBuilder": {
                 //TODO: remove when VariableBuilder will be removed
-                return "mapVariable";
+                return "record-variable";
             }
             default: {
                 return null;

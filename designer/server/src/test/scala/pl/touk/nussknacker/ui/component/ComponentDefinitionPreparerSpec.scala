@@ -5,6 +5,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{
+  BuiltInComponentInfo,
   ComponentGroupName,
   ComponentId,
   ComponentType,
@@ -26,7 +27,6 @@ import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, Node
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SimpleTestComponentIdProvider
@@ -58,7 +58,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo", "alaMaKota", "BarFilter"))
     groups.map(_.components.map(n => n.label)) shouldBe List(
-      List("choice", "filter", "mapVariable", "split", "variable"),
+      List("choice", "filter", "record-variable", "split", "variable"),
       List("alaMaKota", "BarFilter", "foo")
     )
   }
@@ -104,8 +104,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
   }
 
@@ -129,8 +129,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1

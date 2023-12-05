@@ -2,9 +2,7 @@ package pl.touk.nussknacker.engine.api.component
 
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
-//Right now it's not yet clear what this id will be.
 final case class ComponentId private (value: String) extends AnyVal {
   override def toString: String = value
 }
@@ -15,19 +13,19 @@ object ComponentId {
 
   def apply(value: String): ComponentId = new ComponentId(value.toLowerCase)
 
-  def forBaseComponent(componentType: ComponentType): ComponentId = {
-    if (!ComponentType.isBaseComponent(componentType)) {
-      throw new IllegalArgumentException(s"Component type: $componentType is not base component.")
+  def forBuiltInComponent(componentInfo: ComponentInfo): ComponentId = {
+    if (componentInfo.`type` != ComponentType.BuiltIn) {
+      throw new IllegalArgumentException(s"Component type: ${componentInfo.`type`} is not built-in component type")
     }
-
-    apply(componentType.toString)
+    // Built-in components are the same for each processing type so original id is the same across them
+    apply(componentInfo.toString)
   }
 
-  // TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
-  def default(processingType: String, name: String, componentType: ComponentType): ComponentId =
-    if (ComponentType.isBaseComponent(componentType))
-      forBaseComponent(componentType)
-    else
-      apply(s"$processingType-$componentType-$name")
+  def default(processingType: String, componentInfo: ComponentInfo): ComponentId = {
+    if (componentInfo.`type` == ComponentType.BuiltIn) {
+      forBuiltInComponent(componentInfo)
+    } else
+      apply(s"$processingType-$componentInfo")
+  }
 
 }

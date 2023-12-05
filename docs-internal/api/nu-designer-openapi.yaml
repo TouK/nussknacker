@@ -451,19 +451,12 @@ components:
     ComponentType:
       type: string
       enum:
-      - filter
-      - split
-      - switch
-      - variable
-      - mapVariable
-      - processor
-      - enricher
-      - sink
       - source
-      - fragments
-      - customNode
-      - input
-      - output
+      - sink
+      - service
+      - custom
+      - fragment
+      - builtin
     ComponentUsagesInScenario:
       required:
       - id
