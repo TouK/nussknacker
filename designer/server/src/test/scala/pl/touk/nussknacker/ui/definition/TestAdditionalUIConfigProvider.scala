@@ -32,7 +32,7 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
   override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentConfigWithoutId] = {
     if (processingType == TestProcessingTypes.Streaming) {
       Map(
-        ComponentId("streaming-enricher-enricher") -> SingleComponentConfigWithoutId.zero.copy(
+        ComponentId("streaming-service-enricher") -> SingleComponentConfigWithoutId.zero.copy(
           params = Map(
             "paramDualEditor" -> ParameterConfig.empty.copy(
               validators = Some(

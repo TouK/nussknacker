@@ -199,6 +199,7 @@ class ProcessUtils {
         }
     };
 
+    // It should be synchronized with ComponentInfoExtractor.fromScenarioNode
     findNodeDefinitionId = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
@@ -216,9 +217,26 @@ class ProcessUtils {
             case "CustomNode": {
                 return node.nodeType;
             }
+            case "Filter": {
+                return "filter";
+            }
+            case "Split": {
+                return "split";
+            }
+            case "Switch": {
+                return "choice";
+            }
+            case "Variable": {
+                return "variable";
+            }
             case "VariableBuilder": {
-                //TODO: remove when VariableBuilder will be removed
-                return "mapVariable";
+                return "record-variable";
+            }
+            case "FragmentInputDefinition": {
+                return "input";
+            }
+            case "FragmentOutputDefinition": {
+                return "output";
             }
             default: {
                 return null;

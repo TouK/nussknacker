@@ -4,11 +4,12 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.component.ComponentInfo
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{NodeId, ScenarioComponentsUsages}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -174,7 +175,7 @@ final case class ProcessVersionEntityData(
 
 @JsonCodec
 private[entity] final case class ComponentUsages(
-    componentName: Option[String],
+    componentName: String,
     componentType: ComponentType,
     nodeIds: List[NodeId]
 )
@@ -184,15 +185,15 @@ object ScenarioComponentsUsagesJsonCodec {
   implicit val decoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map {
     componentUsagesList =>
       val componentUsagesMap = componentUsagesList.map { componentUsages =>
-        val componentIdParts = ComponentIdParts(componentUsages.componentName, componentUsages.componentType)
-        componentIdParts -> componentUsages.nodeIds
+        val componentInfo = ComponentInfo(componentUsages.componentType, componentUsages.componentName)
+        componentInfo -> componentUsages.nodeIds
       }.toMap
       ScenarioComponentsUsages(componentUsagesMap)
   }
 
   implicit val encoder: Encoder[ScenarioComponentsUsages] =
     implicitly[Encoder[List[ComponentUsages]]].contramap[ScenarioComponentsUsages](_.value.toList.map {
-      case (ComponentIdParts(componentName, componentType), nodeIds) =>
+      case (ComponentInfo(componentType, componentName), nodeIds) =>
         ComponentUsages(componentName, componentType, nodeIds)
     })
 

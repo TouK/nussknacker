@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.definition.{
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSource, _}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
   EndResult,
   ScenarioInputBatch,
@@ -187,7 +187,7 @@ object ScenarioInterpreterFactory {
           monad.pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
-                Some(NodeComponentInfo(source.value, "source", ComponentType.Source)),
+                Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
                 Context("")
               ) :: Nil,

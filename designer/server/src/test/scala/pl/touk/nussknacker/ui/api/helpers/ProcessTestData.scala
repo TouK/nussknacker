@@ -19,14 +19,12 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -65,8 +63,8 @@ object ProcessTestData {
   val optionalEndingStreamTransformer          = "optionalEndingTransformer"
 
   class SimpleTestComponentIdProvider extends ComponentIdProvider {
-    def createComponentId(processingType: String, name: Option[String], componentType: ComponentType): ComponentId =
-      ComponentId.default(processingType, name.getOrElse(""), componentType)
+    def createComponentId(processingType: String, componentInfo: ComponentInfo): ComponentId =
+      ComponentId.default(processingType, componentInfo)
 
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }

@@ -275,7 +275,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     result shouldBe Invalid(
       NonEmptyList.of(
         NuExceptionInfo(
-          Some(NodeComponentInfo("sinkId", "unknown", ComponentType.Sink)),
+          Some(NodeComponentInfo("sinkId", ComponentType.Sink, "unknown")),
           SinkException("FailingSink failed"),
           Context(contextId, Map("input" -> Request1("a", "b")), None)
         )
