@@ -25,7 +25,7 @@ describe("Table editor", () => {
 
         cy.get("@table").click(100, 50);
         cy.get("[value='java.lang.Double']").click();
-        cy.get("@table").realClick({ x: 520, y: 22 });
+        cy.get("@table").realClick({ x: 500, y: 18 });
         cy.realType("some name", { delay: 50 });
         snapshot();
         cy.realPress("Enter", { pressDelay: 50 });
