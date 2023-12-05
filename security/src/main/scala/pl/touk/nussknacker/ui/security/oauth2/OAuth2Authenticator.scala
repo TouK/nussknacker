@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker.JsonMasker
-import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.jwt.{ParsedJwtToken, RawJwtToken}
 import sttp.client3.SttpBackend
 

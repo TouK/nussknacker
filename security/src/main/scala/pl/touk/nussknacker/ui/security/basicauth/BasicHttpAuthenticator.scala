@@ -5,7 +5,8 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import at.favre.lib.crypto.bcrypt.BCrypt
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
-import pl.touk.nussknacker.restmodel.security.{AuthCredentials, AuthenticatedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{
   EncryptedPassword,
   PlainPassword,

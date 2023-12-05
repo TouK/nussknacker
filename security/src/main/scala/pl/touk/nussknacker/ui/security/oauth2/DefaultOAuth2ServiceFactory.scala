@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oidc.{
   DefaultOidcAuthorizationData,
   GenericOidcService,

@@ -3,16 +3,16 @@ package pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.Codec.PlainCodec
 
-class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
+class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import ComponentResourceApiEndpoints.ComponentCodec._
+  import ComponentApiEndpoints.ComponentCodec._
 
   val componentsListEndpoint: SecuredEndpoint[Unit, Unit, List[ComponentListElement], Any] =
     baseNuApiEndpoint
@@ -46,7 +46,7 @@ class ComponentResourceApiEndpoints(auth: EndpointInput[AuthCredentials]) extend
       )
       .withSecurity(auth)
 
-  object ComponentResourceApiEndpoints {
+  object ComponentApiEndpoints {
 
     object ComponentCodec {
       def encode(componentId: ComponentId): String = componentId.value
