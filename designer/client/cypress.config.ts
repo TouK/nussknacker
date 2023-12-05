@@ -47,5 +47,6 @@ export default defineConfig({
         },
         baseUrl: "http://localhost:3000",
         excludeSpecPattern: ["**/__snapshots__/*", "**/__image_snapshots__/*"],
+        video: true,
     },
 });
