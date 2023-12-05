@@ -6,7 +6,7 @@ import cats.implicits._
 import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -187,7 +187,7 @@ object ScenarioInterpreterFactory {
           monad.pure[ResultType[PartResult]](
             Writer(
               NuExceptionInfo(
-                Some(NodeComponentInfo(source.value, "source", ComponentType.Source)),
+                Some(NodeComponentInfo(source.value, "source", RealComponentType.Source)),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
                 Context("")
               ) :: Nil,

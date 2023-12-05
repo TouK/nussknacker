@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
 import pl.touk.nussknacker.engine.api.ValueWithContext
 import pl.touk.nussknacker.engine.process.ExceptionHandlerFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -16,7 +16,7 @@ private[registrar] class CollectingSinkFunction[T](
 
   override def invoke(value: ValueWithContext[T], context: SinkFunction.Context): Unit = {
     exceptionHandler.handling(
-      Some(NodeComponentInfo(sinkId, "collectingSinkFunction", ComponentType.Sink)),
+      Some(NodeComponentInfo(sinkId, "collectingSinkFunction", RealComponentType.Sink)),
       value.context
     ) {
       collectingSink.collect(value.context, value.value)

@@ -1,45 +1,71 @@
 package pl.touk.nussknacker.engine.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentType
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
-import pl.touk.nussknacker.engine.compiledgraph.node._
-import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
+import pl.touk.nussknacker.engine.api.component.{
+  BaseComponentNames,
+  ComponentInfo,
+  NodeComponentInfo,
+  RealComponentType
+}
+import pl.touk.nussknacker.engine.compiledgraph.{node => compilednode}
+import pl.touk.nussknacker.engine.graph.{node => scenarionode}
 
 // TODO this logic should be in one place with DefaultComponentIdProvider
 object NodeComponentInfoExtractor {
 
-  def fromNode(node: Node): NodeComponentInfo = {
-    // warning: this logic should be kept synchronized with DefaultComponentIdProvider
-    // TODO: Maybe compiledgraph.node should have componentId field or WihtCompoment trait? Just like NodeData
+  def fromCompiledNode(node: compilednode.Node): NodeComponentInfo = {
+    val componentInfo = extractComponentInfo(node)
+    NodeComponentInfo(node.id, componentInfo)
+  }
+
+  def fromScenarioNode(nodeData: scenarionode.NodeData): NodeComponentInfo = {
+    val componentInfo = extractComponentInfo(nodeData)
+    NodeComponentInfo(nodeData.id, componentInfo)
+  }
+
+  private def extractComponentInfo(node: compilednode.Node) = {
     node match {
-      case source: Source         => NodeComponentInfo(node.id, source.ref.getOrElse("source"), ComponentType.Source)
-      case sink: Sink             => NodeComponentInfo(node.id, sink.ref, ComponentType.Sink)
-      case _: FragmentOutput      => NodeComponentInfo.forBaseNode(node.id, ComponentType.Sink)
-      case _: Filter              => NodeComponentInfo.forBaseNode(node.id, ComponentType.Filter)
-      case _: SplitNode           => NodeComponentInfo.forBaseNode(node.id, ComponentType.Split)
-      case _: Switch              => NodeComponentInfo.forBaseNode(node.id, ComponentType.Switch)
-      case _: VariableBuilder     => NodeComponentInfo.forBaseNode(node.id, ComponentType.Variable)
-      case customNode: CustomNode => NodeComponentInfo(node.id, customNode.ref, ComponentType.CustomNode)
-      case endingCustomNode: EndingCustomNode =>
-        NodeComponentInfo(node.id, endingCustomNode.ref, ComponentType.CustomNode)
-      case enricher: Enricher   => NodeComponentInfo(node.id, enricher.service.id, ComponentType.Enricher)
-      case processor: Processor => NodeComponentInfo(node.id, processor.service.id, ComponentType.Processor)
-      case endingProcessor: EndingProcessor =>
-        NodeComponentInfo(node.id, endingProcessor.service.id, ComponentType.Processor)
-      case _: FragmentUsageStart => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentInput)
-      case _: FragmentUsageEnd   => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentOutput)
-      case _: BranchEnd          => NodeComponentInfo(node.id, None)
+      case compilednode.Source(_, Some(ref), _) => Some(ComponentInfo(ref, RealComponentType.Source))
+      case compilednode.Source(_, None, _)      => None
+      case sink: compilednode.Sink              => Some(ComponentInfo(sink.ref, RealComponentType.Sink))
+      case _: compilednode.Filter    => Some(ComponentInfo(BaseComponentNames.Filter, RealComponentType.Base))
+      case _: compilednode.SplitNode => Some(ComponentInfo(BaseComponentNames.Split, RealComponentType.Base))
+      case _: compilednode.Switch    => Some(ComponentInfo(BaseComponentNames.Choice, RealComponentType.Base))
+      case compilednode.VariableBuilder(_, _, Left(_), _) =>
+        Some(ComponentInfo(BaseComponentNames.Variable, RealComponentType.Base))
+      case compilednode.VariableBuilder(_, _, Right(_), _) =>
+        Some(ComponentInfo(BaseComponentNames.RecordVariable, RealComponentType.Base))
+      case customNode: compilednode.CustomNode => Some(ComponentInfo(customNode.ref, RealComponentType.CustomNode))
+      case customNode: compilednode.EndingCustomNode =>
+        Some(ComponentInfo(customNode.ref, RealComponentType.CustomNode))
+      case service: compilednode.Enricher        => Some(ComponentInfo(service.service.id, RealComponentType.Service))
+      case service: compilednode.Processor       => Some(ComponentInfo(service.service.id, RealComponentType.Service))
+      case service: compilednode.EndingProcessor => Some(ComponentInfo(service.service.id, RealComponentType.Service))
+      case _: compilednode.FragmentOutput        => None
+      case _: compilednode.FragmentUsageStart    => None
+      case _: compilednode.FragmentUsageEnd      => None
+      case _: compilednode.BranchEnd             => None
     }
   }
 
-  def fromNodeData(nodeData: NodeData): NodeComponentInfo = {
-    val maybeComponentType = ComponentUtil.extractComponentType(nodeData)
-    (nodeData, maybeComponentType) match {
-      case (withComponent: WithComponent, Some(componentType)) =>
-        NodeComponentInfo(nodeData.id, withComponent.componentId, componentType)
-      case (_, Some(componentType)) if ComponentType.isBaseComponent(componentType) =>
-        NodeComponentInfo.forBaseNode(nodeData.id, componentType)
-      case _ => NodeComponentInfo(nodeData.id, None)
+  private def extractComponentInfo(node: scenarionode.NodeData) = {
+    node match {
+      case source: scenarionode.Source => Some(ComponentInfo(source.componentId, RealComponentType.Source))
+      case sink: scenarionode.Sink     => Some(ComponentInfo(sink.componentId, RealComponentType.Sink))
+      case _: scenarionode.Filter      => Some(ComponentInfo(BaseComponentNames.Filter, RealComponentType.Base))
+      case _: scenarionode.Split       => Some(ComponentInfo(BaseComponentNames.Split, RealComponentType.Base))
+      case _: scenarionode.Switch      => Some(ComponentInfo(BaseComponentNames.Choice, RealComponentType.Base))
+      case _: scenarionode.Variable    => Some(ComponentInfo(BaseComponentNames.Variable, RealComponentType.Base))
+      case _: scenarionode.VariableBuilder =>
+        Some(ComponentInfo(BaseComponentNames.RecordVariable, RealComponentType.Base))
+      case custom: scenarionode.CustomNodeData => Some(ComponentInfo(custom.componentId, RealComponentType.CustomNode))
+      case service: scenarionode.Enricher      => Some(ComponentInfo(service.componentId, RealComponentType.Service))
+      case service: scenarionode.Processor     => Some(ComponentInfo(service.componentId, RealComponentType.Service))
+      case _: scenarionode.FragmentInputDefinition  => None
+      case _: scenarionode.FragmentOutputDefinition => None
+      case fragment: scenarionode.FragmentInput =>
+        Some(ComponentInfo(fragment.componentId, RealComponentType.Fragments))
+      case _: scenarionode.FragmentUsageOutput => None
+      case _: scenarionode.BranchEndData       => None
     }
   }
 

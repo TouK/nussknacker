@@ -6,10 +6,9 @@ import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -218,7 +217,7 @@ object sample {
           if (input.value == 1) {
             Invalid(
               NuExceptionInfo(
-                Some(NodeComponentInfo(nodeId.id, "failOnNumber1SourceFactory", ComponentType.Source)),
+                Some(NodeComponentInfo(nodeId.id, "failOnNumber1SourceFactory", RealComponentType.Source)),
                 SourceFailure,
                 Context(input.contextId)
               )
