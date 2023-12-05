@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
@@ -12,14 +13,15 @@ object DbInitializer extends LazyLogging {
 
   def init(configDb: Config): (JdbcBackend.DatabaseDef, JdbcProfile) = {
     import net.ceedubs.ficus.Ficus._
-    val url =  configDb.as[String]("url")
+    val url     = configDb.as[String]("url")
     val profile = chooseDbProfile(url)
     logger.info("Applying db migrations")
 
-    //we want to set property on FluentConfiguration only if there is property in config
+    // we want to set property on FluentConfiguration only if there is property in config
     implicit class OptionalConfig(config: FluentConfiguration) {
-      def setOptional[A](name: String, setAction: (FluentConfiguration, A) => FluentConfiguration)
-                        (implicit reader: ValueReader[Option[A]]): FluentConfiguration = {
+      def setOptional[A](name: String, setAction: (FluentConfiguration, A) => FluentConfiguration)(
+          implicit reader: ValueReader[Option[A]]
+      ): FluentConfiguration = {
         configDb.getAs[A](name).fold(config)(setAction(config, _))
       }
     }
@@ -27,25 +29,27 @@ object DbInitializer extends LazyLogging {
     Flyway
       .configure()
       .locations(
-        ( profile match {
-          case HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
-          case PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
-          case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
+        (profile match {
+          case _: HsqldbProfile   => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
+          case _: PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
+          case _ =>
+            throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
       .dataSource(url, configDb.as[String]("user"), configDb.as[String]("password"))
       .setOptional[String]("schema", _.schemas(_))
       .setOptional[String]("table", _.table(_))
       .baselineOnMigrate(true)
-      .load().migrate()
+      .load()
+      .migrate()
 
     (JdbcBackend.Database.forConfig(path = "", configDb), profile)
   }
 
   private def chooseDbProfile(dbUrl: String): JdbcProfile = {
     dbUrl match {
-      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => PostgresProfile
-      case _ => HsqldbProfile
+      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => ExPostgresProfile
+      case _                                                       => HsqldbProfile
     }
   }
 

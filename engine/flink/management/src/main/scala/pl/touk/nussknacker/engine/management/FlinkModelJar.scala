@@ -12,31 +12,57 @@ import scala.util.Using
 
 class FlinkModelJar extends LazyLogging {
 
-  //TODO: handle multiple models?
+  // TODO: handle multiple models?
   private var modelFile: Option[File] = None
 
-  //we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
-  //currently we just generate random file names
-  def buildJobJar(modelData: BaseModelData): File = synchronized {
+  // we want to have *different* file names for *different* model data (e.g. after rebuild etc.)
+  // currently we just generate random file names
+  def buildJobJar(modelData: BaseModelData, includeDropwizardLibsImplicitly: Boolean = true): File = synchronized {
     modelFile match {
       case Some(file) => file
       case None =>
-        val newFile = prepareModelFile(modelData)
+        val newFile = prepareModelFile(modelData, includeDropwizardLibsImplicitly)
         modelFile = Some(newFile)
         newFile
     }
   }
 
   protected def generateModelFileName(): File = {
-    //currently we want to have one such file for one nussknacker execution
+    // currently we want to have one such file for one nussknacker execution
     val tempFile = Files.createTempFile("tempModelJar", ".jar").toFile
     tempFile.deleteOnExit()
     tempFile
   }
 
-  private def prepareModelFile(modelData: BaseModelData): File = {
+  private def additionalArtifactsToIncludeInJar(): List[URL] = {
+    // Including dropwizard metrics library implicitly to preserve backward compatibility
+    // with flink-metrics-dropwizard library bundled into flinkExecutor
+    val additionalJarFiles = List(
+      "flink-dropwizard-metrics-deps/flink-metrics-dropwizard.jar",
+      "flink-dropwizard-metrics-deps/dropwizard-metrics-core.jar"
+    )
+    val additionalJarUrls = additionalJarFiles
+      .map(filename => new File(filename))
+      .filter(_.exists())
+      .map(_.toURI.toURL)
+    additionalJarUrls
+  }
+
+  private def prepareModelFile(modelData: BaseModelData, includeDropwizardLibsImplicitly: Boolean): File = {
     val tempFile = generateModelFileName()
-    modelData.modelClassLoaderUrls match {
+    val implicitlyIncludedArtifacts =
+      if (includeDropwizardLibsImplicitly)
+        additionalArtifactsToIncludeInJar().toSet -- modelData.modelClassLoaderUrls.toSet
+      else Nil
+    if (implicitlyIncludedArtifacts.nonEmpty) {
+      logger.warn(s"""Including these files to model jar implicitly: [${implicitlyIncludedArtifacts.mkString(
+          ", "
+        )}] to keep backward compatibility""")
+      logger.warn(
+        s"""This implicit inclusion is only transitional, and you should add above files to classPath field in your configuration!!!"""
+      )
+    }
+    implicitlyIncludedArtifacts.toList ++ modelData.modelClassLoaderUrls match {
       case single :: Nil if single.getPath.endsWith(".jar") =>
         logger.debug("Single jar file detected, using directly to upload to Flink")
         FileUtils.copyInputStreamToFile(single.openStream(), tempFile)

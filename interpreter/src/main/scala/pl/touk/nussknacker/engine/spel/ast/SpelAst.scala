@@ -18,7 +18,7 @@ object SpelAst {
 
     def children: List[SpelNode] = {
       (0 until n.getChildCount).map(i => n.getChild(i))
-      }.toList
+    }.toList
 
     def childrenHead: SpelNode = {
       n.getChild(0)

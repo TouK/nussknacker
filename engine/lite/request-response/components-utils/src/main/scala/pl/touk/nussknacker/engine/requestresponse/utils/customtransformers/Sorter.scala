@@ -14,10 +14,12 @@ import scala.language.higherKinds
 object Sorter extends CustomStreamTransformer {
 
   @MethodToInvoke
-  def execute(@ParamName("rank") rank: LazyParameter[java.lang.Number],
-              @ParamName("maxCount") maxCount: Int,
-              @ParamName("output") output: LazyParameter[AnyRef],
-              @OutputVariableName outputVariable: String)(implicit nodeId: NodeId): ContextTransformation = {
+  def execute(
+      @ParamName("rank") rank: LazyParameter[java.lang.Number],
+      @ParamName("maxCount") maxCount: Int,
+      @ParamName("output") output: LazyParameter[AnyRef],
+      @OutputVariableName outputVariable: String
+  )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy { context =>
         val outputType = output.returnType
@@ -31,18 +33,20 @@ object Sorter extends CustomStreamTransformer {
           runtimeContext = context
         }
 
-        override def createTransformation[F[_]:Monad, Result](continuation: DataBatch => F[ResultType[Result]],
-                                          context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
-          val rankInterpreter = context.interpreter.syncInterpretationFunction(rank)
+        override def createTransformation[F[_]: Monad, Result](
+            continuation: DataBatch => F[ResultType[Result]],
+            context: CustomComponentContext[F]
+        ): DataBatch => F[ResultType[Result]] = {
+          val rankInterpreter   = context.interpreter.syncInterpretationFunction(rank)
           val outputInterpreter = context.interpreter.syncInterpretationFunction(output)
           // TODO: this lazy val is tricky - we should instead assign ContextIdGenerator in open, but we don't have nodeId in open
           lazy val contextIdGenerator = runtimeContext.contextIdGenerator(context.nodeId)
           (inputCtx: DataBatch) =>
-            val ranks = inputCtx.map(rankInterpreter(_))
-            val outputs = inputCtx.map(outputInterpreter(_))
+            val ranks        = inputCtx.map(rankInterpreter(_))
+            val outputs      = inputCtx.map(outputInterpreter(_))
             val listWithRank = ranks.zip(outputs)
-            val finalList = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
-            val sorted = Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, finalList)
+            val finalList    = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
+            val sorted       = Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, finalList)
             continuation(DataBatch(sorted :: Nil))
         }
       })

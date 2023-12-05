@@ -9,10 +9,15 @@ import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRunti
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 // depends on liteEngineRuntimeApp / Universal / stage sbt task
-class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with BaseNuKafkaRuntimeDockerTest with LazyLogging {
+class NuKafkaRuntimeBinTest
+    extends AnyFunSuite
+    with BaseNuRuntimeBinTestMixin
+    with BaseNuKafkaRuntimeDockerTest
+    with LazyLogging {
 
   test("should run scenario and pass data to output ") {
-    val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
+    val shellScriptArgs =
+      Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
     val shellScriptEnvs = Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       "KAFKA_AUTO_OFFSET_RESET=earliest",
@@ -22,27 +27,37 @@ class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin w
       "CONFIG_FORCE_kafka_lowLevelComponentsEnabled=false",
       // It looks like github-actions doesn't look binding to 0.0.0.0, was problems like: Bind failed for TCP channel on endpoint [/10.1.0.183:0]
       "CONFIG_FORCE_akka_management_http_hostname=127.0.0.1",
-      "KAFKA_AUTO_OFFSET_RESET=earliest") ++ akkaManagementEnvs
-    withProcessExecutedInBackground(shellScriptArgs, shellScriptEnvs,
-      {
+      "KAFKA_AUTO_OFFSET_RESET=earliest"
+    ) ++ akkaManagementEnvs
+    withProcessExecutedInBackground(
+      shellScriptArgs,
+      shellScriptEnvs, {
         kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
-      },
-      {
-        val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
-        messages shouldBe List(NuKafkaRuntimeTestSamples.jsonPingMessage)
-      })
+      }, {
+        val messages = kafkaClient.createConsumer().consumeWithJson[String](fixture.outputTopic).take(1).head.message()
+        messages shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
+      }
+    )
   }
 
   override val container: Container = {
-    kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
+    kafkaContainer.start()          // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
-    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+    fixture =
+      prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
     MultipleContainers(kafkaContainer, schemaRegistryContainer)
   }
 
   private def registerSchemas(): Unit = {
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.inputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.outputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
   }
+
 }

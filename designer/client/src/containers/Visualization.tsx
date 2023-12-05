@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getFetchedProcessDetails, getGraph } from "../reducers/selectors/graph";
+import { getFetchedProcessDetails, getGraph, getProcessToDisplay } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -9,7 +9,7 @@ import { GraphProvider } from "../components/graph/GraphContext";
 import SelectionContextProvider from "../components/graph/SelectionContextProvider";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import Toolbars from "../components/toolbars/Toolbars";
-import SpinnerWrapper from "../components/SpinnerWrapper";
+import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProcessUtils from "../common/ProcessUtils";
@@ -23,11 +23,11 @@ import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { Process } from "../types";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { clearProcess, loadProcessState } from "../actions/nk/process";
-import { fetchAndDisplayProcessCounts } from "../actions/nk/displayProcessCounts";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { DndProvider } from "react-dnd";
+import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "../actions/nk";
+import { HTML5toTouch } from "rdndmb-html5-to-touch";
+import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
+import { RootState } from "../reducers";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -68,6 +68,7 @@ function useProcessState(time = 10000) {
 function useCountsIfNeeded() {
     const dispatch = useDispatch();
     const id = useSelector(getFetchedProcessDetails)?.id;
+    const processToDisplay = useSelector(getProcessToDisplay);
 
     const [searchParams] = useSearchParams();
     const from = searchParams.get("from");
@@ -75,9 +76,9 @@ function useCountsIfNeeded() {
     useEffect(() => {
         const countParams = VisualizationUrl.extractCountParams({ from, to });
         if (id && countParams) {
-            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to));
+            dispatch(fetchAndDisplayProcessCounts(id, countParams.from, countParams.to, processToDisplay));
         }
-    }, [dispatch, from, id, to]);
+    }, [dispatch, from, id, to, processToDisplay]);
 }
 
 function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
@@ -95,7 +96,9 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
             const nodeIds = nodes.map((node) => node.id);
             nodes.forEach((node) => openNodeWindow(node, process));
 
-            getGraphInstance()?.highlightNodes(nodeIds);
+            if (nodeIds.length) {
+                getGraphInstance()?.highlightNodes(nodeIds);
+            }
 
             navigate(
                 {
@@ -137,7 +140,7 @@ function Visualization() {
 
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const capabilities = useSelector(getCapabilities);
-    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state));
+    const nothingToSave = useSelector((state) => ProcessUtils.nothingToSave(state as RootState));
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
@@ -164,7 +167,7 @@ function Visualization() {
 
     return (
         <ErrorHandler>
-            <DndProvider backend={HTML5Backend}>
+            <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>

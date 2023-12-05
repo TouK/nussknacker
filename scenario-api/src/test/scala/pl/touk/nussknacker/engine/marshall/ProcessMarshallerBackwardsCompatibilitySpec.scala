@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.marshall
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Matchers{
+class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Matchers {
 
   private val legacyJsonWithNoFields =
     """{
@@ -79,7 +79,7 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
       |  "additionalBranches" : []
       |}""".stripMargin
 
-  private val legacyJsonWithAdditionalProperties =
+  private val legacyJsonWithScenarioProperties =
     """{
       |  "metaData" : {
       |    "id" : "testId",
@@ -102,7 +102,7 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
       |  "additionalBranches" : []
       |}""".stripMargin
 
-  private val newJsonWithAdditionalProperties =
+  private val newJsonWithScenarioProperties =
     """{
       |  "metaData" : {
       |    "id" : "testId",
@@ -123,7 +123,6 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
       |  "additionalBranches" : []
       |}""".stripMargin
 
-
   it should "decode legacy json with no additional fields" in {
     ProcessMarshaller.fromJson(legacyJsonWithNoFields).isValid shouldBe true
   }
@@ -138,31 +137,32 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
     oldCP shouldBe newCP
   }
 
-  it should "decode legacy json with description and no additional properties" in {
+  it should "decode legacy json with description and no scenario properties" in {
     ProcessMarshaller.fromJson(legacyJsonWithDescriptionNoProperties).isValid shouldBe true
   }
 
-  it should "decode new json with description and no additional properties" in {
+  it should "decode new json with description and no scenario properties" in {
     ProcessMarshaller.fromJson(newJsonWithDescriptionNoProperties).isValid shouldBe true
   }
 
-  it should "decode new json and old with description and no additional properties to the same structure" in {
+  it should "decode new json and old with description and no scenario properties to the same structure" in {
     val oldCP = ProcessMarshaller.fromJson(legacyJsonWithDescriptionNoProperties).getOrElse(throw new AssertionError())
     val newCP = ProcessMarshaller.fromJson(newJsonWithDescriptionNoProperties).getOrElse(throw new AssertionError())
     oldCP shouldBe newCP
   }
 
-  it should "decode legacy json with additional properties" in {
-    ProcessMarshaller.fromJson(legacyJsonWithAdditionalProperties).isValid shouldBe true
+  it should "decode legacy json with scenario properties" in {
+    ProcessMarshaller.fromJson(legacyJsonWithScenarioProperties).isValid shouldBe true
   }
 
-  it should "decode new json with additional properties" in {
-    ProcessMarshaller.fromJson(newJsonWithAdditionalProperties).isValid shouldBe true
+  it should "decode new json with scenario properties" in {
+    ProcessMarshaller.fromJson(newJsonWithScenarioProperties).isValid shouldBe true
   }
 
-  it should "decode new json and old with additional properties to the same structure" in {
-    val oldCP = ProcessMarshaller.fromJson(legacyJsonWithAdditionalProperties).getOrElse(throw new AssertionError())
-    val newCP = ProcessMarshaller.fromJson(newJsonWithAdditionalProperties).getOrElse(throw new AssertionError())
+  it should "decode new json and old with scenario properties to the same structure" in {
+    val oldCP = ProcessMarshaller.fromJson(legacyJsonWithScenarioProperties).getOrElse(throw new AssertionError())
+    val newCP = ProcessMarshaller.fromJson(newJsonWithScenarioProperties).getOrElse(throw new AssertionError())
     oldCP shouldBe newCP
   }
+
 }

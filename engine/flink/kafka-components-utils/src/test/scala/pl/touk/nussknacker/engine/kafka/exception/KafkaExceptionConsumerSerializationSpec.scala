@@ -15,35 +15,43 @@ import scala.jdk.CollectionConverters._
 
 class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers {
 
-  private val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
+  private val mockProducer =
+    new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
 
   private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
   private val metaData = MetaData("test", StreamMetaData())
 
-  private val consumerConfig = KafkaExceptionConsumerConfig("mockTopic",
+  private val consumerConfig = KafkaExceptionConsumerConfig(
+    "mockTopic",
     stackTraceLengthLimit = 20,
     includeHost = true,
     includeInputEvent = true,
-    additionalParams = Map("testValue" -> "1"))
+    additionalParams = Map("testValue" -> "1")
+  )
 
   private val variables = Map(VariableConstants.InputVariableName -> Map("name" -> "lcl", "age" -> 36))
 
   private val context = Context("ctxId", variables, None)
 
-  private val exception = NuExceptionInfo(Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), context)
+  private val exception = NuExceptionInfo(
+    Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)),
+    NonTransientException("input1", "mess", Instant.ofEpochMilli(111)),
+    context
+  )
 
   private val serializationSchema = new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
-  //null as we don't test open here...
-  private val consumer = TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer), null)
+  // null as we don't test open here...
+  private val consumer =
+    TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer), null)
 
   test("records event") {
     consumer.consume(exception)
 
     val message = mockProducer.history().asScala.toList match {
       case one :: Nil => one
-      case other => fail(s"Expected one message, got $other")
+      case other      => fail(s"Expected one message, got $other")
     }
     message.topic() shouldBe consumerConfig.topic
     new String(message.key()) shouldBe "test-nodeId"

@@ -6,10 +6,10 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -18,12 +18,16 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
-private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                     val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
-  extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
+private[registrar] class AsyncInterpretationFunction(
+    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val node: SplittedNode[_ <: NodeData],
+    validationContext: ValidationContext,
+    asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+    useIOMonad: Boolean
+) extends RichAsyncFunction[Context, InterpretationResult]
+    with LazyLogging
+    with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
@@ -33,8 +37,10 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    executionContext = asyncExecutionContextPreparer.prepareExecutionContext(compiledProcessWithDeps.metaData.id,
-      getRuntimeContext.getExecutionConfig.getParallelism)
+    executionContext = asyncExecutionContextPreparer.prepareExecutionContext(
+      compiledProcessWithDeps.metaData.id,
+      getRuntimeContext.getExecutionConfig.getParallelism
+    )
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -42,7 +48,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
       invokeInterpreter(input) {
         case Right(results) =>
           val exceptions = results.collect { case Right(exInfo) => exInfo }
-          val successes = results.collect { case Left(value) => value }
+          val successes  = results.collect { case Left(value) => value }
           handleResults(collector, successes, exceptions)
         case Left(ex) =>
           logger.warn("Unexpected error", ex)
@@ -54,18 +60,18 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
 
-
   }
 
-  private def invokeInterpreter(input: Context)
-                               (callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
+  private def invokeInterpreter(
+      input: Context
+  )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     implicit val ec: ExecutionContext = executionContext
-    //we leave switch to be able to return to Future if IO has some flaws...
+    // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(_.toEither)
+      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
     }
   }
 
@@ -74,10 +80,12 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     asyncExecutionContextPreparer.close()
   }
 
-  //This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
-  private def handleResults(collector: ResultFuture[InterpretationResult],
-                            results: List[InterpretationResult],
-                            exceptions: List[NuExceptionInfo[_ <: Throwable]]): Unit = {
+  // This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
+  private def handleResults(
+      collector: ResultFuture[InterpretationResult],
+      results: List[InterpretationResult],
+      exceptions: List[NuExceptionInfo[_ <: Throwable]]
+  ): Unit = {
     try {
       exceptions.foreach(exceptionHandler.handle)
       collector.complete(results.asJava)

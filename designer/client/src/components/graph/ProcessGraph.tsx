@@ -4,7 +4,7 @@ import { mapValues } from "lodash";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { getFetchedProcessDetails, getLayout, getProcessCounts, getProcessToDisplay } from "../../reducers/selectors/graph";
-import { setLinksHovered } from "./dragHelpers";
+import { setLinksHovered } from "./utils/dragHelpers";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
@@ -39,7 +39,7 @@ export const ProcessGraph = forwardRef<Graph, { capabilities: Capabilities }>(fu
         },
         hover: (item: NodeType, monitor) => {
             const node = item;
-            const canInjectNode = NodeUtils.hasInputs(node) && NodeUtils.hasOutputs(node);
+            const canInjectNode = NodeUtils.hasInputs(node) || NodeUtils.hasOutputs(node);
 
             if (canInjectNode) {
                 const clientOffset = monitor.getClientOffset();

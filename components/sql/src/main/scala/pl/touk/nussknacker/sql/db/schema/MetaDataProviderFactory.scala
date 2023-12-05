@@ -17,16 +17,27 @@ class MetaDataProviderFactory {
 
   def create(dbPoolConfig: DBPoolConfig): JdbcMetaDataProvider = {
     val props = new Properties()
-    dbPoolConfig.connectionProperties.foreach {
-      case (k, v) => props.put(k, v)
+    dbPoolConfig.dataSourceProperties.foreach { case (k, v) =>
+      props.put(k, v)
     }
     val ds = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      new DriverDataSource(dbPoolConfig.url, dbPoolConfig.driverClassName, props, dbPoolConfig.username, dbPoolConfig.password)
+      new DriverDataSource(
+        dbPoolConfig.url,
+        dbPoolConfig.driverClassName,
+        props,
+        dbPoolConfig.username,
+        dbPoolConfig.password
+      )
     }
-    val getConnection: () => Connection = () => ds.getConnection
+    val getConnection: () => Connection = () => {
+      val conn = ds.getConnection
+      dbPoolConfig.schema.foreach(conn.setSchema)
+      conn
+    }
     dbPoolConfig.driverClassName match {
       case className if className.startsWith(igniteDriverPrefix) => new IgniteMetaDataProvider(getConnection)
-      case _  => new JdbcMetaDataProvider(getConnection)
+      case _                                                     => new JdbcMetaDataProvider(getConnection)
     }
   }
+
 }

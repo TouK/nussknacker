@@ -16,7 +16,9 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext) extends FlinkClient with LazyLogging {
+class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext)
+    extends FlinkClient
+    with LazyLogging {
 
   import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
 
@@ -25,7 +27,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   def uploadJarFileIfNotExists(jarFile: File): Future[JarFile] = {
     checkThatJarWithNameExists(jarFile.getName).flatMap {
       case Some(file) => Future.successful(file)
-      case None => uploadJar(jarFile).map(id => JarFile(id, jarFile.getName))
+      case None       => uploadJar(jarFile).map(id => JarFile(id, jarFile.getName))
     }
   }
 
@@ -43,7 +45,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
     basicRequest
       .post(flinkUrl.addPath("jars", "upload"))
-      .multipartBody( multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
+      .multipartBody(multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
       .response(asJson[UploadJarResponse])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -58,17 +60,15 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = {
     checkThatJarWithNameExists(jarFileName).flatMap {
       case Some(file) =>
-        deleteJar(file.id).recover {
-          case ex =>
-            logger.warn(s"Failed to delete jar: $jarFileName", ex)
-            ()
+        deleteJar(file.id).recover { case ex =>
+          logger.warn(s"Failed to delete jar: $jarFileName", ex)
+          ()
         }
       case None =>
         logger.info(s"$jarFileName does not exist, not removing")
         Future.successful(())
     }
   }
-
 
   private def deleteJar(jarId: String): Future[Unit] = {
     logger.info(s"Delete jar id: $jarId")
@@ -79,7 +79,6 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .recoverWith(recoverWithMessage("delete jar"))
 
   }
-
 
   def findJobsByName(jobName: String): Future[List[JobOverview]] = {
     basicRequest
@@ -107,8 +106,12 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .map(_.`execution-config`)
   }
 
-  //FIXME: get rid of sleep, refactor?
-  def waitForSavepoint(jobId: ExternalDeploymentId, savepointId: String, timeoutLeft: Long = config.jobManagerTimeout.toMillis): Future[SavepointResult] = {
+  // FIXME: get rid of sleep, refactor?
+  def waitForSavepoint(
+      jobId: ExternalDeploymentId,
+      savepointId: String,
+      timeoutLeft: Long = config.jobManagerTimeout.toMillis
+  ): Future[SavepointResult] = {
     val start = System.currentTimeMillis()
     if (timeoutLeft <= 0) {
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
@@ -119,19 +122,19 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .flatMap { resp =>
-      logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
-      if (resp.isCompletedSuccessfully) {
-        //getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
-        val location = resp.operation.flatMap(_.location).getOrElse("")
-        logger.info(s"Savepoint $savepointId for $jobId finished in $location")
-        Future.successful(SavepointResult(location))
-      } else if (resp.isFailed) {
-        Future.failed(new RuntimeException(s"Failed to complete savepoint: ${resp.operation}"))
-      } else {
-        Thread.sleep(1000)
-        waitForSavepoint(jobId, savepointId, timeoutLeft - (System.currentTimeMillis() - start))
+        logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
+        if (resp.isCompletedSuccessfully) {
+          // getOrElse is not really needed since isCompletedSuccessfully returns true only if it's defined
+          val location = resp.operation.flatMap(_.location).getOrElse("")
+          logger.info(s"Savepoint $savepointId for $jobId finished in $location")
+          Future.successful(SavepointResult(location))
+        } else if (resp.isFailed) {
+          Future.failed(new RuntimeException(s"Failed to complete savepoint: ${resp.operation}"))
+        } else {
+          Thread.sleep(1000)
+          waitForSavepoint(jobId, savepointId, timeoutLeft - (System.currentTimeMillis() - start))
+        }
       }
-    }
   }
 
   def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
@@ -159,9 +162,11 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     processSavepointRequest(deploymentId, stopRequest, "stop scenario")
   }
 
-  private def processSavepointRequest(deploymentId: ExternalDeploymentId,
-                                      request: RequestT[Identity, Either[String, String], Any],
-                                      action: String): Future[SavepointResult] = {
+  private def processSavepointRequest(
+      deploymentId: ExternalDeploymentId,
+      request: RequestT[Identity, Either[String, String], Any],
+      action: String
+  ): Future[SavepointResult] = {
     request
       .response(asJson[SavepointTriggerResponse])
       .send(backend)
@@ -174,15 +179,18 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   private val timeoutExtractor = DeeplyCheckingExceptionExtractor.forClass[TimeoutException]
 
-  def runProgram(jarFile: File,
-                 mainClass: String,
-                 args: List[String],
-                 savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  def runProgram(
+      jarFile: File,
+      mainClass: String,
+      args: List[String],
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
         savepointPath = savepointPath,
-        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
+        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" ")
+      )
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
       basicRequest
         .post(flinkUrl.addPath("jars", flinkJarFile.id, "run"))
@@ -192,11 +200,14 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         .flatMap(SttpJson.failureToFuture)
         .map(ret => Some(ExternalDeploymentId(ret.jobid)))
         .recover({
-          //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
-          //workaround for now, not the best solution though
-          //TODO: we should change logic of DeploymentService to mark process deployed for *some* exceptions (like Timeout here)
+          // sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
+          // workaround for now, not the best solution though
+          // TODO: we should change logic of DeploymentService to mark process deployed for *some* exceptions (like Timeout here)
           case timeoutExtractor(e) =>
-            logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
+            logger.warn(
+              "TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...",
+              e
+            )
             None
         })
         .recoverWith(recoverWithMessage("deploy scenario"))
@@ -221,14 +232,13 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       .map(list => configurationFromMap(list.map(e => e.key -> e.value).toMap))
   }
 
-  //we don't use Configuration.fromMap for Flink 1.11 compatibility
+  // we don't use Configuration.fromMap for Flink 1.11 compatibility
   private def configurationFromMap(values: Map[String, String]) = {
     val configuration = new Configuration();
-    values.foreach {
-      case (k, v) => configuration.setString(k, v)
+    values.foreach { case (k, v) =>
+      configuration.setString(k, v)
     }
     configuration
   }
 
 }
-

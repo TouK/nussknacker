@@ -1,4 +1,5 @@
 import Chainable = Cypress.Chainable;
+import { padStart } from "lodash";
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -18,12 +19,17 @@ declare global {
             getNode: typeof getNode;
             dragNode: typeof dragNode;
             layoutScenario: typeof layoutScenario;
+            deployScenario: typeof deployScenario;
+            cancelScenario: typeof cancelScenario;
         }
     }
 }
 
+const processIndexes = {};
 function createTestProcessName(name?: string) {
-    return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`);
+    processIndexes[name] = ++processIndexes[name] || 1;
+    const index = padStart(processIndexes[name].toString(), 3, "0");
+    return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
 
 function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
@@ -32,7 +38,12 @@ function createProcess(name?: string, fixture?: string, category = "Category1", 
         if (isFragment) {
             url += "?isFragment=true";
         }
-        cy.request({ method: "POST", url }).its("status").should("equal", 201);
+        cy.request({
+            method: "POST",
+            url,
+        })
+            .its("status")
+            .should("equal", 201);
         return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName);
     });
 }
@@ -65,11 +76,21 @@ function deleteTestProcess(processName: string, force?: boolean) {
     const url = `/api/processes/${processName}`;
 
     function archiveProcess() {
-        return cy.request({ method: "POST", url: `/api/archive/${processName}`, failOnStatusCode: false });
+        return cy.request({
+            method: "POST",
+            url: `/api/archive/${processName}`,
+            failOnStatusCode: false,
+        });
     }
 
     function archiveThenDeleteProcess() {
-        return archiveProcess().then(() => cy.request({ method: "DELETE", url, failOnStatusCode: false }));
+        return archiveProcess().then(() =>
+            cy.request({
+                method: "DELETE",
+                url,
+                failOnStatusCode: false,
+            }),
+        );
     }
 
     function cancelProcess() {
@@ -87,7 +108,14 @@ function deleteTestProcess(processName: string, force?: boolean) {
         .should("be.oneOf", [200, 404]);
 }
 
-function postFormData(url: string, auth: { username: string; password: string }, body?: FormData): Chainable {
+function postFormData(
+    url: string,
+    auth: {
+        username: string;
+        password: string;
+    },
+    body?: FormData,
+): Chainable {
     const { password, username } = auth;
     const authorization = `Basic ${btoa(`${username}:${password}`)}`;
     return cy.wrap(
@@ -116,7 +144,10 @@ function importTestProcess(name: string, fixture = "testProcess") {
             return cy.postFormData(`/api/processes/import/${name}`, auth, formData);
         })
         .then((process) => {
-            cy.request("PUT", `/api/processes/${name}`, { comment: "import test data", process });
+            cy.request("PUT", `/api/processes/${name}`, {
+                comment: "import test data",
+                process,
+            });
             return cy.wrap(name);
         });
 }
@@ -138,8 +169,22 @@ function getNode(name: string, end?: boolean) {
     return cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000 });
 }
 
-function dragNode(name: string, { x, y }: { x: number; y: number }) {
-    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", { clientX: x, clientY: y });
+function dragNode(
+    name: string,
+    {
+        x,
+        y,
+    }: {
+        x: number;
+        y: number;
+    },
+) {
+    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", x, y, {
+        moveThreshold: 5,
+        force: true,
+        clientX: x,
+        clientY: y,
+    });
     cy.get("body").trigger("mouseup");
     return cy.getNode(name);
 }
@@ -147,6 +192,28 @@ function dragNode(name: string, { x, y }: { x: number; y: number }) {
 function layoutScenario(waitTime = 400) {
     cy.contains(/^layout$/).click();
     cy.wait(waitTime); //wait for graph view (zoom, pan) to settle
+}
+
+function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
+    cy.contains(/^deploy$/i).click();
+    cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
+    if (withScreenshot) {
+        cy.get("[data-testid=window]").matchImage();
+    }
+    cy.get("[data-testid=window] textarea").click().type(comment);
+    cy.contains(/^ok$/i).should("be.enabled").click();
+    cy.wait(["@deploy", "@fetch"], {
+        timeout: 20000,
+        log: true,
+    }).each((res) => {
+        cy.wrap(res).its("response.statusCode").should("eq", 200);
+    });
+}
+
+function cancelScenario(comment = "issues/123") {
+    cy.contains(/^cancel$/i).click();
+    cy.get("[data-testid=window] textarea").click().type(comment);
+    cy.contains(/^ok$/i).should("be.enabled").click();
 }
 
 Cypress.Commands.add("createTestProcess", createTestProcess);
@@ -163,5 +230,7 @@ Cypress.Commands.add("visitProcess", visitProcess);
 Cypress.Commands.add("getNode", getNode);
 Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
+Cypress.Commands.add("deployScenario", deployScenario);
+Cypress.Commands.add("cancelScenario", cancelScenario);
 
 export default {};

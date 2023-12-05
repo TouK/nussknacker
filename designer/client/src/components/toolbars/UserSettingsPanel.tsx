@@ -3,12 +3,14 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
-import { useNkTheme } from "../../containers/theme";
-import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { useTheme } from "@mui/material";
 
 export function UserSettingsPanel(): JSX.Element {
     const { t } = useTranslation();
-    const { theme } = useNkTheme();
+    const {
+        custom: { borderRadius, colors, spacing },
+    } = useTheme();
     const [settings, , reset] = useUserSettings();
     const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
     return (
@@ -19,7 +21,7 @@ export function UserSettingsPanel(): JSX.Element {
                 getOptionValue={(option) => `${option.label}_${option.value}`}
                 onChange={(values) => reset(values?.reduce((current, { label, value }) => ({ ...current, [label]: !!value }), {}))}
                 isValidNewOption={(inputValue) => /^[^_]/.test(inputValue)}
-                theme={(provided) => defaultsDeep(theme, provided)}
+                theme={(provided) => defaultsDeep({ borderRadius, colors, spacing }, provided)}
                 styles={{
                     multiValue: (base) => ({ ...base, width: "100%" }),
                     multiValueLabel: (base) => ({ ...base, width: "100%", fontWeight: "bold" }),

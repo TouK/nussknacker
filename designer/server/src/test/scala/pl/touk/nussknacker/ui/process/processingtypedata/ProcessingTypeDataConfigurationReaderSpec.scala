@@ -8,46 +8,6 @@ import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 
 class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
-  private val oldConfiguration: Config = ConfigFactory.parseString(
-    """
-      |processTypes {
-      |  "streaming" {
-      |    deploymentConfig {
-      |      jobManagerTimeout: 1m
-      |      restUrl: "http://localhost:8081"
-      |      type: "flinkStreaming"
-      |    }
-      |
-      |    modelConfig {
-      |      classPath: ["test.jar"]
-      |    }
-      |  }
-      |}
-      |""".stripMargin
-  )
-
-  import scala.jdk.CollectionConverters._
-
-  test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(oldConfiguration))
-
-    processTypes.size shouldBe 1
-    processTypes.keys.take(1) shouldBe Set("streaming")
-  }
-
-  test("should optionally load scenarioTypes configuration") {
-    val configuration = ConfigFactory.parseMap(Map[String, Any](
-      "scenarioTypes.newStreamingScenario" -> ConfigValueFactory.fromAnyRef(oldConfiguration.getConfig("processTypes.streaming").root())
-    ).asJava)
-
-    val config = oldConfiguration.withFallback(configuration).resolve()
-
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
-
-    processTypes.size shouldBe 1
-    processTypes.keys.take(1) shouldBe Set("newStreamingScenario")
-  }
-
   test("should throw when required configuration is missing") {
     val configuration = ConfigFactory.parseString(
       """
@@ -61,6 +21,8 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
         |    modelConfig {
         |      classPath: ["test.jar"]
         |    }
+        |
+        |    category: "Default"
         |  }
         |}
         |""".stripMargin

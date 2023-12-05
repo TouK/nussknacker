@@ -43,7 +43,6 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
-
             {outputField && outputName && (
                 <LabeledInput
                     value={node[outputField]}

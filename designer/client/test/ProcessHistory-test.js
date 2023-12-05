@@ -1,8 +1,9 @@
 import React from "react";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store";
-import { ProcessHistoryComponent } from "../src/components/ProcessHistory";
+import { ProcessHistoryComponent } from "../src/components/history/ProcessHistory";
 import { render, within } from "@testing-library/react";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore();
 jest.mock("../src/windowManager", () => ({
@@ -23,16 +24,22 @@ describe("ProcessHistory suite", () => {
         //given
         const store = mockStore({
             graphReducer: {
-                fetchedProcessDetails: {
-                    history: [processEntry(3), processEntry(2), processEntry(1)],
+                history: {
+                    present: {
+                        fetchedProcessDetails: {
+                            history: [processEntry(3), processEntry(2), processEntry(1)],
+                        },
+                    },
                 },
             },
         });
         //when
         const { container } = render(
-            <Provider store={store}>
-                <ProcessHistoryComponent />,
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <ProcessHistoryComponent />,
+                </Provider>
+            </NuThemeProvider>,
         );
         //then
         const currentProcessHistoryEntry = container.getElementsByClassName("current");

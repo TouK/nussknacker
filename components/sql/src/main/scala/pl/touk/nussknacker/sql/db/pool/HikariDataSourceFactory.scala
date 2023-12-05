@@ -13,9 +13,11 @@ object HikariDataSourceFactory {
     hikariConf.setMaximumPoolSize(conf.maxTotal)
     hikariConf.setConnectionTimeout(conf.timeout.toMillis)
     hikariConf.setDriverClassName(conf.driverClassName)
-    conf.connectionProperties.foreach { case (name, value) =>
+    conf.schema.foreach(hikariConf.setSchema)
+    conf.dataSourceProperties.foreach { case (name, value) =>
       hikariConf.addDataSourceProperty(name, value)
     }
     new HikariDataSource(hikariConf)
   }
+
 }

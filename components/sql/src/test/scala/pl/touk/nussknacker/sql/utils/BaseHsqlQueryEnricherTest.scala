@@ -15,11 +15,15 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     password = hsqlConfigValues("password")
   )
 
-  val dbEnricherConfig: Config = ConfigFactory.load()
+  val dbEnricherConfig: Config = ConfigFactory
+    .load()
     .withValue("name", ConfigValueFactory.fromAnyRef("db-enricher"))
-    .withValue("dbPool", ConfigValueFactory.fromMap(
-      hsqlConfigValues.asJava
-    ))
+    .withValue(
+      "dbPool",
+      ConfigValueFactory.fromMap(
+        hsqlConfigValues.asJava
+      )
+    )
 
   override def beforeAll(): Unit = {
     service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
@@ -30,4 +34,5 @@ trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithH
     service.close()
     super.afterAll()
   }
+
 }

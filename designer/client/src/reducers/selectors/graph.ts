@@ -8,7 +8,7 @@ import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 
-export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer;
+export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getFetchedProcessDetails = createSelector(getGraph, (g) => g.fetchedProcessDetails);
 export const getProcessToDisplay = createSelector(getGraph, (g) => g.processToDisplay || ({} as Process));
@@ -29,12 +29,17 @@ export const hasPropertiesErrors = createSelector(getProcessToDisplay, (p) => !P
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getProcessToDisplay, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const getHistory = createSelector(getGraph, (g) => g.history);
+export const getHistoryPast = (state: RootState) => state.graphReducer.history.past;
+export const getHistoryFuture = (state: RootState) => state.graphReducer.history.future;
 
 export const isProcessRenamed = createSelector(
     getProcessName,
     getProcessUnsavedNewName,
     (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
+);
+export const getProcessToDisplayWithUnsavedName = createSelector(
+    [getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed],
+    (process, unsavedName, isProcessRenamed) => ({ ...process, id: isProcessRenamed ? unsavedName : process.id }),
 );
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
@@ -43,8 +48,8 @@ export const isDeployPossible = createSelector(
     (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
 export const isMigrationPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState],
-    (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment],
+    (saveDisabled, error, state, fragment) => saveDisabled && !error && (fragment || ProcessStateUtils.canDeploy(state)),
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isArchivePossible = createSelector(

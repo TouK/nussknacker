@@ -1,9 +1,9 @@
 import { WindowContentProps } from "@touk/window-manager";
 import React, { useMemo } from "react";
 import { WindowContent, WindowKind } from "../windowManager";
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 
-const FullSizeBorderlessIFrame = styled.iframe({
+const FullSizeBorderlessIFrame = styled("iframe")({
     border: 0,
     background: "white",
     width: "100%",

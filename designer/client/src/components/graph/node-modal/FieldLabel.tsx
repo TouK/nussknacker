@@ -1,9 +1,12 @@
-import styled from "@emotion/styled";
+import { styled } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
+import { NodeLabelStyled } from "./node";
+import NodeTip from "./NodeTip";
+import InfoIcon from "@mui/icons-material/Info";
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
     return definitions?.find((param) => param.name === paramName);
@@ -13,7 +16,7 @@ function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: Nod
     return processDefinitionData.componentsConfig[nodeId]?.params;
 }
 
-const Footer = styled.div({
+const Footer = styled("div")({
     fontWeight: 500,
     opacity: 0.7,
     display: "-webkit-box",
@@ -22,6 +25,9 @@ const Footer = styled.div({
     overflow: "hidden",
 });
 
+const StyledNodeTip = styled(NodeTip)`
+    margin: 0 8px;
+`;
 export function FieldLabel({
     nodeId,
     paramName,
@@ -38,8 +44,14 @@ export function FieldLabel({
     const readableType = ProcessUtils.humanReadableType(parameter?.typ || null);
 
     return (
-        <div className="node-label" title={paramName}>
-            {label}:{parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
-        </div>
+        <>
+            <NodeLabelStyled title={paramName}>
+                <div>
+                    <div>{label}:</div>
+                    {parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
+                </div>
+                {parameter?.hintText && <StyledNodeTip title={parameter?.hintText} icon={<InfoIcon />} />}
+            </NodeLabelStyled>
+        </>
     );
 }

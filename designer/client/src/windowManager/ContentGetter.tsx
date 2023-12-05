@@ -5,7 +5,7 @@ import { Debug } from "../containers/Debug";
 import { WindowContent } from "./WindowContent";
 import { WindowKind } from "./WindowKind";
 import loadable from "@loadable/component";
-import LoaderSpinner from "../components/Spinner";
+import LoaderSpinner from "../components/spinner/Spinner";
 import FrameDialog from "../components/FrameDialog";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });

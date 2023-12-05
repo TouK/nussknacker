@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -32,8 +31,15 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}
 
-class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
+class KafkaTransactionalScenarioInterpreterTest
+    extends FixtureAnyFunSuite
+    with KafkaSpec
+    with Matchers
+    with LazyLogging
+    with PatientScalaFutures
+    with OptionValues {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import KafkaTransactionalScenarioInterpreter._
   import KafkaFactory._
 
@@ -41,7 +47,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
   def withFixture(test: OneArgTest): Outcome = {
-    val suffix = test.name.replaceAll("[^a-zA-Z]", "")
+    val suffix  = test.name.replaceAll("[^a-zA-Z]", "")
     val fixture = FixtureParam("input-" + suffix, "output-" + suffix, "errors-" + suffix)
     kafkaClient.createTopic(fixture.inputTopic)
     kafkaClient.createTopic(fixture.outputTopic, 1)
@@ -52,28 +58,39 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   private def withMinTolerance(duration: Duration) = duration.toMillis +- 60000L
 
   test("union, passing timestamp source to sink, dual source") { fixture =>
-
-    val inputTopic = fixture.inputTopic
-    val outputTopic = fixture.outputTopic
+    val inputTopic     = fixture.inputTopic
+    val outputTopic    = fixture.outputTopic
     val inputTimestamp = System.currentTimeMillis()
-    val scenario = ScenarioBuilder.streamingLite("sample-union").sources(
-      GraphBuilder
-        .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
-        .branchEnd("branchId1", "joinId1"),
-      GraphBuilder
-        .source("sourceId2", "source", TopicParamName -> s"'${fixture.inputTopic}'")
-        .branchEnd("branchId2", "joinId1"),
-      GraphBuilder
-        .join("joinId1", "union", Some("unionOutput"),
-          List(
-            "branchId1" -> List("Output expression" -> "{a: #input}"),
-            "branchId2" -> List("Output expression" -> "{a: #input}"))
-        )
-        .emptySink("sinkId1", "sink", TopicParamName -> s"'${fixture.outputTopic}'", SinkValueParamName -> "#unionOutput.a")
-    )
+    val scenario = ScenarioBuilder
+      .streamingLite("sample-union")
+      .sources(
+        GraphBuilder
+          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .branchEnd("branchId1", "joinId1"),
+        GraphBuilder
+          .source("sourceId2", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .branchEnd("branchId2", "joinId1"),
+        GraphBuilder
+          .join(
+            "joinId1",
+            "union",
+            Some("unionOutput"),
+            List(
+              "branchId1" -> List("Output expression" -> "{a: #input}"),
+              "branchId2" -> List("Output expression" -> "{a: #input}")
+            )
+          )
+          .emptySink(
+            "sinkId1",
+            "sink",
+            TopicParamName     -> s"'${fixture.outputTopic}'",
+            SinkValueParamName -> "#unionOutput.a"
+          )
+      )
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
@@ -81,55 +98,68 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
-
+      val outputTimestamp = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
 
   test("union, passing timestamp source to sink, single source with split") { fixture =>
-    val inputTopic = fixture.inputTopic
-    val outputTopic = fixture.outputTopic
+    val inputTopic     = fixture.inputTopic
+    val outputTopic    = fixture.outputTopic
     val inputTimestamp = System.currentTimeMillis()
 
-    val scenario = ScenarioBuilder.streamingLite("proc1").sources(
-      GraphBuilder
-        .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
-        .split("splitId1",
-          GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'").branchEnd("branch1", "joinId1"),
-          GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'").branchEnd("branch2", "joinId1")),
-      GraphBuilder
-        .join("joinId1", "union", Some("unionOutput"),
-          List(
-            "branch1" -> List("Output expression" -> "{a: #v1}"),
-            "branch2" -> List("Output expression" -> "{a: #v2}"))
-        )
-        .emptySink("sinkId1", "sink", TopicParamName -> s"'${fixture.outputTopic}'", SinkValueParamName -> "#unionOutput.a")
-    )
+    val scenario = ScenarioBuilder
+      .streamingLite("proc1")
+      .sources(
+        GraphBuilder
+          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .split(
+            "splitId1",
+            GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'").branchEnd("branch1", "joinId1"),
+            GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'").branchEnd("branch2", "joinId1")
+          ),
+        GraphBuilder
+          .join(
+            "joinId1",
+            "union",
+            Some("unionOutput"),
+            List(
+              "branch1" -> List("Output expression" -> "{a: #v1}"),
+              "branch2" -> List("Output expression" -> "{a: #v2}")
+            )
+          )
+          .emptySink(
+            "sinkId1",
+            "sink",
+            TopicParamName     -> s"'${fixture.outputTopic}'",
+            SinkValueParamName -> "#unionOutput.a"
+          )
+      )
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
         content = input.getBytes(),
         timestamp = inputTimestamp
       )
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
+      val outputTimestamp = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
 
   test("should have same timestamp on source and sink") { fixture =>
-
-    val inputTopic = fixture.inputTopic
-    val outputTopic = fixture.outputTopic
-    val scenario = passThroughScenario(fixture)
+    val inputTopic     = fixture.inputTopic
+    val outputTopic    = fixture.outputTopic
+    val scenario       = passThroughScenario(fixture)
     val inputTimestamp = System.currentTimeMillis()
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
@@ -137,16 +167,15 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
-
+      val outputTimestamp = kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).take(1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
 
   test("should run scenario and pass data to output ") { fixture =>
-    val inputTopic = fixture.inputTopic
+    val inputTopic  = fixture.inputTopic
     val outputTopic = fixture.outputTopic
-    val errorTopic = fixture.errorTopic
+    val errorTopic  = fixture.errorTopic
 
     val scenario = ScenarioBuilder
       .streamingLite("test")
@@ -162,11 +191,10 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       kafkaClient.sendMessage(inputTopic, input).futureValue
       kafkaClient.sendMessage(inputTopic, "").futureValue
 
-      val messages = kafkaClient.createConsumer().consume(outputTopic).take(2).map(rec => new String(rec.message()))
+      val messages = kafkaClient.createConsumer().consumeWithJson[String](outputTopic).take(2).map(_.message())
       messages shouldBe List("original-add", "other-add")
 
-      val error = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](kafkaClient
-        .createConsumer().consume(errorTopic).head.message())
+      val error = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](errorTopic).take(1).head.message()
       error.nodeId shouldBe Some("throw on 0")
       error.processName shouldBe scenario.id
       error.exceptionInput shouldBe Some("1 / #input.length")
@@ -176,24 +204,33 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   test("correctly committing of offsets") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
-    lazy val outputConsumer = kafkaClient.createConsumer().consume(fixture.outputTopic).map(rec => new String(rec.message()))
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
-      outputConsumer.take(1) shouldEqual List("one")
+      kafkaClient
+        .createConsumer()
+        .consumeWithJson[String](fixture.outputTopic)
+        .take(1)
+        .map(_.message()) shouldEqual List("one")
     }
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
-      outputConsumer.take(2) shouldEqual List("one", "two")
+      kafkaClient
+        .createConsumer()
+        .consumeWithJson[String](fixture.outputTopic)
+        .take(2)
+        .map(_.message()) shouldEqual List("one", "two")
     }
   }
 
   test("starts without error without kafka") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
-    val configWithFakeAddress = ConfigFactory.parseMap(Collections.singletonMap(KafkaConfigProperties.bootstrapServersProperty(), "not_exist.pl:9092"))
+    val configWithFakeAddress = ConfigFactory.parseMap(
+      Collections.singletonMap(KafkaConfigProperties.bootstrapServersProperty(), "not_exist.pl:9092")
+    )
     runScenarioWithoutErrors(fixture, scenario, configWithFakeAddress) {
-      //TODO: figure out how to wait for starting thread pool?
+      // TODO: figure out how to wait for starting thread pool?
       Thread.sleep(100)
     }
 
@@ -203,28 +240,36 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
     runScenarioWithoutErrors(fixture, scenario) {
-      //TODO: figure out how to wait for starting thread pool?
+      // TODO: figure out how to wait for starting thread pool?
       Thread.sleep(100)
     }
   }
 
   test("detects fatal failure in close") { fixture =>
-    val inputTopic = fixture.inputTopic
+    val inputTopic  = fixture.inputTopic
     val outputTopic = fixture.outputTopic
 
     val failureMessage = "EXPECTED_TO_HAPPEN"
 
     val scenario: CanonicalProcess = passThroughScenario(fixture)
-    val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
+    val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
+    val jobData                    = JobData(scenario.metaData, ProcessVersion.empty)
+    val liteKafkaJobData           = LiteKafkaJobData(tasksCount = 1)
 
-    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+    val interpreter = ScenarioInterpreterFactory
+      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer) {
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
+      interpreter,
+      scenario,
+      jobData,
+      liteKafkaJobData,
+      modelDataToUse,
+      preparer
+    ) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
-        //we simulate throwing exception on shutdown
+        // we simulate throwing exception on shutdown
         new Task {
           override def init(): Unit = original.init()
 
@@ -241,9 +286,9 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     }
     val runResult = Using.resource(kafkaInterpreter) { interpreter =>
       val runResult = interpreter.run()
-      //we wait for one message to make sure everything is already running
+      // we wait for one message to make sure everything is already running
       kafkaClient.sendMessage(inputTopic, "dummy").futureValue
-      kafkaClient.createConsumer().consume(outputTopic).head
+      kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).head
       runResult
     }
     Try(Await.result(runResult, 10 seconds)) match {
@@ -254,22 +299,29 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
   }
 
-
   test("detects fatal failure in run") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
-    val modelDataToUse = modelData(adjustConfig(fixture.errorTopic, config))
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
-    val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
+    val modelDataToUse             = modelData(adjustConfig(fixture.errorTopic, config))
+    val jobData                    = JobData(scenario.metaData, ProcessVersion.empty)
+    val liteKafkaJobData           = LiteKafkaJobData(tasksCount = 1)
 
     var initAttempts = 0
-    var runAttempts = 0
+    var runAttempts  = 0
 
-    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+    val interpreter = ScenarioInterpreterFactory
+      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer) {
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(
+      interpreter,
+      scenario,
+      jobData,
+      liteKafkaJobData,
+      modelDataToUse,
+      preparer
+    ) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
-        //we simulate throwing exception on shutdown
+        // we simulate throwing exception on shutdown
         new Task {
           override def init(): Unit = {
             initAttempts += 1
@@ -291,9 +343,9 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     }
     val (runResult, attemptGauges, restartingGauges) = Using.resource(kafkaInterpreter) { interpreter =>
       val result = interpreter.run()
-      //TODO: figure out how to wait for restarting tasks after failure?
+      // TODO: figure out how to wait for restarting tasks after failure?
       Thread.sleep(2000)
-      //we have to get gauge here, as metrics are unregistered in close
+      // we have to get gauge here, as metrics are unregistered in close
       (result, metricsForName[Gauge[Int]]("task.attempt"), metricsForName[Gauge[Int]]("task.restarting"))
     }
 
@@ -309,9 +361,12 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
     runScenarioWithoutErrors(fixture, scenario) {
-      kafkaClient.sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes).futureValue
-      val error = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](kafkaClient
-        .createConsumer().consume(fixture.errorTopic).head.message())
+      kafkaClient
+        .sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes)
+        .futureValue
+      val error =
+        kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](fixture.errorTopic).take(1).head.message()
+
       error.nodeId shouldBe Some("source")
       error.processName shouldBe scenario.id
       // shouldn't it be just in error.message?
@@ -320,7 +375,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   }
 
   test("source and kafka metrics are handled correctly") { fixture =>
-    val inputTopic = fixture.inputTopic
+    val inputTopic  = fixture.inputTopic
     val outputTopic = fixture.outputTopic
 
     val scenario: CanonicalProcess = passThroughScenario(fixture)
@@ -332,7 +387,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       val input = "original"
 
       kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
-      kafkaClient.createConsumer().consume(outputTopic).head
+      kafkaClient.createConsumer().consumeWithConsumerRecord(outputTopic).head
 
       forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
       forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))
@@ -343,7 +398,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     }
   }
 
-  private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
+  private def forSomeMetric[T <: Metric: ClassTag](name: String)(action: T => Assertion): Unit = {
     val results = metricsForName[T](name).map(m => Try(action(m._2)))
     withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
       results should not be empty
@@ -351,7 +406,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     results.exists(_.isSuccess) shouldBe true
   }
 
-  private def forEachNonEmptyMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
+  private def forEachNonEmptyMetric[T <: Metric: ClassTag](name: String)(action: T => Any): Unit = {
     val metrics = metricsForName[T](name)
     withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
       metrics should not be empty
@@ -359,21 +414,32 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     metrics.map(_._2).foreach(action)
   }
 
-  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[(MetricName, T)] = {
+  private def metricsForName[T <: Metric: ClassTag](name: String): Iterable[(MetricName, T)] = {
     metricRegistry.getMetrics.asScala.collect {
       case (mName, metric: T) if mName.getKey == name => (mName, metric)
     }
   }
 
-  private def runScenarioWithoutErrors[T](fixture: FixtureParam,
-                                          scenario: CanonicalProcess, config: Config = config)(action: => T): T = {
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
+  private def runScenarioWithoutErrors[T](fixture: FixtureParam, scenario: CanonicalProcess, config: Config = config)(
+      action: => T
+  ): T = {
+    val jobData          = JobData(scenario.metaData, ProcessVersion.empty)
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = 1)
-    val configToUse = adjustConfig(fixture.errorTopic, config)
-    val modelDataToUse = modelData(configToUse)
-    val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
+    val configToUse      = adjustConfig(fixture.errorTopic, config)
+    val modelDataToUse   = modelData(configToUse)
+    val interpreter = ScenarioInterpreterFactory
+      .createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer)) { interpreter =>
+    val (runResult, output) = Using.resource(
+      new KafkaTransactionalScenarioInterpreter(
+        interpreter,
+        scenario,
+        jobData,
+        liteKafkaJobData,
+        modelDataToUse,
+        preparer
+      )
+    ) { interpreter =>
       val result = interpreter.run()
       (result, action)
     }

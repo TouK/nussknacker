@@ -1,7 +1,11 @@
 import React, { useCallback, useState } from "react";
 import Select from "react-select";
-import styles from "../../../../stylesheets/select.styl";
-import { NodeValue } from "./NodeValue";
+import { NodeValue } from "../node";
+import { selectStyled } from "../../../../stylesheets/SelectStyled";
+import { useTheme } from "@mui/material";
+import ValidationLabels from "../../../modals/ValidationLabels";
+import { errorValidator, Error } from "../editors/Validators";
+import { FieldName } from "./item";
 
 export interface Option {
     value: string;
@@ -14,16 +18,10 @@ interface RowSelectProps {
     readOnly?: boolean;
     isMarked?: boolean;
     value: Option;
+    placeholder?: string;
+    fieldErrors?: Error[];
+    fieldName?: FieldName;
 }
-
-//to prevent dragging on specified elements, see https://stackoverflow.com/a/51911875
-const preventDragProps = {
-    draggable: true,
-    onDragStart: (event: React.DragEvent) => {
-        event.preventDefault();
-        event.stopPropagation();
-    },
-};
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
@@ -41,23 +39,59 @@ function useCaptureEsc() {
     return { setCaptureEsc, preventEsc };
 }
 
-export function TypeSelect({ isMarked, options, readOnly, value, onChange }: RowSelectProps): JSX.Element {
+export function TypeSelect({
+    isMarked,
+    options,
+    readOnly,
+    value,
+    onChange,
+    placeholder,
+    fieldErrors,
+    fieldName,
+}: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
+    const theme = useTheme();
+
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
 
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
+                aria-label={"type-select"}
                 className="node-value node-value-select node-value-type-select"
-                classNamePrefix={styles.nodeValueSelect}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
                 onMenuClose={() => setCaptureEsc(false)}
                 options={options}
-                value={value}
-                onChange={(option) => onChange(option.value)}
+                value={value || ""}
+                onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
                 menuPortalTarget={document.body}
+                placeholder={placeholder}
+                styles={{
+                    input: (base) => ({ ...input(base) }),
+                    control: (base, props) => ({
+                        ...control(base, props.isFocused, props.isDisabled),
+                    }),
+                    menu: (base) => ({
+                        ...menu(base),
+                    }),
+                    menuPortal: (base) => ({
+                        ...menuPortal(base),
+                    }),
+                    menuList: (base) => ({
+                        ...menuList(base),
+                    }),
+                    option: (base, props) => ({
+                        ...menuOption(base, props.isSelected, props.isFocused),
+                    }),
+                    valueContainer: (base, props) => ({
+                        ...valueContainer(base, props.hasValue),
+                    }),
+                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                }}
             />
+            <ValidationLabels validators={[errorValidator(fieldErrors, fieldName)]} values={[]} />
         </NodeValue>
     );
 }

@@ -1,3 +1,3 @@
 package pl.touk.nussknacker.ui.process.test
 
-case class RawScenarioTestData(content: String)
+final case class RawScenarioTestData(content: String)

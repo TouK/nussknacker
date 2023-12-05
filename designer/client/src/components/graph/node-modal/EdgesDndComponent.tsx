@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
-import { NodeRowFields } from "./fragment-input-definition/NodeRowFields";
-import { DndItems } from "./fragment-input-definition/DndItems";
+import { NodeRowFieldsProvider } from "./node-row-fields-provider";
+import { DndItems } from "../../common/dndItems/DndItems";
 import { EdgeFields } from "./EdgeFields";
 import { ExpressionLang } from "./editors/expression/types";
 import NodeUtils from "../NodeUtils";
@@ -58,7 +58,7 @@ function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
 }
 
 function getDefaultEdge(kind: EdgeKind): Edge {
-    return { from: "", to: "", edgeType: getDefaultEdgeType(kind) };
+    return { _id: `id${Math.random()}`, from: "", to: "", edgeType: getDefaultEdgeType(kind) };
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
@@ -89,7 +89,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
         [],
     );
 
-    const removeEdge = useCallback((n, index) => setEdges((edges) => edges.filter((e, i) => i !== index)), []);
+    const removeEdge = useCallback((n, uuid: string) => setEdges((edges) => edges.filter((e) => e._id !== uuid)), []);
 
     const addEdge = useCallback(() => {
         const [{ value: type }] = availableTypes;
@@ -128,7 +128,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
     const namespace = `edges`;
 
     return (
-        <NodeRowFields
+        <NodeRowFieldsProvider
             label={label}
             path={namespace}
             readOnly={readOnly}
@@ -136,6 +136,6 @@ export function EdgesDndComponent(props: Props): JSX.Element {
             onFieldAdd={availableTypes.length ? addEdge : null}
         >
             <DndItems disabled={readOnly || !ordered} items={edgeItems} onChange={setEdges} />
-        </NodeRowFields>
+        </NodeRowFieldsProvider>
     );
 }

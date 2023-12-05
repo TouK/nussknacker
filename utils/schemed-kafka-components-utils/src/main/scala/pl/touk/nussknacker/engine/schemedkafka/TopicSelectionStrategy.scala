@@ -18,8 +18,7 @@ class AllTopicsSelectionStrategy extends TopicSelectionStrategy {
 
 }
 
-class TopicPatternSelectionStrategy(val topicPattern: Pattern)
-  extends TopicSelectionStrategy {
+class TopicPatternSelectionStrategy(val topicPattern: Pattern) extends TopicSelectionStrategy {
 
   override def getTopics(schemaRegistryClient: SchemaRegistryClient): Validated[SchemaRegistryError, List[String]] =
     schemaRegistryClient.getAllTopics.map(_.filter(topicPattern.matcher(_).matches()))

@@ -4,7 +4,7 @@ sidebar_position: 4
 ---
 # Designer configuration
 
-Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas)) to understand where Designer configuration should be
+Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas) to understand where Designer configuration should be
 placed in the Nussknacker configuration.
 
 The default Designer configuration can be found in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
@@ -84,20 +84,21 @@ Counts are based on InfluxDB metrics, stored in `nodeCount` measurement by defau
 If you have custom metrics settings which result in different fields or tags (e.g. you have different telegraf configuration), you can configure required values
 with the settings presented below:
 
-| Parameter name                                     | Importance | Type                                                                      | Default value               | Description                                                                                                                                   |
-|----------------------------------------------------|------------|---------------------------------------------------------------------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| countsSettings.influxUrl                           | Medium     | string                                                                    |                             | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
-| countsSettings.database                            | Medium     | string                                                                    |                             |                                                                                                                                               |
-| countsSettings.user                                | Medium     | string                                                                    |                             |                                                                                                                                               |
-| countsSettings.password                            | Medium     | string                                                                    |                             |                                                                                                                                               |
-| countsSettings.queryMode                           | Low        | OnlySingleDifference / OnlySumOfDifferences / SumOfDifferencesForRestarts | SumOfDifferencesForRestarts |                                                                                                                                               |
-| countsSettings.metricsConfig.sourceCountMetric     | Low        | string                                                                    | source_count                |                                                                                                                                               |
-| countsSettings.metricsConfig.nodeCountMetric       | Low        | string                                                                    | nodeCount                   |                                                                                                                                               |
-| countsSettings.metricsConfig.nodeIdTag             | Low        | string                                                                    | nodeId                      |                                                                                                                                               |
-| countsSettings.metricsConfig.additionalGroupByTags | Low        | list of string                                                            | ["slot", "instanceId"]      |                                                                                                                                               |
-| countsSettings.metricsConfig.scenarioTag           | Low        | string                                                                    | scenario                    |                                                                                                                                               |
-| countsSettings.metricsConfig.countField            | Low        | string                                                                    | count                       |                                                                                                                                               |
-| countsSettings.metricsConfig.envTag                | Low        | string                                                                    | env                         |                                                                                                                                               |
+| Parameter name                                     | Importance | Type                                                                      | Default value          | Description                                                                                                                                   |
+|----------------------------------------------------|------------|---------------------------------------------------------------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| countsSettings.influxUrl                           | Medium     | string                                                                    |                        | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
+| countsSettings.database                            | Medium     | string                                                                    |                        | InfluxDB database name                                                                                                                        |
+| countsSettings.user                                | Medium     | string                                                                    |                        | User name (optional)                                                                                                                          |
+| countsSettings.password                            | Medium     | string                                                                    |                        | Password (optional)                                                                                                                           |
+| countsSettings.additionalHeaders                   | Low        | map of strings                                                            | empty map              | Additional headers sent to InfluxDB                                                                                                           |
+| countsSettings.queryMode                           | Low        | OnlySingleDifference / OnlySumOfDifferences / SumOfDifferencesForRestarts | OnlySumOfDifferences   |                                                                                                                                               |
+| countsSettings.metricsConfig.sourceCountMetric     | Low        | string                                                                    | source_count           |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeCountMetric       | Low        | string                                                                    | nodeCount              |                                                                                                                                               |
+| countsSettings.metricsConfig.nodeIdTag             | Low        | string                                                                    | nodeId                 |                                                                                                                                               |
+| countsSettings.metricsConfig.additionalGroupByTags | Low        | list of string                                                            | ["slot", "instanceId"] |                                                                                                                                               |
+| countsSettings.metricsConfig.scenarioTag           | Low        | string                                                                    | scenario               |                                                                                                                                               |
+| countsSettings.metricsConfig.countField            | Low        | string                                                                    | count                  |                                                                                                                                               |
+| countsSettings.metricsConfig.envTag                | Low        | string                                                                    | env                    |                                                                                                                                               |
 
 ## Deployment settings
 
@@ -254,23 +255,23 @@ and provider discovery. The only supported flow is the authorization code flow w
 
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
 
-| Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                                                                                                                                                      |
-|--------------------------------------|-------------|----------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                                                                                                                                                       |
-| authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                              |
-| authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                        |
-| authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                       |
-| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                      |
-| authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                       |
-| authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                      |
-| authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                |
-| authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                                                                                                                                                             |
-| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                      |
-| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                    |
-| authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format. |
+| Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                                                                                                                                                             |
+|--------------------------------------|-------------|----------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                                                                                                                                                              |
+| authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                                     |
+| authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                               |
+| authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                              |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                             |
+| authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                              |
+| authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                             |
+| authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                       |
+| authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                                                                                                                                                                    |
+| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                             |
+| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                           |
+| authentication.usernameClaim         | optional    | string         |                             | The OIDC claim from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) claim from JWT. |
 
 #### Auth0 sample configuration
 
@@ -310,6 +311,34 @@ authentication: {
 
 The role names in the `usersFile` should match the roles defined in the Auth0 tenant.
 
+#### MS Azure Active Directory sample configuration
+
+- Open MS Azure Portal: https://portal.azure.com/
+- Go to Azure Active Directory Service
+- Register new app: AAD Service -> App registrations -> New registration
+- Add auth platform: AAD Service -> App registrations -> Your App -> Authentication -> Add a platform
+- Register app roles: AAD Service -> App registrations -> Your App -> App roles -> Create app role
+- Add client secret: AAD Service -> App registrations -> Your App -> Certificates & secrets -> New client secret
+- Configure users roles: Enterprise applications -> Your App -> Users and groups -> Add user/group
+
+In Nussknacker's configuration file add the following `authentication` section:
+```hocon
+authentication: {
+  method: "Oidc"
+  issuer: "https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0"
+  clientSecret: <the value of App registrations -> Your App -> Certificates & secrets -> Your created secret value>
+  clientId: <the value of App registrations -> Your App -> Overview -> Application (client) ID>
+  usernameClaim: "name" # Here MS AAD returns at JWT full user name 
+  rolesClaims: ["roles"] # Here MS AAD returns at JWT information about assigned roles
+  usersFile: "conf/users.conf"
+}
+```
+
+The value of YOUR_TENANT_ID you can find at App registrations -> Your App -> Directory (tenant) ID. More information about
+the API you can find at https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0/.well-known/openid-configuration.
+
+The role names in the `usersFile` should match the roles defined in MS AAD App registrations -> Your App -> App roles.
+
 ### OAuth2 security module
 
 #### Generic configuration
@@ -344,6 +373,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
+  usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
   }
@@ -643,14 +673,15 @@ Tabs (in main menu bar, such as Scenarios etc.) can be configured in the followi
 
 By default, only `Scenarios` tab is configured.
 
-| Parameter name             | Type                    | Description                                                                                             |
-|----------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
-| id                         | string                  | Unique identifier                                                                                       |
-| title                      | string                  | Title appearing in UI                                                                                   |
-| type                       | IFrame/Local/Remote/Url | Type of tab (see below for explanation)                                                                 |
-| url                        | string                  | URL of the tab                                                                                          |
-| requiredPermission         | string                  | Optional parameter, name of [Global Permission](#security)                                              |
-| addAccessTokenInQueryParam | boolean                 | Optional parameter, when true add accessToken (if OAuth2 authentication is used) to iframe query params |
+| Parameter name                   | Type                    | Default value | Description                                                                                                              |
+|----------------------------------|-------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| id                               | string                  |               | Unique identifier                                                                                                        |
+| title                            | string                  |               | Title appearing in UI                                                                                                    |
+| type                             | IFrame/Local/Remote/Url |               | Type of tab (see below for explanation)                                                                                  |
+| url                              | string                  |               | URL of the tab                                                                                                           |
+| requiredPermission               | string                  |               | Optional parameter, name of [Global Permission](#security)                                                               |
+| accessTokenInQuery.enabled       | boolean                 | false         | When true the parameter holding access token (if OAuth2 authentication is used) will be added to iframe query parameters |
+| accessTokenInQuery.parameterName | string                  | auth_token    | Optional name of query parameter that holds the access token                                                             |
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
@@ -710,19 +741,38 @@ You can configure `secondaryEnvironment` to allow for
 
 ## Scenario type, categories
 
-Every scenario has to belong to a group called `category`. For example, in one Nussknacker installation you can have
-scenarios detecting frauds, and those implementing marketing campaigns. Category configuration looks like this:
+Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
+[users permissions](/installation_configuration_guide/DesignerConfiguration/#users-roles-and-permissions).
+
+For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 
 ```
-categoriesConfig: {
-  "marketing": "streaming",
-  "fraud": "streaming",
+scenarioTypes {
+  streaming-marketing {
+    deploymentConfig { 
+      (...) 
+    }
+    modelConfig {
+      (...)
+    }
+    category: "Marketing"
+  }
+  streaming-fraud-detection {
+    deploymentConfig { 
+      (...) 
+    }
+    modelConfig {
+      (...)
+    }
+    category: "Fraud Detection"
+  }
 }
 ```
 
-For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
+Scenario type configuration consists of parts:
 - `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
+- `category` - category handled by given scenario type
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components

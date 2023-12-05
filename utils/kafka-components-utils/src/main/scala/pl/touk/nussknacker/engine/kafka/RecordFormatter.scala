@@ -30,14 +30,17 @@ trait RecordFormatter extends Serializable {
 
   def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged = ListUtil.mergeLists(listsFromAllTopics, size)
+    val merged             = ListUtil.mergeLists(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
   }
 
-  private def fillEmptyTimestampFromConsumerRecord(testRecord: TestRecord, consumerRecord: ConsumerRecord[_, _]): TestRecord = {
+  private def fillEmptyTimestampFromConsumerRecord(
+      testRecord: TestRecord,
+      consumerRecord: ConsumerRecord[_, _]
+  ): TestRecord = {
     testRecord.timestamp match {
       case Some(_) => testRecord
-      case None => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
+      case None    => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
     }
   }
 
@@ -54,7 +57,13 @@ object BasicRecordFormatter extends RecordFormatter {
 
   override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
-    new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), stringRecord.getBytes(StandardCharsets.UTF_8))
+    new ConsumerRecord[Array[Byte], Array[Byte]](
+      topic,
+      0,
+      0L,
+      Array[Byte](),
+      stringRecord.getBytes(StandardCharsets.UTF_8)
+    )
   }
 
 }

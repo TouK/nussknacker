@@ -3,9 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
 import Input from "../../field/Input";
-import "./cronEditorStyle.styl";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import { CronEditorStyled } from "./CronEditorStyled";
 import { ExtendedEditor } from "../Editor";
 import { NodeValidationError } from "src/types";
 
@@ -73,7 +73,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     };
 
     return (
-        <div ref={node} className={"cron-editor-container"}>
+        <CronEditorStyled ref={node}>
             <Input
                 value={value}
                 fieldErrors={fieldErrors}
@@ -93,7 +93,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
                     showResultCron={false}
                 />
             )}
-        </div>
+        </CronEditorStyled>
     );
 };
 

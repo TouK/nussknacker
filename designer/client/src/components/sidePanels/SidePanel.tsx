@@ -1,59 +1,64 @@
 import React, { forwardRef, PropsWithChildren, useEffect, useRef, useState } from "react";
-import cn from "classnames";
 import ErrorBoundary from "../common/ErrorBoundary";
-import panelStyles from "./SidePanel.styl";
 import { ScrollbarsExtended } from "./ScrollbarsExtended";
 import TogglePanel from "../TogglePanel";
 import { useDispatch, useSelector } from "react-redux";
 import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/toolbars";
-import { togglePanel } from "../../actions/nk/ui/layout";
+import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
-
-export function useSidePanelToggle(side: "LEFT" | "RIGHT") {
-    const dispatch = useDispatch();
-    const isOpened = useSelector(side === "RIGHT" ? isRightPanelOpened : isLeftPanelOpened);
-    const onToggle = () => dispatch(togglePanel(side));
-    return { isOpened, onToggle };
-}
-
-type Props = {
-    isCollapsed?: boolean;
-    className?: string;
-    innerClassName?: string;
-    onScrollToggle?: (isEnabled: boolean) => void;
-};
-
-const ScrollTogglePanel = forwardRef<HTMLDivElement, PropsWithChildren<Props>>(function ScrollTogglePanel(props, ref) {
-    const { children, className, innerClassName, isCollapsed, onScrollToggle } = props;
-    return (
-        <div ref={ref} className={cn(panelStyles.collapsible, className, !isCollapsed && panelStyles.isOpened)}>
-            <ScrollbarsExtended onScrollToggle={onScrollToggle}>
-                <ErrorBoundary>
-                    <div className={cn(panelStyles.sidePanel, innerClassName)}>{children}</div>
-                </ErrorBoundary>
-            </ScrollbarsExtended>
-        </div>
-    );
-});
+import { StyledScrollToggle, StyledScrollToggleChild, styledScrollTogglePanelWrapper } from "./SidePanelStyled";
+import { useTheme } from "@mui/material";
 
 export enum PanelSide {
     Right = "RIGHT",
     Left = "LEFT",
 }
 
+type Props = {
+    isCollapsed?: boolean;
+    className?: string;
+    innerClassName?: string;
+    side?: PanelSide;
+    onScrollToggle?: (isEnabled: boolean) => void;
+};
+
 type SidePanelProps = {
     side: PanelSide;
     className?: string;
 };
+
+export type Side = "LEFT" | "RIGHT";
+
+export function useSidePanelToggle(side: Side) {
+    const dispatch = useDispatch();
+    const isOpened = useSelector(side === PanelSide.Right ? isRightPanelOpened : isLeftPanelOpened);
+    const onToggle = () => dispatch(togglePanel(side));
+    return { isOpened, onToggle };
+}
+
+const ScrollTogglePanel = forwardRef<HTMLDivElement, PropsWithChildren<Props>>(function ScrollTogglePanel(props, ref) {
+    const { children, innerClassName, side, isCollapsed, onScrollToggle, className } = props;
+    return (
+        <StyledScrollToggle ref={ref} side={side} isOpened={isCollapsed} className={className}>
+            <ScrollbarsExtended onScrollToggle={onScrollToggle} side={side}>
+                <ErrorBoundary>
+                    <StyledScrollToggleChild side={side} className={innerClassName}>
+                        {children}
+                    </StyledScrollToggleChild>
+                </ErrorBoundary>
+            </ScrollbarsExtended>
+        </StyledScrollToggle>
+    );
+});
 
 // adjust viewport for PanZoomPlugin.panToCells
 function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], isOccupied: boolean) {
     const ref = useRef<HTMLDivElement>();
     const getGraph = useGraph();
     useEffect(() => {
-        getGraph().adjustViewport({
-            [side]: isOccupied ? ref.current.getBoundingClientRect().width : 0,
+        getGraph?.()?.adjustViewport({
+            [side]: isOccupied ? ref.current?.getBoundingClientRect().width : 0,
         });
     }, [getGraph, isOccupied, side]);
     return ref;
@@ -63,17 +68,18 @@ export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
     const { children, side, className } = props;
     const { isOpened, onToggle } = useSidePanelToggle(side);
     const [showToggle, setShowToggle] = useState(true);
+    const theme = useTheme();
 
     const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened && showToggle);
-
     return (
         <>
             {!isOpened || showToggle ? <TogglePanel type={side} isOpened={isOpened} onToggle={onToggle} /> : null}
             <ScrollTogglePanel
+                className={styledScrollTogglePanelWrapper(theme)}
                 ref={ref}
                 onScrollToggle={setShowToggle}
-                isCollapsed={!isOpened}
-                className={cn(side, side === PanelSide.Left ? panelStyles.left : panelStyles.right)}
+                isCollapsed={isOpened}
+                side={side}
                 innerClassName={className}
             >
                 {children}

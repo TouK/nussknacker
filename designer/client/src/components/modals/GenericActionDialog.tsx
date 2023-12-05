@@ -17,6 +17,7 @@ import { getGenericActionValidation } from "../../reducers/selectors/genericActi
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { isEmpty } from "lodash";
+import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
 
 export type GenericActionLayout = {
     name: string;
@@ -35,6 +36,7 @@ interface GenericAction extends GenericActionParameters {
     layout: GenericActionLayout;
     variableTypes: VariableTypes;
     onConfirmAction: (parmValues) => void;
+    processingType: string;
 }
 
 interface GenericActionDialogProps {
@@ -59,7 +61,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
 
     useEffect(() => {
         dispatch(
-            validateGenericActionParameters(processId, {
+            validateGenericActionParameters(action.processingType, {
                 parameters: action.parameters.map((uiParam) => {
                     return {
                         name: uiParam.name,
@@ -67,7 +69,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                         expression: value[uiParam.name],
                     };
                 }),
-                processProperties: processProperties,
                 variableTypes: action.variableTypes,
             }),
         );
@@ -85,7 +86,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                             const formatter =
                                 param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
                             return (
-                                <div className={"node-row"} key={param.name}>
+                                <NodeRow key={param.name}>
                                     <FieldLabel nodeId={param.name} parameterDefinitions={action.parameters} paramName={param.name} />
                                     <Editor
                                         editorConfig={param?.editor}
@@ -101,7 +102,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                         showValidation={true}
                                         variableTypes={action.variableTypes}
                                     />
-                                </div>
+                                </NodeRow>
                             );
                         })}
                     </NodeTableBody>

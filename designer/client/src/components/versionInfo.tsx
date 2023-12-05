@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { alpha } from "../containers/theme";
+import { alpha } from "../containers/theme/helpers";
 import HttpService, { AppBuildInfo } from "../http/HttpService";
 
 function useAppInfo(): AppBuildInfo {
@@ -22,25 +22,47 @@ function Nu({ size }: { size?: string }): JSX.Element {
     );
 }
 
-export function VersionInfo({ t = 2000 }: { t?: number }): JSX.Element {
+function useTimer(): [(t: number) => Promise<number>, () => void] {
+    const timeout = useRef(null);
+
+    const stop = useCallback(() => {
+        clearTimeout(timeout.current);
+    }, []);
+
+    const start = useCallback((t: number) => {
+        return new Promise<number>((resolve) => {
+            timeout.current = setTimeout(() => resolve(t), t);
+        });
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            stop();
+        };
+    }, [stop]);
+
+    return [start, stop];
+}
+
+export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
     const appInfo = useAppInfo();
     const variedVersions = __BUILD_VERSION__ !== appInfo?.version;
 
     const [expanded, setExpanded] = useState(false);
-    const timeout = useRef(null);
-    const show = useCallback(() => {
-        clearTimeout(timeout.current);
-        timeout.current = setTimeout(() => {
-            setExpanded(true);
-        }, t / 5);
-    }, [t]);
+    const [startTimer, stopTimer] = useTimer();
 
     const hide = useCallback(() => {
-        clearTimeout(timeout.current);
-        timeout.current = setTimeout(() => {
-            setExpanded(false);
-        }, t);
-    }, [t]);
+        stopTimer();
+        startTimer(t).then(() => setExpanded(false));
+    }, [startTimer, stopTimer, t]);
+
+    const show = useCallback(() => {
+        stopTimer();
+        startTimer(t / 4).then(() => {
+            setExpanded(true);
+            hide();
+        });
+    }, [hide, startTimer, stopTimer, t]);
 
     return (
         <div

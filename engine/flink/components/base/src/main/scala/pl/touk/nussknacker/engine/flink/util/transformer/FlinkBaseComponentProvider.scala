@@ -5,7 +5,11 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{SessionWindowAggregateTransformer, SlidingAggregateTransformerV2, TumblingAggregateTransformer}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
+  SessionWindowAggregateTransformer,
+  SlidingAggregateTransformerV2,
+  TumblingAggregateTransformer
+}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
@@ -20,7 +24,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
     val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(config)
 
-    //When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
+    // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
@@ -30,12 +34,23 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
     val statefulComponents = List(
       ComponentDefinition("union-memo", UnionWithMemoTransformer).withRelativeDocs("DataSourcesAndSinks#unionmemo"),
-      ComponentDefinition("previousValue", PreviousValueTransformer).withRelativeDocs("DataSourcesAndSinks#previousvalue"),
-      ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs("AggregatesInTimeWindows#sliding-window"),
-      ComponentDefinition("aggregate-tumbling", new TumblingAggregateTransformer(aggregateWindowsConfig)).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
-      ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
-      ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
-      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
+      ComponentDefinition("previousValue", PreviousValueTransformer).withRelativeDocs(
+        "DataSourcesAndSinks#previousvalue"
+      ),
+      ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs(
+        "AggregatesInTimeWindows#sliding-window"
+      ),
+      ComponentDefinition("aggregate-tumbling", new TumblingAggregateTransformer(aggregateWindowsConfig))
+        .withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
+      ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#session-window"
+      ),
+      ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#single-side-join"
+      ),
+      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs(
+        "AggregatesInTimeWindows#full-outer-join"
+      ),
       ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay"),
     )
 

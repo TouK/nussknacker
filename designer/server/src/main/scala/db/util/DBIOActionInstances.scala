@@ -16,12 +16,13 @@ object DBIOActionInstances {
 
     override def flatMap[A, B](fa: DB[A])(f: (A) => DB[B]) = fa.flatMap(f)
 
-    //this is *not* tail recursive
+    // this is *not* tail recursive
     override def tailRecM[A, B](a: A)(f: (A) => DB[Either[A, B]]): DB[B] =
       f(a).flatMap {
         case Right(r) => pure(r)
-        case Left(l) => tailRecM(l)(f)
+        case Left(l)  => tailRecM(l)(f)
       }
+
   }
 
 }

@@ -49,6 +49,7 @@ export function JoinCustomNode({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             {hasOutputVar && (
                 <NodeField

@@ -7,9 +7,13 @@ import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, Metrics
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-//We have to pass taskId, as we need different tags. `metrics` map passed in constructor is mutable (by Kafka), so we 
+//We have to pass taskId, as we need different tags. `metrics` map passed in constructor is mutable (by Kafka), so we
 //create own set of registered metrics to remove them correctly
-private[kafka] class KafkaMetricsRegistrar(taskId: String, metrics: java.util.Map[MetricName, _ <: Metric], metricsProvider: MetricsProviderForScenario) extends AutoCloseable {
+private[kafka] class KafkaMetricsRegistrar(
+    taskId: String,
+    metrics: java.util.Map[MetricName, _ <: Metric],
+    metricsProvider: MetricsProviderForScenario
+) extends AutoCloseable {
 
   private val registeredNames: mutable.Set[MetricIdentifier] = new mutable.HashSet[MetricIdentifier]()
 
@@ -17,9 +21,12 @@ private[kafka] class KafkaMetricsRegistrar(taskId: String, metrics: java.util.Ma
     metrics.forEach { case (name, metric) =>
       val metricIdentifier = prepareMetricIdentifier(name)
       registeredNames.add(metricIdentifier)
-      metricsProvider.registerGauge[AnyRef](metricIdentifier, new Gauge[AnyRef] {
-        override def getValue: AnyRef = metric.metricValue()
-      })
+      metricsProvider.registerGauge[AnyRef](
+        metricIdentifier,
+        new Gauge[AnyRef] {
+          override def getValue: AnyRef = metric.metricValue()
+        }
+      )
     }
   }
 

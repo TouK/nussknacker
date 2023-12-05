@@ -1,10 +1,10 @@
-import ace from "ace-builds/src-noconflict/ace";
-import { isEmpty, map, overSome } from "lodash";
+import "ace-builds/src-noconflict/ace";
+import { isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
-import { BackendExpressionSuggester, ExpressionSuggester } from "./ExpressionSuggester";
+import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
 import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
@@ -39,6 +39,10 @@ function isSpelTokenAllowed(iterator, modeId): boolean {
     // We need to handle #dict['Label'], where Label is a string token
     return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate";
 }
+import { SerializedStyles } from "@emotion/react";
+import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
+import { cx } from "@emotion/css";
+import { VariableTypes } from "../../../../../types";
 
 interface InputProps {
     value: string;
@@ -47,7 +51,8 @@ interface InputProps {
     rows?: number;
     onValueChange: (value: string) => void;
     ref: React.Ref<ReactAce>;
-    className: string;
+    className?: string;
+    style: SerializedStyles;
     cols: number;
     editorMode?: EditorMode;
 }
@@ -58,78 +63,8 @@ interface Props {
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
-    variableTypes: Record<string, unknown>;
+    variableTypes: VariableTypes;
     editorMode?: EditorMode;
-}
-
-interface Editor extends Ace.Editor {
-    readonly completer: {
-        activated: boolean;
-    };
-}
-
-interface EditSession extends Ace.EditSession {
-    readonly $modeId: unknown;
-}
-
-class CustomAceEditorCompleter implements Ace.Completer {
-    private isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed]);
-    // We add hash to identifier pattern to start suggestions just after hash is typed
-    public identifierRegexps = identifierRegexpsWithoutDot;
-    // This is necessary to make live auto complete works after dot
-    public triggerCharacters = ["."];
-
-    constructor(private expressionSuggester: ExpressionSuggester) {}
-
-    replaceSuggester(expressionSuggester: ExpressionSuggester) {
-        this.expressionSuggester = expressionSuggester;
-    }
-
-    getCompletions(
-        editor: Editor,
-        session: EditSession,
-        caretPosition2d: Ace.Point,
-        prefix: string,
-        callback: Ace.CompleterCallback,
-    ): void {
-        const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column);
-        if (!this.isTokenAllowed(iterator, session.$modeId)) {
-            callback(null, []);
-        }
-
-        this.expressionSuggester.suggestionsFor(editor.getValue(), caretPosition2d).then((suggestions) => {
-            callback(
-                null,
-                map(suggestions, (s) => {
-                    const methodName = s.methodName;
-                    const returnType = ProcessUtils.humanReadableType(s.refClazz);
-
-                    let docHTML = null;
-                    if (s.description || !isEmpty(s.parameters)) {
-                        const paramsSignature = s.parameters
-                            .map((p) => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`)
-                            .join(", ");
-                        const javaStyleSignature = `${returnType} ${methodName}(${paramsSignature})`;
-                        docHTML = ReactDOMServer.renderToStaticMarkup(
-                            <div className="function-docs">
-                                <b>{javaStyleSignature}</b>
-                                <hr />
-                                <p>{s.description}</p>
-                            </div>,
-                        );
-                    }
-
-                    return {
-                        value: methodName,
-                        score: s.fromClass ? 1 : 1000,
-                        meta: returnType,
-                        className: `${s.fromClass ? `class` : `default`}Method ace_`,
-                        docHTML: docHTML,
-                    };
-                }),
-            );
-        });
-    }
 }
 
 function ExpressionSuggest(props: Props): JSX.Element {
@@ -137,14 +72,14 @@ function ExpressionSuggest(props: Props): JSX.Element {
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const { id, processingType } = useSelector(getProcessToDisplay);
+    const { processingType } = useSelector(getProcessToDisplay);
 
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        return new BackendExpressionSuggester(language, id, variableTypes, processingType, HttpService);
-    }, [id, processingType, variableTypes, language]);
+        return new BackendExpressionSuggester(language, variableTypes, processingType, HttpService);
+    }, [processingType, variableTypes, language]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
@@ -156,7 +91,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     return dataResolved ? (
         <>
             <div
-                className={cn([
+                className={cx([
                     "row-ace-editor",
                     showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                     isMarked && "marked",

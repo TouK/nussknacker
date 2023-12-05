@@ -4,17 +4,14 @@ import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestKitBase, TestProbe}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.BeforeAndAfterAll
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class RescheduleFinishedActorTest extends AnyFunSuite
-  with TestKitBase
-  with Matchers
-  with BeforeAndAfterAll {
+class RescheduleFinishedActorTest extends AnyFunSuite with TestKitBase with Matchers with BeforeAndAfterAll {
 
-  private val interval = 100 millis
+  private val interval    = 100 millis
   private val maxWaitTime = interval * 20
 
   override implicit lazy val system: ActorSystem = ActorSystem(suiteName)
@@ -32,7 +29,7 @@ class RescheduleFinishedActorTest extends AnyFunSuite
   }
 
   private def shouldInvokeHandleFinishedRepeatedly(result: Future[Unit]): Unit = {
-    val probe = TestProbe()
+    val probe   = TestProbe()
     var counter = 0
     def handleFinished: Future[Unit] = {
       counter += 1
@@ -48,4 +45,5 @@ class RescheduleFinishedActorTest extends AnyFunSuite
 
     system.stop(actor)
   }
+
 }

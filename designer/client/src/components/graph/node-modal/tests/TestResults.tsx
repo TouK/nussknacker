@@ -1,11 +1,13 @@
 import { isEmpty, isObject, join } from "lodash";
 import React from "react";
-import TipsInfo from "../../../../assets/img/icons/tipsInfo.svg";
+import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
+import { NodeLabelStyled } from "../node";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const results = useTestResults();
@@ -16,17 +18,22 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
 
     return (
         <NodeTableBody className="node-test-results">
-            <div className="node-row">
-                <div className="node-label">
-                    <NodeTip title={"Variables in test case"} icon={<TipsInfo />} />
-                </div>
-            </div>
-            {Object.keys(results.testResultsToShow.context.variables).map((key, ikey) => (
-                <div className="node-row" key={ikey}>
-                    <div className="node-label">{key}:</div>
-                    <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
-                </div>
-            ))}
+            <NodeRow>
+                <NodeLabelStyled>
+                    <NodeTip
+                        title={"Variables in test case"}
+                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
+                    />
+                </NodeLabelStyled>
+            </NodeRow>
+            {Object.keys(results.testResultsToShow.context.variables)
+                .sort((a, b) => a.localeCompare(b))
+                .map((key, ikey) => (
+                    <NodeRow key={ikey}>
+                        <div className="node-label">{key}:</div>
+                        <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
+                    </NodeRow>
+                ))}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext)
                 ? results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (
                       <span key={index} className="testResultDownload">
@@ -61,7 +68,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     }
 
     function stringifyMockedValue(mockedValue) {
-        const content = mockedValue.value.pretty;
+        const content = mockedValue.value?.pretty;
         return isObject(content) ? JSON.stringify(content) : content;
     }
 }

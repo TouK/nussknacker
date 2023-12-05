@@ -12,7 +12,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1, Pa
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
-class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
+class ConfluentKafkaAvroDeserializationSpec
+    extends SchemaRegistryMixin
+    with TableDrivenPropertyChecks
+    with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
 
@@ -26,7 +29,6 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       (avroSetup, false, PaymentV1.record, PaymentV1.record, "simple.from-record"),
       (avroSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject-version"),
       (jsonSetup, true, PaymentV1.exampleData, PaymentV1.record, "json.simple.from-subject-version")
-
     )
 
     runDeserializationTest(table, schemas)
@@ -72,8 +74,8 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
   }
 
   test("trying to deserialize record to avro object with wrong type schema") {
-    val schemas = List(PaymentV1.schema)
-    val fromRecordTopic = createAndRegisterTopicConfig("wrong.from-record", schemas)
+    val schemas                 = List(PaymentV1.schema)
+    val fromRecordTopic         = createAndRegisterTopicConfig("wrong.from-record", schemas)
     val fromSubjectVersionTopic = createAndRegisterTopicConfig("wrong.from-subject-version", schemas)
 
     pushMessage(FullNameV1.record, fullNameTopic, Some(fromRecordTopic.input))
@@ -85,7 +87,8 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
 
     val fromSubjectVersionDeserializer = {
       val subject = ConfluentUtils.topicSubject(fromSubjectVersionTopic.input, fromSubjectVersionTopic.isKey)
-      val schemaId = SchemaId.fromInt(schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema)))
+      val schemaId =
+        SchemaId.fromInt(schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema)))
       val schemaData = RuntimeSchemaData(PaymentV1.schema, Some(schemaId))
       avroSetup.provider.deserializationSchemaFactory.create(kafkaConfig, None, Some(schemaData.toParsedSchemaData))
     }
@@ -95,23 +98,36 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
     }
   }
 
-  private def runDeserializationTest(table: TableFor5[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String], schemas: List[Schema]): Assertion = {
+  private def runDeserializationTest(
+      table: TableFor5[SchemaRegistryProviderSetup, Boolean, Any, GenericRecord, String],
+      schemas: List[Schema]
+  ): Assertion = {
 
-    forAll(table) { (setup: SchemaRegistryProviderSetup, schemaEvolution: Boolean, givenObj: Any, expectedObj: GenericRecord, topic: String) =>
-      val topicConfig = createAndRegisterTopicConfig(topic, schemas)
+    forAll(table) {
+      (
+          setup: SchemaRegistryProviderSetup,
+          schemaEvolution: Boolean,
+          givenObj: Any,
+          expectedObj: GenericRecord,
+          topic: String
+      ) =>
+        val topicConfig = createAndRegisterTopicConfig(topic, schemas)
 
-      val schemaDataOpt = if (schemaEvolution) {
-        val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-        val inputSchemaId = SchemaId.fromInt(schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema)))
-        Option(RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId)))
-      } else {
-        None
-      }
-      val deserializer = setup.provider.deserializationSchemaFactory.create(kafkaConfig, None, schemaDataOpt.map(_.toParsedSchemaData))
+        val schemaDataOpt = if (schemaEvolution) {
+          val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+          val inputSchemaId = SchemaId.fromInt(
+            schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
+          )
+          Option(RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId)))
+        } else {
+          None
+        }
+        val deserializer =
+          setup.provider.deserializationSchemaFactory.create(kafkaConfig, None, schemaDataOpt.map(_.toParsedSchemaData))
 
-      setup.pushMessage(givenObj, topicConfig.input)
+        setup.pushMessage(givenObj, topicConfig.input)
 
-      setup.consumeAndVerifyMessages(deserializer, topicConfig.input, List(expectedObj))
+        setup.consumeAndVerifyMessages(deserializer, topicConfig.input, List(expectedObj))
     }
 
   }

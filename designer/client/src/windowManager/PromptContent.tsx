@@ -1,22 +1,23 @@
 import { css } from "@emotion/css";
 import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
-import { useNkTheme } from "../containers/theme";
 import { LaddaButton } from "./LaddaButton";
+import { isTouchDevice } from "../helpers/detectDevice";
+import { useTheme } from "@mui/material";
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>;
 
 export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JSX.Element {
-    const { theme } = useNkTheme();
+    const theme = useTheme();
     const classnames = useMemo(() => {
         const content = css({
-            paddingBottom: theme.spacing.baseUnit,
-            paddingTop: theme.spacing.baseUnit * 2,
-            paddingLeft: theme.spacing.baseUnit * 6,
-            paddingRight: theme.spacing.baseUnit * 6,
+            paddingBottom: theme.custom.spacing.baseUnit,
+            paddingTop: theme.custom.spacing.baseUnit * 2,
+            paddingLeft: theme.custom.spacing.baseUnit * 6,
+            paddingRight: theme.custom.spacing.baseUnit * 6,
         });
         return { ...props.classnames, content };
-    }, [props.classnames, theme.spacing.baseUnit]);
+    }, [props.classnames, theme.custom.spacing.baseUnit]);
 
     const components = useMemo(
         () => ({
@@ -27,5 +28,5 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
         [props.components],
     );
 
-    return <DefaultContent backgroundDrag {...props} classnames={classnames} components={components} />;
+    return <DefaultContent backgroundDrag={!isTouchDevice()} {...props} classnames={classnames} components={components} />;
 }

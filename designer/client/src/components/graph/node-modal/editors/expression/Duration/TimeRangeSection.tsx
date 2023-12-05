@@ -4,7 +4,7 @@ import ValidationLabels from "../../../../../modals/ValidationLabels";
 import React from "react";
 import { Duration } from "./DurationEditor";
 import { Period } from "./PeriodEditor";
-import "./timeRange.styl";
+import { TimeRangeStyled } from "./TimeRangeStyled";
 import { isEmpty } from "lodash";
 import { NodeValidationError } from "../../../../../../types";
 
@@ -23,7 +23,7 @@ export default function TimeRangeSection(props: Props): JSX.Element {
     const { components, onComponentValueChange, readOnly, showValidation, fieldErrors, value, expression, isMarked } = props;
 
     return (
-        <div className={"time-range-section"}>
+        <TimeRangeStyled>
             <div className={"time-range-components"}>
                 {components.map((componentName) => (
                     <TimeRangeComponent
@@ -39,6 +39,6 @@ export default function TimeRangeSection(props: Props): JSX.Element {
                 ))}
             </div>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
-        </div>
+        </TimeRangeStyled>
     );
 }

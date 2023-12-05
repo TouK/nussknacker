@@ -7,9 +7,11 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkStreamingRestManager(config: FlinkConfig, modelData: BaseModelData)
-                               (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService)
-  extends FlinkRestManager(config, modelData, mainClassName = MainClassName)
+class FlinkStreamingRestManager(config: FlinkConfig, modelData: BaseModelData)(
+    implicit ec: ExecutionContext,
+    backend: SttpBackend[Future, Any],
+    deploymentService: ProcessingTypeDeploymentService
+) extends FlinkRestManager(config, modelData, mainClassName = MainClassName)
 
 object FlinkStreamingRestManager {
   val MainClassName = "pl.touk.nussknacker.engine.process.runner.FlinkStreamingProcessMain"

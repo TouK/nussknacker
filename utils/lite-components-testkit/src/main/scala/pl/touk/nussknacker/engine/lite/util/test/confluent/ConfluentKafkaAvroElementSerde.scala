@@ -9,7 +9,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid
 
 object ConfluentKafkaAvroElementSerde extends KafkaAvroElementSerde {
 
-  override def serializeAvroElement(containerData: GenericContainer, schemaId: SchemaId, headers: Headers, isKey: Boolean): Array[Byte] = {
+  override def serializeAvroElement(
+      containerData: GenericContainer,
+      schemaId: SchemaId,
+      headers: Headers,
+      isKey: Boolean
+  ): Array[Byte] = {
     ConfluentUtils.serializeContainerToBytesArray(containerData, schemaId)
   }
 

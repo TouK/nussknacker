@@ -17,13 +17,14 @@ import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client3._
 
 import java.io.File
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
-                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService)
-    extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
+class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)(
+    implicit ec: ExecutionContext,
+    backend: SttpBackend[Future, Any],
+    deploymentService: ProcessingTypeDeploymentService
+) extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName)
+    with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
 
@@ -32,26 +33,34 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   private val slotsChecker = new FlinkSlotsChecker(client)
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
-    val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
-    client.findJobsByName(preparedName)
-      .flatMap(jobs => Future.sequence(jobs
-        .map(job => withJobDetails(job.jid, name).map { jobDetails =>
-          //TODO: return error when there's no correct version in process
-          //currently we're rather lax on this, so that this change is backward-compatible
-          //we log debug here for now, since it's invoked v. often
-          if (jobDetails.isEmpty) {
-            logger.debug(s"No correct job details in deployed scenario: ${job.name}")
-          }
-          StatusDetails(
-            mapJobStatus(job),
-            jobDetails.flatMap(_.deploymentId),
-            Some(ExternalDeploymentId(job.jid)),
-            version = jobDetails.map(_.version),
-            startTime = Some(job.`start-time`),
-            attributes = Option.empty,
-            errors = List.empty
-          )
-        })))
+    val preparedName =
+      modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
+    client
+      .findJobsByName(preparedName)
+      .flatMap(jobs =>
+        Future.sequence(
+          jobs
+            .map(job =>
+              withJobDetails(job.jid, name).map { jobDetails =>
+                // TODO: return error when there's no correct version in process
+                // currently we're rather lax on this, so that this change is backward-compatible
+                // we log debug here for now, since it's invoked v. often
+                if (jobDetails.isEmpty) {
+                  logger.debug(s"No correct job details in deployed scenario: ${job.name}")
+                }
+                StatusDetails(
+                  mapJobStatus(job),
+                  jobDetails.flatMap(_.deploymentId),
+                  Some(ExternalDeploymentId(job.jid)),
+                  version = jobDetails.map(_.version),
+                  startTime = Some(job.`start-time`),
+                  attributes = Option.empty,
+                  errors = List.empty
+                )
+              }
+            )
+        )
+      )
   }
 
   private def toJobStatus(overview: JobOverview): JobStatus = {
@@ -59,20 +68,21 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     JobStatus.valueOf(overview.state)
   }
 
-  //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
+  // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     toJobStatus(overview) match {
       case JobStatus.RUNNING if ensureTasksRunning(overview) => SimpleStateStatus.Running
-      case s if checkDuringDeployForNotRunningJob(s) => SimpleStateStatus.DuringDeploy
-      case JobStatus.FINISHED => SimpleStateStatus.Finished
-      case JobStatus.RESTARTING => SimpleStateStatus.Restarting
-      case JobStatus.CANCELED => SimpleStateStatus.Canceled
-      case JobStatus.CANCELLING => SimpleStateStatus.DuringCancel
-      //The job is not technically running, but should be in a moment
+      case s if checkDuringDeployForNotRunningJob(s)         => SimpleStateStatus.DuringDeploy
+      case JobStatus.FINISHED                                => SimpleStateStatus.Finished
+      case JobStatus.RESTARTING                              => SimpleStateStatus.Restarting
+      case JobStatus.CANCELED                                => SimpleStateStatus.Canceled
+      case JobStatus.CANCELLING                              => SimpleStateStatus.DuringCancel
+      // The job is not technically running, but should be in a moment
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleStateStatus.Running
       case JobStatus.FAILING => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
-      case JobStatus.FAILED => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
-      case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
+      case JobStatus.FAILED  => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
+      case _ =>
+        throw new IllegalStateException() // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
 
   }
@@ -84,31 +94,51 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     overview.tasks.running + overview.tasks.finished == overview.tasks.total
   }
 
-  // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
+  // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
   protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
     // Flink return running status even if some tasks are scheduled or initializing
     s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }
 
-  override protected def waitForDuringDeployFinished(processName: ProcessName, deploymentId: ExternalDeploymentId): Future[Unit] = {
-    config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
-      retry.Pause(config.maxChecks, config.delay).apply {
-        getFreshProcessStates(processName).map { statuses =>
-          statuses.find(details => details.externalDeploymentId.contains(deploymentId) && details.status == SimpleStateStatus.DuringDeploy).map(Left(_)).getOrElse(Right(()))
-        }
-      }.map(_.getOrElse(throw new IllegalStateException("Deploy execution finished, but job is still in during deploy state on Flink")))
-    }.getOrElse(Future.successful(()))
+  override protected def waitForDuringDeployFinished(
+      processName: ProcessName,
+      deploymentId: ExternalDeploymentId
+  ): Future[Unit] = {
+    config.waitForDuringDeployFinish.toEnabledConfig
+      .map { config =>
+        retry
+          .Pause(config.maxChecks, config.delay)
+          .apply {
+            getFreshProcessStates(processName).map { statuses =>
+              statuses
+                .find(details =>
+                  details.externalDeploymentId
+                    .contains(deploymentId) && details.status == SimpleStateStatus.DuringDeploy
+                )
+                .map(Left(_))
+                .getOrElse(Right(()))
+            }
+          }
+          .map(
+            _.getOrElse(
+              throw new IllegalStateException(
+                "Deploy execution finished, but job is still in during deploy state on Flink"
+              )
+            )
+          )
+      }
+      .getOrElse(Future.successful(()))
   }
 
-  //TODO: cache by jobId?
+  // TODO: cache by jobId?
   private def withJobDetails(jobId: String, name: ProcessName): Future[Option[JobDetails]] = {
     client.getJobConfig(jobId).map { executionConfig =>
       val userConfig = executionConfig.`user-config`
       for {
         version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
-        user <- userConfig.get("user").map(_.asString.getOrElse(""))
+        user    <- userConfig.get("user").map(_.asString.getOrElse(""))
         modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-        processId = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
+        processId    = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
         deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
       } yield {
         val versionDetails = ProcessVersion(version, name, processId, user, modelVersion)
@@ -118,48 +148,88 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
-    def doCancel(details: StatusDetails) = {
-      cancel(details.externalDeploymentId.getOrElse(throw new IllegalStateException("Error during cancelling scenario: returned status details has no external deployment id")))
+    getFreshProcessStates(processName).flatMap { statuses =>
+      cancelEachMatchingJob(processName, None, statuses)
     }
+  }
 
-    getFreshProcessStates(processName).map { statuses =>
-      statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
-        case Nil =>
-          logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink.")
-          Future.successful(())
-        case single :: Nil => doCancel(single)
-        case moreThanOne@(_ :: _ :: _) =>
-          logger.warn(s"Found duplicate jobs of ${processName.value}: $moreThanOne. Cancelling all in non terminal state.")
-          Future.sequence(moreThanOne.map(doCancel)).map(_=> ())
-      }
+  override def cancel(processName: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+    getFreshProcessStates(processName).flatMap { statuses =>
+      cancelEachMatchingJob(processName, Some(deploymentId), statuses.filter(_.deploymentId.contains(deploymentId)))
     }
+  }
+
+  private def cancelEachMatchingJob(
+      processName: ProcessName,
+      deploymentId: Option[DeploymentId],
+      statuses: List[StatusDetails]
+  ) = {
+    statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
+      case Nil =>
+        logger.warn(
+          s"Trying to cancel ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink."
+        )
+        Future.successful(())
+      case single :: Nil => cancelJob(single)
+      case moreThanOne @ (_ :: _ :: _) =>
+        logger.warn(
+          s"Found duplicate jobs of ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state."
+        )
+        Future.sequence(moreThanOne.map(cancelJob)).map(_ => ())
+    }
+  }
+
+  private def cancelJob(details: StatusDetails) = {
+    cancel(
+      details.externalDeploymentId.getOrElse(
+        throw new IllegalStateException(
+          "Error during cancelling scenario: returned status details has no external deployment id"
+        )
+      )
+    )
   }
 
   override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     client.cancel(deploymentId)
   }
 
-  override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def makeSavepoint(
+      deploymentId: ExternalDeploymentId,
+      savepointDir: Option[String]
+  ): Future[SavepointResult] = {
     client.makeSavepoint(deploymentId, savepointDir)
   }
 
-  override protected def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override protected def stop(
+      deploymentId: ExternalDeploymentId,
+      savepointDir: Option[String]
+  ): Future[SavepointResult] = {
     client.stop(deploymentId, savepointDir)
   }
 
-  override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override protected def runProgram(
+      processName: ProcessName,
+      mainClass: String,
+      args: List[String],
+      savepointPath: Option[String]
+  ): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 
-  override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  override protected def checkRequiredSlotsExceedAvailableSlots(
+      canonicalProcess: CanonicalProcess,
+      currentlyDeployedJobsIds: List[ExternalDeploymentId]
+  ): Future[Unit] = {
     if (config.shouldCheckAvailableSlots) {
-      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobId)
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobsIds)
     } else
       Future.successful(())
   }
 
-  override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+  override def close(): Unit = {
+    logger.info("Closing Flink REST manager")
+  }
 
 }
 

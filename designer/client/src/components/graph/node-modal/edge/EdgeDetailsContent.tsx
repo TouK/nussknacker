@@ -3,6 +3,7 @@ import { Edge, EdgeKind, EdgeType } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
+import { NodeLabelStyled } from "../node";
 
 interface Props {
     edge: Edge;
@@ -19,7 +20,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
     const { edge, edgeErrors, readOnly, changeEdgeTypeCondition, showValidation, showSwitch, changeEdgeTypeValue, variableTypes } = props;
 
     const [isMarked] = useDiffMark();
-    const renderFieldLabel = useCallback((label) => <div className="node-label">{label}</div>, []);
+    const renderFieldLabel = useCallback((label) => <NodeLabelStyled>{label}</NodeLabelStyled>, []);
 
     switch (edge.edgeType?.type) {
         case EdgeKind.switchDefault: {

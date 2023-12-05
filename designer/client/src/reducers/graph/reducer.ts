@@ -1,8 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, isEqual, pick, sortBy, uniq, xor, zipObject } from "lodash";
-import undoable, { combineFilters, excludeAction } from "redux-undo";
-import { Reducer } from "../../actions/reduxTypes";
-import * as GraphUtils from "../../components/graph/GraphUtils";
+import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
+import { Action, Reducer } from "../../actions/reduxTypes";
+import * as GraphUtils from "../../components/graph/utils/graphUtils";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";
@@ -16,9 +16,12 @@ import {
     updateAfterNodeDelete,
     updateAfterNodeIdChange,
 } from "./utils";
-import { Edge, ValidationResult } from "../../types";
+import { ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
+import { NestedKeyOf } from "./nestedKeyOf";
+import ProcessUtils from "../../common/ProcessUtils";
+import { correctFetchedDetails } from "./correctFetchedDetails";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -40,7 +43,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...state.processToDisplay.validationResult.nodeResults,
+            ...ProcessUtils.getValidationResult(state.processToDisplay).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
@@ -88,6 +91,24 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 fetchedProcessDetails,
                 graphLoading: false,
                 layout: LayoutUtils.fromMeta(processToDisplay),
+            };
+        }
+        case "CORRECT_INVALID_SCENARIO": {
+            const fetchedProcessDetails = correctFetchedDetails(state.fetchedProcessDetails, action.processDefinitionData);
+            const processToDisplay = fetchedProcessDetails.json;
+            return {
+                ...state,
+                processToDisplay,
+                fetchedProcessDetails,
+            };
+        }
+        case "ARCHIVED": {
+            return {
+                ...state,
+                fetchedProcessDetails: {
+                    ...state.fetchedProcessDetails,
+                    isArchived: true,
+                },
             };
         }
         case "PROCESS_VERSIONS_LOADED": {
@@ -141,37 +162,25 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             }, state);
         }
         case "NODES_CONNECTED": {
-            let newEdges: Edge[];
+            const currentEdges = NodeUtils.edgesFromProcess(state.processToDisplay);
+            const newEdge = NodeUtils.getEdgeForConnection({
+                fromNode: action.fromNode,
+                toNode: action.toNode,
+                edgeType: action.edgeType,
+                processDefinition: action.processDefinitionData,
+                process: state.processToDisplay,
+            });
 
-            const availableEdges = NodeUtils.edgesForNode(action.fromNode, action.processDefinitionData).edges;
-            const freeOutputEdges = state.processToDisplay.edges
-                .filter((e) => e.from === action.fromNode.id && !e.to)
-                //we do this to skip e.g. edges that became incorrect/unavailable
-                .filter((e) =>
-                    availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
-                );
-
-            const freeOutputEdge =
-                freeOutputEdges.find((e) => e.edgeType === action.edgeType) || (freeOutputEdges.length == 0 ? null : freeOutputEdges[0]);
-            if (freeOutputEdge) {
-                newEdges = state.processToDisplay.edges.map((e) =>
-                    e === freeOutputEdge
-                        ? {
-                              ...freeOutputEdge,
-                              to: action.toNode.id,
-                          }
-                        : e,
-                );
-            } else {
-                const edge = createEdge(
-                    action.fromNode,
-                    action.toNode,
-                    action.edgeType,
-                    state.processToDisplay.edges,
-                    action.processDefinitionData,
-                );
-                newEdges = concat(state.processToDisplay.edges, edge);
-            }
+            const newEdges = currentEdges.includes(newEdge)
+                ? currentEdges.map((edge) =>
+                      edge === newEdge
+                          ? {
+                                ...newEdge,
+                                to: action.toNode.id,
+                            }
+                          : edge,
+                  )
+                : concat(currentEdges, newEdge);
 
             return {
                 ...state,
@@ -224,7 +233,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
                 const fromNode = nodes.find((n) => n.id === edge.from);
                 const toNode = nodes.find((n) => n.id === edge.to);
-                const newEdge = createEdge(fromNode, toNode, edge.edgeType, edges, action.processDefinitionData);
+                const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
+                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
                 return edges.concat(newEdge);
             }, state.processToDisplay.edges);
 
@@ -297,42 +307,49 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 };
 
-const reducer = mergeReducers(graphReducer, {
+const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     processToDisplay: {
         nodes,
     },
 });
 
-const undoableReducer = undoable(reducer, {
+const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
+const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
+
+const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
+const omitKeys: NestedKeyOf<GraphState>[] = [
+    "fetchedProcessDetails.json.validationResult",
+    "fetchedProcessDetails.lastDeployedAction",
+    "fetchedProcessDetails.lastAction",
+    "fetchedProcessDetails.history",
+];
+
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["processToDisplay.validationResult"]));
+const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
+
+const undoableReducer = undoable<GraphState, Action>(reducer, {
     ignoreInitialState: true,
-    undoType: "UNDO",
-    redoType: "REDO",
-    clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
+    clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
-    filter: combineFilters(
-        excludeAction([
-            "VALIDATION_RESULT",
-            "DISPLAY_PROCESS",
-            "UPDATE_IMPORTED_PROCESS",
-            "PROCESS_STATE_LOADED",
-            "UPDATE_TEST_CAPABILITIES",
-            "UPDATE_BACKEND_NOTIFICATIONS",
-        ]),
-        (action, nextState, prevState) => {
-            const keys: Array<keyof GraphState> = [
-                "fetchedProcessDetails",
-                "processToDisplay",
-                "unsavedNewName",
-                "layout",
-                "selectionState",
-            ];
-            return !isEqual(pick(nextState, keys), pick(prevState._latestUnfiltered, keys));
-        },
-    ),
+    filter: combineFilters((action, nextState, prevState) => {
+        return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
+    }, excludeAction(["VALIDATION_RESULT", "DISPLAY_PROCESS", "UPDATE_IMPORTED_PROCESS", "PROCESS_STATE_LOADED", "UPDATE_TEST_CAPABILITIES", "UPDATE_BACKEND_NOTIFICATIONS", "PROCESS_DEFINITION_DATA", "PROCESS_TOOLBARS_CONFIGURATION_LOADED", "CORRECT_INVALID_SCENARIO", "DISPLAY_PROCESS_ACTIVITY", "LOGGED_USER", "REGISTER_TOOLBARS", "UI_SETTINGS"])),
 });
 
-//TODO: replace this with use of selectors everywhere
-export function reducerWithUndo(state, action) {
-    const history = undoableReducer(state?.history, action);
-    return { ...history.present, history };
+// apply only undoable changes for undo actions
+function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action): StateWithHistory<GraphState> {
+    const nextState = undoableReducer(state, action);
+
+    if (Object.values(UndoActionTypes).includes(action.type)) {
+        const present = defaultsDeep(getUndoableState(nextState.present), getNonUndoableState(state?.present));
+        return { ...nextState, present };
+    }
+
+    return nextState;
 }
+
+//TODO: replace this with use of selectors everywhere
+export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
+    const history = fixUndoableHistory(state?.history, action);
+    return { ...history.present, history };
+};

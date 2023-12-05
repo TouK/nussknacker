@@ -7,7 +7,13 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
+import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.{
+  ResultsCollectingListener,
+  ResultsCollectingListenerHolder,
+  TestServiceInvocationCollector
+}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
 import scala.reflect.ClassTag
 
@@ -25,14 +31,14 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult[R] = ValidatedNel[ProcessCompilationError, RunResult[R]]
+  type RunnerResult[R]     = ValidatedNel[ProcessCompilationError, RunResult[R]]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
   // Maybe we should replace ids with more meaningful: test-data, rest-result?
   val testDataSource = "source"
-  val noopSource = "noopSource"
+  val noopSource     = "noopSource"
   // Maybe we should unify those two test result nodes?
-  val testResultSink = "sink"
+  val testResultSink    = "sink"
   val testResultService = "invocationCollector"
 
   def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
@@ -50,15 +56,41 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
   def withExtraComponents(components: List[ComponentDefinition]): B
 
+  def withExtraGlobalVariables(globalVariables: Map[String, AnyRef]): B
+
   def inTestRuntimeMode: B
 
   def build(): R
 
 }
 
+object TestScenarioCollectorHandler {
+
+  def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
+
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
+      new TestServiceInvocationCollector(resultsCollectingListener.runId)
+    } else {
+      ProductionServiceInvocationCollector
+    }
+
+    new TestScenarioCollectorHandler(resultCollector, resultsCollectingListener)
+  }
+
+  final class TestScenarioCollectorHandler(
+      val resultCollector: ResultCollector,
+      val resultsCollectingListener: ResultsCollectingListener
+  ) extends AutoCloseable {
+    def close(): Unit = resultsCollectingListener.close()
+  }
+
+}
+
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
-  //todo add generate test data support
-  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
+  // TODO: add generate test data support
+  def runWithData[T: ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
 }
 
 object RunResult {

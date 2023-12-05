@@ -1,6 +1,94 @@
 # Changelog
 
-1.11.0 (Not released yet)
+1.13.0 (Not released yet)
+-------------------------
+* [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
+* [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
+* [#4828](https://github.com/TouK/nussknacker/pull/4828) Improvement: Allow passing timestampAssigner at FlinkTestScenarioRunner
+* [#4839](https://github.com/TouK/nussknacker/pull/4839) Fixed: Fragment migration to secondary env is again available
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+  * Run runner with proper prepared invocation collector for test mode
+  * Fix passing global variables on LiteTestScenarioRunner and RequestResponseTestScenarioRunner
+  * Add missing tests for passing global variables
+  * Fix bug with passing components on RequestResponseTestScenarioRunner
+  * Fix bug building source test context on LiteTestScenarioRunner
+* [#4854](https://github.com/TouK/nussknacker/pull/4854)[#5059](https://github.com/TouK/nussknacker/pull/5059) Categories configuration redesign
+* [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner
+* [#4923](https://github.com/TouK/nussknacker/pull/4923) Fix non-unique test case ids when testing scenario with union
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Improvement: Stricter Node and scenario id validation
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) Breaking change: `Validator.isValid` method now takes expression
+  and optional evaluated value, instead of just expression. Also:
+  * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`, 
+  * `LiteralNumberValidator` is removed,
+  * `LiteralIntegerValidator` is considered deprecated and will be removed in the future.
+  * new validator: `CompileTimeEvaluableValueValidator` that checks if value is valid at compile time and it should be used instead of literal validators
+  * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Updated Scala 2.13 to 2.13.12
+* [#4887](https://github.com/TouK/nussknacker/pull/4887) New parameter validator - `ValidationExpressionParameterValidator` that allows to use SpEL (or any other) expression to validate parameters
+* [#5077](https://github.com/TouK/nussknacker/pull/5077) Add an option to set schema on connections in SQL enricher
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) [#5103](https://github.com/TouK/nussknacker/pull/5103) Breaking change: Scenario type to Category mapping become 1-to-1 instead of 1-to-many.
+* [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
+* [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
+* [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
+
+1.12.5 (1 Dec 2023)
+------------------------
+* [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
+
+1.12.4 (14 Nov 2023)
+------------------------
+* [#4992](https://github.com/TouK/nussknacker/pull/4992) Fix: List of periodic deployments is now sorted not only by schedule time but also by its creation time.
+
+1.12.3 (26 Oct 2023)
+-------------------------
+[this version was skipped]
+
+1.12.2 (25 Oct 2023)
+-------------------------
+[this version was skipped]
+
+1.12.1 (25 Oct 2023)
+-------------------------
+* [#4885](https://github.com/TouK/nussknacker/pull/4885) Fix: Synchronize embedded engine deployments after designer restart
+
+1.12.0 (6 Oct 2023)
+-------------------------
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
+* [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SpEL string literal conversions (allow only constant that convert successfully)
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+* [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
+* [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
+* [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
+* [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
+* [#4572](https://github.com/TouK/nussknacker/pull/4572) The package of improvements:
+    - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
+    - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
+    - allow passing classLoader at `ResourceLoader.load`
+* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+* [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
+* [#4739](https://github.com/TouK/nussknacker/pull/4739) Add configuration parameter for sending additional headers to InfluxDB (`countsSettings.additionalHeaders`)
+* [#4762](https://github.com/TouK/nussknacker/pull/4762) Fix: RegExpParameterValidator, trimming SPeL comprehension
+* [#4744](https://github.com/TouK/nussknacker/pull/4744) Fix for OIDC: support for simultaneously Machine-2-Machine and Basic flow handling: 
+  * Skip user profile call based on the fact that access token is JWT with subject and user has username configured. 
+  * `accessTokenIsJwt` Oidc configuration introduced in [#4283](https://github.com/TouK/nussknacker/pull/4283) is removed: `audience` configuration specifies that access token is a JWT as it was before this change
+* [#4797](https://github.com/TouK/nussknacker/pull/4797) Ability to define the name of query parameter with access token that will be passed into tabs url
+* [#4804](https://github.com/TouK/nussknacker/pull/4804) Improvement: Allow passing globalVariables on TestRunner
+
+1.11.3 (11 Sep 2023)
+-------------------------
+* [#4629](https://github.com/TouK/nussknacker/pull/4629) Fix closing of shared SttpBackend when reloading model
+
+1.11.1 (25 Aug 2023)
+-------------------------
+* [#4603](https://github.com/TouK/nussknacker/pull/4603) Fix subprocess -> fragment migration
+
+1.11.0 (22 Aug 2023)
 -------------------------
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,

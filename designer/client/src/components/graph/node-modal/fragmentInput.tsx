@@ -4,24 +4,12 @@ import React, { useCallback } from "react";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
 import { DisableField } from "./DisableField";
-import ParameterList from "./ParameterList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
-import { InputWithFocus } from "../../withFocus";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
+import { useParametersList } from "./useParametersList";
 
-export function FragmentInput({
-    fieldErrors,
-    findAvailableVariables,
-    isEditMode,
-    node,
-    parameterDefinitions,
-    processDefinitionData,
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    showValidation,
-}: {
+interface FragmentInput {
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
@@ -32,8 +20,24 @@ export function FragmentInput({
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
+}
+
+export function FragmentInput(props: FragmentInput): JSX.Element {
+    const {
+        fieldErrors,
+        findAvailableVariables,
+        isEditMode,
+        node,
+        parameterDefinitions,
+        processDefinitionData,
+        renderFieldLabel,
+        setProperty,
+        showSwitch,
+        showValidation,
+    } = props;
     const setNodeState = useCallback((newParams) => setProperty("ref.parameters", newParams), [setProperty]);
+    const parameters = useParametersList(node, processDefinitionData, isEditMode, setNodeState);
+
     return (
         <NodeTableBody>
             <IdField
@@ -42,6 +46,7 @@ export function FragmentInput({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <DisableField
                 node={node}
@@ -50,37 +55,22 @@ export function FragmentInput({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
             />
-            <ParameterList
-                processDefinitionData={processDefinitionData}
-                editedNode={node}
-                savedNode={node}
-                setNodeState={setNodeState}
-                createListField={(param, index) => {
-                    return (
-                        <ParameterExpressionField
-                            showSwitch={showSwitch}
-                            findAvailableVariables={findAvailableVariables}
-                            parameterDefinitions={parameterDefinitions}
-                            fieldErrors={fieldErrors}
-                            node={node}
-                            isEditMode={isEditMode}
-                            showValidation={showValidation}
-                            renderFieldLabel={renderFieldLabel}
-                            setProperty={setProperty}
-                            parameter={param}
-                            listFieldPath={`ref.parameters[${index}]`}
-                        />
-                    );
-                }}
-                createReadOnlyField={(params) => (
-                    <div className="node-row">
-                        {renderFieldLabel(params.name)}
-                        <div className="node-value">
-                            <InputWithFocus type="text" className="node-input" value={params.expression.expression} disabled={true} />
-                        </div>
-                    </div>
-                )}
-            />
+            {parameters.map((param, index) => (
+                <ParameterExpressionField
+                    key={`${param.name}-${index}`}
+                    showSwitch={showSwitch}
+                    findAvailableVariables={findAvailableVariables}
+                    parameterDefinitions={parameterDefinitions}
+                    fieldErrors={fieldErrors}
+                    node={node}
+                    isEditMode={isEditMode}
+                    showValidation={showValidation}
+                    renderFieldLabel={renderFieldLabel}
+                    setProperty={setProperty}
+                    parameter={param}
+                    listFieldPath={`ref.parameters[${index}]`}
+                />
+            ))}
             <OutputParametersList
                 editedNode={node}
                 fieldErrors={fieldErrors}

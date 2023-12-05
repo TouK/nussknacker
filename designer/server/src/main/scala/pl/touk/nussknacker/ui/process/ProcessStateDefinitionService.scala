@@ -5,23 +5,31 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 
-class ProcessStateDefinitionService(processingTypeDataProvider: ProcessingTypeDataProvider[_, StatusNameToStateDefinitionsMapping],
-                                    categoryService: ProcessCategoryService) {
+class ProcessStateDefinitionService(
+    processingTypeDataProvider: ProcessingTypeDataProvider[
+      _,
+      (StatusNameToStateDefinitionsMapping, ProcessCategoryService)
+    ],
+) {
 
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val userAccessibleCategories = categoryService.getUserCategories(user)
-    processingTypeDataProvider.combined
+    val (stateDefinitionsMapping, categoryService) = processingTypeDataProvider.combined
+    val userCategoryService                        = new UserCategoryService(categoryService)
+    val userAccessibleCategories                   = userCategoryService.getUserCategories(user)
+    stateDefinitionsMapping
       .map { case (statusName, (stateDefinition, processingTypes)) =>
         val categoriesWhereStateAppears = processingTypes.flatMap { processingType =>
-          categoryService
-            .getProcessingTypeCategories(processingType)
+          List(
+            categoryService
+              .getProcessingTypeCategoryUnsafe(processingType)
+          )
             .intersect(userAccessibleCategories)
         }
         // TODO: Here we switch icon to non-animated version, in rather not sophisticated manner. We should be able to handle
@@ -37,6 +45,7 @@ class ProcessStateDefinitionService(processingTypeDataProvider: ProcessingTypeDa
       .filter(_.categories.nonEmpty)
       .toList
   }
+
 }
 
 object ProcessStateDefinitionService {
@@ -48,7 +57,9 @@ object ProcessStateDefinitionService {
     * states with the same StatusName and different UI configurations (displayable name and icon). Here is an assertion
     * that this does not happen and each state has the same definition across all processingTypes.
     */
-  def createDefinitionsMappingUnsafe(processingTypes: Map[ProcessingType, ProcessingTypeData]): StatusNameToStateDefinitionsMapping = {
+  def createDefinitionsMappingUnsafe(
+      processingTypes: Map[ProcessingType, ProcessingTypeData]
+  ): StatusNameToStateDefinitionsMapping = {
     import cats.instances.list._
     import cats.syntax.alternative._
 
@@ -56,27 +67,32 @@ object ProcessStateDefinitionService {
       .groupBy { case (_, statusName, _) => statusName }
       .map { case (statusName, stateDefinitionsForOneStatusName) =>
         validateStateDefinitions(stateDefinitionsForOneStatusName)
-          .map(_ => statusName -> (stateDefinitionsForOneStatusName.head._3, stateDefinitionsForOneStatusName.map(_._1)))
+          .map(_ =>
+            statusName -> (stateDefinitionsForOneStatusName.head._3, stateDefinitionsForOneStatusName.map(_._1))
+          )
       }
       .toList
       .separate
     if (namesWithNonUniqueDefinitions.nonEmpty) {
-      throw new IllegalStateException(s"State definitions are not unique for states: ${namesWithNonUniqueDefinitions.mkString(", ")}")
+      throw new IllegalStateException(
+        s"State definitions are not unique for states: ${namesWithNonUniqueDefinitions.mkString(", ")}"
+      )
     }
     validDefinitions.toMap
   }
 
-  private def processingTypeStateDefinitions(processingTypes: Map[ProcessingType, ProcessingTypeData]): List[(ProcessingType, StatusName, StateDefinitionDetails)] = {
+  private def processingTypeStateDefinitions(
+      processingTypes: Map[ProcessingType, ProcessingTypeData]
+  ): List[(ProcessingType, StatusName, StateDefinitionDetails)] = {
     processingTypes.toList.flatMap { case (processingType, processingTypeData) =>
-      processingTypeData
-        .deploymentManager
-        .processStateDefinitionManager
-        .stateDefinitions
+      processingTypeData.deploymentManager.processStateDefinitionManager.stateDefinitions
         .map { case (name, sd) => (processingType, name, sd) }
     }
   }
 
-  private def validateStateDefinitions(stateDefinitionsForOneStatusName: List[(ProcessingType, StatusName, StateDefinitionDetails)]): Validated[StatusName, Unit] = {
+  private def validateStateDefinitions(
+      stateDefinitionsForOneStatusName: List[(ProcessingType, StatusName, StateDefinitionDetails)]
+  ): Validated[StatusName, Unit] = {
     val uniqueDefinitionsForName = stateDefinitionsForOneStatusName
       .groupBy { case (_, _, sd) => (sd.displayableName, sd.icon) }
     Validated.cond(uniqueDefinitionsForName.size == 1, (), stateDefinitionsForOneStatusName.head._2)
@@ -84,8 +100,10 @@ object ProcessStateDefinitionService {
 
 }
 
-@JsonCodec case class UIStateDefinition(name: StatusName,
-                                        displayableName: String,
-                                        icon: URI,
-                                        tooltip: String,
-                                        categories: List[String])
+@JsonCodec final case class UIStateDefinition(
+    name: StatusName,
+    displayableName: String,
+    icon: URI,
+    tooltip: String,
+    categories: List[String]
+)

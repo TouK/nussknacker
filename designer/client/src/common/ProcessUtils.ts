@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform } from "lodash";
 import {
-    GlobalVariables,
     NodeId,
     NodeObjectTypeDefinition,
     NodeResults,
@@ -14,31 +13,41 @@ import {
     ValidationResult,
     VariableTypes,
 } from "../types";
+import { RootState } from "../reducers";
+import { isProcessRenamed } from "../reducers/selectors/graph";
 
 class ProcessUtils {
-    nothingToSave = (state): boolean => {
+    nothingToSave = (state: RootState): boolean => {
         const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
         const processToDisplay = state.graphReducer.processToDisplay;
         //TODO: validationResult should be removed from processToDisplay...
-        const omitValidation = (details) => omit(details, ["validationResult"]);
-        return !isEmpty(fetchedProcessDetails)
-            ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay))
-            : true;
+        const omitValidation = (details: Process) => omit(details, ["validationResult"]);
+        const processRenamed = isProcessRenamed(state);
+
+        if (processRenamed) {
+            return false;
+        }
+
+        if (isEmpty(fetchedProcessDetails)) {
+            return true;
+        }
+
+        return isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay));
     };
 
-    canExport = (state): boolean => {
+    canExport = (state: RootState): boolean => {
         const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails;
         return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes);
     };
 
     //fixme maybe return hasErrors flag from backend?
-    hasNeitherErrorsNorWarnings = (process) => {
+    hasNeitherErrorsNorWarnings = (process: Process) => {
         return this.hasNoErrors(process) && this.hasNoWarnings(process);
     };
 
-    extractInvalidNodes = (invalidNodes) => {
+    extractInvalidNodes = (invalidNodes: Pick<ValidationResult, "warnings">) => {
         return flatten(
-            Object.keys(invalidNodes || {}).map((key, idx) =>
+            Object.keys(invalidNodes || {}).map((key, _) =>
                 invalidNodes[key].map((error) => {
                     return { error: error, key: key };
                 }),
@@ -46,7 +55,7 @@ class ProcessUtils {
         );
     };
 
-    hasNoErrors = (process) => {
+    hasNoErrors = (process: Process) => {
         const result = this.getValidationErrors(process);
         return (
             !result ||
@@ -56,28 +65,27 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (process: Process): ValidationResult => process?.validationResult;
+    getValidationResult = (process: Process): ValidationResult =>
+        process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
-    hasNoWarnings = (process) => {
-        const warnings = this.getValidationResult(process)?.warnings;
+    hasNoWarnings = (process: Process) => {
+        const warnings = this.getValidationResult(process).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
-    hasNoPropertiesErrors = (process) => {
+    hasNoPropertiesErrors = (process: Process) => {
         return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors);
     };
 
-    getValidationErrors(process) {
-        return this.getValidationResult(process)?.errors;
+    getValidationErrors(process: Process) {
+        return this.getValidationResult(process).errors;
     }
 
-    //see BranchEndDefinition.artificialNodeId
-    findContextForBranch = (node, branchId) => {
+    findContextForBranch = (node: NodeType, branchId: string) => {
         return `$edge-${branchId}-${node.id}`;
     };
 
-    //see BranchEndDefinition.artificialNodeId
-    findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
+    findVariablesForBranches = (nodeResults: NodeResults) => (nodeId: NodeId) => {
         //we find all nodes matching pattern encoding branch and edge and extract branch id
         const escapedNodeId = this.escapeNodeIdForRegexp(nodeId);
         return transform(
@@ -92,45 +100,21 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process)?.nodeResults;
+    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
-    escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-
-    //It's not pretty but works.. This should be done at backend with properly category hierarchy
-    _findGlobalVariablesWithMismatchCategory = (globalVariables: GlobalVariables, processCategory: string) => {
-        return keys(pickBy(globalVariables, (variable) => variable.categories.indexOf(processCategory) === -1));
-    };
-
-    //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
-    _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
-        const filteredGlobalVariables = pickBy(processDefinition.globalVariables, (variable) => variable.returnType !== null);
-        const globalVariables = mapValues(filteredGlobalVariables, (v) => {
-            return v.returnType;
-        });
-        const variablesDefinedBeforeNode = this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
-        return {
-            ...globalVariables,
-            ...variablesDefinedBeforeNode,
-        };
-    };
+    escapeNodeIdForRegexp = (id: string) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 
     findAvailableVariables =
-        (processDefinition: ProcessDefinition, processCategory: string, process: Process) =>
+        (processDefinition: ProcessDefinition, process: Process) =>
         (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
             const nodeResults = this.getNodeResults(process);
             const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId);
-            const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition);
+            const variablesForNode = variablesFromValidation || this._findVariablesDeclaredBeforeNode(nodeId, process, processDefinition);
             const variablesToHideForParam = parameterDefinition?.variablesToHide || [];
             const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key));
             const additionalVariablesForParam = parameterDefinition?.additionalVariables || {};
-            const variables = { ...withoutVariablesToHide, ...additionalVariablesForParam };
-            //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
-            const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(
-                processDefinition.globalVariables,
-                processCategory,
-            );
-            return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1);
+            return { ...withoutVariablesToHide, ...additionalVariablesForParam };
         };
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
@@ -187,37 +171,34 @@ class ProcessUtils {
         }
     };
 
-    //TODO: this should be done without these switches..
     findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
-        if (node) {
-            const nodeDefinitionId = this.findNodeDefinitionId(node);
-            switch (node.type) {
-                case "Source": {
-                    return processDefinition.sourceFactories?.[nodeDefinitionId];
-                }
-                case "Sink": {
-                    return processDefinition.sinkFactories?.[nodeDefinitionId];
-                }
-                case "Enricher":
-                case "Processor": {
-                    return processDefinition.services?.[nodeDefinitionId];
-                }
-                case "Join":
-                case "CustomNode": {
-                    return processDefinition.customStreamTransformers?.[nodeDefinitionId];
-                }
-                case "FragmentInput": {
-                    return processDefinition.fragmentInputs?.[nodeDefinitionId];
-                }
-            }
-        }
-        return {
+        const foundDefinition = this.findDefinitionsForType(processDefinition, node)?.[this.findNodeDefinitionId(node)];
+        const emptyDefinition = {
             parameters: null,
             returnType: null,
         };
+        return foundDefinition || emptyDefinition;
     };
 
-    //TODO: this should be done without these switches..
+    private findDefinitionsForType = (processDefinition: ProcessDefinition, node?: NodeType): Record<string, NodeObjectTypeDefinition> => {
+        switch (node?.type) {
+            case "Source":
+                return processDefinition.sourceFactories;
+            case "Sink":
+                return processDefinition.sinkFactories;
+            case "Enricher":
+            case "Processor":
+                return processDefinition.services;
+            case "Join":
+            case "CustomNode":
+                return processDefinition.customStreamTransformers;
+            case "FragmentInput":
+                return processDefinition.fragmentInputs;
+            default:
+                return {};
+        }
+    };
+
     findNodeDefinitionId = (node: NodeType): string | null => {
         switch (node?.type) {
             case "Source":
@@ -236,7 +217,7 @@ class ProcessUtils {
                 return node.nodeType;
             }
             case "VariableBuilder": {
-                //todo remove when VariableBuilder will be removed
+                //TODO: remove when VariableBuilder will be removed
                 return "mapVariable";
             }
             default: {
@@ -245,11 +226,11 @@ class ProcessUtils {
         }
     };
 
-    findNodeDefinitionIdOrType = (node) => this.findNodeDefinitionId(node) || node.type || null;
+    findNodeDefinitionIdOrType = (node: NodeType) => this.findNodeDefinitionId(node) || node.type || null;
 
-    getNodeBaseTypeCamelCase = (node) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
+    getNodeBaseTypeCamelCase = (node: NodeType) => node.type && node.type.charAt(0).toLowerCase() + node.type.slice(1);
 
-    findNodeConfigName = (node): string => {
+    findNodeConfigName = (node: NodeType): string => {
         // First we try to find id of node (config for specific custom node by id).
         // If it is falsy then we try to extract config name from node type (config for build-in components e.g. variable, join).
         // If all above are falsy then it means that node is special process properties node without id and type.
@@ -268,6 +249,7 @@ class ProcessUtils {
         }
     };
 
+    //Remove if it doesn't use
     prepareFilterCategories = (categories, loggedUser) =>
         map(
             (categories || []).filter((c) => loggedUser.canRead(c)),

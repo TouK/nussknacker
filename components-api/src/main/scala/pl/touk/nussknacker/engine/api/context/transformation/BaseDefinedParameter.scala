@@ -25,14 +25,19 @@ sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
 }
 
-case class DefinedLazyParameter(expression: TypedExpression) extends DefinedSingleParameter with ValidDefinedSingleParameter
-case class DefinedEagerParameter(value: Any, expression: TypedExpression) extends DefinedSingleParameter with ValidDefinedSingleParameter
+case class DefinedLazyParameter(expression: TypedExpression)
+    extends DefinedSingleParameter
+    with ValidDefinedSingleParameter
+
+case class DefinedEagerParameter(value: Any, expression: TypedExpression)
+    extends DefinedSingleParameter
+    with ValidDefinedSingleParameter
 
 case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
-case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypedExpression])
+    extends DefinedBranchParameter
 
 //TODO: and for branch parameters??
 case object FailedToDefineParameter extends DefinedSingleParameter {
   override val returnType: TypingResult = Unknown
 }
-

@@ -1,20 +1,22 @@
 import React from "react";
-import { ProcessAttachments } from "../src/components/ProcessAttachments"; //import redux-independent component
+import { ProcessAttachments } from "../src/components/processAttach/ProcessAttachments"; //import redux-independent component
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import { Provider } from "react-redux";
 import * as selectors from "../src/reducers/selectors/other";
-import { render, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore([thunk]);
 
-jest.mock("../src/containers/theme");
 jest.spyOn(selectors, "getCapabilities").mockReturnValue({ write: true });
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
         t: (key) => key,
-        i18n: { changeLanguage: () => {} },
+        i18n: {
+            changeLanguage: () => {},
+        },
     }),
 }));
 
@@ -30,14 +32,16 @@ const processAttachment = (id) => ({
 describe("ProcessAttachments suite", () => {
     it("should render with no problems", () => {
         const store = mockStore({
-            graphReducer: { fetchedProcessDetails: { name: "proc1", processVersionId: 1 } },
+            graphReducer: { history: { present: { fetchedProcessDetails: { name: "proc1", processVersionId: 1 } } } },
             processActivity: { attachments: [processAttachment(3), processAttachment(2), processAttachment(1)] },
         });
 
         const { container } = render(
-            <Provider store={store}>
-                <ProcessAttachments />
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <ProcessAttachments />
+                </Provider>
+            </NuThemeProvider>,
         );
 
         expect(container.getElementsByClassName("download-attachment").length).toBe(3);

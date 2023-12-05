@@ -16,13 +16,16 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
   test("should migrate union node 'value' parameter name to Output expression") {
 
     val process = ScenarioBuilder
-        .requestResponse("test")
-        .source("source", "request")
-        .emptySink("sink", "response")
+      .requestResponse("test")
+      .source("source", "request")
+      .emptySink("sink", "response")
 
     val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, "none")
     getFirst[Sink](results).parameters shouldBe List(Parameter("Value validation mode", "'lax'"))
   }
 
-  private def getFirst[T: ClassTag](scenario: CanonicalProcess): T = scenario.collectAllNodes.collectFirst { case t: T => t }.get
+  private def getFirst[T: ClassTag](scenario: CanonicalProcess): T = scenario.collectAllNodes.collectFirst {
+    case t: T => t
+  }.get
+
 }

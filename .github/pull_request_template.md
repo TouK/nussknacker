@@ -1,10 +1,12 @@
-<!--
-Thank you for sending the PR! We appreciate you spending the time to work on these changes.
+## Describe your changes
 
-Please make sure that you added appropriate entry in docs/Changelog.md and docs/MigrationGuide.md
-
-You can learn more about contributing to Nussknacker here: https://github.com/TouK/nussknacker/blob/staging/CONTRIBUTING.md
-
-Happy contributing!
-
--->
+## Checklist before merge
+- [ ] Related issue ID is placed at the beginning of PR title in \[brackets\] (can be GH issue or Nu Jira issue)
+- [ ] Code is cleaned from temporary changes and commented out lines
+- [ ] Parts of the code that are not easy to understand are documented in the code
+- [ ] Changes are covered by automated tests
+- [ ] Showcase in dev-application.conf added to demonstrate the feature
+- [ ] Documentation added or updated
+- [ ] Added entry in _Changelog.md_ describing the change from the perspective of a public distribution user
+- [ ] Added _MigrationGuide.md_ entry in the appropriate subcategory if introducing a breaking change
+- [ ] Verify that PR will be squashed during merge

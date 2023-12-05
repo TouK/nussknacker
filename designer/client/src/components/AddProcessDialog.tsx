@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService from "../http/HttpService";
-import "../stylesheets/visualization.styl";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm } from "./AddProcessForm";
 import { allValid, errorValidator } from "./graph/node-modal/editors/Validators";
@@ -38,7 +37,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 navigate(visualizationUrl(processId));
             } catch (error) {
                 if (error?.response?.status == 400) {
-                    //todo: change to pass error from BE as whole object not just the message
+                    //TODO: change to pass error from BE as whole object not just the message
                     setProcessNameError({ fieldName: "processName", message: error?.response?.data, description: "", typ: "" });
                 } else {
                     throw error;

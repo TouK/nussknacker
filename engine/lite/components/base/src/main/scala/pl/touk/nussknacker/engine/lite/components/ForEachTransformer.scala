@@ -14,31 +14,40 @@ import scala.language.higherKinds
 object ForEachTransformer extends CustomStreamTransformer {
 
   @MethodToInvoke(returnType = classOf[Object])
-  def invoke(@ParamName("Elements") elements: LazyParameter[java.util.Collection[Any]],
-             @OutputVariableName outputVariable: String): LiteCustomComponent = {
+  def invoke(
+      @ParamName("Elements") elements: LazyParameter[java.util.Collection[Any]],
+      @OutputVariableName outputVariable: String
+  ): LiteCustomComponent = {
     new ForEachTransformerComponent(elements, outputVariable)
   }
 
 }
 
 class ForEachTransformerComponent(elements: LazyParameter[java.util.Collection[Any]], outputVariable: String)
-  extends LiteCustomComponent with ReturningType {
+    extends LiteCustomComponent
+    with ReturningType {
 
-  final override def createTransformation[F[_]: Monad, Result](continuation: DataBatch => F[ResultType[Result]], context: CustomComponentContext[F]): DataBatch => F[ResultType[Result]] = {
+  final override def createTransformation[F[_]: Monad, Result](
+      continuation: DataBatch => F[ResultType[Result]],
+      context: CustomComponentContext[F]
+  ): DataBatch => F[ResultType[Result]] = {
     val interpreter = context.interpreter.syncInterpretationFunction(elements)
-    batch => continuation(DataBatch(batch.value.flatMap { ctx =>
-      val partsToRun = interpreter(ctx)
-      partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
-        ctx.withVariable(outputVariable, partToRun).copy(id=s"${ctx.id}-$index")
-      }
-    }))
+    batch =>
+      continuation(DataBatch(batch.value.flatMap { ctx =>
+        val partsToRun = interpreter(ctx)
+        partsToRun.asScala.toList.zipWithIndex.map { case (partToRun, index) =>
+          ctx.withVariable(outputVariable, partToRun).appendIdSuffix(index.toString)
+        }
+      }))
   }
 
   override def returnType: typing.TypingResult = {
     elements.returnType match {
-      case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.objType.params.nonEmpty =>
+      case tc: SingleTypingResult
+          if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) && tc.objType.params.nonEmpty =>
         tc.objType.params.head
       case _ => Unknown
     }
   }
+
 }

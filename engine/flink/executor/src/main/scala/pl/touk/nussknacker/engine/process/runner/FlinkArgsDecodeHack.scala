@@ -5,12 +5,12 @@ package pl.touk.nussknacker.engine.process.runner
 //@see FlinkArgsEncodeHack
 object FlinkArgsDecodeHack {
 
-  //FRH - flink replacement hack....
-  def prepareProgramArgs(list: Array[String]): Array[String] = list.map(_
-    .replace("__FRH_", "\"")
-    .replace("__FRH2_", "\n")
-    .replace("__FRH3_", "'")
-
+  // FRH - flink replacement hack....
+  def prepareProgramArgs(list: Array[String]): Array[String] = list.map(
+    _.replace("__FRH_", "\"")
+      .replace("__FRH2_", "\n")
+      .replace("__FRH3_", "'")
+      .replace("__FRH4_", "#")
   )
 
 }

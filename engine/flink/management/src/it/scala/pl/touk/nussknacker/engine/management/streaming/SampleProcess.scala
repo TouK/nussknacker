@@ -9,15 +9,17 @@ object SampleProcess {
 
   import spel.Implicits._
 
-  def prepareProcess(id: String, parallelism: Option[Int] = None) : CanonicalProcess = {
+  def prepareProcess(id: String, parallelism: Option[Int] = None): CanonicalProcess = {
     val baseProcessBuilder = ScenarioBuilder.streaming(id)
-    parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
+    parallelism
+      .map(baseProcessBuilder.parallelism)
+      .getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .filter("nightFilter", "true", endWithMessage("endNight", "Odrzucenie noc"))
       .emptySink("endSend", "sendSms", "Value" -> "'message'")
   }
 
-  def kafkaProcess(id: String, topic: String) : CanonicalProcess = {
+  def kafkaProcess(id: String, topic: String): CanonicalProcess = {
     ScenarioBuilder
       .streaming(id)
       .source("startProcess", "real-kafka", "Topic" -> s"'$topic'")

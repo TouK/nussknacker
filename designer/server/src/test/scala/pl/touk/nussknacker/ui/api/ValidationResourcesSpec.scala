@@ -9,8 +9,11 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -18,29 +21,57 @@ import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 
-class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+class ValidationResourcesSpec
+    extends AnyFlatSpec
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
-      "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-    ))
+  private val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> Map(
+        "requiredStringProperty" -> ScenarioPropertyConfig(
+          None,
+          Some(StringParameterEditor),
+          Some(List(MandatoryParameterValidator)),
+          Some("label")
+        ),
+        "numberOfThreads" -> ScenarioPropertyConfig(
+          None,
+          Some(FixedValuesParameterEditor(possibleValues)),
+          Some(List(FixedValuesValidator(possibleValues))),
+          None
+        ),
+        "maxEvents" -> ScenarioPropertyConfig(
+          None,
+          None,
+          Some(List(LiteralIntegerValidator)),
+          Some("label")
+        )
+      )
+    )
   )
 
-  private val route: Route = withPermissions(new ValidationResources(futureFetchingProcessRepository,
-    new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
+  private val route: Route = withPermissions(
+    new ValidationResources(
+      processService,
+      new UIProcessResolver(processValidator, emptyProcessingTypeDataProvider)
+    ),
+    testPermissionRead
   )
 
   it should "find errors in a bad scenario" in {
@@ -68,7 +99,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   }
 
   it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
+    createAndValidateScenario(ProcessTestData.processWithInvalidScenarioProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Configured property requiredStringProperty (label) is missing")
@@ -82,24 +113,48 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(ProcessTestData.invalidProcessWithWrongFixedExpressionValue) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include("Property expression has invalid value")
+      entity should include("Failed to parse expression")
+    }
+  }
+
+  it should "find errors in scenario id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Scenario name cannot be blank")
+    }
+  }
+
+  it should "find errors in node id" in {
+    createAndValidateScenario(ProcessTestData.validProcessWithNodeId(" ")) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("Node name cannot be blank")
     }
   }
 
   it should "return fatal error for bad ids" in {
-    val invalidCharacters = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)),
+    val invalidCharacters = newDisplayableProcess(
+      "p1",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Sink("f1\"'", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+      ),
       List(Edge("s1", "f1\"'", None))
     )
 
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Node f1\"' contains invalid characters")
+      entity should include("Node name contains invalid characters")
     }
 
-    val duplicateIds = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)),
+    val duplicateIds = newDisplayableProcess(
+      "p2",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Sink("s1", SinkRef(ProcessTestData.existingSinkFactory, List()), None)
+      ),
       List(Edge("s1", "s1", None))
     )
 
@@ -111,8 +166,12 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   }
 
   it should "find errors in scenario of bad shape" in {
-    val invalidShapeProcess = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression.spel("false"))),
+    val invalidShapeProcess = newDisplayableProcess(
+      "p1",
+      List(
+        Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        node.Filter("f1", Expression.spel("false"))
+      ),
       List(Edge("s1", "f1", None))
     )
 
@@ -140,6 +199,29 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("MissingSourceFactory")
+    }
+  }
+
+  it should "find missing mandatory parameter errors in base components" in {
+    val emptyExpression = Expression.spel("")
+
+    val process =
+      ScenarioBuilder
+        .streaming("process")
+        .source("source", ProcessTestData.existingSourceFactory)
+        .filter("filter", emptyExpression)
+        .buildSimpleVariable("variable", "varName", emptyExpression)
+        .emptySink("sink", ProcessTestData.existingSinkFactory)
+
+    createAndValidateScenario(process) {
+      status shouldEqual StatusCodes.OK
+      val validation = responseAs[ValidationResult]
+      validation.errors.invalidNodes("filter").head.message should include(
+        "This field is required and can not be null"
+      )
+      validation.errors.invalidNodes("variable").head.message should include(
+        "This field is mandatory and can not be empty"
+      )
     }
   }
 
@@ -185,4 +267,5 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       testCode
     }
   }
+
 }

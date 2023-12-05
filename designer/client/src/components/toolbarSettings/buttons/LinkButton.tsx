@@ -1,7 +1,7 @@
 import React, { ComponentType } from "react";
 import FallbackIcon from "../../../assets/img/toolbarButtons/link.svg";
 import { PlainStyleLink } from "../../../containers/plainStyleLink";
-import ToolbarButton from "../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../toolbarComponents/toolbarButtons";
 import UrlIcon from "../../UrlIcon";
 import { FallbackProps } from "react-error-boundary";
 
@@ -15,7 +15,7 @@ export interface LinkButtonProps {
 
 export function LinkButton({ url, icon, name, title, disabled }: LinkButtonProps): JSX.Element {
     return (
-        <PlainStyleLink disabled={disabled} to={url}>
+        <PlainStyleLink disabled={disabled} to={url} tabIndex={-1}>
             <ToolbarButton
                 name={name}
                 title={title || name}

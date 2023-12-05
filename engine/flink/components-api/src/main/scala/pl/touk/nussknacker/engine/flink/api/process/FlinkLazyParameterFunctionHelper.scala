@@ -10,9 +10,11 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 /*
   This is helper class that allows to evaluate LazyParameter[T] in Flink functions.
  */
-class FlinkLazyParameterFunctionHelper(val exceptionComponentInfo: NodeComponentInfo,
-                                       val exceptionHandler: RuntimeContext => ExceptionHandler,
-                                       val createInterpreter: RuntimeContext => LazyParameterInterpreter) extends Serializable {
+class FlinkLazyParameterFunctionHelper(
+    val exceptionComponentInfo: NodeComponentInfo,
+    val exceptionHandler: RuntimeContext => ExceptionHandler,
+    val createInterpreter: RuntimeContext => LazyParameterInterpreter
+) extends Serializable {
 
   /*
      Helper that allows for easy mapping:
@@ -20,21 +22,24 @@ class FlinkLazyParameterFunctionHelper(val exceptionComponentInfo: NodeComponent
         .keyBy(_.value)
         @see AggregateTransformer
    */
-  def lazyMapFunction[T <: AnyRef](parameter: LazyParameter[T]): FlatMapFunction[Context, ValueWithContext[T]]
-  = new LazyParameterMapFunction[T](parameter, this)
+  def lazyMapFunction[T <: AnyRef](parameter: LazyParameter[T]): FlatMapFunction[Context, ValueWithContext[T]] =
+    new LazyParameterMapFunction[T](parameter, this)
 
   /*
      Helper that allows for easy filtering:
      stream.filter(ctx.nodeServices.lazyFilterFunction(expression))
      @see CustomFilter class
    */
-  def lazyFilterFunction(parameter: LazyParameter[java.lang.Boolean]): FilterFunction[Context]
-  = new LazyParameterFilterFunction(parameter, this)
+  def lazyFilterFunction(parameter: LazyParameter[java.lang.Boolean]): FilterFunction[Context] =
+    new LazyParameterFilterFunction(parameter, this)
 
 }
 
-class LazyParameterFilterFunction(parameter: LazyParameter[java.lang.Boolean], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper) with FilterFunction[Context] {
+class LazyParameterFilterFunction(
+    parameter: LazyParameter[java.lang.Boolean],
+    lazyParameterHelper: FlinkLazyParameterFunctionHelper
+) extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper)
+    with FilterFunction[Context] {
 
   override def filter(value: Context): Boolean = {
     val handled: Option[Boolean] = handlingErrors(value) {
@@ -45,9 +50,11 @@ class LazyParameterFilterFunction(parameter: LazyParameter[java.lang.Boolean], l
 
 }
 
-class LazyParameterMapFunction[T <: AnyRef](parameter: LazyParameter[T], lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper) with FlatMapFunction[Context, ValueWithContext[T]] {
-
+class LazyParameterMapFunction[T <: AnyRef](
+    parameter: LazyParameter[T],
+    lazyParameterHelper: FlinkLazyParameterFunctionHelper
+) extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper)
+    with FlatMapFunction[Context, ValueWithContext[T]] {
 
   override def flatMap(value: Context, out: Collector[ValueWithContext[T]]): Unit = {
     collectHandlingErrors(value, out) {
@@ -57,12 +64,15 @@ class LazyParameterMapFunction[T <: AnyRef](parameter: LazyParameter[T], lazyPar
 
 }
 
-abstract class AbstractOneParamLazyParameterFunction[T <: AnyRef](val parameter: LazyParameter[T],
-                                                                  val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractRichFunction with OneParamLazyParameterFunction[T]
+abstract class AbstractOneParamLazyParameterFunction[T <: AnyRef](
+    val parameter: LazyParameter[T],
+    val lazyParameterHelper: FlinkLazyParameterFunctionHelper
+) extends AbstractRichFunction
+    with OneParamLazyParameterFunction[T]
 
 abstract class AbstractLazyParameterInterpreterFunction(val lazyParameterHelper: FlinkLazyParameterFunctionHelper)
-  extends AbstractRichFunction with LazyParameterInterpreterFunction
+    extends AbstractRichFunction
+    with LazyParameterInterpreterFunction
 
 /*
   Helper trait for situation when you are using one lazy parameter.
@@ -92,7 +102,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
 
   protected def lazyParameterHelper: FlinkLazyParameterFunctionHelper
 
-  protected var lazyParameterInterpreter : LazyParameterInterpreter = _
+  protected var lazyParameterInterpreter: LazyParameterInterpreter = _
 
   protected var exceptionHandler: ExceptionHandler = _
 
@@ -103,7 +113,7 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
       exceptionHandler.close()
   }
 
-  //TODO: how can we make sure this will invoke super.open(...) (can't do it directly...)
+  // TODO: how can we make sure this will invoke super.open(...) (can't do it directly...)
   override def open(parameters: Configuration): Unit = {
     lazyParameterInterpreter = lazyParameterHelper.createInterpreter(getRuntimeContext)
     exceptionHandler = lazyParameterHelper.exceptionHandler(getRuntimeContext)
@@ -112,15 +122,18 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
     */
-  def handlingErrors[T](context: Context)(action: => T): Option[T] = exceptionHandler.handling(Some(lazyParameterHelper.exceptionComponentInfo), context)(action)
+  def handlingErrors[T](context: Context)(action: => T): Option[T] =
+    exceptionHandler.handling(Some(lazyParameterHelper.exceptionComponentInfo), context)(action)
 
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in
     * flatMap-like operators/functions
     */
-  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(action: => Iterable[T]): Unit = handlingErrors(context)(action)
-    .foreach(data => data.foreach(collector.collect))
+  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(action: => Iterable[T]): Unit =
+    handlingErrors(context)(action)
+      .foreach(data => data.foreach(collector.collect))
 
-  def collectHandlingErrors[T](context: Context, collector: Collector[T])(action: => T): Unit = collectIterableHandlingErrors(context, collector)(List(action))
+  def collectHandlingErrors[T](context: Context, collector: Collector[T])(action: => T): Unit =
+    collectIterableHandlingErrors(context, collector)(List(action))
 
 }

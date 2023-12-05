@@ -50,4 +50,5 @@ export interface UIParameter {
     additionalVariables: TypingInfo;
     variablesToHide: Array<string>;
     branchParam: boolean;
+    hintText?: string;
 }

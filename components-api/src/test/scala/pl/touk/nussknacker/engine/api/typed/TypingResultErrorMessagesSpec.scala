@@ -18,16 +18,35 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
   test("determine if can be subclass for typed object") {
 
     canBeSubclassOf(
-      typeMap("field1" -> Typed[String], "field2" -> Typed[Int], "field3" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int])), "field5" -> list(typeMap("field2" -> Typed[String]))),
-      typeMap("field2" -> Typed[String], "field3" -> Typed[String], "field4" -> Typed[String], "field5" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList.of("Field 'field2' is of the wrong type. Expected: Integer, actual: String", "Field 'field3' is of the wrong type. Expected: List[Record{field2a: String, field3: Integer}], actual: String", "Field 'field4' is lacking").invalid
+      typeMap(
+        "field1" -> Typed[String],
+        "field2" -> Typed[Int],
+        "field3" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int])),
+        "field5" -> list(typeMap("field2" -> Typed[String]))
+      ),
+      typeMap(
+        "field2" -> Typed[String],
+        "field3" -> Typed[String],
+        "field4" -> Typed[String],
+        "field5" -> list(typeMap("field2" -> Typed[String]))
+      )
+    ) shouldBe NonEmptyList
+      .of(
+        "Field 'field2' is of the wrong type. Expected: Integer, actual: String",
+        "Field 'field3' is of the wrong type. Expected: List[Record{field2a: String, field3: Integer}], actual: String",
+        "Field 'field4' is lacking"
+      )
+      .invalid
 
     canBeSubclassOf(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList.of("Map[String,List[Record{field2a: String, field3: Integer}]] cannot be converted to Map[String,List[Record{field2: String}]]").invalid
+    ) shouldBe NonEmptyList
+      .of(
+        "Map[String,List[Record{field2a: String, field3: Integer}]] cannot be converted to Map[String,List[Record{field2: String}]]"
+      )
+      .invalid
   }
-
 
   test("determine if can be subclass for class") {
     canBeSubclassOf(Typed.fromDetailedType[Set[BigDecimal]], Typed.fromDetailedType[Set[String]]) shouldBe
@@ -35,11 +54,14 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
   }
 
   test("determine if can be subclass for tagged value") {
-    canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1"), Typed.tagged(Typed.typedClass[String], "tag2")) shouldBe
+    canBeSubclassOf(
+      Typed.tagged(Typed.typedClass[String], "tag1"),
+      Typed.tagged(Typed.typedClass[String], "tag2")
+    ) shouldBe
       "Tagged values have unequal tags: tag1 and tag2".invalidNel
 
     canBeSubclassOf(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
-    "The type is not a tagged value".invalidNel
+      "The type is not a tagged value".invalidNel
   }
 
   test("determine if can be subclass for object with value") {
@@ -53,4 +75,5 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
     canBeSubclassOf(TypedNull, Typed.fromInstance(1)) shouldBe
       "Null cannot be subclass of type with value".invalidNel
   }
+
 }

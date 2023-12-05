@@ -8,33 +8,35 @@ object StatefulSampleProcess {
 
   import spel.Implicits._
 
-
   def prepareProcess(id: String): CanonicalProcess = {
 
-   ScenarioBuilder
+    ScenarioBuilder
       .streaming(id)
       .source("state", "oneSource")
-        .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
-        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
+      .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
 
   def prepareProcessStringWithStringState(id: String): CanonicalProcess = {
 
-   ScenarioBuilder
+    ScenarioBuilder
       .streaming(id)
       .source("state", "oneSource")
-        .customNode("stateful", "stateVar", "constantStateTransformer")
-        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
+      .customNode("stateful", "stateVar", "constantStateTransformer")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
 
   def processWithAggregator(id: String, aggregatorExpression: String): CanonicalProcess = ScenarioBuilder
     .streaming(id)
     .source("state", "oneSource")
-    .customNode("transform", "aggregate", "aggregate-sliding",
-      "groupBy" -> "'test'",
-      "aggregator" -> aggregatorExpression,
-      "aggregateBy" -> "1",
-      "windowLength" -> "T(java.time.Duration).parse('PT1H')",
+    .customNode(
+      "transform",
+      "aggregate",
+      "aggregate-sliding",
+      "groupBy"           -> "'test'",
+      "aggregator"        -> aggregatorExpression,
+      "aggregateBy"       -> "1",
+      "windowLength"      -> "T(java.time.Duration).parse('PT1H')",
       "emitWhenEventLeft" -> "false"
     )
     // Add enricher to force creating async operator which buffers elements emitted by aggregation. These elements can be incompatible.
@@ -43,10 +45,11 @@ object StatefulSampleProcess {
 
   def prepareProcessWithLongState(id: String): CanonicalProcess = {
 
-   ScenarioBuilder
+    ScenarioBuilder
       .streaming(id)
       .source("state", "oneSource")
-        .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
-        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
+      .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
+
 }

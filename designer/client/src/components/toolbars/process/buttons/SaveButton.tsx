@@ -1,4 +1,3 @@
-import cn from "classnames";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -7,9 +6,8 @@ import { getProcessName, getProcessUnsavedNewName, isProcessRenamed, isSaveDisab
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
-import classes from "./SaveButton.styl";
 
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
@@ -37,9 +35,8 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
 
     return (
         <ToolbarButton
-            name={t("panels.actions.process-save.button", "save")}
+            name={saveDisabled ? t("panels.actions.process-save.button", "save") : t("panels.actions.process-save.buttonUnsaved", "save*")}
             icon={<Icon />}
-            labelClassName={cn("button-label", !disabled && !saveDisabled && classes.unsaved)}
             disabled={!available}
             onClick={onClick}
         />

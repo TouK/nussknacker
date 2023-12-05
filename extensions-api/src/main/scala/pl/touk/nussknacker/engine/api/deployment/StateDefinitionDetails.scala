@@ -14,10 +14,7 @@ import java.net.URI
   * @see filtering options in [[UIStateDefinition]]
   * @see overriding state definitions in [[OverridingProcessStateDefinitionManager]]
   */
-case class StateDefinitionDetails(displayableName: String,
-                                  icon: URI,
-                                  tooltip: String,
-                                  description: String)
+case class StateDefinitionDetails(displayableName: String, icon: URI, tooltip: String, description: String)
 
 object StateDefinitionDetails {
   val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")

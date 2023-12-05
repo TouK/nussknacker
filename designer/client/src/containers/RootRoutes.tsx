@@ -1,5 +1,5 @@
 import loadable from "@loadable/component";
-import LoaderSpinner from "../components/Spinner";
+import LoaderSpinner from "../components/spinner/Spinner";
 import React, { useMemo } from "react";
 import * as Paths from "./paths";
 import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
@@ -12,7 +12,6 @@ import { NussknackerApp } from "./NussknackerApp";
 import { ErrorBoundaryFallbackComponent } from "../components/common/ErrorBoundary";
 
 const Visualization = loadable(() => import("./Visualization"), { fallback: <LoaderSpinner show={true} /> });
-const ProcessesTab = loadable(() => import("./ProcessesTab"), { fallback: <LoaderSpinner show={true} /> });
 const ScenariosTab = loadable(() => import("./ScenariosTab"), { fallback: <LoaderSpinner show={true} /> });
 
 function DefaultRedirect() {
@@ -31,9 +30,9 @@ export default createRoutesFromElements(
             {/* overrides scenarios custom tab */}
             <Route path={ScenariosBasePath} element={<ScenariosTab />} />
 
-            {/* overrides legacy scenarios custom tab */}
+            {/* for the backward compatibility we redirect old urls */}
             <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath} />} />
-            <Route path="/processes/*" element={<ProcessesTab />} />
+            <Route path="/processes/*" element={<StarRedirect to={RootPath} />} />
 
             {/* overrides metrics custom tab */}
             <Route path={MetricsBasePath}>

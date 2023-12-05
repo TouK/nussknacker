@@ -5,6 +5,7 @@ import { render } from "@testing-library/react";
 import { getAllByText, queryAllByText } from "@testing-library/dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../src/i18n";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 describe("test validation labels", () => {
     const fieldName = "fieldName";
@@ -36,9 +37,11 @@ describe("test validation labels", () => {
 
             //when
             render(
-                <I18nextProvider i18n={i18n}>
-                    <ValidationLabels fieldErrors={[]} />
-                </I18nextProvider>,
+                <NuThemeProvider>
+                    <I18nextProvider i18n={i18n}>
+                        <ValidationLabels fieldErrors={[]} />
+                    </I18nextProvider>
+                </NuThemeProvider>,
             );
 
             //then

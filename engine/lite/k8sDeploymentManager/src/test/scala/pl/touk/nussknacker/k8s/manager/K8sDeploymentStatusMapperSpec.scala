@@ -42,19 +42,29 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     )
   }
 
-
   test("detects scenario without progress") {
     val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("progressFailed.json") :: Nil, Nil)
     state shouldBe Some(
-      StatusDetails(ProblemStateStatus.Failed, None, None, Some(version), Some(timestamp), None,
-        List("Deployment does not have minimum availability.",
-          "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
+      StatusDetails(
+        ProblemStateStatus.Failed,
+        None,
+        None,
+        Some(version),
+        Some(timestamp),
+        None,
+        List(
+          "Deployment does not have minimum availability.",
+          "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing."
+        )
       )
     )
   }
 
   test("detects restarting (crashing) scenario") {
-    val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("inProgress.json") :: Nil, parseResource[ListResource[Pod]]("podsCrashLoopBackOff.json").items)
+    val state = mapper.findStatusForDeploymentsAndPods(
+      parseResource[Deployment]("inProgress.json") :: Nil,
+      parseResource[ListResource[Pod]]("podsCrashLoopBackOff.json").items
+    )
 
     state shouldBe Some(
       StatusDetails(SimpleStateStatus.Restarting, None, None, Some(version), Some(timestamp), None, Nil)
@@ -62,15 +72,22 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
   }
 
   test("detects multiple deployments") {
-    val deployment = parseResource[Deployment]("running.json")
+    val deployment  = parseResource[Deployment]("running.json")
     val deployment2 = deployment.copy(metadata = deployment.metadata.copy(name = "otherName"))
-    val state = mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
+    val state       = mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
 
     state shouldBe Some(
-      StatusDetails(ProblemStateStatus.MultipleJobsRunning, None, None, None, None, None,
-        "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
+      StatusDetails(
+        ProblemStateStatus.MultipleJobsRunning,
+        None,
+        None,
+        None,
+        None,
+        None,
+        "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil
+      )
     )
   }
 
-  //TODO: some test for ongoing termination??
+  // TODO: some test for ongoing termination??
 }

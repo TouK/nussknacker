@@ -13,7 +13,7 @@ import { IdField } from "./IdField";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
-function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
+function getTypingResult(expressionType: TypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
     return expressionType || nodeTypingInfo?.[DEFAULT_EXPRESSION_ID];
 }
 
@@ -54,6 +54,7 @@ export default function Variable({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <LabeledInput
                 value={node.varName}
@@ -66,7 +67,7 @@ export default function Variable({
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
             <EditableEditor
-                fieldName="expression"
+                fieldName="$expression"
                 fieldLabel={"Expression"}
                 renderFieldLabel={renderFieldLabel}
                 expressionObj={node.value}

@@ -26,35 +26,48 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
-  lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-        ConfluentSchemaBasedSerdeProvider.avroPayload(MockSchemaRegistry.factory),
-        new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
-        new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false))
+  lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(
+    SchemaRegistryProviderSetupType.avro,
+    ConfluentSchemaBasedSerdeProvider.avroPayload(MockSchemaRegistry.factory),
+    new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
+    new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false)
+  )
 
-  lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
-        ConfluentSchemaBasedSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
-        SimpleKafkaJsonSerializer,
-        SimpleKafkaJsonDeserializer)
+  lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(
+    SchemaRegistryProviderSetupType.json,
+    ConfluentSchemaBasedSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
+    SimpleKafkaJsonSerializer,
+    SimpleKafkaJsonDeserializer
+  )
 
   object SchemaRegistryProviderSetupType extends Enumeration {
     val json, avro = Value
   }
 
-  case class SchemaRegistryProviderSetup(`type`: SchemaRegistryProviderSetupType.Value,
-                                         provider: SchemaBasedSerdeProvider,
-                                         override val valueSerializer: Serializer[Any],
-                                         valueDeserializer: Deserializer[Any]) extends KafkaWithSchemaRegistryOperations {
+  case class SchemaRegistryProviderSetup(
+      `type`: SchemaRegistryProviderSetupType.Value,
+      provider: SchemaBasedSerdeProvider,
+      override val valueSerializer: Serializer[Any],
+      valueDeserializer: Deserializer[Any]
+  ) extends KafkaWithSchemaRegistryOperations {
 
-    override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = valueDeserializer
+    override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] =
+      valueDeserializer
 
-    override protected def schemaRegistryClient: SchemaRegistryClient = ConfluentKafkaAvroSeDeSpecMixin.this.schemaRegistryClient
+    override protected def schemaRegistryClient: SchemaRegistryClient =
+      ConfluentKafkaAvroSeDeSpecMixin.this.schemaRegistryClient
 
     override protected def kafkaClient: KafkaClient = ConfluentKafkaAvroSeDeSpecMixin.this.kafkaClient
 
-    def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
+    def pushMessage(
+        kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
+        obj: AnyRef,
+        topic: String
+    ): RecordMetadata = {
       val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
       kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
     }
+
   }
 
 }

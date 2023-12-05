@@ -12,8 +12,6 @@ class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
   import OutputValidatorErrorsMessageFormatter._
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
-
-
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)
   }
@@ -22,29 +20,35 @@ class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
     case s: ObjectSchema if s.hasOnlyAdditionalProperties =>
       val valuesType = Option(s.getSchemaOfAdditionalProperties).map(print).getOrElse("Any")
       s"Map[String, ${valuesType}]"
-    case s: ObjectSchema => s.getPropertySchemas.asScala.map {
-      case (name, fieldSchema) => s"$name:${print(fieldSchema)}"
-    }.mkString("Record{", ", ", "}")
+    case s: ObjectSchema =>
+      s.getPropertySchemas.asScala
+        .map { case (name, fieldSchema) =>
+          s"$name:${print(fieldSchema)}"
+        }
+        .mkString("Record{", ", ", "}")
     case _ => printSchemaType(schema)
   }
 
   private def printSchemaType(schema: Schema): String = {
-    val defaultDisplayType = baseDisplayType(schema) :: Nil
+    val defaultDisplayType     = baseDisplayType(schema) :: Nil
     val logicalTypeDisplayType = printLogicalType(schema)
     (defaultDisplayType ::: logicalTypeDisplayType.toList).printType
   }
 
   private def baseDisplayType(schema: Schema) = SwaggerBasedJsonSchemaTypeDefinitionExtractor
-    .swaggerType(schema, parentSchema = Some(parentSchema)).typingResult.display
+    .swaggerType(schema, parentSchema = Some(parentSchema))
+    .typingResult
+    .display
 
-  //todo: remove duplication - JsonSchemaTypeDefinitionExtractor
+  // TODO: remove duplication - JsonSchemaTypeDefinitionExtractor
   private def printLogicalType(schema: Schema): Option[String] = Option(schema match {
-    case s: StringSchema => s.getFormatValidator.formatName() match {
-      case "date-time" => classOf[LocalDateTime].getSimpleName
-      case "date" => classOf[LocalDate].getSimpleName
-      case "time" => classOf[LocalTime].getSimpleName
-      case _ => null
-    }
+    case s: StringSchema =>
+      s.getFormatValidator.formatName() match {
+        case "date-time" => classOf[LocalDateTime].getSimpleName
+        case "date"      => classOf[LocalDate].getSimpleName
+        case "time"      => classOf[LocalTime].getSimpleName
+        case _           => null
+      }
     case _ => null
   })
 

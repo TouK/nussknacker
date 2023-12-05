@@ -2,10 +2,8 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel
@@ -15,13 +13,11 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class KafkaAvroSchemaJsonPayloadItSpec extends  FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
+class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
-  import KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import MockSchemaRegistry._
   import spel.Implicits._
-
-  private val secondsToWaitForAvro = 30
 
   private val givenMatchingJsonObj =
     """{
@@ -41,40 +37,44 @@ class KafkaAvroSchemaJsonPayloadItSpec extends  FlinkWithKafkaSuite with Patient
 
   override val avroAsJsonSerialization: Boolean = true
 
-  private def avroSchemedJsonPayloadProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+  private def avroSchemedJsonPayloadProcess(
+      topicConfig: TopicConfig,
+      versionOption: SchemaVersionOption,
+      validationMode: ValidationMode = ValidationMode.strict
+  ) =
     ScenarioBuilder
       .streaming("json-schemed-test")
       .parallelism(1)
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
+    val timeAgo     = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterAvroTopicConfig("read-filter-save-json", RecordSchemas)
 
     val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
     logger.info(s"Message sent successful: $sendResult")
 
     run(avroSchemedJsonPayloadProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val consumer = kafkaClient.createConsumer()
-      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-      processedMessage.timestamp shouldBe timeAgo
-      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
+      val result = kafkaClient.createConsumer().consumeWithJson[Json](topicConfig.output).take(1).head
+
+      result.timestamp shouldBe timeAgo
+      result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
   }
 
@@ -84,4 +84,5 @@ class KafkaAvroSchemaJsonPayloadItSpec extends  FlinkWithKafkaSuite with Patient
     val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
+
 }

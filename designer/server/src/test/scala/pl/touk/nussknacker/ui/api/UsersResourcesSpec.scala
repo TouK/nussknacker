@@ -7,30 +7,31 @@ import io.circe.Json
 import io.circe.Json._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
+import pl.touk.nussknacker.ui.api.helpers.NuResourcesTest
 
-class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with EspItTest with PatientScalaFutures {
+class UsersResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with NuResourcesTest
+    with PatientScalaFutures {
 
-  private val usersRoute = new UserResources(processCategoryService)
+  private val usersRoute = new UserResources(() => processCategoryService)
 
   test("fetch user info") {
     getUser(isAdmin = false) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe obj(
-        "id" -> fromString("1"),
+        "id"       -> fromString("1"),
         "username" -> fromString("user"),
-        "isAdmin" -> fromBoolean(false),
+        "isAdmin"  -> fromBoolean(false),
         "categories" -> arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
+          List("Category1").map(fromString): _*
         ),
         "categoryPermissions" -> obj(
-          "TESTCAT" -> arr(
-            List("Deploy", "Read", "Write").map(fromString): _*
-          ),
-          "TESTCAT2" -> arr(
+          "Category1" -> arr(
             List("Deploy", "Read", "Write").map(fromString): _*
           )
         ),
@@ -43,14 +44,14 @@ class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFa
     getUser(isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json] shouldBe obj(
-        "id" -> fromString("1"),
+        "id"       -> fromString("1"),
         "username" -> fromString("admin"),
-        "isAdmin" -> fromBoolean(true),
+        "isAdmin"  -> fromBoolean(true),
         "categories" -> arr(
-          List("Category1", "Category2", "ReqRes", "TESTCAT", "TESTCAT2").map(fromString): _*
+          List("Category1", "Category2").map(fromString): _*
         ),
         "categoryPermissions" -> obj(),
-        "globalPermissions" -> arr()
+        "globalPermissions"   -> arr()
       )
     }
   }

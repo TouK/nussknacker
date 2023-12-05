@@ -1,122 +1,105 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
-import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
-import { Items } from "../../fragment-input-definition/Items";
-import { NodeRowFields } from "../../fragment-input-definition/NodeRowFields";
-import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../Validators";
-import MapKey from "./MapKey";
-import MapValue from "./MapValue";
-import { isEqual } from "lodash";
+import React, { createContext, useCallback, useMemo } from "react";
+import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
+import { Error, mandatoryValueValidator, uniqueListValueValidator } from "../Validators";
 import { useDiffMark } from "../../PathsToMark";
+import { DndItems } from "../../../../common/dndItems/DndItems";
+import MapRow from "./MapRow";
+import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 
-export interface MapCommonProps {
+interface MapProps<F extends Field> {
     setProperty: (path: string, newValue: unknown) => void;
     readOnly?: boolean;
-    showValidation: boolean;
+    showValidation?: boolean;
     variableTypes: VariableTypes;
-    fieldErrors: NodeValidationError[];
-}
-
-interface MapProps<F extends Field> extends MapCommonProps {
+    fieldErrors: Error[];
     fields: F[];
     label: string;
     namespace: string;
     addField: (namespace: string, field?: F) => void;
-    removeField: (namespace: string, index: number) => void;
+    removeField: (namespace: string, uuid: string) => void;
     expressionType?: Partial<TypedObjectTypingResult>;
 }
 
-export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
-    const { label, setProperty, addField, removeField, namespace, readOnly, showValidation, fieldErrors, variableTypes, expressionType } =
-        props;
+export const MapItemsCtx = createContext<{
+    readOnly?: boolean;
+    showValidation?: boolean;
+    setProperty: (path: string, newValue: unknown) => void;
+    isMarked: (path: string) => boolean;
+    fieldErrors: Error[];
+    variableTypes: VariableTypes;
+}>(null);
 
+export function Map<F extends Field>({
+    fields,
+    label,
+    setProperty,
+    addField,
+    removeField,
+    namespace,
+    readOnly,
+    expressionType,
+    showValidation,
+    variableTypes,
+    fieldErrors,
+}: MapProps<F>): JSX.Element {
     const [isMarked] = useDiffMark();
 
     const appendTypeInfo = useCallback(
-        (expressionObj: F): F & { typeInfo: string } => {
+        (
+            expressionObj: F,
+        ): F & {
+            typeInfo: string;
+        } => {
             const fields = expressionType?.fields;
             const typeInfo = fields ? fields[expressionObj.name]?.display : expressionType?.display;
-            return { ...expressionObj, typeInfo: typeInfo };
+            return {
+                ...expressionObj,
+                typeInfo: typeInfo,
+            };
         },
         [expressionType?.display, expressionType?.fields],
     );
 
-    const [fields, setFields] = useState(props.fields);
-    useEffect(() => {
-        if (!isEqual(props.fields, fields)) {
-            setFields(props.fields);
-        }
-    }, [props.fields, fields]);
+    const changeOrder = useCallback((value) => setProperty(namespace, value), [namespace, setProperty]);
 
-    const Item = useCallback(
-        ({ index, item, validators }: { index: number; item; validators: Validator[] }) => {
-            const path = `${namespace}[${index}]`;
-            console.log("variableTypes", variableTypes);
-            const expressionValidators = [mandatoryValueValidator];
-
-            return (
-                <FieldsRow index={index}>
-                    <MapKey
-                        readOnly={readOnly}
-                        showValidation={showValidation}
-                        isMarked={isMarked(`${path}.name`)}
-                        onChange={(value) => setProperty(`${path}.name`, value)}
-                        value={item.name}
-                        fieldErrors={validators
-                            .filter((validator) => !validator.isValid(item.name))
-                            .map((validator) => ({
-                                message: validator.message(),
-                                typ: "",
-                                description: validator.description(),
-                                fieldName: item.name,
-                                errorType: "SaveAllowed",
-                            }))}
-                    />
-                    <MapValue
-                        readOnly={readOnly}
-                        showValidation={showValidation}
-                        isMarked={isMarked(`${path}.expression.expression`)}
-                        onChange={(value) => setProperty(`${path}.expression.expression`, value)}
-                        validationLabelInfo={item.typeInfo}
-                        value={item.expression}
-                        fieldErrors={expressionValidators
-                            .filter((validator) => !validator.isValid(item.expression.expression))
-                            .map((validator) => ({
-                                message: validator.message(),
-                                typ: "",
-                                description: validator.description(),
-                                fieldName: `expression-${index}`,
-                                errorType: "SaveAllowed",
-                            }))}
-                        fieldName={`expression-${index}`}
-                        variableTypes={variableTypes}
-                    />
-                </FieldsRow>
-            );
-        },
-        // "variableTypes" ignored for reason
-        [namespace, readOnly, showValidation, isMarked, fieldErrors, variableTypes, setProperty],
+    const uniqueNameValidator = useCallback(
+        (index: number) =>
+            uniqueListValueValidator(
+                fields?.map((v) => v.name),
+                index,
+            ),
+        [fields],
     );
 
     const items = useMemo(
         () =>
-            fields?.map(appendTypeInfo).map((item, index, list) => {
-                const validators = [
-                    mandatoryValueValidator,
-                    uniqueListValueValidator(
-                        list.map((v) => v.name),
-                        index,
-                    ),
-                ];
-                return { item, el: <Item key={index} index={index} item={item} validators={validators} /> };
-            }),
-        [Item, appendTypeInfo, fields],
+            fields?.map(appendTypeInfo)?.map((item, index) => ({
+                item,
+                el: (
+                    <FieldsRow uuid={item.uuid} index={index}>
+                        <MapRow index={index} item={item} />
+                    </FieldsRow>
+                ),
+            })),
+        [appendTypeInfo, fields],
     );
 
     return (
-        <NodeRowFields label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
-            <Items items={items} />
-        </NodeRowFields>
+        <NodeRowFieldsProvider label={label} path={namespace} onFieldAdd={addField} onFieldRemove={removeField} readOnly={readOnly}>
+            <MapItemsCtx.Provider
+                value={{
+                    readOnly,
+                    isMarked: (path) => isMarked(`${namespace}.${path}`),
+                    setProperty: (path, value) => setProperty(`${namespace}.${path}`, value),
+                    showValidation,
+                    fieldErrors,
+                    variableTypes,
+                }}
+            >
+                <DndItems disabled={readOnly} items={items} onChange={changeOrder} />
+            </MapItemsCtx.Provider>
+        </NodeRowFieldsProvider>
     );
 }
 

@@ -1,37 +1,67 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  ValidationErrors,
+  ValidationResult,
+  ValidationWarnings
+}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], processValidation: ProcessValidation) {
+class TestModelMigrations(
+    migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
+    processValidator: UIProcessValidator
+) {
 
-  def testMigrations(processes: List[ValidatedProcessDetails], fragments: List[ValidatedProcessDetails]): List[TestMigrationResult] = {
+  def testMigrations(
+      processes: List[ScenarioWithDetails],
+      fragments: List[ScenarioWithDetails]
+  )(implicit user: LoggedUser): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidation.withFragmentResolver(new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory)))))
+    val validator = processValidator.withFragmentResolver(
+      new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
+    )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
-      val validationResult = validation.validate(migrationDetails.newProcess)
-      val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
-      TestMigrationResult(new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult), newErrors, migrationDetails.shouldFail)
+      val validationResult = validator.validate(migrationDetails.newProcess)
+      val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
+      TestMigrationResult(
+        ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
+        newErrors,
+        migrationDetails.shouldFail
+      )
     }
   }
 
-  private def migrateProcess(process: ValidatedProcessDetails): Option[MigratedProcessDetails] = {
+  private def migrateProcess(
+      process: ScenarioWithDetails
+  )(implicit user: LoggedUser): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
-      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable), skipEmptyMigrations = false)
+      MigrationResult(newProcess, migrations) <- migrator.migrateProcess(
+        process.toEntityWithScenarioGraphUnsafe,
+        skipEmptyMigrations = false
+      )
       displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
-      MigratedProcessDetails(displayable, process.json.validationResult, migrations.exists(_.failOnNewValidationError), process.processCategory)
+      MigratedProcessDetails(
+        displayable,
+        process.validationResultUnsafe,
+        migrations.exists(_.failOnNewValidationError),
+        process.processCategory
+      )
     }
   }
 
@@ -59,9 +89,11 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     }
 
     def diffOnMap(before: Map[String, List[NodeValidationError]], after: Map[String, List[NodeValidationError]]) = {
-      after.map {
-        case (nodeId, errorsAfter) => (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))
-      }.filterNot(_._2.isEmpty)
+      after
+        .map { case (nodeId, errorsAfter) =>
+          (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))
+        }
+        .filterNot(_._2.isEmpty)
     }
 
     ValidationResult(
@@ -70,16 +102,28 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
         diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
         diffErrorLists(before.errors.globalErrors, after.errors.globalErrors)
       ),
-      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty
+      ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)),
+      Map.empty
     )
   }
 
 }
 
-@JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
+@JsonCodec final case class TestMigrationResult(
+    converted: ValidatedDisplayableProcess,
+    newErrors: ValidationResult,
+    shouldFailOnNewErrors: Boolean
+) {
+
   def shouldFail: Boolean = {
     shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
   }
+
 }
 
-private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)
+private final case class MigratedProcessDetails(
+    newProcess: DisplayableProcess,
+    oldProcessErrors: ValidationResult,
+    shouldFail: Boolean,
+    processCategory: String
+)

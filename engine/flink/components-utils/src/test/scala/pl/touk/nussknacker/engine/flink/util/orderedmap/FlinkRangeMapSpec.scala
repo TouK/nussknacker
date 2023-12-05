@@ -17,9 +17,11 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
 
   private def verifyAdding[MapT[_, _]: FlinkRangeMap] = {
 
-    implicitly[FlinkRangeMap[MapT]].empty[Int, Int]
+    implicitly[FlinkRangeMap[MapT]]
+      .empty[Int, Int]
       .updated(1, 0)
-      .toScalaMapRO.size shouldEqual 1
+      .toScalaMapRO
+      .size shouldEqual 1
   }
 
   test("read-only filtering") {
@@ -31,15 +33,17 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
   }
 
   private def verifyOrder[MapT[_, _]: FlinkRangeMap] = {
-    val withSomeElements = implicitly[FlinkRangeMap[MapT]].empty[Int, Int]
-          .updated(10, 0)
-          .updated(5, 0)
-          .updated(20, 0)
+    val withSomeElements = implicitly[FlinkRangeMap[MapT]]
+      .empty[Int, Int]
+      .updated(10, 0)
+      .updated(5, 0)
+      .updated(20, 0)
     withSomeElements.toScalaMapRO.keys.toList shouldBe List(5, 10, 20)
   }
 
   private def verifyReadOnlyFiltering[MapT[_, _]: FlinkRangeMap](shouldThrowExceptionAfterROFiltering: Boolean) = {
-    val withSomeElements = implicitly[FlinkRangeMap[MapT]].empty[Int, Int]
+    val withSomeElements = implicitly[FlinkRangeMap[MapT]]
+      .empty[Int, Int]
       .updated(1, 0)
       .updated(2, 0)
       .updated(3, 0)
@@ -61,7 +65,8 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
   }
 
   private def verifyMutatingFiltering[MapT[_, _]: FlinkRangeMap] = {
-    val withSomeElements = implicitly[FlinkRangeMap[MapT]].empty[Int, Int]
+    val withSomeElements = implicitly[FlinkRangeMap[MapT]]
+      .empty[Int, Int]
       .updated(1, 0)
       .updated(2, 0)
       .updated(3, 0)

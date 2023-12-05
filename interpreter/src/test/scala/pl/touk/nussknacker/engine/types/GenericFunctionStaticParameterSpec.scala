@@ -5,13 +5,19 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, MethodTypeInfo, Parameter, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{
+  GenericFunctionTypingError,
+  GenericType,
+  MethodTypeInfo,
+  Parameter,
+  TypingFunction
+}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 import scala.annotation.varargs
 
-class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with OptionValues{
+class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with OptionValues {
   implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
 
   test("should accept valid static parameters") {
@@ -30,11 +36,24 @@ class GenericFunctionStaticParametersSpec extends AnyFunSuite with Matchers with
       }.getMessage shouldBe message
     }
 
-    test(classOf[Invalid.Foo1], "Generic function f has declared parameters that are incompatible with methods signature: wrong number of no-vararg arguments: found 1, expected: 2")
-    test(classOf[Invalid.Foo2], "Generic function f has declared parameters that are incompatible with methods signature: argument at position 4 has illegal type: String cannot be subclass of Number")
-    test(classOf[Invalid.Foo3], "Generic function f has declared parameters that are incompatible with methods signature: function with varargs cannot be more specific than function without varargs; wrong number of no-vararg arguments: found 1, expected: 2")
-    test(classOf[Invalid.Foo4], "Generic function f has declared parameters that are incompatible with methods signature: argument at position 3 has illegal type: Double cannot be subclass of Long")
+    test(
+      classOf[Invalid.Foo1],
+      "Generic function f has declared parameters that are incompatible with methods signature: wrong number of no-vararg arguments: found 1, expected: 2"
+    )
+    test(
+      classOf[Invalid.Foo2],
+      "Generic function f has declared parameters that are incompatible with methods signature: argument at position 4 has illegal type: String cannot be subclass of Number"
+    )
+    test(
+      classOf[Invalid.Foo3],
+      "Generic function f has declared parameters that are incompatible with methods signature: function with varargs cannot be more specific than function without varargs; wrong number of no-vararg arguments: found 1, expected: 2"
+    )
+    test(
+      classOf[Invalid.Foo4],
+      "Generic function f has declared parameters that are incompatible with methods signature: argument at position 3 has illegal type: Double cannot be subclass of Long"
+    )
   }
+
 }
 
 private trait TypingFunctionHelper extends TypingFunction {
@@ -45,11 +64,15 @@ private trait TypingFunctionHelper extends TypingFunction {
   override def signatures: Option[NonEmptyList[MethodTypeInfo]] =
     Some(NonEmptyList.one(MethodTypeInfo(params.map(Parameter("", _)), varArgParam.map(Parameter("", _)), Unknown)))
 
-  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+  override def computeResultType(
+      arguments: List[TypingResult]
+  ): ValidatedNel[GenericFunctionTypingError, TypingResult] =
     Unknown.validNel
+
 }
 
 private object Valid {
+
   class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
@@ -61,11 +84,12 @@ private object Valid {
     override def varArgParam: Option[TypingResult] = None
   }
 
-
   class Foo2 {
+
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
+
   }
 
   class Foo2TypingFunction extends TypingFunctionHelper {
@@ -74,11 +98,12 @@ private object Valid {
     override def varArgParam: Option[TypingResult] = None
   }
 
-
   class Foo4 {
+
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
+
   }
 
   class Foo4TypingFunction extends TypingFunctionHelper {
@@ -86,9 +111,11 @@ private object Valid {
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
   }
+
 }
 
 private object Invalid {
+
   class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
@@ -100,11 +127,12 @@ private object Invalid {
     override def varArgParam: Option[TypingResult] = None
   }
 
-
   class Foo2 {
+
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
+
   }
 
   class Foo2TypingFunction extends TypingFunctionHelper {
@@ -112,7 +140,6 @@ private object Invalid {
 
     override def varArgParam: Option[TypingResult] = None
   }
-
 
   class Foo3 {
     @GenericType(typingFunction = classOf[Foo3TypingFunction])
@@ -125,11 +152,12 @@ private object Invalid {
     override def varArgParam: Option[TypingResult] = Some(Typed[String])
   }
 
-
   class Foo4 {
+
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
+
   }
 
   class Foo4TypingFunction extends TypingFunctionHelper {
@@ -137,4 +165,5 @@ private object Invalid {
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
   }
+
 }

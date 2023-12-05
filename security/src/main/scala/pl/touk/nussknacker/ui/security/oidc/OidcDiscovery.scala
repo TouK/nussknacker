@@ -16,28 +16,33 @@ object OidcDiscovery extends LazyLogging {
   implicit val config: Configuration = Configuration.default
 
   def apply(issuer: URI)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): Option[OidcDiscovery] =
-    Try(Await.result(
-      basicRequest
-        .contentType(MediaType.ApplicationJson)
-        .get(uri"$issuer/.well-known/openid-configuration")
-        .response(asJson[OidcDiscovery]).send(sttpBackend),
-      Duration(30, SECONDS)
-    ).body).fold(Left(_), identity) match {
+    Try(
+      Await
+        .result(
+          basicRequest
+            .contentType(MediaType.ApplicationJson)
+            .get(uri"$issuer/.well-known/openid-configuration")
+            .response(asJson[OidcDiscovery])
+            .send(sttpBackend),
+          Duration(30, SECONDS)
+        )
+        .body
+    ).fold(Left(_), identity) match {
       case Right(v) => Some(v)
       case Left(err) =>
         logger.warn(s"Unable to retrieve the OpenID Provider's configuration: ${err.getMessage}")
         None
     }
+
 }
 
 @ConfiguredJsonCodec
-case class OidcDiscovery
-(
-  issuer: URI,
-  @JsonKey("authorization_endpoint") authorizationEndpoint: URI,
-  @JsonKey("token_endpoint") tokenEndpoint: URI,
-  @JsonKey("userinfo_endpoint") userinfoEndpoint: URI,
-  @JsonKey("jwks_uri") jwksUri: URI,
-  @JsonKey("supported_scopes") scopesSupported: Option[List[String]],
-  @JsonKey("response_types_supported") responseTypesSupported: List[String]
+final case class OidcDiscovery(
+    issuer: URI,
+    @JsonKey("authorization_endpoint") authorizationEndpoint: URI,
+    @JsonKey("token_endpoint") tokenEndpoint: URI,
+    @JsonKey("userinfo_endpoint") userinfoEndpoint: URI,
+    @JsonKey("jwks_uri") jwksUri: URI,
+    @JsonKey("supported_scopes") scopesSupported: Option[List[String]],
+    @JsonKey("response_types_supported") responseTypesSupported: List[String]
 )

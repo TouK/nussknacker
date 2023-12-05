@@ -6,7 +6,7 @@ sidebar_position: 6
 
 ## Overview
 
-Usually not all required data are in the Kafka event streams - some data may reside in an external database or may be served by an external service. For this purpose Nussknacker provides enrichers - specialized components which allow to get data from sources other than Kafka streams.
+Usually not all required data are in the data record - some data may reside in an external database or may be served by an external service. For this purpose Nussknacker provides enrichers - specialized components which allow to get data from sources other than Kafka streams.
 
 
 ## Concepts
@@ -21,7 +21,7 @@ Enricher components need to be added to the Model configuration first; once they
 
 There are two components of this type, they both allow to access data from JDBC compliant data sources. All major relational databases support JDBC. As there are also some JDBC compliant data sources which are not relational databases, the final pool of possible data sources is wider than just relational databases. 
 
-**DatabaseQueryEnricher**
+### DatabaseQueryEnricher
 
 The more generic databaseQueryEnricher component allows to execute any SQL SELECT statement against the target data provider. 
 
@@ -35,7 +35,7 @@ If a query returns more than just one record and you need just one, you can set 
 
 TTL (Time to Live) determines how long returned result is held in the cache of the running scenario. 
 
-**DatabaseLookupEnricher**
+### DatabaseLookupEnricher
 
 DatabaseLookupEnricher is a specialized look-up component; it returns all columns of a looked up record. In the example below the city table is looked up based on the id field. 
 

@@ -4,12 +4,11 @@ import { ToolbarsSide } from "../../reducers/toolbars";
 import { useDispatch, useSelector } from "react-redux";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { ToolbarsContainer } from "./ToolbarsContainer";
-import cn from "classnames";
-import styles from "./ToolbarsLayer.styl";
 import { SidePanel, PanelSide } from "../sidePanels/SidePanel";
 import { Toolbar } from "./toolbar";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useSurvey } from "../toolbars/useSurvey";
+import { cx } from "@emotion/css";
 
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 
@@ -57,14 +56,14 @@ function ToolbarsLayer(props: { toolbars: Toolbar[]; configId: string }): JSX.El
 
     return (
         <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
-            <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} className={cn(styles.top)} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} className={cn(styles.bottom)} />
+            <SidePanel side={PanelSide.Left} className={cx("left", isDragging && "is-dragging-started")}>
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} className={"top"} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} className={"bottom"} />
             </SidePanel>
 
-            <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} className={cn(styles.top)} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} className={cn(styles.bottom)} />
+            <SidePanel side={PanelSide.Right} className={cx("right", isDragging && "is-dragging-started")}>
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} className={"top"} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} className={"bottom"} />
             </SidePanel>
         </DragDropContext>
     );

@@ -19,17 +19,19 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
-    override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-      //Append variable "input"
+    override def validationContext(
+        context: ValidationContext
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
+      // Append variable "input"
       val contextWithInput = super.validationContext(context)
 
-      //Specify additional variables
+      // Specify additional variables
       val additionalVariables = Map(
         "additionalOne" -> Typed[String],
         "additionalTwo" -> Typed[Int]
       )
 
-      //Append additional variables to ValidationContext
+      // Append additional variables to ValidationContext
       additionalVariables.foldLeft(contextWithInput) { case (acc, (name, typingResult)) =>
         acc.andThen(_.withVariable(name, typingResult, None))
       }
@@ -37,34 +39,41 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
     override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
       new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
+
         override def apply(input: String): Context = {
-          //perform some transformations and/or computations
+          // perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
             "additionalOne" -> s"transformed:$input",
             "additionalTwo" -> input.length()
           )
-          //initialize context with input variable and append computed values
+          // initialize context with input variable and append computed values
           super.apply(input).withVariables(additionalVariables)
         }
+
       }
 
   }
 
   override type State = Nothing
 
-  //There is only one parameter in this source
+  // There is only one parameter in this source
   private val elementsParamName = "elements"
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
-  : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
+  override def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): Source = {
     import scala.jdk.CollectionConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
@@ -76,7 +85,8 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
       override def generateTestData(size: Int): TestData = TestData(elements.map(el => TestRecord(Json.fromString(el))))
 
-      override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+      override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
+        CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
     }

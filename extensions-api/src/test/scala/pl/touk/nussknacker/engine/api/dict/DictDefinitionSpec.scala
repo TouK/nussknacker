@@ -10,7 +10,10 @@ class DictDefinitionSpec extends AnyFunSuite with Matchers {
   test("should type dict") {
     val dict = DictInstance(dictId = "id", definition = EmbeddedDictDefinition(Map.empty))
 
-    Typed.fromInstance(dict) shouldBe TypedDict(dictId = "id", valueType = TypedTaggedValue(underlying = Typed.typedClass[String], tag = "dictValue:id"))
+    Typed.fromInstance(dict) shouldBe TypedDict(
+      dictId = "id",
+      valueType = TypedTaggedValue(underlying = Typed.typedClass[String], tag = "dictValue:id")
+    )
   }
 
 }

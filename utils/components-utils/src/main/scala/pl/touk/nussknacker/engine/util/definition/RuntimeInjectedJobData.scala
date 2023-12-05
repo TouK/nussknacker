@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 
 trait RuntimeInjectedJobData extends WithJobData with Lifecycle {
-  private var engineRuntimeContextOpt:Option[EngineRuntimeContext] = None
+  private var engineRuntimeContextOpt: Option[EngineRuntimeContext] = None
 
   override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
     super.open(engineRuntimeContext)
@@ -15,10 +15,3 @@ trait RuntimeInjectedJobData extends WithJobData with Lifecycle {
 }
 
 class UninitializedJobDataException extends IllegalStateException
-
-
-
-
-
-
-

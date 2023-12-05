@@ -20,23 +20,34 @@ import java.net.URL
 object ModelData extends LazyLogging {
 
   def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
-    ModelData(processingTypeConfig.modelConfig, ModelClassLoader(processingTypeConfig.classPath))
+    ModelData(
+      processingTypeConfig.modelConfig,
+      ModelClassLoader(processingTypeConfig.classPath),
+      processingTypeConfig.category
+    )
   }
 
-  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
-    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader)
+  def apply(inputConfig: Config, modelClassLoader: ModelClassLoader, category: Option[String]): ModelData = {
+    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader, category)
   }
 
-  def apply(inputConfig: ConfigWithUnresolvedVersion, modelClassLoader: ModelClassLoader) : ModelData = {
+  def apply(
+      inputConfig: ConfigWithUnresolvedVersion,
+      modelClassLoader: ModelClassLoader,
+      category: Option[String]
+  ): ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
-      modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
-      modelClassLoader)
+      modelConfigLoader =>
+        modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
+      modelClassLoader,
+      category
+    )
   }
 
   // Used on Flink, where we start already with resolved config so we should not resolve it twice.
   def duringExecution(inputConfig: Config): ModelData = {
-    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
+    ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil), None)
   }
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
@@ -45,28 +56,31 @@ object ModelData extends LazyLogging {
 
 }
 
+case class ClassLoaderModelData private (
+    private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
+    modelClassLoader: ModelClassLoader,
+    override val category: Option[String]
+) extends ModelData {
 
-case class ClassLoaderModelData private(private val resolveInputConfigDuringExecution: ModelConfigLoader => InputConfigDuringExecution,
-                                        modelClassLoader: ModelClassLoader)
-  extends ModelData {
-
-  //this is not lazy, to be able to detect if creator can be created...
-  override val configCreator : ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
+  // this is not lazy, to be able to detect if creator can be created...
+  override val configCreator: ProcessConfigCreator = ProcessConfigCreatorLoader.justOne(modelClassLoader.classLoader)
 
   override lazy val modelConfigLoader: ModelConfigLoader = {
     Multiplicity(ScalaServiceLoader.load[ModelConfigLoader](modelClassLoader.classLoader)) match {
-      case Empty() => new DefaultModelConfigLoader
+      case Empty()                => new DefaultModelConfigLoader
       case One(modelConfigLoader) => modelConfigLoader
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ModelConfigLoader instance found: $moreThanOne")
     }
   }
 
-  override lazy val inputConfigDuringExecution: InputConfigDuringExecution = resolveInputConfigDuringExecution(modelConfigLoader)
+  override lazy val inputConfigDuringExecution: InputConfigDuringExecution = resolveInputConfigDuringExecution(
+    modelConfigLoader
+  )
 
   override lazy val migrations: ProcessMigrations = {
     Multiplicity(ScalaServiceLoader.load[ProcessMigrations](modelClassLoader.classLoader)) match {
-      case Empty() => ProcessMigrations.empty
+      case Empty()            => ProcessMigrations.empty
       case One(migrationsDef) => migrationsDef
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one ProcessMigrations instance found: $moreThanOne")
@@ -82,9 +96,17 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def configCreator: ProcessConfigCreator
 
+  // It won't be necessary after we get rid of ProcessConfigCreator API
+  def category: Option[String]
+
   lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = {
     val processDefinitions = withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, modelClassLoader.classLoader, ProcessObjectDependencies(processConfig, objectNaming))
+      ProcessDefinitionExtractor.extractObjectWithMethods(
+        configCreator,
+        modelClassLoader.classLoader,
+        ProcessObjectDependencies(processConfig, objectNaming),
+        category
+      )
     }
     ModelDefinitionWithTypes(processDefinitions)
   }
@@ -92,7 +114,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
   final def modelDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     modelDefinitionWithTypes.modelDefinition
 
-  private lazy val dictServicesFactory: DictServicesFactory = DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
+  private lazy val dictServicesFactory: DictServicesFactory =
+    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
 
   lazy val uiDictServices: UiDictServices =
     dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, processConfig)
@@ -104,7 +127,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
   }
 
-  def withThisAsContextClassLoader[T](block: => T) : T = {
+  def withThisAsContextClassLoader[T](block: => T): T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {
       block
     }
@@ -112,11 +135,12 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
 
-  def modelClassLoader : ModelClassLoader
+  def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 
-  override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+  override lazy val processConfig: Config =
+    modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
     uiDictServices.close()

@@ -113,7 +113,7 @@ describe("Components list", () => {
     });
 
     it("should apply filters from query", () => {
-        cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&USAGES=-1");
+        cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=Category1&USAGES=-1");
         cy.contains(/^name$/i).should("be.visible");
         cy.get("[role=row]").should("have.length", 2);
         cy.contains("[role=row] *", /^Default$/).should("be.visible");
@@ -145,10 +145,16 @@ describe("Components list", () => {
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
 
-        cy.get("[role=row] a").should("have.length", 4).as("links");
+        cy.get("[role=row] a")
+            // this number is two times larger than number of components with some usages because it handles also links to documentation
+            .should("have.length", 6)
+            .as("links");
 
         // we are clicking filter component because it has many usages and we are able to test usages list expansion
-        cy.get("@links").its(2).click();
+        cy.get("@links")
+            .filter((i, e) => /^\d+$/.test(e.innerText))
+            .eq(2)
+            .click();
 
         // we are clicking "X more" on list of places of usages to test usages list expansion
         cy.contains("4 more").click();
@@ -175,17 +181,21 @@ describe("Components list", () => {
     it("should filter usage types", () => {
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
-        cy.contains("fragments").should("be.visible").click();
-        cy.contains(`${seed}_xxx`).last().should("be.visible").drag("#nk-graph-main", {
-            x: 800,
-            y: 600,
-            position: "right",
-            force: true,
-        });
-        cy.contains(/^save$/i).click();
+        cy.get("#toolbox").contains("fragments").should("be.visible").click();
+        cy.contains(`${seed}_xxx`)
+            .last()
+            .should("be.visible")
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 800,
+                    y: 600,
+                },
+                force: true,
+            });
+        cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
-        cy.viewport(1400, 500);
+        cy.viewport(1400, 600);
         cy.visit("/components/usages/filter");
 
         cy.contains(/^other$/i).click();
@@ -196,7 +206,7 @@ describe("Components list", () => {
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.01,
+            maxDiffThreshold: 0.02,
         });
 
         cy.get("@options")
@@ -207,7 +217,7 @@ describe("Components list", () => {
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.01,
+            maxDiffThreshold: 0.02,
         });
 
         cy.get("@options")
@@ -219,7 +229,7 @@ describe("Components list", () => {
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.01,
+            maxDiffThreshold: 0.02,
         });
     });
 

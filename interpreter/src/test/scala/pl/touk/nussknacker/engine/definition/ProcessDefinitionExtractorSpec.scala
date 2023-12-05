@@ -6,14 +6,25 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{
+  AdditionalVariableProvidedInRuntime,
+  FixedExpressionValue,
+  FixedValuesValidator,
+  MandatoryParameterValidator,
+  Parameter,
+  RegExpParameterValidator
+}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, MethodBasedComponentImplementationInvoker, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
+  GenericNodeTransformationMethodDef,
+  MethodBasedComponentImplementationInvoker,
+  StandardObjectWithMethodDef
+}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -25,61 +36,81 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with OptionValues {
 
-  private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, getClass.getClassLoader,
-      process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)))
-
-  private val definitionWithTypes = ModelDefinitionWithTypes(processDefinition)
+  private val SomeCategory      = "SomeCategory"
+  private val SomeOtherCategory = "SomeOtherCategory"
 
   test("extract additional variables info from annotation") {
-    val methodDef = processDefinition.customStreamTransformers("transformer1")._1
+    val methodDef = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformer1")
+      ._1
       .asInstanceOf[StandardObjectWithMethodDef]
-      .implementationInvoker.asInstanceOf[MethodBasedComponentImplementationInvoker]
+      .implementationInvoker
+      .asInstanceOf[MethodBasedComponentImplementationInvoker]
       .methodDef
     val additionalVars = methodDef.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe AdditionalVariableProvidedInRuntime[OnlyUsedInAdditionalVariable]
   }
 
   test("extract type info from classes from additional variables") {
-    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
+    val classDefinition = modelDefinitionWithTypes(None).typeDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
     classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract type info from additional classes") {
-    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[AdditionalClass])
+    val classDefinition = modelDefinitionWithTypes(None).typeDefinitions.get(classOf[AdditionalClass])
     classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {
-    val definition = processDefinition.services("configurable1")
+    val definition = modelDefinitionWithTypes(None).modelDefinition.services("configurable1")
 
-    definition.asInstanceOf[GenericNodeTransformationMethodDef]
-      .obj.asInstanceOf[EagerServiceWithStaticParametersAndReturnType].returnType shouldBe Typed[String]
+    definition
+      .asInstanceOf[GenericNodeTransformationMethodDef]
+      .obj
+      .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
+      .returnType shouldBe Typed[String]
   }
 
   test("extract definition with generic params") {
-    val definition = processDefinition.customStreamTransformers("transformerWithGenericParam")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerWithGenericParam")
+      ._1
+      .asInstanceOf[StandardObjectWithMethodDef]
 
     definition.parameters should have size 1
     definition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
   }
 
   test("extract definition using ContextTransformation") {
-    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")._1.returnType shouldBe defined
-    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")._1.returnType shouldBe empty
+    modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")
+      ._1
+      .returnType shouldBe defined
+    modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")
+      ._1
+      .returnType shouldBe empty
   }
 
   test("extract validators based on editor") {
-    val definition = processDefinition.customStreamTransformers("transformerWithFixedValueParam")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerWithFixedValueParam")
+      ._1
+      .asInstanceOf[StandardObjectWithMethodDef]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
-    parameter.validators should contain (MandatoryParameterValidator)
-    parameter.validators should contain (FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar"))))
+    parameter.validators should contain(MandatoryParameterValidator)
+    parameter.validators should contain(
+      FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar")))
+    )
   }
 
   test("extract default value from annotation") {
-    val definition = processDefinition.customStreamTransformers("transformerWithDefaultValueForParameter")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerWithDefaultValueForParameter")
+      ._1
+      .asInstanceOf[StandardObjectWithMethodDef]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
@@ -87,7 +118,10 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("default value from annotation should have higher priority than optionality") {
-    val definition = processDefinition.customStreamTransformers("transformerWithOptionalDefaultValueForParameter")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerWithOptionalDefaultValueForParameter")
+      ._1
+      .asInstanceOf[StandardObjectWithMethodDef]
 
     definition.parameters should have size 1
     val parameter = definition.parameters.head
@@ -95,7 +129,10 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extract definition with branch params") {
-    val definition = processDefinition.customStreamTransformers("transformerWithBranchParam")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition = modelDefinitionWithTypes(None).modelDefinition
+      .customStreamTransformers("transformerWithBranchParam")
+      ._1
+      .asInstanceOf[StandardObjectWithMethodDef]
 
     definition.parameters should have size 2
 
@@ -111,7 +148,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extract basic global variable") {
-    val definition = processDefinition.expressionConfig.globalVariables
+    val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
     val helperDef = definition("helper")
     helperDef.obj shouldBe SampleHelper
@@ -119,7 +156,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extract typed global variable") {
-    val definition = processDefinition.expressionConfig.globalVariables
+    val definition = modelDefinitionWithTypes(None).modelDefinition.expressionConfig.globalVariables
 
     val typedGlobalDef = definition("typedGlobal")
     typedGlobalDef.obj shouldBe SampleTypedVariable
@@ -127,44 +164,94 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extracts validators from config") {
-    val definition = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val definition =
+      modelDefinitionWithTypes(None).modelDefinition
+        .customStreamTransformers("transformer1")
+        ._1
+        .asInstanceOf[StandardObjectWithMethodDef]
     val parameter = definition.parameters.find(_.name == "param1")
-    parameter.map(_.validators) shouldBe Some(List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match...")))
+    parameter.map(_.validators) shouldBe Some(
+      List(
+        MandatoryParameterValidator,
+        RegExpParameterValidator(".*", "has to match...", "really has to match...")
+      )
+    )
   }
 
-  object TestCreator extends ProcessConfigCreator {
-    override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(
-        "transformer1" -> WithCategories(Transformer1, "cat"),
-        "transformerWithGenericParam" -> WithCategories(TransformerWithGenericParam, "cat"),
-        "transformerReturningContextTransformationWithOutputVariable" -> WithCategories(TransformerReturningContextTransformationWithOutputVariable, "cat"),
-        "transformerReturningContextTransformationWithoutOutputVariable" -> WithCategories(TransformerReturningContextTransformationWithoutOutputVariable, "cat"),
-        "transformerWithBranchParam" -> WithCategories(TransformerWithBranchParam, "cat"),
-        "transformerWithFixedValueParam" -> WithCategories(TransformerWithFixedValueParam, "cat"),
-        "transformerWithDefaultValueForParameter" -> WithCategories(TransformerWithDefaultValueForParameter, "cat"),
-        "transformerWithOptionalDefaultValueForParameter" -> WithCategories(TransformerWithOptionalDefaultValueForParameter, "cat"))
+  test("extract components that are only in specified category") {
+    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.customStreamTransformers
 
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-      "configurable1" -> WithCategories(EmptyExplicitMethodToInvoke(
-        List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")
-      ), Typed[String]), "cat")
+    customTransformers should contain key "transformer1"
+    customTransformers should contain key "transformedInSomeCategory"
+    customTransformers should not contain key("transformedInSomeOtherCategory")
+  }
+
+  private def modelDefinitionWithTypes(category: Option[String]) = ModelDefinitionWithTypes(
+    ProcessDefinitionExtractor.extractObjectWithMethods(
+      TestCreator,
+      getClass.getClassLoader,
+      process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)),
+      category
     )
+  )
 
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map()
+  object TestCreator extends ProcessConfigCreator {
 
-    override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map()
+    override def customStreamTransformers(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[CustomStreamTransformer]] =
+      Map(
+        "transformer1"                -> WithCategories.anyCategory(Transformer1),
+        "transformerWithGenericParam" -> WithCategories.anyCategory(TransformerWithGenericParam),
+        "transformerReturningContextTransformationWithOutputVariable" -> WithCategories.anyCategory(
+          TransformerReturningContextTransformationWithOutputVariable
+        ),
+        "transformerReturningContextTransformationWithoutOutputVariable" -> WithCategories.anyCategory(
+          TransformerReturningContextTransformationWithoutOutputVariable,
+        ),
+        "transformerWithBranchParam"     -> WithCategories.anyCategory(TransformerWithBranchParam),
+        "transformerWithFixedValueParam" -> WithCategories.anyCategory(TransformerWithFixedValueParam),
+        "transformerWithDefaultValueForParameter" -> WithCategories.anyCategory(
+          TransformerWithDefaultValueForParameter
+        ),
+        "transformerWithOptionalDefaultValueForParameter" -> WithCategories.anyCategory(
+          TransformerWithOptionalDefaultValueForParameter,
+        ),
+        "transformedInSomeCategory"      -> WithCategories(Transformer1, SomeCategory),
+        "transformedInSomeOtherCategory" -> WithCategories(Transformer1, SomeOtherCategory),
+      )
+
+    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+      Map(
+        "configurable1" -> WithCategories.anyCategory(
+          EmptyExplicitMethodToInvoke(
+            List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")),
+            Typed[String]
+          )
+        )
+      )
+
+    override def sourceFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SourceFactory]] = Map()
+
+    override def sinkFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SinkFactory]] = Map()
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List()
 
-    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(
-      globalProcessVariables = Map(
-        "helper" -> WithCategories(SampleHelper, "category"),
-        "typedGlobal" -> WithCategories(SampleTypedVariable, "category")
-      ),
-      globalImports = Nil, additionalClasses = List(
-        classOf[AdditionalClass]
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+      ExpressionConfig(
+        globalProcessVariables = Map(
+          "helper"      -> WithCategories.anyCategory(SampleHelper),
+          "typedGlobal" -> WithCategories.anyCategory(SampleTypedVariable)
+        ),
+        globalImports = Nil,
+        additionalClasses = List(
+          classOf[AdditionalClass]
+        )
       )
-    )
 
     override def buildInfo(): Map[String, String] = Map()
   }
@@ -173,16 +260,19 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
 
     @MethodToInvoke
     def invoke(
-      @ParamName("param1")
-      @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
-      someStupidNameWithoutMeaning: LazyParameter[String]) : Unit = {}
+        @ParamName("param1")
+        @AdditionalVariables(value =
+          Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable]))
+        )
+        someStupidNameWithoutMeaning: LazyParameter[String]
+    ): Unit = {}
+
   }
 
   object TransformerWithGenericParam extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def invoke(@ParamName("foo") foo: List[String]): Unit = {
-    }
+    def invoke(@ParamName("foo") foo: List[String]): Unit = {}
 
   }
 
@@ -211,47 +301,67 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   object TransformerWithBranchParam extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def invoke(@BranchParamName("lazyParam") lazyParam: Map[String, LazyParameter[Integer]],
-               @BranchParamName("eagerParam") eagerParam: Map[String, Integer]): Unit = {
-    }
+    def invoke(
+        @BranchParamName("lazyParam") lazyParam: Map[String, LazyParameter[Integer]],
+        @BranchParamName("eagerParam") eagerParam: Map[String, Integer]
+    ): Unit = {}
 
   }
 
   object TransformerWithFixedValueParam extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def invoke(@ParamName("param1")
-               @SimpleEditor(`type` = SimpleEditorType.FIXED_VALUES_EDITOR,
-                 possibleValues = Array(
-                 new LabeledExpression(expression = "'foo'", label = "foo"),
-                 new LabeledExpression(expression = "'bar'", label = "bar")))
-               someStupidNameWithoutMeaning: String) : Unit = {}
+    def invoke(
+        @ParamName("param1")
+        @SimpleEditor(
+          `type` = SimpleEditorType.FIXED_VALUES_EDITOR,
+          possibleValues = Array(
+            new LabeledExpression(expression = "'foo'", label = "foo"),
+            new LabeledExpression(expression = "'bar'", label = "bar")
+          )
+        )
+        someStupidNameWithoutMeaning: String
+    ): Unit = {}
+
   }
 
   object TransformerWithDefaultValueForParameter extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def invoke(@ParamName("param1")
-               @DefaultValue("'foo'")
-               someStupidNameWithoutMeaning: String) : Unit = {}
+    def invoke(
+        @ParamName("param1")
+        @DefaultValue("'foo'")
+        someStupidNameWithoutMeaning: String
+    ): Unit = {}
+
   }
 
   object TransformerWithOptionalDefaultValueForParameter extends CustomStreamTransformer {
 
     @MethodToInvoke
-    def invoke(@ParamName("param1")
-               @DefaultValue("'foo'")
-               @Nullable someStupidNameWithoutMeaning: String) : Unit = {}
+    def invoke(
+        @ParamName("param1")
+        @DefaultValue("'foo'")
+        @Nullable someStupidNameWithoutMeaning: String
+    ): Unit = {}
+
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)
 
   case class AdditionalClass(someField: String)
 
-  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult) extends EagerServiceWithStaticParametersAndReturnType {
-    override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
-                                                  collector: InvocationCollectors.ServiceInvocationCollector,
-                                                  contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[Any] = ???
+  case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
+      extends EagerServiceWithStaticParametersAndReturnType {
+
+    override def invoke(params: Map[String, Any])(
+        implicit ec: ExecutionContext,
+        collector: InvocationCollectors.ServiceInvocationCollector,
+        contextId: ContextId,
+        metaData: MetaData,
+        componentUseCase: ComponentUseCase
+    ): Future[Any] = ???
+
   }
 
   object SampleHelper {
@@ -265,4 +375,5 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
 
     override def initialReturnType: TypingResult = Typed(classOf[Int])
   }
+
 }

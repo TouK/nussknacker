@@ -1,10 +1,9 @@
 import React from "react";
-import TipsError from "../../../assets/img/icons/tipsError.svg";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeTip from "./NodeTip";
 import { css } from "@emotion/css";
 import { NodeValidationError } from "../../../types";
 
-//TODO: remove style overrides, cleanup
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
     const { errors = [], message: errorMessage } = props;
 
@@ -14,19 +13,22 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
 
     const className = css({
         display: "flex",
+    });
+
+    const nodeTip = css({
+        alignItems: "center",
         margin: 0,
-        "&&& .node-tip": {
-            margin: ".5em 1em .5em 0",
-        },
-        "&&& .node-error": {
-            padding: 0,
-            margin: "0 0 .5em 0",
-        },
+        width: 24,
+        height: 24,
     });
 
     return (
-        <div className={className}>
-            <NodeTip title={errorMessage} icon={<TipsError />} />
+        <div className={className} style={{ alignItems: "center" }}>
+            <NodeTip
+                title={errorMessage}
+                className={nodeTip}
+                icon={<DangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "center", width: 24, height: 24 })} />}
+            />
             <div>
                 {errors.map(({ description, fieldName, message }, index) => (
                     <div className="node-error" key={index} title={description}>

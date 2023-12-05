@@ -1,16 +1,26 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.model.{
+  PeriodicProcessDeployment,
+  PeriodicProcessDeploymentId,
+  PeriodicProcessDeploymentState,
+  PeriodicProcessDeploymentStatus,
+  ScheduleName
+}
 
 import java.time.LocalDateTime
 
 object PeriodicProcessDeploymentGen {
+
+  val now: LocalDateTime = LocalDateTime.now()
+
   def apply(): PeriodicProcessDeployment = {
     PeriodicProcessDeployment(
       id = PeriodicProcessDeploymentId(42),
       periodicProcess = PeriodicProcessGen(),
-      runAt = LocalDateTime.now(),
-      scheduleName = None,
+      createdAt = now.minusMinutes(10),
+      runAt = now,
+      scheduleName = ScheduleName(None),
       retriesLeft = 0,
       nextRetryAt = None,
       state = PeriodicProcessDeploymentState(
@@ -20,4 +30,5 @@ object PeriodicProcessDeploymentGen {
       )
     )
   }
+
 }

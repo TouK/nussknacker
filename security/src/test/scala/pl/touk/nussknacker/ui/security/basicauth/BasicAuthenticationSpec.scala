@@ -15,11 +15,11 @@ import scala.concurrent.Future
 class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives {
 
   implicit private val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
-  private val classLoader = getClass.getClassLoader
+  private val classLoader                                           = getClass.getClassLoader
 
   private val anonymousUserRole = "Anonymous"
-  private val config = ConfigFactory.parseString(
-    s"""
+
+  private val config = ConfigFactory.parseString(s"""
         authentication: {
           method: "BasicAuth"
           anonymousUserRole: "${anonymousUserRole}"
@@ -27,7 +27,7 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
         }
       """.stripMargin)
 
-  private val authenticationResources = AuthenticationResources(config, classLoader)
+  private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
   assert(authenticationResources.isInstanceOf[BasicAuthenticationResources])
 
   private val testRoute = Route.seal(

@@ -1,11 +1,11 @@
 /* eslint-disable i18next/no-literal-string */
-import css from "!raw-loader!./export.styl";
 import { dia, V, Vectorizer } from "jointjs";
 import { toXml } from "../../../common/SVGUtils";
+import { exportStyled } from "./ExportStyled";
 
 function createStyle() {
     const style = V("style").node;
-    style.appendChild(document.createTextNode(css));
+    style.appendChild(document.createTextNode(exportStyled.styles));
     return style;
 }
 
@@ -51,6 +51,10 @@ const removeHiddenNodes = (root: SVGElement) =>
         .filter((el, i, all) => !all.includes(el.ownerSVGElement))
         .forEach((el) => el.remove());
 
+const removeIncompatibles = (root: SVGElement) => {
+    root.querySelectorAll<SVGGraphicsElement>(`[orient="auto-start-reverse"]`).forEach((el) => el.setAttribute("orient", "auto"));
+};
+
 function createPlaceholder(parent = document.body) {
     const el = document.createElement("div");
     el.style.position = "absolute";
@@ -89,6 +93,7 @@ export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, m
 
     addStyles(svg, height, width);
     removeHiddenNodes(svg);
+    removeIncompatibles(svg);
     embedImages(svg);
 
     placeholder.remove();

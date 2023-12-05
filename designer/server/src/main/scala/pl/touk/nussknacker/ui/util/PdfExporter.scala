@@ -13,45 +13,58 @@ import org.apache.commons.io.IOUtils
 import org.apache.fop.apps.FopConfParser
 import org.apache.fop.apps.io.ResourceResolverFactory
 import org.apache.xmlgraphics.util.MimeConstants
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter extends LazyLogging {
 
-  private val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
-    new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
+  private val fopFactory = new FopConfParser(
+    getClass.getResourceAsStream("/fop/config.xml"),
+    new URI("http://touk.pl"),
+    ResourceResolverFactory.createDefaultResourceResolver
+  ).getFopFactoryBuilder.build
 
-  def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity): Array[Byte] = {
+  def exportToPdf(
+      svg: String,
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processActivity: ProcessActivity
+  ): Array[Byte] = {
 
-    //initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
+    // initFontsIfNeeded is invoked every time to make sure that /tmp content is not deleted
     initFontsIfNeeded()
-    //FIXME: cannot render polish signs..., better to strip them than not render anything...
-    //\u00A0 - non-breaking space in not ASCII :)...
-    val fopXml = prepareFopXml(svg.replaceAll("\u00A0", " ").replaceAll("[^\\p{ASCII}]", ""), processDetails, processActivity, processDetails.json)
+    // FIXME: cannot render polish signs..., better to strip them than not render anything...
+    // \u00A0 - non-breaking space in not ASCII :)...
+    val fopXml = prepareFopXml(
+      svg.replaceAll("\u00A0", " ").replaceAll("[^\\p{ASCII}]", ""),
+      processDetails,
+      processActivity,
+      processDetails.json
+    )
 
     createPdf(fopXml)
   }
 
-  //in PDF export we print timezone, to avoid ambiguity
-  //TODO: pass client timezone from FE
+  // in PDF export we print timezone, to avoid ambiguity
+  // TODO: pass client timezone from FE
   private def format(instant: Instant) = {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss [VV]")
     instant.atZone(ZoneId.systemDefault()).format(formatter)
   }
 
-  //TODO: this is one nasty hack, is there a better way to make fop read fonts from classpath?
+  // TODO: this is one nasty hack, is there a better way to make fop read fonts from classpath?
   private def initFontsIfNeeded(): Unit = synchronized {
     val dir = new File("/tmp/fop/fonts")
     dir.mkdirs()
-    List("OpenSans-BoldItalic.ttf",
+    List(
+      "OpenSans-BoldItalic.ttf",
       "OpenSans-Bold.ttf",
       "OpenSans-ExtraBoldItalic.ttf",
       "OpenSans-ExtraBold.ttf",
@@ -74,9 +87,14 @@ object PdfExporter extends LazyLogging {
     out.toByteArray
   }
 
-  private def prepareFopXml(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity, displayableProcess: DisplayableProcess) = {
-    val diagram = XML.loadString(svg)
-    val currentVersion = processDetails.history.find(_.processVersionId == processDetails.processVersionId).get
+  private def prepareFopXml(
+      svg: String,
+      processDetails: ScenarioWithDetailsEntity[DisplayableProcess],
+      processActivity: ProcessActivity,
+      displayableProcess: DisplayableProcess
+  ) = {
+    val diagram        = XML.loadString(svg)
+    val currentVersion = processDetails.history.get.find(_.processVersionId == processDetails.processVersionId).get
 
     <root xmlns="http://www.w3.org/1999/XSL/Format" font-family="OpenSans" font-size="12pt" xml:lang="en">
 
@@ -154,13 +172,14 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {if (processActivity.comments.isEmpty) {
-          <table-cell>
+          {
+    if (processActivity.comments.isEmpty) {
+      <table-cell>
             <block/>
           </table-cell>
-        } else
-          processActivity.comments.sortBy(_.createDate).map { comment =>
-            <table-row>
+    } else
+      processActivity.comments.sortBy(_.createDate).map { comment =>
+        <table-row>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
                   {format(comment.createDate)}
@@ -177,7 +196,8 @@ object PdfExporter extends LazyLogging {
                 </block>
               </table-cell>
             </table-row>
-          }}
+      }
+  }
         </table-body>
       </table>
     </block>
@@ -186,29 +206,38 @@ object PdfExporter extends LazyLogging {
   private def nodeDetails(node: NodeData) = {
     val nodeData = node match {
       case Source(_, SourceRef(typ, params), _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case Filter(_, expression, _, _) => List(("Expression", expression.expression))
-      case Enricher(_, ServiceRef(typ, params), output, _) => ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
-      //TODO: what about Swtich??
+      case Filter(_, expression, _, _)          => List(("Expression", expression.expression))
+      case Enricher(_, ServiceRef(typ, params), output, _) =>
+        ("Type", typ) :: ("Output", output) :: params.map(p => (p.name, p.expression.expression))
+      // TODO: what about Swtich??
       case Switch(_, expression, exprVal, _) => expression.map(e => ("Expression", e.expression)).toList
-      case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+      case Processor(_, ServiceRef(typ, params), _, _) =>
+        ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
-      case FragmentInput(_, FragmentRef(typ, params, _), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+      case CustomNode(_, output, typ, params, _) =>
+        ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
+      case FragmentInput(_, FragmentRef(typ, params, _), _, _, _) =>
+        ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case FragmentInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
-      case FragmentOutputDefinition(_, outputName, fields, _) => ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
+      case FragmentOutputDefinition(_, outputName, fields, _) =>
+        ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
       case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
-      case VariableBuilder(_, name, fields, _) => ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
+      case VariableBuilder(_, name, fields, _) =>
+        ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
       case Join(_, output, typ, parameters, branch, _) =>
         ("Type", typ) :: ("Output", output.getOrElse("")) ::
-          parameters.map(p => p.name -> p.expression.expression) ++ branch.flatMap(bp => bp.parameters.map(p => s"${bp.branchId} - ${p.name}" -> p.expression.expression))
+          parameters.map(p => p.name -> p.expression.expression) ++ branch.flatMap(bp =>
+            bp.parameters.map(p => s"${bp.branchId} - ${p.name}" -> p.expression.expression)
+          )
       case Split(_, _) => ("No parameters", "") :: Nil
-      //This should not happen in properly resolved scenario...
-      case _: BranchEndData => throw new IllegalArgumentException("Should not happen during PDF export")
+      // This should not happen in properly resolved scenario...
+      case _: BranchEndData       => throw new IllegalArgumentException("Should not happen during PDF export")
       case _: FragmentUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
     }
     val data = node.additionalFields
       .flatMap(_.description)
-      .map(naf => ("Description", naf)).toList ++ nodeData
+      .map(naf => ("Description", naf))
+      .toList ++ nodeData
     if (data.isEmpty) {
       NodeSeq.Empty
     } else {
@@ -220,8 +249,9 @@ object PdfExporter extends LazyLogging {
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
           <table-column column-width="proportional-column-width(3)"/>
           <table-body>
-            {data.map { case (key, value) =>
-            <table-row>
+            {
+        data.map { case (key, value) =>
+          <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>
                   {key}
@@ -233,7 +263,8 @@ object PdfExporter extends LazyLogging {
                 </block>
               </table-cell>
             </table-row>
-          }}
+        }
+      }
           </table-body>
         </table>
       </block>
@@ -241,8 +272,8 @@ object PdfExporter extends LazyLogging {
 
   }
 
-  //we want to be able to break line for these characters. it's not really perfect solution for long, complex expressions,
-  //but should handle most of the cases../
+  // we want to be able to break line for these characters. it's not really perfect solution for long, complex expressions,
+  // but should handle most of the cases../
   private def addEmptySpace(str: String) = List(")", ".", "(")
     .foldLeft(str) { (acc, el) => acc.replace(el, el + '\u200b') }
 
@@ -269,13 +300,14 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {if (displayableProcess.nodes.isEmpty) {
-          <table-cell>
+          {
+      if (displayableProcess.nodes.isEmpty) {
+        <table-cell>
             <block/>
           </table-cell>
-        } else
-          displayableProcess.nodes.map { node =>
-            <table-row>
+      } else
+        displayableProcess.nodes.map { node =>
+          <table-row>
               <table-cell border="1pt solid black" padding-left="1pt" font-weight="bold">
                 <block>
                   <basic-link internal-destination={node.id}>
@@ -294,14 +326,15 @@ object PdfExporter extends LazyLogging {
                 </block>
               </table-cell>
             </table-row>
-          }}
+        }
+    }
         </table-body>
       </table>
     </block>
   }
 
   private def attachments(processActivity: ProcessActivity) = if (processActivity.attachments.isEmpty) {
-      <block/>
+    <block/>
   } else {
     <block space-after.minimum="3em">
       <block font-size="15pt" font-weight="bold" text-align="left">
@@ -328,8 +361,10 @@ object PdfExporter extends LazyLogging {
           </table-row>
         </table-header>
         <table-body>
-          {processActivity.attachments.sortBy(_.createDate).map(attachment =>
-          <table-row>
+          {
+      processActivity.attachments
+        .sortBy(_.createDate)
+        .map(attachment => <table-row>
 
             <table-cell border="1pt solid black" padding-left="1pt">
               <block>
@@ -346,8 +381,8 @@ object PdfExporter extends LazyLogging {
                 {attachment.fileName}
               </block>
             </table-cell>
-          </table-row>
-        )}
+          </table-row>)
+    }
         </table-body>
       </table>
     </block>

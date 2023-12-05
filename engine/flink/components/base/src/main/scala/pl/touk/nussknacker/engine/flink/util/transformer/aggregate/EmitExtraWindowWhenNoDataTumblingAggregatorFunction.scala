@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
@@ -24,21 +24,23 @@ import scala.language.higherKinds
  * it handles out of order elements. The other difference from AggregatorFunction is that we emit event only in timer and handle
  * state eviction on ours own.
  */
-class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](
-                                                                      protected val aggregator: Aggregator,
-                                                                      protected val timeWindowLengthMillis: Long,
-                                                                      protected val timeWindowOffsetMillis: Long,
-                                                                      override val nodeId: NodeId,
-                                                                      protected val aggregateElementType: TypingResult,
-                                                                      protected override val aggregateTypeInformation: TypeInformation[AnyRef],
-                                                                      val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-                                                                    )(implicit override val rangeMap: FlinkRangeMap[MapT])
-  extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
+class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K, V]](
+    protected val aggregator: Aggregator,
+    protected val timeWindowLengthMillis: Long,
+    protected val timeWindowOffsetMillis: Long,
+    override val nodeId: NodeId,
+    protected val aggregateElementType: TypingResult,
+    protected override val aggregateTypeInformation: TypeInformation[AnyRef],
+    val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+)(implicit override val rangeMap: FlinkRangeMap[MapT])
+    extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
 
-  type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
-  type FlinkOnTimerCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
+  type FlinkCtx =
+    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#Context
+  type FlinkOnTimerCtx =
+    KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]#OnTimerContext
 
   @transient
   protected var state: ValueState[MapT[Long, AnyRef]] = _
@@ -53,20 +55,34 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](
 
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
 
-  override def processElement(value: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def processElement(
+      value: ValueWithContext[StringKeyedValue[AnyRef]],
+      ctx: FlinkCtx,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     addElementToState(value, ctx.timestamp() - timeWindowOffsetMillis, ctx.timerService(), out)
   }
 
-  override protected def handleElementAddedToState(newElementInStateTimestamp: Long, newElement: aggregator.Element, nkCtx: NkContext,
-                                                   timerService: TimerService, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override protected def handleElementAddedToState(
+      newElementInStateTimestamp: Long,
+      newElement: aggregator.Element,
+      nkCtx: NkContext,
+      timerService: TimerService,
+      out: Collector[ValueWithContext[AnyRef]]
+  ): Unit = {
     timerService.registerEventTimeTimer(newElementInStateTimestamp + timeWindowLengthMillis)
   }
 
   override def onTimer(timestamp: Long, ctx: FlinkOnTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val previousTimestamp = timestamp - timeWindowLengthMillis
     val currentStateValue = readStateOrInitial()
-    val finalVal = computeFinalValue(currentStateValue, previousTimestamp)
-    out.collect(ValueWithContext(finalVal, KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)))
+    val finalVal          = computeFinalValue(currentStateValue, previousTimestamp)
+    out.collect(
+      ValueWithContext(
+        finalVal,
+        KeyEnricher.enrichWithKey(NkContext(contextIdGenerator.nextContextId()), ctx.getCurrentKey)
+      )
+    )
 
     val previousTimestampStateAndRest = stateForTimestampToReadUntilEnd(currentStateValue, previousTimestamp)
     if (previousTimestampStateAndRest.toScalaMapRO.isEmpty) {
@@ -76,7 +92,11 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](
     }
   }
 
-  override protected def updateState(stateValue: MapT[Long, AnyRef], stateValidity: Long, timeService: TimerService): Unit = {
+  override protected def updateState(
+      stateValue: MapT[Long, AnyRef],
+      stateValidity: Long,
+      timeService: TimerService
+  ): Unit = {
     state.update(stateValue)
   }
 

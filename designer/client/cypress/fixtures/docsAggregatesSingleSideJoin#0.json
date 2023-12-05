@@ -1,0 +1,206 @@
+{
+    "metaData": {
+        "id": "First-Single-Side-Join",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "single-side-join",
+            "outputVar": "outputVar",
+            "nodeType": "single-side-join",
+            "parameters": [
+                {
+                    "name": "aggregator",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "#AGG.last"
+                    }
+                },
+                {
+                    "name": "windowLength",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "T(java.time.Duration).parse('P1D')"
+                    }
+                },
+                {
+                    "name": "aggregateBy",
+                    "expression": {
+                        "language": "spel",
+                        "expression": "{\"operation\": #input.operation, \"amount\": #input.amount}"
+                    }
+                }
+            ],
+            "branchParameters": [
+                {
+                    "branchId": "subscriber alerts",
+                    "parameters": [
+                        {
+                            "name": "branchType",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "T(pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType).MAIN"
+                            }
+                        },
+                        {
+                            "name": "key",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "#input.subscriber"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "branchId": "audit - all events",
+                    "parameters": [
+                        {
+                            "name": "branchType",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "T(pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType).JOINED"
+                            }
+                        },
+                        {
+                            "name": "key",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "#input.subscriber"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 180
+                }
+            },
+            "type": "Join"
+        },
+        {
+            "id": "tracked subscriber operations",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 360
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": [
+        [
+            {
+                "id": "subscriber alerts",
+                "ref": {
+                    "typ": "periodic",
+                    "parameters": [
+                        {
+                            "name": "period",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "T(java.time.Duration).parse('PT1M')"
+                            }
+                        },
+                        {
+                            "name": "count",
+                            "expression": {
+                                "language": "spel",
+                                "expression": ""
+                            }
+                        },
+                        {
+                            "name": "value",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "{subscriber: 'sdsds'}"
+                            }
+                        }
+                    ]
+                },
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 360,
+                        "y": 0
+                    }
+                },
+                "type": "Source"
+            },
+            {
+                "definition": {
+                    "id": "subscriber alerts",
+                    "joinId": "single-side-join"
+                },
+                "type": "BranchEndData"
+            }
+        ],
+        [
+            {
+                "id": "audit - all events",
+                "ref": {
+                    "typ": "periodic",
+                    "parameters": [
+                        {
+                            "name": "period",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "T(java.time.Duration).parse('PT1M')"
+                            }
+                        },
+                        {
+                            "name": "count",
+                            "expression": {
+                                "language": "spel",
+                                "expression": ""
+                            }
+                        },
+                        {
+                            "name": "value",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "{subscriber: 'sdsds', operation: 'ewerw', amount: 1221}"
+                            }
+                        }
+                    ]
+                },
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 0,
+                        "y": 0
+                    }
+                },
+                "type": "Source"
+            },
+            {
+                "definition": {
+                    "id": "audit - all events",
+                    "joinId": "single-side-join"
+                },
+                "type": "BranchEndData"
+            }
+        ]
+    ]
+}

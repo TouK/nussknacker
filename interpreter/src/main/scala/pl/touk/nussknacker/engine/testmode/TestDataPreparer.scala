@@ -20,42 +20,51 @@ import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-class TestDataPreparer(classloader: ClassLoader,
-                       expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
-                       dictRegistry: EngineDictRegistry,
-                       typeDefinitionSet: TypeDefinitionSet,
-                       metaData: MetaData) {
+class TestDataPreparer(
+    classloader: ClassLoader,
+    expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
+    dictRegistry: EngineDictRegistry,
+    typeDefinitionSet: TypeDefinitionSet,
+    metaData: MetaData
+) {
 
-  private lazy val dumbContext = Context("dumb", Map.empty, None)
+  private lazy val dumbContext             = Context("dumb", Map.empty, None)
   private lazy val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)
-  private lazy val validationContext = globalVariablesPreparer.emptyValidationContext(metaData)
+  private lazy val validationContext       = globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private lazy val expressionCompiler: ExpressionCompiler =
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, typeDefinitionSet)
 
-  def prepareRecordForTest[T](source: Source,
-                              record: ScenarioTestRecord): T = {
+  def prepareRecordForTest[T](source: Source, record: ScenarioTestRecord): T = {
     implicit val implicitNodeId: NodeId = record.sourceId
     (source, record) match {
-      case (s: SourceTestSupport[T@unchecked], jsonRecord: ScenarioTestJsonRecord) => s.testRecordParser.parse(jsonRecord.record)
-      case (s: TestWithParametersSupport[T@unchecked], parametersRecord: ScenarioTestParametersRecord) =>
+      case (s: SourceTestSupport[T @unchecked], jsonRecord: ScenarioTestJsonRecord) =>
+        s.testRecordParser.parse(jsonRecord.record)
+      case (s: TestWithParametersSupport[T @unchecked], parametersRecord: ScenarioTestParametersRecord) =>
         val parameterTypingResults = s.testParametersDefinition.collect { param =>
           parametersRecord.parameterExpressions.get(param.name) match {
-            case Some(expression) => evaluateExpression(expression, param).map(e => param.name -> e)
+            case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
             case None if !param.isOptional => UnknownProperty(param.name).invalidNel
           }
         }
         parameterTypingResults.sequence match {
           case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
-          case Invalid(errors) => throw new IllegalArgumentException(errors.toList.mkString(", "))
+          case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
         }
-      case (other, _: ScenarioTestJsonRecord) => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
-      case (other, _: ScenarioTestParametersRecord) => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters")
+      case (other, _: ScenarioTestJsonRecord) =>
+        throw new IllegalArgumentException(
+          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
+        )
+      case (other, _: ScenarioTestParametersRecord) =>
+        throw new IllegalArgumentException(
+          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters"
+        )
     }
   }
 
-  private def evaluateExpression(expression: Expression, parameter: Parameter)
-                                (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
+  private def evaluateExpression(expression: Expression, parameter: Parameter)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
     expressionCompiler
       .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
@@ -74,6 +83,7 @@ object TestDataPreparer {
       modelData.modelDefinition.expressionConfig,
       modelData.engineDictRegistry,
       modelData.modelDefinitionWithTypes.typeDefinitions,
-      process.metaData)
+      process.metaData
+    )
 
 }

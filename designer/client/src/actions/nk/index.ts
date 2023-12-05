@@ -1,6 +1,5 @@
 export * from "./assignSettings";
 export * from "./assignUser";
-export * from "./closeModals";
 export * from "./comment";
 export * from "./displayProcessActivity";
 export * from "./displayProcessCounts";

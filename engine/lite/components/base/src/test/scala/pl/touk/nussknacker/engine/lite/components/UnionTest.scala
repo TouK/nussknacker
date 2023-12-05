@@ -38,7 +38,9 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
 
   test("unification of different types") {
     val validationResult = validate("123", "'foo'")
-    validationResult.result.toEither.leftValue.toList should contain (CannotCreateObjectError("All branch values must be of the same type", "union"))
+    validationResult.result.toEither.leftValue.toList should contain(
+      CannotCreateObjectError("All branch values must be of the same type", "union")
+    )
   }
 
   test("unification of map types with common supertype") {
@@ -48,45 +50,64 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
   }
 
   private def validate(leftValueExpression: String, rightValueExpression: String): CompilationResult[Unit] = {
-    val scenario = ScenarioBuilder.streamingLite("test").sources(
-      GraphBuilder
-        .source("left-source", "typed-source", "value" -> leftValueExpression)
-        .branchEnd("left-source", "union"),
-      GraphBuilder
-        .source("right-source", "typed-source", "value" -> rightValueExpression)
-        .branchEnd("right-source", "union"),
-      GraphBuilder
-        .join("union", "union", Some("unified"), List(
-          "left-source" -> List(
-            "Output expression" -> "#input"
-          ),
-          "right-source" -> List(
-            "Output expression" -> "#input"
+    val scenario = ScenarioBuilder
+      .streamingLite("test")
+      .sources(
+        GraphBuilder
+          .source("left-source", "typed-source", "value" -> leftValueExpression)
+          .branchEnd("left-source", "union"),
+        GraphBuilder
+          .source("right-source", "typed-source", "value" -> rightValueExpression)
+          .branchEnd("right-source", "union"),
+        GraphBuilder
+          .join(
+            "union",
+            "union",
+            Some("unified"),
+            List(
+              "left-source" -> List(
+                "Output expression" -> "#input"
+              ),
+              "right-source" -> List(
+                "Output expression" -> "#input"
+              )
+            )
           )
-        ))
-        .processorEnd("end", "dumb"))
+          .processorEnd("end", "dumb")
+      )
 
     val configCreator = new EmptyProcessConfigCreator {
-      override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+      override def sourceFactories(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[SourceFactory]] =
         Map("typed-source" -> WithCategories.anyCategory(TypedSourceFactory))
 
-      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+      override def services(
+          processObjectDependencies: ProcessObjectDependencies
+      ): Map[String, WithCategories[Service]] =
         Map("dumb" -> WithCategories.anyCategory(DumbService))
     }
-    val modelData = LocalModelData(ConfigFactory.empty(), configCreator)
-    val validator = ProcessValidator.default(modelData, None)
+    val modelData        = LocalModelData(ConfigFactory.empty(), configCreator)
+    val validator        = ProcessValidator.default(modelData)
     val validationResult = validator.validate(scenario)
     validationResult
   }
+
 }
 
 object TypedSourceFactory extends SourceFactory {
+
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Source =
     new LiteSource[Any] with ReturningType {
-      override def createTransformation[F[_] : Monad](evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]): Any => ValidatedNel[ErrorType, Context] = ???
+
+      override def createTransformation[F[_]: Monad](
+          evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
+      ): Any => ValidatedNel[ErrorType, Context] = ???
+
       override def returnType: typing.TypingResult = value.returnType
     }
+
 }
 
 object DumbService extends Service {

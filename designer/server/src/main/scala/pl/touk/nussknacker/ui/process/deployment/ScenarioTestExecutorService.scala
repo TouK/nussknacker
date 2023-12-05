@@ -4,24 +4,35 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
-  def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, processingType: ProcessingType,
-                     scenarioTestData: ScenarioTestData, variableEncoder: Any => T)
-                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
+  def testProcess[T](
+      id: ProcessIdWithName,
+      canonicalProcess: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
 
 }
 
-class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver,
-                                      dispatcher: DeploymentManagerDispatcher) extends ScenarioTestExecutorService {
-  override def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, processingType: ProcessingType,
-                              scenarioTestData: ScenarioTestData, variableEncoder: Any => T)
-                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
+class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, dispatcher: DeploymentManagerDispatcher)
+    extends ScenarioTestExecutorService {
+
+  override def testProcess[T](
+      id: ProcessIdWithName,
+      canonicalProcess: CanonicalProcess,
+      category: String,
+      processingType: ProcessingType,
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
       manager = dispatcher.deploymentManagerUnsafe(processingType)

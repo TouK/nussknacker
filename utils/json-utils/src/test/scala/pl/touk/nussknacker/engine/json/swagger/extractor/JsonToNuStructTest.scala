@@ -14,35 +14,36 @@ import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
   private val json = Json.obj(
-    "field1" -> fromString("value"),
-    "field2" -> Json.fromInt(1),
-    "field4" -> fromString("2020-07-10T12:12:30+02:00"),
-    "field5" -> fromString(""),
-    "field6" -> fromString("12:12:35+02:00"),
-    "field7" -> fromString("2020-07-10"),
+    "field1"       -> fromString("value"),
+    "field2"       -> Json.fromInt(1),
+    "field4"       -> fromString("2020-07-10T12:12:30+02:00"),
+    "field5"       -> fromString(""),
+    "field6"       -> fromString("12:12:35+02:00"),
+    "field7"       -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
-    "doubleField" -> Json.fromDoubleOrNull(1.55),
-    "nullField" -> Json.Null,
-    "mapField" -> Json.obj(("a", fromString("1")), ("b", fromInt(2)), ("c", fromValues(List(fromString("d"))))),
+    "doubleField"  -> Json.fromDoubleOrNull(1.55),
+    "nullField"    -> Json.Null,
+    "mapField"     -> Json.obj(("a", fromString("1")), ("b", fromInt(2)), ("c", fromValues(List(fromString("d"))))),
     "mapOfStringsField" -> Json.obj(("a", fromString("b")), ("c", fromString("d")), ("e", fromString("f"))),
   )
 
   test("should parse object with all required fields present") {
     val definition = SwaggerObject(
       elementType = Map(
-        "field1" -> SwaggerString,
-        "field2" -> SwaggerLong,
-        "field3" -> SwaggerLong,
-        "field4" -> SwaggerDateTime,
-        "field5" -> SwaggerDateTime,
-        "field6" -> SwaggerTime,
-        "field7" -> SwaggerDate,
-        "decimalField" -> SwaggerBigDecimal,
-        "doubleField" -> SwaggerDouble,
-        "nullField" -> SwaggerNull,
-        "mapField" -> SwaggerObject(Map.empty),
+        "field1"            -> SwaggerString,
+        "field2"            -> SwaggerLong,
+        "field3"            -> SwaggerLong,
+        "field4"            -> SwaggerDateTime,
+        "field5"            -> SwaggerDateTime,
+        "field6"            -> SwaggerTime,
+        "field7"            -> SwaggerDate,
+        "decimalField"      -> SwaggerBigDecimal,
+        "doubleField"       -> SwaggerDouble,
+        "nullField"         -> SwaggerNull,
+        "mapField"          -> SwaggerObject(Map.empty),
         "mapOfStringsField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))
-      ), AdditionalPropertiesDisabled
+      ),
+      AdditionalPropertiesDisabled
     )
 
     val value = JsonToNuStruct(json, definition)
@@ -67,7 +68,10 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should reject map with incorrect values types") {
-    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))), AdditionalPropertiesDisabled)
+    val definition = SwaggerObject(
+      elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))),
+      AdditionalPropertiesDisabled
+    )
 
     val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
 
@@ -76,7 +80,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should skip additionalFields when schema/SwaggerObject does not allow them") {
-    val definitionWithoutFields = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
+    val definitionWithoutFields =
+      SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
     extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
 
     val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
@@ -85,23 +90,28 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
-    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
-      "field1" -> "value",
-      "field2" -> java.math.BigDecimal.valueOf(1)
-    ))
+    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(
+      Map(
+        "field1" -> "value",
+        "field2" -> java.math.BigDecimal.valueOf(1)
+      )
+    )
 
     val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
-    val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
-    extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(Map(
-      "field1" -> 2L,
-      "field2" -> 1L
-    ))
+    val definition2 =
+      SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
+    extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(
+      Map(
+        "field1" -> 2L,
+        "field2" -> 1L
+      )
+    )
   }
 
   test("should throw exception on trying convert string to integer") {
-    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val json       = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
@@ -126,8 +136,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(
       elementType = Map(
         "string" -> SwaggerString,
-        "long" -> SwaggerLong,
-        "array" -> SwaggerArray(SwaggerBool),
+        "long"   -> SwaggerLong,
+        "array"  -> SwaggerArray(SwaggerBool),
         "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString))
       )
     )
@@ -139,19 +149,20 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     assertPath(
       Json.obj(
         "string" -> fromString(""),
-        "long" -> fromLong(1),
-        "array" -> fromValues(List(fromBoolean(false), fromString("string")))
+        "long"   -> fromLong(1),
+        "array"  -> fromValues(List(fromBoolean(false), fromString("string")))
       ),
       "array[1]"
     )
     assertPath(
       Json.obj(
         "string" -> fromString(""),
-        "long" -> fromLong(1),
-        "array" -> fromValues(Nil),
+        "long"   -> fromLong(1),
+        "array"  -> fromValues(Nil),
         "nested" -> Json.obj("string" -> fromLong(1))
       ),
       "nested.string"
     )
   }
+
 }

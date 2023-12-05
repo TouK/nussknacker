@@ -4,9 +4,15 @@ sidebar_position: 1
 ---
 # Configuration
 
+## Minimal configuration file
+
 The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
 additional configuration files. 
 This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 
+
+The location and name of the configuration file is defined by the CONFIG_FILE environment variable. Consult [Basic environment variables](../installation/Installation.md#basic-environment-variables) for information on how this variable is resolved. 
+
+Details of K8s based configuration can be found in  [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker). 
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
@@ -15,6 +21,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 * Scenario Types configuration, comprising of:
   * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
   * [Model](/about/GLOSSARY#model) configuration.
+  * [Category](/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) configuration
 
 The Scenario Type is a convenient umbrella term for a particular Deployment Manager configuration and the associated model configuration. Diagram below presents main relationships between configuration areas.
 
@@ -42,6 +49,7 @@ scenarioTypes {
         ...
       }
     }
+    category: "Default"
   }
 }
 ```

@@ -17,19 +17,22 @@ class DateFormatUtilsSpelSpec extends AnyFunSuite with BaseSpelSpec with Matcher
       LocalDateTime.of(2020, 1, 1, 11, 12, 13).atZone(ZoneOffset.UTC).toInstant
     evaluate[OffsetDateTime]("#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00')", Map.empty) shouldEqual
       LocalDateTime.of(2020, 1, 1, 11, 12, 13).atOffset(ZoneOffset.of("+01:00"))
-    evaluate[ZonedDateTime]("#DATE_FORMAT.parseZonedDateTime('2020-01-01T11:12:13+01:00[Europe/Warsaw]')", Map.empty) shouldEqual
+    evaluate[ZonedDateTime](
+      "#DATE_FORMAT.parseZonedDateTime('2020-01-01T11:12:13+01:00[Europe/Warsaw]')",
+      Map.empty
+    ) shouldEqual
       LocalDateTime.of(2020, 1, 1, 11, 12, 13).atZone(ZoneId.of("Europe/Warsaw"))
   }
 
   test("formatting") {
     val fixedZoned: ZonedDateTime = ZonedDateTime.of(2021, 1, 1, 1, 0, 0, 0, ZoneId.of("Europe/Warsaw"))
     val variables = Map[String, Any](
-      "instant" -> fixedZoned.toInstant,
-      "offset" -> fixedZoned.toOffsetDateTime,
-      "zoned" -> fixedZoned,
+      "instant"       -> fixedZoned.toInstant,
+      "offset"        -> fixedZoned.toOffsetDateTime,
+      "zoned"         -> fixedZoned,
       "localDateTime" -> fixedZoned.toLocalDateTime,
-      "localDate" -> fixedZoned.toLocalDate,
-      "localTime" -> fixedZoned.toLocalTime,
+      "localDate"     -> fixedZoned.toLocalDate,
+      "localTime"     -> fixedZoned.toLocalTime,
     )
     def evaluateExpr[T: TypeTag](expr: String): T = evaluate(expr, variables)
 
@@ -43,14 +46,17 @@ class DateFormatUtilsSpelSpec extends AnyFunSuite with BaseSpelSpec with Matcher
 
   test("custom formatters") {
     val fixedZoned: ZonedDateTime = ZonedDateTime.of(2021, 10, 12, 1, 0, 0, 0, ZoneId.of("Europe/Warsaw"))
-    val variables = Map[String, Any](
-      "zoned" -> fixedZoned)
+    val variables                 = Map[String, Any]("zoned" -> fixedZoned)
     def evaluateExpr[T: TypeTag](expr: String): T = evaluate(expr, variables)
 
     evaluateExpr[String]("#DATE_FORMAT.formatter('EEEE').format(#zoned)") shouldEqual "Tuesday"
     evaluateExpr[String]("#DATE_FORMAT.formatter('EEEE', 'PL').format(#zoned)") shouldEqual "wtorek"
-    evaluateExpr[LocalDate]("#DATE_FORMAT.parseLocalDate('2021-01-01', #DATE_FORMAT.formatter('yyyy-MM-dd'))") shouldEqual LocalDate.of(2021, 1, 1)
-    evaluateExpr[LocalDate]("#DATE_FORMAT.parseLocalDate('2021-1-1', #DATE_FORMAT.lenientFormatter('yyyy-MM-dd'))") shouldEqual LocalDate.of(2021, 1, 1)
+    evaluateExpr[LocalDate](
+      "#DATE_FORMAT.parseLocalDate('2021-01-01', #DATE_FORMAT.formatter('yyyy-MM-dd'))"
+    ) shouldEqual LocalDate.of(2021, 1, 1)
+    evaluateExpr[LocalDate](
+      "#DATE_FORMAT.parseLocalDate('2021-1-1', #DATE_FORMAT.lenientFormatter('yyyy-MM-dd'))"
+    ) shouldEqual LocalDate.of(2021, 1, 1)
   }
 
 }

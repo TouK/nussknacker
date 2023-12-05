@@ -1,7 +1,6 @@
 import React, { FC } from "react";
-import { Box, SvgIconTypeMap, Typography } from "@mui/material";
+import { Box, SvgIconTypeMap, Typography, useTheme } from "@mui/material";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
-import { useMuiTheme } from "../useMuiTheme";
 
 interface Props {
     Icon: OverridableComponent<SvgIconTypeMap>;
@@ -10,7 +9,7 @@ interface Props {
 }
 
 export const ConnectionErrorContent: FC<Props> = ({ Icon, headerText, contentText }) => {
-    const theme = useMuiTheme();
+    const theme = useTheme();
 
     return (
         <Box
@@ -18,7 +17,7 @@ export const ConnectionErrorContent: FC<Props> = ({ Icon, headerText, contentTex
             alignItems={"center"}
             flexDirection={"column"}
             p={4}
-            sx={{ backgroundColor: theme.colors.secondaryBackground }}
+            sx={{ backgroundColor: theme.custom.colors.secondaryBackground }}
         >
             <Icon sx={{ width: "56px", height: "56px", fill: "white" }} />
             <Typography mb={2} color={"white"} variant={"h5"}>

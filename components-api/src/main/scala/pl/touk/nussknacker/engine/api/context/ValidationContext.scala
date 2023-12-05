@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.api.context
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
@@ -14,10 +15,12 @@ object ValidationContext {
   def empty: ValidationContext = ValidationContext()
 }
 
-case class ValidationContext(localVariables: Map[String, TypingResult] = Map.empty,
-                             //TODO global variables should not be part of ValidationContext
-                             globalVariables: Map[String, TypingResult] = Map.empty,
-                             parent: Option[ValidationContext] = None) {
+case class ValidationContext(
+    localVariables: Map[String, TypingResult] = Map.empty,
+    // TODO global variables should not be part of ValidationContext
+    globalVariables: Map[String, TypingResult] = Map.empty,
+    parent: Option[ValidationContext] = None
+) {
 
   val variables: Map[String, TypingResult] = localVariables ++ globalVariables
 
@@ -29,35 +32,44 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
 
   def contains(name: String): Boolean = variables.contains(name)
 
-  def withVariable(name: String, value: TypingResult, paramName: Option[String])
-                  (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
+  def withVariable(name: String, value: TypingResult, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
 
-    List(validateVariableExists(name, paramName), validateVariableFormat(name, paramName))
-      .sequence
+    List(validateVariableExists(name, paramName), validateVariableFormat(name, paramName)).sequence
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
-  def withVariable(outputVar: OutputVar, value: TypingResult)(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
+  def withVariable(outputVar: OutputVar, value: TypingResult)(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
     withVariable(outputVar.outputName, value, Some(outputVar.fieldName))
 
-  def withVariableOverriden(name: String, value: TypingResult, paramName: Option[String])
-                           (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
+  def withVariableOverriden(name: String, value: TypingResult, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
     validateVariableFormat(name, paramName)
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
-  private def validateVariableExists(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
+  private def validateVariableExists(name: String, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, String] =
     if (variables.contains(name)) Invalid(OverwrittenVariable(name, paramName)).toValidatedNel else Valid(name)
 
-  private def validateVariableFormat(name: String, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, String] =
-    if (SourceVersion.isIdentifier(name)) Valid(name) else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
+  private def validateVariableFormat(name: String, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): ValidatedNel[PartSubGraphCompilationError, String] =
+    if (SourceVersion.isIdentifier(name)) Valid(name)
+    else Invalid(InvalidVariableOutputName(name, paramName)).toValidatedNel
 
   def clearVariables: ValidationContext = copy(localVariables = Map.empty, parent = None)
 
   def pushNewContext(): ValidationContext =
     ValidationContext(Map.empty, globalVariables, Some(this))
 
-  def popContextOrEmptyWithGlobals(): ValidationContext = parent.getOrElse(empty.copy(globalVariables = globalVariables))
+  def popContextOrEmptyWithGlobals(): ValidationContext =
+    parent.getOrElse(empty.copy(globalVariables = globalVariables))
 }
 
 /**

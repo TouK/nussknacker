@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.ProcessComparator._
@@ -19,7 +19,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect not existing node in other process") {
     val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
-    val other = toDisplayable(_.emptySink("end", "testSink"))
+    val other   = toDisplayable(_.emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeNotPresentInOther("filter1", Filter("filter1", "#input == 4")),
@@ -43,7 +43,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect not existing node in current process") {
     val current = toDisplayable(_.emptySink("end", "testSink"))
-    val other = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
+    val other   = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeNotPresentInCurrent("filter1", Filter("filter1", "#input == 4")),
@@ -67,7 +67,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect changed nodes") {
     val current = toDisplayable(_.filter("filter1", "#input == 4").emptySink("end", "testSink"))
-    val other = toDisplayable(_.filter("filter1", "#input == 8").emptySink("end", "testSink"))
+    val other   = toDisplayable(_.filter("filter1", "#input == 8").emptySink("end", "testSink"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Node 'filter1'" -> NodeDifferent("filter1", Filter("filter1", "#input == 4"), Filter("filter1", "#input == 8"))
@@ -76,7 +76,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect changed edges") {
     val current = toDisplayable(_.switch("switch1", "#input", "var", caseWithExpression("current")))
-    val other = toDisplayable(_.switch("switch1", "#input", "var", caseWithExpression("other")))
+    val other   = toDisplayable(_.switch("switch1", "#input", "var", caseWithExpression("other")))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Edge from 'switch1' to 'end1'" -> EdgeDifferent(
@@ -90,7 +90,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect changed description") {
     val current = toDisplayable(_.emptySink("end", "testSink"), description = Some("current"))
-    val other = toDisplayable(_.emptySink("end", "testSink"), description = Some("other"))
+    val other   = toDisplayable(_.emptySink("end", "testSink"), description = Some("other"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Properties" -> PropertiesDifferent(
@@ -102,7 +102,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
   test("detect changed property") {
     val current = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "current"))
-    val other = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "other"))
+    val other   = toDisplayable(_.emptySink("end", "testSink"), properties = Map("key" -> "other"))
 
     ProcessComparator.compare(current, other) shouldBe Map(
       "Properties" -> PropertiesDifferent(
@@ -112,27 +112,35 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  private def toDisplayable(espProcess: GraphBuilder[CanonicalProcess] => CanonicalProcess,
-                            description: Option[String] = None,
-                            properties: Map[String, String] = Map.empty) : DisplayableProcess  =
-    toDisplayableFromProcess(espProcess(
-      ScenarioBuilder.streaming("test")
-        .additionalFields(
-          description = description,
-          properties = properties
-        )
-        .parallelism(1)
-        .source("start", "testSource")
-    ))
+  private def toDisplayable(
+      espProcess: GraphBuilder[CanonicalProcess] => CanonicalProcess,
+      description: Option[String] = None,
+      properties: Map[String, String] = Map.empty
+  ): DisplayableProcess =
+    toDisplayableFromProcess(
+      espProcess(
+        ScenarioBuilder
+          .streaming("test")
+          .additionalFields(
+            description = description,
+            properties = properties
+          )
+          .parallelism(1)
+          .source("start", "testSource")
+      )
+    )
 
-  private def toDisplayableFromProcess(canonicalProcess: CanonicalProcess) : DisplayableProcess =
+  private def toDisplayableFromProcess(canonicalProcess: CanonicalProcess): DisplayableProcess =
     ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming, TestCategories.Category1)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))
   }
 
-  private def processProperties(description: Option[String] = None, properties: Map[String, String] = Map.empty): ProcessProperties = {
+  private def processProperties(
+      description: Option[String] = None,
+      properties: Map[String, String] = Map.empty
+  ): ProcessProperties = {
     ProcessProperties.combineTypeSpecificProperties(
       typeSpecificProperties = StreamMetaData(
         parallelism = Some(1)
@@ -144,4 +152,5 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
       )
     )
   }
+
 }

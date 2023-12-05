@@ -8,6 +8,10 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
 
+object TestRunId {
+  def generate: TestRunId = TestRunId(UUID.randomUUID().toString)
+}
+
 case class TestRunId(id: String)
 
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
@@ -25,23 +29,39 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData) = {}
 
-  override def expressionEvaluated(nodeId: String, expressionId: String, expression: String, context: Context, processMetaData: MetaData, result: Any) = {
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateExpressionResult(nodeId, context, expressionId, result))
+  override def expressionEvaluated(
+      nodeId: String,
+      expressionId: String,
+      expression: String,
+      context: Context,
+      processMetaData: MetaData,
+      result: Any
+  ) = {
+    ResultsCollectingListenerHolder.updateResults(
+      runId,
+      _.updateExpressionResult(nodeId, context, expressionId, result)
+    )
   }
 
-  override def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, params: Map[String, Any], result: Try[Any]) = {}
+  override def serviceInvoked(
+      nodeId: String,
+      id: String,
+      context: Context,
+      processMetaData: MetaData,
+      params: Map[String, Any],
+      result: Try[Any]
+  ) = {}
 
-  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
+  override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
     ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))
-  }
-}
 
+}
 
 object ResultsCollectingListenerHolder {
 
   private var results = Map[TestRunId, TestResults[_]]()
 
-  //TODO: casting is not so nice, but currently no other idea...
+  // TODO: casting is not so nice, but currently no other idea...
   def resultsForId[T](id: TestRunId): TestResults[T] = results(id).asInstanceOf[TestResults[T]]
 
   def registerRun[T](variableEncoder: Any => T): ResultsCollectingListener = synchronized {

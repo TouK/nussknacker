@@ -43,6 +43,8 @@ For arrays, we use `items` to define type of elements.
 
 ## Configuration
 
+Open API enricher is configured under `components` configuration key. Check this [configuration file snippet](../installation_configuration_guide/Common.md#configuration-areas) to understand the placement of `components` configuration key in the configuration file.
+
 Sample configuration:
 ```
 components {
@@ -64,8 +66,8 @@ components {
 
 | Parameter      | Required | Default | Description                                                                                                                   |
 |----------------|----------|---------|-------------------------------------------------------------------------------------------------------------------------------|
-| url            | true     |         | URL with OpenAPI resource                                                                                                     |
-| rootUrl        | false    |         | Base URL of service, can be used to override value from OpenAPI in NAT settings                                               |
+| url            | true     |         | URL of the [*OpenAPI document*](https://swagger.io/specification/v3/). It contains specification of the service you want to interact with.             |
+| rootUrl        | false    |         | The URL of the service. If not specified, the URL of the service is taken from the *OpenAPI document*.  |
 | allowedMethods | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                          |
 | namePattern    | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                           |
 | security       | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/). Currently only apiKey is supported |

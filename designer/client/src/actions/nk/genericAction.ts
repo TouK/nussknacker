@@ -4,9 +4,8 @@ import { Expression, NodeValidationError, PropertiesType, TypingResult, Variable
 
 import { debounce } from "lodash";
 
-export type NodeValidationUpdated = { type: "GENERIC_ACTION_VALIDATION_UPDATED"; validationData: GenericValidationData };
-export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR"; nodeId: string };
-export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear;
+type GenericActionValidationUpdated = { type: "GENERIC_ACTION_VALIDATION_UPDATED"; validationData: GenericValidationData };
+export type GenericActionActions = GenericActionValidationUpdated;
 
 export interface GenericValidationData {
     validationErrors: NodeValidationError[];
@@ -22,24 +21,23 @@ export interface UIValueParameter {
 export interface GenericValidationRequest {
     parameters: UIValueParameter[];
     variableTypes: VariableTypes;
-    processProperties: PropertiesType;
 }
 
-function nodeGenericValidationDataUpdated(validationData: GenericValidationData): NodeValidationUpdated {
+function nodeGenericValidationDataUpdated(validationData: GenericValidationData): GenericActionValidationUpdated {
     return { type: "GENERIC_ACTION_VALIDATION_UPDATED", validationData };
 }
 
 const validate = debounce(
-    async (processId: string, validationRequestData: GenericValidationRequest, callback: (data: GenericValidationData) => void) => {
-        const { data } = await HttpService.validateGenericActionParameters(processId, validationRequestData);
+    async (processingType: string, validationRequestData: GenericValidationRequest, callback: (data: GenericValidationData) => void) => {
+        const { data } = await HttpService.validateGenericActionParameters(processingType, validationRequestData);
         callback(data);
     },
     500,
 );
 
-export function validateGenericActionParameters(processId: string, validationRequestData: GenericValidationRequest): ThunkAction {
+export function validateGenericActionParameters(processingType: string, validationRequestData: GenericValidationRequest): ThunkAction {
     return (dispatch) =>
-        validate(processId, validationRequestData, (data) => {
+        validate(processingType, validationRequestData, (data) => {
             dispatch(nodeGenericValidationDataUpdated(data));
         });
 }

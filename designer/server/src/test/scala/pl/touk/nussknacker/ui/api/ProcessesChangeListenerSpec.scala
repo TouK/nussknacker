@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
@@ -15,33 +16,45 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds
 
-class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+class ProcessesChangeListenerSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with Inside
+    with FailFastCirceSupport
+    with PatientScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
   import TestCategories._
 
-  private val routeWithAllPermissions = withAllPermissions(processesRoute)
+  private val routeWithAllPermissions   = withAllPermissions(processesRoute)
   private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
+  implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
 
   private val processName = ProcessName(SampleProcess.process.id)
 
   test("listen to category change") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
-    Post(s"/processes/category/${processName.value}/$TestCat2") ~> routeWithAdminPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnCategoryChanged(`processId`, TestCat, TestCat2) => }
+    Post(s"/processes/category/${processName.value}/$Category2") ~> routeWithAdminPermissions ~> checkEventually {
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnCategoryChanged(`processId`, Category1, Category2) =>
+      }
     }
   }
 
   test("listen to process create") {
-    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> checkEventually {
+    Post(
+      s"/processes/${processName.value}/$Category1?isFragment=false"
+    ) ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
   }
 
   test("listen to process update") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
     updateProcess(processName, ProcessTestData.validProcess) {
       eventually {
@@ -51,7 +64,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
   }
 
   test("listen to process archive / unarchive") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createEmptyProcess(processName, Category1, false)
 
     Post(s"/archive/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnArchived(`processId`) => }
@@ -62,33 +75,44 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
   }
 
   test("listen to process rename") {
-    val processId = createEmptyProcess(processName, TestCat, false)
-    val newName = ProcessName("new_name")
+    val processId = createEmptyProcess(processName, Category1, false)
+    val newName   = ProcessName("new_name")
 
     Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnRenamed(`processId`, `processName`, `newName`) => }
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnRenamed(`processId`, `processName`, `newName`) =>
+      }
     }
   }
 
   test("listen to delete process") {
-    val processId = createEmptyProcess(processName, TestCat, false)
+    val processId = createArchivedProcess(processName, false)
 
-    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnDeleted(`processId`) => }
+    Delete(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+      status shouldBe StatusCodes.OK
+      eventually {
+        processChangeListener.events.toArray.last should matchPattern { case OnDeleted(`processId`) => }
+      }
     }
   }
 
   test("listen to deployment success") {
-    val processId = createValidProcess(processName, TestCat, false)
-    val comment = Some("deployComment")
+    val processId = createValidProcess(processName, Category1, false)
+    val comment   = Some("deployComment")
 
-    deployProcess(processName.value, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Deploy) => }
+    deployProcess(
+      processName.value,
+      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
+      comment
+    ) ~> checkEventually {
+      processChangeListener.events.toArray.last should matchPattern {
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Deploy) =>
+      }
     }
   }
 
   test("listen to deployment failure") {
-    val processId = createValidProcess(processName, TestCat, false)
+    val processId = createValidProcess(processName, Category1, false)
 
     deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName.value) ~> checkEventually {
@@ -99,11 +123,17 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
   test("listen to deployment cancel") {
     val processId = createDeployedProcess(processName)
-    val comment = Some("cancelComment")
+    val comment   = Some("cancelComment")
 
-    cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
+    cancelProcess(
+      SampleProcess.process.id,
+      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
+      comment
+    ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
-      head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
+      head should matchPattern {
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) =>
+      }
     }
   }
 

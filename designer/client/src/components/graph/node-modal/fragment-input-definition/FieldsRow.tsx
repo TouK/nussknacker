@@ -1,21 +1,42 @@
 import React, { PropsWithChildren, useCallback } from "react";
-import { NodeRow } from "./NodeRow";
-import { useFieldsContext } from "./NodeRowFields";
-import { NodeValue } from "./NodeValue";
-import { RemoveButton } from "./RemoveButton";
+import { useFieldsContext } from "../node-row-fields-provider";
+import { NodeRow, NodeValue } from "../node/";
+import { RemoveButton } from "./buttons/RemoveButton";
 import { cx } from "@emotion/css";
+import { styled } from "@mui/material";
 
-export function FieldsRow({ index, className, children }: PropsWithChildren<{ index: number; className?: string }>): JSX.Element {
+const StyledFieldsRow = styled(NodeRow)`
+    .fieldName {
+        width: 28%;
+    }
+    .node-value {
+        &.fieldName {
+            flex-basis: 30%;
+            max-width: 20em;
+        }
+        &.fieldRemove {
+            flex: 0;
+        }
+    }
+`;
+
+interface FieldsRow {
+    index: number;
+    uuid: string;
+    className?: string;
+}
+
+export function FieldsRow({ index, uuid, className, children }: PropsWithChildren<FieldsRow>): JSX.Element {
     const { readOnly, remove } = useFieldsContext();
-    const onClick = useCallback(() => remove?.(index), [index, remove]);
+    const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (
-        <NodeRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
+        <StyledFieldsRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
             {children}
             {!readOnly && remove && (
                 <NodeValue className="fieldRemove">
                     <RemoveButton onClick={onClick} />
                 </NodeValue>
             )}
-        </NodeRow>
+        </StyledFieldsRow>
     );
 }

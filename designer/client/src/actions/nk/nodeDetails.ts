@@ -4,10 +4,13 @@ import { Edge, NodeId, NodeType, NodeValidationError, PropertiesType, TypingResu
 
 import { debounce } from "lodash";
 import NodeUtils from "../../components/graph/NodeUtils";
+import { applyIdFromFakeName } from "../../components/graph/node-modal/IdField";
 
-export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
-export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR"; nodeId: string };
-export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear;
+type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED"; validationData: ValidationData; nodeId: string };
+type NodeDetailsOpened = { type: "NODE_DETAILS_OPENED"; nodeId: string };
+type NodeDetailsClosed = { type: "NODE_DETAILS_CLOSED"; nodeId: string };
+
+export type NodeDetailsActions = NodeValidationUpdated | NodeDetailsOpened | NodeDetailsClosed;
 
 export interface ValidationData {
     parameters?: UIParameter[];
@@ -24,12 +27,26 @@ export interface ValidationRequest {
     outgoingEdges: Edge[];
 }
 
-function nodeValidationDataUpdated(validationData: ValidationData, nodeId: string): NodeValidationUpdated {
-    return { type: "NODE_VALIDATION_UPDATED", validationData, nodeId };
+export function nodeValidationDataUpdated(nodeId: string, validationData: ValidationData): NodeValidationUpdated {
+    return {
+        type: "NODE_VALIDATION_UPDATED",
+        validationData,
+        nodeId,
+    };
 }
 
-export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
-    return { type: "NODE_VALIDATION_CLEAR", nodeId };
+export function nodeDetailsOpened(nodeId: string): NodeDetailsOpened {
+    return {
+        type: "NODE_DETAILS_OPENED",
+        nodeId,
+    };
+}
+
+export function nodeDetailsClosed(nodeId: string): NodeDetailsClosed {
+    return {
+        type: "NODE_DETAILS_CLOSED",
+        nodeId,
+    };
 }
 
 //we don't return ThunkAction here as it would not work correctly with debounce
@@ -37,12 +54,19 @@ export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
 const validate = debounce(
     async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
         const nodeId = validationRequestData.nodeData.id;
-        if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
+        const nodeWithChangedName = applyIdFromFakeName(validationRequestData.nodeData);
+        if (NodeUtils.nodeIsProperties(nodeWithChangedName)) {
             //NOTE: we don't validationRequestData contains processProperties, but they are refreshed only on modal open
-            const { data } = await HttpService.validateProperties(processId, validationRequestData.nodeData);
+            const { data } = await HttpService.validateProperties(processId, {
+                additionalFields: nodeWithChangedName.additionalFields,
+                id: nodeWithChangedName.id,
+            });
             callback(data, nodeId);
         } else {
-            const { data } = await HttpService.validateNode(processId, validationRequestData);
+            const { data } = await HttpService.validateNode(processId, {
+                ...validationRequestData,
+                nodeData: nodeWithChangedName,
+            });
             callback(data, nodeId);
         }
     },
@@ -50,9 +74,12 @@ const validate = debounce(
 );
 
 export function validateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
-    return (dispatch) => {
+    return (dispatch, getState) => {
         validate(processId, validationRequestData, (data, nodeId) => {
-            dispatch(nodeValidationDataUpdated(data, nodeId));
+            // node details view creates this on open and removes after close
+            if (getState().nodeDetails[nodeId]) {
+                dispatch(nodeValidationDataUpdated(nodeId, data));
+            }
         });
     };
 }

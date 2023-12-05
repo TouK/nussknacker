@@ -47,6 +47,11 @@ export type PossibleValue = {
     label: string;
 };
 
+export type PosibleValues = {
+    expression: PossibleValue;
+    label: PossibleValue;
+};
+
 export interface Error {
     fieldName: string;
     message: string;
@@ -54,6 +59,7 @@ export interface Error {
     typ: string;
 }
 
+// TODO: after removing FE validators we can simply pass filtered errors instead of a filtering validator
 export const errorValidator = (errors: Error[], fieldName: string): Validator => {
     const error = errors?.find((error) => error.fieldName === fieldName || error.fieldName === `$${fieldName}`);
     return {
@@ -73,7 +79,7 @@ export const mandatoryValueValidator: Validator = {
     validatorType: ValidatorType.Frontend,
 };
 
-const uniqueValueValidator: (otherValues: string[]) => Validator = (otherValues) => ({
+export const uniqueValueValidator: (otherValues: string[]) => Validator = (otherValues) => ({
     isValid: (value) => !otherValues.includes(value),
     message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique"),
     description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),
@@ -99,10 +105,10 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
     validatorType: ValidatorType.Frontend,
 });
 
-const literalRegExpPattern = (pattern: string) => new RegExp(pattern);
+const regExpPattern = (pattern: string) => new RegExp(pattern);
 
 export const notBlankValueValidator: Validator = {
-    isValid: (value) => !literalRegExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
+    isValid: (value) => !regExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
     message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
     description: () => i18next.t("validator.notBlank.description", "Please fill field value for this parameter"),
     handledErrorType: HandledErrorType.BlankParameter,
@@ -111,7 +117,7 @@ export const notBlankValueValidator: Validator = {
 
 export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
     //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || literalRegExpPattern(pattern).test(value.trim()),
+    isValid: (value) => isEmpty(value) || regExpPattern(pattern).test(value.trim()),
     message: () => message,
     description: () => description,
     handledErrorType: HandledErrorType.MismatchParameter,
@@ -120,7 +126,7 @@ export const regExpValueValidator = (pattern: string, message: string, descripti
 
 export const literalIntegerValueValidator: Validator = {
     //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || literalRegExpPattern("^-?[0-9]+$").test(value),
+    isValid: (value) => isEmpty(value) || regExpPattern("^-?[0-9]+$").test(value),
     message: () => i18next.t("literalIntegerValueValidator.message", "This field value has to be an integer number"),
     description: () => i18next.t("literalIntegerValueValidator.description", "Please fill field by proper integer type"),
     handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,

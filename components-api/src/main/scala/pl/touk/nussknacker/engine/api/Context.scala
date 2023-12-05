@@ -37,6 +37,9 @@ case class ContextId(value: String)
  */
 case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 
+  def appendIdSuffix(suffix: String): Context =
+    copy(id = s"$id-$suffix")
+
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
 
@@ -62,7 +65,7 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
     Context(id, variables, Some(this))
   }
 
-  //it returns all variables from context including parent tree
+  // it returns all variables from context including parent tree
   def allVariables: Map[String, Any] = {
     def extractContextVariables(context: Context): Map[String, Any] =
       context.parentContext.map(extractContextVariables).getOrElse(Map.empty) ++ context.variables
@@ -71,7 +74,7 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
   }
 
   def clearUserVariables: Context = {
-    //clears variables from context but leaves technical variables, hidden from user
+    // clears variables from context but leaves technical variables, hidden from user
     val variablesToLeave = Set(VariableConstants.EventTimestampVariableName)
     copy(variables = variables.filter { case (k, _) => variablesToLeave(k) })
   }

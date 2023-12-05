@@ -13,21 +13,26 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CodeHandlingTest extends  AnyFunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures with BaseOpenAPITest {
+class CodeHandlingTest
+    extends AnyFunSuite
+    with BeforeAndAfterAll
+    with Matchers
+    with LazyLogging
+    with PatientScalaFutures
+    with BaseOpenAPITest {
 
   private val codeParameter = "code"
 
-  private val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
-    case request =>
-      val code = request.uri.params.get(codeParameter).get.toInt
-      Response("{}", StatusCode(code))
+  private val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case request =>
+    val code = request.uri.params.get(codeParameter).get.toInt
+    Response("{}", StatusCode(code))
   }
 
   test("should handle configured response codes") {
-    //should be non 2xx
+    // should be non 2xx
     val customEmptyCode = 409
-    val config = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
-    val service = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
+    val config          = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
+    val service         = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
     def invokeWithCode(code: Int) =
       service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]

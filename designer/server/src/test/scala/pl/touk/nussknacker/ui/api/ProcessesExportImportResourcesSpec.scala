@@ -7,10 +7,9 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.MultipartUtils
@@ -18,21 +17,40 @@ import io.circe.syntax._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 
 import scala.language.higherKinds
 
-class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+class ProcessesExportImportResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with Inside
+    with FailFastCirceSupport
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
   import akka.http.scaladsl.server.RouteConcatenation._
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
   private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
-  private val processesExportResources = new ProcessesExportResources(futureFetchingProcessRepository, processActivityRepository, processResolving)
-  private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
+  private val processesExportResources =
+    new ProcessesExportResources(
+      futureFetchingProcessRepository,
+      processService,
+      processActivityRepository,
+      processResolver
+    )
+
+  private val routeWithAllPermissions =
+    withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
 
   test("export process from displayable") {
@@ -41,7 +59,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
-      val exported = responseAs[String]
+      val exported       = responseAs[String]
       val processDetails = ProcessMarshaller.fromJson(exported).toOption.get
 
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
@@ -57,17 +75,19 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
 
     Get(s"/processesExport/${processToSave.id}/2") ~> route ~> check {
-      val response = responseAs[String]
+      val response       = responseAs[String]
       val processDetails = ProcessMarshaller.fromJson(response).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
-      val modified = processDetails.copy(metaData = processDetails.metaData.withTypeSpecificData(typeSpecificData = StreamMetaData(Some(987))))
+      val modified = processDetails.copy(metaData =
+        processDetails.metaData.withTypeSpecificData(typeSpecificData = StreamMetaData(Some(987)))
+      )
       val multipartForm = MultipartUtils.prepareMultiPart(modified.asJson.spaces2, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
@@ -80,9 +100,13 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   test("export process in new version") {
-    val description = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = ProcessAdditionalFields(Some(description), Map.empty, StreamMetaData.typeName)))
+    val description   = "alamakota"
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
+    val processWithDescription = processToSave.copy(properties =
+      processToSave.properties.copy(additionalFields =
+        ProcessAdditionalFields(Some(description), Map.empty, StreamMetaData.typeName)
+      )
+    )
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
@@ -110,7 +134,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
 
@@ -122,7 +146,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
         status shouldEqual StatusCodes.OK
         contentType shouldEqual ContentTypes.`application/octet-stream`
-        //just simple sanity check that it's really pdf...
+        // just simple sanity check that it's really pdf...
         responseAs[String] should startWith("%PDF")
       }
     }

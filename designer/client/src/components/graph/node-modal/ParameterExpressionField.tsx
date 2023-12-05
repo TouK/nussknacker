@@ -5,20 +5,7 @@ import React from "react";
 import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 
-//this is for "dynamic" parameters in sources, sinks, services etc.
-export function ParameterExpressionField({
-    fieldErrors,
-    findAvailableVariables,
-    isEditMode,
-    listFieldPath,
-    node,
-    parameter,
-    parameterDefinitions,
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    showValidation,
-}: {
+interface ParameterExpressionField {
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
@@ -30,7 +17,23 @@ export function ParameterExpressionField({
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
+}
+//this is for "dynamic" parameters in sources, sinks, services etc.
+export function ParameterExpressionField(props: ParameterExpressionField): JSX.Element {
+    const {
+        fieldErrors,
+        findAvailableVariables,
+        isEditMode,
+        listFieldPath,
+        node,
+        parameter,
+        parameterDefinitions,
+        renderFieldLabel,
+        setProperty,
+        showSwitch,
+        showValidation,
+    } = props;
+
     const expressionProperty = "expression";
     const testResultsState = useTestResults();
     return (

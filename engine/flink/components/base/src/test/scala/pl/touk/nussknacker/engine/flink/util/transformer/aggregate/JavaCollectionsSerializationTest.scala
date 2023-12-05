@@ -6,7 +6,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{
+  EmptyProcessConfigCreator,
+  ProcessObjectDependencies,
+  SourceFactory,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -41,14 +46,21 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
   // serialize them properly, so JavaWrapperScala2_13Registrar class was added to fix this issue. This test verifies
   // if we can serialize and deserialize records properly.
   test("should serialize record with java map, list and set") {
-    val record = Record(id = "2", map = mutable.Map(1 -> "a").asJava, list = mutable.ListBuffer("abc").asJava, set = mutable.Set("def").asJava)
+    val record = Record(
+      id = "2",
+      map = mutable.Map(1 -> "a").asJava,
+      list = mutable.ListBuffer("abc").asJava,
+      set = mutable.Set("def").asJava
+    )
 
     val model = modelData(List(record))
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, process, collectingListener)
 
-    val result = collectingListener.results[Any].nodeResults("end")
+    val result = collectingListener
+      .results[Any]
+      .nodeResults("end")
       .map {
         _.variableTyped("input")
       }
@@ -56,31 +68,57 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     result shouldBe List(Some(record))
   }
 
-  def modelData(list: List[Record] = List()): LocalModelData = LocalModelData(ConfigFactory
-    .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new AggregateCreator(list))
+  def modelData(list: List[Record] = List()): LocalModelData = LocalModelData(
+    ConfigFactory
+      .empty()
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
+    new AggregateCreator(list)
+  )
 
-  protected def runProcess(model: LocalModelData, testProcess: CanonicalProcess, collectingListener: ResultsCollectingListener): Unit = {
+  protected def runProcess(
+      model: LocalModelData,
+      testProcess: CanonicalProcess,
+      collectingListener: ResultsCollectingListener
+  ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
-      override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
-        collectingListener :: defaults
-      }
-    }, ExecutionConfigPreparer.unOptimizedChain(model))
+    val registrar = FlinkProcessRegistrar(
+      new FlinkProcessCompiler(model) {
+        override protected def adjustListeners(
+            defaults: List[ProcessListener],
+            processObjectDependencies: ProcessObjectDependencies
+        ): List[ProcessListener] = {
+          collectingListener :: defaults
+        }
+      },
+      ExecutionConfigPreparer.unOptimizedChain(model)
+    )
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
+
 }
 
 class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = {
     val inputType = Typed.fromDetailedType[List[Record]]
-    Map("start" -> WithCategories(SourceFactory.noParam[Record](CollectionSource[Record](input, None, inputType)(TypeInformation.of(classOf[Record])))))
+    Map(
+      "start" -> WithCategories.anyCategory(
+        SourceFactory.noParam[Record](
+          CollectionSource[Record](input, None, inputType)(TypeInformation.of(classOf[Record]))
+        )
+      )
+    )
   }
 
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("delay" -> WithCategories(new DelayTransformer))
+  override def customStreamTransformers(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[CustomStreamTransformer]] = {
+    Map("delay" -> WithCategories.anyCategory(new DelayTransformer))
   }
+
 }
 
 case class Record(id: String, map: java.util.Map[Int, String], list: java.util.List[String], set: java.util.Set[String])

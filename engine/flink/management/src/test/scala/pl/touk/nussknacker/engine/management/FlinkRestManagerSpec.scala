@@ -27,6 +27,7 @@ import sttp.model.{Method, StatusCode}
 import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
+import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -36,7 +37,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   import scala.concurrent.ExecutionContext.Implicits._
 
-  //We don't test scenario's json here
+  // We don't test scenario's json here
   private val config = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
@@ -46,7 +47,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   private val uploadedJarPath = "file"
 
   private val savepointRequestId = "123-savepoint"
-  private val savepointPath = "savepointPath"
+  private val savepointPath      = "savepointPath"
 
   private val defaultDeploymentData = DeploymentData(DeploymentId(""), User("user1", "User 1"), Map.empty)
 
@@ -54,32 +55,42 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   private val canonicalProcess: CanonicalProcess = CanonicalProcess(MetaData("p1", StreamMetaData(Some(1))), Nil, Nil)
 
-  private def createManager(statuses: List[JobOverview] = List(),
-                            acceptSavepoint: Boolean = false,
-                            acceptDeploy: Boolean = false,
-                            acceptStop: Boolean = false,
-                            acceptCancel: Boolean = true,
-                            statusCode: StatusCode = StatusCode.Ok,
-                            exceptionOnDeploy: Option[Exception] = None,
-                            freeSlots: Int = 1
-                           ): FlinkRestManager =
-    createManagerWithHistory(statuses, acceptSavepoint, acceptDeploy, acceptStop, acceptCancel, statusCode, exceptionOnDeploy, freeSlots)._1
+  private def createManager(
+      statuses: List[JobOverview] = List(),
+      acceptSavepoint: Boolean = false,
+      acceptDeploy: Boolean = false,
+      acceptStop: Boolean = false,
+      acceptCancel: Boolean = true,
+      statusCode: StatusCode = StatusCode.Ok,
+      exceptionOnDeploy: Option[Exception] = None,
+      freeSlots: Int = 1
+  ): FlinkRestManager =
+    createManagerWithHistory(
+      statuses,
+      acceptSavepoint,
+      acceptDeploy,
+      acceptStop,
+      acceptCancel,
+      statusCode,
+      exceptionOnDeploy,
+      freeSlots
+    )._1
 
   private case class HistoryEntry(operation: String, jobId: Option[String])
 
-
-  private def createManagerWithHistory(statuses: List[JobOverview] = List(),
-                                       acceptSavepoint: Boolean = false,
-                                       acceptDeploy: Boolean = false,
-                                       acceptStop: Boolean = false,
-                                       acceptCancel: Boolean = true,
-                                       statusCode: StatusCode = StatusCode.Ok,
-                                       exceptionOnDeploy: Option[Exception] = None,
-                                       freeSlots: Int = 1
-                                      ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
-  = {
+  private def createManagerWithHistory(
+      statuses: List[JobOverview] = List(),
+      acceptSavepoint: Boolean = false,
+      acceptDeploy: Boolean = false,
+      acceptStop: Boolean = false,
+      acceptCancel: Boolean = true,
+      statusCode: StatusCode = StatusCode.Ok,
+      exceptionOnDeploy: Option[Exception] = None,
+      freeSlots: Int = 1
+  ): (FlinkRestManager, mutable.Buffer[HistoryEntry]) = {
     import scala.jdk.CollectionConverters._
-    val history: mutable.Buffer[HistoryEntry] = Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
+    val history: mutable.Buffer[HistoryEntry] =
+      Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
     val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
       val toReturn = (req.uri.path, req.method) match {
         case (List("jobs", "overview"), Method.GET) =>
@@ -94,7 +105,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint || acceptStop =>
           val operation = req.body match {
             case StringBody(s, _, _) if s.contains(""""cancel-job":true""") => "stop"
-            case _ => "makeSavepoint"
+            case _                                                          => "makeSavepoint"
           }
           history.append(HistoryEntry(operation, Some(jobId)))
           SavepointTriggerResponse(`request-id` = savepointRequestId)
@@ -107,8 +118,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         case (List("jars", `uploadedJarPath`, "run"), Method.POST) if acceptDeploy =>
           history.append(HistoryEntry("runJar", None))
           exceptionOnDeploy
-            //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
-            //TODO: can be make behaviour more robust?
+            // see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
+            // TODO: can be make behaviour more robust?
             .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
             .foreach(throw _)
           RunResponse(returnedJobId)
@@ -119,7 +130,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           ClusterOverview(1, `slots-available` = freeSlots)
         case (List("jobmanager", "config"), Method.GET) =>
           List()
-        case (unsupportedPath, unsupportedMethod) => throw new IllegalStateException(s"Unsupported method ${unsupportedMethod} for ${unsupportedPath}")
+        case (unsupportedPath, unsupportedMethod) =>
+          throw new IllegalStateException(s"Unsupported method ${unsupportedMethod} for ${unsupportedPath}")
       }
       Response(Right(toReturn), statusCode)
     })
@@ -135,12 +147,14 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         defaultDeploymentData,
         canonicalProcess,
         None
-      ).futureValue shouldBe None
+      )
+      .futureValue shouldBe None
   }
 
   test("not continue on random network exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
-    val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
+    val manager =
+      createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
     val result = manager.deploy(
       defaultVersion,
@@ -158,7 +172,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = Nil
     val manager = createManager(statuses, freeSlots = 0)
 
-    val message = "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
+    val message =
+      "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
     expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
     expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
   }
@@ -181,30 +196,34 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   test("should make savepoint") {
     val processName = ProcessName("p1")
-    val manager = createManager(List(buildRunningJobOverview(processName)), acceptSavepoint = true)
+    val manager     = createManager(List(buildRunningJobOverview(processName)), acceptSavepoint = true)
 
     manager.savepoint(processName, savepointDir = None).futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
   test("should stop") {
     val processName = ProcessName("p1")
-    val manager = createManager(List(buildRunningJobOverview(processName)), acceptStop = true)
+    val manager     = createManager(List(buildRunningJobOverview(processName)), acceptStop = true)
 
-    manager.stop(processName, savepointDir = None, user = User("user1", "user")).futureValue shouldBe SavepointResult(path = savepointPath)
+    manager
+      .stop(processName, savepointDir = None, user = User("user1", "user"))
+      .futureValue shouldBe SavepointResult(path = savepointPath)
   }
 
   test("allow cancel if process is in non terminal status") {
     // JobStatus.CANCELLING & FAILING is skipped here, cause we do not allow Cancel action in ProcessStateDefinitionManager for this status
     val cancellableStatuses = List(
-        JobStatus.CREATED.name(),
-        JobStatus.RUNNING.name(),
-        JobStatus.RESTARTING.name(),
-        JobStatus.SUSPENDED.name(),
-        JobStatus.RECONCILING.name()
+      JobStatus.CREATED.name(),
+      JobStatus.RUNNING.name(),
+      JobStatus.RESTARTING.name(),
+      JobStatus.SUSPENDED.name(),
+      JobStatus.RECONCILING.name()
     )
-    statuses = cancellableStatuses.map(status => JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status, tasksOverview()))
+    statuses = cancellableStatuses.map(status =>
+      JobOverview(UUID.randomUUID().toString, s"process_$status", 10L, 10L, status, tasksOverview())
+    )
 
-    val (manager, history)  = createManagerWithHistory(statuses)
+    val (manager, history) = createManagerWithHistory(statuses)
 
     cancellableStatuses
       .map(status => ProcessName(s"process_$status"))
@@ -214,22 +233,53 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses.map(_.jid).foreach(id => history should contain(HistoryEntry("cancel", Some(id))))
   }
 
+  test("allow cancel specific deployment") {
+    val processName     = ProcessName("process1")
+    val fooDeploymentId = DeploymentId("foo")
+    val barDeploymentId = DeploymentId("bar")
+
+    val deploymentIds = List(fooDeploymentId, barDeploymentId)
+    statuses = deploymentIds.map(deploymentId =>
+      JobOverview(deploymentId.value, processName.value, 10L, 10L, JobStatus.RUNNING.name(), tasksOverview())
+    )
+    configs = deploymentIds
+      .map(deploymentId =>
+        deploymentId.value -> ExecutionConfig(
+          1,
+          Map(
+            "processId"    -> fromString("123"),
+            "versionId"    -> fromString("1"),
+            "deploymentId" -> fromString(deploymentId.value),
+            "user"         -> fromString("user1")
+          )
+        )
+      )
+      .toMap
+
+    val (manager, history) = createManagerWithHistory(statuses)
+
+    manager.cancel(processName, fooDeploymentId, User("user1", "user1")).futureValue shouldBe (())
+
+    history should contain(HistoryEntry("cancel", Some(fooDeploymentId.value)))
+    history should not contain HistoryEntry("cancel", Some(barDeploymentId.value))
+  }
+
   test("cancel duplicate processes which are in non terminal state") {
     val jobStatuses = List(
       JobStatus.RUNNING.name(),
       JobStatus.RUNNING.name(),
       JobStatus.FAILED.name()
     )
-    statuses = jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status, tasksOverview()))
+    statuses =
+      jobStatuses.map(status => JobOverview(UUID.randomUUID().toString, "test", 10L, 10L, status, tasksOverview()))
 
-    val (manager, history)  = createManagerWithHistory(statuses)
+    val (manager, history) = createManagerWithHistory(statuses)
 
     manager.cancel(ProcessName("test"), User("test_id", "Jack")).futureValue shouldBe (())
 
     history.filter(_.operation == "cancel").map(_.jobId.get) should contain theSameElementsAs
       statuses.filter(_.state == JobStatus.RUNNING.name()).map(_.jid)
   }
-
 
   test("allow cancel but do not sent cancel request if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
@@ -243,52 +293,78 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   test("return failed status if two jobs running") {
     statuses = List(
       JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
+      JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1))
+    )
 
-    val manager = createManager(statuses)
+    val manager          = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      ProblemStateStatus.MultipleJobsRunning, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
-    ))
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
+      StatusDetails(
+        ProblemStateStatus.MultipleJobsRunning,
+        None,
+        Some(ExternalDeploymentId("1111")),
+        startTime = Some(30L),
+        errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+      )
+    )
   }
 
   // TODO: extract test for InconsistentStateDetector
   test("return failed status if two in non-terminal state") {
     statuses = List(
       JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
+      JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview())
+    )
 
-    val manager = createManager(statuses)
+    val manager          = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      ProblemStateStatus.MultipleJobsRunning, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
-    ))
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
+      StatusDetails(
+        ProblemStateStatus.MultipleJobsRunning,
+        None,
+        Some(ExternalDeploymentId("1111")),
+        startTime = Some(30L),
+        errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
+      )
+    )
   }
 
   // TODO: extract test for InconsistentStateDetector
   test("return running status if cancelled job has last-modification date later then running job") {
     statuses = List(
       JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
-      JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)))
+      JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1))
+    )
 
-    val manager = createManager(statuses)
+    val manager          = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Running, None, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
-    ))
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
+      StatusDetails(
+        SimpleStateStatus.Running,
+        None,
+        Some(ExternalDeploymentId("2343")),
+        startTime = Some(10L)
+      )
+    )
   }
 
   // TODO: extract test for InconsistentStateDetector
   test("return last terminal state if not running") {
     statuses = List(
       JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
+      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1))
+    )
 
-    val manager = createManager(statuses)
+    val manager          = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Finished, None, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
-    ))
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
+      StatusDetails(
+        SimpleStateStatus.Finished,
+        None,
+        Some(ExternalDeploymentId("2343")),
+        startTime = Some(10L)
+      )
+    )
 
   }
 
@@ -296,34 +372,54 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   test("return non-terminal state if not running") {
     statuses = List(
       JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
+      JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview())
+    )
 
-    val manager = createManager(statuses)
+    val manager          = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
-    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Restarting, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L)
-    ))
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(
+      StatusDetails(
+        SimpleStateStatus.Restarting,
+        None,
+        Some(ExternalDeploymentId("1111")),
+        startTime = Some(30L)
+      )
+    )
   }
 
   test("return process version if in config") {
-    val jid = "2343"
-    val processName = ProcessName("p1")
-    val version = 15L
+    val jid          = "2343"
+    val processName  = ProcessName("p1")
+    val version      = 15L
     val deploymentId = "789"
-    val user = "user1"
-    val processId = ProcessId(6565L)
+    val user         = "user1"
+    val processId    = ProcessId(6565L)
 
-    statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
-    //Flink seems to be using strings also for Configuration.setLong
-    configs = Map(jid -> ExecutionConfig(1, Map("processId" -> fromString(processId.value.toString),
-                                                "versionId" -> fromString(version.toString),
-                                                "deploymentId" -> fromString(deploymentId),
-                                                "user" -> fromString(user))))
+    statuses =
+      List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
+    // Flink seems to be using strings also for Configuration.setLong
+    configs = Map(
+      jid -> ExecutionConfig(
+        1,
+        Map(
+          "processId"    -> fromString(processId.value.toString),
+          "versionId"    -> fromString(version.toString),
+          "deploymentId" -> fromString(deploymentId),
+          "user"         -> fromString(user)
+        )
+      )
+    )
 
     val manager = createManager(statuses)
-    manager.getFreshProcessStates(processName).futureValue shouldBe List(StatusDetails(
-      SimpleStateStatus.Finished, Some(DeploymentId(deploymentId)), Some(ExternalDeploymentId("2343")), Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
-    ))
+    manager.getFreshProcessStates(processName).futureValue shouldBe List(
+      StatusDetails(
+        SimpleStateStatus.Finished,
+        Some(DeploymentId(deploymentId)),
+        Some(ExternalDeploymentId("2343")),
+        Some(ProcessVersion(VersionId(version), processName, processId, user, None)),
+        Some(10L)
+      )
+    )
   }
 
   test("return process state respecting a short timeout for this operation") {
@@ -335,29 +431,34 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         wireMockServer.stubFor(
           get(urlPathEqualTo("/jobs/overview")).willReturn(
             aResponse()
-              .withBody(
-                """{
+              .withBody("""{
                   |  "jobs": []
                   |}""".stripMargin)
-              .withFixedDelay(delay.toMillis.toInt)))
+              .withFixedDelay(delay.toMillis.toInt)
+          )
+        )
       }
       implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
-      implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
+      implicit val deploymentService: ProcessingTypeDeploymentService =
+        new ProcessingTypeDeploymentServiceStub(List.empty)
       val manager = new FlinkRestManager(
-        config = config.copy(
-          restUrl = wireMockServer.baseUrl(),
-          scenarioStateRequestTimeout = clientRequestTimeout),
-        modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+        config = config.copy(restUrl = wireMockServer.baseUrl(), scenarioStateRequestTimeout = clientRequestTimeout),
+        modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+        mainClassName = "UNUSED"
       )
 
       val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
       stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
-        manager.getFreshProcessStates(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+        manager
+          .getFreshProcessStates(ProcessName("p1"))
+          .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
-      val resultWithoutDelay = manager.getFreshProcessStates(ProcessName("p1")).futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
+      val resultWithoutDelay = manager
+        .getFreshProcessStates(ProcessName("p1"))
+        .futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual List.empty
     } finally {
       wireMockServer.stop()
@@ -366,25 +467,62 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
     implicit val b: SttpBackend[Future, Any] = backend
-    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
     new FlinkRestManager(
       config = config,
-      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+      mainClassName = "UNUSED"
     )
   }
 
   private def buildRunningJobOverview(processName: ProcessName): JobOverview = {
-    JobOverview(jid = "1111", name = processName.value, `last-modification` = System.currentTimeMillis(), `start-time` = System.currentTimeMillis(), state = JobStatus.RUNNING.name(), tasksOverview(running = 1))
+    JobOverview(
+      jid = "1111",
+      name = processName.value,
+      `last-modification` = System.currentTimeMillis(),
+      `start-time` = System.currentTimeMillis(),
+      state = JobStatus.RUNNING.name(),
+      tasksOverview(running = 1)
+    )
   }
-  private def tasksOverview(total: Int = 1, created: Int = 0, scheduled: Int = 0, deploying: Int = 0, running: Int = 0, finished: Int = 0,
-                            canceling: Int = 0, canceled: Int = 0, failed: Int = 0, reconciling: Int = 0, initializing: Int = 0): JobTasksOverview =
-    JobTasksOverview(total, created = created, scheduled = scheduled, deploying = deploying, running = running, finished = finished,
-      canceling = canceling, canceled = canceled, failed = failed, reconciling = reconciling, initializing = Some(initializing))
+
+  private def tasksOverview(
+      total: Int = 1,
+      created: Int = 0,
+      scheduled: Int = 0,
+      deploying: Int = 0,
+      running: Int = 0,
+      finished: Int = 0,
+      canceling: Int = 0,
+      canceled: Int = 0,
+      failed: Int = 0,
+      reconciling: Int = 0,
+      initializing: Int = 0
+  ): JobTasksOverview =
+    JobTasksOverview(
+      total,
+      created = created,
+      scheduled = scheduled,
+      deploying = deploying,
+      running = running,
+      finished = finished,
+      canceling = canceling,
+      canceled = canceled,
+      failed = failed,
+      reconciling = reconciling,
+      initializing = Some(initializing)
+    )
 
   private def buildFinishedSavepointResponse(savepointPath: String): GetSavepointStatusResponse = {
-    GetSavepointStatusResponse(status = SavepointStatus("COMPLETED"), operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None)))
+    GetSavepointStatusResponse(
+      status = SavepointStatus("COMPLETED"),
+      operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None))
+    )
   }
 
-  private def expectException(future: Future[_], message: String) = future.failed.futureValue.getMessage shouldBe message
+  private def expectException(future: Future[_], message: String) =
+    future.failed.futureValue.getMessage shouldBe message
 
 }

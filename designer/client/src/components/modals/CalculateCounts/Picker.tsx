@@ -1,12 +1,10 @@
 import { Moment } from "moment";
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { DTPicker } from "../../common/DTPicker";
-
-const datePickerStyle = {
-    // eslint-disable-next-line i18next/no-literal-string
-    className: "node-input",
-};
+import moment from "moment/moment";
+import { cx } from "@emotion/css";
+import { styled } from "@mui/material";
 
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm:ss";
@@ -15,12 +13,25 @@ export type PickerInput = Moment | string;
 
 type PickerProps = { label: string; onChange: (date: PickerInput) => void; value: PickerInput };
 
+const DTPickerWrapper = styled("div")`
+    margin: 0;
+`;
+
 export function Picker({ label, onChange, value }: PickerProps): JSX.Element {
     const { i18n } = useTranslation();
+    const isValid = useMemo(() => moment(value).isValid(), [value]);
+    const datePickerStyle = useMemo(
+        () => ({
+            // TODO: styled
+            className: cx({ "node-input-with-error": !isValid }),
+        }),
+        [isValid],
+    );
+
     return (
         <>
             <p>{label}</p>
-            <div className="datePickerContainer">
+            <DTPickerWrapper>
                 <DTPicker
                     dateFormat={dateFormat}
                     timeFormat={timeFormat}
@@ -29,7 +40,7 @@ export function Picker({ label, onChange, value }: PickerProps): JSX.Element {
                     value={value}
                     locale={i18n.language}
                 />
-            </div>
+            </DTPickerWrapper>
         </>
     );
 }

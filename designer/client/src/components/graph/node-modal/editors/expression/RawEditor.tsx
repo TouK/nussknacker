@@ -1,9 +1,11 @@
-import cn from "classnames";
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import ExpressionSuggest from "./ExpressionSuggest";
 import { NodeValidationError, VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
+import { NodeInputCss } from "../../../../NodeInput";
+import { useTheme } from "@mui/material";
+import { cx } from "@emotion/css";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -36,15 +38,16 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         editorMode,
     } = props;
 
+    const theme = useTheme();
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
-    const className1 = useMemo(() => cn("node-input"), []);
 
     const inputProps = useMemo(
         () => ({
             rows: rows,
             cols: cols,
-            className: className1,
+            className: cx("node-input"),
+            style: NodeInputCss(theme),
             value: value,
             language: language,
             onValueChange: onValueChange,
@@ -52,11 +55,11 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             ref: forwardedRef,
             editorMode: editorMode,
         }),
-        [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef, editorMode],
+        [rows, cols, theme, value, language, onValueChange, readOnly, forwardedRef, editorMode],
     );
 
     return (
-        <div className={className}>
+        <div className={className} style={{ width: "100%" }}>
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}

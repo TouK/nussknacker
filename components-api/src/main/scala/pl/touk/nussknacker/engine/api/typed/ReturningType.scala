@@ -18,10 +18,10 @@ trait ReturningType {
 case object MissingOutputVariableException extends Exception("Missing output variable name")
 
 case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Throwable)
-  extends RuntimeException(message, parent)
+    extends RuntimeException(message, parent)
 
 object CustomNodeValidationException {
-  
+
   def apply(message: String, paramName: Option[String]): CustomNodeValidationException =
     CustomNodeValidationException(message, paramName, null)
 

@@ -1,4 +1,5 @@
-import { ReturnedType } from "./process";
+import { ProcessAdditionalFields, ReturnedType } from "./process";
+import { FragmentInputParameter } from "../components/graph/node-modal/fragment-input-definition/item";
 
 type Type = "Properties" | "FragmentInput" | string;
 
@@ -30,7 +31,7 @@ export type NodeType<F extends Field = Field> = {
     ref?: {
         id: string;
         typ: string;
-        parameters: $TodoType[];
+        parameters: Parameter[];
         outputVariableNames: Record<string, string>;
     };
     varName?: string;
@@ -41,26 +42,21 @@ export type NodeType<F extends Field = Field> = {
         id: string;
         parameters?: $TodoType[];
     };
-    typeSpecificProperties?: {
-        type: $TodoType;
-        slug?: string;
-    };
     nodeType: string;
     [key: string]: any;
 };
 
 export type FragmentNodeType = NodeType;
 
-export type Field = {
-    name: string;
-    expression?: Expression;
-};
+export type Field = Parameter | FragmentInputParameter;
 
 export interface Parameter {
+    uuid: string;
     name: string;
     expression?: Expression; //TODO: Check if we need this type
     typ?: ReturnedType;
     uuid?: string;
+    hintText?: string;
 }
 
 export interface Expression {
@@ -71,6 +67,7 @@ export interface Expression {
 //TODO: Add other process properties...
 export type PropertiesType = NodeType & {
     type: "Properties";
+    additionalFields: ProcessAdditionalFields;
 };
 
 export type NodeId = NodeType["id"];

@@ -17,8 +17,7 @@ class ConfigWithUnresolvedVersionSpec extends AnyFunSuite with Matchers {
   }
 
   test("should be able to substitute variables with references to root values") {
-    val config = ConfigFactory.parseString(
-      s"""rootValue: xyz
+    val config = ConfigFactory.parseString(s"""rootValue: xyz
          |nested {
          |  substitution: $${rootValue}
          |  fromEnv: $${$someEnvVariableName}

@@ -4,7 +4,9 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.{Failure, Success, Try}
 
-final case class ProcessId(value: Long)
+final case class ProcessId(value: Long) {
+  override def toString: String = value.toString
+}
 
 object ProcessId {
   implicit val encoder: Encoder[ProcessId] = Encoder.encodeLong.contramap(_.value)
@@ -12,6 +14,7 @@ object ProcessId {
 
   def apply(value: String): ProcessId = Try(value.toLong) match {
     case Success(id) => ProcessId(id)
-    case Failure(_) => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
+    case Failure(_)  => throw new IllegalArgumentException(s"Value '$value' is not valid ProcessId.")
   }
+
 }

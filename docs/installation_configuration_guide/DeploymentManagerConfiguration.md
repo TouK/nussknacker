@@ -20,31 +20,31 @@ deploymentConfig {
 }
 ```
 
-`type` parameter determines engine to which the scenario is deployed.The `type` parameter is set in both the minimal
-working configuration file (Docker image and binary distribution) and Helm chart - you will not need to set it on your
-own.
+`type` parameter determines engine to which the scenario is deployed. It is set in the [minimal configuration file](./Common.md#minimal-configuration-file) (docker image, binary distribution) and in the Helm chart - you will not need to set it on your own.
 
 ## Kubernetes native Lite engine configuration
 
-Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
-in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you
-have to configure `.kube/config` properly.
+Please check high level [Lite engine description](https://nussknacker.io/documentation/about/engines/LiteArchitecture/#scenario-deployment) before proceeding to configuration details. 
+
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
 
 Except the `servicePort` configuration option, all remaining configuration options apply to
-both `streaming` and `request-response` processing modes.
+both `streaming` and `request-response` processing modes. 
 
-The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize
-the Helm chart to use different values for
-these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install
-Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any
-other Nussknacker non K8s configuration.
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classic" Nussknacker configuration file will be generated.
+
+&nbsp;
+If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration.
+
+
 
 | Parameter                     | Type                                                | Default value                     | Description                                                                              |
 |-------------------------------|-----------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
-| mode                          | string                                              |                                   | Either streaming or request-response                                                     |
+| mode                          | string                                              |                                   | Processing mode: either streaming or request-response                                                     |
 | dockerImageName               | string                                              | touk/nussknacker-lite-runtime-app | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
 | dockerImageTag                | string                                              | current nussknacker version       |                                                                                          |
-| scalingConfig                 | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }            | see [below](#configuring-replicas-count)                                                 |
+| scalingConfig *(Streaming processing mode)*| {tasksPerReplica: int}                   | { tasksPerReplica: 4 }            | see [below](#configuring-replicas-count)                                                 |
+| scalingConfig *(Request - Response processing mode)*| {fixedReplicasCount: int}       | { fixedReplicasCount: 2 }            | see [below](#configuring-replicas-count)                                                 |
 | configExecutionOverrides      | config                                              | {}                                | see [below](#overriding-configuration-passed-to-runtime)                                 |
 | k8sDeploymentConfig           | config                                              | {}                                | see [below](#customizing-k8s-deployment-resource-definition)                             |
 | nussknackerInstanceName       | string                                              | {?NUSSKNACKER_INSTANCE_NAME}      | see [below](#nussknacker-instance-name)                                                  |
@@ -58,7 +58,7 @@ other Nussknacker non K8s configuration.
 
 ### Customizing K8s deployment resource definition
 
-By default, each scenario creates K8s Deployment. By default, Nussknacker will create following deployment:
+By default, each scenario is deployed as the following K8s deployment:
 
 ```yaml
 apiVersion: apps/v1
@@ -194,16 +194,17 @@ modelConfig {
 
 ### Configuring replicas count
 
+Replicas count is configured under `scalingConfig` configuration key. 
+&nbsp;
+
 ​In the **Request-Response** processing mode you can affect the count of scenario pods (replicas) by setting
 fixedReplicasCount configuration key; its default value is 2:
 
 `{ fixedReplicasCount: x }`.
 
-​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the
-minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per
-replica are connected with a simple formula:
+​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per replica are connected with a simple formula:
 
-*scenarioParallelism = replicasCount * tasksPerReplica*
+*scenarioParallelism = replicasCount \* tasksPerReplica*
 
 If you do not change any settings, the number of replicas in the K8s deployment will be set to the ceiling (
 scenarioParallelism / tasksPerReplica); the default value of 4 will be used for tasksPerReplica.
@@ -282,7 +283,7 @@ Deployment Manager of type `lite-embedded` has the following configuration optio
 
 | Parameter                                                 | Type   | Default value   | Description                                                                                                                                              |
 |-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| mode                                                      | string |                 | Either streaming or request-response                                                                                                                     |
+| mode                                                      | string |                 | Processing mode: either  streaming-lite or request-response                                                                                                                     |
 | http.interface                                            | string | 0.0.0.0         | (Request-Response only) Interface on which REST API of scenarios will be exposed                                                                         |
 | http.port                                                 | int    | 8181            | (Request-Response only) Port on which REST API of scenarios will be exposed                                                                              | 
 | request-response.definitionMetadata.servers               | string | [{"url": "./"}] | (Request-Response only) Configuration of exposed servers in scenario's OpenAPI definition. When not configured, will be used server with ./ relative url | 

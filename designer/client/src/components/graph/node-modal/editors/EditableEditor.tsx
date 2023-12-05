@@ -1,11 +1,14 @@
 import { isEmpty } from "lodash";
-import React, { useMemo } from "react";
+import React, { forwardRef, useMemo } from "react";
 import { NodeValidationError, VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
 import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
+import { Error, PosibleValues, Validator } from "./Validators";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
+import { cx } from "@emotion/css";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -14,6 +17,7 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     param?: ParamType;
+    values?: Array<PosibleValues>;
     fieldName?: string;
     isMarked?: boolean;
     showValidation: boolean;
@@ -23,7 +27,7 @@ interface Props {
     validationLabelInfo?: string;
 }
 
-export function EditableEditor(props: Props): JSX.Element {
+export const EditableEditor = forwardRef((props: Props, ref) => {
     const { expressionObj, valueClassName, param, fieldName, validationLabelInfo, fieldErrors = [] } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
@@ -40,6 +44,7 @@ export function EditableEditor(props: Props): JSX.Element {
     return (
         <Editor
             {...props}
+            ref={ref}
             editorConfig={param?.editor}
             className={`${valueClassName ? valueClassName : "node-value"}`}
             fieldErrors={validationErrorsForField}
@@ -47,7 +52,9 @@ export function EditableEditor(props: Props): JSX.Element {
             expressionInfo={validationLabelInfo}
         />
     );
-}
+});
+
+EditableEditor.displayName = "EditableEditor";
 
 function EditableEditorRow({
     rowClassName,
@@ -59,12 +66,12 @@ function EditableEditorRow({
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
     return (
-        <div className={`${rowClassName ? rowClassName : " node-row"}`}>
+        <NodeRow className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>
                 {fieldLabel && renderFieldLabel?.(fieldLabel)}
                 <EditableEditor {...props} />
             </>
-        </div>
+        </NodeRow>
     );
 }
 

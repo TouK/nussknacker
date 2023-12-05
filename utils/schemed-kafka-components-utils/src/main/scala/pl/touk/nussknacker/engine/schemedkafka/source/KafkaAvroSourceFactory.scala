@@ -20,7 +20,11 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, KafkaUniversalComponentTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.schemedkafka.{
+  AvroSchemaDeterminer,
+  KafkaUniversalComponentTransformer,
+  RuntimeSchemaData
+}
 
 import scala.reflect.ClassTag
 
@@ -40,33 +44,42 @@ import scala.reflect.ClassTag
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
-class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                                               val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-                                                                               val processObjectDependencies: ProcessObjectDependencies,
-                                                                               protected val implProvider: KafkaSourceImplFactory[K, V])
-  extends SourceFactory
+class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](
+    val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+    val processObjectDependencies: ProcessObjectDependencies,
+    protected val implProvider: KafkaSourceImplFactory[K, V]
+) extends SourceFactory
     with KafkaUniversalComponentTransformer[Source]
     with WithExplicitTypesToExtract {
 
   override type State = KafkaAvroSourceFactoryState[K, V]
 
-  override def typesToExtract: List[TypedClass] = Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
+  override def typesToExtract: List[TypedClass] =
+    Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: NodeId): NodeTransformationDefinition =
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition =
     topicParamStep orElse
       schemaParamStep orElse
       nextSteps(context, dependencies)
 
-  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case step@TransformationStep((`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil, _) =>
+  protected def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case step @ TransformationStep(
+          (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: Nil,
+          _
+        ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val valueValidationResult = determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
+      val valueValidationResult =
+        determineSchemaAndType(prepareValueSchemaDeterminer(preparedTopic, versionOption), Some(SchemaVersionParamName))
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step@TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
+    case step @ TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: Nil, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String
@@ -74,20 +87,28 @@ class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](v
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
-  Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)] = {
-    schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema.rawSchema()))
-    }.leftMap(error => CustomNodeError(error.getMessage, paramName))
+  protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)] = {
+    schemaDeterminer.determineSchemaUsedInTyping
+      .map { schemaData =>
+        (
+          schemaDeterminer.toRuntimeSchema(schemaData),
+          AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema.rawSchema())
+        )
+      }
+      .leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
   // Source specific FinalResults
-  protected def prepareSourceFinalResults(preparedTopic: PreparedKafkaTopic,
-                                          valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)],
-                                          context: ValidationContext,
-                                          dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)],
-                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
+  protected def prepareSourceFinalResults(
+      preparedTopic: PreparedKafkaTopic,
+      valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)],
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      errors: List[ProcessCompilationError]
+  )(implicit nodeId: NodeId): FinalResults = {
     val keyValidationResult = if (kafkaConfig.useStringForKey) {
       Valid((None, Typed[String]))
     } else {
@@ -97,59 +118,90 @@ class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](v
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        val finalState       = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
-        prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
+        prepareSourceFinalErrors(
+          context,
+          dependencies,
+          parameters,
+          keyValidationResult.swap.toList ++ valueValidationResult.swap.toList
+        )
     }
   }
 
   // Source specific FinalResults with errors
-  protected def prepareSourceFinalErrors(context: ValidationContext,
-                                         dependencies: List[NodeDependencyValue],
-                                         parameters: List[(String, DefinedParameter)],
-                                         errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
+  protected def prepareSourceFinalErrors(
+      context: ValidationContext,
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      errors: List[ProcessCompilationError]
+  )(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
     FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
   }
 
   // Overwrite this for dynamic type definitions.
-  protected def prepareContextInitializer(dependencies: List[NodeDependencyValue],
-                                          parameters: List[(String, DefinedParameter)],
-                                          keyTypingResult: TypingResult,
-                                          valueTypingResult: TypingResult): ContextInitializer[ConsumerRecord[K, V]] =
-    new KafkaContextInitializer[K, V](OutputVariableNameDependency.extract(dependencies), keyTypingResult, valueTypingResult)
+  protected def prepareContextInitializer(
+      dependencies: List[NodeDependencyValue],
+      parameters: List[(String, DefinedParameter)],
+      keyTypingResult: TypingResult,
+      valueTypingResult: TypingResult
+  ): ContextInitializer[ConsumerRecord[K, V]] =
+    new KafkaContextInitializer[K, V](
+      OutputVariableNameDependency.extract(dependencies),
+      keyTypingResult,
+      valueTypingResult
+    )
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
+  override def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): Source = {
     val preparedTopic = extractPreparedTopic(params)
-    val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
+    val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) =
+      finalState.get
 
-    val keyParsedSchemaDataOpt = keySchemaDataUsedInRuntime.map(_.toParsedSchemaData)
+    val keyParsedSchemaDataOpt   = keySchemaDataUsedInRuntime.map(_.toParsedSchemaData)
     val valueParsedSchemaDataOpt = valueSchemaUsedInRuntime.map(_.toParsedSchemaData)
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
-    val deserializationSchema = schemaBasedMessagesSerdeProvider
-      .deserializationSchemaFactory.create[K, V](kafkaConfig, keyParsedSchemaDataOpt, valueParsedSchemaDataOpt)
+    val deserializationSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory
+      .create[K, V](kafkaConfig, keyParsedSchemaDataOpt, valueParsedSchemaDataOpt)
 
     // - avro payload formatter requires to format test data with writer schema, id of writer schema comes with event
     // - for json payload event does not come with writer schema id
-    val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
-    val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
+    val formatterSchema =
+      schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
+    val recordFormatter =
+      schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    //we don't support kafka avro source anymore so KafkaTestParametersInfo feature won't be added here - use universal source instead
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig,
-      deserializationSchema, recordFormatter, kafkaContextInitializer, KafkaTestParametersInfo.empty)
+    // we don't support kafka avro source anymore so KafkaTestParametersInfo feature won't be added here - use universal source instead
+    implProvider.createSource(
+      params,
+      dependencies,
+      finalState.get,
+      List(preparedTopic),
+      kafkaConfig,
+      deserializationSchema,
+      recordFormatter,
+      kafkaContextInitializer,
+      KafkaTestParametersInfo.empty
+    )
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
-    TypedNodeDependency[NodeId], OutputVariableNameDependency)
+  override def nodeDependencies: List[NodeDependency] =
+    List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId], OutputVariableNameDependency)
 }
 
 object KafkaAvroSourceFactory {
 
-  case class KafkaAvroSourceFactoryState[K, V](keySchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
-                                               valueSchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
-                                               contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
+  case class KafkaAvroSourceFactoryState[K, V](
+      keySchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
+      valueSchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]
+  )
 
 }

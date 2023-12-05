@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment
+
 import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -22,16 +23,18 @@ import java.net.URI
   * @param tooltip Message displayed when mouse is hoovering over an icon (both scenarios and diagram panel).
   *                May contain longer, detailed status description.
   */
-@JsonCodec case class ProcessState(externalDeploymentId: Option[ExternalDeploymentId],
-                                   status: StateStatus,
-                                   version: Option[ProcessVersion],
-                                   allowedActions: List[ProcessActionType],
-                                   icon: URI,
-                                   tooltip: String,
-                                   description: String,
-                                   startTime: Option[Long],
-                                   attributes: Option[Json],
-                                   errors: List[String])
+@JsonCodec case class ProcessState(
+    externalDeploymentId: Option[ExternalDeploymentId],
+    status: StateStatus,
+    version: Option[ProcessVersion],
+    allowedActions: List[ProcessActionType],
+    icon: URI,
+    tooltip: String,
+    description: String,
+    startTime: Option[Long],
+    attributes: Option[Json],
+    errors: List[String]
+)
 
 object ProcessState {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
@@ -48,6 +51,7 @@ object StateStatus {
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString
     .contramap[StateStatus](_.name)
     .mapJson(nameJson => Json.fromFields(Seq("name" -> nameJson)))
+
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoAttributesStateStatus)
 
   // Temporary methods to simplify status creation
@@ -64,10 +68,12 @@ case class NoAttributesStateStatus(name: StatusName) extends StateStatus {
   override def toString: String = name
 }
 
-case class StatusDetails(status: StateStatus,
-                         deploymentId: Option[DeploymentId],
-                         externalDeploymentId: Option[ExternalDeploymentId] = None,
-                         version: Option[ProcessVersion] = None,
-                         startTime: Option[Long] = None,
-                         attributes: Option[Json] = None,
-                         errors: List[String] = List.empty)
+case class StatusDetails(
+    status: StateStatus,
+    deploymentId: Option[DeploymentId],
+    externalDeploymentId: Option[ExternalDeploymentId] = None,
+    version: Option[ProcessVersion] = None,
+    startTime: Option[Long] = None,
+    attributes: Option[Json] = None,
+    errors: List[String] = List.empty
+)

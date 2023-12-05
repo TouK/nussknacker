@@ -4,7 +4,11 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{
+  CommonSupertypeFinder,
+  NumberTypesPromotionStrategy,
+  SupertypeClassResolutionStrategy
+}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -53,16 +57,19 @@ object typing {
     def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
   }
 
-  case class TypedObjectTypingResult(fields: Map[String, TypingResult],
-                                     objType: TypedClass,
-                                     additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
+  case class TypedObjectTypingResult(
+      fields: Map[String, TypingResult],
+      objType: TypedClass,
+      additionalInfo: Map[String, AdditionalDataValue] = Map.empty
+  ) extends SingleTypingResult {
     override def valueOpt: Option[Map[String, Any]] =
-      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(Map(_: _*))
+      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*))
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
 
-    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.toList.sorted.mkString("Record{", ", ", "}")
+    override def display: String =
+      fields.map { case (name, typ) => s"$name: ${typ.display}" }.toList.sorted.mkString("Record{", ", ", "}")
   }
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
@@ -96,8 +103,8 @@ object typing {
     override def display: String = s"${underlying.display} @ $tag"
   }
 
-  case class TypedObjectWithValue private[typing](underlying: TypedClass, value: Any) extends TypedObjectWithData {
-    val maxDataDisplaySize: Int = 15
+  case class TypedObjectWithValue private[typing] (underlying: TypedClass, value: Any) extends TypedObjectWithData {
+    val maxDataDisplaySize: Int         = 15
     val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def data: Any = value
@@ -113,12 +120,14 @@ object typing {
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
       s"${underlying.display}($shortenedDataString)"
     }
+
   }
 
   case object TypedNull extends TypingResult {
     override def withoutValue: TypedNull.type = TypedNull
 
-    override val valueOpt: None.type = None
+    // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
+    override val valueOpt: Some[Null] = Some(null)
 
     override val display = "Null"
   }
@@ -133,16 +142,19 @@ object typing {
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
-  case class TypedUnion private[typing](possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
+  case class TypedUnion private[typing] (possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
-    assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
+    assert(
+      possibleTypes.size != 1,
+      "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass"
+    )
 
     override def valueOpt: None.type = None
 
     override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
 
-    override val display : String = possibleTypes.toList match {
-      case Nil => "EmptyUnion"
+    override val display: String = possibleTypes.toList match {
+      case Nil  => "EmptyUnion"
       case many => many.map(_.display).mkString(" | ")
     }
 
@@ -150,7 +162,7 @@ object typing {
 
   object TypedClass {
 
-    //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
+    // it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
     private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
 
   }
@@ -197,7 +209,7 @@ object typing {
         genericTypeClass(runtimeClass, typ.dealias.typeArgs.map(fromType))
     }
 
-    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypedClass = genericTypeClass(toRuntime[T], params)
+    def genericTypeClass[T: ClassTag](params: List[TypingResult]): TypedClass = genericTypeClass(toRuntime[T], params)
 
     def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypedClass = typedClass(klass, Some(params))
 
@@ -209,8 +221,8 @@ object typing {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
 
-    //TODO: how to assert in compile time that T != Any, AnyRef, Object?
-    //TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
+    // TODO: how to assert in compile time that T != Any, AnyRef, Object?
+    // TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
     //      Maybe we should do sth to enforce devs to use genericTypeClass variant with explicit list of params and leave it just
     //      for very specific cases - e.g. by renaming it to typedClassUnsafeGenericParams?
     def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
@@ -219,11 +231,11 @@ object typing {
 
     def typedClassOpt[T: ClassTag]: Option[TypedClass] = typedClassOpt(toRuntime[T])
 
-    def typedClassOpt(klass: Class[_]): Option[TypedClass] = Option(Typed(klass)).collect {
-      case cl: TypedClass => cl
+    def typedClassOpt(klass: Class[_]): Option[TypedClass] = Option(Typed(klass)).collect { case cl: TypedClass =>
+      cl
     }
 
-    private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
+    private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     // parameters - None if you are not in generic aware context, Some - otherwise
     private def typedClass(klass: Class[_], parametersOpt: Option[List[TypingResult]]): TypedClass =
@@ -232,7 +244,9 @@ object typing {
       } else if (klass.isPrimitive) {
         parametersOpt.collect {
           case parameters if parameters.nonEmpty =>
-            throw new IllegalArgumentException(s"Primitive type: $klass with non empty generic parameters list: $parameters")
+            throw new IllegalArgumentException(
+              s"Primitive type: $klass with non empty generic parameters list: $parameters"
+            )
         }
         TypedClass(ClassUtils.primitiveToWrapper(klass), List.empty)
       } else if (klass.isArray) {
@@ -241,7 +255,7 @@ object typing {
         determineStandardClassType(klass, parametersOpt)
       }
 
-    //to not have separate class for each array, we pass Array of Objects
+    // to not have separate class for each array, we pass Array of Objects
     private val KlassForArrays = classOf[Array[Object]]
 
     private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
@@ -254,7 +268,9 @@ object typing {
         case Some(notComponentType :: Nil) if determinedComponentType == Unknown =>
           TypedClass(KlassForArrays, List(notComponentType))
         case Some(others) =>
-          throw new IllegalArgumentException(s"Array generic parameters: $others doesn't match parameters from component type: ${klass.getComponentType}")
+          throw new IllegalArgumentException(
+            s"Array generic parameters: $others doesn't match parameters from component type: ${klass.getComponentType}"
+          )
       }
     }
 
@@ -263,10 +279,12 @@ object typing {
         case None =>
           TypedClass(klass, klass.getTypeParameters.map(_ => Unknown).toList)
         case Some(params) if params.size != klass.getTypeParameters.size =>
-          val className = klass.getSimpleName
-          val paramGiven = s"$className[${params.map(_.display).mkString(", ")}]"
+          val className     = klass.getSimpleName
+          val paramGiven    = s"$className[${params.map(_.display).mkString(", ")}]"
           val paramExpected = s"$className[${klass.getTypeParameters.map(_.getName).mkString(", ")}]"
-          throw new IllegalArgumentException(s"Type's generic parameters don't match expected type parameters: found $paramGiven, expected $paramExpected. This may be caused by passing incorrect arguments or using type aliases.")
+          throw new IllegalArgumentException(
+            s"Type's generic parameters don't match expected type parameters: found $paramGiven, expected $paramExpected. This may be caused by passing incorrect arguments or using type aliases."
+          )
         case Some(params) =>
           TypedClass(klass, params)
       }
@@ -281,10 +299,10 @@ object typing {
       obj match {
         case null =>
           TypedNull
-        case map: Map[String@unchecked, _]  =>
+        case map: Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(map)
           TypedObjectTypingResult(fieldTypes, stringMapWithValues[Map[_, _]](fieldTypes))
-        case javaMap: java.util.Map[String@unchecked, _] =>
+        case javaMap: java.util.Map[String @unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
@@ -292,20 +310,22 @@ object typing {
         case javaList: java.util.List[_] =>
           genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case other => Typed(other.getClass) match {
-          case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
-            case Valid(_) => TypedObjectWithValue(typedClass, other)
-            case Invalid(_) => typedClass
+        case other =>
+          Typed(other.getClass) match {
+            case typedClass: TypedClass =>
+              SimpleObjectEncoder.encode(typedClass, other) match {
+                case Valid(_)   => TypedObjectWithValue(typedClass, other)
+                case Invalid(_) => typedClass
+              }
+            case notTypedClass => notTypedClass
           }
-          case notTypedClass => notTypedClass
-        }
 
       }
     }
 
-    private def typeMapFields(map: Map[String, Any]) = map.map {
-        case (k, v) => k -> fromInstance(v)
-      }
+    private def typeMapFields(map: Map[String, Any]) = map.map { case (k, v) =>
+      k -> fromInstance(v)
+    }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {
       apply(possibleTypes.toSet)
@@ -316,17 +336,17 @@ object typing {
       // We use local function instead of lambda to get compilation error
       // when some type is not handled.
       def flattenType(t: TypingResult): Option[List[SingleTypingResult]] = t match {
-        case Unknown => None
-        case TypedNull => Some(Nil)
-        case TypedUnion(s) => Some(s.toList)
+        case Unknown                    => None
+        case TypedNull                  => Some(Nil)
+        case TypedUnion(s)              => Some(s.toList)
         case single: SingleTypingResult => Some(List(single))
       }
 
       val flattenedTypes = possibleTypes.map(flattenType).toList.sequence.map(_.flatten)
       flattenedTypes match {
-        case None => Unknown
+        case None                => Unknown
         case Some(single :: Nil) => single
-        case Some(list) => TypedUnion(list.toSet)
+        case Some(list)          => TypedUnion(list.toSet)
       }
     }
 
@@ -343,7 +363,9 @@ object typing {
 
   private def superTypeOfTypes(list: Iterable[TypingResult]) = {
     val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
-    list.reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).getOrElse(Unknown)
+    list
+      .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+      .getOrElse(Unknown)
   }
 
   object AdditionalDataValue {
@@ -369,9 +391,11 @@ object typing {
   }
 
   case class CastTypedValue[T: TypeTag]() {
+
     def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
       Option(typingResult).filter(_.canBeSubclassOf(Typed.fromDetailedType[T])).map(new TypingResultTypedValue(_))
     }
+
   }
 
   class TypingResultTypedValue[T](typingResult: TypingResult) {

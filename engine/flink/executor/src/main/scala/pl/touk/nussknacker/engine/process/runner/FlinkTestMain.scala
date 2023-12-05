@@ -12,47 +12,67 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.testmode.{
+  ResultsCollectingListener,
+  ResultsCollectingListenerHolder,
+  TestServiceInvocationCollector
+}
+
+import scala.util.Using
 
 object FlinkTestMain extends FlinkRunner {
 
-  def run[T](modelData: ModelData, process: CanonicalProcess, scenarioTestData: ScenarioTestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
-    val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest(variableEncoder)
+  def run[T](
+      modelData: ModelData,
+      process: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      configuration: Configuration,
+      variableEncoder: Any => T
+  ): TestResults[T] = {
+    val processVersion = ProcessVersion.empty.copy(processName =
+      ProcessName("snapshot version")
+    ) // testing process may be unreleased, so it has no version
+    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration)
+      .runTest(variableEncoder)
   }
 
 }
 
-class FlinkTestMain(val modelData: ModelData,
-                    val process: CanonicalProcess,
-                    scenarioTestData: ScenarioTestData,
-                    processVersion: ProcessVersion,
-                    deploymentData: DeploymentData,
-                    val configuration: Configuration)
-  extends FlinkStubbedRunner {
+class FlinkTestMain(
+    val modelData: ModelData,
+    val process: CanonicalProcess,
+    scenarioTestData: ScenarioTestData,
+    processVersion: ProcessVersion,
+    deploymentData: DeploymentData,
+    val configuration: Configuration
+) extends FlinkStubbedRunner {
 
-  def runTest[T](variableEncoder: Any => T): TestResults[T] = {
-    val env = createEnv
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-    try {
-      val registrar: FlinkProcessRegistrar = prepareRegistrar(collectingListener, scenarioTestData)
-      registrar.register(env, process, processVersion, deploymentData, Option(collectingListener.runId))
+  def runTest[T](variableEncoder: Any => T): TestResults[T] =
+    Using.resource(ResultsCollectingListenerHolder.registerRun(variableEncoder)) { collectingListener =>
+      val resultCollector = new TestServiceInvocationCollector(collectingListener.runId)
+      val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
+      val env             = createEnv
+
+      registrar.register(env, process, processVersion, deploymentData, resultCollector)
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
-    } finally {
-      collectingListener.clean()
     }
+
+  protected def prepareRegistrar[T](
+      collectingListener: ResultsCollectingListener,
+      scenarioTestData: ScenarioTestData
+  ): FlinkProcessRegistrar = {
+    FlinkProcessRegistrar(
+      new TestFlinkProcessCompiler(
+        modelData.configCreator,
+        modelData.processConfig,
+        collectingListener,
+        process,
+        modelData.objectNaming,
+        scenarioTestData
+      ),
+      ExecutionConfigPreparer.defaultChain(modelData)
+    )
   }
 
-  protected def prepareRegistrar[T](collectingListener: ResultsCollectingListener, scenarioTestData: ScenarioTestData): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(new TestFlinkProcessCompiler(
-      modelData.configCreator,
-      modelData.processConfig,
-      collectingListener,
-      process,
-      modelData.objectNaming,
-      scenarioTestData),
-      ExecutionConfigPreparer.defaultChain(modelData))
-  }
 }
-

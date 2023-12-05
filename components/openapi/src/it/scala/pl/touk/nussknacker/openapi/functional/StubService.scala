@@ -11,21 +11,29 @@ class StubService(val swaggerDefinition: String = "/customer-swagger.json") {
   def withCustomerService[T](action: Int => T): T = {
     AvailablePortFinder.withAvailablePortsBlocked(1) { ports =>
       val port = ports.head
-      val server = ServerBootstrap.bootstrap()
+      val server = ServerBootstrap
+        .bootstrap()
         .setListenerPort(port)
-        .registerHandler("/swagger", new HttpRequestHandler {
-          override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
-            response.setStatusCode(200)
-            response.setEntity(new InputStreamEntity(getClass.getResourceAsStream(swaggerDefinition)))
+        .registerHandler(
+          "/swagger",
+          new HttpRequestHandler {
+            override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
+              response.setStatusCode(200)
+              response.setEntity(new InputStreamEntity(getClass.getResourceAsStream(swaggerDefinition)))
+            }
           }
-        })
-        .registerHandler("/customers/*", new HttpRequestHandler {
-          override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
-            val id = request.getRequestLine.getUri.replaceAll(".*customers/", "").toInt
-            response.setStatusCode(200)
-            response.setEntity(new StringEntity(s"""{"name": "Robert Wright", "id": $id, "category": "GOLD"}"""))
+        )
+        .registerHandler(
+          "/customers/*",
+          new HttpRequestHandler {
+            override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
+              val id = request.getRequestLine.getUri.replaceAll(".*customers/", "").toInt
+              response.setStatusCode(200)
+              response.setEntity(new StringEntity(s"""{"name": "Robert Wright", "id": $id, "category": "GOLD"}"""))
+            }
           }
-        }).create()
+        )
+        .create()
       try {
         server.start()
         action(port)
@@ -34,4 +42,5 @@ class StubService(val swaggerDefinition: String = "/customer-swagger.json") {
       }
     }
   }
+
 }

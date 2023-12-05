@@ -21,19 +21,30 @@ import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
-class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDefinitions: TypeDefinitionSet, uiDictServices: UiDictServices, classLoader: ClassLoader) {
+class SpelExpressionSuggester(
+    expressionDefinition: ExpressionDefinition[_],
+    typeDefinitions: TypeDefinitionSet,
+    uiDictServices: UiDictServices,
+    classLoader: ClassLoader
+) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
-  private val typer = Typer.default(classLoader, expressionConfig, new LabelsDictTyper(uiDictServices.dictRegistry), typeDefinitions)
+  private val typer =
+    Typer.default(classLoader, expressionDefinition, new LabelsDictTyper(uiDictServices.dictRegistry), typeDefinitions)
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
-  def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, variables: Map[String, TypingResult])(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
+  def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, validationContext: ValidationContext)(
+      implicit ec: ExecutionContext
+  ): Future[List[ExpressionSuggestion]] = {
     val spelExpression = expression.expression
     if (normalizedCaretPosition == 0) {
       return successfulNil
     }
     val previousChar = spelExpression.substring(normalizedCaretPosition - 1, normalizedCaretPosition)
-    val shouldInsertDummyVariable = (previousChar == "#" || previousChar == ".") && (normalizedCaretPosition == spelExpression.length || !spelExpression.charAt(normalizedCaretPosition).isLetter)
+    val shouldInsertDummyVariable =
+      (previousChar == "#" || previousChar == ".") && (normalizedCaretPosition == spelExpression.length || !spelExpression
+        .charAt(normalizedCaretPosition)
+        .isLetter)
     val input = if (shouldInsertDummyVariable) {
       insertDummyVariable(spelExpression, normalizedCaretPosition)
     } else {
@@ -48,36 +59,79 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
       }
     }
 
-    def suggestionsForPropertyOrFieldReference(nodeInPosition: NuSpelNode, p: PropertyOrFieldReference): Future[Iterable[ExpressionSuggestion]] = {
+    def suggestionsForPropertyOrFieldReference(
+        nodeInPosition: NuSpelNode,
+        p: PropertyOrFieldReference
+    ): Future[Iterable[ExpressionSuggestion]] = {
       val typedPrevNode = nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
-      typedPrevNode.collect {
-        case TypingResultWithContext(tc: TypedClass, staticContext) => Future.successful(typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
-        case TypingResultWithContext(to: TypedObjectWithValue, staticContext) => Future.successful(typeDefinitions.get(to.underlying.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
-        case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
-          val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil) }
-          val suggestionsFromClass = typeDefinitions.get(to.objType.klass).map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)).getOrElse(Nil)
-          Future.successful(suggestionsFromFields ++ suggestionsFromClass)
-        case TypingResultWithContext(tu: TypedUnion, staticContext) => Future.successful(tu.possibleTypes.map(_.objType.klass).flatMap(klass => typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)))
-        case TypingResultWithContext(td: TypedDict, _) => dictQueryService.queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
-          .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))).getOrElse(successfulNil)
-      }.getOrElse(successfulNil)
+      typedPrevNode
+        .collect {
+          case TypingResultWithContext(tc: TypedClass, staticContext) =>
+            Future.successful(
+              typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+            )
+          case TypingResultWithContext(to: TypedObjectWithValue, staticContext) =>
+            Future.successful(
+              typeDefinitions
+                .get(to.underlying.klass)
+                .map(c => filterClassMethods(c, p.getName, staticContext))
+                .getOrElse(Nil)
+            )
+          case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
+            val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map {
+              case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
+            }
+            val suggestionsFromClass = typeDefinitions
+              .get(to.objType.klass)
+              .map(c =>
+                filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)
+              )
+              .getOrElse(Nil)
+            Future.successful(suggestionsFromFields ++ suggestionsFromClass)
+          case TypingResultWithContext(tu: TypedUnion, staticContext) =>
+            Future.successful(
+              tu.possibleTypes
+                .map(_.objType.klass)
+                .flatMap(klass =>
+                  typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+                )
+            )
+          case TypingResultWithContext(td: TypedDict, _) =>
+            dictQueryService
+              .queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
+              .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil))))
+              .getOrElse(successfulNil)
+        }
+        .getOrElse(successfulNil)
     }
 
-    def filterClassMethods(classDefinition: ClazzDefinition, name: String, staticContext: Boolean, fromClass: Boolean = false): List[ExpressionSuggestion] = {
+    def filterClassMethods(
+        classDefinition: ClazzDefinition,
+        name: String,
+        staticContext: Boolean,
+        fromClass: Boolean = false
+    ): List[ExpressionSuggestion] = {
       val methods = filterMapByName(if (staticContext) classDefinition.staticMethods else classDefinition.methods, name)
 
-      methods.values.flatten
-        .map { method =>
-          // TODO: present all overloaded methods, not only one with most parameters.
-          //  Current logic here is the same as in UIProcessObjectsFactory
-          val signature = method.signatures.toList.maxBy(_.parametersToList.length)
-          ExpressionSuggestion(method.name, signature.result, fromClass = fromClass, method.description, (signature.noVarArgs ::: signature.varArg.toList).map(p => Parameter(p.name, p.refClazz)))
-        }
-        .toList
+      methods.values.flatten.map { method =>
+        // TODO: present all overloaded methods, not only one with most parameters.
+        //  Current logic here is the same as in UIProcessObjectsFactory
+        val signature = method.signatures.toList.maxBy(_.parametersToList.length)
+        ExpressionSuggestion(
+          method.name,
+          signature.result,
+          fromClass = fromClass,
+          method.description,
+          (signature.noVarArgs ::: signature.varArg.toList).map(p => Parameter(p.name, p.refClazz))
+        )
+      }.toList
     }
 
     val suggestions = for {
-      (parsedSpelNode, adjustedPosition) <- nuSpelNodeParser.parse(input, expression.language, normalizedCaretPosition, variables).toOption.flatten
+      (parsedSpelNode, adjustedPosition) <- nuSpelNodeParser
+        .parse(input, expression.language, normalizedCaretPosition, validationContext)
+        .toOption
+        .flatten
       nodeInPosition <- parsedSpelNode.findNodeInPosition(adjustedPosition)
     } yield {
       nodeInPosition.spelNode match {
@@ -85,16 +139,21 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
         case v: VariableReference =>
           // if the caret is inside projection or selection (eg #list.?[#<HERE>]) we add `this` to list of variables
           val thisTypingResult = for {
-            parent <- nodeInPosition.parent.map(_.node)
+            parent   <- nodeInPosition.parent.map(_.node)
             prevNode <- parent.prevNode().flatMap(_.typingResultWithContext)
           } yield {
             parent.spelNode match {
               case _: Selection | _: Projection => Some(determineIterableElementTypingResult(prevNode.typingResult))
-              case _ => None
+              case _                            => None
             }
           }
-          val filteredVariables = filterMapByName(thisTypingResult.flatten.map("this" -> _).toMap ++ variables, v.toStringAST.stripPrefix("#"))
-          Future.successful(filteredVariables.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false, None, Nil) })
+          val filteredVariables = filterMapByName(
+            thisTypingResult.flatten.map("this" -> _).toMap ++ validationContext.variables,
+            v.toStringAST.stripPrefix("#")
+          )
+          Future.successful(filteredVariables.map { case (variable, clazzRef) =>
+            ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false, None, Nil)
+          })
         // property is typed (#foo.bar), so we need to return filtered list of all methods and fields from previous spel node type
         case p: PropertyOrFieldReference =>
           suggestionsForPropertyOrFieldReference(nodeInPosition, p)
@@ -104,16 +163,22 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
         // 3. parent's prev node is dictionary
         case s: StringLiteral =>
           val y = for {
-            parent <- nodeInPosition.parent.map(_.node)
-            parentPrevNode <- parent.prevNode()
+            parent               <- nodeInPosition.parent.map(_.node)
+            parentPrevNode       <- parent.prevNode()
             parentPrevNodeTyping <- parentPrevNode.typingResultWithContext.map(_.typingResult)
           } yield {
             parent.spelNode match {
-              case _: Indexer => parentPrevNodeTyping match {
-                case td: TypedDict => dictQueryService.queryEntriesByLabel(td.dictId, s.getLiteralValue.getValue.toString)
-                  .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))).getOrElse(successfulNil)
-                case _ => successfulNil
-              }
+              case _: Indexer =>
+                parentPrevNodeTyping match {
+                  case td: TypedDict =>
+                    dictQueryService
+                      .queryEntriesByLabel(td.dictId, s.getLiteralValue.getValue.toString)
+                      .map(
+                        _.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))
+                      )
+                      .getOrElse(successfulNil)
+                  case _ => successfulNil
+                }
               case _ => successfulNil
             }
           }
@@ -121,7 +186,7 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
         // suggestions for full class name inside TypeReference, eg T(java.time.Duration)
         case _: Identifier =>
           val r = for {
-            parentNode <- nodeInPosition.parent
+            parentNode      <- nodeInPosition.parent
             grandparentNode <- parentNode.node.parent
           } yield {
             (parentNode.node.spelNode, grandparentNode.node.spelNode) match {
@@ -131,13 +196,21 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
                 } else {
                   q.toStringAST
                 }
-                typeDefinitions.typeDefinitions.keys.filter {
-                  klass => klass.getName.startsWith(name)
-                }.flatMap {
-                  klass => klass.getName.stripPrefix(q.toStringAST.split('.').dropRight(1).mkString(".")).stripPrefix(".").split('.').headOption
-                }.toSet.map {
-                  ExpressionSuggestion(_, Unknown, fromClass = false, None, Nil)
-                }
+                typeDefinitions.typeDefinitions.keys
+                  .filter { klass =>
+                    klass.getName.startsWith(name)
+                  }
+                  .flatMap { klass =>
+                    klass.getName
+                      .stripPrefix(q.toStringAST.split('.').dropRight(1).mkString("."))
+                      .stripPrefix(".")
+                      .split('.')
+                      .headOption
+                  }
+                  .toSet
+                  .map {
+                    ExpressionSuggestion(_, Unknown, fromClass = false, None, Nil)
+                  }
               case _ => Nil
             }
           }
@@ -159,47 +232,66 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
         tc.objType.params.headOption.getOrElse(Unknown)
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-        TypedObjectTypingResult(List(
-          ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-          ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown))))
+        TypedObjectTypingResult(
+          List(
+            ("key", tc.objType.params.headOption.getOrElse(Unknown)),
+            ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown))
+          )
+        )
       case tc: SingleTypingResult if tc.objType.klass.isArray =>
         tc.objType.params.headOption.getOrElse(Unknown)
       case _ => Unknown
     }
   }
+
 }
 
 private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
   private val parser = new NuTemplateAwareExpressionParser(new SpelParserConfiguration)
 
-  def parse(input: String, language: String, position: Int, variables: Map[String, TypingResult]): Try[Option[(NuSpelNode, Int)]] = {
+  def parse(
+      input: String,
+      language: String,
+      position: Int,
+      validationContext: ValidationContext
+  ): Try[Option[(NuSpelNode, Int)]] = {
     val rawExpression = language match {
-      case Expression.Language.Spel => Try(parser.parseExpression(input, null))
+      case Expression.Language.Spel         => Try(parser.parseExpression(input, null))
       case Expression.Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
       case _ => Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
-    rawExpression.map { parsedExpressions =>
-      parsedExpressions.find(e => e.start <= position && position <= e.end).flatMap { e =>
-        e.expression match {
-          case s: SpringSpelExpression =>
-            val collectedTypingResult = typer.doTypeExpression(s, ValidationContext(variables))._2
-            Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.start))
-          case _ => None
+    rawExpression
+      .map { parsedExpressions =>
+        parsedExpressions.find(e => e.start <= position && position <= e.end).flatMap { e =>
+          e.expression match {
+            case s: SpringSpelExpression =>
+              val collectedTypingResult =
+                typer.doTypeExpression(s, validationContext)._2
+              Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.start))
+            case _ => None
+          }
         }
       }
-    }.recoverWith {
-      case e =>
+      .recoverWith { case e =>
         logger.debug(s"Failed to parse $language expression: $input, error: ${e.getMessage}")
         Failure(e)
-    }
+      }
   }
+
 }
 
-private class NuSpelNode(val spelNode: SpelNode, collectedTypingResult: CollectedTypingResult, val parent: Option[NuSpelNodeParent] = None) {
+private class NuSpelNode(
+    val spelNode: SpelNode,
+    collectedTypingResult: CollectedTypingResult,
+    val parent: Option[NuSpelNodeParent] = None
+) {
+
   val children: List[NuSpelNode] = (0 until spelNode.getChildCount).map { i =>
     new NuSpelNode(spelNode.getChild(i), collectedTypingResult, Some(NuSpelNodeParent(this, i)))
   }.toList
-  val typingResultWithContext: Option[Typer.TypingResultWithContext] = collectedTypingResult.intermediateResults.get(SpelNodeId(spelNode))
+
+  val typingResultWithContext: Option[Typer.TypingResultWithContext] =
+    collectedTypingResult.intermediateResults.get(SpelNodeId(spelNode))
 
   def findNodeInPosition(position: Int): Option[NuSpelNode] = {
     val allInPosition = (this :: children.flatMap(c => c.findNodeInPosition(position)))
@@ -207,7 +299,7 @@ private class NuSpelNode(val spelNode: SpelNode, collectedTypingResult: Collecte
     for {
       // scala 2.12 is missing minOption and findLast
       shortest <- minOption(allInPosition.map(e => e.positionLength))
-      last <- allInPosition.reverse.find(e => e.positionLength == shortest)
+      last     <- allInPosition.reverse.find(e => e.positionLength == shortest)
     } yield last
   }
 
@@ -221,7 +313,8 @@ private class NuSpelNode(val spelNode: SpelNode, collectedTypingResult: Collecte
     Some(seq.min)
   }
 
-  private def isInPosition(position: Int): Boolean = spelNode.getStartPosition <= position && position <= spelNode.getEndPosition
+  private def isInPosition(position: Int): Boolean =
+    spelNode.getStartPosition <= position && position <= spelNode.getEndPosition
 
   private def positionLength: Int = spelNode.getEndPosition - spelNode.getStartPosition
 
@@ -232,7 +325,13 @@ private case class NuSpelNodeParent(node: NuSpelNode, nodeIndex: Int)
 // TODO: fromClass is used to calculate suggestion score - to show fields first, then class methods. Maybe we should
 //  return score from BE?
 @JsonCodec(encodeOnly = true)
-case class ExpressionSuggestion(methodName: String, refClazz: TypingResult, fromClass: Boolean, description: Option[String], parameters: List[Parameter])
+case class ExpressionSuggestion(
+    methodName: String,
+    refClazz: TypingResult,
+    fromClass: Boolean,
+    description: Option[String],
+    parameters: List[Parameter]
+)
 
 @JsonCodec(encodeOnly = true)
 case class Parameter(name: String, refClazz: TypingResult)

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.timestamp
 
-
 import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.watermark.Watermark
@@ -11,7 +10,8 @@ import org.apache.flink.streaming.api.watermark.Watermark
  */
 @silent("deprecated")
 class BoundedOutOfOrderPreviousElementAssigner[T](maxOutOfOrdernessMillis: Long)
-  extends AssignerWithPeriodicWatermarks[T] with Serializable {
+    extends AssignerWithPeriodicWatermarks[T]
+    with Serializable {
 
   private var currentMaxTimestamp = Long.MinValue + maxOutOfOrdernessMillis
 

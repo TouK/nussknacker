@@ -22,7 +22,7 @@
         "i18next/no-literal-string": [
             "error",
             {
-                "ignore": ["-icon", "glyphicon", ".svg", ".jpg", ".jpeg", ".png"],
+                "ignore": ["-icon", ".svg", ".jpg", ".jpeg", ".png"],
                 "ignoreCallee": [
                     "t",
                     "withTranslation",
@@ -34,7 +34,7 @@
                     "_.has",
                     "classNames",
                     "classnames",
-                    "cn",
+                    "cx",
                     "api.get",
                     "api.post",
                     "describe",

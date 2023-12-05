@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -33,18 +33,23 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
-      ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
-    )
+    def * : ProvenShape[ProcessEntityData] =
+      (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
+        ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
+      )
+
   }
+
 }
 
-case class ProcessEntityData(id: ProcessId,
-                             name: ProcessName,
-                             description: Option[String],
-                             processCategory: String,
-                             processingType: ProcessingType,
-                             isFragment: Boolean,
-                             isArchived: Boolean,
-                             createdAt: Timestamp,
-                             createdBy: String)
+final case class ProcessEntityData(
+    id: ProcessId,
+    name: ProcessName,
+    description: Option[String],
+    processCategory: String,
+    processingType: ProcessingType,
+    isFragment: Boolean,
+    isArchived: Boolean,
+    createdAt: Timestamp,
+    createdBy: String
+)

@@ -21,14 +21,19 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def invoke(params: Map[String, Any])
-                            (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, metaData: MetaData, componentUseCase: ComponentUseCase): Future[AnyRef] = {
+  override def invoke(params: Map[String, Any])(
+      implicit ec: ExecutionContext,
+      collector: ServiceInvocationCollector,
+      contextId: ContextId,
+      metaData: MetaData,
+      componentUseCase: ComponentUseCase
+  ): Future[AnyRef] = {
     val toCollect = params.values.mkString(",")
-    val res = ().asInstanceOf[AnyRef]
+    val res       = ().asInstanceOf[AnyRef]
     collector.collect(toCollect, Some(res))(Future.successful(res))
   }
 
-  //we load parameters only *once* per service creation
+  // we load parameters only *once* per service creation
   override val parameters: List[Parameter] = {
     val paramNames = if (fileWithDefinition.exists()) {
       FileUtils.readLines(fileWithDefinition, StandardCharsets.UTF_8).asScala.toList

@@ -3,6 +3,8 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
+import { NodeRow } from "./NodeDetailsContent/NodeStyled";
+import { BranchParameterRowStyled } from "../focusableStyled";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -36,7 +38,7 @@ export default function BranchParameters({
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <div className="node-row" key={paramName}>
+                    <NodeRow key={paramName}>
                         <div className="node-label" title={paramName}>
                             {paramName}:
                         </div>
@@ -60,7 +62,7 @@ export default function BranchParameters({
                                     }
 
                                     return (
-                                        <div className="branch-parameter-row" key={`${paramName}-${branchId}`}>
+                                        <BranchParameterRowStyled key={`${paramName}-${branchId}`}>
                                             <div className={"branch-param-label"}>{branchId}</div>
                                             <div className={"branch-parameter-expr-container"}>
                                                 <ExpressionField
@@ -79,12 +81,12 @@ export default function BranchParameters({
                                                     fieldErrors={fieldErrors}
                                                 />
                                             </div>
-                                        </div>
+                                        </BranchParameterRowStyled>
                                     );
                                 })}
                             </div>
                         </div>
-                    </div>
+                    </NodeRow>
                 );
             })}
         </>

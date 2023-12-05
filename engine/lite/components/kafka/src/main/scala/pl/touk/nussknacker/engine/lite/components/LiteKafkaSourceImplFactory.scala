@@ -9,34 +9,53 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterBaseTestDataGenerator}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaConfig,
+  PreparedKafkaTopic,
+  RecordFormatter,
+  RecordFormatterBaseTestDataGenerator
+}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
 
-  override def createSource(params: Map[String, Any],
-                            dependencies: List[NodeDependencyValue],
-                            finalState: Any,
-                            preparedTopics: List[PreparedKafkaTopic],
-                            kafkaConfig: KafkaConfig,
-                            deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                            formatter: RecordFormatter,
-                            contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-                            testParametersInfo: KafkaTestParametersInfo): Source = {
-    new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics, kafkaConfig, formatter, testParametersInfo)
+  override def createSource(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Any,
+      preparedTopics: List[PreparedKafkaTopic],
+      kafkaConfig: KafkaConfig,
+      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+      formatter: RecordFormatter,
+      contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
+      testParametersInfo: KafkaTestParametersInfo
+  ): Source = {
+    new LiteKafkaSourceImpl(
+      contextInitializer,
+      deserializationSchema,
+      TypedNodeDependency[NodeId].extract(dependencies),
+      preparedTopics,
+      kafkaConfig,
+      formatter,
+      testParametersInfo
+    )
   }
 
 }
 
-class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-                                deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                                val nodeId: NodeId,
-                                preparedTopics: List[PreparedKafkaTopic],
-                                val kafkaConfig: KafkaConfig,
-                                val formatter: RecordFormatter,
-                                testParametersInfo: KafkaTestParametersInfo) extends LiteKafkaSource with
-  SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with RecordFormatterBaseTestDataGenerator with TestWithParametersSupport[ConsumerRecord[Array[Byte], Array[Byte]]] {
+class LiteKafkaSourceImpl[K, V](
+    contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
+    deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
+    val nodeId: NodeId,
+    preparedTopics: List[PreparedKafkaTopic],
+    val kafkaConfig: KafkaConfig,
+    val formatter: RecordFormatter,
+    testParametersInfo: KafkaTestParametersInfo
+) extends LiteKafkaSource
+    with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]]
+    with RecordFormatterBaseTestDataGenerator
+    with TestWithParametersSupport[ConsumerRecord[Array[Byte], Array[Byte]]] {
 
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
 
@@ -54,10 +73,10 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
       .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
   }
 
-  //We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
-  //(see difference with Flink implementation)
-  override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] = (testRecord: TestRecord) =>
-    formatter.parseRecord(topics.head, testRecord)
+  // We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
+  // (see difference with Flink implementation)
+  override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] =
+    (testRecord: TestRecord) => formatter.parseRecord(topics.head, testRecord)
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 

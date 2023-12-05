@@ -3,7 +3,111 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.11.0 (Not released yet)
+## In version 1.13.x (Not released yet)
+
+### Code API changes
+* [#4988](https://github.com/TouK/nussknacker/pull/4988) Method definition `def authenticationMethod(): Auth[AuthCredentials, _]` was changed to `def authenticationMethod(): EndpointInput[AuthCredentials]`
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) DeploymentManagerProvider implementations have to implement the method `def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig]` instead of `def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]`
+* [#4919](https://github.com/TouK/nussknacker/pull/4919) Improvement: Support for handling runtime exceptions at FlinkTestScenarioRunner:
+  * `TestProcess.exceptions` type changed from `List[ExceptionResult[T]]` to `List[NuExceptionInfo[_ <: Throwable]]`
+* [#4912](https://github.com/TouK/nussknacker/pull/4912) Changes in scenario details:
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]` and `pl.touk.nussknacker.restmodel.processdetails.BasicProcess`
+    used in rest resources were merged into `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails`
+  * `pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails[_]`
+    used in `pl.touk.nussknacker.ui.listener.services.PullProcessRepository` were moved into `listener-api` and renamed into
+    `pl.touk.nussknacker.ui.listener.ListenerScenarioWithDetails`
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessDetails` and `pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails`
+    type aliases are not available anymore - you should probably use `ScenarioWithDetails` in these places
+  * `pl.touk.nussknacker.restmodel.processdetails.ProcessVersion` was moved into `pl.touk.nussknacker.engine.api.process.ScenarioVersion`
+  * `pl.touk.nussknacker.restmodel.processdetails.StateActionsTypes` was moved into `ProcessActionType.StateActionsTypes`
+* [#4959](https://github.com/TouK/nussknacker/pull/4959) `listener-api` module become decoupled from `restmodel` module. 
+  Some classes were moved to `extensions-api` module to make it possible:
+  * `pl.touk.nussknacker.restmodel.displayedgraph` package was renamed to `pl.touk.nussknacker.engine.api.displayedgraph`
+  * `pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess` was moved to `pl.touk.nussknacker.restmodel.validation` package
+  * `pl.touk.nussknacker.restmodel.process.ProcessingType` was moved to `pl.touk.nussknacker.engine.api.process` package
+  * `pl.touk.nussknacker.restmodel.scenariodetails.ScenarioVersion` was moved to `pl.touk.nussknacker.engine.api.process` package
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Added method `ScenarioBuilder` to create fragments with specified input node id instead of taking a default 
+  from fragment id
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Add more errors for scenario and node id validation and change names, messages of existing ones
+* [#4928](https://github.com/TouK/nussknacker/pull/4928) [#5028](https://github.com/TouK/nussknacker/pull/5028) `Validator.isValid` method 
+  now takes `expression: Expression, value: Option[Any]` instead of `value: String` which was not really value, but expression.
+  Straight-forward migration is to change method definition and now use `expression.expression` instead of `value` if your validator depends on raw expression. 
+  If validator was doing quasi-evaluation, for example trimming `'` to get string, you can just take `value` and cast it to desired class.
+  * `LiteralNumberValidator` is removed, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Number` type,
+  * `LiteralIntegerValidator` is considered deprecated and will be removed in the future, to achieve same result use `CompileTimeEvaluableValueValidator` with parameter of `Integer` type,
+  * `LiteralRegExpParameterValidator` is renamed to `RegExpParameterValidator`
+  * annotation `pl.touk.nussknacker.engine.api.validation.Literal` was renamed to `pl.touk.nussknacker.engine.api.validation.CompileTimeEvaluableValue`
+* [#5103](https://github.com/TouK/nussknacker/pull/5103) 
+  * Values of `ExpressionConfig.globalImports` and `ExpressionConfig.dictionaries` aren't wrapped with `WithCategories` anymore
+  * `WithCategories.apply` with `categories` varrag variant is replaced by version with head `category` and tail `categories` varrag
+    Previous version was commonly wrongly used as an "object without categories specified" but in fact it was "object with empty categories list"
+    which means that object should be never visible. To create "object without categories specified" use, `WithCategories.anyCategory`.
+    If you want to pass just a list of categories, use `WithCategories(value, Some(list), SingleComponentConfig.zero)`
+
+### REST API changes
+* [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type
+  * Replace `processProperties` with `additionalFields`
+  * Add `id` field for scenario or fragment id
+* [#5039](https://github.com/TouK/nussknacker/pull/5039)[#5052](https://github.com/TouK/nussknacker/pull/5052) Changes in endpoints 
+  * `api/parameters/*/suggestions` request
+    * `variables` is renamed to `variableTypes` and it should have only local variables now
+  * `api/processes/**` response
+    * `.json.validationResult.nodeResults.variableTypes` doesn't contain global variables types anymore
+  * `api/processDefinitionData/*` response
+    * `.processDefinition.globalVariables` is removed
+  * `api/parameters/*/validate` request
+    * `scenarioName` is removed
+    * `processProperties` is removed
+
+### Other changes
+* [#4860](https://github.com/TouK/nussknacker/pull/4860) In file-based configuration, the field `scenarioTypes.<scenarioType>.additionalPropertiesConfig` is renamed to `scenarioTypes.<scenarioType>.scenarioPropertiesConfig`
+* [#4901](https://github.com/TouK/nussknacker/pull/4901) Improvements TestScenarioRunner:
+  * Changes at `FlinkProcessRegistrar.register` passing `resultCollector` instead of `testRunId`
+* [#5033](https://github.com/TouK/nussknacker/pull/5033) Scala 2.13 was updated to 2.13.12, you may update your `flink-scala-2.13` to 1.1.1
+  (it's not required, new version is binary-compatible)
+* [#5077](https://github.com/TouK/nussknacker/pull/5077) In SQL enricher configuration, `connectionProperties` was changed to `dataSourceProperties`
+* [#5059](https://github.com/TouK/nussknacker/pull/5059) [#5100](https://github.com/TouK/nussknacker/pull/5100) Categories configuration doesn't allow to configure multiple categories for the same scenario type. 
+  If you have such a case, you have to extract another scenario types and assign each category to each scenario type.
+  Because of this change configuration of categories was also removed from Components configuration
+* [#4953](https://github.com/TouK/nussknacker/pull/4953) Stricter validation in base components:
+  * Boolean expressions in `Switch` and `Filter` nodes are required not null values
+  * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
+  * Field names in `MapVariable`, `FragmentOutput` are required to be unique
+
+## In version 1.12.x
+
+### Code API changes
+* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+  * `RichKafkaConsumer.consumeWithJson` needs json decoder
+  * removed `RichKafkaConsumer.consumeWithConsumerRecord`, use `RichKafkaConsumer.consumeWithJson` instead of it 
+  * `RichKafkaConsumer.defaultSecondsToWait` renamed to `RichKafkaConsumer.DefaultSecondsToWait`
+  * `KafkaClient.sendMessage` accepts generic content with json encoder
+* [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
+  taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
+  to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
+* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+  methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
+  `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
+  authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication
+  action itself. The `def authenticate(): Directive1[AuthenticatedUser]` should be treated as deprecated. It's 
+  used in the NU APIs which are still Akka HTTP-based. When we get rid of Akka HTTP, it will be removed.
+* [#4762](https://github.com/TouK/nussknacker/pull/4762) Rename `RegExpParameterValidator` to `LiteralRegExpParameterValidator`
+
+### REST API changes
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+  * Removed isSubprocess endpoint param, use isFragment from now on.
+  * Removed backward compatibility for subprocess fields.
+
+### Other changes
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad-hoc testing method.
+  By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
+  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` 
+  and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
+
+## In version 1.11.0
 
 ### Code API changes
 * [#4295](https://github.com/TouK/nussknacker/pull/4295) `DeploymentManager.getProcessState(ProcessName)`

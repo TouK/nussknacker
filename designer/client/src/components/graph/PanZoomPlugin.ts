@@ -1,12 +1,11 @@
 import { css } from "@emotion/css";
 import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
+import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
-import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
-
-type EventData = { panStart?: { x: number; y: number; touched?: boolean } };
-type Event = JQuery.MouseEventBase<any, EventData>;
+import { GlobalCursor } from "./GlobalCursor";
+import { Events } from "./types";
+import Hammer from "hammerjs";
 
 const getAnimationClass = (disabled?: boolean) =>
     css({
@@ -16,12 +15,20 @@ const getAnimationClass = (disabled?: boolean) =>
     });
 
 export class PanZoomPlugin {
-    private cursorMask: CursorMask;
+    private globalCursor: GlobalCursor;
     private instance: SvgPanZoom.Instance;
+    private pinchEventActive = false;
     private animationClassHolder: HTMLElement;
+    private panStart: {
+        x: number;
+        y: number;
+        touched?: boolean;
+    };
+
+    private panEnabled = false;
 
     constructor(private paper: dia.Paper) {
-        this.cursorMask = new CursorMask();
+        this.globalCursor = new GlobalCursor();
         this.instance = svgPanZoom(paper.svg, {
             fit: false,
             contain: false,
@@ -36,6 +43,10 @@ export class PanZoomPlugin {
         //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
         this.instance.zoom(0.001);
 
+        if (isTouchDevice()) {
+            this.initPinchZooming(this.paper);
+        }
+
         this.animationClassHolder = paper.el;
         this.animationClassHolder.addEventListener(
             "transitionend",
@@ -44,35 +55,32 @@ export class PanZoomPlugin {
             }, 500),
         );
 
-        paper.on(Events.BLANK_POINTERDOWN, (event: Event, x, y) => {
-            const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-            if (!isModified) {
-                this.cursorMask.enable("move");
-                event.data = { ...event.data, panStart: { x, y } };
-            }
-        });
+        paper.on(Events.BLANK_POINTERDOWN, this.handleBlankPointerDown);
 
-        paper.on(Events.BLANK_POINTERMOVE, (event: Event, eventX, eventY) => {
-            const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-            const panStart = event.data?.panStart;
-            if (!isModified && panStart) {
-                const zoom = this.instance.getZoom();
-                const dx = (eventX - panStart.x) * zoom;
-                const dy = (eventY - panStart.y) * zoom;
-                const { movementX: x = dx, movementY: y = dy } = event.originalEvent;
-                this.instance.panBy({ x, y });
-                panStart.touched = true;
-            } else {
-                this.cleanup(event);
-            }
-        });
+        this.initPanMove(paper);
+    }
 
-        paper.on(Events.BLANK_POINTERUP, (event: Event) => {
-            if (event.data?.panStart?.touched) {
-                event.stopImmediatePropagation();
+    private handleBlankPointerDown = (event: dia.Event) => {
+        if (isTouchEvent(event)) {
+            const pressTimer = setTimeout(() => {
+                this.panEnabled = false;
+            }, LONG_PRESS_TIME);
+            this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
+            this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
+        }
+    };
+
+    private initMove(event: MouseEvent): void {
+        const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
+        if (!isModified) {
+            if (!isTouchEvent(event)) {
+                this.globalCursor.enable("move");
             }
-            this.cleanup(event);
-        });
+            this.panStart = {
+                x: event.clientX,
+                y: event.clientY,
+            };
+        }
     }
 
     private setAnimationClass({ enabled }: { enabled: boolean }) {
@@ -87,9 +95,9 @@ export class PanZoomPlugin {
         return this.instance.getZoom();
     }
 
-    private cleanup(event: Event) {
-        delete event.data?.panStart;
-        this.cursorMask.disable();
+    private cleanup() {
+        this.panStart = null;
+        this.globalCursor.disable();
     }
 
     fitSmallAndLargeGraphs = debounce((): void => {
@@ -144,5 +152,89 @@ export class PanZoomPlugin {
         requestAnimationFrame(() => {
             this.panToCells(cells, viewport);
         });
+    };
+
+    private initPinchZooming(paper: dia.Paper) {
+        let lastScale = 1;
+
+        const hammer = new Hammer(paper.el);
+        hammer.get("pinch").set({ enable: true });
+
+        hammer.on("pinchstart", () => {
+            this.pinchEventActive = true;
+            this.instance.setZoomScaleSensitivity(0.015);
+        });
+
+        hammer.on("pinchend", () => {
+            this.pinchEventActive = false;
+            this.instance.setZoomScaleSensitivity(0.4);
+        });
+
+        hammer.on("pinchin pinchout", (e) => {
+            if (e.scale < lastScale) {
+                this.instance.zoomOut();
+            } else if (e.scale > lastScale) {
+                this.instance.zoomIn();
+            }
+
+            lastScale = e.scale;
+        });
+
+        document.addEventListener("touchmove", (event) => {
+            if (this.pinchEventActive) {
+                event.stopImmediatePropagation();
+            }
+        });
+    }
+
+    private initPanMove = (paper: dia.Paper) => {
+        const hammer = new Hammer(paper.el);
+        hammer.get("pan").set({
+            threshold: 2,
+            direction: Hammer.DIRECTION_ALL,
+            enable: (recognizer, input) => {
+                const isInitialPanTouch = input?.isFirst;
+
+                if (isInitialPanTouch) {
+                    const diagramBoardIds = ["nk-graph-main", "nk-graph-fragment"];
+                    this.panEnabled = diagramBoardIds.some((diagramBoardId) => diagramBoardId === input?.target.parentElement.id);
+                }
+
+                return this.panEnabled;
+            },
+        });
+
+        hammer.on("panstart", (event) => {
+            this.initMove(event.pointers[0]);
+        });
+
+        hammer.on("panmove", (event) => {
+            const isModified = event.srcEvent.shiftKey || event.srcEvent.ctrlKey || event.srcEvent.altKey || event.srcEvent.metaKey;
+
+            if (!isModified && this.panStart) {
+                const panStart = this.panStart;
+                this.instance.panBy({
+                    x: event.pointers[0].clientX - panStart.x,
+                    y: event.pointers[0].clientY - panStart.y,
+                });
+
+                this.panStart = {
+                    x: event.pointers[0].clientX,
+                    y: event.pointers[0].clientY,
+                    touched: true,
+                };
+            }
+        });
+
+        hammer.on("panend", (event) => {
+            if (this.panStart?.touched) {
+                event.pointers[0].stopImmediatePropagation();
+            }
+            this.cleanup();
+        });
+    };
+
+    getPinchEventActive = () => {
+        return this.pinchEventActive;
     };
 }

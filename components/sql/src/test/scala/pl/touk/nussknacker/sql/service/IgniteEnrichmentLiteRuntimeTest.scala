@@ -2,7 +2,7 @@ package pl.touk.nussknacker.sql.service
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
-import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -14,8 +14,12 @@ import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
 import scala.jdk.CollectionConverters._
 
-class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll
-  with WithIgniteDB {
+class IgniteEnrichmentLiteRuntimeTest
+    extends AnyFunSuite
+    with Matchers
+    with LiteRuntimeTest
+    with BeforeAndAfterAll
+    with WithIgniteDB {
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
@@ -30,7 +34,7 @@ class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with Lit
         "databaseEnricher" -> Map(
           "config" -> Map(
             "databaseLookupEnricher" -> Map(
-              "name" -> "ignite-lookup-enricher",
+              "name"   -> "ignite-lookup-enricher",
               "dbPool" -> igniteConfigValues.asJava
             ).asJava
           ).asJava
@@ -45,11 +49,14 @@ class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with Lit
     val process = ScenarioBuilder
       .streaming("")
       .source("request", "request")
-      .enricher("ignite-lookup-enricher", "output", "ignite-lookup-enricher",
-        "Table" -> "'CITIES'",
+      .enricher(
+        "ignite-lookup-enricher",
+        "output",
+        "ignite-lookup-enricher",
+        "Table"      -> "'CITIES'",
         "Key column" -> "'ID'",
-        "Key value" -> "#input.id",
-        "Cache TTL" -> ""
+        "Key value"  -> "#input.id",
+        "Cache TTL"  -> ""
       )
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
@@ -59,9 +66,8 @@ class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with Lit
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
 
-    inside(resultList.head) {
-      case resp: TestResponse =>
-        resp.name shouldEqual "Warszawa"
+    inside(resultList.head) { case resp: TestResponse =>
+      resp.name shouldEqual "Warszawa"
     }
   }
 

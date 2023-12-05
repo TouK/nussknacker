@@ -24,22 +24,34 @@ describe("Process mouse drag", () => {
             });
         cy.get("[title='toggle left panel']").click();
         cy.layoutScenario();
+        cy.wait(500);
     });
 
     it("should allow pan view", () => {
         cy.get("@canvas")
-            .trigger("mousedown", 10, 10, { force: true })
-            .trigger("mousemove", 200, 100, { force: true })
-            .trigger("mouseup", { force: true })
-            .wait(200);
-        cy.get("@graph").matchImage(snapshotParams);
+            // jointjs' pointerdown
+            .trigger("mousedown", { force: true })
+            // hammerjs' panstart
+            .trigger("pointerdown", {
+                force: true,
+                button: 0,
+            })
+            .trigger("pointermove", 10, 10, { force: true })
+            // hammerjs' panmove
+            .trigger("pointermove", 200, 100, { force: true })
+            // hammerjs' panend
+            .trigger("pointerup", {
+                force: true,
+                button: 0,
+            });
+        cy.get("@graph").wait(200).matchImage(snapshotParams);
     });
 
     it("should select only fully covered (to right)", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 300, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 700, 500, { metaKey: true, force: true });
+            .trigger("mousemove", 700, 500, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);
@@ -49,7 +61,7 @@ describe("Process mouse drag", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 700, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 500, 500, { metaKey: true, force: true });
+            .trigger("mousemove", 500, 500, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);
@@ -59,14 +71,14 @@ describe("Process mouse drag", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 700, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 500, 400, { metaKey: true, force: true });
+            .trigger("mousemove", 500, 400, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true }).trigger("keyup", { key: "Meta" });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas")
             .trigger("keydown", { key: "Shift" })
             .trigger("mousedown", 700, 150, { shiftKey: true, force: true })
-            .trigger("mousemove", 500, 550, { shiftKey: true, force: true });
+            .trigger("mousemove", 500, 550, { shiftKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);

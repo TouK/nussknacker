@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 import java.util.UUID
 
-// todo: this is basically a Writer; we should approach it differently?
+// TODO: this is basically a Writer; we should approach it differently?
 private[engine] class MaybeArtificial[A](private val value: A, private val errors: List[ProcessUncanonizationError]) {
   def map[B](f: A => B): MaybeArtificial[B] = new MaybeArtificial(f(value), errors)
 
@@ -21,7 +21,7 @@ private[engine] class MaybeArtificial[A](private val value: A, private val error
     import cats.syntax.validated._
     errors match {
       case h :: hs => NonEmptyList.of(h, hs: _*).invalid[A]
-      case _ => extract.validNel
+      case _       => extract.validNel
     }
   }
 
@@ -39,14 +39,21 @@ private[engine] object MaybeArtificial {
     override def ap[A, B](ff: MaybeArtificial[A => B])(fa: MaybeArtificial[A]): MaybeArtificial[B] = {
       new MaybeArtificial(ff.value(fa.value), fa.errors ++ ff.errors)
     }
+
   }
 
-  //we need to make sure it's unique to prevent weird errors
+  // we need to make sure it's unique to prevent weird errors
   private def generateArtificialName() = s"$DummyObjectNamePrefix-${UUID.randomUUID()}"
 
   def artificialSink(errors: ProcessUncanonizationError*): MaybeArtificial[node.SubsequentNode] =
-    new MaybeArtificial(node.EndingNode(node.Sink(generateArtificialName(), SinkRef(artificalSourceSinkRef, Nil), None)), errors.toList)
+    new MaybeArtificial(
+      node.EndingNode(node.Sink(generateArtificialName(), SinkRef(artificalSourceSinkRef, Nil), None)),
+      errors.toList
+    )
 
   def artificialSource(errors: ProcessUncanonizationError*): MaybeArtificial[node.SourceNode] =
-    artificialSink(errors: _*).map(node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _))
+    artificialSink(errors: _*).map(
+      node.SourceNode(node.Source(generateArtificialName(), SourceRef(artificalSourceSinkRef, Nil)), _)
+    )
+
 }

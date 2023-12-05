@@ -1,6 +1,6 @@
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { InputWithFocus, InputWithFocusProps } from "../../../../withFocus";
+import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
 import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
 import { NodeValidationError } from "../../../../../types";
@@ -32,12 +32,11 @@ export default function Input(props: InputProps): JSX.Element {
         onFocus,
         onChange,
     } = props;
-
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
                 {
-                    <InputWithFocus
+                    <NodeInput
                         autoFocus={autoFocus}
                         readOnly={readOnly}
                         placeholder={placeholder}

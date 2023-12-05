@@ -56,7 +56,8 @@ trait ProcessStateDefinitionManager {
       statusDescription(statusDetails.status),
       statusDetails.startTime,
       statusDetails.attributes,
-      statusDetails.errors)
+      statusDetails.errors
+    )
   }
 
 }

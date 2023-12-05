@@ -2,12 +2,12 @@
 import { attributes, dia, shapes } from "jointjs";
 import { cloneDeepWith, get, isEmpty, toString } from "lodash";
 import customAttrs from "../../../assets/json/nodeAttributes.json";
-import { ProcessCounts } from "../../../reducers/graph";
+import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
-import { setLinksHovered } from "../dragHelpers";
+import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
-import { Events } from "../joint-events";
+import { Events } from "../types";
 import NodeUtils from "../NodeUtils";
 import { EspNodeShape } from "./esp";
 import millify from "millify";
@@ -69,6 +69,22 @@ export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
     return toString(str).length * pxPerChar + 2 * padding;
 }
 
+function getTestCounts(hasCounts: boolean, shortCounts: boolean, count: NodeCounts): string {
+    if (!hasCounts) {
+        return "";
+    }
+
+    if (shortCounts) {
+        if (count && millify(count?.all)) {
+            return count?.all?.toLocaleString();
+        }
+    } else if (count?.all?.toLocaleString()) {
+        return count.all.toLocaleString() || "0";
+    }
+
+    return "?";
+}
+
 export const updateNodeCounts =
     (processCounts: ProcessCounts, userSettings: UserSettings) =>
     (node: shapes.devs.Model): void => {
@@ -76,7 +92,7 @@ export const updateNodeCounts =
         const count = processCounts[node.id];
         const hasCounts = !isEmpty(count);
         const hasErrors = hasCounts && count?.errors > 0;
-        const testCounts = hasCounts ? (shortCounts ? millify(count.all) : count.all.toLocaleString() || "0") : "";
+        const testCounts = getTestCounts(hasCounts, shortCounts, count);
         const testResultsWidth = getStringWidth(testCounts);
 
         const testResultsSummary: attributes.SVGTextAttributes = {
@@ -104,7 +120,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         const attributes: shapes.devs.ModelAttributes = {
             id: node.id,
             inPorts: NodeUtils.hasInputs(node) ? ["In"] : [],
-            outPorts: NodeUtils.hasOutputs(node) ? ["Out"] : [],
+            outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
                 background: {
                     opacity: node.isDisabled ? 0.4 : 1,
@@ -122,6 +138,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                 content: {
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.65 : 1,
+                    disabled: node.isDisabled,
                 },
             },
             rankDir: "R",
@@ -141,7 +158,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             // add event listeners after element setup
             setTimeout(() => {
                 e.on(Events.CHANGE_POSITION, (el: dia.Element) => {
-                    if (isModelElement(el) && !isConnected(el) && el.hasPort("In") && el.hasPort("Out")) {
+                    if (isModelElement(el) && !isConnected(el) && (el.hasPort("In") || el.hasPort("Out"))) {
                         setLinksHovered(el.graph, el.getBBox());
                     }
                 });

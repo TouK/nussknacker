@@ -15,10 +15,12 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
+  val IdFieldName = "$id"
+
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
       case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
-      case _ => false
+      case _                                                           => false
     }
 
   private def withoutDisabled(nodes: List[CanonicalNode]): List[CanonicalNode] = nodes.flatMap {
@@ -40,9 +42,11 @@ object CanonicalProcess {
       List(
         switchNode.copy(
           defaultNext = withoutDisabled(switchNode.defaultNext),
-          nexts = switchNode.nexts.map { caseNode =>
-            caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
-          }.filterNot(_.nodes.isEmpty)
+          nexts = switchNode.nexts
+            .map { caseNode =>
+              caseNode.copy(nodes = withoutDisabled(caseNode.nodes))
+            }
+            .filterNot(_.nodes.isEmpty)
         )
       )
     case splitNode: canonicalnode.SplitNode =>
@@ -52,9 +56,11 @@ object CanonicalProcess {
     case fragmentNode: canonicalnode.Fragment =>
       List(
         fragmentNode.copy(
-          outputs = fragmentNode.outputs.map { case (id, canonicalNodes) =>
-            (id, withoutDisabled(canonicalNodes))
-          }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
+          outputs = fragmentNode.outputs
+            .map { case (id, canonicalNodes) =>
+              (id, withoutDisabled(canonicalNodes))
+            }
+            .filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
         )
       )
     case node =>
@@ -68,12 +74,13 @@ object CanonicalProcess {
 }
 
 //in fact with branches/join this form is not canonical anymore - graph can be represented in more than way
-case class CanonicalProcess(metaData: MetaData,
-                            //separation of nodes and additionalBranches is just for compatibility of stored json
-                            //DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
-                            nodes: List[CanonicalNode],
-                            additionalBranches: List[List[CanonicalNode]] = List.empty
-                           ) extends CanonicalTreeNode {
+case class CanonicalProcess(
+    metaData: MetaData,
+    // separation of nodes and additionalBranches is just for compatibility of stored json
+    // DON'T use these fields, rely on allStartNodes or mapAllNodes instead.
+    nodes: List[CanonicalNode],
+    additionalBranches: List[List[CanonicalNode]] = List.empty
+) extends CanonicalTreeNode {
 
   import CanonicalProcess._
 
@@ -81,7 +88,9 @@ case class CanonicalProcess(metaData: MetaData,
 
   def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches)
 
-  def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(allStartNodes.map(action))
+  def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(
+    allStartNodes.map(action)
+  )
 
   def withNodes(nodes: NonEmptyList[List[CanonicalNode]]): CanonicalProcess = {
     val NonEmptyList(head, tail) = nodes
@@ -115,14 +124,14 @@ object canonicalnode {
 
   case class Case(expression: Expression, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
-  case class Fragment(data: FragmentInput,
-                      outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
+  case class Fragment(data: FragmentInput, outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
 
   def collectAllNodes(node: CanonicalNode): List[NodeData] = node match {
-    case canonicalnode.FlatNode(data) => List(data)
+    case canonicalnode.FlatNode(data)              => List(data)
     case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
-    case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
-    case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(collectAllNodes)
+    case canonicalnode.SwitchNode(data, nexts, defaultNext) =>
+      data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
+    case canonicalnode.SplitNode(data, nexts)  => data :: nexts.flatten.flatMap(collectAllNodes)
     case canonicalnode.Fragment(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
   }
 

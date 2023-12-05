@@ -32,24 +32,31 @@ object DatabaseLookupEnricher {
   private def keyValueParam(keyColumnName: String, tableDef: TableDefinition): Parameter = {
     val columnDef = tableDef.columnDefs.find(_.name == keyColumnName).getOrElse {
       // This error should only happen when defining a process via Nussknacker's programming interface.
-      throw new IllegalArgumentException(s"Invalid key column: $keyColumnName. Available columns: ${tableDef.columnDefs.map(_.name).mkString(", ")}")
+      throw new IllegalArgumentException(
+        s"Invalid key column: $keyColumnName. Available columns: ${tableDef.columnDefs.map(_.name).mkString(", ")}"
+      )
     }
     Parameter(KeyValueParamName, columnDef.typing).copy(isLazyParameter = true)
   }
+
 }
 
-class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider) extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider) with LazyLogging {
+class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbMetaDataProvider)
+    extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider)
+    with LazyLogging {
 
   protected def tableParam(): Parameter = {
-    val schemaMetaData = try {
-      dbMetaDataProvider.getSchemaDefinition()
-    } catch {
-      case NonFatal(e) =>
-        logger.warn(s"Cannot fetch schema metadata for ${dBPoolConfig.url}", e)
-        SchemaDefinition.empty()
-    }
+    val schemaMetaData =
+      try {
+        dbMetaDataProvider.getSchemaDefinition()
+      } catch {
+        case NonFatal(e) =>
+          logger.warn(s"Cannot fetch schema metadata for ${dBPoolConfig.url}", e)
+          SchemaDefinition.empty()
+      }
 
-    val possibleTables: List[FixedExpressionValue] = schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
+    val possibleTables: List[FixedExpressionValue] =
+      schemaMetaData.tables.map(table => FixedExpressionValue(s"'$table'", table))
     Parameter(TableParamName, Typed[String]).copy(editor = Some(FixedValuesParameterEditor(possibleTables)))
   }
 
@@ -57,41 +64,65 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
     (argsCount: Int, params: Map[String, Any]) =>
-      QueryArguments(
-        QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
+      QueryArguments(QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
 
-  override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
+  override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+    NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
   }
 
-  protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                              (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil, None) =>
+  protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case TransformationStep(
+          (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil,
+          None
+        ) =>
       if (tableName.isEmpty) {
-        FinalResults(context, errors = CustomNodeError("Table name is missing", Some(TableParamName)) :: Nil, state = None)
+        FinalResults(
+          context,
+          errors = CustomNodeError("Table name is missing", Some(TableParamName)) :: Nil,
+          state = None
+        )
       } else {
-        val query = s"SELECT * FROM $tableName"
+        val query         = s"SELECT * FROM $tableName"
         val queryMetaData = dbMetaDataProvider.getTableMetaData(tableName)
         NextParameters(
           parameters = keyColumnParam(queryMetaData.tableDefinition) :: Nil,
-          state = Some(TransformationState(query = query, argsCount = 1, queryMetaData.tableDefinition, strategy = SingleResultStrategy)))
+          state = Some(
+            TransformationState(
+              query = query,
+              argsCount = 1,
+              queryMetaData.tableDefinition,
+              strategy = SingleResultStrategy
+            )
+          )
+        )
       }
   }
 
-  protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                  (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((TableParamName, _) :: (CacheTTLParamName, _) :: (KeyColumnParamName, DefinedEagerParameter(keyColumn: String, _)) :: Nil, Some(state)) =>
+  protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case TransformationStep(
+          (TableParamName, _) :: (CacheTTLParamName, _) :: (
+            KeyColumnParamName,
+            DefinedEagerParameter(keyColumn: String, _)
+          ) :: Nil,
+          Some(state)
+        ) =>
       val queryWithWhere = s"""${state.query} WHERE ${sqlDialect.quoteIdentifier(keyColumn)} = ?"""
-      val newState = state.copy(query = queryWithWhere)
+      val newState       = state.copy(query = queryWithWhere)
       NextParameters(
         parameters = keyValueParam(keyColumn, state.tableDef) :: Nil,
         state = Some(newState)
       )
   }
 
-  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
-                                    (implicit nodeId: NodeId): NodeTransformationDefinition =
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse

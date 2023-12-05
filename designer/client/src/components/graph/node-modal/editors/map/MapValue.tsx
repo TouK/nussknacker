@@ -1,7 +1,7 @@
 import { isEqual } from "lodash";
 import React from "react";
 import { Expression, NodeValidationError, VariableTypes } from "../../../../../types";
-import { NodeValue } from "../../fragment-input-definition/NodeValue";
+import { NodeValue } from "../../node";
 import EditableEditor from "../EditableEditor";
 import { Validator } from "../Validators";
 
@@ -19,7 +19,7 @@ interface MapValueProps {
 }
 
 export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
-    const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo, fieldName } = props;
+    const { value, isMarked, validators, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo, fieldName } = props;
 
     console.log("field errors", fieldErrors);
     return (

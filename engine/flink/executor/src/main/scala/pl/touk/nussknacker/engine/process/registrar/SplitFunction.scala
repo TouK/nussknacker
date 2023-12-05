@@ -10,21 +10,27 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.EndId
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInformationDetection: TypeInformationDetection) extends ProcessFunction[InterpretationResult, Unit] {
+class SplitFunction(
+    nodeToValidationCtx: Map[String, ValidationContext],
+    typeInformationDetection: TypeInformationDetection
+) extends ProcessFunction[InterpretationResult, Unit] {
 
-
-  //we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
+  // we eagerly create TypeInformation here, creating it during OutputTag construction would be too expensive
   private lazy val typeInfoMap: Map[String, TypeInformation[InterpretationResult]] =
     nodeToValidationCtx.mapValuesNow(vc => InterpretationResultTypeInformation.create(typeInformationDetection, vc))
 
-  override def processElement(interpretationResult: InterpretationResult, ctx: ProcessFunction[InterpretationResult, Unit]#Context,
-                              out: Collector[Unit]): Unit = {
+  override def processElement(
+      interpretationResult: InterpretationResult,
+      ctx: ProcessFunction[InterpretationResult, Unit]#Context,
+      out: Collector[Unit]
+  ): Unit = {
     val (tagName, typeInfo) = interpretationResult.reference match {
       case NextPartReference(id) => (id, typeInfoMap(id))
-      //TODO JOIN - this is a bit weird, probably refactoring of splitted process structures will help...
+      // TODO JOIN - this is a bit weird, probably refactoring of splitted process structures will help...
       case JoinReference(id, _, _) => (id, typeInfoMap(id))
-      case er: EndingReference => (EndId, typeInfoMap(er.nodeId))
+      case er: EndingReference     => (EndId, typeInfoMap(er.nodeId))
     }
     ctx.output(new OutputTag[InterpretationResult](tagName, typeInfo), interpretationResult)
   }
+
 }

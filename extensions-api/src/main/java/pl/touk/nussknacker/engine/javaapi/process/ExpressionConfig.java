@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.dict.DictDefinition;
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig$;
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
-//todo it's deprecated in 2.13
+//TODO: it's deprecated in 2.13
 import scala.collection.JavaConverters;
 import scala.collection.immutable.List$;
 
@@ -18,7 +18,7 @@ public class ExpressionConfig implements Serializable {
 
     private final Map<String, WithCategories<Object>> globalProcessVariables;
 
-    private final List<WithCategories<String>> globalImports;
+    private final List<String> globalImports;
 
     private final List<Class<?>> additionalClasses;
 
@@ -28,7 +28,7 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean strictTypeChecking;
 
-    private final Map<String, WithCategories<DictDefinition>> dictionaries;
+    private final Map<String, DictDefinition> dictionaries;
 
     private final boolean hideMetaVariable;
 
@@ -36,13 +36,13 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean dynamicPropertyAccessAllowed;
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports) {
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports) {
         this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, false, false);
     }
 
-    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<WithCategories<String>> globalImports,
+    public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports,
                             List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
-                            Map<String, WithCategories<DictDefinition>> dictionaries, boolean hideMetaVariable, boolean methodExecutionForUnknownAllowed,
+                            Map<String, DictDefinition> dictionaries, boolean hideMetaVariable, boolean methodExecutionForUnknownAllowed,
                             boolean dynamicPropertyAccessAllowed) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
@@ -60,7 +60,7 @@ public class ExpressionConfig implements Serializable {
         return globalProcessVariables;
     }
 
-    public List<WithCategories<String>> getGlobalImports() {
+    public List<String> getGlobalImports() {
         return globalImports;
     }
 
@@ -80,7 +80,7 @@ public class ExpressionConfig implements Serializable {
         return strictTypeChecking;
     }
 
-    public Map<String, WithCategories<DictDefinition>> getDictionaries() {
+    public Map<String, DictDefinition> getDictionaries() {
         return dictionaries;
     }
 

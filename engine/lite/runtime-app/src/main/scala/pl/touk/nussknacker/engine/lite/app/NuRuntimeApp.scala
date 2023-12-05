@@ -25,13 +25,13 @@ object NuRuntimeApp extends App with LazyLogging {
   SLF4JBridgeHandlerRegistrar.register()
 
   val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
-  val scenario = parseScenario(scenarioFileLocation)
-  val deploymentConfig = parseDeploymentConfig(deploymentConfigLocation)
+  val scenario                                         = parseScenario(scenarioFileLocation)
+  val deploymentConfig                                 = parseDeploymentConfig(deploymentConfigLocation)
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
   val httpConfig = runtimeConfig.as[HttpBindingConfig]("http")
 
-  implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
+  implicit val system: ActorSystem = ActorSystem("nu-lite-runtime", runtimeConfig)
 
   import system.dispatcher
 
@@ -39,28 +39,31 @@ object NuRuntimeApp extends App with LazyLogging {
 
   // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
   // will be still alive even if something fail (like scenarioInterpreter creation)
-  val exitCode = try {
-    runAfterActorSystemCreation()
-    0
-  } catch {
-    case NonFatal(ex) =>
-      logger.error("Exception during runtime execution", ex)
-      1
-  } finally {
-    Await.result(system.terminate(), 5.seconds)
-  }
+  val exitCode =
+    try {
+      runAfterActorSystemCreation()
+      0
+    } catch {
+      case NonFatal(ex) =>
+        logger.error("Exception during runtime execution", ex)
+        1
+    } finally {
+      Await.result(system.terminate(), 5.seconds)
+    }
+
   System.exit(exitCode)
 
   private def runAfterActorSystemCreation(): Unit = {
-    val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
+    val scenarioInterpreter =
+      RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
 
     val healthCheckProvider = new HealthCheckRoutesProvider(system, scenarioInterpreter)
 
     val httpServer = Http().newServerAt(interface = httpConfig.interface, port = httpConfig.port)
 
-    val runFuture = scenarioInterpreter.run()
+    val runFuture         = scenarioInterpreter.run()
     val healthCheckRoutes = healthCheckProvider.routes
-    val routes = Directives.concat(scenarioInterpreter.routes.toList ::: healthCheckRoutes :: Nil: _*)
+    val routes            = Directives.concat(scenarioInterpreter.routes.toList ::: healthCheckRoutes :: Nil: _*)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
@@ -83,7 +86,6 @@ object NuRuntimeApp extends App with LazyLogging {
       if (server != null) Await.ready(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
     }
   }
-
 
   private def parseArgs: (Path, Path) = {
     if (args.length < 1) {

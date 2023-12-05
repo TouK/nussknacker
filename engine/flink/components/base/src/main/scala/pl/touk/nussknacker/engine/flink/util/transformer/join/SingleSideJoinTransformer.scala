@@ -28,9 +28,13 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 
-class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
-  extends CustomStreamTransformer with JoinGenericNodeTransformation[FlinkCustomJoinTransformation] with ExplicitUidInOperatorsSupport
-    with WithExplicitTypesToExtract with LazyLogging {
+class SingleSideJoinTransformer(
+    timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]]
+) extends CustomStreamTransformer
+    with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
+    with ExplicitUidInOperatorsSupport
+    with WithExplicitTypesToExtract
+    with LazyLogging {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
 
@@ -40,57 +44,108 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-  override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(
-      List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
+  override def contextTransformation(contexts: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): NodeTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      NextParameters(List(BranchTypeParam, KeyParam, AggregatorParam, WindowLengthParam).map(_.parameter))
     case TransformationStep(
-    (`BranchTypeParamName`, DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType]@unchecked, _)) ::
-    (`KeyParamName`, _) :: (`AggregatorParamName`, _) :: (`WindowLengthParamName`, _) :: Nil, _) =>
-      val error = if (branchTypeByBranchId.values.toList.sorted != BranchType.values().toList)
-        List(CustomNodeError(s"Has to be exactly one MAIN and JOINED branch, got: ${branchTypeByBranchId.values.mkString(", ")}", Some(BranchTypeParamName)))
-      else
-        Nil
-      val joinedVariables = joinedId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-        .localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_))
-      NextParameters(List(Parameter[Any](AggregateByParamName).copy(additionalVariables = joinedVariables, isLazyParameter = true)), error)
+          (
+            `BranchTypeParamName`,
+            DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType] @unchecked, _)
+          ) ::
+          (`KeyParamName`, _) :: (`AggregatorParamName`, _) :: (`WindowLengthParamName`, _) :: Nil,
+          _
+        ) =>
+      val error =
+        if (branchTypeByBranchId.values.toList.sorted != BranchType.values().toList)
+          List(
+            CustomNodeError(
+              s"Has to be exactly one MAIN and JOINED branch, got: ${branchTypeByBranchId.values.mkString(", ")}",
+              Some(BranchTypeParamName)
+            )
+          )
+        else
+          Nil
+      val joinedVariables = joinedId(branchTypeByBranchId)
+        .map(contexts)
+        .getOrElse(ValidationContext())
+        .localVariables
+        .mapValuesNow(AdditionalVariableProvidedInRuntime(_))
+      NextParameters(
+        List(Parameter[Any](AggregateByParamName).copy(additionalVariables = joinedVariables, isLazyParameter = true)),
+        error
+      )
 
     case TransformationStep(
-    (`BranchTypeParamName`, DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType]@unchecked, _)) ::
-      (`KeyParamName`, _) :: (`AggregatorParamName`, DefinedEagerParameter(aggregator: Aggregator, _)) :: (`WindowLengthParamName`, _) ::
-      (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil, _) =>
+          (
+            `BranchTypeParamName`,
+            DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType] @unchecked, _)
+          ) ::
+          (`KeyParamName`, _) :: (`AggregatorParamName`, DefinedEagerParameter(aggregator: Aggregator, _)) :: (
+            `WindowLengthParamName`,
+            _
+          ) ::
+          (`AggregateByParamName`, aggregateBy: DefinedSingleParameter) :: Nil,
+          _
+        ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val mainCtx = mainId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      val validAggregateOutputType = aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
+      val validAggregateOutputType =
+        aggregator.computeOutputType(aggregateBy.returnType).leftMap(CustomNodeError(_, Some(AggregatorParamName)))
       FinalResults.forValidation(mainCtx, validAggregateOutputType.swap.toList)(
-        _.withVariable(OutputVar.customNode(outName), validAggregateOutputType.getOrElse(Unknown)))
+        _.withVariable(OutputVar.customNode(outName), validAggregateOutputType.getOrElse(Unknown))
+      )
   }
 
-  override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): FlinkCustomJoinTransformation = {
-    val branchTypeByBranchId: Map[String, BranchType] = BranchTypeParam.extractValue(params)
+  override def implementation(
+      params: Map[String, Any],
+      dependencies: List[NodeDependencyValue],
+      finalState: Option[State]
+  ): FlinkCustomJoinTransformation = {
+    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParam.extractValue(params)
     val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParam.extractValue(params)
-    val aggregator: Aggregator = AggregatorParam.extractValue(params)
-    val window: Duration = WindowLengthParam.extractValue(params)
+    val aggregator: Aggregator                                  = AggregatorParam.extractValue(params)
+    val window: Duration                                        = WindowLengthParam.extractValue(params)
     val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
-    val outputType = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
+    val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {
-      override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
+      override def transform(
+          inputs: Map[String, DataStream[Context]],
+          context: FlinkCustomNodeContext
+      ): DataStream[ValueWithContext[AnyRef]] = {
         val keyedMainBranchStream = inputs(mainId(branchTypeByBranchId).get)
-          .flatMap(new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainId(branchTypeByBranchId).get)))
+          .flatMap(
+            new StringKeyOnlyMapper(context.lazyParameterHelper, keyByBranchId(mainId(branchTypeByBranchId).get))
+          )
 
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
           .flatMap(new StringKeyedValueMapper(context, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
-        val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
-        val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
+        val storedTypeInfo =
+          context.typeInformationDetection.forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
+        val aggregatorFunction = prepareAggregatorFunction(
+          aggregator,
+          FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS),
+          aggregateBy.returnType,
+          storedTypeInfo,
+          context.convertToEngineRuntimeContext
+        )(NodeId(context.nodeId))
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
-          .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
+          .keyBy(
+            (v: ValueWithContext[String]) => v.value,
+            (v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key
+          )
           .process(aggregatorFunction)
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
         timestampAssigner
-          .map(new TimestampAssignmentHelper(_)(context.valueWithContextInfo.forType[AnyRef](outputType)).assignWatermarks(statefulStreamWithUid))
+          .map(
+            new TimestampAssignmentHelper(_)(context.valueWithContextInfo.forType[AnyRef](outputType))
+              .assignWatermarks(statefulStreamWithUid)
+          )
           .getOrElse(statefulStreamWithUid)
       }
     }
@@ -104,11 +159,23 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
     branchTypeByBranchId.find(_._2 == BranchType.JOINED).map(_._1)
   }
 
-  protected def prepareAggregatorFunction(aggregator: Aggregator, stateTimeout: FiniteDuration, aggregateElementType: TypingResult,
-                                          storedTypeInfo: TypeInformation[AnyRef], convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-                                         (implicit nodeId: NodeId):
-  CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
-    new SingleSideJoinAggregatorFunction[SortedMap](aggregator, stateTimeout.toMillis, nodeId, aggregateElementType, storedTypeInfo, convertToEngineRuntimeContext)
+  protected def prepareAggregatorFunction(
+      aggregator: Aggregator,
+      stateTimeout: FiniteDuration,
+      aggregateElementType: TypingResult,
+      storedTypeInfo: TypeInformation[AnyRef],
+      convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+  )(
+      implicit nodeId: NodeId
+  ): CoProcessFunction[ValueWithContext[String], ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] =
+    new SingleSideJoinAggregatorFunction[SortedMap](
+      aggregator,
+      stateTimeout.toMillis,
+      nodeId,
+      aggregateElementType,
+      storedTypeInfo,
+      convertToEngineRuntimeContext
+    )
 
   override def typesToExtract: List[typing.TypedClass] = List(Typed.typedClass[BranchType])
 }
@@ -116,18 +183,27 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName = "branchType"
-  val BranchTypeParam: ParameterWithExtractor[Map[String, BranchType]] = ParameterWithExtractor.branchMandatory[BranchType](BranchTypeParamName)
+  val BranchTypeParam: ParameterWithExtractor[Map[String, BranchType]] =
+    ParameterWithExtractor.branchMandatory[BranchType](BranchTypeParamName)
 
   val KeyParamName = "key"
-  val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] = ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
+  val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] =
+    ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
 
   val AggregatorParamName = "aggregator"
+
   val AggregatorParam: ParameterWithExtractor[Aggregator] = ParameterWithExtractor
-    .mandatory[Aggregator](AggregatorParamName, _.copy(editor = Some(AggregateHelper.DUAL_EDITOR),
-      additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))))
+    .mandatory[Aggregator](
+      AggregatorParamName,
+      _.copy(
+        editor = Some(AggregateHelper.DUAL_EDITOR),
+        additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
+      )
+    )
 
   val WindowLengthParamName = "windowLength"
-  val WindowLengthParam: ParameterWithExtractor[Duration] = ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
+  val WindowLengthParam: ParameterWithExtractor[Duration] =
+    ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
 
   val AggregateByParamName = "aggregateBy"
 

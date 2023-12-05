@@ -3,7 +3,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 import com.dimafeng.testcontainers.{ForAllTestContainer, InfluxDBContainer}
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.Point
-import org.scalatest.Assertion
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -16,7 +16,13 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
 
-class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
+class InfluxCountsReporterSpec
+    extends AnyFunSuite
+    with BeforeAndAfterAll
+    with ForAllTestContainer
+    with TableDrivenPropertyChecks
+    with VeryPatientScalaFutures
+    with Matchers {
 
   implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
@@ -25,13 +31,18 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
   private val startTime = Instant.now()
 
   private implicit class RichInstant(instant: Instant) {
-    def plusHours(count: Int): Instant = instant.plus(ofHours(count))
-    def plusMinutes(count: Int): Instant = instant.plus(ofMinutes(count))
-    def minusHours(count: Int): Instant = instant.minus(ofHours(count))
+    def plusHours(count: Int): Instant    = instant.plus(ofHours(count))
+    def plusMinutes(count: Int): Instant  = instant.plus(ofMinutes(count))
+    def minusHours(count: Int): Instant   = instant.minus(ofHours(count))
     def minusMinutes(count: Int): Instant = instant.minus(ofMinutes(count))
   }
 
   private val env = "testEnv"
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 
   test("invokes counts for point in time data") {
 
@@ -48,7 +59,6 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
     results("node2") shouldBe Some(20)
     results("node3") shouldBe None
 
-
   }
 
   test("invokes query for date range") {
@@ -59,7 +69,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
 
     data.writePointForCount(process, "node1", 1, startTime.minusMinutes(62))
     data.writePointForCount(process, "node1", 1, startTime.minusMinutes(59))
-    
+
     data.writePointForCount(process, "node1", 10, startTime.plusHours(2).minusMinutes(1))
     data.writePointForCount(process, "node1", 10, startTime.plusHours(2))
 
@@ -68,9 +78,9 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
     data.writePointForCount(process, "node2", 50, startTime.plusHours(2).minusMinutes(1))
     data.writePointForCount(process, "node2", 50, startTime.plusHours(2))
 
-
-    forQueryModes(QueryMode.values) { mode:QueryMode.Value =>
-      val results = data.reporter(mode)
+    forQueryModes(QueryMode.values) { mode: QueryMode.Value =>
+      val results = data
+        .reporter(mode)
         .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
       results("node1") shouldBe Some(9)
       results("node2") shouldBe Some(30)
@@ -91,12 +101,16 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
 
     data.writePointForCount(process, "node1", 25, startTime.plusHours(2).minusMinutes(1))
 
-    intercept[CannotFetchCountsError](data.reporter(QueryMode.OnlySingleDifference)
-          .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))) shouldBe
+    intercept[CannotFetchCountsError](
+      data
+        .reporter(QueryMode.OnlySingleDifference)
+        .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
+    ) shouldBe
       CannotFetchCountsError.restartsDetected(List(startTime.minusMinutes(1)))
 
     forQueryModes(QueryMode.values - QueryMode.OnlySingleDifference) { mode =>
-      val value = data.reporter(mode)
+      val value = data
+        .reporter(mode)
         .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))
       value("node1") shouldBe Some(10 + 15)
 
@@ -111,28 +125,35 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
 
     private val influxDB = InfluxDBFactory.connect(container.url, container.username, container.password)
 
-    def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter[Identity](env,
-      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config)), identity
+    def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter[Identity](
+      env,
+      InfluxConfig(
+        container.url + "/query",
+        Option(container.username),
+        Option(container.password),
+        Map.empty,
+        container.database,
+        queryMode,
+        Some(config)
+      )
     )
 
     influxDB.setDatabase(container.database)
     influxDB.disableBatch()
 
-    def writePointForCount(processName: String,
-                           nodeName: String,
-                           value: Long,
-                           time: Instant,
-                           slot: Int = 0): Unit = {
+    def writePointForCount(processName: String, nodeName: String, value: Long, time: Instant, slot: Int = 0): Unit = {
       def savePoint(measurement: String): Unit = {
-        influxDB.write(Point
-          .measurement(measurement)
-          .addField(config.countField, value)
-          .time(time.toEpochMilli, TimeUnit.MILLISECONDS)
-          .tag(config.envTag, env)
-          .tag(config.nodeIdTag, nodeName)
-          .tag(config.scenarioTag, processName)
-          .tag(config.additionalGroupByTags.head, slot.toString)
-          .build())
+        influxDB.write(
+          Point
+            .measurement(measurement)
+            .addField(config.countField, value)
+            .time(time.toEpochMilli, TimeUnit.MILLISECONDS)
+            .tag(config.envTag, env)
+            .tag(config.nodeIdTag, nodeName)
+            .tag(config.scenarioTag, processName)
+            .tag(config.additionalGroupByTags.head, slot.toString)
+            .build()
+        )
       }
       savePoint(config.nodeCountMetric)
       savePoint(config.sourceCountMetric)
@@ -141,5 +162,3 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
   }
 
 }
-
-

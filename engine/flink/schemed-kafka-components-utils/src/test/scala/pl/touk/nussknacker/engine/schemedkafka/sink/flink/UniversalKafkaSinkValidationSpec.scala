@@ -3,7 +3,11 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CustomNodeError,
+  EmptyMandatoryParameter,
+  InvalidPropertyFixedValue
+}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -30,76 +34,105 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
-    val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(modelData),
-      modelData.modelDefinition.expressionConfig)
+    val validator = new GenericNodeTransformationValidator(
+      ExpressionCompiler.withoutOptimization(modelData),
+      modelData.modelDefinition.expressionConfig
+    )
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
-    val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(universalSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
+    val paramsList              = params.toList.map(p => Parameter(p._1, p._2))
+    validator
+      .validateNode(
+        universalSinkFactory,
+        paramsList,
+        Nil,
+        Some(VariableConstants.InputVariableName),
+        SingleComponentConfig.zero
+      )(ValidationContext())
+      .toOption
+      .get
   }
 
   test("should validate specific version") {
     val result = validate(
-      SinkKeyParamName -> "",
-      SinkValueParamName -> FullNameV1.exampleData.toSpELLiteral,
-      SinkRawEditorParamName -> "true",
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> FullNameV1.exampleData.toSpELLiteral,
+      SinkRawEditorParamName          -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-      TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName -> "'1'")
+      TopicParamName                  -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      SchemaVersionParamName          -> "'1'"
+    )
 
     result.errors shouldBe Nil
   }
 
   test("should validate latest version") {
     val result = validate(
-      SinkKeyParamName -> "",
-      SinkValueParamName -> PaymentV1.exampleData.toSpELLiteral,
-      SinkRawEditorParamName -> "true",
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> PaymentV1.exampleData.toSpELLiteral,
+      SinkRawEditorParamName          -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-      TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+      TopicParamName                  -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'"
+    )
 
     result.errors shouldBe Nil
   }
 
   test("should return sane error on invalid topic") {
     val result = validate(
-      SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
-      SinkRawEditorParamName -> "true",
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> "null",
+      SinkRawEditorParamName          -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-      TopicParamName -> "'tereferer'",
-      SchemaVersionParamName -> "'1'")
+      TopicParamName                  -> "'tereferer'",
+      SchemaVersionParamName          -> "'1'"
+    )
 
-    result.errors shouldBe InvalidPropertyFixedValue(TopicParamName, None, "'tereferer'", List("", "'fullname'", "'generated-avro'"), "id") ::
-      InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
+    result.errors shouldBe InvalidPropertyFixedValue(
+      TopicParamName,
+      None,
+      "'tereferer'",
+      List("", "'fullname'", "'generated-avro'"),
+      "id"
+    ) :: InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
   }
 
   test("should return sane error on invalid version") {
     val result = validate(
-      SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
-      SinkRawEditorParamName -> "true",
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> "null",
+      SinkRawEditorParamName          -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-      TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName -> "'343543'")
+      TopicParamName                  -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      SchemaVersionParamName          -> "'343543'"
+    )
 
-    result.errors shouldBe InvalidPropertyFixedValue(SchemaVersionParamName, None, "'343543'", List("'latest'", "'1'", "'2'", "'3'"), "id") :: Nil
+    result.errors shouldBe InvalidPropertyFixedValue(
+      SchemaVersionParamName,
+      None,
+      "'343543'",
+      List("'latest'", "'1'", "'2'", "'3'"),
+      "id"
+    ) :: Nil
   }
 
   test("should validate value") {
     val result = validate(
-      SinkKeyParamName -> "",
-      SinkValueParamName -> "''",
-      SinkRawEditorParamName -> "true",
+      SinkKeyParamName                -> "",
+      SinkValueParamName              -> "''",
+      SinkRawEditorParamName          -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-      TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+      TopicParamName                  -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'"
+    )
 
-    result.errors shouldBe CustomNodeError("id",
+    result.errors shouldBe CustomNodeError(
+      "id",
       "Provided value does not match scenario output - errors:\nIncorrect type: actual: 'String()' expected: 'Record{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: Record{name: String, address: Record{street: String, city: String}}, products: List[Record{id: String, name: String, price: Double}], vat: Integer | Null}'.",
-      Some(SinkValueParamName)) :: Nil
+      Some(SinkValueParamName)
+    ) :: Nil
   }
 
 }

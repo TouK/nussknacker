@@ -1,11 +1,7 @@
 import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
-import { config } from "dotenv";
-import { resolve } from "path";
 import merge from "webpack-merge";
 import { commonConfig, outputPath } from "./common";
 import "webpack-dev-server";
-
-config({ path: resolve(__dirname, "../../.env") });
 
 export default merge(commonConfig, {
     mode: "development",
@@ -23,12 +19,31 @@ export default merge(commonConfig, {
             logging: "error",
             overlay: false,
         },
-        port: process.env.PORT ? parseInt(process.env.PORT) : 7890,
+        port: parseInt(process.env.PORT),
         hot: true,
         historyApiFallback: true,
         allowedHosts: "all",
         devMiddleware: {
             writeToDisk: true,
+        },
+        proxy: {
+            [process.env.PROXY_PATH]: {
+                target: process.env.NU_FE_CORE_URL,
+                pathRewrite: {
+                    [`^${process.env.PROXY_PATH}/api`]: "/api",
+                    [`^${process.env.PROXY_PATH}`]: "/static",
+                },
+                onProxyReq: (proxyReq, req, res) => {
+                    // redirect instead of rewrite for one time basic auth
+                    if (req.headers?.origin) {
+                        res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+                        res.setHeader("Access-Control-Allow-Credentials", "true");
+                        res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, content-type, Authorization");
+                        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+                    }
+                    res.redirect(new URL(req.url, process.env.NU_FE_CORE_URL).href);
+                },
+            },
         },
     },
     devtool: "eval-source-map",
