@@ -217,11 +217,6 @@ class HttpService {
         // `id` is not the same as in //api/component response
         return api.get<string[]>("/processDefinitionData/componentIds");
     }
-
-    fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
-        return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`);
-    }
-
     fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
         return api.get<ComponentType[]>("/components");
     }
