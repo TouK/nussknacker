@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.security.api
 
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.security.Permission.Permission
 
 sealed trait LoggedUser {

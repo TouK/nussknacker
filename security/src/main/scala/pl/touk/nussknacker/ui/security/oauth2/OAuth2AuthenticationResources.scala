@@ -9,7 +9,6 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
