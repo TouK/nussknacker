@@ -171,17 +171,18 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
-    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
+    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] =
       synchronizeDeploymentsStates(processName, schedules)
         .flatMap { case (_, needRescheduleDeploymentIds) =>
-          val callbacks = schedules.groupedByPeriodicProcess.collect {
-            case processScheduleData
-                if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
-              reschedule(processScheduleData, needRescheduleDeploymentIds)
-          }
-          callbacks.sequence.runWithCallbacks
+          schedules.groupedByPeriodicProcess
+            .collect {
+              case processScheduleData
+                  if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
+                reschedule(processScheduleData, needRescheduleDeploymentIds)
+            }
+            .sequence
+            .runWithCallbacks
         }
-    }
 
     for {
       schedules <- scheduledProcessesRepository
@@ -189,9 +190,8 @@ class PeriodicProcessService(
           Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
         )
         .run
-      schedulesToCheck = schedules.groupByProcessName.toList
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
-      _ <- Future.sequence(schedulesToCheck.map(handleSingleProcess _ tupled))
+      _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
     } yield ()
   }
 
