@@ -181,10 +181,10 @@ object PrettyValidationErrors {
     }
   }
 
-  def noValidatorKnown(typ: ProcessingType): NodeValidationError = {
+  def noValidatorKnown(processingType: ProcessingType): NodeValidationError = {
     NodeValidationError(
-      typ,
-      s"No validator available for $typ",
+      processingType,
+      s"No validator available for $processingType",
       "No validator for scenario type - please check configuration",
       fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed

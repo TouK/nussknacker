@@ -98,7 +98,7 @@ class AppApiHttpService(
           import net.ceedubs.ficus.Ficus._
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           // TODO: Warning, here is a little security leak. Everyone can discover configured processing types.
-          //       We should consider authorization of access to this data
+          //       We should consider adding an authorization of access rights to this data.
           val modelDataInfo: Map[ProcessingType, Map[String, String]] =
             modelData.all(NussknackerInternalUser.instance).mapValuesNow(_.configCreator.buildInfo())
           BuildInfoDto(

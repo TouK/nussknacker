@@ -27,24 +27,28 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
  */
 trait ProcessingTypeDataProvider[+T, +C] {
 
-  def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[T]
+  def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T]
 
   // TODO: replace with proper forType handling
-  final def forTypeUnsafe(typ: ProcessingType)(implicit user: LoggedUser): T = forType(typ)
-    .getOrElse(throw new IllegalArgumentException(s"Unknown typ: $typ, known types are: ${all.keys.mkString(", ")}"))
+  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): T = forType(processingType)
+    .getOrElse(
+      throw new IllegalArgumentException(
+        s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+      )
+    )
 
   def all(implicit user: LoggedUser): Map[ProcessingType, T]
 
-  // TODO: We should return type that can produce views for users with access to certain categories. Thanks to that
-  //       we will be sure that no sensitive data leak
+  // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
+  //       Thanks to that we will be sure that no sensitive data leak
   def combined: C
 
   def mapValues[Y](fun: T => Y): ProcessingTypeDataProvider[Y, C] = {
 
     new ProcessingTypeDataProvider[Y, C] {
 
-      override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[Y] =
-        ProcessingTypeDataProvider.this.forType(typ).map(fun)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Y] =
+        ProcessingTypeDataProvider.this.forType(processingType).map(fun)
 
       override def all(implicit user: LoggedUser): Map[ProcessingType, Y] =
         ProcessingTypeDataProvider.this.all.mapValuesNow(fun)
@@ -58,8 +62,8 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
     new ProcessingTypeDataProvider[T, CC] {
 
-      override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[T] =
-        ProcessingTypeDataProvider.this.forType(typ)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] =
+        ProcessingTypeDataProvider.this.forType(processingType)
 
       override def all(implicit user: LoggedUser): Map[ProcessingType, T] = ProcessingTypeDataProvider.this.all
 
@@ -73,10 +77,11 @@ trait ProcessingTypeDataProvider[+T, +C] {
 class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, ValueWithPermission[T]], getCombined: => C)
     extends ProcessingTypeDataProvider[T, C] {
 
-  override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[T] = map.get(typ).collect {
-    case ValueWithPermission(v, AnyUserPermission)                                                               => v
-    case ValueWithPermission(v, UserWithCategoryReadPermission(category)) if user.can(category, Permission.Read) => v
-  }
+  override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] =
+    map.get(processingType).collect {
+      case ValueWithPermission(v, AnyUserPermission)                                                               => v
+      case ValueWithPermission(v, UserWithCategoryReadPermission(category)) if user.can(category, Permission.Read) => v
+    }
 
   override def all(implicit user: LoggedUser): Map[ProcessingType, T] = map.collect {
     case (k, ValueWithPermission(v, AnyUserPermission)) => (k, v)

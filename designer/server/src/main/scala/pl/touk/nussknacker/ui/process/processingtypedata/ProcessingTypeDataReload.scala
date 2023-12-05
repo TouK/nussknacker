@@ -56,8 +56,8 @@ object BasicProcessingTypeDataReload {
     // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
     val provider = new ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] {
-      override def forType(typ: ProcessingType)(implicit user: LoggedUser): Option[ProcessingTypeData] =
-        reloader.current.forType(typ)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[ProcessingTypeData] =
+        reloader.current.forType(processingType)
 
       override def all(implicit user: LoggedUser): Map[ProcessingType, ProcessingTypeData] = reloader.current.all
 

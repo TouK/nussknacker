@@ -71,7 +71,7 @@ class UsageStatisticsReportsSettingsDeterminer(
 
   private[statistics] def determineQueryParams(): ListMap[String, String] = {
     // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
-    //       given user has no access.
+    //       given user has no access rights.
     val user = NussknackerInternalUser.instance
     val deploymentManagerTypes = processingTypeStatistics(user).values.map(_.deploymentManagerType).map {
       case Some(dm) if knownDeploymentManagerTypes.contains(dm) => dm
