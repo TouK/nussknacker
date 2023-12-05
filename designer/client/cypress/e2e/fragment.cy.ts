@@ -21,13 +21,17 @@ describe("Fragment", () => {
         cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible").as("window");
 
+        cy.intercept("POST", "/api/nodes/*/validation").as("validation");
+
         // Provide String Any Value inputMode
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:3']").find("[placeholder='Field name']").type("name_value_string_any_value");
         toggleSettings(3);
         cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']");
         cy.get("[data-testid='fieldsRow:0']").find("[placeholder='Field name']").should("have.value", "name_value_string_any_value");
-        cy.get("@window").matchImage();
+
+        cy.wait("@validation");
+        cy.get("@window").find("[data-testid='settings:0']").matchImage();
 
         // Provide String Any with Suggestion Value inputMode
         cy.get("@window").contains("+").click();
@@ -63,6 +67,9 @@ describe("Fragment", () => {
         cy.get("[data-testid='settings:4']").find("[type='ERROR']").should("be.visible");
         cy.get("[data-testid='settings:4']").contains("This field has to be unique");
 
+        cy.wait("@validation");
+        cy.get("@window").find("[data-testid='settings:4']").matchImage();
+
         // Provide String Fixed value inputMode
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:5']").find("[placeholder='Field name']").type("name_string_fixed");
@@ -77,6 +84,9 @@ describe("Fragment", () => {
         cy.get("[id$='option-1']").click({ force: true });
         cy.get("[data-testid='settings:5']").find("textarea").eq(1).type("Hint text test");
 
+        cy.wait("@validation");
+        cy.get("@window").find("[data-testid='settings:5']").matchImage();
+
         // Provide non String or Boolean Any Value inputMode
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:6']").find("[placeholder='Field name']").type("non_boolean_or_string");
@@ -85,7 +95,8 @@ describe("Fragment", () => {
         toggleSettings(6);
         cy.get("[data-testid='settings:6']").find("[id='ace-editor']").type("1");
 
-        cy.get("@window").matchImage();
+        cy.wait("@validation");
+        cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
         cy.get("@window")
             .contains(/^apply$/i)
@@ -110,7 +121,8 @@ describe("Fragment", () => {
 
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("#nk-graph-fragment [model-id='input']").should("be.visible");
-        cy.wait(750);
+
+        cy.wait("@validation");
         cy.get("[data-testid=window]").matchImage();
 
         cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find('[title="Switch to expression mode"]');
@@ -178,6 +190,8 @@ describe("Fragment", () => {
         // Verify existing fragment after properties change
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").siblings().eq(0).find("[id='ace-editor']").type("test");
+
+        cy.wait("@validation");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
