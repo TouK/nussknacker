@@ -4,7 +4,7 @@ import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
@@ -35,7 +35,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
   private val context = Context("ctxId", variables, None)
 
   private val exception = NuExceptionInfo(
-    Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)),
+    Some(NodeComponentInfo("nodeId", "componentName", RealComponentType.Service)),
     NonTransientException("input1", "mess", Instant.ofEpochMilli(111)),
     context
   )

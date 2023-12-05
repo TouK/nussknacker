@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo, RealComponentType}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
@@ -68,7 +68,7 @@ class FlinkKafkaUniversalSink(
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler
-          .handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
+          .handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", RealComponentType.Sink)), ctx.context) {
             val encode = schemaSupportDispatcher
               .forSchemaType(schema.getParsedSchema.schemaType())
               .formValueEncoder(schema.getParsedSchema, validationMode)
