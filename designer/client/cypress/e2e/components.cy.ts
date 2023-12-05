@@ -222,7 +222,7 @@ describe("Components list", () => {
         cy.get("#app-container>main").matchImage({
             maxDiffThreshold: 0.02,
             screenshotConfig: {
-                blackout: ['div:not(:first-child) > div[data-field="modificationDate"][role="cell"] span'],
+                blackout: ['div > div[data-field="modificationDate"][role="cell"] span'],
             },
         });
 
