@@ -522,7 +522,7 @@ jobs:
           name: CypressTests-results
           path: designer/client/cypress-test-results/*.xml
       - name: Store test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: e2e-test-results
