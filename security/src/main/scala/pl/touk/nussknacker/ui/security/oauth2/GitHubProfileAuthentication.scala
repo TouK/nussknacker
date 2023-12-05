@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.restmodel.AuthenticatedUser
+import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 

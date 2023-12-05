@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.restmodel.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.restmodel.{AuthCredentials, BaseEndpointDefinitions}
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.security.AuthCredentials
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass

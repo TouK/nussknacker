@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
-import pl.touk.nussknacker.restmodel.{AuthCredentials, AuthenticatedUser}
+import pl.touk.nussknacker.restmodel.security.AuthCredentials
+import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.api._
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._

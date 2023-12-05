@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.{TableFor3, TableFor4}
-import pl.touk.nussknacker.restmodel.AuthenticatedUser
+import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Decoder
-import pl.touk.nussknacker.restmodel.AuthenticatedUser
+import pl.touk.nussknacker.restmodel.security.AuthenticatedUser
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
