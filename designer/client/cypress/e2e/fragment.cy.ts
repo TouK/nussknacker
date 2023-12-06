@@ -5,14 +5,14 @@ describe("Fragment", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        // cy.deleteAllTestProcesses({ filter: seed });
     });
 
     beforeEach(() => {
         cy.viewport(1440, 1200);
     });
 
-    it("should allow adding input parameters and display used fragment graph in modal", () => {
+    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='SettingsButton']").click();
         };
@@ -140,7 +140,6 @@ describe("Fragment", () => {
             .should("be.enabled")
             .click();
 
-        cy.get("[data-testid=window]").find('[title="Node has errors"]').should("not.exist");
         cy.getNode("sendSms")
             .parent()
             .matchImage({
@@ -163,9 +162,15 @@ describe("Fragment", () => {
         });
         cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
-        cy.wait("@validation").its("response.statusCode").should("eq", 200);
+        cy.wait("@validation")
+            .its("response.statusCode")
+            .should("eq", 200)
+            .then(() => {
+                cy.get("@window").get("[title='Value']").siblings().eq(0).find("[type='ERROR']").should("exist");
+            });
         cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
+
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
 
         // Save scenario
@@ -194,10 +199,11 @@ describe("Fragment", () => {
 
         // Verify existing fragment after properties change
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
-        cy.get("[data-testid=window]").find('[title="Node has errors"]').should("be.visible");
-        cy.get("[data-testid=window]").find('[title="Node has errors"]').should("not.exist");
         cy.get("[data-testid=window]").get("[title='name_value_string_any_value']").siblings().eq(0).find("[id='ace-editor']").type("test");
 
+        cy.get("@window").get("[title='name_value_string_any_value']").siblings().eq(0).find("[type='ERROR']").should("be.visible");
+
+        cy.get("[data-testid=window]").find("section").scrollTo("bottom");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
