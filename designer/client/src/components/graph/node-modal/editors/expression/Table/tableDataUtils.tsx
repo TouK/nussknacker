@@ -1,34 +1,28 @@
 import { SpelExpressionEvaluator } from "spel2js";
-import { DataColumn, DataRow } from "./tableState";
+import { TableData } from "./tableState";
 import { ExpressionLang } from "../types";
 
-export const parsers = {
-    [ExpressionLang.SpEL]: parseSpel,
-    [ExpressionLang.JSON]: parseJson,
-} as const;
+const parseWithDefault =
+    (parse: (text: string) => TableData) =>
+    (expression: string, emptyValue?: TableData): TableData => {
+        try {
+            const { rows, columns } = parse(expression);
+            return { rows, columns };
+        } catch (error) {
+            console.warn(error);
+            return emptyValue;
+        }
+    };
 
-export const stringifiers = {
-    [ExpressionLang.SpEL]: toSpel,
-    [ExpressionLang.JSON]: toJson,
-} as const;
+export const parsers: Record<string, (expression: string, emptyValue?: TableData) => TableData> = {
+    [ExpressionLang.SpEL]: parseWithDefault(SpelExpressionEvaluator.eval),
+    [ExpressionLang.JSON]: parseWithDefault(JSON.parse),
+};
 
-export function parseSpel<T>(expression: string, emptyValue?: T): T {
-    try {
-        return SpelExpressionEvaluator.eval(expression);
-    } catch (error) {
-        console.warn(error);
-        return emptyValue;
-    }
-}
-
-export function parseJson<T>(expression: string, emptyValue?: T): T {
-    try {
-        return JSON.parse(expression);
-    } catch (error) {
-        console.warn(error);
-        return emptyValue;
-    }
-}
+export const stringifiers: Record<string, (data: TableData) => string> = {
+    [ExpressionLang.SpEL]: ({ columns, rows }) => `{\n columns:{\n${stringifyList(columns)}\n },\n rows:{\n${stringifyList(rows)}\n }\n}`,
+    [ExpressionLang.JSON]: (data) => JSON.stringify(data, null, 2),
+};
 
 function stringify(str = "") {
     return `'${str.replaceAll(`"`, `""`).replaceAll(`'`, `''`)}'`;
@@ -56,19 +50,14 @@ function stringifyList(rows: string[][]) {
     return listString;
 }
 
-export function toSpel({ columns, rows }: { columns: DataColumn[]; rows: DataRow[] }): string {
-    return `{\n columns:{\n${stringifyList(columns)}\n },\n rows:{\n${stringifyList(rows)}\n }\n}`;
+type MatrixElement<M> = M extends Matrix<infer T> ? T : never;
+type Matrix<I> = readonly (readonly I[])[];
+
+export function longestRow<M, I = MatrixElement<M>>(matrix: Matrix<I>): readonly I[] {
+    return matrix.reduce((longestRow, row) => (longestRow.length < row.length ? row : longestRow), [] as I[]);
 }
 
-export function toJson(data: { columns: DataColumn[]; rows: DataRow[] }): string {
-    return JSON.stringify(data, null, 2);
-}
-
-export function longestRow<T>(matrix: readonly (readonly T[])[]) {
-    return matrix.reduce((longestRow, row) => (longestRow.length < row.length ? row : longestRow), []);
-}
-
-export function transpose<T>(matrix: T[][], defaultValue?: T) {
+export function transpose<M, I = MatrixElement<M>>(matrix: Matrix<I>, defaultValue?: I): Matrix<I> {
     return longestRow(matrix).map((_, i) => matrix.map((row) => row[i] ?? defaultValue));
 }
 
