@@ -14,7 +14,12 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessActionId,
+  ProcessingTypeDeploymentService,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -27,7 +32,6 @@ import pl.touk.nussknacker.engine.management.periodic.model.{
   PeriodicProcessDeploymentStatus,
   ScheduleData,
   ScheduleDeploymentData,
-  ScheduleId,
   SchedulesState
 }
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -121,6 +125,10 @@ class PeriodicProcessServiceIntegrationTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
 
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
+
     def periodicProcessService(currentTime: Instant, processingType: String = processingType) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -157,15 +165,37 @@ class PeriodicProcessServiceIntegrationTest
     def otherProcessingTypeService = f.periodicProcessService(currentTime, processingType = "other")
     val otherProcessName           = ProcessName("other")
 
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
     service
-      .schedule(cronEvery30Minutes, ProcessVersion.empty.copy(processName = every30MinutesProcessName), sampleProcess)
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
     service
-      .schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess)
+      .schedule(
+        cronEvery30Minutes,
+        ProcessVersion.empty.copy(processName = every30MinutesProcessName),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
+    service
+      .schedule(
+        cronEvery4Hours,
+        ProcessVersion.empty.copy(processName = every4HoursProcessName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
     otherProcessingTypeService
-      .schedule(cronEveryHour, ProcessVersion.empty.copy(processName = otherProcessName), sampleProcess)
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = otherProcessName),
+        sampleProcess,
+        randomProcessActionId
+      )
       .futureValue
 
     val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
@@ -232,7 +262,14 @@ class PeriodicProcessServiceIntegrationTest
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
 
     def service = f.periodicProcessService(currentTime)
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
+    service
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
 
     currentTime = timeToTriggerCheck
     val toDeploy :: Nil = service.findToBeDeployed.futureValue.toList
@@ -267,7 +304,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess
+        sampleProcess,
+        randomProcessActionId
       )
       .futureValue
 
@@ -281,7 +319,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = ProcessName("other")),
-        sampleProcess
+        sampleProcess,
+        randomProcessActionId
       )
       .futureValue
 
@@ -327,7 +366,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess
+        sampleProcess,
+        randomProcessActionId
       )
       .futureValue
 
@@ -377,7 +417,8 @@ class PeriodicProcessServiceIntegrationTest
           )
         ),
         ProcessVersion.empty.copy(processName = processName),
-        sampleProcess
+        sampleProcess,
+        randomProcessActionId
       )
       .futureValue
 
@@ -465,7 +506,12 @@ class PeriodicProcessServiceIntegrationTest
     }
 
     tryWithFailedListener { () =>
-      service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess)
+      service.schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
     }
 
     currentTime = timeToTriggerCheck
@@ -489,7 +535,14 @@ class PeriodicProcessServiceIntegrationTest
     f.jarManagerStub.deployWithJarFuture = Future.failed(new RuntimeException("Flink deploy error"))
     def service = f.periodicProcessService(currentTime)
 
-    service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
+    service
+      .schedule(
+        cronEveryHour,
+        ProcessVersion.empty.copy(processName = processName),
+        sampleProcess,
+        randomProcessActionId
+      )
+      .futureValue
     currentTime = timeToTriggerCheck
     val toDeploy = service.findToBeDeployed.futureValue.toList
 
@@ -504,6 +557,8 @@ class PeriodicProcessServiceIntegrationTest
     val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
+
+  private def randomProcessActionId = ProcessActionId(UUID.randomUUID())
 
   private def convertDateToCron(date: LocalDateTime): String = {
     CronBuilder

@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -38,7 +39,7 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock
-)(implicit ec: ExecutionContext)
+)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
     extends LazyLogging {
 
   import cats.syntax.all._
@@ -52,9 +53,7 @@ class PeriodicProcessService(
       result.run.flatMap(callbacks => Future.sequence(callbacks.map(_()))).map(_ => ())
   }
 
-  private implicit class EmptyCallback(result: RepositoryAction[Unit]) {
-    def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
-  }
+  private val emptyCallback: Callback = () => Future.successful(())
 
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
@@ -62,11 +61,14 @@ class PeriodicProcessService(
       schedule: ScheduleProperty,
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
+      processActionId: ProcessActionId,
       beforeSchedule: => Future[Unit] = Future.unit
   ): Future[Unit] = {
     prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
-        beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates))
+        beforeSchedule.flatMap(_ =>
+          scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates, processActionId)
+        )
       case Left(error) =>
         Future.failed(error)
     }
@@ -96,7 +98,8 @@ class PeriodicProcessService(
       scheduleProperty: ScheduleProperty,
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
-      scheduleDates: List[(ScheduleName, Option[LocalDateTime])]
+      scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
+      processActionId: ProcessActionId
   ): Future[Unit] = {
     logger.info("Scheduling periodic scenario: {} on {}", processVersion, scheduleDates)
     for {
@@ -110,17 +113,18 @@ class PeriodicProcessService(
       enrichedDeploymentWithJarData = deploymentWithJarData.copy(inputConfigDuringExecutionJson =
         enrichedProcessConfig.inputConfigDuringExecutionJson
       )
-      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData)
+      _ <- initialSchedule(scheduleProperty, scheduleDates, enrichedDeploymentWithJarData, processActionId)
     } yield ()
   }
 
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithJarData
+      deploymentWithJarData: DeploymentWithJarData,
+      processActionId: ProcessActionId
   ): Future[Unit] = {
     scheduledProcessesRepository
-      .create(deploymentWithJarData, scheduleMap)
+      .create(deploymentWithJarData, scheduleMap, processActionId)
       .flatMap { process =>
         scheduleDates.collect {
           case (name, Some(date)) =>
@@ -167,20 +171,18 @@ class PeriodicProcessService(
   }
 
   def handleFinished: Future[Unit] = {
-    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] = {
-      synchronizeDeploymentsStates(processName, schedules).flatMap { case (_, needRescheduleDeploymentIds) =>
-        schedules.groupedByPeriodicProcess
-          .map { processScheduleData =>
-            if (processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id))) {
-              reschedule(processScheduleData, needRescheduleDeploymentIds)
-            } else {
-              scheduledProcessesRepository.monad.pure(()).emptyCallback
+    def handleSingleProcess(processName: ProcessName, schedules: SchedulesState): Future[Unit] =
+      synchronizeDeploymentsStates(processName, schedules)
+        .flatMap { case (_, needRescheduleDeploymentIds) =>
+          schedules.groupedByPeriodicProcess
+            .collect {
+              case processScheduleData
+                  if processScheduleData.existsDeployment(d => needRescheduleDeploymentIds.contains(d.id)) =>
+                reschedule(processScheduleData, needRescheduleDeploymentIds)
             }
-          }
-          .sequence
-          .runWithCallbacks
-      }
-    }
+            .sequence
+            .runWithCallbacks
+        }
 
     for {
       schedules <- scheduledProcessesRepository
@@ -188,7 +190,6 @@ class PeriodicProcessService(
           Set(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy)
         )
         .run
-
       // we handle each job separately, if we fail at some point, we will continue on next handleFinished run
       _ <- Future.sequence(schedules.groupByProcessName.toList.map(handleSingleProcess _ tupled))
     } yield ()
@@ -251,7 +252,7 @@ class PeriodicProcessService(
   ): RepositoryAction[Callback] = {
     import processScheduleData._
     val scheduleActions = deployments.map { deployment =>
-      if (needRescheduleDeploymentIds.contains(deployment.id)) {
+      if (needRescheduleDeploymentIds.contains(deployment.id))
         deployment.nextRunAt(clock) match {
           case Right(Some(futureDate)) =>
             logger.info(s"Rescheduling ${deployment.display} to $futureDate")
@@ -268,18 +269,21 @@ class PeriodicProcessService(
             logger.error(s"Wrong periodic property, error: $error for ${deployment.display}")
             None
         }
-      } else {
+      else
         Option(deployment)
           .filter(_.state.status == PeriodicProcessDeploymentStatus.Scheduled)
           .map(_ => scheduledProcessesRepository.monad.pure(()))
-      }
+
     }
-    if (!scheduleActions.exists(_.isDefined)) {
+
+    if (scheduleActions.forall(_.isEmpty)) {
       logger.info(s"No scheduled deployments for periodic process: ${process.id.value}. Deactivating")
-      deactivateAction(process)
-    } else {
-      scheduleActions.flatten.sequence.map(_ => ()).emptyCallback
-    }
+      deactivateAction(process).flatMap { _ =>
+        markProcessActionExecutionFinished(processScheduleData.process.processActionId)
+      }
+
+    } else
+      scheduleActions.flatten.sequence.as(emptyCallback)
   }
 
   private def markFinished(deployment: ScheduleDeploymentData, state: Option[StatusDetails]): RepositoryAction[Unit] = {
@@ -343,6 +347,16 @@ class PeriodicProcessService(
       // have process without jar
     } yield () => jarManager.deleteJar(process.deploymentData.jarFileName)
   }
+
+  private def markProcessActionExecutionFinished(
+      processActionIdOption: Option[ProcessActionId]
+  ): RepositoryAction[Callback] =
+    scheduledProcessesRepository.monad.pure { () =>
+      processActionIdOption
+        .map(deploymentService.markActionExecutionFinished)
+        .sequence
+        .map(_ => ())
+    }
 
   def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
     // TODO: set status before deployment?
