@@ -352,10 +352,10 @@ class PeriodicProcessService(
       processActionIdOption: Option[ProcessActionId]
   ): RepositoryAction[Callback] =
     scheduledProcessesRepository.monad.pure { () =>
-      processActionIdOption match {
-        case Some(actionId) => deploymentService.markActionExecutionFinished(actionId).map(_ => ())
-        case _              => Future.successful(())
-      }
+      processActionIdOption
+        .map(deploymentService.markActionExecutionFinished)
+        .sequence
+        .map(_ => ())
     }
 
   def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
