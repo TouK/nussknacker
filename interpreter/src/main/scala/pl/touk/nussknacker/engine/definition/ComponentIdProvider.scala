@@ -1,55 +1,42 @@
 package pl.touk.nussknacker.engine.definition
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
-import pl.touk.nussknacker.engine.component.ComponentUtil
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.component.ComponentInfoExtractor
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
+import pl.touk.nussknacker.engine.graph.node.NodeData
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
-  def createComponentId(processingType: String, name: Option[String], componentType: ComponentType): ComponentId
+  def createComponentId(processingType: String, componentInfo: ComponentInfo): ComponentId
   def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId]
 }
 
 class DefaultComponentIdProvider(configs: Map[String, ComponentsUiConfig]) extends ComponentIdProvider {
 
+  private val RestrictedComponentTypes = Set(ComponentType.BuiltIn, ComponentType.Fragment)
+
   override def createComponentId(
       processingType: String,
-      name: Option[String],
-      componentType: ComponentType
+      componentInfo: ComponentInfo
   ): ComponentId = {
-    name match {
-      case Some(value) => createComponentId(processingType, value, componentType)
-      case None        => ComponentId.forBaseComponent(componentType)
-    }
-  }
-
-  override def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] =
-    ComponentUtil
-      .extractComponentType(node)
-      .map(componentType =>
-        node match {
-          case n: WithComponent => createComponentId(processingType, n.componentId, componentType)
-          case _                => ComponentId.forBaseComponent(componentType)
-        }
-      )
-
-  private def createComponentId(processingType: String, name: String, componentType: ComponentType): ComponentId = {
-    val defaultComponentId    = ComponentId.default(processingType, name, componentType)
-    val overriddenComponentId = getOverriddenComponentId(processingType, name, defaultComponentId)
+    val defaultComponentId = ComponentId.default(processingType, componentInfo)
+    val overriddenComponentId =
+      getOverriddenComponentId(processingType, componentInfo.name, defaultComponentId)
 
     // We assume that base and currently fragment component's id can't be overridden
-    if (defaultComponentId != overriddenComponentId && (ComponentType.isBaseComponent(
-        componentType
-      ) || componentType == ComponentType.Fragments)) {
+    if (defaultComponentId != overriddenComponentId && RestrictedComponentTypes.contains(componentInfo.`type`)) {
       throw new IllegalArgumentException(
-        s"Component id can't be overridden for: '$name' with component type: '$componentType'."
+        s"Component id can't be overridden for: $componentInfo"
       )
     }
 
     overriddenComponentId
   }
+
+  override def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] =
+    ComponentInfoExtractor
+      .fromScenarioNode(node)
+      .map(createComponentId(processingType, _))
 
   private def getOverriddenComponentId(
       processingType: String,

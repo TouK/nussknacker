@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.component
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
@@ -37,7 +37,7 @@ private[component] object ComponentsValidator {
   ): List[ComponentValidationData] = {
     componentObjects.templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, com.componentInfo)
         val icon        = getComponentIcon(componentObjects.config, com)
 
         ComponentValidationData(
@@ -91,6 +91,7 @@ private[component] object ComponentsValidator {
 
 }
 
+// TODO: validate component's initial parameters as well
 private final case class ComponentValidationData(
     id: ComponentId,
     name: String,

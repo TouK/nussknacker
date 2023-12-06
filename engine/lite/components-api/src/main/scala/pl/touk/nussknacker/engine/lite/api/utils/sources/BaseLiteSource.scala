@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo, RealComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
@@ -34,7 +34,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
         .fromEither(Try(transform(record)).toEither)
         .leftMap(ex =>
           NuExceptionInfo(
-            Some(NodeComponentInfo(componentContext.nodeId, "unknown", RealComponentType.Source)),
+            Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
             ex,
             Context(contextIdGenerator.nextContextId())
           )

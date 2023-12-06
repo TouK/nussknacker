@@ -3,18 +3,13 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.component.ComponentType.{
-  ComponentType,
-  CustomNode => CustomNodeType,
-  Filter,
-  FragmentInput,
-  FragmentOutput,
-  Fragments,
-  Sink,
-  Source,
-  Switch
+import pl.touk.nussknacker.engine.api.component.ComponentType._
+import pl.touk.nussknacker.engine.api.component.{
+  BuiltInComponentInfo,
+  ComponentId,
+  ComponentInfo,
+  SingleComponentConfig
 }
-import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -167,33 +162,33 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Sink, existingSinkFactory2)               -> 1,
           sid(Source, existingSourceFactory)            -> 2,
           oid(overriddenOtherExistingStreamTransformer) -> 1,
-          bid(Switch)                                   -> 1,
-          bid(Filter)                                   -> 2
+          bid(BuiltInComponentInfo.Choice)              -> 1,
+          bid(BuiltInComponentInfo.Filter)              -> 2
         )
       ),
       (
         List(processDetails2, fragmentDetails),
         Map(
-          sid(Sink, existingSinkFactory)                       -> 1,
-          sid(Source, existingSourceFactory)                   -> 1,
-          oid(overriddenOtherExistingStreamTransformer)        -> 1,
-          sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-          bid(FragmentInput)                                   -> 1,
-          bid(FragmentOutput)                                  -> 1
+          sid(Sink, existingSinkFactory)                        -> 1,
+          sid(Source, existingSourceFactory)                    -> 1,
+          oid(overriddenOtherExistingStreamTransformer)         -> 1,
+          sid(CustomComponent, otherExistingStreamTransformer2) -> 1,
+          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
+          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
         )
       ),
       (
         List(processDetails2, processDetailsWithSomeBasesStreaming, fragmentDetails),
         Map(
-          sid(Sink, existingSinkFactory)                       -> 2,
-          sid(Sink, existingSinkFactory2)                      -> 1,
-          sid(Source, existingSourceFactory)                   -> 2,
-          oid(overriddenOtherExistingStreamTransformer)        -> 1,
-          sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-          bid(Switch)                                          -> 1,
-          bid(Filter)                                          -> 2,
-          bid(FragmentInput)                                   -> 1,
-          bid(FragmentOutput)                                  -> 1
+          sid(Sink, existingSinkFactory)                        -> 2,
+          sid(Sink, existingSinkFactory2)                       -> 1,
+          sid(Source, existingSourceFactory)                    -> 2,
+          oid(overriddenOtherExistingStreamTransformer)         -> 1,
+          sid(CustomComponent, otherExistingStreamTransformer2) -> 1,
+          bid(BuiltInComponentInfo.Choice)                      -> 1,
+          bid(BuiltInComponentInfo.Filter)                      -> 2,
+          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
+          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
         )
       ),
       (
@@ -205,27 +200,27 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           fid(Sink, existingSinkFactory)     -> 1,
           fid(Sink, existingSinkFactory2)    -> 1,
           fid(Source, existingSourceFactory) -> 1,
-          bid(Switch)                        -> 2,
-          bid(Filter)                        -> 3
+          bid(BuiltInComponentInfo.Choice)   -> 2,
+          bid(BuiltInComponentInfo.Filter)   -> 3
         )
       ),
       (
         List(processDetailsWithFragment, fragmentDetails),
         Map(
-          sid(Source, existingSourceFactory)                   -> 1,
-          sid(Sink, existingSinkFactory)                       -> 1,
-          sid(Fragments, fragment.metaData.id)                 -> 1,
-          sid(CustomNodeType, otherExistingStreamTransformer2) -> 2,
-          bid(FragmentInput)                                   -> 1,
-          bid(FragmentOutput)                                  -> 1
+          sid(Source, existingSourceFactory)                    -> 1,
+          sid(Sink, existingSinkFactory)                        -> 1,
+          sid(Fragment, fragment.metaData.id)                   -> 1,
+          sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
+          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 1,
+          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 1
         )
       ),
       (
         List(fragmentDetails, fragmentDetails),
         Map(
-          sid(CustomNodeType, otherExistingStreamTransformer2) -> 2,
-          bid(FragmentInput)                                   -> 2,
-          bid(FragmentOutput)                                  -> 2
+          sid(CustomComponent, otherExistingStreamTransformer2) -> 2,
+          bid(BuiltInComponentInfo.FragmentInputDefinition)     -> 2,
+          bid(BuiltInComponentInfo.FragmentOutputDefinition)    -> 2
         )
       )
     )
@@ -252,7 +247,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetails1ButDeployed),
         Map(
           sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List(ScenarioUsageData("source")))),
-          sid(CustomNodeType, existingStreamTransformer) -> List(
+          sid(CustomComponent, existingStreamTransformer) -> List(
             (processDetails1ButDeployed, List(ScenarioUsageData("custom")))
           ),
           oid(overriddenOtherExistingStreamTransformer) -> List(
@@ -268,7 +263,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
             (processDetails1ButDeployed, List(ScenarioUsageData("source"))),
             (processDetails2, List(ScenarioUsageData("source")))
           ),
-          sid(CustomNodeType, existingStreamTransformer) -> List(
+          sid(CustomComponent, existingStreamTransformer) -> List(
             (processDetails1ButDeployed, List(ScenarioUsageData("custom")))
           ),
           oid(overriddenOtherExistingStreamTransformer) -> List(
@@ -293,11 +288,11 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
           sid(Sink, existingSinkFactory2) -> List(
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out2")))
           ),
-          bid(Filter) -> List(
+          bid(BuiltInComponentInfo.Filter) -> List(
             (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("checkId"))),
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("checkId"), ScenarioUsageData("checkId2")))
           ),
-          bid(Switch) -> List(
+          bid(BuiltInComponentInfo.Choice) -> List(
             (processDetailsWithSomeBasesFraud, List(ScenarioUsageData("switchFraud"))),
             (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("switchStreaming")))
           ),
@@ -312,16 +307,20 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         List(processDetailsWithFragment, fragmentDetails),
         Map(
           sid(Source, existingSourceFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("source")))),
-          sid(CustomNodeType, otherExistingStreamTransformer2) -> List(
+          sid(CustomComponent, otherExistingStreamTransformer2) -> List(
             (processDetailsWithFragment, List(ScenarioUsageData("custom"))),
             (fragmentDetails, List(ScenarioUsageData("f1")))
           ),
           sid(Sink, existingSinkFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("sink")))),
-          sid(Fragments, fragment.metaData.id) -> List(
+          sid(Fragment, fragment.metaData.id) -> List(
             (processDetailsWithFragment, List(ScenarioUsageData(fragment.metaData.id)))
           ),
-          bid(FragmentInput)  -> List((fragmentDetails, List(ScenarioUsageData("start")))),
-          bid(FragmentOutput) -> List((fragmentDetails, List(ScenarioUsageData("out1")))),
+          bid(BuiltInComponentInfo.FragmentInputDefinition) -> List(
+            (fragmentDetails, List(ScenarioUsageData("start")))
+          ),
+          bid(BuiltInComponentInfo.FragmentOutputDefinition) -> List(
+            (fragmentDetails, List(ScenarioUsageData("out1")))
+          ),
         )
       )
     )
@@ -345,11 +344,13 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     }
   }
 
-  private def sid(componentType: ComponentType, id: String) = ComponentId.default(Streaming, id, componentType)
+  private def sid(componentType: ComponentType, id: String) =
+    ComponentId.default(Streaming, ComponentInfo(componentType, id))
 
-  private def fid(componentType: ComponentType, id: String) = ComponentId.default(Fraud, id, componentType)
+  private def fid(componentType: ComponentType, id: String) =
+    ComponentId.default(Fraud, ComponentInfo(componentType, id))
 
-  private def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
+  private def bid(componentInfo: ComponentInfo) = ComponentId.forBuiltInComponent(componentInfo)
 
   private def oid(overriddenName: String) = ComponentId(overriddenName)
 

@@ -5,14 +5,13 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.net.URI
 
@@ -97,22 +96,30 @@ package object definition {
   object ComponentTemplate {
 
     def create(
-        `type`: ComponentType,
+        componentInfo: ComponentInfo,
         node: NodeData,
         categories: List[String],
         branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
     ): ComponentTemplate =
-      ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
+      ComponentTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
 
   }
 
+  // TODO: Rename to ComponentNodeTemplate
   @JsonCodec(encodeOnly = true) final case class ComponentTemplate(
       `type`: ComponentType,
+      // TODO: Rename to name
       label: String,
       node: NodeData,
+      // TODO: remove
       categories: List[String],
-      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
-  )
+      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty,
+      // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
+      isEnricher: Option[Boolean] = None
+  ) {
+    // TODO: This is temporary - we shouldn't use this class for other purposes than encoding to json
+    def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
+  }
 
   @JsonCodec(encodeOnly = true) final case class ComponentGroup(
       name: ComponentGroupName,

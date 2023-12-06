@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
-import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -227,7 +227,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val espExceptionInfo = RecordingExceptionConsumer.dataFor(runId).head
 
     espExceptionInfo.nodeComponentInfo shouldBe Some(
-      NodeComponentInfo("end", "flinkKafkaAvroSink", RealComponentType.Sink)
+      NodeComponentInfo("end", ComponentType.Sink, "flinkKafkaAvroSink")
     )
     espExceptionInfo.throwable shouldBe a[NonTransientException]
     val cause = espExceptionInfo.throwable.asInstanceOf[NonTransientException].cause
