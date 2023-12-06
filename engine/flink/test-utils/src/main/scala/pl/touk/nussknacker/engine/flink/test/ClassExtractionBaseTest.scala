@@ -68,9 +68,9 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
     if (Option(System.getenv("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
       FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)
     }
-
     val parsed  = parse(ResourceLoader.load(outputResource)).toOption.get
     val decoded = decode(parsed)
+
     checkGeneratedClasses(types, decoded)
   }
 
