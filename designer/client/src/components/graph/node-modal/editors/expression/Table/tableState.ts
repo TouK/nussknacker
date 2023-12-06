@@ -200,13 +200,8 @@ function reducer(state: TableData, action: Action): TableData {
 export function useTableState({ expression, language }: ExpressionObj): [TableData, Dispatch<Action>, string] {
     const [rawExpression, setRawExpression] = useState<string>(expression);
 
-    const fromExpression = useMemo(() => {
-        return parsers[language];
-    }, [language]);
-
-    const toExpression = useMemo(() => {
-        return stringifiers[language];
-    }, [language]);
+    const fromExpression = useMemo(() => parsers[language], [language]);
+    const toExpression = useMemo(() => stringifiers[language], [language]);
 
     const [state, dispatch] = useReducer(reducer, emptyValue, (defaultValue) => fromExpression(expression, defaultValue));
 
