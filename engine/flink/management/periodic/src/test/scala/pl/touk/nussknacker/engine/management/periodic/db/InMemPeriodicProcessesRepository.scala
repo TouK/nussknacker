@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic.db
 
 import cats.{Id, Monad}
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.periodic._
@@ -44,16 +45,18 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       deploymentStatus: PeriodicProcessDeploymentStatus,
       scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
       deployMaxRetries: Int = 0,
-      processingType: String = processingType
+      processingType: String = processingType,
+      processActionId: Option[ProcessActionId] = None
   ): PeriodicProcessDeploymentId = {
-    val periodicProcessId = addOnlyProcess(processName, scheduleProperty, processingType)
+    val periodicProcessId = addOnlyProcess(processName, scheduleProperty, processingType, processActionId)
     addOnlyDeployment(periodicProcessId, deploymentStatus, deployMaxRetries = deployMaxRetries)
   }
 
   def addOnlyProcess(
       processName: ProcessName,
       scheduleProperty: ScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
-      processingType: String = processingType
+      processingType: String = processingType,
+      processActionId: Option[ProcessActionId] = None
   ): PeriodicProcessId = {
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
     val entity = PeriodicProcessEntity(
@@ -69,7 +72,8 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
-      createdAt = LocalDateTime.now()
+      createdAt = LocalDateTime.now(),
+      processActionId = processActionId
     )
     processEntities += entity
     id
@@ -108,7 +112,8 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
 
   override def create(
       deploymentWithJarData: DeploymentWithJarData,
-      scheduleProperty: ScheduleProperty
+      scheduleProperty: ScheduleProperty,
+      processActionId: ProcessActionId
   ): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
@@ -121,7 +126,8 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       jarFileName = deploymentWithJarData.jarFileName,
       scheduleProperty = scheduleProperty.asJson.noSpaces,
       active = true,
-      createdAt = LocalDateTime.now()
+      createdAt = LocalDateTime.now(),
+      processActionId = Some(processActionId)
     )
     processEntities += periodicProcess
     PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
