@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, SpelExpressionExcludeList}
@@ -141,15 +141,9 @@ object ProcessDefinitionExtractor {
         processingType: String
     ): List[(ComponentIdWithName, T)] =
       services.map { case (name, obj) =>
-        val hasNoReturn = obj match {
-          case objDef: ObjectDefinition              => objDef.returnType.isEmpty
-          case objWithMethodDef: ObjectWithMethodDef => objWithMethodDef.returnType.isEmpty
-        }
-
         val id = componentIdProvider.createComponentId(
           processingType,
-          Some(name),
-          if (hasNoReturn) ComponentType.Processor else ComponentType.Enricher
+          ComponentInfo(ComponentType.Service, name)
         )
         ComponentIdWithName(id, name) -> obj
       }.toList
@@ -159,7 +153,10 @@ object ProcessDefinitionExtractor {
         processingType: String
     ): List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))] =
       customStreamTransformers.map { case (name, obj) =>
-        val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.CustomNode)
+        val id = componentIdProvider.createComponentId(
+          processingType,
+          ComponentInfo(ComponentType.CustomComponent, name)
+        )
         ComponentIdWithName(id, name) -> obj
       }.toList
 
@@ -168,7 +165,10 @@ object ProcessDefinitionExtractor {
         processingType: String
     ): List[(ComponentIdWithName, T)] =
       sinkFactories.map { case (name, obj) =>
-        val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.Sink)
+        val id = componentIdProvider.createComponentId(
+          processingType,
+          ComponentInfo(ComponentType.Sink, name)
+        )
         ComponentIdWithName(id, name) -> obj
       }.toList
 
@@ -177,7 +177,10 @@ object ProcessDefinitionExtractor {
         processingType: String
     ): List[(ComponentIdWithName, T)] =
       sourceFactories.map { case (name, obj) =>
-        val id = componentIdProvider.createComponentId(processingType, Some(name), ComponentType.Source)
+        val id = componentIdProvider.createComponentId(
+          processingType,
+          ComponentInfo(ComponentType.Source, name)
+        )
         ComponentIdWithName(id, name) -> obj
       }.toList
 

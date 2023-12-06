@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.ComponentInfo
 
-final case class ScenarioComponentsUsages(value: Map[ComponentIdParts, List[NodeId]])
+final case class ScenarioComponentsUsages(value: Map[ComponentInfo, List[NodeId]])
 
 object ScenarioComponentsUsages {
   val Empty: ScenarioComponentsUsages = ScenarioComponentsUsages(Map.empty)
 }
-
-final case class ComponentIdParts(componentName: Option[String], componentType: ComponentType)

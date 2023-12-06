@@ -4,7 +4,7 @@ import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -333,7 +333,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
       exception.throwable shouldBe a[NonTransientException]
       exception.nodeComponentInfo shouldBe Some(
-        NodeComponentInfo("throwingNonTransientErrorsNodeId", "throwingNonTransientErrors", RealComponentType.Service)
+        NodeComponentInfo("throwingNonTransientErrorsNodeId", ComponentType.Service, "throwingNonTransientErrors")
       )
       SinkForStrings.data.loneElement shouldBe "b"
     }

@@ -361,7 +361,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should not allow duplicated field names in variable builder") {
     inside(
       validate(
-        VariableBuilder("mapVariable", "var1", Field("field", "null") :: Field("field", "null") :: Nil),
+        VariableBuilder("recordVariable", "var1", Field("field", "null") :: Field("field", "null") :: Nil),
         ValidationContext.empty
       )
     ) {
@@ -370,12 +370,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               "The key of a record has to be unique",
               _,
               "$fields-0-$key",
-              "mapVariable"
+              "recordVariable"
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
               "$fields-1-$key",
-              "mapVariable"
+              "recordVariable"
             ) :: Nil,
             None,
             _
@@ -386,14 +386,18 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should not allow duplicated field names in variable builder when cannot compile") {
     inside(
       validate(
-        VariableBuilder("mapVariable", "var1", Field("field", "unresolvedReference") :: Field("field", "null") :: Nil),
+        VariableBuilder(
+          "recordVariable",
+          "var1",
+          Field("field", "unresolvedReference") :: Field("field", "null") :: Nil
+        ),
         ValidationContext.empty
       )
     ) {
       case ValidationPerformed(
             ExpressionParserCompilationError(
               "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
-              "mapVariable",
+              "recordVariable",
               Some("$fields-0-$value"),
               "unresolvedReference"
             ) ::
@@ -401,12 +405,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               "The key of a record has to be unique",
               _,
               "$fields-0-$key",
-              "mapVariable"
+              "recordVariable"
             ) :: CustomParameterValidationError(
               "The key of a record has to be unique",
               _,
               "$fields-1-$key",
-              "mapVariable"
+              "recordVariable"
             ) :: Nil,
             None,
             _
@@ -418,7 +422,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
       inside(
         validate(
-          VariableBuilder("mapVariable", "var1", Field("field1", e) :: Field("field2", e) :: Nil),
+          VariableBuilder("recordVariable", "var1", Field("field1", e) :: Field("field2", e) :: Nil),
           ValidationContext.empty
         )
       ) {
@@ -427,12 +431,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 "This field is mandatory and can not be empty",
                 _,
                 "$fields-0-$value",
-                "mapVariable"
+                "recordVariable"
               ) :: EmptyMandatoryParameter(
                 "This field is mandatory and can not be empty",
                 _,
                 "$fields-1-$value",
-                "mapVariable"
+                "recordVariable"
               ) :: Nil,
               None,
               _

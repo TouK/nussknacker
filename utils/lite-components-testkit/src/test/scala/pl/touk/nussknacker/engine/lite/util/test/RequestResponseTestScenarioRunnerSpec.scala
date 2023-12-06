@@ -4,12 +4,7 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentDefinition,
-  ComponentInfo,
-  NodeComponentInfo,
-  RealComponentType
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
@@ -62,7 +57,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
       ).swap.toOption.get.head
 
       firstError.nodeComponentInfo shouldBe Some(
-        NodeComponentInfo("fail", Some(ComponentInfo(failingComponent, RealComponentType.Service)))
+        NodeComponentInfo("fail", Some(ComponentInfo(ComponentType.Service, failingComponent)))
       )
       firstError.throwable.getMessage shouldBe FailingService.failMessage
 

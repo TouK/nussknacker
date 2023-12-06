@@ -44,6 +44,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     Previous version was commonly wrongly used as an "object without categories specified" but in fact it was "object with empty categories list"
     which means that object should be never visible. To create "object without categories specified" use, `WithCategories.anyCategory`.
     If you want to pass just a list of categories, use `WithCategories(value, Some(list), SingleComponentConfig.zero)`
+* [#5171](https://github.com/TouK/nussknacker/pull/5171) Changes around `ComponentType` values changes:
+  * In `ComponentType` values: 
+    * Built-in component's artificial component types (`Filter`, `Split`, `Switch`, `Variable`, `MapVariable`)  were replaced by `BuiltIn` type
+    * `Processor` and `Enricher` component types were replaced by `Service`
+    * `Fragments` was replaced by `Fragment`
+    * `CustomNode` was replaced by `CustomComponent`
+  * In `ComponentInfo`: Order of parameters swapped + names of them changed `componentType` -> `type`, `componentName` -> `name`
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type

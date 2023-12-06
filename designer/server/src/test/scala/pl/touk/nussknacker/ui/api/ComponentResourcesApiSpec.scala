@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.given
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -41,10 +41,10 @@ class ComponentResourcesApiSpec
     "authenticated should" - {
 
       val correctListForTestUser: List[String] = List(
+        "builtin-choice",
         "builtin-filter",
-        "builtin-mapvariable",
+        "builtin-record-variable",
         "builtin-split",
-        "builtin-switch",
         "builtin-variable",
         "streaming-custom-additionalvariable",
         "streaming-custom-constantstatetransformer",
@@ -124,10 +124,10 @@ class ComponentResourcesApiSpec
       "return different component lists for users(test, admin)" in {
 
         val correctListForAdminUser: List[String] = List(
+          "builtin-choice",
           "builtin-filter",
-          "builtin-mapvariable",
+          "builtin-record-variable",
           "builtin-split",
-          "builtin-switch",
           "builtin-variable",
           "streaming-custom-additionalvariable",
           "streaming-custom-constantstatetransformer",
@@ -305,8 +305,7 @@ class ComponentResourcesApiSpec
         val processId = createSavedProcess(process, Category1, TestProcessingTypes.Streaming)
         val componentId = defaultComponentIdProvider.createComponentId(
           TestProcessingTypes.Streaming,
-          Some(sourceComponentName),
-          ComponentType.Source
+          ComponentInfo(ComponentType.Source, sourceComponentName)
         )
 
         given()

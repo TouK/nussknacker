@@ -7,7 +7,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, RealComponentType}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
@@ -275,7 +275,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     result shouldBe Invalid(
       NonEmptyList.of(
         NuExceptionInfo(
-          Some(NodeComponentInfo("sinkId", "unknown", RealComponentType.Sink)),
+          Some(NodeComponentInfo("sinkId", ComponentType.Sink, "unknown")),
           SinkException("FailingSink failed"),
           Context(contextId, Map("input" -> Request1("a", "b")), None)
         )

@@ -61,7 +61,7 @@ object DefaultComponentService {
   private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): String =
     componentConfig(componentsUiConfig, com)
       .flatMap(_.icon)
-      .getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+      .getOrElse(DefaultsComponentIcon.fromComponentInfo(com.componentInfo, com.isEnricher))
 
   private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): Option[String] =
     componentConfig(componentsUiConfig, com).flatMap(_.docsUrl)
@@ -202,7 +202,7 @@ class DefaultComponentService private (
   ): List[ComponentListElement] = {
     componentObjects.templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, com.componentInfo)
         val icon        = getComponentIcon(componentObjects.config, com)
         val links       = createComponentLinks(componentId, com, componentObjects.config)
 
