@@ -21,7 +21,7 @@ import { useTypeOptions } from "../../../fragment-input-definition/FragmentInput
 import { PopoverPosition } from "@mui/material/Popover/Popover";
 import { NuThemeProvider } from "../../../../../../containers/theme/nuThemeProvider";
 import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
-import { ActionTypes, DataRow, useTableState } from "./tableState";
+import { ActionTypes, useTableState } from "./tableState";
 import { TypesMenu } from "./TypesMenu";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
 import { tableTheme } from "./tableTheme";
@@ -59,7 +59,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
         });
     }, [defaultTypeOption.value, dispatch, columns.length, rows.length]);
 
-    const [additionalRows, hiddenAdditionalRows] = useMemo<[DataRow[], DataRow[]]>(() => {
+    const [additionalRows, hiddenAdditionalRows] = useMemo(() => {
         const HEADER_FIELDS_COUNT = 3; // name, type, size
         const columnsAsRows = columns.length ? transpose(columns, "") : [];
         const usedInHeaders = columnsAsRows.slice(0, HEADER_FIELDS_COUNT);
