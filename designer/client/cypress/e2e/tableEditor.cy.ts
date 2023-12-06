@@ -1,5 +1,5 @@
 function snapshot() {
-    cy.get("[data-testid='window']").matchImage();
+    cy.get("@editor").matchImage();
 }
 
 describe("Table editor", () => {
