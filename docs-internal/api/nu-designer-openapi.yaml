@@ -3,6 +3,95 @@ info:
   title: Nussknacker Designer API
   version: ''
 paths:
+  /api/components/{id}/usages:
+    get:
+      tags:
+      - Components
+      summary: Show component usage
+      operationId: getApiComponentsIdUsages
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComponentUsagesInScenario'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Component {id} not exist.
+      security:
+      - httpAuth: []
+  /api/components:
+    get:
+      tags:
+      - Components
+      summary: Listing components
+      operationId: getApiComponents
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComponentListElement'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
   /api/app/healthCheck:
     get:
       tags:
@@ -305,6 +394,129 @@ components:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
           $ref: '#/components/schemas/Map_String'
+    ComponentGroupName:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+    ComponentLink:
+      required:
+      - id
+      - title
+      - icon
+      - url
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+        url:
+          type: string
+    ComponentListElement:
+      required:
+      - id
+      - name
+      - icon
+      - componentType
+      - componentGroupName
+      - usageCount
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        componentType:
+          $ref: '#/components/schemas/ComponentType'
+        componentGroupName:
+          $ref: '#/components/schemas/ComponentGroupName'
+        categories:
+          type: array
+          items:
+            type: string
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentLink'
+        usageCount:
+          type: integer
+          format: int64
+    ComponentType:
+      type: string
+      enum:
+      - filter
+      - split
+      - switch
+      - variable
+      - mapVariable
+      - processor
+      - enricher
+      - sink
+      - source
+      - fragments
+      - customNode
+      - input
+      - output
+    ComponentUsagesInScenario:
+      required:
+      - id
+      - name
+      - processId
+      - isFragment
+      - processCategory
+      - modificationDate
+      - modifiedAt
+      - modifiedBy
+      - createdAt
+      - createdBy
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          $ref: '#/components/schemas/ProcessName'
+        processId:
+          $ref: '#/components/schemas/ProcessId'
+        nodesUsagesData:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeUsageData'
+        isFragment:
+          type: boolean
+        processCategory:
+          type: string
+        modificationDate:
+          type: string
+          format: date-time
+        modifiedAt:
+          type: string
+          format: date-time
+        modifiedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastAction:
+          $ref: '#/components/schemas/ProcessAction'
+    FragmentUsageData:
+      required:
+      - fragmentNodeId
+      - nodeId
+      type: object
+      properties:
+        fragmentNodeId:
+          type: string
+        nodeId:
+          type: string
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -347,6 +559,102 @@ components:
       type: object
       additionalProperties:
         type: string
+    NodeUsageData:
+      oneOf:
+      - $ref: '#/components/schemas/FragmentUsageData'
+      - $ref: '#/components/schemas/ScenarioUsageData'
+    ProcessAction:
+      required:
+      - id
+      - processId
+      - processVersionId
+      - user
+      - createdAt
+      - performedAt
+      - actionType
+      - state
+      - buildInfo
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ProcessActionId'
+        processId:
+          $ref: '#/components/schemas/ProcessId'
+        processVersionId:
+          $ref: '#/components/schemas/VersionId'
+        user:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        performedAt:
+          type: string
+          format: date-time
+        actionType:
+          $ref: '#/components/schemas/ProcessActionType'
+        state:
+          $ref: '#/components/schemas/ProcessActionState'
+        failureMessage:
+          type:
+          - string
+          - 'null'
+        commentId:
+          type:
+          - integer
+          - 'null'
+          format: int64
+        comment:
+          type:
+          - string
+          - 'null'
+        buildInfo:
+          $ref: '#/components/schemas/Map_String'
+    ProcessActionId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+          format: uuid
+    ProcessActionState:
+      type: string
+      enum:
+      - IN_PROGRESS
+      - FINISHED
+      - FAILED
+      - EXECUTION_FINISHED
+    ProcessActionType:
+      type: string
+      enum:
+      - DEPLOY
+      - CANCEL
+      - ARCHIVE
+      - UNARCHIVE
+      - PAUSE
+      - RENAME
+    ProcessId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int64
+    ProcessName:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+    ScenarioUsageData:
+      required:
+      - nodeId
+      type: object
+      properties:
+        nodeId:
+          type: string
     Status:
       type: string
       enum:
@@ -355,6 +663,14 @@ components:
       type: string
       enum:
       - ERROR
+    VersionId:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int64
   securitySchemes:
     httpAuth:
       type: http

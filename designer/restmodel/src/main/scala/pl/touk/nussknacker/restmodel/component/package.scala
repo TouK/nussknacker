@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import sttp.tapir.Schema
 
 import java.net.URI
 import java.time.Instant
@@ -72,4 +73,5 @@ package object component {
       lastAction: Option[ProcessAction]
   )
 
+  implicit val uriSchema: Schema[URI] = Schema.string
 }
