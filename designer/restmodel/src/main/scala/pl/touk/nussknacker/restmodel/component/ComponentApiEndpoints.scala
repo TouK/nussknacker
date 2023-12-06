@@ -72,7 +72,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
           jsonBody[List[ComponentUsagesInScenario]]
             .example(
               Example.of(
-                summary = Some("Component usages"),
+                summary = Some("List component usages"),
                 value = List(
                   ComponentUsagesInScenario(
                     id = "scenario1",
@@ -96,19 +96,12 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                         user = "admin",
                         createdAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
                         performedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
-                        actionType = ProcessActionType.Cancel,
-                        state = ProcessActionState.Failed,
-                        failureMessage = Some("Failed"),
-                        commentId = Some(5),
-                        comment = Some("Comment"),
-                        buildInfo = Map(
-                          "name"            -> "name",
-                          "gitCommit"       -> "commit",
-                          "buildTime"       -> "some time",
-                          "version"         -> "some version",
-                          "processingType"  -> "some processing type",
-                          "globalBuildInfo" -> "some global build info"
-                        )
+                        actionType = ProcessActionType.Deploy,
+                        state = ProcessActionState.Finished,
+                        failureMessage = None,
+                        commentId = None,
+                        comment = None,
+                        buildInfo = Map.empty
                       )
                     )
                   )
@@ -117,7 +110,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
             )
             .example(
               Example.of(
-                summary = Some("Component usages with no last Action"),
+                summary = Some("List component usages with no last Action"),
                 value = List(
                   ComponentUsagesInScenario(
                     id = "scenario1",
