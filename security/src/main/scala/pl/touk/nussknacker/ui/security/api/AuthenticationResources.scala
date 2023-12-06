@@ -5,6 +5,7 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.security.AuthCredentials
 import sttp.client3.SttpBackend
 import sttp.tapir.EndpointInput
 

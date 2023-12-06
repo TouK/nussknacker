@@ -362,7 +362,7 @@ class ComponentResourcesApiSpec
           .statusCode(405)
           .body(
             equalTo(
-              s"HTTP method not allowed, supported methods: GET"
+              s"Method Not Allowed"
             )
           )
       }

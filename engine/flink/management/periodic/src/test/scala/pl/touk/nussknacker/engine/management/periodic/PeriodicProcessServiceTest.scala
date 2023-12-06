@@ -8,7 +8,11 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessActionId,
+  ProcessingTypeDeploymentServiceStub
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -33,6 +37,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.temporal.ChronoField
 import java.time.{Clock, LocalDate, LocalDateTime}
+import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
@@ -67,6 +72,10 @@ class PeriodicProcessServiceTest
     val jarManagerStub                = new JarManagerStub
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
+
+    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
+      List.empty
+    )
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -173,11 +182,19 @@ class PeriodicProcessServiceTest
   }
 
   test("handleFinished - should reschedule for finished Flink job") {
-    val f            = new Fixture
-    val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
+    val deploymentId =
+      f.repository.addActiveProcess(
+        processName,
+        PeriodicProcessDeploymentStatus.Deployed,
+        processActionId = Some(processActionId)
+      )
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
+
+    f.deploymentService.sentActionIds shouldBe Nil
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -195,16 +212,37 @@ class PeriodicProcessServiceTest
     )
   }
 
+  test("handleFinished - should not mark ExecutionFinished process during deploy") {
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
+    val deploymentId =
+      f.repository.addActiveProcess(
+        processName,
+        PeriodicProcessDeploymentStatus.Deployed,
+        processActionId = Some(processActionId)
+      )
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.DuringDeploy, Some(deploymentId))
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    f.deploymentService.sentActionIds shouldBe Nil
+
+  }
+
   test("handleFinished - should deactivate process if there are no future schedules") {
-    val f = new Fixture
+    val f               = new Fixture
+    val processActionId = randomProcessActionId
     val deploymentId = f.repository.addActiveProcess(
       processName,
       PeriodicProcessDeploymentStatus.Deployed,
-      scheduleProperty = cronInPast
+      scheduleProperty = cronInPast,
+      processActionId = Some(processActionId)
     )
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
+
+    f.deploymentService.sentActionIds shouldBe List(processActionId)
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe false
@@ -232,6 +270,8 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
+    f.deploymentService.sentActionIds shouldBe Nil
+
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.map(
       _.status
@@ -255,7 +295,7 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     f.periodicProcessService
-      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess)
+      .schedule(CronScheduleProperty("0 0 * * * ?"), ProcessVersion.empty, canonicalProcess, randomProcessActionId)
       .futureValue
 
     val processEntity = f.repository.processEntities.loneElement
@@ -332,7 +372,9 @@ class PeriodicProcessServiceTest
     val f = new Fixture
 
     def tryToSchedule(schedule: ScheduleProperty): Unit =
-      f.periodicProcessService.schedule(schedule, ProcessVersion.empty, canonicalProcess).futureValue
+      f.periodicProcessService
+        .schedule(schedule, ProcessVersion.empty, canonicalProcess, randomProcessActionId)
+        .futureValue
 
     tryToSchedule(cronInFuture) shouldBe (())
     tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInFuture, "s2" -> cronInPast))) shouldBe (())
@@ -425,4 +467,5 @@ class PeriodicProcessServiceTest
     }
   }
 
+  private def randomProcessActionId = ProcessActionId(UUID.randomUUID())
 }

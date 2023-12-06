@@ -1,21 +1,31 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import io.circe.syntax._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessId
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import slick.ast.TypedType
 import slick.jdbc.JdbcProfile
+import slick.lifted.MappedToBase.mappedToIsomorphism
 import slick.lifted.ProvenShape
 import slick.sql.SqlProfile.ColumnOption.NotNull
-import io.circe.syntax._
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.time.LocalDateTime
+import java.util.UUID
 
 trait PeriodicProcessesTableFactory {
 
   protected val profile: JdbcProfile
 
   import profile.api._
+
+  implicit val ProcessActionIdTypedType: TypedType[ProcessActionId] =
+    MappedColumnType.base[ProcessActionId, UUID](
+      _.value,
+      ProcessActionId(_)
+    )
 
   class PeriodicProcessesTable(tag: Tag) extends Table[PeriodicProcessEntity](tag, "periodic_processes") {
 
@@ -39,6 +49,8 @@ trait PeriodicProcessesTableFactory {
 
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("created_at", NotNull)
 
+    def processActionId: Rep[Option[ProcessActionId]] = column[Option[ProcessActionId]]("process_action_id")
+
     override def * : ProvenShape[PeriodicProcessEntity] = (
       id,
       processName,
@@ -49,7 +61,8 @@ trait PeriodicProcessesTableFactory {
       jarFileName,
       scheduleProperty,
       active,
-      createdAt
+      createdAt,
+      processActionId
     ) <> (
       (PeriodicProcessEntity.create _).tupled,
       (e: PeriodicProcessEntity) =>
@@ -64,7 +77,8 @@ trait PeriodicProcessesTableFactory {
                 jarFileName,
                 scheduleProperty,
                 active,
-                createdAt
+                createdAt,
+                processActionId
               ) =>
             (
               id,
@@ -76,7 +90,8 @@ trait PeriodicProcessesTableFactory {
               jarFileName,
               scheduleProperty,
               active,
-              createdAt
+              createdAt,
+              processActionId
             )
         }
     )
@@ -99,7 +114,8 @@ object PeriodicProcessEntity {
       jarFileName: String,
       scheduleProperty: String,
       active: Boolean,
-      createdAt: LocalDateTime
+      createdAt: LocalDateTime,
+      processActionId: Option[ProcessActionId]
   ): PeriodicProcessEntity =
     PeriodicProcessEntity(
       id,
@@ -111,7 +127,8 @@ object PeriodicProcessEntity {
       jarFileName,
       scheduleProperty,
       active,
-      createdAt
+      createdAt,
+      processActionId
     )
 
 }
@@ -126,5 +143,6 @@ case class PeriodicProcessEntity(
     jarFileName: String,
     scheduleProperty: String,
     active: Boolean,
-    createdAt: LocalDateTime
+    createdAt: LocalDateTime,
+    processActionId: Option[ProcessActionId]
 )

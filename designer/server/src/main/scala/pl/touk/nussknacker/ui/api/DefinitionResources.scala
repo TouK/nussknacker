@@ -26,8 +26,6 @@ class DefinitionResources(
     with EspPathMatchers
     with RouteWithUser {
 
-  private val dictResources = new DictResources
-
   def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
     path("processDefinitionData" / "componentIds") {
       get {
@@ -61,7 +59,7 @@ class DefinitionResources(
                 )
               }
             }
-          } ~ dictResources.route(processingTypeData.modelData)
+          }
         }
         .getOrElse {
           complete(HttpResponse(status = StatusCodes.NotFound, entity = s"Scenario type: $processingType not found"))
