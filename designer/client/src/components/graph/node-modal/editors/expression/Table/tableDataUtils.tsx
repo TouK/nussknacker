@@ -1,4 +1,3 @@
-import { SpelExpressionEvaluator } from "spel2js";
 import { TableData } from "./tableState";
 import { ExpressionLang } from "../types";
 
@@ -15,40 +14,12 @@ const parseWithDefault =
     };
 
 export const parsers: Record<string, (expression: string, emptyValue?: TableData) => TableData> = {
-    [ExpressionLang.SpEL]: parseWithDefault(SpelExpressionEvaluator.eval),
     [ExpressionLang.JSON]: parseWithDefault(JSON.parse),
 };
 
 export const stringifiers: Record<string, (data: TableData) => string> = {
-    [ExpressionLang.SpEL]: ({ columns, rows }) => `{\n columns:{\n${stringifyList(columns)}\n },\n rows:{\n${stringifyList(rows)}\n }\n}`,
     [ExpressionLang.JSON]: (data) => JSON.stringify(data, null, 2),
 };
-
-function stringify(str = "") {
-    return `'${str.replaceAll(`"`, `""`).replaceAll(`'`, `''`)}'`;
-}
-
-function stringifyList(rows: string[][]) {
-    let listString = "";
-    for (let i = 0; i < rows.length; i++) {
-        let rowString = "";
-        const l = rows[i]?.length || 0;
-        for (let j = 0; j < l; j++) {
-            rowString += stringify(rows[i][j]);
-            if (j !== l - 1) {
-                rowString += ", ";
-            }
-        }
-
-        listString += `  {${rowString}}`;
-
-        if (i !== rows.length - 1) {
-            listString += ",\n";
-        }
-    }
-
-    return listString;
-}
 
 type MatrixElement<M> = M extends Matrix<infer T> ? T : never;
 type Matrix<I> = readonly (readonly I[])[];
