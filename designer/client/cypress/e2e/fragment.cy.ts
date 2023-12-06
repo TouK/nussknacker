@@ -91,7 +91,7 @@ describe("Fragment", () => {
             .siblings()
             .eq(0)
             .find("[type='ERROR']")
-            .should("be.visible");
+            .should("not.exist");
         cy.get("@window").find("[data-testid='settings:5']").matchImage();
 
         // Provide non String or Boolean Any Value inputMode
