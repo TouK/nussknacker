@@ -73,7 +73,6 @@
         "redux-thunk": "2.4.1",
         "redux-undo": "1.0.1",
         "reselect": "4.1.5",
-        "spel2js": "0.2.8",
         "svg-pan-zoom": "3.6.1",
         "url-join": "5.0.0",
         "use-debounce": "3.4.3",

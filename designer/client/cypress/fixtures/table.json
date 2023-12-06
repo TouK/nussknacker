@@ -61,8 +61,8 @@
                 {
                     "name": "tableData",
                     "expression": {
-                        "language": "spel",
-                        "expression": "{\n columns:{\n  {'A', 'java.lang.String'}\n },\n rows:{\n  {'test'}\n }\n}"
+                        "language": "json",
+                        "expression": "{\n \"columns\": [\n  [\"A\", \"java.lang.String\"]\n ],\n \"rows\": [\n  [\"test\"]\n ]\n}"
                     }
                 }
             ],
