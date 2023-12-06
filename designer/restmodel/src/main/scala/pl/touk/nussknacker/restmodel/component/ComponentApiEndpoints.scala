@@ -1,14 +1,22 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.EndpointIO.Example
+
+import java.net.URI
+import java.time.Instant
+import java.util.UUID
 
 class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
@@ -24,6 +32,32 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .out(
         statusCode(Ok).and(
           jsonBody[List[ComponentListElement]]
+            .example(
+              Example.of(
+                summary = Some("List of available components"),
+                value = List(
+                  ComponentListElement(
+                    id = ComponentId("request-response-embedded-customnode-collect"),
+                    name = "collect",
+                    icon = "/assets/components/CustomNde.svg",
+                    componentType = ComponentType.CustomNode,
+                    componentGroupName = ComponentGroupName("custom"),
+                    categories = List("RequestResponse"),
+                    links = List(
+                      ComponentLink(
+                        id = "documentation",
+                        title = "Documentation",
+                        icon = URI.create("/assets/icons/documentation.svg"),
+                        url = URI.create(
+                          "https://nussknacker.io/documentation/docs/scenarios_authoring/RRDataSourcesAndSinks/#collect"
+                        )
+                      )
+                    ),
+                    usageCount = 2
+                  )
+                )
+              )
+            )
         )
       )
 
@@ -36,6 +70,74 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .out(
         statusCode(Ok).and(
           jsonBody[List[ComponentUsagesInScenario]]
+            .example(
+              Example.of(
+                summary = Some("Component usages"),
+                value = List(
+                  ComponentUsagesInScenario(
+                    id = "scenario1",
+                    name = ProcessName("scenario1"),
+                    processId = ProcessId(1),
+                    nodesUsagesData = List(
+                      ScenarioUsageData("csv-source")
+                    ),
+                    isFragment = false,
+                    processCategory = "Category1",
+                    modificationDate = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                    modifiedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                    modifiedBy = "admin",
+                    createdAt = Instant.parse("2023-11-14T11:09:28.078800Z"),
+                    createdBy = "admin",
+                    lastAction = Some(
+                      ProcessAction(
+                        id = ProcessActionId(UUID.fromString("45c0f3f5-3ef7-4dc2-92d4-8bb826ec0ca9")),
+                        processId = ProcessId(1),
+                        processVersionId = VersionId(1),
+                        user = "admin",
+                        createdAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                        performedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                        actionType = ProcessActionType.Cancel,
+                        state = ProcessActionState.Failed,
+                        failureMessage = Some("Failed"),
+                        commentId = Some(5),
+                        comment = Some("Comment"),
+                        buildInfo = Map(
+                          "name"            -> "name",
+                          "gitCommit"       -> "commit",
+                          "buildTime"       -> "some time",
+                          "version"         -> "some version",
+                          "processingType"  -> "some processing type",
+                          "globalBuildInfo" -> "some global build info"
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            .example(
+              Example.of(
+                summary = Some("Component usages with no last Action"),
+                value = List(
+                  ComponentUsagesInScenario(
+                    id = "scenario1",
+                    name = ProcessName("scenario1"),
+                    processId = ProcessId(1),
+                    nodesUsagesData = List(
+                      ScenarioUsageData("csv-source")
+                    ),
+                    isFragment = false,
+                    processCategory = "Category1",
+                    modificationDate = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                    modifiedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
+                    modifiedBy = "admin",
+                    createdAt = Instant.parse("2023-11-14T11:09:28.078800Z"),
+                    createdBy = "admin",
+                    lastAction = None
+                  )
+                )
+              )
+            )
         )
       )
       .errorOut(
