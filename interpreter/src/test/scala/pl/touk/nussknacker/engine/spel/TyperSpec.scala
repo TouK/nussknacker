@@ -8,8 +8,8 @@ import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedObjectWithValue}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -63,6 +63,27 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   test("restricting simple type selection") {
     typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").invalidValue.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
+  }
+
+  test("indexing on records with primitive values") {
+    typeExpression("{\"key1\": \"val1\", \"key2\": \"val2\"}[\"key2\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "val2")
+    typeExpression("{\"key1\": \"val1\", \"key2\": 1}[\"key2\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[Int], 1)
+  }
+
+  test("indexing on records with record values") {
+    typeExpression(
+      "{\"key1\": \"val1\", \"key2\": {\"nestedKey1\": \"nestedVal1\"}}[\"key2\"]"
+    ).validValue.finalResult.typingResult shouldBe
+      TypedObjectTypingResult(Map("nestedKey1" -> TypedObjectWithValue(Typed.typedClass[String], "nestedVal1")))
+  }
+
+  test("nested indexing on records") {
+    typeExpression(
+      "{\"key1\": \"val1\", \"key2\": {\"nestedKey1\": \"nestedVal1\"}}[\"key2\"][\"nestedKey1\"]"
+    ).validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "nestedVal1")
   }
 
   private val strictTypeChecking               = false
