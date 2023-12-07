@@ -39,7 +39,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                   ComponentListElement(
                     id = ComponentId("request-response-embedded-customnode-collect"),
                     name = "collect",
-                    icon = "/assets/components/CustomNde.svg",
+                    icon = "/assets/components/CustomNode.svg",
                     componentType = ComponentType.CustomNode,
                     componentGroupName = ComponentGroupName("custom"),
                     categories = List("RequestResponse"),
