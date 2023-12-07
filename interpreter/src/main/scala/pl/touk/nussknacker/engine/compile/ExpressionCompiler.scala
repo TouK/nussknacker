@@ -9,17 +9,16 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
-import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
+import pl.touk.nussknacker.engine.{ModelData, compiledgraph}
 
 object ExpressionCompiler {
 
@@ -27,24 +26,24 @@ object ExpressionCompiler {
       loader: ClassLoader,
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionDefinition[_],
-      typeDefinitionSet: TypeDefinitionSet
+      classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
-    default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, typeDefinitionSet)
+    default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, classDefinitionSet)
 
   def withoutOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionDefinition[_],
-      typeDefinitionSet: TypeDefinitionSet
+      classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
-    default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, typeDefinitionSet)
+    default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, classDefinitionSet)
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(
       modelData.modelClassLoader.classLoader,
-      modelData.uiDictServices.dictRegistry,
+      modelData.designerDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
-      modelData.modelDefinitionWithTypes.typeDefinitions
+      modelData.modelDefinitionWithClasses.classDefinitions
     )
   }
 
@@ -53,7 +52,7 @@ object ExpressionCompiler {
       dictRegistry: DictRegistry,
       expressionConfig: ExpressionDefinition[_],
       optimizeCompilation: Boolean,
-      typeDefinitionSet: TypeDefinitionSet
+      classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler = {
     def spelParser(flavour: Flavour) =
       SpelExpressionParser.default(
@@ -62,7 +61,7 @@ object ExpressionCompiler {
         dictRegistry,
         optimizeCompilation,
         flavour,
-        typeDefinitionSet
+        classDefinitionSet
       )
     val defaultParsers = Seq(spelParser(SpelExpressionParser.Standard), spelParser(SpelExpressionParser.Template))
     val parsersSeq     = defaultParsers ++ expressionConfig.languages.expressionParsers

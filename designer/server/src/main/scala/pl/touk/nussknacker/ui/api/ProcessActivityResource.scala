@@ -10,7 +10,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, EspPathMatchers}
+import pl.touk.nussknacker.ui.util.{AkkaHttpResponse, CatsSyntax, NuPathMatchers}
 
 import java.io.ByteArrayInputStream
 import scala.concurrent.ExecutionContext
@@ -25,7 +25,7 @@ class ProcessActivityResource(
     with RouteWithUser
     with ProcessDirectives
     with AuthorizeProcessDirectives
-    with EspPathMatchers {
+    with NuPathMatchers {
 
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller
@@ -71,7 +71,7 @@ class AttachmentResources(
     with RouteWithUser
     with ProcessDirectives
     with AuthorizeProcessDirectives
-    with EspPathMatchers {
+    with NuPathMatchers {
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("processes" / Segment / VersionIdSegment / "activity" / "attachments") { (processName, versionId) =>

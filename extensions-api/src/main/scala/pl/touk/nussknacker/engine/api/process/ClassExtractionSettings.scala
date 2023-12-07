@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.util.{Calendar, Date, Optional, UUID}
 
+// TODO: Rename to ClassDefinitionDiscoverySettings
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
   *

@@ -8,9 +8,9 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
+import pl.touk.nussknacker.ui.process.{ComponentNamesFinder, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.EspPathMatchers
+import pl.touk.nussknacker.ui.util.NuPathMatchers
 
 import scala.concurrent.ExecutionContext
 
@@ -23,15 +23,15 @@ class DefinitionResources(
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
-    with EspPathMatchers
+    with NuPathMatchers
     with RouteWithUser {
 
   def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
     path("processDefinitionData" / "componentIds") {
       get {
         complete {
-          val fragmentIds = fragmentRepository.loadFragmentIds()
-          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.modelDefinition).toList, fragmentIds)
+          val fragmentNames = fragmentRepository.loadFragmentIds()
+          ComponentNamesFinder.componentNames(modelDataProvider.all.values.map(_.modelDefinition).toList, fragmentNames)
         }
       }
     } ~ pathPrefix("processDefinitionData" / Segment) { processingType =>
@@ -46,7 +46,7 @@ class DefinitionResources(
                 complete(
                   UIProcessObjectsFactory.prepareUIProcessObjects(
                     processingTypeData.modelData,
-                    processingTypeData.staticObjectsDefinition,
+                    processingTypeData.staticModelDefinition,
                     processingTypeData.deploymentManager,
                     user,
                     fragments,

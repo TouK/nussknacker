@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.component.ComponentExtractor
+import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor
 
 class DefaultModelConfigLoader extends ModelConfigLoader {
 
@@ -10,7 +10,7 @@ class DefaultModelConfigLoader extends ModelConfigLoader {
       configWithDefaults: Config,
       classLoader: ClassLoader
   ): InputConfigDuringExecution = {
-    val loaded = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
+    val loaded = ComponentFromProvidersExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
     InputConfigDuringExecution(loaded)
   }
 

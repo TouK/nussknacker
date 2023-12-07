@@ -3,11 +3,11 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
-trait InvalidateComponentsUsagesCache extends SlickMigration with EspTables with LazyLogging {
+trait InvalidateComponentsUsagesCache extends SlickMigration with NuTables with LazyLogging {
 
   import profile.api._
   import slick.dbio.DBIOAction

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.modelconfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory._
 import net.ceedubs.ficus.Ficus._
-import pl.touk.nussknacker.engine.component.ComponentExtractor
+import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor
 import pl.touk.nussknacker.engine.modelconfig.{InputConfigDuringExecution, ModelConfigLoader}
 
 class SampleModelConfigLoader extends ModelConfigLoader {
@@ -13,7 +13,8 @@ class SampleModelConfigLoader extends ModelConfigLoader {
       configWithDefaults: Config,
       classLoader: ClassLoader
   ): InputConfigDuringExecution = {
-    val withExtractors          = ComponentExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
+    val withExtractors =
+      ComponentFromProvidersExtractor(classLoader).loadAdditionalConfig(inputConfig, configWithDefaults)
     val valueFromOriginalConfig = configWithDefaults.getAs[String]("configValueToLoadFrom").getOrElse("notFound")
     InputConfigDuringExecution(
       withExtractors

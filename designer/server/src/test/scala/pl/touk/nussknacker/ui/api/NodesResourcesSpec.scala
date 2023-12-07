@@ -64,8 +64,8 @@ class NodesResourcesSpec
     typeToConfig.mapValues(v =>
       new ExpressionSuggester(
         v.modelData.modelDefinition.expressionConfig,
-        v.modelData.modelDefinitionWithTypes.typeDefinitions,
-        v.modelData.uiDictServices,
+        v.modelData.modelDefinitionWithClasses.classDefinitions,
+        v.modelData.designerDictServices,
         v.modelData.modelClassLoader.classLoader,
         v.scenarioPropertiesConfig.keys
       )

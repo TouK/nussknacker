@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
-import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -54,7 +54,7 @@ abstract class DbProcessActionRepository[F[_]](
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
     extends Repository[F]
-    with EspTables
+    with NuTables
     with CommentActions
     with ProcessActionRepository[F]
     with LazyLogging {

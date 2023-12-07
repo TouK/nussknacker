@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -12,8 +11,9 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
@@ -44,9 +44,9 @@ class TestFlinkProcessCompiler(
   }
 
   override protected def prepareSourceFactory(
-      sourceFactory: ObjectWithMethodDef,
+      sourceFactory: ComponentDefinitionWithImplementation,
       context: ComponentDefinitionContext
-  ): ObjectWithMethodDef = {
+  ): ComponentDefinitionWithImplementation = {
     sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
       override def handleInvoke(
           originalSource: Any,
@@ -59,7 +59,7 @@ class TestFlinkProcessCompiler(
               context.userCodeClassLoader,
               context.originalDefinitionWithTypes.modelDefinition.expressionConfig,
               context.originalDictRegistry,
-              context.originalDefinitionWithTypes.typeDefinitions,
+              context.originalDefinitionWithTypes.classDefinitions,
               process.metaData,
               scenarioTestData
             )
@@ -72,9 +72,9 @@ class TestFlinkProcessCompiler(
   }
 
   override protected def prepareService(
-      service: ObjectWithMethodDef,
+      service: ComponentDefinitionWithImplementation,
       context: ComponentDefinitionContext
-  ): ObjectWithMethodDef = service
+  ): ComponentDefinitionWithImplementation = service
 
   override protected def exceptionHandler(
       metaData: MetaData,
@@ -94,9 +94,9 @@ class TestFlinkProcessCompiler(
 
 class StubbedSourcePreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
+    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
     dictRegistry: EngineDictRegistry,
-    typeDefinitionSet: TypeDefinitionSet,
+    classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData,
     scenarioTestData: ScenarioTestData
 ) {
@@ -128,7 +128,7 @@ class StubbedSourcePreparer(
 
   private def collectSamples(originalSource: Source, nodeId: NodeId): List[Object] = {
     val testDataPreparer =
-      new TestDataPreparer(classloader, expressionConfig, dictRegistry, typeDefinitionSet, metaData)
+      new TestDataPreparer(classloader, expressionConfig, dictRegistry, classDefinitionSet, metaData)
     scenarioTestData.testRecords.filter(_.sourceId == nodeId).map { scenarioTestRecord =>
       testDataPreparer.prepareRecordForTest[Object](originalSource, scenarioTestRecord)
     }

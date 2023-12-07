@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Invalid
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -18,13 +18,11 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
+import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
@@ -67,7 +65,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
+  private val modelDefinition = ModelDefinitionExtractor.extractModelDefinition(
     MyProcessConfigCreator,
     getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)),
@@ -75,7 +73,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   )
 
   private val validator = ProcessValidator.default(
-    ModelDefinitionWithTypes(objectWithMethodDef),
+    ModelDefinitionWithClasses(modelDefinition),
     ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
     CustomProcessValidatorLoader.emptyCustomProcessValidator

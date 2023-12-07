@@ -5,8 +5,12 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.model.{
+  ModelDefinition,
+  ModelDefinitionExtractor,
+  ModelDefinitionWithClasses
+}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
@@ -99,32 +103,32 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // It won't be necessary after we get rid of ProcessConfigCreator API
   def category: Option[String]
 
-  lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = {
-    val processDefinitions = withThisAsContextClassLoader {
-      ProcessDefinitionExtractor.extractObjectWithMethods(
+  lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
+    val modelDefinitions = withThisAsContextClassLoader {
+      ModelDefinitionExtractor.extractModelDefinition(
         configCreator,
         modelClassLoader.classLoader,
-        ProcessObjectDependencies(processConfig, objectNaming),
+        ProcessObjectDependencies(modelConfig, objectNaming),
         category
       )
     }
-    ModelDefinitionWithTypes(processDefinitions)
+    ModelDefinitionWithClasses(modelDefinitions)
   }
 
-  final def modelDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    modelDefinitionWithTypes.modelDefinition
+  final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
+    modelDefinitionWithClasses.modelDefinition
 
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
 
-  lazy val uiDictServices: UiDictServices =
-    dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, processConfig)
+  lazy val designerDictServices: UiDictServices =
+    dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, modelConfig)
 
   lazy val engineDictRegistry: EngineDictRegistry =
     dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
   def customProcessValidator: CustomProcessValidator = {
-    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
+    CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, modelConfig)
   }
 
   def withThisAsContextClassLoader[T](block: => T): T = {
@@ -139,11 +143,11 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def modelConfigLoader: ModelConfigLoader
 
-  override lazy val processConfig: Config =
+  override lazy val modelConfig: Config =
     modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
-    uiDictServices.close()
+    designerDictServices.close()
   }
 
 }

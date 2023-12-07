@@ -2,15 +2,14 @@ package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet, MethodDefinition}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 
-class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet, methodExecutionForUnknownAllowed: Boolean) {
+class MethodReferenceTyper(classDefinitionSet: ClassDefinitionSet, methodExecutionForUnknownAllowed: Boolean) {
 
   def typeMethodReference(reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
     implicit val implicitReference: MethodReference = reference
@@ -26,12 +25,12 @@ class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet, methodExecution
     }
   }
 
-  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult]): List[ClazzDefinition] = {
-    typedClasses.flatMap(tc => typeDefinitionSet.get(tc.objType.klass)).toList
+  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult]): List[ClassDefinition] = {
+    typedClasses.flatMap(tc => classDefinitionSet.get(tc.objType.klass)).toList
   }
 
   private def typeFromClazzDefinitions(
-      clazzDefinitions: List[ClazzDefinition]
+      clazzDefinitions: List[ClassDefinition]
   )(implicit reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
     val validatedType = for {
       nonEmptyClassDefinitions     <- validateClassDefinitionsNonEmpty(clazzDefinitions)
@@ -50,13 +49,13 @@ class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet, methodExecution
   }
 
   private def validateClassDefinitionsNonEmpty(
-      clazzDefinitions: List[ClazzDefinition]
-  ): Either[Option[ExpressionParseError], List[ClazzDefinition]] =
+      clazzDefinitions: List[ClassDefinition]
+  ): Either[Option[ExpressionParseError], List[ClassDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
 
   private def validateMethodsNonEmpty(
-      clazzDefinitions: List[ClazzDefinition]
-  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[MethodInfo]] = {
+      clazzDefinitions: List[ClassDefinition]
+  )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[MethodDefinition]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass         = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
 
@@ -72,7 +71,7 @@ class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet, methodExecution
   }
 
   private def validateMethodParameterTypes(
-      methodInfos: List[MethodInfo]
+      methodInfos: List[MethodDefinition]
   )(implicit reference: MethodReference): Either[Option[ExpressionParseError], List[TypingResult]] = {
     // We combine MethodInfo with errors so we can use it to decide which
     // error to display.
@@ -105,7 +104,7 @@ class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet, methodExecution
   // then we return GenericFunctionError. All regular functions return
   // only ArgumentTypeError, so we will lose information about errors
   // only when there is more than one generic function.
-  private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError =
+  private def combineErrors(errors: NonEmptyList[(MethodDefinition, ExpressionParseError)]): ExpressionParseError =
     errors match {
       case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
         xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)
