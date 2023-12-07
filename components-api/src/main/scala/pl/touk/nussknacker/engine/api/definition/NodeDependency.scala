@@ -2,11 +2,7 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  NodeDependencyValue,
-  OutputVariableNameValue,
-  TypedNodeDependencyValue
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
@@ -125,8 +121,126 @@ case class Parameter(
     isLazyParameter: Boolean,
     scalaOptionParameter: Boolean,
     javaOptionalParameter: Boolean,
-    hintText: Option[String] = None
+    hintText: Option[String]
 ) extends NodeDependency {
+
+  def copy(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+  ): Parameter = {
+    copy(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText = None
+    )
+  }
+
+  def copy(
+      name: String = this.name,
+      typ: TypingResult = this.typ,
+      editor: Option[ParameterEditor] = this.editor,
+      validators: List[ParameterValidator] = this.validators,
+      defaultValue: Option[Expression] = this.defaultValue,
+      additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
+      variablesToHide: Set[String] = this.variablesToHide,
+      branchParam: Boolean = this.branchParam,
+      isLazyParameter: Boolean = this.isLazyParameter,
+      scalaOptionParameter: Boolean = this.scalaOptionParameter,
+      javaOptionalParameter: Boolean = this.javaOptionalParameter,
+      hintText: Option[String] = this.hintText
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText
+    )
+  }
+
+  def apply(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+      hintText: Option[String]
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText
+    )
+  }
+
+  def apply(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText = None
+    )
+  }
 
   // we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
   if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
