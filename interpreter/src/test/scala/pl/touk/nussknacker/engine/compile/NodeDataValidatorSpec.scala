@@ -34,13 +34,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
-  FixedExpressionValue,
-  FragmentClazzRef,
-  FragmentParameter,
-  ValueInputWithFixedValuesPreset,
-  ValueInputWithFixedValuesProvided
-}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -770,32 +764,32 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
-//  test("should validate not found preset in FragmentInputDefinition") { // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
-//    val nodeId: String       = "in"
-//    val nodes                = Set(nodeId)
-//    val nodes1               = nodes
-//    val fixedValuesPresetId1 = fixedValuesPresetId
-//    inside(
-//      validate(
-//        FragmentInputDefinition(
-//          nodeId,
-//          List(fragmentParameterWithStringPreset)
-//        ),
-//        ValidationContext.empty,
-//        Map.empty,
-//        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
-//        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
-//      )
-//    ) {
-//      case ValidationPerformed(
-//            List(
-//              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodeId),
-//            ),
-//            None,
-//            None
-//          ) =>
-//    }
-//  }
+  test("should validate not found preset in FragmentInputDefinition") {
+    val nodeId: String       = "in"
+    val nodes                = Set(nodeId)
+    val nodes1               = nodes
+    val fixedValuesPresetId1 = fixedValuesPresetId
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(fragmentParameterWithStringPreset)
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))),
+        fixedValuesPresetProvider = new DefaultFixedValuesPresetProvider(Map.empty)
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              PresetIdNotFoundInProvidedPresets("param1", fixedValuesPresetId, nodeId),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
 
   test("should validate fragment parameter fixed values are of supported type") {
     val nodeId: String = "in"

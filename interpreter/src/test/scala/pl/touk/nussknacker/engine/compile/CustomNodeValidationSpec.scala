@@ -7,27 +7,20 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  BlankParameter,
-  CustomNodeError,
-  EmptyMandatoryParameter,
-  ExpressionParserCompilationError,
-  InvalidTailOfBranch,
-  MissingParameters
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.variables.MetaVariables
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 
 import scala.collection.Set
 
@@ -83,7 +76,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     ModelDefinitionWithTypes(objectWithMethodDef),
     ConfigFactory.empty,
     new SimpleDictRegistry(Map.empty),
-    CustomProcessValidatorLoader.emptyCustomProcessValidator
+    CustomProcessValidatorLoader.emptyCustomProcessValidator,
+    fixedValuesPresetProvider = TestFixedValuesPresetProvider
   )
 
   test("valid scenario") {

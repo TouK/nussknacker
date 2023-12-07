@@ -307,7 +307,6 @@ object node {
     @ConfiguredJsonCodec
     sealed trait ValueInputWithFixedValues {
       def allowOtherValue: Boolean
-      def fixedValuesList: List[FixedExpressionValue]
     }
 
     case class ValueInputWithFixedValuesProvided(fixedValuesList: List[FixedExpressionValue], allowOtherValue: Boolean)
@@ -316,10 +315,7 @@ object node {
     case class ValueInputWithFixedValuesPreset(
         fixedValuesListPresetId: String,
         allowOtherValue: Boolean,
-        resolvedFixedValuesListPreset: Option[List[FixedExpressionValue]] = None // TODO dont encode/decode?
-    ) extends ValueInputWithFixedValues {
-      override def fixedValuesList: List[FixedExpressionValue] = resolvedFixedValuesListPreset.getOrElse(List.empty)
-    }
+    ) extends ValueInputWithFixedValues
 
     @ConfiguredJsonCodec
     case class FragmentParameter(

@@ -115,7 +115,8 @@ class AkkaHttpBasedRouteProvider(
         modelData,
         scenarioProperties,
         typeToConfig.mapValues(_.additionalValidators),
-        fragmentResolver
+        fragmentResolver,
+        fixedValuesPresetProvider
       )
 
       val substitutorsByProcessType =
@@ -194,7 +195,7 @@ class AkkaHttpBasedRouteProvider(
         featureTogglesConfig.testDataSettings,
         processResolver,
         counter,
-        testExecutorService
+        testExecutorService,
       )
 
       val configProcessToolbarService = new ConfigProcessToolbarService(

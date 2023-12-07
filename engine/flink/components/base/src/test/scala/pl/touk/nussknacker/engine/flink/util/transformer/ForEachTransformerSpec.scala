@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
@@ -59,7 +60,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
     val testProcess =
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
 
     val forEachResultValidationContext = processValidator.validate(testProcess).typing(forEachNodeResultId)
     forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])

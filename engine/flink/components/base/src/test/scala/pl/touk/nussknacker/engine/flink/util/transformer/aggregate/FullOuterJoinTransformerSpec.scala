@@ -8,13 +8,8 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SinkFactory,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -32,14 +27,13 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Duration
-import scala.jdk.CollectionConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -471,7 +465,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -521,7 +515,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None)
+    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }

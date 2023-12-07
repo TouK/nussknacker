@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
@@ -71,7 +72,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       ),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
-      sampleResolver
+      sampleResolver,
+      TestFixedValuesPresetProvider
     )
   }
 

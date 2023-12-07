@@ -8,11 +8,14 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   FragmentParamClassLoadError,
-  MultipleOutputsForName
+  MultipleOutputsForName,
+  PresetIdNotFoundInProvidedPresets
 }
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider.FixedValuesPreset
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -28,7 +31,11 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FragmentParameter,
+  ValueInputWithFixedValuesPreset,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
@@ -65,15 +72,20 @@ class FragmentComponentDefinitionExtractor(
     componentConfig: String => Option[SingleComponentConfig],
     classLoader: ClassLoader,
     expressionCompiler: ExpressionCompiler,
+    fixedValuesPresetProvider: Option[
+      FixedValuesPresetProvider
+    ] // in the None case, it extracts value-less FixedValuesPresetParameterEditor and no validator
 ) extends FragmentDefinitionExtractor {
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess
   ): Validated[FragmentDefinitionError, FragmentComponentDefinition] = {
     extractFragmentGraph(fragment).map { case (input, _, outputs) =>
-      val docsUrl    = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      val config     = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
-      val parameters = input.parameters.map(toParameter(config)(_)(NodeId(input.id))).sequence.value
+      val docsUrl = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
+      val config  = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
+      val fixedValuesPresets = fixedValuesPresetProvider.map(_.getAll)
+
+      val parameters = input.parameters.map(toParameter(config, fixedValuesPresets)(_)).sequence.value
       new FragmentComponentDefinition(parameters, config, outputs)
     }
   }
@@ -96,18 +108,21 @@ class FragmentComponentDefinitionExtractor(
   private def extractFragmentParametersDefinition(componentId: String, parameters: List[FragmentParameter])(
       implicit nodeId: NodeId
   ): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    val config             = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    val fixedValuesPresets = fixedValuesPresetProvider.map(_.getAll)
+
     parameters
-      .map(toParameter(config))
+      .map(toParameter(config, fixedValuesPresets))
       .sequence
-      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
+      .mapWritten(_.map(_.toError(nodeId.id)))
   }
 
   private def toParameter(
-      componentConfig: SingleComponentConfig
+      componentConfig: SingleComponentConfig,
+      fixedValuesPresets: Option[Map[String, FixedValuesPreset]]
   )(
       fragmentParameter: FragmentParameter
-  )(implicit nodeId: NodeId): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
+  ): Writer[List[FragmentParameterErrorData], Parameter] = {
     fragmentParameter.typ
       .toRuntimeClass(classLoader)
       .map(Typed(_))
@@ -117,47 +132,89 @@ class FragmentComponentDefinitionExtractor(
           .value[List[FragmentParamClassLoadErrorData], TypingResult](Unknown)
           .tell(List(FragmentParamClassLoadErrorData(fragmentParameter.name, fragmentParameter.typ.refClazzName)))
       )
-      .map(toParameter(componentConfig, _, fragmentParameter))
+      .mapBoth { (written, value) =>
+        val parameter = toParameter(componentConfig, value, fragmentParameter, fixedValuesPresets)
+        (written ++ parameter.written, parameter.value)
+      }
   }
 
   private val nullFixedValue: FixedExpressionValue = FixedExpressionValue("", "")
 
+  private def extractEditor(
+      fragmentParameter: FragmentParameter,
+      config: ParameterConfig,
+      parameterData: ParameterData,
+      fixedValuesPresets: Option[Map[String, FixedValuesPreset]]
+  ) =
+    fragmentParameter.valueEditor match {
+      case Some(ValueInputWithFixedValuesPreset(presetId, allowOtherValue)) =>
+        val (errors, fixedValues) = fixedValuesPresets
+          .map { presets =>
+            presets.get(presetId) match {
+              case Some(preset) => (List.empty, Some(nullFixedValue +: preset.values))
+              case None =>
+                (List(PresetIdNotFoundInProvidedPresetsErrorData(fragmentParameter.name, presetId)), None)
+            }
+          }
+          .getOrElse((List.empty, None))
+
+        Writer(
+          errors,
+          fixedValuesEditorWithAllowOtherValue(
+            allowOtherValue,
+            FixedValuesPresetParameterEditor(
+              presetId,
+              fixedValues
+            )
+          )
+        )
+
+      case Some(ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue)) =>
+        Writer(
+          List.empty,
+          fixedValuesEditorWithAllowOtherValue(
+            allowOtherValue,
+            FixedValuesParameterEditor(
+              nullFixedValue +: fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
+            )
+          )
+        )
+
+      case None => Writer(List.empty, EditorExtractor.extract(parameterData, config))
+    }
+
   private def toParameter(
       componentConfig: SingleComponentConfig,
       typ: typing.TypingResult,
-      fragmentParameter: FragmentParameter
-  )(implicit nodeId: NodeId): Parameter = {
+      fragmentParameter: FragmentParameter,
+      fixedValuesPresets: Option[Map[String, FixedValuesPreset]]
+  ): Writer[List[PresetIdNotFoundInProvidedPresetsErrorData], Parameter] = {
     val config        = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = fragmentParameter.valueEditor
-      .map { valueEditor =>
-        fixedValuesEditorWithAllowOtherValue(
-          valueEditor.allowOtherValue,
-          FixedValuesParameterEditor(
-            nullFixedValue +: valueEditor.fixedValuesList.map(v => FixedExpressionValue(v.expression, v.label))
-          )
-        )
-      }
-      .getOrElse(EditorExtractor.extract(parameterData, config))
-    val isOptional = !fragmentParameter.required
 
-    Parameter
-      .optional(fragmentParameter.name, typ)
-      .copy(
-        editor = extractedEditor,
-        validators = ValidatorsExtractor
-          .extract(
-            ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)
-          ),
-        defaultValue = fragmentParameter.initialValue
-          .map(i => Expression.spel(i.expression))
-          .orElse(
-            DefaultValueDeterminerChain.determineParameterDefaultValue(
-              DefaultValueDeterminerParameters(parameterData, isOptional, config, extractedEditor)
-            )
-          ),
-        hintText = fragmentParameter.hintText
-      )
+    val editor = extractEditor(fragmentParameter, config, parameterData, fixedValuesPresets)
+
+    val isOptional = !fragmentParameter.required
+    Writer(
+      editor.written,
+      Parameter
+        .optional(fragmentParameter.name, typ)
+        .copy(
+          editor = editor.value,
+          validators = ValidatorsExtractor
+            .extract(
+              ValidatorExtractorParameters(parameterData, isOptional, config, editor.value)
+            ),
+          defaultValue = fragmentParameter.initialValue
+            .map(i => Expression.spel(i.expression))
+            .orElse(
+              DefaultValueDeterminerChain.determineParameterDefaultValue(
+                DefaultValueDeterminerParameters(parameterData, isOptional, config, editor.value)
+              )
+            ),
+          hintText = fragmentParameter.hintText
+        )
+    )
   }
 
   private def fixedValuesEditorWithAllowOtherValue(
@@ -175,7 +232,10 @@ class FragmentComponentDefinitionExtractor(
 
 object FragmentComponentDefinitionExtractor {
 
-  def apply(modelData: ModelData): FragmentComponentDefinitionExtractor = {
+  def apply(
+      modelData: ModelData,
+      fixedValuesPresetProvider: Option[FixedValuesPresetProvider]
+  ): FragmentComponentDefinitionExtractor = {
     val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig
     val expressionCompiler = ExpressionCompiler.withOptimization(
       modelData.modelClassLoader.classLoader,
@@ -186,21 +246,24 @@ object FragmentComponentDefinitionExtractor {
     FragmentComponentDefinitionExtractor(
       modelData.processConfig,
       modelData.modelClassLoader.classLoader,
-      expressionCompiler
+      expressionCompiler,
+      fixedValuesPresetProvider
     )
   }
 
   def apply(
       processConfig: Config,
       classLoader: ClassLoader,
-      expressionCompiler: ExpressionCompiler
+      expressionCompiler: ExpressionCompiler,
+      fixedValuesPresetProvider: Option[FixedValuesPresetProvider]
   ): FragmentComponentDefinitionExtractor = {
     val componentsConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     new FragmentComponentDefinitionExtractor(
       componentsConfig.get,
       classLoader,
-      expressionCompiler
+      expressionCompiler,
+      fixedValuesPresetProvider
     )
   }
 
@@ -245,4 +308,17 @@ class FragmentGraphDefinition(
 
 }
 
-case class FragmentParamClassLoadErrorData(fieldName: String, refClazzName: String)
+sealed trait FragmentParameterErrorData {
+  def toError(nodeId: String): PartSubGraphCompilationError
+}
+
+case class FragmentParamClassLoadErrorData(fieldName: String, refClazzName: String) extends FragmentParameterErrorData {
+  override def toError(nodeId: String): FragmentParamClassLoadError =
+    FragmentParamClassLoadError(fieldName, refClazzName, nodeId)
+}
+
+case class PresetIdNotFoundInProvidedPresetsErrorData(fieldName: String, presetId: String)
+    extends FragmentParameterErrorData {
+  override def toError(nodeId: String): PresetIdNotFoundInProvidedPresets =
+    PresetIdNotFoundInProvidedPresets(fieldName, presetId, nodeId)
+}

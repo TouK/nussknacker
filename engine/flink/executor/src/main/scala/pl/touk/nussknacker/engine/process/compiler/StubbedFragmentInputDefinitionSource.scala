@@ -2,10 +2,8 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -18,6 +16,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
@@ -28,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 // This source adds input parameters to context and allows testing with ad-hoc testing.
 class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
 
-  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(modelData)
+  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(modelData, None)
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
 
   def createSourceDefinition(frag: FragmentInputDefinition): StandardObjectWithMethodDef = {

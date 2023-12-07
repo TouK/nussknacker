@@ -54,7 +54,7 @@ object UIProcessObjectsFactory {
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(modelDataForType.processConfig)
 
     val fragmentInputs =
-      extractFragmentInputs(modelDataForType, fragmentsDetails)
+      extractFragmentInputs(modelDataForType, fragmentsDetails, fixedValuesPresetProvider)
 
     val combinedComponentsConfig =
       getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentInputs, processDefinition)
@@ -180,8 +180,9 @@ object UIProcessObjectsFactory {
   private def extractFragmentInputs(
       modelDataForType: ModelData,
       fragmentsDetails: Set[FragmentDetails],
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): Map[String, FragmentObjectDefinition] = {
-    val definitionExtractor = FragmentComponentDefinitionExtractor(modelDataForType)
+    val definitionExtractor = FragmentComponentDefinitionExtractor(modelDataForType, Some(fixedValuesPresetProvider))
     (for {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption

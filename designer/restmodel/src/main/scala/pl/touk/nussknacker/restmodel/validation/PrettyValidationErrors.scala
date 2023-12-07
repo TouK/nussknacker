@@ -173,7 +173,7 @@ object PrettyValidationErrors {
           s"There is a problem with expression: $originalExpr",
           fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
         )
-      case PresetIdNotFoundInProvidedPresets(presetId, paramName, _) =>
+      case PresetIdNotFoundInProvidedPresets(paramName, presetId, _) =>
         node(
           s"The specified preset id '$presetId' is not defined",
           "Please check fragment definition",

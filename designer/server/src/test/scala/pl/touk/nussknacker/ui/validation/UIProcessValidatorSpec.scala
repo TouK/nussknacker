@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -531,13 +532,6 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     validationResult.errors should not be empty
     validationResult.errors.invalidNodes("in") should matchPattern {
       case List(
-//            NodeValidationError( // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
-//              "PresetIdNotFoundInProvidedPresets",
-//              "The specified preset id 'thisPresetDoesNotExist' used in subParam3 is not defined",
-//              _,
-//              Some("$param.subParam3.$fixedValuesPresetId"),
-//              NodeValidationErrorType.SaveAllowed
-//            ),
             NodeValidationError(
               "InitialValueNotPresentInPossibleValues",
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
@@ -550,6 +544,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "PresetIdNotFoundInProvidedPresets",
+              "The specified preset id 'thisPresetDoesNotExist' is not defined",
+              _,
+              Some("$param.subParam3.$fixedValuesPresetId"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -616,13 +617,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
               Some("param1"),
               NodeValidationErrorType.SaveAllowed
             ),
-//            NodeValidationError( // TODO won't work until fixedValuesPresetId is hooked up to FragmentComponentDefinitionExtractor
-//              "PresetIdNotFoundInProvidedPresets",
-//              "The specified preset id 'thisPresetDoesNotExist' used in param1 is not defined",
-//              _,
-//              Some("$param.param1.$fixedValuesPresetId"),
-//              NodeValidationErrorType.SaveAllowed
-//            )
+            NodeValidationError(
+              "PresetIdNotFoundInProvidedPresets",
+              "The specified preset id 'thisPresetDoesNotExist' is not defined",
+              _,
+              Some("$param.param1.$fixedValuesPresetId"),
+              NodeValidationErrorType.SaveAllowed
+            )
           ) =>
     }
     validationResult.errors.invalidNodes("subIn-subVar") should matchPattern {
@@ -1278,7 +1279,8 @@ private object UIProcessValidatorSpec {
             FragmentDetails(fragment, Category1),
           )
         )
-      )
+      ),
+      TestFixedValuesPresetProvider
     )
   }
 

@@ -51,7 +51,8 @@ class NodesResourcesSpec
     typeToConfig.mapValues(_.modelData),
     typeToConfig.mapValues(_.scenarioPropertiesConfig),
     typeToConfig.mapValues(_.additionalValidators),
-    new FragmentResolver(fragmentRepository)
+    new FragmentResolver(fragmentRepository),
+    TestFixedValuesPresetProvider
   )
 
   private val nodeRoute = new NodesResources(

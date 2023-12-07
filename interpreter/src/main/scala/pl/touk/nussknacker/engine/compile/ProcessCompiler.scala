@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -317,7 +318,11 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(modelData: ModelData, categoryOpt: Option[String]): ProcessValidator = {
+  def default(
+      modelData: ModelData,
+      categoryOpt: Option[String],
+      fixedValuesPresetProvider: FixedValuesPresetProvider
+  ): ProcessValidator = {
     default(
       categoryOpt
         .map(category => modelData.modelDefinitionWithTypes.filter(_.availableForCategory(category)))
@@ -325,7 +330,8 @@ object ProcessValidator {
       modelData.processConfig,
       modelData.uiDictServices.dictRegistry,
       modelData.customProcessValidator,
-      modelData.modelClassLoader.classLoader
+      modelData.modelClassLoader.classLoader,
+      fixedValuesPresetProvider
     )
   }
 
@@ -334,7 +340,8 @@ object ProcessValidator {
       processConfig: Config,
       dictRegistry: DictRegistry,
       customProcessValidator: CustomProcessValidator,
-      classLoader: ClassLoader = getClass.getClassLoader
+      classLoader: ClassLoader = getClass.getClassLoader,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): ProcessValidator = {
     import definitionWithTypes.modelDefinition
     val expressionCompiler = ExpressionCompiler.withoutOptimization(
@@ -346,7 +353,8 @@ object ProcessValidator {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
       processConfig,
       classLoader,
-      expressionCompiler
+      expressionCompiler,
+      Some(fixedValuesPresetProvider)
     )
 
     val nodeCompiler = new NodeCompiler(

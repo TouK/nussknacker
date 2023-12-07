@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   JoinGenericNodeTransformation,
   SingleInputGenericNodeTransformation
 }
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{FixedValuesPresetParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.expression.{
   ExpressionParser,
   ExpressionTypingInfo,
@@ -163,12 +163,27 @@ class NodeCompiler(
           )
       }
 
+      val usedFixedValuesPresets = paramDefs.value
+        .flatMap(p =>
+          p.editor match {
+            case Some(FixedValuesPresetParameterEditor(presetId, Some(possibleValues))) =>
+              Some(presetId -> possibleValues)
+            case _ => None
+          }
+        )
+        .toMap
+
       val paramValidation = params.map { param =>
-        fragmentParameterValidator.validate(param, id, validationContext)
+        fragmentParameterValidator.validate(
+          param,
+          id,
+          usedFixedValuesPresets,
+          validationContext,
+        )
       }.sequence
 
       val parameterExtractionValidation =
-        NonEmptyList // TODO this will contain PresetIdNotFoundInProvidedPresets errors
+        NonEmptyList
           .fromList(paramDefs.written)
           .map(invalid)
           .getOrElse(valid(List.empty))

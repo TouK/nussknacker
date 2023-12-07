@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, StreamMetaData, process}
@@ -90,7 +91,8 @@ class ModelDataTestInfoProviderSpec
 
   }
 
-  private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
+  private val testInfoProvider: TestInfoProvider =
+    new ModelDataTestInfoProvider(modelData)
 
   test("should detect capabilities for empty scenario") {
     val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)

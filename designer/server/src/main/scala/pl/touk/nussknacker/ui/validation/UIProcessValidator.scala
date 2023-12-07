@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.FixedValuesPresetProvider
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{IdValidator, NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, FragmentInputDefinition, NodeData, Source}
@@ -29,9 +30,17 @@ object UIProcessValidator {
       modelData: ProcessingTypeDataProvider[ModelData, _],
       scenarioProperties: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
       additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
-      fragmentResolver: FragmentResolver
+      fragmentResolver: FragmentResolver,
+      fixedValuesPresetProvider: FixedValuesPresetProvider
   ): UIProcessValidator = {
-    new UIProcessValidator(modelData, scenarioProperties, additionalValidators, fragmentResolver, None)
+    new UIProcessValidator(
+      modelData,
+      scenarioProperties,
+      additionalValidators,
+      fragmentResolver,
+      None,
+      fixedValuesPresetProvider
+    )
   }
 
 }
@@ -41,7 +50,8 @@ class UIProcessValidator(
     scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _],
     additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
     fragmentResolver: FragmentResolver,
-    expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]
+    expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]],
+    fixedValuesPresetProvider: FixedValuesPresetProvider
 ) {
 
   /**
@@ -59,7 +69,8 @@ class UIProcessValidator(
     scenarioPropertiesConfig,
     additionalValidators,
     fragmentResolver,
-    None
+    None,
+    fixedValuesPresetProvider
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new UIProcessValidator(
@@ -67,13 +78,21 @@ class UIProcessValidator(
     scenarioPropertiesConfig,
     additionalValidators,
     fragmentResolver,
-    Some(modify)
+    Some(modify),
+    fixedValuesPresetProvider
   )
 
   def withScenarioPropertiesConfig(
       scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
   ) =
-    new UIProcessValidator(modelData, scenarioPropertiesConfig, additionalValidators, fragmentResolver, None)
+    new UIProcessValidator(
+      modelData,
+      scenarioPropertiesConfig,
+      additionalValidators,
+      fragmentResolver,
+      None,
+      fixedValuesPresetProvider
+    )
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -127,7 +146,7 @@ class UIProcessValidator(
       category: Category
   ): ValidationResult = {
     val processValidator = processValidatorCache.getOrCreate(ValidatorKey(modelData, category)) {
-      val modelCategoryValidator = ProcessValidator.default(modelData, Some(category))
+      val modelCategoryValidator = ProcessValidator.default(modelData, Some(category), fixedValuesPresetProvider)
 
       expressionParsers
         .map(modelCategoryValidator.withExpressionParsers)

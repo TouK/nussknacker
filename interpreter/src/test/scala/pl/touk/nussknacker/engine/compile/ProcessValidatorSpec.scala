@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.api.process.{
   ClassExtractionSettings,
   ComponentUseCase,
@@ -1633,7 +1634,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         ModelDefinitionWithTypes(definitions),
         ConfigFactory.empty,
         new SimpleDictRegistry(Map.empty),
-        CustomProcessValidatorLoader.emptyCustomProcessValidator
+        CustomProcessValidatorLoader.emptyCustomProcessValidator,
+        fixedValuesPresetProvider = TestFixedValuesPresetProvider
       )
       .validate(process)
   }
