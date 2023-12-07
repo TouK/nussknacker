@@ -48,7 +48,12 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.services.{AppApiHttpService, ComponentApiHttpService, NuDesignerExposedApiHttpService}
+import pl.touk.nussknacker.ui.services.{
+  AppApiHttpService,
+  ComponentApiHttpService,
+  NuDesignerExposedApiHttpService,
+  UserApiHttpService
+}
 import pl.touk.nussknacker.ui.security.api.{
   AuthenticationConfiguration,
   AuthenticationResources,
@@ -227,6 +232,11 @@ class AkkaHttpBasedRouteProvider(
         getProcessCategoryService = getProcessCategoryService,
         componentService = componentService
       )
+      val userApiHttpService = new UserApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService
+      )
 
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
 
@@ -275,7 +285,6 @@ class AkkaHttpBasedRouteProvider(
             getProcessCategoryService,
             additionalUIConfigProvider
           ),
-          new UserResources(getProcessCategoryService),
           new NotificationResources(notificationService),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(
@@ -330,7 +339,8 @@ class AkkaHttpBasedRouteProvider(
         authenticationResources.routeWithPathPrefix,
       )
 
-      val nuDesignerApi = new NuDesignerExposedApiHttpService(appApiHttpService, componentsApiHttpService)
+      val nuDesignerApi =
+        new NuDesignerExposedApiHttpService(appApiHttpService, componentsApiHttpService, userApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
