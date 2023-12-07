@@ -39,11 +39,7 @@ class UserApiSpec
                |  "isAdmin": false,
                |  "categories": [ "Category1" ],
                |  "categoryPermissions": {
-               |      "Category1": [
-               |          "Deploy",
-               |          "Read",
-               |          "Write"
-               |      ]
+               |      "Category1": [ "Deploy", "Read", "Write" ]
                |    },
                |  "globalPermissions": []
                |}""".stripMargin)
