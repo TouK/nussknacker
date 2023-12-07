@@ -275,8 +275,18 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   test("not allow required scenario fields") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-        "field2" -> ScenarioPropertyConfig(None, None, None, Some("label2"))
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label1")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = None,
+          label = Some("label2")
+        )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
@@ -319,8 +329,18 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   test("don't validate properties on fragment") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
-        "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-        "field2" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label1")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label2")
+        )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
@@ -342,16 +362,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
         "field1" -> ScenarioPropertyConfig(
-          None,
-          Some(FixedValuesParameterEditor(possibleValues)),
-          Some(List(FixedValuesValidator(possibleValues))),
-          Some("label")
+          defaultValue = None,
+          editor = Some(FixedValuesParameterEditor(possibleValues)),
+          validators = Some(List(FixedValuesValidator(possibleValues))),
+          label = Some("label")
         ),
         "field2" -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(LiteralIntegerValidator)),
-          Some("label")
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(LiteralIntegerValidator)),
+          label = Some("label")
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -369,10 +389,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
         "field2" -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(CompileTimeEvaluableValueValidator)),
-          Some("label")
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(CompileTimeEvaluableValueValidator)),
+          label = Some("label")
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -1017,22 +1037,22 @@ private object UIProcessValidatorSpec {
   val configuredValidator: UIProcessValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
     Map(
       "requiredStringProperty" -> ScenarioPropertyConfig(
-        None,
-        Some(StringParameterEditor),
-        Some(List(MandatoryParameterValidator)),
-        Some("label")
+        defaultValue = None,
+        editor = Some(StringParameterEditor),
+        validators = Some(List(MandatoryParameterValidator)),
+        label = Some("label")
       ),
       "numberOfThreads" -> ScenarioPropertyConfig(
-        None,
-        Some(FixedValuesParameterEditor(possibleValues)),
-        Some(List(FixedValuesValidator(possibleValues))),
-        None
+        defaultValue = None,
+        editor = Some(FixedValuesParameterEditor(possibleValues)),
+        validators = Some(List(FixedValuesValidator(possibleValues))),
+        label = None
       ),
       "maxEvents" -> ScenarioPropertyConfig(
-        None,
-        None,
-        Some(List(CompileTimeEvaluableValueValidator)),
-        Some("label")
+        defaultValue = None,
+        editor = None,
+        validators = Some(List(CompileTimeEvaluableValueValidator)),
+        label = Some("label")
       )
     ) ++ FlinkStreamingPropertiesConfig.properties
   )

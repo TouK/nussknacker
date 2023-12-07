@@ -7,6 +7,8 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.process.processingtypedata.ValueAccessPermission.{AnyUser, UserWithAccessRightsToCategory}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.util.concurrent.atomic.AtomicReference
+
 /**
  *  NOTICE: This is probably *temporary* solution. We want to be able to:
  *  - reload elements of ProcessingTypeData
@@ -22,25 +24,25 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
  *  Currently, the only implementation is map-based, but in the future it will allow to reload ProcessingTypeData related stuff
  *  without restarting the app
  */
-trait ProcessingTypeDataProvider[+T, +C] {
+trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: replace with proper forType handling
-  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): T = forType(processingType)
+  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data = forType(processingType)
     .getOrElse(
       throw new IllegalArgumentException(
         s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
       )
     )
 
-  final def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[T] = allAuthorized
+  final def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = allAuthorized
     .get(processingType)
     .map(_.getOrElse(throw new UnauthorizedError()))
 
-  def all(implicit user: LoggedUser): Map[ProcessingType, T] = allAuthorized.collect { case (k, Some(v)) =>
+  def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
     (k, v)
   }
 
-  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[T]] = state.all.map {
+  private def allAuthorized(implicit user: LoggedUser): Map[ProcessingType, Option[Data]] = state.all.map {
     case (k, ValueWithPermission(v, AnyUser)) => (k, Some(v))
     case (k, ValueWithPermission(v, UserWithAccessRightsToCategory(category))) if user.can(category, Permission.Read) =>
       (k, Some(v))
@@ -49,15 +51,15 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
-  def combined: C = state.getCombined()
+  def combined: CombinedData = state.getCombined()
 
-  private[processingtypedata] def state: ProcessingTypeDataState[T, C]
+  private[processingtypedata] def state: ProcessingTypeDataState[Data, CombinedData]
 
-  def mapValues[TT](fun: T => TT): ProcessingTypeDataProvider[TT, C] =
-    new TransformingProcessingTypeDataProvider[T, C, TT, C](this, _.mapValues(fun))
+  def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
+    new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
 
-  def mapCombined[CC](fun: C => CC): ProcessingTypeDataProvider[T, CC] =
-    new TransformingProcessingTypeDataProvider[T, C, T, CC](this, _.mapCombined(fun))
+  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] =
+    new TransformingProcessingTypeDataProvider[Data, CombinedData, Data, CC](this, _.mapCombined(fun))
 
 }
 
@@ -66,14 +68,17 @@ class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
 ) extends ProcessingTypeDataProvider[TT, CC] {
 
-  private var stateValue: ProcessingTypeDataState[TT, CC] = transformState(observed.state)
+  private val stateValue = new AtomicReference(transformState(observed.state))
 
-  override private[processingtypedata] def state: ProcessingTypeDataState[TT, CC] = synchronized {
-    val currentObservedState = observed.state
-    if (currentObservedState.stateIdentity != stateValue.stateIdentity) {
-      stateValue = transformState(currentObservedState)
+  override private[processingtypedata] def state: ProcessingTypeDataState[TT, CC] = {
+    stateValue.updateAndGet { currentValue =>
+      val currentObservedState = observed.state
+      if (currentObservedState.stateIdentity != currentValue.stateIdentity) {
+        transformState(currentObservedState)
+      } else {
+        currentValue
+      }
     }
-    stateValue
   }
 
 }

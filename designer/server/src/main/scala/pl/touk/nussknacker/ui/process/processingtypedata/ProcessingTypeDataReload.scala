@@ -21,8 +21,7 @@ class ProcessingTypeDataReload(
 ) extends ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]
     with LazyLogging {
 
-  @volatile private[processingtypedata] var state
-      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] =
+  private var stateValue: ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] =
     // We init state with dumb value instead of calling loadMethod() to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     ProcessingTypeDataState(
       Map.empty,
@@ -30,17 +29,27 @@ class ProcessingTypeDataReload(
       new Object
     )
 
-  def reloadAll(): Unit = synchronized {
-    val beforeReload = state
-    logger.info(
-      s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted.mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
-    )
-    beforeReload.all.values.foreach(_.value.close())
-    logger.info("Reloading processing type data...")
-    state = loadMethod()
-    logger.info(
-      s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
-    )
+  override private[processingtypedata] def state
+      : ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
+    synchronized {
+      stateValue
+    }
+  }
+
+  def reloadAll(): Unit = {
+    synchronized {
+      val beforeReload = stateValue
+      logger.info(
+        s"Closing state with old processing types [${beforeReload.all.keys.toList.sorted
+            .mkString(", ")}] and identity [${beforeReload.stateIdentity}]"
+      )
+      beforeReload.all.values.foreach(_.value.close())
+      logger.info("Reloading processing type data...")
+      stateValue = loadMethod()
+      logger.info(
+        s"New state with processing types [${state.all.keys.toList.sorted.mkString(", ")}] and identity [${state.stateIdentity}] reloaded finished"
+      )
+    }
   }
 
 }
