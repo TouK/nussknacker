@@ -15,14 +15,14 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
+import pl.touk.nussknacker.engine.compile.nodecompilation.{
+  CompilerLazyParameterInterpreter,
+  LazyInterpreterDependencies
+}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{
-  CompilerLazyParameterInterpreter,
-  FragmentComponentDefinitionExtractor,
-  LazyInterpreterDependencies
-}
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
@@ -72,7 +72,7 @@ object ScenarioInterpreterFactory {
       implicit val monad: Monad[F] = shape.monad
 
       val creator                   = modelData.configCreator
-      val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
+      val processObjectDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
@@ -84,8 +84,8 @@ object ScenarioInterpreterFactory {
 
       val compilerData = ProcessCompilerData.prepare(
         process,
-        modelData.processConfig,
-        modelData.modelDefinitionWithTypes,
+        modelData.modelConfig,
+        modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
         listeners,
         modelData.modelClassLoader.classLoader,

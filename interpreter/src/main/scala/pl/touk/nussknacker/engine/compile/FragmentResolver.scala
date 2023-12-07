@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.{FragmentGraphDefinition, FragmentGraphDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.fragment.{FragmentGraphDefinition, FragmentGraphDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node._
 
 object FragmentResolver {

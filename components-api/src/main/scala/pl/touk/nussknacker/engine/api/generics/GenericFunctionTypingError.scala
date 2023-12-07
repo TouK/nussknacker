@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import cats.data.NonEmptyList
-
 sealed trait GenericFunctionTypingError
 
 object GenericFunctionTypingError {

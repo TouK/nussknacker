@@ -18,6 +18,7 @@ trait DictServicesFactory {
 
 }
 
+// TODO: rename to DesignerDictServices
 case class UiDictServices(dictRegistry: DictRegistry, dictQueryService: DictQueryService) {
 
   def close(): Unit = {

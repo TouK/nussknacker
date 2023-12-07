@@ -9,13 +9,11 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
-  CustomTransformerAdditionalData,
-  ModelDefinitionWithTypes
-}
-import pl.touk.nussknacker.engine.definition.{GlobalVariableDefinitionExtractor, ProcessObjectDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
@@ -26,7 +24,7 @@ import scala.reflect.ClassTag
 class FlinkProcessCompilerWithTestComponents(
     modelData: ModelData,
     creator: ProcessConfigCreator,
-    processConfig: Config,
+    modelConfig: Config,
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
@@ -34,7 +32,7 @@ class FlinkProcessCompilerWithTestComponents(
     resultsCollectingListener: ResultsCollectingListener,
 ) extends FlinkProcessCompiler(
       creator,
-      processConfig,
+      modelConfig,
       diskStateBackendSupport,
       objectNaming,
       componentUseCase,
@@ -43,37 +41,37 @@ class FlinkProcessCompilerWithTestComponents(
   override protected def definitions(
       processObjectDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
-  ): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+  ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
     val definitions                         = definitionWithTypes.modelDefinition
-    val componentsUiConfig                  = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
-    val testServicesDefs = ObjectWithMethodDef.forMap(
+    val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
+    val testServicesDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[Service],
-      ProcessObjectDefinitionExtractor.service,
+      MethodDefinitionExtractor.Service,
       componentsUiConfig
     )
-    val testCustomStreamTransformerDefs = ObjectWithMethodDef
+    val testCustomStreamTransformerDefs = ComponentDefinitionWithImplementation
       .forMap(
         testComponentsWithCategories[CustomStreamTransformer],
-        ProcessObjectDefinitionExtractor.customStreamTransformer,
+        MethodDefinitionExtractor.CustomStreamTransformer,
         componentsUiConfig
       )
       .map { case (name, el) =>
-        val customStreamTransformer = el.obj.asInstanceOf[CustomStreamTransformer]
+        val customStreamTransformer = el.implementation.asInstanceOf[CustomStreamTransformer]
         val additionalData = CustomTransformerAdditionalData(
           customStreamTransformer.canHaveManyInputs,
           customStreamTransformer.canBeEnding
         )
         name -> (el, additionalData)
       }
-    val testSourceDefs = ObjectWithMethodDef.forMap(
+    val testSourceDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[SourceFactory],
-      ProcessObjectDefinitionExtractor.source,
+      MethodDefinitionExtractor.Source,
       componentsUiConfig
     )
-    val testSinkDefs = ObjectWithMethodDef.forMap(
+    val testSinkDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[SinkFactory],
-      ProcessObjectDefinitionExtractor.sink,
+      MethodDefinitionExtractor.Sink,
       componentsUiConfig
     )
     val servicesWithTests                = definitions.services ++ testServicesDefs
@@ -98,7 +96,7 @@ class FlinkProcessCompilerWithTestComponents(
       expressionConfig = expressionConfigWithTests
     )
 
-    (ModelDefinitionWithTypes(definitionsWithTestComponents), dictRegistry)
+    (ModelDefinitionWithClasses(definitionsWithTestComponents), dictRegistry)
   }
 
   override protected def adjustListeners(
@@ -145,7 +143,7 @@ class FlinkProcessCompilerWithTestComponents(
   ) = this(
     modelData,
     modelData.configCreator,
-    modelData.processConfig,
+    modelData.modelConfig,
     false,
     modelData.objectNaming,
     componentUseCase,

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.definition.ComponentIdProvider
+import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
 import pl.touk.nussknacker.restmodel.component.NodeUsageData._
 import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity

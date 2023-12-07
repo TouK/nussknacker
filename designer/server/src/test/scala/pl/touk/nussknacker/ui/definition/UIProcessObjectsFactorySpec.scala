@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
+import pl.touk.nussknacker.engine.definition.component.ToStaticComponentDefinitionTransformer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
@@ -218,11 +218,11 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   }
 
   private def prepareUIProcessObjects(model: ModelData, fragmentDetails: Set[FragmentDetails]) = {
-    val staticObjectsDefinition =
-      ToStaticObjectDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
+    val staticModelDefinition =
+      ToStaticComponentDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(
       model,
-      staticObjectsDefinition,
+      staticModelDefinition,
       mockDeploymentManager,
       TestFactory.user("userId"),
       fragmentDetails,

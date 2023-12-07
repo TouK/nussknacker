@@ -7,7 +7,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
@@ -66,7 +66,7 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     // `insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
     import dbRef.profile.api._
-    val espTables = new EspTables {
+    val espTables = new NuTables {
       override implicit val profile: JdbcProfile = dbRef.profile
     }
     val uppsertEnvironmentAction = for {
