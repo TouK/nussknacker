@@ -77,8 +77,6 @@ object UIProcessObjectsFactory {
         finalProcessDefinition
       ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ProcessDefinition doesn't contain configs for base components and fragments
 
-    // TODO maybe we have to update FixedValuesValidator based on presets - but FE should be going away from using validators on FE anyway
-
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
