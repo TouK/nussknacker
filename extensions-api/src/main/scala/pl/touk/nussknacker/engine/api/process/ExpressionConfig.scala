@@ -45,7 +45,7 @@ object ExpressionConfig {
   val defaultStrictMethodsChecking            = true
   val defaultStaticMethodInvocationsChecking  = true
   val defaultMethodExecutionForUnknownAllowed = false
-  val defaultDynamicPropertyAccessAllowed     = false
+  val defaultDynamicPropertyAccessAllowed     = true
 }
 
 object LanguageConfiguration {
