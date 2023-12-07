@@ -118,7 +118,7 @@ paths:
                   value:
                   - id: request-response-embedded-customnode-collect
                     name: collect
-                    icon: /assets/components/CustomNde.svg
+                    icon: /assets/components/CustomNode.svg
                     componentType: customNode
                     componentGroupName: custom
                     categories:
