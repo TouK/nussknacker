@@ -10,7 +10,6 @@ import { Notifications } from "./Notifications";
 import { UsageReportingImage } from "./UsageReportingImage";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
-import { NuThemeProvider } from "./theme/nuThemeProvider";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
