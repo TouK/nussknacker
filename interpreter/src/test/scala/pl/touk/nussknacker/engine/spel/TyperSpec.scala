@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedObjectWithValue}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -84,6 +85,11 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       "{\"key1\": \"val1\", \"key2\": {\"nestedKey1\": \"nestedVal1\"}}[\"key2\"][\"nestedKey1\"]"
     ).validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], "nestedVal1")
+  }
+
+  test("dynamic property access on records returns error when disabled") {
+    typeExpression("{\"key1\": \"val1\", \"key2\": 1}[\"key\" + 2]").invalidValue shouldBe
+      NonEmptyList(DynamicPropertyAccessError, Nil)
   }
 
   private val strictTypeChecking               = false
