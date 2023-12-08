@@ -42,7 +42,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extract additional variables info from annotation") {
     val methodDef = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformer1")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .implementationInvoker
       .asInstanceOf[MethodBasedComponentImplementationInvoker]
@@ -74,7 +73,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extract definition with generic params") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerWithGenericParam")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -84,18 +82,15 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extract definition using ContextTransformation") {
     modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")
-      ._1
       .returnType shouldBe defined
     modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")
-      ._1
       .returnType shouldBe empty
   }
 
   test("extract validators based on editor") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerWithFixedValueParam")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -109,7 +104,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extract default value from annotation") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerWithDefaultValueForParameter")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -120,7 +114,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("default value from annotation should have higher priority than optionality") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerWithOptionalDefaultValueForParameter")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -131,7 +124,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extract definition with branch params") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
       .customStreamTransformers("transformerWithBranchParam")
-      ._1
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 2
@@ -167,7 +159,6 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
     val definition =
       modelDefinitionWithTypes(None).modelDefinition
         .customStreamTransformers("transformer1")
-        ._1
         .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(

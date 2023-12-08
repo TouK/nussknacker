@@ -27,12 +27,16 @@ object ComponentDefinitionExtractor {
   ): ComponentDefinitionWithImplementation = {
     val obj = objWithCategories.value
 
-    val (componentType, methodDefinitionExtractor) = obj match {
-      case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source)
-      case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink)
-      case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service)
-      case _: CustomStreamTransformer =>
-        (ComponentType.CustomComponent, MethodDefinitionExtractor.CustomStreamTransformer)
+    val (componentType, methodDefinitionExtractor, componentTypeSpecificData) = obj match {
+      case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source, NoComponentTypeSpecificData)
+      case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink, NoComponentTypeSpecificData)
+      case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service, NoComponentTypeSpecificData)
+      case custom: CustomStreamTransformer =>
+        (
+          ComponentType.CustomComponent,
+          MethodDefinitionExtractor.CustomStreamTransformer,
+          CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
+        )
       case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
     }
 
@@ -45,7 +49,8 @@ object ComponentDefinitionExtractor {
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         objWithCategories.categories,
-        mergedComponentConfig
+        mergedComponentConfig,
+        componentTypeSpecificData
       )
       val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
       MethodBasedComponentDefinitionWithImplementation(
@@ -65,7 +70,8 @@ object ComponentDefinitionExtractor {
             implementationInvoker,
             e,
             objWithCategories.categories,
-            mergedComponentConfig
+            mergedComponentConfig,
+            componentTypeSpecificData
           )
         )
       case _ =>

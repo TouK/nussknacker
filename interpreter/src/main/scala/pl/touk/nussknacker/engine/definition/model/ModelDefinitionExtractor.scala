@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.definition.model
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
-  ComponentFromProvidersExtractor
+  ComponentFromProvidersExtractor,
+  CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.{ExpressionDefinition, GlobalVariableDefinitionExtractor}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
@@ -63,7 +63,7 @@ object ModelDefinitionExtractor {
       servicesDefs,
       sourceFactoriesDefs,
       sinkFactoriesDefs,
-      customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
+      customStreamTransformersDefs,
       toExpressionDefinition(expressionConfig),
       settings
     )
@@ -96,11 +96,6 @@ object ModelDefinitionExtractor {
       processObjectDependencies: ProcessObjectDependencies
   ): ComponentFromProvidersExtractor.ComponentsGroupedByType = {
     ComponentFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies)
-  }
-
-  private def extractCustomTransformerData(componentWithImpl: ComponentDefinitionWithImplementation) = {
-    val transformer = componentWithImpl.implementation.asInstanceOf[CustomStreamTransformer]
-    CustomTransformerAdditionalData(transformer.canHaveManyInputs, transformer.canBeEnding)
   }
 
 }

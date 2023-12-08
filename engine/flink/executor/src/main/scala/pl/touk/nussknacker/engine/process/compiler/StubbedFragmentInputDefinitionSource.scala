@@ -17,8 +17,12 @@ import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, methodbased}
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentStaticDefinition,
+  NoComponentTypeSpecificData,
+  methodbased
+}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -33,7 +37,14 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
 
   def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
     val staticDefinition =
-      ComponentStaticDefinition(ComponentType.Fragment, Nil, Some(fragmentReturnType), None, SingleComponentConfig.zero)
+      ComponentStaticDefinition(
+        componentType = ComponentType.Fragment,
+        parameters = Nil,
+        returnType = Some(fragmentReturnType),
+        categories = None,
+        componentConfig = SingleComponentConfig.zero,
+        componentTypeSpecificData = NoComponentTypeSpecificData
+      )
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
 
     methodbased.MethodBasedComponentDefinitionWithImplementation(

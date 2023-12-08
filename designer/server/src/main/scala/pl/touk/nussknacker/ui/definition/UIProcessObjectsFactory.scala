@@ -82,9 +82,6 @@ object UIProcessObjectsFactory {
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.modelConfig),
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = finalModelDefinition.customStreamTransformers.map {
-          case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-        }.toMap,
         processingType
       ),
       processDefinition = createUIModelDefinition(
@@ -135,11 +132,7 @@ object UIProcessObjectsFactory {
       services = modelDefinitionWithIds.services.map(finalizeComponentConfig),
       sourceFactories = modelDefinitionWithIds.sourceFactories.map(finalizeComponentConfig),
       sinkFactories = modelDefinitionWithIds.sinkFactories.map(finalizeComponentConfig),
-      customStreamTransformers =
-        modelDefinitionWithIds.customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
-          val (_, finalValue) = finalizeComponentConfig(idWithName, value)
-          idWithName -> (finalValue, additionalData)
-        },
+      customStreamTransformers = modelDefinitionWithIds.customStreamTransformers.map(finalizeComponentConfig),
     )
   }
 
@@ -224,9 +217,7 @@ object UIProcessObjectsFactory {
       sourceFactories = mapByName(transformed.sourceFactories),
       sinkFactories = mapByName(transformed.sinkFactories),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentComponentDef),
-      customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) =>
-        (name, value)
-      },
+      customStreamTransformers = mapByName(transformed.customStreamTransformers),
       typesInformation = types
     )
   }

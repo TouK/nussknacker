@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   ComponentStaticDefinition,
+  NoComponentTypeSpecificData,
   methodbased
 }
 
@@ -32,7 +33,8 @@ object GlobalVariableDefinitionExtractor {
       parameters = Nil,
       returnType = Some(returnType),
       categories = varWithCategories.categories,
-      componentConfig = varWithCategories.componentConfig
+      componentConfig = varWithCategories.componentConfig,
+      componentTypeSpecificData = NoComponentTypeSpecificData
     )
     MethodBasedComponentDefinitionWithImplementation(
       // Global variables are always accessed by MethodBasedComponentDefinitionWithImplementation.obj - see GlobalVariablesPreparer

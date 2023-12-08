@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
-  ComponentStaticDefinition
+  ComponentStaticDefinition,
+  ComponentTypeSpecificData
 }
 
 case class MethodBasedComponentDefinitionWithImplementation(
@@ -29,5 +30,7 @@ case class MethodBasedComponentDefinitionWithImplementation(
   override protected[definition] def categories: Option[List[String]] = staticDefinition.categories
 
   override def componentConfig: SingleComponentConfig = staticDefinition.componentConfig
+
+  override def componentTypeSpecificData: ComponentTypeSpecificData = staticDefinition.componentTypeSpecificData
 
 }

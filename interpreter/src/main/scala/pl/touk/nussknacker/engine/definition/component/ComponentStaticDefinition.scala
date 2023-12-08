@@ -10,12 +10,27 @@ case class ComponentStaticDefinition(
     parameters: List[Parameter],
     returnType: Option[TypingResult],
     categories: Option[List[String]],
-    componentConfig: SingleComponentConfig
+    componentConfig: SingleComponentConfig,
+    componentTypeSpecificData: ComponentTypeSpecificData
 ) {
 
   def withComponentConfig(componentConfig: SingleComponentConfig): ComponentStaticDefinition =
     copy(componentConfig = componentConfig)
 
   val hasNoReturn: Boolean = returnType.isEmpty
+
+}
+
+sealed trait ComponentTypeSpecificData
+
+case object NoComponentTypeSpecificData extends ComponentTypeSpecificData
+
+case class CustomComponentSpecificData(manyInputs: Boolean, canBeEnding: Boolean) extends ComponentTypeSpecificData
+
+object ComponentTypeSpecificData {
+
+  implicit class ComponentTypeSpecificDataCaster(typeSpecificData: ComponentTypeSpecificData) {
+    def asCustomComponentData: CustomComponentSpecificData = typeSpecificData.asInstanceOf[CustomComponentSpecificData]
+  }
 
 }

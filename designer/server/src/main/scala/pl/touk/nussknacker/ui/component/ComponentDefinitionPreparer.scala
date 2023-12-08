@@ -1,15 +1,10 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentType}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.{
-  ComponentIdWithName,
-  CustomTransformerAdditionalData,
-  ModelDefinitionWithComponentIds
-}
+import pl.touk.nussknacker.engine.definition.model.{ComponentIdWithName, ModelDefinitionWithComponentIds}
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -20,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
@@ -45,7 +41,6 @@ object ComponentDefinitionPreparer {
       componentsConfig: ComponentsUiConfig,
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
       processCategoryService: ProcessCategoryService,
-      customTransformerAdditionalData: Map[ComponentId, CustomTransformerAdditionalData],
       processingType: ProcessingType
   ): List[ComponentGroup] = {
     val userCategoryService          = new UserCategoryService(processCategoryService)
@@ -130,7 +125,8 @@ object ComponentDefinitionPreparer {
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
-        case (idWithName, (componentDefinition, _)) if customTransformerAdditionalData(idWithName.id).manyInputs =>
+        case (idWithName, componentDefinition)
+            if componentDefinition.componentTypeSpecificData.asCustomComponentData.manyInputs =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
@@ -144,7 +140,8 @@ object ComponentDefinitionPreparer {
             filterCategories(componentDefinition),
             componentDefBranchParams(componentDefinition)
           )
-        case (idWithName, (componentDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
+        case (idWithName, componentDefinition)
+            if !componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
@@ -162,7 +159,8 @@ object ComponentDefinitionPreparer {
     val optionalEndingCustomTransformers = ComponentGroup(
       OptionalEndingCustomGroupName,
       modelDefinition.customStreamTransformers.collect {
-        case (idWithName, (componentDefinition, _)) if customTransformerAdditionalData(idWithName.id).canBeEnding =>
+        case (idWithName, componentDefinition)
+            if componentDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
           ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
@@ -310,7 +308,7 @@ object ComponentDefinitionPreparer {
         }
 
     val joinInputs = modelDefinition.customStreamTransformers.collect {
-      case (idWithName, value) if value._2.manyInputs =>
+      case (idWithName, value) if value.componentTypeSpecificData.asCustomComponentData.manyInputs =>
         NodeEdges(NodeTypeId("Join", Some(idWithName.name)), List(), canChooseNodes = true, isForInputDefinition = true)
     }
 

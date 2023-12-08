@@ -9,24 +9,19 @@ case class ModelDefinitionWithComponentIds[T](
     services: List[(ComponentIdWithName, T)],
     sourceFactories: List[(ComponentIdWithName, T)],
     sinkFactories: List[(ComponentIdWithName, T)],
-    // TODO: find easier way to handle *AdditionalData?
-    customStreamTransformers: List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))],
+    customStreamTransformers: List[(ComponentIdWithName, T)],
     expressionConfig: ExpressionDefinition[T],
     settings: ClassExtractionSettings
 ) {
 
   val allDefinitions: List[(ComponentIdWithName, T)] =
-    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.map { case (idWithName, (value, _)) =>
-      (idWithName, value)
-    }
+    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers
 
   def transform[R](f: T => R): ModelDefinitionWithComponentIds[R] = copy(
     services.map { case (idWithName, value) => (idWithName, f(value)) },
     sourceFactories.map { case (idWithName, value) => (idWithName, f(value)) },
     sinkFactories.map { case (idWithName, value) => (idWithName, f(value)) },
-    customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
-      (idWithName, (f(value), additionalData))
-    },
+    customStreamTransformers.map { case (idWithName, value) => (idWithName, f(value)) },
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
 

@@ -16,7 +16,7 @@ object ModelClassDefinitionDiscovery {
     ComponentClassDefinitionDiscovery.discoverClasses(
       definition.services.values ++
         definition.sourceFactories.values ++
-        definition.customStreamTransformers.values.map(_._1) ++
+        definition.customStreamTransformers.values ++
         definition.expressionConfig.globalVariables.values
     )(definition.settings) ++
       ClassDefinitionDiscovery

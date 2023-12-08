@@ -7,9 +7,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithComponentIds}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
@@ -141,18 +141,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return custom nodes with correct group") {
     val initialDefinition = ProcessTestData.modelDefinitionWithIds
     val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
-      customStreamTransformers =
-        initialDefinition.customStreamTransformers.map { case (name, (componentDef, additionalData)) =>
-          (
-            name,
-            (
-              componentDef.copy(componentConfig =
-                componentDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
-              ),
-              additionalData
-            )
+      customStreamTransformers = initialDefinition.customStreamTransformers.map { case (name, componentDef) =>
+        (
+          name,
+          componentDef.copy(componentConfig =
+            componentDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
           )
-        }
+        )
+      }
     )
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
@@ -167,7 +163,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       .withCustomStreamTransformer(
         "fooTransformer",
         Some(Unknown),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true),
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
         parameter
       )
       .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
@@ -266,9 +262,6 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
-        case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
       TestProcessingTypes.Streaming
     )
     groups
@@ -286,9 +279,6 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = Map(),
       componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
-        case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
       TestProcessingTypes.Streaming
     )
     groups

@@ -39,14 +39,15 @@ class ToStaticComponentDefinitionTransformer(
   ): ComponentStaticDefinition = {
     componentDefWithImpl match {
       case standard: MethodBasedComponentDefinitionWithImplementation => standard.staticDefinition
-      case generic: DynamicComponentDefinitionWithImplementation =>
-        val parameters = determineInitialParameters(generic)
+      case dynamic: DynamicComponentDefinitionWithImplementation =>
+        val parameters = determineInitialParameters(dynamic)
         ComponentStaticDefinition(
-          generic.componentType,
+          dynamic.componentType,
           parameters,
-          generic.returnType,
-          generic.categories,
-          generic.componentConfig
+          dynamic.returnType,
+          dynamic.categories,
+          dynamic.componentConfig,
+          dynamic.componentTypeSpecificData
         )
     }
   }

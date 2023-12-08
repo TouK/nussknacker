@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.api.definition.OutputVariableNameDependency
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
-  ComponentImplementationInvoker
+  ComponentImplementationInvoker,
+  ComponentTypeSpecificData
 }
 
 case class DynamicComponentDefinitionWithImplementation(
@@ -15,7 +16,8 @@ case class DynamicComponentDefinitionWithImplementation(
     override val implementationInvoker: ComponentImplementationInvoker,
     implementation: GenericNodeTransformation[_],
     override protected[definition] val categories: Option[List[String]],
-    override val componentConfig: SingleComponentConfig
+    override val componentConfig: SingleComponentConfig,
+    override val componentTypeSpecificData: ComponentTypeSpecificData
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(

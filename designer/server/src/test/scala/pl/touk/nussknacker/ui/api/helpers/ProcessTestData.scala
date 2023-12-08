@@ -12,13 +12,12 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition._
-import pl.touk.nussknacker.engine.definition.component.{ComponentIdProvider, ComponentStaticDefinition}
-import pl.touk.nussknacker.engine.definition.model.{
-  CustomTransformerAdditionalData,
-  ModelDefinition,
-  ModelDefinitionWithComponentIds
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentIdProvider,
+  ComponentStaticDefinition,
+  CustomComponentSpecificData
 }
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithComponentIds}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -102,22 +101,22 @@ object ProcessTestData {
       .withCustomStreamTransformer(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
       .withCustomStreamTransformer(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
       .withCustomStreamTransformer(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = false)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
       )
       .withCustomStreamTransformer(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true)
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true)
       )
 
   val modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =

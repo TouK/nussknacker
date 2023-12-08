@@ -9,9 +9,12 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  CustomComponentSpecificData
+}
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
@@ -53,14 +56,6 @@ class FlinkProcessCompilerWithTestComponents(
         testComponentsWithCategories[CustomStreamTransformer],
         componentsUiConfig
       )
-      .map { case (name, el) =>
-        val customStreamTransformer = el.implementation.asInstanceOf[CustomStreamTransformer]
-        val additionalData = CustomTransformerAdditionalData(
-          customStreamTransformer.canHaveManyInputs,
-          customStreamTransformer.canBeEnding
-        )
-        name -> (el, additionalData)
-      }
     val testSourceDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[SourceFactory],
       componentsUiConfig

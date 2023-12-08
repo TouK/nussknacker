@@ -9,8 +9,7 @@ case class ModelDefinition[T](
     services: Map[String, T],
     sourceFactories: Map[String, T],
     sinkFactories: Map[String, T],
-    // TODO: find easier way to handle *AdditionalData?
-    customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
+    customStreamTransformers: Map[String, T],
     expressionConfig: ExpressionDefinition[T],
     settings: ClassExtractionSettings
 ) {
@@ -41,7 +40,7 @@ case class ModelDefinition[T](
   private def customStreamTransformersWithIds(
       componentIdProvider: ComponentIdProvider,
       processingType: String
-  ): List[(ComponentIdWithName, (T, CustomTransformerAdditionalData))] =
+  ): List[(ComponentIdWithName, T)] =
     customStreamTransformers.map { case (name, obj) =>
       val id = componentIdProvider.createComponentId(
         processingType,
@@ -88,13 +87,13 @@ case class ModelDefinition[T](
     )
 
   val allDefinitions: Map[String, T] =
-    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers.mapValuesNow(_._1)
+    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers
 
   def filter(predicate: T => Boolean): ModelDefinition[T] = copy(
     services.filter(kv => predicate(kv._2)),
     sourceFactories.filter(kv => predicate(kv._2)),
     sinkFactories.filter(kv => predicate(kv._2)),
-    customStreamTransformers.filter(ct => predicate(ct._2._1)),
+    customStreamTransformers.filter(ct => predicate(ct._2)),
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2)))
   )
 
@@ -102,10 +101,8 @@ case class ModelDefinition[T](
     services.mapValuesNow(f),
     sourceFactories.mapValuesNow(f),
     sinkFactories.mapValuesNow(f),
-    customStreamTransformers.mapValuesNow { case (o, additionalData) => (f(o), additionalData) },
+    customStreamTransformers.mapValuesNow(f),
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
 
 }
-
-case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)

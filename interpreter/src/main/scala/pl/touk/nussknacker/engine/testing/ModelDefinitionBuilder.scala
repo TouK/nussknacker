@@ -12,10 +12,12 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   ComponentStaticDefinition,
-  methodbased
+  ComponentTypeSpecificData,
+  CustomComponentSpecificData,
+  NoComponentTypeSpecificData
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinition}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.concurrent.Future
@@ -56,9 +58,7 @@ object ModelDefinitionBuilder {
       definition.services.mapValuesNow(wrapWithNullImplementation(_, classOf[Future[_]])),
       definition.sourceFactories.mapValuesNow(wrapWithNullImplementation(_)),
       definition.sinkFactories.mapValuesNow(wrapWithNullImplementation(_)),
-      definition.customStreamTransformers.mapValuesNow { case (transformer, queryNames) =>
-        (wrapWithNullImplementation(transformer), queryNames)
-      },
+      definition.customStreamTransformers.mapValuesNow(wrapWithNullImplementation(_)),
       expressionDefinition,
       definition.settings
     )
@@ -103,7 +103,8 @@ object ModelDefinitionBuilder {
           definition.expressionConfig.globalVariables + (name -> wrapWithStaticDefinition(
             ComponentType.BuiltIn,
             List.empty,
-            Some(typ)
+            Some(typ),
+            NoComponentTypeSpecificData
           ))
         )
       )
@@ -138,7 +139,8 @@ object ModelDefinitionBuilder {
           params.toList,
           Some(Unknown),
           Some(List(category)),
-          SingleComponentConfig.zero
+          SingleComponentConfig.zero,
+          componentTypeSpecificData = NoComponentTypeSpecificData
         ))
       )
 
@@ -150,15 +152,15 @@ object ModelDefinitionBuilder {
     def withCustomStreamTransformer(
         id: String,
         returnType: Option[TypingResult],
-        additionalData: CustomTransformerAdditionalData,
+        componentSpecificData: CustomComponentSpecificData,
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (wrapWithStaticCustomComponentDefinition(
+        definition.customStreamTransformers + (id -> wrapWithStaticCustomComponentDefinition(
           params.toList,
-          returnType
-        ),
-        additionalData))
+          returnType,
+          componentSpecificData
+        ))
       )
 
   }
@@ -167,38 +169,47 @@ object ModelDefinitionBuilder {
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(ComponentType.Source, parameters, returnType)
+    wrapWithStaticDefinition(ComponentType.Source, parameters, returnType, NoComponentTypeSpecificData)
 
   def wrapWithStaticSinkDefinition(
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(ComponentType.Sink, parameters, returnType)
+    wrapWithStaticDefinition(ComponentType.Sink, parameters, returnType, NoComponentTypeSpecificData)
 
   def wrapWithStaticServiceDefinition(
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(ComponentType.Service, parameters, returnType)
+    wrapWithStaticDefinition(ComponentType.Service, parameters, returnType, NoComponentTypeSpecificData)
 
   def wrapWithStaticCustomComponentDefinition(
       parameters: List[Parameter],
-      returnType: Option[TypingResult]
+      returnType: Option[TypingResult],
+      componentSpecificData: CustomComponentSpecificData
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(ComponentType.CustomComponent, parameters, returnType)
+    wrapWithStaticDefinition(ComponentType.CustomComponent, parameters, returnType, componentSpecificData)
 
   def wrapWithStaticGlobalVariableDefinition(
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(ComponentType.BuiltIn, parameters, returnType)
+    wrapWithStaticDefinition(ComponentType.BuiltIn, parameters, returnType, NoComponentTypeSpecificData)
 
   private def wrapWithStaticDefinition(
       componentType: ComponentType,
       parameters: List[Parameter],
-      returnType: Option[TypingResult]
+      returnType: Option[TypingResult],
+      componentTypeSpecificData: ComponentTypeSpecificData
   ): ComponentStaticDefinition = {
-    ComponentStaticDefinition(componentType, parameters, returnType, None, SingleComponentConfig.zero)
+    ComponentStaticDefinition(
+      componentType,
+      parameters,
+      returnType,
+      None,
+      SingleComponentConfig.zero,
+      componentTypeSpecificData
+    )
   }
 
 }

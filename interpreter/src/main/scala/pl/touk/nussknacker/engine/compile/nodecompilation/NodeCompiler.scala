@@ -209,10 +209,11 @@ class NodeCompiler(
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
     definitions.customStreamTransformers.get(data.nodeType) match {
-      case Some((_, additionalData)) if ending && !additionalData.canBeEnding =>
+      case Some(nodeDefinition)
+          if ending && !nodeDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
-      case Some((nodeDefinition, _)) =>
+      case Some(nodeDefinition) =>
         val default = defaultContextAfter(data, ending, ctx, nodeDefinition)
         compileObjectWithTransformation(
           data.parameters,

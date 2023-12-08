@@ -29,14 +29,11 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
-  ComponentStaticDefinition
+  ComponentStaticDefinition,
+  CustomComponentSpecificData
 }
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.model.{
-  CustomTransformerAdditionalData,
-  ModelDefinition,
-  ModelDefinitionWithClasses
-}
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -64,7 +61,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
-  private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
+  private val emptyQueryNamesData = CustomComponentSpecificData(false, false)
 
   private val baseDefinition = ModelDefinition[ComponentStaticDefinition](
     services = Map(
@@ -88,83 +85,96 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       )
     ),
     customStreamTransformers = Map(
-      "customTransformer" -> (wrapWithStaticCustomComponentDefinition(
+      "customTransformer" -> wrapWithStaticCustomComponentDefinition(
         List.empty,
-        Some(Typed[SimpleRecord])
-      ), emptyQueryNamesData),
-      "withParamsTransformer" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Typed[SimpleRecord]),
+        emptyQueryNamesData
+      ),
+      "withParamsTransformer" -> wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("par1")),
-        Some(Typed[SimpleRecord])
-      ), emptyQueryNamesData),
-      "manyParams" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Typed[SimpleRecord]),
+        emptyQueryNamesData
+      ),
+      "manyParams" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("par1").copy(isLazyParameter = true),
           Parameter[String]("par2"),
           Parameter[String]("par3").copy(isLazyParameter = true),
           Parameter[String]("par4")
         ),
-        Some(Typed[SimpleRecord])
-      ), emptyQueryNamesData),
-      "withManyParameters" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Typed[SimpleRecord]),
+        emptyQueryNamesData
+      ),
+      "withManyParameters" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("lazyString").copy(isLazyParameter = true),
           Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
           Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0)))
         ),
-        Some(Typed[SimpleRecord])
-      ), emptyQueryNamesData),
-      "withoutReturnType" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Typed[SimpleRecord]),
+        emptyQueryNamesData
+      ),
+      "withoutReturnType" -> wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("par1")),
-        None
-      ), emptyQueryNamesData),
-      "withMandatoryParams" -> (wrapWithStaticCustomComponentDefinition(
+        None,
+        emptyQueryNamesData
+      ),
+      "withMandatoryParams" -> wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("mandatoryParam")),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withNotBlankParams" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withNotBlankParams" -> wrapWithStaticCustomComponentDefinition(
         List(NotBlankParameter("notBlankParam", Typed[String])),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withNullableLiteralIntegerParam" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withNullableLiteralIntegerParam" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[Integer]("nullableLiteralIntegerParam")
             .copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withRegExpParam" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withRegExpParam" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[Integer]("regExpParam").copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withJsonParam" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withJsonParam" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withCustomValidatorParam" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withCustomValidatorParam" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withAdditionalVariable" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withAdditionalVariable" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(
             additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]),
             isLazyParameter = true
           )
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData),
-      "withVariablesToHide" -> (wrapWithStaticCustomComponentDefinition(
+        Some(Unknown),
+        emptyQueryNamesData
+      ),
+      "withVariablesToHide" -> wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
         ),
-        Some(Unknown)
-      ), emptyQueryNamesData)
+        Some(Unknown),
+        emptyQueryNamesData
+      )
     ),
     expressionConfig = ExpressionDefinition(
       Map("processHelper" -> wrapWithStaticGlobalVariableDefinition(List(), Some(Typed(ProcessHelper.getClass)))),

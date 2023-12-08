@@ -31,6 +31,8 @@ trait ComponentDefinitionWithImplementation {
 
   def componentConfig: SingleComponentConfig
 
+  def componentTypeSpecificData: ComponentTypeSpecificData
+
 }
 
 object ComponentDefinitionWithImplementation {
