@@ -16,7 +16,7 @@ describe(DualParameterEditor.name, () => {
                 className={""}
                 isMarked={false}
                 onValueChange={mockValueChange}
-                fieldError={mockFieldError}
+                fieldErrors={mockFieldError}
                 editorConfig={{
                     simpleEditor: { type: EditorType.CRON_EDITOR },
                     defaultMode: DualEditorMode.SIMPLE,

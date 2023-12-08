@@ -11,11 +11,11 @@ type Props = {
     onValueChange: (value: string) => void;
     className: string;
     showValidation: boolean;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     fieldName: string;
 };
 
-export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, fieldError, showValidation }: Props) => {
+export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, fieldErrors, showValidation }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
 
     const onChange = (newValue: string) => {
@@ -51,7 +51,7 @@ export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expr
                     tabSize: 2,
                 }}
             />
-            {showValidation && <ValidationLabels fieldError={fieldError} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 };

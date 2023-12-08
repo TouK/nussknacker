@@ -57,7 +57,7 @@ export function FixedValuesSetting({
                         }}
                         value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
                         options={presetListOptions}
-                        fieldError={undefined}
+                        fieldErrors={undefined}
                     />
                     {selectedPresetValueExpressions?.length > 0 && (
                         <ListItems

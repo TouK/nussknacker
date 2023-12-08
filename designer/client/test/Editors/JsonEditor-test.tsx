@@ -14,7 +14,7 @@ describe(JsonEditor.name, () => {
         render(
             <JsonEditor
                 onValueChange={mockValueChange}
-                fieldError={mockFieldError}
+                fieldErrors={mockFieldError}
                 expressionObj={{ language: "spel", expression: "" }}
                 showValidation={true}
                 className={""}

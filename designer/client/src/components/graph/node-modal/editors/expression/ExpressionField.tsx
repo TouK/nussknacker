@@ -7,7 +7,7 @@ import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
-import { getValidationErrorForField } from "../Validators";
+import { getValidationErrorsForField } from "../Validators";
 
 type Props = {
     fieldName: string;
@@ -62,7 +62,7 @@ function ExpressionField(props: Props): JSX.Element {
                 onValueChange={onValueChange}
                 variableTypes={variableTypes}
                 showValidation={showValidation}
-                fieldError={getValidationErrorForField(errors, fieldName)}
+                fieldErrors={getValidationErrorsForField(errors, fieldName)}
             />
         );
     }
@@ -80,7 +80,7 @@ function ExpressionField(props: Props): JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                fieldError={getValidationErrorForField(errors, fieldName)}
+                fieldErrors={getValidationErrorsForField(errors, fieldName)}
             />
         </ExpressionTestResults>
     );

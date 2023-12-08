@@ -13,10 +13,10 @@ import { FieldError } from "./graph/node-modal/editors/Validators";
 type FormValue = { processId: string; processCategory: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 }
 
-export function AddProcessForm({ value, onChange, fieldError }: AddProcessFormProps): JSX.Element {
+export function AddProcessForm({ value, onChange, fieldErrors }: AddProcessFormProps): JSX.Element {
     const categories = useSelector(getWritableCategories);
 
     const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
@@ -48,7 +48,7 @@ export function AddProcessForm({ value, onChange, fieldError }: AddProcessFormPr
                                 value={value.processId}
                                 onChange={(e) => onFieldChange("processId", e.target.value)}
                             />
-                            <ValidationLabels fieldError={fieldError} />
+                            <ValidationLabels fieldErrors={fieldErrors} />
                         </div>
                     </NodeRow>
                     <NodeRow>

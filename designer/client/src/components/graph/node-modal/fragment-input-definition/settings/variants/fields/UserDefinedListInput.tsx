@@ -7,7 +7,7 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
-import { getValidationErrorForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
+import { getValidationErrorsForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
@@ -179,7 +179,7 @@ export const UserDefinedListInput = ({
                     }
                 }}
                 param={{ validators: [], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                fieldError={getValidationErrorForField(temporaryValueErrors, temporaryItemName)}
+                fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
                 showValidation
             />
             {userDefinedListOptions?.length > 0 && (

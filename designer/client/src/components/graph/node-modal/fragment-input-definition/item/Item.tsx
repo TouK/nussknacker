@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import { TypeSelect } from "../TypeSelect";
-import { getValidationErrorForField } from "../../editors/Validators";
+import { getValidationErrorsForField } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
 import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
@@ -59,7 +59,7 @@ export function Item(props: ItemProps): JSX.Element {
                         onChange={(e) => onChange(`${path}.name`, e.target.value)}
                         value={item.name}
                         placeholder="Field name"
-                        fieldError={getValidationErrorForField(errors, "name")}
+                        fieldErrors={getValidationErrorsForField(errors, "name")}
                     />
                 </NodeValue>
                 <TypeSelect
@@ -71,7 +71,7 @@ export function Item(props: ItemProps): JSX.Element {
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
-                    fieldError={getValidationErrorForField(errors, `type`)}
+                    fieldErrors={getValidationErrorsForField(errors, `type`)}
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>

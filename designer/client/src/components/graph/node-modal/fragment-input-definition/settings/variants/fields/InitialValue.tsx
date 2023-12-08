@@ -6,7 +6,7 @@ import { Option, TypeSelect } from "../../../TypeSelect";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { EditableEditor } from "../../../../editors/EditableEditor";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
-import { errorValidator, getValidationErrorForField } from "../../../../editors/Validators";
+import { errorValidator, getValidationErrorsForField } from "../../../../editors/Validators";
 import { EditorType } from "../../../../editors/expression/Editor";
 
 interface InitialValue {
@@ -39,7 +39,7 @@ export default function InitialValue({ onChange, fieldName, item, path, options,
                     options={optionsToDisplay}
                     readOnly={readOnly}
                     placeholder={""}
-                    fieldError={getValidationErrorForField(errors, fieldName)}
+                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
                 />
             ) : (
                 <EditableEditor
@@ -49,7 +49,7 @@ export default function InitialValue({ onChange, fieldName, item, path, options,
                     readOnly={readOnly}
                     param={{ validators: [errorValidator], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
                     showValidation
-                    fieldError={getValidationErrorForField(errors, fieldName)}
+                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
                 />
             )}
         </SettingRow>

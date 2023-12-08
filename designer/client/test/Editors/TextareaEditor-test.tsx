@@ -14,7 +14,7 @@ describe(TextareaEditor.name, () => {
                 onValueChange={jest.fn()}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}
-                fieldError={mockFieldError}
+                fieldErrors={mockFieldError}
                 showValidation={true}
             />,
         );

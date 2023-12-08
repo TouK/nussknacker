@@ -13,7 +13,7 @@ describe(FixedValuesEditor.name, () => {
             <FixedValuesEditor
                 readOnly={false}
                 onValueChange={mockValueChange}
-                fieldError={mockFieldError}
+                fieldErrors={mockFieldError}
                 editorConfig={{
                     possibleValues: [],
                 }}

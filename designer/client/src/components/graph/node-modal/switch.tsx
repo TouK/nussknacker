@@ -1,6 +1,6 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { errorValidator, getValidationErrorForField } from "./editors/Validators";
+import { errorValidator, getValidationErrorsForField } from "./editors/Validators";
 import { isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
@@ -110,7 +110,7 @@ export function Switch({
                               }
                             : variableTypes
                     }
-                    fieldError={getValidationErrorForField(errors, "exprVal")}
+                    fieldErrors={getValidationErrorsForField(errors, "exprVal")}
                 />
             ) : null}
             <DescriptionField

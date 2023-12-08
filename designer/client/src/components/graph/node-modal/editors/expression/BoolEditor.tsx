@@ -4,14 +4,14 @@ import React from "react";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { ExtendedEditor } from "./Editor";
-import { FieldError, getValidationErrorForField } from "../Validators";
+import { FieldError, getValidationErrorsForField } from "../Validators";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     readOnly: boolean;
     className: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
 };
 
@@ -30,7 +30,7 @@ export const BoolEditor: ExtendedEditor<Props> = ({
     readOnly,
     onValueChange,
     className,
-    fieldError,
+    fieldErrors,
     showValidation = true,
 }: Props) => {
     const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
@@ -44,7 +44,7 @@ export const BoolEditor: ExtendedEditor<Props> = ({
             onValueChange={onValueChange}
             readOnly={readOnly}
             className={className}
-            fieldError={fieldError}
+            fieldErrors={fieldErrors}
             showValidation={showValidation}
         />
     );

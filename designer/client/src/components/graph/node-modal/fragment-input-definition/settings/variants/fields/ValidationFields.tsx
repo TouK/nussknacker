@@ -6,7 +6,7 @@ import { ExpressionLang } from "../../../../editors/expression/types";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
-import { getValidationErrorForField } from "../../../../editors/Validators";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 
 interface ValidationFields extends Omit<FragmentValidation, "validation"> {
     onChange: (path: string, value: onChangeType) => void;
@@ -35,7 +35,7 @@ export default function ValidationFields({
                 onValueChange={(value) => onChange(`${path}.validationExpression`, value)}
                 variableTypes={variableTypes}
                 readOnly={readOnly}
-                fieldError={getValidationErrorForField(errors, "validationExpression")}
+                fieldErrors={getValidationErrorsForField(errors, "validationExpression")}
                 showValidation
             />
             <SettingRow>

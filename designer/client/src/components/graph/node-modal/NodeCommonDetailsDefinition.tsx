@@ -4,7 +4,7 @@ import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
-import { getValidationErrorForField } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;
@@ -40,7 +40,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("id")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                fieldError={getValidationErrorForField(errors, "$id")}
+                fieldErrors={getValidationErrorsForField(errors, "$id")}
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
@@ -51,7 +51,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                     isMarked={isMarked(outputField)}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    fieldError={getValidationErrorForField(errors, outputField)}
+                    fieldErrors={getValidationErrorsForField(errors, outputField)}
                 >
                     {renderFieldLabel(outputName)}
                 </LabeledInput>
@@ -65,7 +65,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("additionalFields.description")}
                 readOnly={readOnly}
                 className={"node-input"}
-                fieldError={getValidationErrorForField(errors, "additionalFields.description")}
+                fieldErrors={getValidationErrorsForField(errors, "additionalFields.description")}
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>

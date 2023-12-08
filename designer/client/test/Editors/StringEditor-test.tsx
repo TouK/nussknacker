@@ -15,7 +15,7 @@ describe(StringEditor.name, () => {
                 onValueChange={mockValueChange}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}
-                fieldError={mockFieldError}
+                fieldErrors={mockFieldError}
                 showValidation={true}
             />,
         );

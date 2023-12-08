@@ -12,7 +12,7 @@ type Props = {
     onValueChange: (value: string) => void;
     className: string;
     formatter: Formatter;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
 };
 const splitConcats = (value: string) => {

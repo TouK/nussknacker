@@ -10,7 +10,7 @@ import { RootState } from "../../../reducers";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { IdField } from "./IdField";
-import { getValidationErrorForField } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -64,7 +64,7 @@ export default function Variable({
                 isMarked={isMarked("varName")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                fieldError={getValidationErrorForField(errors, "varName")}
+                fieldErrors={getValidationErrorsForField(errors, "varName")}
             >
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
@@ -76,7 +76,7 @@ export default function Variable({
                 readOnly={readOnly}
                 showValidation={showValidation}
                 showSwitch={false}
-                fieldError={getValidationErrorForField(errors, "$expression")}
+                fieldErrors={getValidationErrorsForField(errors, "$expression")}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
             />
@@ -86,7 +86,7 @@ export default function Variable({
                 isMarked={isMarked("additionalFields.description")}
                 readOnly={readOnly}
                 className={"node-input"}
-                fieldError={getValidationErrorForField(errors, "additionalFields.description")}
+                fieldErrors={getValidationErrorsForField(errors, "additionalFields.description")}
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>

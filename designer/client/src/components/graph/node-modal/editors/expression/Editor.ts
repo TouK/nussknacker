@@ -23,7 +23,7 @@ export type EditorProps = {
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     formatter?: Formatter;
     expressionInfo?: string;
     expressionObj?: ExpressionObj;

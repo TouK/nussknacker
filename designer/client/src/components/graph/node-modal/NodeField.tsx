@@ -1,5 +1,5 @@
 import Field, { FieldType } from "./editors/field/Field";
-import { FieldError, getValidationErrorForField } from "./editors/Validators";
+import { FieldError, getValidationErrorsForField } from "./editors/Validators";
 import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
@@ -36,9 +36,9 @@ export function NodeField<N extends string, V>({
 }: NodeFieldProps<N, V>): JSX.Element {
     const readOnly = !isEditMode || readonly;
     const value = get(node, fieldName, null) ?? defaultValue;
-    const fieldError = getValidationErrorForField(errors, fieldName);
+    const fieldErrors = getValidationErrorsForField(errors, fieldName);
 
-    const className = !showValidation || !fieldError ? "node-input" : "node-input node-input-with-error";
+    const className = !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error";
     const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
     const [isMarked] = useDiffMark();
 
@@ -50,7 +50,7 @@ export function NodeField<N extends string, V>({
             showValidation={showValidation}
             autoFocus={autoFocus}
             className={className}
-            fieldError={fieldError}
+            fieldErrors={fieldErrors}
             value={value}
             onChange={onChange}
         >

@@ -18,7 +18,7 @@ interface RowSelectProps {
     isMarked?: boolean;
     value: Option;
     placeholder?: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 }
 
 function useCaptureEsc() {
@@ -37,7 +37,7 @@ function useCaptureEsc() {
     return { setCaptureEsc, preventEsc };
 }
 
-export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder, fieldError }: RowSelectProps): JSX.Element {
+export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder, fieldErrors }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
@@ -80,7 +80,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange, place
                     singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
                 }}
             />
-            <ValidationLabels fieldError={fieldError} />
+            <ValidationLabels fieldErrors={fieldErrors} />
         </NodeValue>
     );
 }

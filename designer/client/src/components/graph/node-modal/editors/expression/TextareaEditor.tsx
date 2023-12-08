@@ -14,7 +14,7 @@ type Props = {
     className?: string;
     inputClassName?: string;
     formatter?: Formatter;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
     isMarked?: boolean;
     autoFocus?: boolean;
@@ -32,7 +32,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     formatter,
     isMarked,
     autoFocus,
-    fieldError,
+    fieldErrors,
     showValidation,
     placeholder,
     readOnly,
@@ -43,7 +43,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     return (
         <Textarea
             isMarked={isMarked}
-            fieldError={fieldError}
+            fieldErrors={fieldErrors}
             showValidation={showValidation}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
             value={stringFormatter.decode(expressionObj.expression) as string}

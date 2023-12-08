@@ -125,18 +125,16 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
     validatorType: ValidatorType.Frontend,
 });
 
-export type FieldError = Pick<Error, "message" | "description"> | undefined;
+export type FieldError = Pick<Error, "message" | "description">;
 
-export const getValidationErrorForField = (errors: NodeValidationError[], fieldName: string) => {
-    const validator = errorValidator(errors, fieldName);
-
-    const fieldError: FieldError = !validator.isValid()
-        ? {
-              message: validator.message && validator.message(),
-              description: validator.description && validator.description(),
-          }
-        : undefined;
-    return fieldError;
+export const getValidationErrorsForField = (errors: NodeValidationError[], fieldName: string) => {
+    const fieldErrors: FieldError[] = errors
+        .filter((error) => error.fieldName === fieldName)
+        .map(({ message, description }) => ({
+            message,
+            description,
+        }));
+    return fieldErrors;
 };
 
 export const extendErrors = (

@@ -7,13 +7,14 @@ import { Formatter } from "../Formatter";
 import { DTPicker } from "../../../../../common/DTPicker";
 import { cx } from "@emotion/css";
 import { FieldError } from "../../Validators";
+import { isEmpty } from "lodash";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly: boolean;
     className: string;
     onValueChange: (value: string) => void;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
     isMarked: boolean;
     editorFocused: boolean;
@@ -29,7 +30,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
         expressionObj,
         onValueChange,
         readOnly,
-        fieldError,
+        fieldErrors,
         showValidation,
         isMarked,
         editorFocused,
@@ -71,7 +72,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 inputProps={{
                     className: cx([
                         "node-input",
-                        showValidation && !fieldError && "node-input-with-error",
+                        showValidation && isEmpty(fieldErrors) && "node-input-with-error",
                         isMarked && "marked",
                         editorFocused && "focused",
                         readOnly && "read-only",
@@ -81,7 +82,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 }}
                 {...other}
             />
-            {showValidation && <ValidationLabels fieldError={fieldError} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }

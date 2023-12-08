@@ -3,6 +3,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import React, { ChangeEvent } from "react";
 import { TextAreaWithFocus } from "../../../../withFocus";
 import { FieldError } from "../Validators";
+import { isEmpty } from "lodash";
 
 interface Props {
     isMarked: boolean;
@@ -17,10 +18,10 @@ interface Props {
     type: string;
     inputClassName: string;
     onFocus: () => void;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 }
 export function Textarea(props: Props) {
-    const { isMarked, showValidation, className, placeholder, autoFocus, onChange, value, readOnly, inputClassName, onFocus, fieldError } =
+    const { isMarked, showValidation, className, placeholder, autoFocus, onChange, value, readOnly, inputClassName, onFocus, fieldErrors } =
         props;
 
     return (
@@ -31,14 +32,17 @@ export function Textarea(props: Props) {
                         autoFocus={autoFocus}
                         readOnly={readOnly}
                         placeholder={placeholder}
-                        className={cx([!showValidation || !fieldError ? "node-input" : "node-input node-input-with-error", inputClassName])}
+                        className={cx([
+                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                            inputClassName,
+                        ])}
                         value={value || ""}
                         onChange={onChange}
                         onFocus={onFocus}
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels fieldError={fieldError} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }

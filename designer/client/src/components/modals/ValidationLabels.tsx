@@ -5,7 +5,7 @@ import { isEmpty } from "lodash";
 import { FieldError } from "../graph/node-modal/editors/Validators";
 
 type Props = {
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     validationLabelInfo?: string;
 };
 
@@ -23,18 +23,20 @@ const LabelsContainer = styled("div")({
 });
 
 export default function ValidationLabels(props: Props) {
-    const { fieldError, validationLabelInfo } = props;
+    const { fieldErrors, validationLabelInfo } = props;
 
     // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
     // It's possible that expression is valid and it's type is known, but a different type is expected.
     return (
         <LabelsContainer>
-            {isEmpty(fieldError) ? (
+            {isEmpty(fieldErrors) ? (
                 <LimitedValidationLabel title={validationLabelInfo}>{validationLabelInfo}</LimitedValidationLabel>
             ) : (
-                <LimitedValidationLabel key={fieldError.message} title={fieldError.message} type="ERROR">
-                    {fieldError.message}
-                </LimitedValidationLabel>
+                fieldErrors.map((fieldErrors) => (
+                    <LimitedValidationLabel key={fieldErrors.message} title={fieldErrors.message} type="ERROR">
+                        {fieldErrors.message}
+                    </LimitedValidationLabel>
+                ))
             )}
         </LabelsContainer>
     );

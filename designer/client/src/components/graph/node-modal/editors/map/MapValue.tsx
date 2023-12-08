@@ -7,7 +7,7 @@ import { FieldError, Validator } from "../Validators";
 
 interface MapValueProps {
     value: Expression;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     variableTypes: VariableTypes;
     onChange?: (value: unknown) => void;
     showValidation?: boolean;
@@ -17,12 +17,12 @@ interface MapValueProps {
 }
 
 export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
-    const { value, isMarked, showValidation, readOnly, onChange, fieldError, variableTypes, validationLabelInfo } = props;
+    const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     return (
         <NodeValue className="field">
             <EditableEditor
-                fieldError={fieldError}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 readOnly={readOnly}
                 showValidation={showValidation}

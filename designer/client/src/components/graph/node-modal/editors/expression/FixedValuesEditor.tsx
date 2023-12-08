@@ -17,7 +17,7 @@ type Props = {
     className: string;
     param?: $TodoType;
     showValidation: boolean;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 };
 
 interface Option {
@@ -46,7 +46,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
         ); // just leave undefined and let the user explicitly select one
     };
 
-    const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldError } = props;
+    const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldErrors } = props;
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
@@ -87,7 +87,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 }}
             />
 
-            {showValidation && <ValidationLabels fieldError={fieldError} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 };

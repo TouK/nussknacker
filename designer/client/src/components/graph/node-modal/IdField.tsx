@@ -1,4 +1,4 @@
-import { extendErrors, getValidationErrorForField, uniqueScenarioValueValidator } from "./editors/Validators";
+import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
@@ -6,6 +6,7 @@ import { NodeType, NodeValidationError } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
 import NodeUtils from "../NodeUtils";
+import { isEmpty } from "lodash";
 
 interface IdFieldProps {
     isEditMode?: boolean;
@@ -38,7 +39,7 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
 
     const isUniqueValueValidator = !NodeUtils.nodeIsProperties(node) && uniqueScenarioValueValidator(otherNodes);
 
-    const fieldError = getValidationErrorForField(extendErrors(errors, value, errorFieldName, [isUniqueValueValidator]), errorFieldName);
+    const fieldErrors = getValidationErrorsForField(extendErrors(errors, value, errorFieldName, [isUniqueValueValidator]), errorFieldName);
 
     return (
         <Field
@@ -47,8 +48,8 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
             showValidation={showValidation}
             onChange={(newValue) => setProperty(FAKE_NAME_PROP_NAME, newValue.toString())}
             readOnly={!isEditMode}
-            className={!showValidation || !fieldError ? "node-input" : "node-input node-input-with-error"}
-            fieldError={fieldError}
+            className={!showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error"}
+            fieldErrors={fieldErrors}
             value={value}
             autoFocus
         >

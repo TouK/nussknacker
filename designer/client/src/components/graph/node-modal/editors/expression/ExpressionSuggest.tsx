@@ -1,5 +1,5 @@
 import "ace-builds/src-noconflict/ace";
-import { isEmpty } from "lodash";
+import { has, isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
@@ -31,7 +31,7 @@ interface InputProps {
 
 interface Props {
     inputProps: InputProps;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
@@ -40,7 +40,7 @@ interface Props {
 }
 
 export function ExpressionSuggest(props: Props): JSX.Element {
-    const { isMarked, showValidation, inputProps, fieldError, variableTypes, validationLabelInfo } = props;
+    const { isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
@@ -64,7 +64,7 @@ export function ExpressionSuggest(props: Props): JSX.Element {
             <div
                 className={cx([
                     "row-ace-editor",
-                    showValidation && fieldError && "node-input-with-error",
+                    showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                     isMarked && "marked",
                     editorFocused && "focused",
                     inputProps.readOnly && "read-only",
@@ -80,7 +80,7 @@ export function ExpressionSuggest(props: Props): JSX.Element {
                     customAceEditorCompleter={customAceEditorCompleter}
                 />
             </div>
-            {showValidation && <ValidationLabels fieldError={fieldError} validationLabelInfo={validationLabelInfo} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;
 }

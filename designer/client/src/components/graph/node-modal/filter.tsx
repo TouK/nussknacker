@@ -8,7 +8,7 @@ import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
-import { getValidationErrorForField } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 export function Filter({
     edges,
@@ -77,7 +77,7 @@ export function Filter({
                         { value: EdgeKind.filterFalse, onlyOne: true },
                     ]}
                     readOnly={!isEditMode}
-                    fieldError={getValidationErrorForField(errors, "outputs")}
+                    fieldErrors={getValidationErrorsForField(errors, "outputs")}
                 />
             ) : null}
             <DescriptionField

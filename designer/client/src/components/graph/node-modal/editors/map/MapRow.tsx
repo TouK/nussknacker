@@ -3,7 +3,7 @@ import { Field } from "../../../../../types";
 import { MapItemsCtx } from "./Map";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";
-import { getValidationErrorForField } from "../Validators";
+import { getValidationErrorsForField } from "../Validators";
 
 interface MapRowProps<F extends Field> {
     index: number;
@@ -27,7 +27,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 isMarked={isPropertyMarked("name")}
                 onChange={(value) => setItemProperty("name", value)}
                 value={name}
-                fieldError={getValidationErrorForField(errors, `$fields-${index}-$key`)}
+                fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$key`)}
             />
             <MapValue
                 readOnly={readOnly}
@@ -36,7 +36,7 @@ export default function MapRow<F extends TypedField>({ index, item }: MapRowProp
                 onChange={(value) => setItemProperty("expression.expression", value)}
                 value={expression}
                 validationLabelInfo={typeInfo}
-                fieldError={getValidationErrorForField(errors, `$fields-${index}-$value`)}
+                fieldErrors={getValidationErrorsForField(errors, `$fields-${index}-$value`)}
                 variableTypes={variableTypes}
             />
         </>

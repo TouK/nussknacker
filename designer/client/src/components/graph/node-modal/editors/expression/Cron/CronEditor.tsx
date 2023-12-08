@@ -14,7 +14,7 @@ export type CronExpression = string;
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -28,7 +28,7 @@ const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     const node = useRef(null);
 
-    const { expressionObj, isMarked, onValueChange, showValidation, readOnly, formatter, fieldError } = props;
+    const { expressionObj, isMarked, onValueChange, showValidation, readOnly, formatter, fieldErrors } = props;
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
@@ -76,7 +76,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
         <CronEditorStyled ref={node}>
             <Input
                 value={value}
-                fieldError={fieldError}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 onFocus={onInputFocus}
                 showValidation={showValidation}

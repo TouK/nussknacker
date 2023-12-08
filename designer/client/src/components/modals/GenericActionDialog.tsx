@@ -17,7 +17,7 @@ import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { isEmpty } from "lodash";
 import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
-import { getValidationErrorForField } from "../graph/node-modal/editors/Validators";
+import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 
 export type GenericActionLayout = {
     name: string;
@@ -89,7 +89,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                     <Editor
                                         editorConfig={param?.editor}
                                         className={"node-value"}
-                                        fieldError={getValidationErrorForField(errors, fieldName)}
+                                        fieldErrors={getValidationErrorsForField(errors, fieldName)}
                                         formatter={formatter}
                                         expressionInfo={null}
                                         onValueChange={setParam(fieldName)}

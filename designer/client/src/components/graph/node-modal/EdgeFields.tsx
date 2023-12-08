@@ -23,12 +23,12 @@ interface Props {
     edges: Edge[];
     types?: EdgeTypeOption[];
     variableTypes?: VariableTypes;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 }
 
 export function EdgeFields(props: Props): JSX.Element {
     const { t } = useTranslation();
-    const { readOnly, value, index, onChange, edges, types, variableTypes, fieldError } = props;
+    const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors } = props;
     const process = useSelector(getProcessToDisplay);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
@@ -90,7 +90,7 @@ export function EdgeFields(props: Props): JSX.Element {
                     }}
                     readOnly={readOnly}
                     onValueChange={onValueChange}
-                    fieldError={fieldError}
+                    fieldErrors={fieldErrors}
                     showValidation
                 />
             );

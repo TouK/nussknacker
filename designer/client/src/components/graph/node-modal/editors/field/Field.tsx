@@ -20,7 +20,7 @@ interface FieldProps {
     showValidation: boolean;
     autoFocus: boolean;
     className: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     type: FieldType;
     value: string | boolean;
     onChange: (value: string | boolean) => void;

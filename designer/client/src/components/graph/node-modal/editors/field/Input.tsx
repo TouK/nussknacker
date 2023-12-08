@@ -3,6 +3,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
+import { isEmpty } from "lodash";
 
 export interface InputProps
     extends Pick<
@@ -11,7 +12,7 @@ export interface InputProps
     > {
     value: string;
     inputClassName?: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation?: boolean;
 }
@@ -22,7 +23,7 @@ export default function Input(props: InputProps): JSX.Element {
         showValidation,
         className,
         value,
-        fieldError,
+        fieldErrors,
         type = "text",
         inputClassName,
         autoFocus,
@@ -43,12 +44,15 @@ export default function Input(props: InputProps): JSX.Element {
                         onChange={onChange}
                         onFocus={onFocus}
                         type={type}
-                        className={cx([!showValidation || !fieldError ? "node-input" : "node-input node-input-with-error", inputClassName])}
+                        className={cx([
+                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                            inputClassName,
+                        ])}
                         value={value || ""}
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels fieldError={fieldError} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }

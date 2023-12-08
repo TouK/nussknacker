@@ -17,7 +17,7 @@ export type Duration = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -34,7 +34,7 @@ const NONE_DURATION = {
 };
 
 export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, fieldError, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
+    const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const durationFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Duration] : formatter), [formatter]);
 
@@ -74,7 +74,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             editorConfig={editorConfig}
             readOnly={readOnly}
             showValidation={showValidation}
-            fieldError={fieldError}
+            fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
         />

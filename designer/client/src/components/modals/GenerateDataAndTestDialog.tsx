@@ -55,7 +55,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
                     })}
                     autoFocus
                 />
-                <ValidationLabels fieldError={undefined} />
+                <ValidationLabels fieldErrors={undefined} />
             </div>
         </PromptContent>
     );

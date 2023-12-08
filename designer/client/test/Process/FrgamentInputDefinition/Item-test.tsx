@@ -1,4 +1,4 @@
-import { InputMode, Item } from "../../../src/components/graph/node-modal/fragment-input-definition/item";
+import { Item } from "../../../src/components/graph/node-modal/fragment-input-definition/item";
 import React from "react";
 import { NodeRowFieldsProvider } from "../../../src/components/graph/node-modal/node-row-fields-provider";
 import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";

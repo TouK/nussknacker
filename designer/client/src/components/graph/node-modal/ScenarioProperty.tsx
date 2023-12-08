@@ -2,7 +2,7 @@ import { get } from "lodash";
 import EditableEditor from "./editors/EditableEditor";
 import React, { useCallback, useMemo } from "react";
 import { ExpressionLang } from "./editors/expression/types";
-import { errorValidator, getValidationErrorForField, PossibleValue } from "./editors/Validators";
+import { errorValidator, getValidationErrorsForField, PossibleValue } from "./editors/Validators";
 import { NodeType, NodeValidationError } from "../../../types";
 import { ValidationError } from "../../modals/ValidationLabels";
 
@@ -46,7 +46,7 @@ export default function ScenarioProperty(props: Props) {
             showValidation={showValidation}
             //ScenarioProperties do not use any variables
             variableTypes={{}}
-            fieldError={getValidationErrorForField(errors, propertyName)}
+            fieldErrors={getValidationErrorsForField(errors, propertyName)}
         />
     );
 }

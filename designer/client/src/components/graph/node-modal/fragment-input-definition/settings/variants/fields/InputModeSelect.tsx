@@ -6,7 +6,7 @@ import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVaria
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
 import { FixedValuesPresets, NodeValidationError } from "../../../../../../../types";
-import { getValidationErrorForField } from "../../../../editors/Validators";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -84,7 +84,7 @@ export default function InputModeSelect(props: Props) {
                     }}
                     value={inputModeOptions.find((inputModeOption) => inputModeOption.value === value)}
                     options={inputModeOptions}
-                    fieldError={getValidationErrorForField(errors, `$param.${item.name}.$inputMode`)}
+                    fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$inputMode`)}
                 />
             </SettingRow>
         </>

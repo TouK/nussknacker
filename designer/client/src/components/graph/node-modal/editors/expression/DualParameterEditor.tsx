@@ -18,7 +18,7 @@ type Props = {
     expressionObj: ExpressionObj;
     readOnly?: boolean;
     valueClassName?: string;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation: boolean;
     onValueChange: (value: string) => void;

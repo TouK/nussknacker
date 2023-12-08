@@ -53,7 +53,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                         <Editor
                             editorConfig={param?.editor}
                             className={"node-value"}
-                            fieldError={undefined}
+                            fieldErrors={undefined}
                             formatter={null}
                             expressionInfo={null}
                             onValueChange={setParam(fieldName)}

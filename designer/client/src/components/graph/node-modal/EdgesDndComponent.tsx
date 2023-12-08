@@ -26,7 +26,7 @@ interface Props {
     edgeTypes: EdgeType[];
     ordered?: boolean;
     variableTypes?: VariableTypes;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
 }
 
 export type WithTempId<T> = T & { _id?: string };
@@ -65,7 +65,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, fieldError } = props;
+    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, fieldErrors } = props;
     const process = useSelector(getProcessToDisplay);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({ from }) => from === nodeId));
 
@@ -117,12 +117,12 @@ export function EdgesDndComponent(props: Props): JSX.Element {
                         edges={array}
                         types={types}
                         variableTypes={variableTypes}
-                        fieldError={fieldError}
+                        fieldErrors={fieldErrors}
                     />
                 ),
             };
         });
-    }, [edgeTypes, edges, fieldError, readOnly, replaceEdge, variableTypes]);
+    }, [edgeTypes, edges, fieldErrors, readOnly, replaceEdge, variableTypes]);
 
     const namespace = `edges`;
 

@@ -10,7 +10,7 @@ import { FieldError } from "../Validators";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
-    fieldError: FieldError;
+    fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation: boolean;
     readOnly?: boolean;
@@ -26,7 +26,7 @@ export type RawEditorProps = {
 const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
-        fieldError,
+        fieldErrors,
         isMarked,
         showValidation,
         readOnly,
@@ -64,7 +64,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}
-                fieldError={fieldError}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}
