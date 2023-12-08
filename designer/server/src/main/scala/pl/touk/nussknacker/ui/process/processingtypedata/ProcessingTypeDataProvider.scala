@@ -130,7 +130,7 @@ object ProcessingTypeDataProvider {
 }
 
 // It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
-private[processingtypedata] trait ProcessingTypeDataState[+Data, +CombinedData] {
+trait ProcessingTypeDataState[+Data, +CombinedData] {
   def all: Map[ProcessingType, ValueWithPermission[Data]]
 
   // It returns function because we want to sometimes throw Exception instead of return value and we want to
@@ -151,7 +151,7 @@ private[processingtypedata] trait ProcessingTypeDataState[+Data, +CombinedData] 
 
 }
 
-private[processingtypedata] object ProcessingTypeDataState {
+object ProcessingTypeDataState {
 
   def apply[Data, CombinedData](
       allValues: Map[ProcessingType, ValueWithPermission[Data]],
