@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
+import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromScenarioNode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -374,7 +374,7 @@ class FlinkProcessRegistrar(
     streamExecutionEnvPreparer.sideOutputGetter(stream, tag)
 
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
-    fromNodeData(processPart.node.data)
+    fromScenarioNode(processPart.node.data)
   }
 
 }

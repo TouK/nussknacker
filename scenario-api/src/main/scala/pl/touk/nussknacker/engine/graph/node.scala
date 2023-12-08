@@ -84,6 +84,7 @@ object node {
   }
 
   sealed trait CustomNodeData extends NodeData with WithComponent with RealNodeData with WithParameters {
+    // TODO: rename to componentId
     def nodeType: String
 
     def parameters: List[Parameter]
@@ -128,6 +129,7 @@ object node {
   case class Join(
       id: String,
       outputVar: Option[String],
+      // TODO: rename to componentId
       nodeType: String,
       parameters: List[Parameter],
       branchParameters: List[BranchParameters],
@@ -154,6 +156,7 @@ object node {
   }
 
   // expression and expressionVal are deprecated, will be removed in the future
+  // TODO: rename to Choice
   case class Switch(
       id: String,
       expression: Option[Expression],
@@ -163,6 +166,7 @@ object node {
       with RealNodeData
       with DeadEndingData
 
+  // TODO: rename to RecordVariable
   case class VariableBuilder(
       id: String,
       varName: String,
@@ -197,6 +201,7 @@ object node {
   case class CustomNode(
       id: String,
       outputVar: Option[String],
+      // TODO: rename to componentId
       nodeType: String,
       parameters: List[Parameter],
       additionalFields: Option[UserDefinedAdditionalNodeFields] = None
