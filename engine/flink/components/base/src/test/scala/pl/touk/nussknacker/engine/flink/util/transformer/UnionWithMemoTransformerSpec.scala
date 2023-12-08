@@ -7,23 +7,18 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SinkFactory,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -62,7 +57,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
         GraphBuilder
           .join(
             UnionNodeId,
-            "union-memo-test",
+            "union-memo",
             Some(OutVariableName),
             List(
               BranchFooId -> List(
@@ -76,7 +71,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val key       = "fooKey"
@@ -125,7 +120,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
         GraphBuilder
           .join(
             UnionNodeId,
-            "union-memo-test",
+            "union-memo",
             Some(OutVariableName),
             List(
               BranchFooId -> List(
@@ -139,7 +134,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -149,7 +144,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      prepareComponents(sourceFoo, sourceBar),
+      configCreator = new ConfigCreatorWithListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -176,7 +172,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
         GraphBuilder
           .join(
             UnionNodeId,
-            "union-memo-test",
+            "union-memo",
             Some(OutVariableName),
             List(
               BranchFooId -> List(
@@ -190,7 +186,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -200,7 +196,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      prepareComponents(sourceFoo, sourceBar),
+      configCreator = new ConfigCreatorWithListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -219,7 +216,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   )(action: => Unit): Unit = {
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      prepareComponents(sourceFoo, sourceBar),
+      configCreator = new ConfigCreatorWithListener(collectingListener),
     )
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
@@ -228,38 +226,18 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 
+  def prepareComponents(
+      fooRecordsSource: BlockingQueueSource[OneRecord],
+      barRecordsSource: BlockingQueueSource[OneRecord]
+  ): List[ComponentDefinition] = {
+    ComponentDefinition("start-foo", SourceFactory.noParam[OneRecord](fooRecordsSource)) ::
+      ComponentDefinition("start-bar", SourceFactory.noParam[OneRecord](barRecordsSource)) ::
+      FlinkBaseComponentProvider.Components
+  }
+
 }
 
 object UnionWithMemoTransformerSpec {
-
-  class Creator(
-      sourceFoo: BlockingQueueSource[OneRecord],
-      sourceBar: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
-  ) extends EmptyProcessConfigCreator {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("union-memo-test" -> WithCategories.anyCategory(new UnionWithMemoTransformer(None)))
-
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      Seq(collectingListener)
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map(
-        "start-foo" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](sourceFoo)),
-        "start-bar" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](sourceBar))
-      )
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
-
-  }
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {
     def timestamp: Long = timeHours * 3600L * 1000

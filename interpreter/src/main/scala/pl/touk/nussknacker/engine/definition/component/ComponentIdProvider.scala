@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo, ComponentType}
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.node.ComponentInfoExtractor
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
@@ -44,7 +44,7 @@ class DefaultComponentIdProvider(configs: Map[String, ComponentsUiConfig]) exten
       defaultComponentId: ComponentId
   ): ComponentId = {
     def getComponentId(name: String): Option[ComponentId] =
-      configs.get(processingType).flatMap(_.get(name)).flatMap(_.componentId)
+      configs.get(processingType).map(_.getConfigByComponentName(name)).flatMap(_.componentId)
 
     val componentId = getComponentId(componentName)
 

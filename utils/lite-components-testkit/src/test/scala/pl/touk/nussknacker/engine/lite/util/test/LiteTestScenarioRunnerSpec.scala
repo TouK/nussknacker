@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -18,7 +15,6 @@ import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.time.{Clock, Instant, ZoneId}
-import java.util
 import scala.concurrent.Future
 
 class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage with Inside {
@@ -29,21 +25,18 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val scenario = ScenarioBuilder
       .streamingLite("t1")
       .source("source", TestScenarioRunner.testDataSource)
-      // we test component created manually
       .enricher("customByHand", "o1", "customByHand", "param" -> "#input")
-      // we test component registered via normal ConfigProvider
-      .enricher("custom", "o2", "custom", "param" -> "#input")
-      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "{#o1, #o2}")
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#o1")
 
     val runner = new LiteTestScenarioRunner(
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
       Map.empty,
-      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")),
+      ConfigFactory.empty,
       EngineRuntime
     )
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
-    result.validValue shouldBe RunResult.success(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
+    result.validValue shouldBe RunResult.success("myPrefix:t1")
   }
 
   test("should access source property") {
@@ -100,24 +93,37 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     runResults.validValue.successes shouldBe List(TestService.MockedValued)
   }
 
-  test("should allowing use global variable - date helper") {
-    val now        = Instant.now()
-    val dateHelper = new DateUtils(Clock.fixed(now, ZoneId.systemDefault()))
-
+  test("should allow using extra global variables") {
     val scenario =
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#DATE.now.toString")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#SAMPLE.foo")
 
     val runResults =
       TestScenarioRunner
-        .liteBased(ConfigFactory.empty())
-        .withExtraGlobalVariables(Map("DATE" -> dateHelper))
+        .liteBased()
+        .withExtraGlobalVariables(Map("SAMPLE" -> SampleHelper))
         .build()
-        .runWithData[String, String](scenario, List("input"))
+        .runWithData[String, String](scenario, List("lcl"))
 
-    runResults.validValue.successes shouldBe List(now.toString)
+    runResults.validValue.successes shouldBe List(SampleHelper.foo)
+  }
+
+  test("should allow using default global variables") {
+    val scenario =
+      ScenarioBuilder
+        .streaming(getClass.getName)
+        .source("start", TestScenarioRunner.testDataSource)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#NUMERIC.negate(#input)")
+
+    val runResults =
+      TestScenarioRunner
+        .liteBased()
+        .build()
+        .runWithData[Int, Int](scenario, List(123))
+
+    runResults.validValue.successes shouldBe List(-123)
   }
 
   test("should handle exception during runtime in test run mode") {
@@ -146,18 +152,11 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
 
 private case class SourceData(field: String)
 
-class CustomComponentProvider extends ComponentProvider {
-  override def providerName: String = "custom"
-
-  override def resolveConfigForExecution(config: Config): Config = config
-
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] =
-    List(ComponentDefinition("custom", new CustomComponent(config.getString("prefix"))))
-
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-}
-
 class CustomComponent(prefix: String) extends Service {
   @MethodToInvoke
   def invoke(@ParamName("param") input: String): Future[String] = Future.successful(s"$prefix:$input")
+}
+
+object SampleHelper {
+  def foo: Int = 123
 }

@@ -17,7 +17,20 @@ class RequestResponseComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig: DocsConfig = new DocsConfig(config)
+    val docsConfig: DocsConfig = DocsConfig(config)
+    RequestResponseComponentProvider.create(docsConfig)
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = true
+
+  override def isAutoLoaded: Boolean = true
+}
+
+object RequestResponseComponentProvider {
+
+  val Components: List[ComponentDefinition] = create(DocsConfig.Default)
+
+  def create(docsConfig: DocsConfig): List[ComponentDefinition] = {
     import docsConfig._
     List(
       ComponentDefinition("request", new JsonSchemaRequestResponseSourceFactory)
@@ -28,7 +41,4 @@ class RequestResponseComponentProvider extends ComponentProvider {
     )
   }
 
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-
-  override def isAutoLoaded: Boolean = true
 }

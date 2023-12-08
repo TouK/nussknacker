@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine
 
-import java.util.Collections
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution}
 import pl.touk.nussknacker.engine.testing.LocalModelData
+
+import java.util.Collections
 
 class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
 
@@ -26,7 +26,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should load model.conf and override with given") {
-    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).modelConfig
+    val config = LocalModelData(inputConfig, List.empty).modelConfig
 
     config.getString("property1") shouldBe "value1"
     config.getString("property2") shouldBe "value1Suffix"
@@ -35,7 +35,8 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should load only input config during execution") {
-    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).inputConfigDuringExecution.config
+    val config =
+      LocalModelData(inputConfig, List.empty).inputConfigDuringExecution.config
 
     config.getString("property1") shouldBe "value1"
     config.hasPath("property2") shouldBe false
@@ -44,7 +45,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should not load application.conf") {
-    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).modelConfig
+    val config = LocalModelData(inputConfig, List.empty).modelConfig
 
     config.hasPath("shouldNotLoad") shouldBe false
 

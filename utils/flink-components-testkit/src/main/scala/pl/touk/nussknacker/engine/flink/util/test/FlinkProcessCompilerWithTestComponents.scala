@@ -3,27 +3,26 @@ package pl.touk.nussknacker.engine.flink.util.test
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionExtractor,
+  ComponentDefinitionWithImplementation
+}
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
-import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
-
-import scala.reflect.ClassTag
 
 class FlinkProcessCompilerWithTestComponents(
-    modelData: ModelData,
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
@@ -32,6 +31,7 @@ class FlinkProcessCompilerWithTestComponents(
     resultsCollectingListener: ResultsCollectingListener,
 ) extends FlinkProcessCompiler(
       creator,
+      extractModelDefinition,
       modelConfig,
       diskStateBackendSupport,
       objectNaming,
@@ -45,58 +45,23 @@ class FlinkProcessCompilerWithTestComponents(
     val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
     val definitions                         = definitionWithTypes.modelDefinition
     val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
-    val testServicesDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[Service],
-      MethodDefinitionExtractor.Service,
-      componentsUiConfig
-    )
-    val testCustomStreamTransformerDefs = ComponentDefinitionWithImplementation
-      .forMap(
-        testComponentsWithCategories[CustomStreamTransformer],
-        MethodDefinitionExtractor.CustomStreamTransformer,
-        componentsUiConfig
+    val testComponents =
+      ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, componentsUiConfig)
+
+    val definitionsWithTestComponentsAndGlobalVariables = definitions
+      .addComponents(testComponents)
+      .copy(
+        expressionConfig = definitions.expressionConfig.copy(
+          definitions.expressionConfig.globalVariables ++
+            GlobalVariableDefinitionExtractor.extractDefinitions(
+              testExtensionsHolder.globalVariables.view.map { case (key, value) =>
+                key -> WithCategories.anyCategory(value)
+              }.toMap
+            )
+        )
       )
-      .map { case (name, el) =>
-        val customStreamTransformer = el.implementation.asInstanceOf[CustomStreamTransformer]
-        val additionalData = CustomTransformerAdditionalData(
-          customStreamTransformer.canHaveManyInputs,
-          customStreamTransformer.canBeEnding
-        )
-        name -> (el, additionalData)
-      }
-    val testSourceDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[SourceFactory],
-      MethodDefinitionExtractor.Source,
-      componentsUiConfig
-    )
-    val testSinkDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[SinkFactory],
-      MethodDefinitionExtractor.Sink,
-      componentsUiConfig
-    )
-    val servicesWithTests                = definitions.services ++ testServicesDefs
-    val sourcesWithTests                 = definitions.sourceFactories ++ testSourceDefs
-    val sinksWithTests                   = definitions.sinkFactories ++ testSinkDefs
-    val customStreamTransformerWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
 
-    val expressionConfigWithTests = definitions.expressionConfig.copy(
-      definitions.expressionConfig.globalVariables ++
-        GlobalVariableDefinitionExtractor.extractDefinitions(
-          testExtensionsHolder.globalVariables.view.map { case (key, value) =>
-            key -> WithCategories.anyCategory(value)
-          }.toMap
-        )
-    )
-
-    val definitionsWithTestComponents = definitions.copy(
-      services = servicesWithTests,
-      sinkFactories = sinksWithTests,
-      sourceFactories = sourcesWithTests,
-      customStreamTransformers = customStreamTransformerWithTests,
-      expressionConfig = expressionConfigWithTests
-    )
-
-    (ModelDefinitionWithClasses(definitionsWithTestComponents), dictRegistry)
+    (ModelDefinitionWithClasses(definitionsWithTestComponentsAndGlobalVariables), dictRegistry)
   }
 
   override protected def adjustListeners(
@@ -129,20 +94,14 @@ class FlinkProcessCompilerWithTestComponents(
       )
   }
 
-  private def testComponentsWithCategories[T <: Component: ClassTag] =
-    testExtensionsHolder
-      .components[T]
-      .map(cd => cd.name -> WithCategories.anyCategory(cd.component.asInstanceOf[T]))
-      .toMap
-
   def this(
       testExtensionsHolder: TestExtensionsHolder,
       resultsCollectingListener: ResultsCollectingListener,
       modelData: ModelData,
       componentUseCase: ComponentUseCase
   ) = this(
-    modelData,
     modelData.configCreator,
+    modelData.extractModelDefinitionFun,
     modelData.modelConfig,
     false,
     modelData.objectNaming,

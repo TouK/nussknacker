@@ -5,15 +5,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
@@ -23,7 +19,11 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.wrapWithStaticDefinition
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{
+  wrapWithStaticServiceDefinition,
+  wrapWithStaticSourceDefinition
+}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -34,7 +34,6 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithModelDefinition, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
@@ -42,29 +41,9 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   lazy val validation: UIProcessValidator = {
-    val modelDefinition = ModelDefinition[ComponentStaticDefinition](
-      services = Map("ref" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
-      sourceFactories = Map("sourceRef" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
-      sinkFactories = Map(),
-      customStreamTransformers = Map(),
-      expressionConfig = ExpressionDefinition(
-        Map.empty,
-        List.empty,
-        List.empty,
-        LanguageConfiguration.default,
-        optimizeCompilation = false,
-        strictTypeChecking = true,
-        Map.empty,
-        hideMetaVariable = false,
-        strictMethodsChecking = true,
-        staticMethodInvocationsChecking = false,
-        methodExecutionForUnknownAllowed = false,
-        dynamicPropertyAccessAllowed = false,
-        spelExpressionExcludeList = SpelExpressionExcludeList.default,
-        customConversionsProviders = List.empty
-      ),
-      settings = ClassExtractionSettings.Default
-    )
+    val modelDefinition = ModelDefinitionBuilder.empty
+      .addComponent("ref", wrapWithStaticServiceDefinition(List.empty, Some(Unknown)))
+      .addComponent("sourceRef", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
 
     new UIProcessValidator(
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
@@ -81,8 +60,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
-    implicit val user: LoggedUser = AdminUser("admin", "admin")
-    val canonical                 = ProcessConverter.fromDisplayable(process)
+    val canonical   = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
     ValidatedDisplayableProcess.withValidationResult(displayable, validation.validate(displayable))
   }
@@ -219,7 +197,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   test("convert process with branches") {
-
     val process = DisplayableProcess(
       "t1",
       ProcessProperties(metaData),
@@ -286,7 +263,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   test("finds all nodes in diamond-shaped process") {
-
     val process = ScenarioBuilder
       .streaming("proc1")
       .sources(
@@ -301,11 +277,9 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val foundNodes = ProcessConverter.findNodes(process)
 
     foundNodes.map(_.id).toSet shouldBe Set("sourceId1", "split1", "join1", "end")
-
   }
 
   test("Handle switch/split/filter => union case") {
-
     val branchEnd      = GraphBuilder.branchEnd("branch1", "join1")
     val nodeId: String = "problemNode"
 
@@ -345,7 +319,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       Some(SwitchDefault),
       Set(Edge(nodeId, "end2", Some(NextSwitch("1"))))
     )
-
   }
 
 }

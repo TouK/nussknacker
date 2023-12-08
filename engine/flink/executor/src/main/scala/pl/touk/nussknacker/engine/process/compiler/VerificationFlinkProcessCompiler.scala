@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
@@ -14,11 +15,13 @@ import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 class VerificationFlinkProcessCompiler(
     process: CanonicalProcess,
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     objectNaming: ObjectNaming
 ) extends StubbedFlinkProcessCompiler(
       process,
       creator,
+      extractModelDefinition,
       modelConfig,
       diskStateBackendSupport = true,
       objectNaming,
@@ -55,6 +58,7 @@ object VerificationFlinkProcessCompiler {
     new VerificationFlinkProcessCompiler(
       process,
       modelData.configCreator,
+      modelData.extractModelDefinitionFun,
       modelData.modelConfig,
       modelData.objectNaming
     )

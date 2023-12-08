@@ -7,13 +7,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
+import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -96,9 +96,6 @@ class DefaultComponentServiceSpec
 
   private val filterDocsLink = ComponentLink.createDocumentationLink(filterDocsUrl)
 
-  // We disable kafka ComponentProvider from kafkaLite, which is unnecessarily added to classpath when running in Idea...
-  private val disableKafkaLite = "kafka.disabled: true"
-
   private val componentLinksConfig = ComponentLinksConfigExtractor.extract(
     ConfigFactory.parseString(
       s"""
@@ -163,12 +160,6 @@ class DefaultComponentServiceSpec
        |    "$ServicesGroupName": "$executionGroupName",
        |    "$hiddenGroupName": null
        |  }
-       |
-       |  components {
-       |    $ProviderName {
-       |    }
-       |    $disableKafkaLite
-       |  }
        |}
        |""".stripMargin)
 
@@ -204,12 +195,6 @@ class DefaultComponentServiceSpec
        |    "$ServicesGroupName": "$executionGroupName",
        |    "$hiddenGroupName": null
        |  }
-       |
-       |  components {
-       |    $ProviderName {
-       |    }
-       |    $disableKafkaLite
-       |  }
        |}
        |""".stripMargin)
 
@@ -225,12 +210,6 @@ class DefaultComponentServiceSpec
        |      icon: "$overriddenIcon"
        |      componentGroup: $overriddenGroupName
        |    }
-       |  }
-       |
-       |  components {
-       |    $ProviderName {
-       |    }
-       |    $disableKafkaLite
        |  }
        |}
        |""".stripMargin)
@@ -490,9 +469,16 @@ class DefaultComponentServiceSpec
   private val fraudUser =
     TestFactory.userWithCategoriesReadPermission(username = "fraudUser", categories = List(CategoryFraud))
 
+  private val providerComponents =
+    new DynamicComponentProvider().create(ConfigFactory.empty, ProcessObjectDependencies.empty)
+
   private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
-    Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), CategoryMarketing),
-    Fraud     -> (LocalModelData(fraudConfig, ComponentFraudTestConfigCreator), CategoryFraud)
+    Streaming -> (LocalModelData(
+      streamingConfig,
+      providerComponents,
+      ComponentMarketingTestConfigCreator
+    ), CategoryMarketing),
+    Fraud -> (LocalModelData(fraudConfig, providerComponents, ComponentFraudTestConfigCreator), CategoryFraud)
   ).transform { case (_, (modelData, category)) =>
     ProcessingTypeData.createProcessingTypeData(
       MockManagerProvider,
@@ -584,8 +570,12 @@ class DefaultComponentServiceSpec
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
     val badProcessingTypeDataMap = Map(
-      Streaming -> (LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator), CategoryMarketing),
-      Fraud     -> (LocalModelData(wrongConfig, WronglyConfiguredConfigCreator), CategoryFraud)
+      Streaming -> (LocalModelData(
+        streamingConfig,
+        providerComponents,
+        ComponentMarketingTestConfigCreator
+      ), CategoryMarketing),
+      Fraud -> (LocalModelData(wrongConfig, providerComponents, WronglyConfiguredConfigCreator), CategoryFraud)
     ).map { case (processingType, (modelData, category)) =>
       processingType -> ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,

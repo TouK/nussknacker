@@ -48,7 +48,7 @@ class DelayedKafkaAvroIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config, List.empty, configCreator = creator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 

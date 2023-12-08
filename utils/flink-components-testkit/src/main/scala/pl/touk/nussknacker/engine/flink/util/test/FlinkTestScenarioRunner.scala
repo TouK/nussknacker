@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
   testDataSourceComponent,
   testResultServiceComponent
 }
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -84,10 +85,12 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       testDataSourceComponent: ComponentDefinition
   ): RunnerListResult[R] = {
-    val testComponents      = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runResult =>
-      collectResults(testComponentHolder, runResult)
+    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder).map { runResult =>
+          collectResults(testComponentHolder, runResult)
+        }
     }
   }
 
@@ -95,10 +98,12 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runResult =>
-      collectResults(testComponentHolder, runResult)
+    val testComponents = noopSourceComponent :: testResultServiceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder).map { runResult =>
+          collectResults(testComponentHolder, runResult)
+        }
     }
   }
 
@@ -108,13 +113,21 @@ class FlinkTestScenarioRunner(
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents      = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder)
+    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder)
+    }
   }
 
   private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {
-    val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(
+      inputConfig = config,
+      // We can't just pass extra components here because we don't want Flink to serialize them.
+      // We also don't want user to make them serializable
+      components = FlinkBaseComponentProvider.Components,
+      configCreator = new DefaultConfigCreator
+    )
 
     // TODO: get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()

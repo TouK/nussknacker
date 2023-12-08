@@ -8,13 +8,8 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SinkFactory,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -29,17 +24,17 @@ import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Duration
-import scala.jdk.CollectionConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -89,7 +84,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -459,7 +454,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -467,10 +462,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
-    val model = LocalModelData(
-      ConfigFactory.empty(),
-      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
-    )
+    val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
@@ -509,18 +501,14 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
             ),
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
-    val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-
+    val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
+    val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
-    val model = LocalModelData(
-      ConfigFactory.empty(),
-      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
-    )
+    val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
@@ -546,9 +534,8 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       input2: BlockingQueueSource[OneRecord],
       collectingListener: ResultsCollectingListener
   ) = {
-    val creator = new FullOuterJoinTransformerSpec.Creator(input1, input2, collectingListener)
-    creator.resetElementsAdded()
-    LocalModelData(ConfigFactory.empty(), creator)
+    val creator = new ConfigCreatorWithListener(collectingListener)
+    LocalModelData(ConfigFactory.empty(), prepareComponents(input1, input2), configCreator = creator)
   }
 
 }
@@ -559,64 +546,47 @@ object FullOuterJoinTransformerSpec {
 
   val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
-  class Creator(
+  def prepareComponents(
       mainRecordsSource: BlockingQueueSource[OneRecord],
-      joinedRecordsSource: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
-  ) extends EmptyProcessConfigCreator {
+      joinedRecordsSource: BlockingQueueSource[OneRecord]
+  ): List[ComponentDefinition] = {
+    elementsAddedToState.clear()
+    ComponentDefinition("start-main", SourceFactory.noParam[OneRecord](mainRecordsSource)) ::
+      ComponentDefinition("start-joined", SourceFactory.noParam[OneRecord](joinedRecordsSource)) ::
+      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)) ::
+      joinComponentDefinition :: Nil
+  }
 
-    def resetElementsAdded(): Unit = {
-      elementsAddedToState.clear()
-    }
+  val joinComponentDefinition: ComponentDefinition = ComponentDefinition(
+    customElementName,
+    new FullOuterJoinTransformer(None) {
 
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(customElementName -> WithCategories.anyCategory(new FullOuterJoinTransformer(None) {
-
-        override protected def prepareAggregatorFunction(
-            aggregator: Aggregator,
-            stateTimeout: FiniteDuration,
-            aggregateElementType: TypingResult,
-            storedTypeInfo: TypeInformation[AnyRef],
-            convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-        )(
-            implicit nodeId: NodeId
-        ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
-          new ProcessFunctionInterceptor(
-            super.prepareAggregatorFunction(
-              aggregator,
-              stateTimeout,
-              aggregateElementType,
-              storedTypeInfo,
-              convertToEngineRuntimeContext
-            )
-          ) {
-            override protected def afterProcessElement(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
-              elementsAddedToState.add(value.value)
-            }
+      override protected def prepareAggregatorFunction(
+          aggregator: Aggregator,
+          stateTimeout: FiniteDuration,
+          aggregateElementType: TypingResult,
+          storedTypeInfo: TypeInformation[AnyRef],
+          convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+      )(
+          implicit nodeId: NodeId
+      ): KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]] = {
+        new ProcessFunctionInterceptor(
+          super.prepareAggregatorFunction(
+            aggregator,
+            stateTimeout,
+            aggregateElementType,
+            storedTypeInfo,
+            convertToEngineRuntimeContext
+          )
+        ) {
+          override protected def afterProcessElement(value: ValueWithContext[StringKeyedValue[AnyRef]]): Unit = {
+            elementsAddedToState.add(value.value)
           }
         }
+      }
 
-      }))
-
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      Seq(collectingListener)
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map(
-        "start-main"   -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](joinedRecordsSource))
-      )
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
-
-  }
+    }
+  )
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {
     def timestamp: Long = timeHours * 3600L * 1000

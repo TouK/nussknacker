@@ -4,6 +4,7 @@ import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -82,9 +83,6 @@ object UIProcessObjectsFactory {
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(modelDataForType.modelConfig),
         processCategoryService = processCategoryService,
-        customTransformerAdditionalData = finalModelDefinition.customStreamTransformers.map {
-          case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-        }.toMap,
         processingType
       ),
       processDefinition = createUIModelDefinition(
@@ -93,7 +91,7 @@ object UIProcessObjectsFactory {
         modelDataForType.modelDefinitionWithClasses.classDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
-      componentsConfig = finalComponentsConfig,
+      componentsConfig = finalComponentsConfig.config,
       scenarioPropertiesConfig =
         if (!isFragment) {
           (additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig)
@@ -112,12 +110,15 @@ object UIProcessObjectsFactory {
 
   private def toComponentsUiConfig(
       modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition]
-  ): ComponentsUiConfig =
-    modelDefinition.allDefinitions.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+  ): ComponentsUiConfig = {
+    ComponentsUiConfig(
+      modelDefinition.components.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+    )
+  }
 
   private def finalizeModelDefinition(
       modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
-      combinedComponentsConfig: Map[String, SingleComponentConfig],
+      combinedComponentsConfig: ComponentsUiConfig,
       additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]
   ) = {
 
@@ -125,21 +126,14 @@ object UIProcessObjectsFactory {
         : ((ComponentIdWithName, ComponentStaticDefinition)) => (ComponentIdWithName, ComponentStaticDefinition) = {
       case (idWithName, value) =>
         val finalConfig = additionalComponentsUiConfig.getOrElse(idWithName.id, SingleComponentConfig.zero) |+|
-          combinedComponentsConfig.getOrElse(idWithName.name, SingleComponentConfig.zero) |+|
+          combinedComponentsConfig.getConfigByComponentName(idWithName.name) |+|
           value.componentConfig
 
         idWithName -> value.withComponentConfig(finalConfig)
     }
 
     modelDefinitionWithIds.copy(
-      services = modelDefinitionWithIds.services.map(finalizeComponentConfig),
-      sourceFactories = modelDefinitionWithIds.sourceFactories.map(finalizeComponentConfig),
-      sinkFactories = modelDefinitionWithIds.sinkFactories.map(finalizeComponentConfig),
-      customStreamTransformers =
-        modelDefinitionWithIds.customStreamTransformers.map { case (idWithName, (value, additionalData)) =>
-          val (_, finalValue) = finalizeComponentConfig(idWithName, value)
-          idWithName -> (finalValue, additionalData)
-        },
+      components = modelDefinitionWithIds.components.map(finalizeComponentConfig)
     )
   }
 
@@ -148,8 +142,12 @@ object UIProcessObjectsFactory {
       fragmentComponents: Map[String, FragmentStaticDefinition],
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig       = fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-    val modelDefinitionComponentsConfig = modelDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val fragmentsComponentsConfig = ComponentsUiConfig(
+      fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
+    )
+    val modelDefinitionComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, component) =>
+      info.name -> component.componentConfig
+    })
 
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?
@@ -218,15 +216,21 @@ object UIProcessObjectsFactory {
     def createUIFragmentComponentDef(fragmentDef: FragmentStaticDefinition) =
       createUIFragmentComponentDefinition(fragmentDef, processCategoryService)
 
+    def filterByTypeAndTransform(componentType: ComponentType): Map[String, UIComponentDefinition] =
+      modelDefinition.components
+        .filter(_._2.componentType == componentType)
+        .map { case (idWithName, value) =>
+          idWithName.name -> createUIComponentDefinition(value, processCategoryService)
+        }
+        .toMap
+
     val transformed = modelDefinition.transform(createUIComponentDef)
     UIModelDefinition(
-      services = mapByName(transformed.services),
-      sourceFactories = mapByName(transformed.sourceFactories),
-      sinkFactories = mapByName(transformed.sinkFactories),
+      services = filterByTypeAndTransform(ComponentType.Service),
+      sourceFactories = filterByTypeAndTransform(ComponentType.Source),
+      sinkFactories = filterByTypeAndTransform(ComponentType.Sink),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentComponentDef),
-      customStreamTransformers = mapByName(transformed.customStreamTransformers).map { case (name, (value, _)) =>
-        (name, value)
-      },
+      customStreamTransformers = filterByTypeAndTransform(ComponentType.CustomComponent),
       typesInformation = types
     )
   }
@@ -251,9 +255,6 @@ object UIProcessObjectsFactory {
     val determinedValidators = ScenarioPropertyValidatorDeterminerChain(config).determine()
     UiScenarioPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
-
-  private def mapByName[T](mapByNameWithId: List[(ComponentIdWithName, T)]): Map[String, T] =
-    mapByNameWithId.map { case (idWithName, value) => idWithName.name -> value }.toMap
 
 }
 

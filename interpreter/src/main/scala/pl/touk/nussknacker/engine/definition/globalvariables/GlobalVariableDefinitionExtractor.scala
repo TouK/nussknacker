@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.globalvariables
 
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
   ComponentStaticDefinition,
+  NoComponentTypeSpecificData,
   methodbased
 }
 
@@ -27,12 +29,14 @@ object GlobalVariableDefinitionExtractor {
       case obj                                      => Typed.fromInstance(obj)
     }
     val staticDefinition = ComponentStaticDefinition(
+      componentType = ComponentType.BuiltIn,
       parameters = Nil,
       returnType = Some(returnType),
       categories = varWithCategories.categories,
-      componentConfig = varWithCategories.componentConfig
+      componentConfig = varWithCategories.componentConfig,
+      componentTypeSpecificData = NoComponentTypeSpecificData
     )
-    methodbased.MethodBasedComponentDefinitionWithImplementation(
+    MethodBasedComponentDefinitionWithImplementation(
       // Global variables are always accessed by MethodBasedComponentDefinitionWithImplementation.obj - see GlobalVariablesPreparer
       // and comment in ComponentDefinitionWithImplementation.implementationInvoker
       ComponentImplementationInvoker.nullImplementationInvoker,

@@ -10,12 +10,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.Headers
-import org.apache.kafka.common.header.internals.RecordHeaders
-import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
@@ -34,7 +32,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactoryWithRegistration,
   SchemaRegistryClientWithRegistration
 }
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
 import pl.touk.nussknacker.test.KafkaConfigProperties
@@ -52,8 +49,6 @@ object LiteKafkaTestScenarioRunner {
           .empty()
           .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
           .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
-          // we disable default kafka components to replace them by mocked
-          .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
       )
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
@@ -79,8 +74,8 @@ case class LiteKafkaTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
-    copy(components = extraComponents)
+  override def withExtraComponents(components: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
+    copy(components = components)
 
   override def withExtraGlobalVariables(
       globalVariables: Map[String, AnyRef]
@@ -96,7 +91,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val processObjectDependencies     = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
+    val processObjectDependencies     = ProcessObjectDependencies.withConfig(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
     val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, processObjectDependencies)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))

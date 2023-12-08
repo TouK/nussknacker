@@ -51,6 +51,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `Fragments` was replaced by `Fragment`
     * `CustomNode` was replaced by `CustomComponent`
   * In `ComponentInfo`: Order of parameters swapped + names of them changed `componentType` -> `type`, `componentName` -> `name`
+* [#5209](https://github.com/TouK/nussknacker/pull/5209) Now `TestScenarioRunner` doesn't load components from `ComponentProvider`
+  automatically. Instead, it loads some predefined set of components. Rest of them you need to pass components using `withExtraComponents` method.
+  Components loaded automatically:
+  * `TestScenarioRunner.liteBased` - from `base` provider
+  * `TestScenarioRunner.kafkaLiteBased` - from `base` and `kafka` providers
+  * `TestScenarioRunner.requestResponseBased` - from `base` and `requestResponse` providers
+  * `TestScenarioRunner.flinkBased` - from `base` provider
+  `TestScenarioRunner` now also uses global variables from default model
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type

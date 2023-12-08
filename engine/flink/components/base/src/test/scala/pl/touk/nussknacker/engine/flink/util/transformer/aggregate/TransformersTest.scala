@@ -8,6 +8,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
@@ -28,6 +29,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.editor.Paramete
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -39,24 +41,33 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.config.DocsConfig
 
-import java.time.{Duration, OffsetDateTime, ZoneId}
+import java.time.{Duration, OffsetDateTime}
 import java.util
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-  def modelData(list: List[TestRecord] = List(), tumblingAggregateOffset: Option[String] = None): LocalModelData = {
+  def modelData(
+      list: List[TestRecord] = List(),
+      aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default
+  ): LocalModelData = {
     val config = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    val sourceComponent = SourceFactory.noParam[TestRecord](
+      EmitWatermarkAfterEachElementCollectionSource
+        .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+    )
     LocalModelData(
-      tumblingAggregateOffset
-        .map(o => config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
-        .getOrElse(config),
-      new Creator(list)
+      config,
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.create(
+        DocsConfig.Default,
+        aggregateWindowsConfig
+      )
     )
   }
 
@@ -211,7 +222,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           TestRecordWithTimestamp(id, t1b, 5, "b"),
           TestRecordWithTimestamp(id, t2, 7, "b"),
         ),
-        Some("PT-3H")
+        AggregateWindowsConfig(Some(Duration.parse("PT-3H")))
       )
 
       val testProcess = tumbling(
@@ -717,24 +728,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
 
     FragmentResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
-  }
-
-}
-
-class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
-    Map(
-      "start" -> WithCategories.anyCategory(
-        SourceFactory.noParam[TestRecord](
-          EmitWatermarkAfterEachElementCollectionSource
-            .create[TestRecord](input, _.timestamp, Duration.ofHours(1))
-        )
-      )
-    )
   }
 
 }

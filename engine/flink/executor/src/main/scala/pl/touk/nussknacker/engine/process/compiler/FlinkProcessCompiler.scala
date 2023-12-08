@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -30,6 +31,7 @@ import scala.concurrent.duration.FiniteDuration
  */
 class FlinkProcessCompiler(
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     val modelConfig: Config,
     val diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
@@ -41,6 +43,7 @@ class FlinkProcessCompiler(
 
   def this(modelData: ModelData) = this(
     modelData.configCreator,
+    modelData.extractModelDefinitionFun,
     modelData.modelConfig,
     diskStateBackendSupport = true,
     modelData.objectNaming,
@@ -113,17 +116,17 @@ class FlinkProcessCompiler(
     )
   }
 
+  // TODO: We already passed extractModelDefinition function to compiler - we shouldn't transform this definition again.
+  //       It should be merged
   protected def definitions(
       processObjectDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
   ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
     val modelDefinitionWithTypes = ModelDefinitionWithClasses(
-      ModelDefinitionExtractor.extractModelDefinition(
-        creator,
+      extractModelDefinition(
         userCodeClassLoader,
         processObjectDependencies,
-        category = None
       )
     )
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(

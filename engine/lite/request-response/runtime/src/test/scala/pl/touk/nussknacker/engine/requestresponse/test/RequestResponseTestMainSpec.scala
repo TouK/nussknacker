@@ -11,10 +11,12 @@ import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.requestresponse.{
   FutureBasedRequestResponseScenarioInterpreter,
   Request1,
-  RequestResponseConfigCreator,
+  RequestResponseSampleComponents,
   Response
 }
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -26,7 +28,14 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
+  val requestResponseSampleComponents = new RequestResponseSampleComponents
+
+  private val modelData = LocalModelData(
+    ConfigFactory.load(),
+    requestResponseSampleComponents.components :::
+      LiteBaseComponentProvider.Components :::
+      RequestResponseComponentProvider.Components
+  )
 
   private val sourceId = "start"
 
@@ -69,7 +78,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId"))
     )
 
-    RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
+    RequestResponseSampleComponents.processorService.get().invocationsCount.get shouldBe 0
 
   }
 

@@ -9,7 +9,6 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -32,10 +31,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters._
 
 class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
@@ -406,7 +405,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   private def validate(params: (String, Expression)*): TransformationResult = {
 
-    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
 
     val validator = new GenericNodeTransformationValidator(
       ExpressionCompiler.withoutOptimization(modelData),

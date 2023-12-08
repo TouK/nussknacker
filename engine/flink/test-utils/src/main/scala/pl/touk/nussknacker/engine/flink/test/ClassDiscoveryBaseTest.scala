@@ -78,11 +78,11 @@ trait ClassDiscoveryBaseTest extends AnyFunSuite with Matchers with Inside {
     val names        = types.map(_.getClazz.getName)
     val decodedNames = decoded.map(_.getClazz.getName)
 
-    withClue(s"New classes: ${names -- decodedNames} ") {
-      (names -- decodedNames) shouldBe Set.empty
+    withClue(s"New classes") {
+      (names -- decodedNames) shouldBe empty
     }
-    withClue(s"Removed classes: ${decodedNames -- names} ") {
-      (decodedNames -- names) shouldBe Set.empty
+    withClue(s"Removed classes") {
+      (decodedNames -- names) shouldBe empty
     }
 
     val decodedMap = decoded.map(k => k.getClazz -> k).toMap[Class[_], ClassDefinition]

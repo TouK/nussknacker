@@ -6,9 +6,10 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -80,12 +82,23 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def modelData(
       list: List[TestRecord] = List(),
       collectingListener: ResultsCollectingListener
-  ): LocalModelData = LocalModelData(
-    ConfigFactory
+  ): LocalModelData = {
+    val modelConfig = ConfigFactory
       .empty()
-      .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-    new Creator(list, collectingListener)
-  )
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    val sourceComponent = ComponentDefinition(
+      "start",
+      SourceFactory.noParam[TestRecord](
+        EmitWatermarkAfterEachElementCollectionSource
+          .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+      )
+    )
+    LocalModelData(
+      modelConfig,
+      sourceComponent :: FlinkBaseComponentProvider.Components,
+      configCreator = new ConfigCreatorWithListener(collectingListener),
+    )
+  }
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
     ScenarioBuilder
@@ -122,27 +135,6 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 
-}
-
-class Creator(input: List[TestRecord], collectingListener: ResultsCollectingListener)
-    extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
-    Map(
-      "start" -> WithCategories.anyCategory(
-        SourceFactory.noParam[TestRecord](
-          EmitWatermarkAfterEachElementCollectionSource
-            .create[TestRecord](input, _.timestamp, Duration.ofHours(1))
-        )
-      )
-    )
-  }
-
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(collectingListener)
 }
 
 case class TestRecord(id: String = "1", timeHours: Int = 0, eId: Int = 1, str: String = "a") {

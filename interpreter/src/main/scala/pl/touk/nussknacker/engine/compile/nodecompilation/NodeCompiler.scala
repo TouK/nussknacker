@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -111,7 +112,7 @@ class NodeCompiler(
       nodeData: SourceNodeData
   )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[Source] = nodeData match {
     case a @ pl.touk.nussknacker.engine.graph.node.Source(_, ref, _) =>
-      definitions.sourceFactories.get(ref.typ) match {
+      definitions.getComponent(ComponentType.Source, ref.typ) match {
         case Some(definition) =>
           def defaultContextTransformation(compiled: Option[Any]) =
             contextWithOnlyGlobalVariables.withVariable(
@@ -152,7 +153,7 @@ class NodeCompiler(
         )
       }
 
-      definitions.sourceFactories.get(id) match {
+      definitions.getComponent(ComponentType.Source, id) match {
         case Some(definition) =>
           val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
@@ -208,11 +209,12 @@ class NodeCompiler(
     val defaultCtx      = ctx.fold(identity, _ => contextWithOnlyGlobalVariables)
     val defaultCtxToUse = outputVar.map(defaultCtx.withVariable(_, Unknown)).getOrElse(Valid(defaultCtx))
 
-    definitions.customStreamTransformers.get(data.nodeType) match {
-      case Some((_, additionalData)) if ending && !additionalData.canBeEnding =>
+    definitions.getComponent(ComponentType.CustomComponent, data.nodeType) match {
+      case Some(nodeDefinition)
+          if ending && !nodeDefinition.componentTypeSpecificData.asCustomComponentData.canBeEnding =>
         val error = Invalid(NonEmptyList.of(InvalidTailOfBranch(nodeId.id)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
-      case Some((nodeDefinition, _)) =>
+      case Some(nodeDefinition) =>
         val default = defaultContextAfter(data, ending, ctx, nodeDefinition)
         compileObjectWithTransformation(
           data.parameters,
@@ -234,7 +236,7 @@ class NodeCompiler(
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[api.process.Sink] = {
     val ref = sink.ref
 
-    definitions.sinkFactories.get(ref.typ) match {
+    definitions.getComponent(ComponentType.Sink, ref.typ) match {
       case Some(definition) =>
         compileObjectWithTransformation[api.process.Sink](
           sink.parameters,
@@ -335,7 +337,7 @@ class NodeCompiler(
       metaData: MetaData
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
-    definitions.services.get(n.id) match {
+    definitions.getComponent(ComponentType.Service, n.id) match {
       case Some(componentDefWithImpl) if componentDefWithImpl.implementation.isInstanceOf[EagerService] =>
         compileEagerService(n, componentDefWithImpl, validationContext, outputVar)
       case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
@@ -501,7 +503,7 @@ class NodeCompiler(
   )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[(T, List[evaluatedparam.Parameter])] = {
     nodeDefinition match {
       case generic: DynamicComponentDefinitionWithImplementation =>
-        val afterValidation = validateGenericTransformer(ctx, parameters, branchParameters, outputVar, generic).map {
+        val afterValidation = validateDynamicTransformer(ctx, parameters, branchParameters, outputVar, generic).map {
           case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
             val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
             val withoutRedundant       = nodeParameters.filter(p => computedParameterNames.contains(p.name))
@@ -632,20 +634,20 @@ class NodeCompiler(
     }
   }
 
-  private def validateGenericTransformer(
+  private def validateDynamicTransformer(
       eitherSingleOrJoin: GenericValidationContext,
       parameters: List[evaluatedparam.Parameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
-      genericDefinition: DynamicComponentDefinitionWithImplementation
+      dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (genericDefinition.implementation, eitherSingleOrJoin) match {
+    (dynamicDefinition.implementation, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
-        nodeValidator.validateNode(single, parameters, branchParameters, outputVar, genericDefinition.componentConfig)(
+        nodeValidator.validateNode(single, parameters, branchParameters, outputVar, dynamicDefinition.componentConfig)(
           singleCtx
         )
       case (join: JoinGenericNodeTransformation[_], Right(joinCtx)) =>
-        nodeValidator.validateNode(join, parameters, branchParameters, outputVar, genericDefinition.componentConfig)(
+        nodeValidator.validateNode(join, parameters, branchParameters, outputVar, dynamicDefinition.componentConfig)(
           joinCtx
         )
       case (_: SingleInputGenericNodeTransformation[_], Right(_)) =>

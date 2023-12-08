@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError,
@@ -18,58 +19,39 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   import spel.Implicits._
 
-  object MyProcessConfigCreator extends EmptyProcessConfigCreator {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "genericParameters" -> WithCategories.anyCategory(GenericParametersTransformer),
-      "genericJoin"       -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
-      "twoStepsInOne"     -> WithCategories.anyCategory(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
-      "paramsLoop"        -> WithCategories.anyCategory(ParamsLoopNode)
-    )
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] = Map(
-      "mySource"                -> WithCategories.anyCategory(SimpleStringSource),
-      "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
-    )
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink"              -> WithCategories.anyCategory(SinkFactory.noParam(new Sink {})),
-      "genericParametersSink"  -> WithCategories.anyCategory(GenericParametersSink),
-      "optionalParametersSink" -> WithCategories.anyCategory(OptionalParametersSink),
-    )
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-      Map(
-        "genericParametersProcessor"         -> WithCategories.anyCategory(GenericParametersProcessor),
-        "genericParametersEnricher"          -> WithCategories.anyCategory(GenericParametersEnricher),
-        "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException)
-      )
-
-  }
+  private val components = List(
+    ComponentDefinition("genericParameters", GenericParametersTransformer),
+    ComponentDefinition("genericJoin", DynamicParameterJoinTransformer),
+    ComponentDefinition("twoStepsInOne", GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
+    ComponentDefinition("paramsLoop", ParamsLoopNode),
+    ComponentDefinition("mySource", SimpleStringSource),
+    ComponentDefinition("genericParametersSource", new GenericParametersSource),
+    ComponentDefinition("dummySink", SinkFactory.noParam(new Sink {})),
+    ComponentDefinition("genericParametersSink", GenericParametersSink),
+    ComponentDefinition("optionalParametersSink", OptionalParametersSink),
+    ComponentDefinition("genericParametersProcessor", GenericParametersProcessor),
+    ComponentDefinition("genericParametersEnricher", GenericParametersEnricher),
+    ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
+  )
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
-  private val modelDefinition = ModelDefinitionExtractor.extractModelDefinition(
-    MyProcessConfigCreator,
-    getClass.getClassLoader,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)),
-    category = None
+  private val modelDefinition = ModelDefinition(
+    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ModelDefinitionBuilder.toExpressionDefinition(ModelDefinitionBuilder.emptyExpressionDefinition),
+    ClassExtractionSettings.Default
   )
 
   private val validator = ProcessValidator.default(
