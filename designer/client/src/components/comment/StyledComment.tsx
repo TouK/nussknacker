@@ -55,7 +55,7 @@ export const CommentButton = styled(NkButton)(
     border-radius: 3px !important;
     cursor: pointer;
     &:hover {
-        background-color: #3d3d3d !important;
+        background-color: ${theme.custom.colors.pictonBlue} !important;
     }
 `,
 );

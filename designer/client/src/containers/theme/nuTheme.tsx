@@ -51,6 +51,7 @@ const colors = {
     nightRider: "#2d2d2d",
     revolver: "#333344",
     curiousBlue: "#337AB7",
+    pictonBlue: "#359AF1",
     abbey: "#4A4A4A",
     dustyGray: l4,
     gallery: "#eeeeee",
