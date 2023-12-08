@@ -152,7 +152,7 @@ class AkkaHttpBasedRouteProvider(
 
       deploymentServiceSupplier.set(deploymentService)
 
-      // we need to init processing type data after deployment service creation to make sure that it will be done using
+      // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
       typeToConfig.reloadAll()
       val processActivityRepository = new DbProcessActivityRepository(dbRef)

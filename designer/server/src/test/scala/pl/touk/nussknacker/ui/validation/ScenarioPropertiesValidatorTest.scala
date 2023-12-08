@@ -30,23 +30,28 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   private val validator = new ScenarioPropertiesValidator(
     Map(
       reqFieldName -> ScenarioPropertyConfig(
-        None,
-        None,
-        Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
-        Some(label)
+        defaultValue = None,
+        editor = None,
+        validators = Some(List(LiteralIntegerValidator, MandatoryParameterValidator)),
+        label = Some(label)
       ),
       regexpFieldName -> ScenarioPropertyConfig(
-        None,
-        None,
-        Some(List(LiteralIntegerValidator)),
-        Some(label)
+        defaultValue = None,
+        editor = None,
+        validators = Some(List(LiteralIntegerValidator)),
+        label = Some(label)
       ),
-      optionalFieldName -> ScenarioPropertyConfig(None, Some(StringParameterEditor), None, Some(label)),
+      optionalFieldName -> ScenarioPropertyConfig(
+        defaultValue = None,
+        editor = Some(StringParameterEditor),
+        validators = None,
+        label = Some(label)
+      ),
       optFixedFieldName -> ScenarioPropertyConfig(
-        None,
-        Some(FixedValuesParameterEditor(possibleValues)),
-        Some(List(FixedValuesValidator(possibleValues))),
-        Some(label)
+        defaultValue = None,
+        editor = Some(FixedValuesParameterEditor(possibleValues)),
+        validators = Some(List(FixedValuesValidator(possibleValues))),
+        label = Some(label)
       )
     )
   )
@@ -55,11 +60,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq" -> "5"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -73,11 +78,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propOpt" -> "a"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -101,11 +106,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq" -> ""
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -123,12 +128,12 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq"    -> "1",
             "propRegExp" -> ""
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -143,12 +148,12 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq"    -> "1",
             "propRegExp" -> "asd"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -172,11 +177,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq" -> "some text"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -218,11 +223,11 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             optFixedFieldName -> "some text"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )
@@ -254,12 +259,12 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(
       Some(
         ProcessAdditionalFields(
-          None,
+          description = None,
           properties = Map(
             "propReq" -> "5",
             "unknown" -> "some text"
           ),
-          StreamMetaData.typeName
+          metaDataType = StreamMetaData.typeName
         )
       )
     )

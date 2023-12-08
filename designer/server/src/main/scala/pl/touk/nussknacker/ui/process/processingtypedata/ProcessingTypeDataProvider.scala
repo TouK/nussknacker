@@ -10,20 +10,25 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- *  NOTICE: This is probably *temporary* solution. We want to be able to:
- *  - reload elements of ProcessingTypeData
- *  - have option to add new ProcessingTypeData dynamically (though currently it's not supported)
- *  - use only those elements which are needed in given place
- *
- *  In the future we'll probably have better way of controlling how ProcessingTypeData is used, e.g. by
- *    - custom Directives or custom routes.
- *    - appropriate variant of Reader monad :)
- *
- *  Now we just want to be able to easily check usages of ProcessingTypeData elements
- *
- *  Currently, the only implementation is map-based, but in the future it will allow to reload ProcessingTypeData related stuff
- *  without restarting the app
- */
+  * ProcessingType is a context of application. One ProcessingType can't see data from another ProcessingType.
+  * Services run inside one ProcessingType scope behave differently from services run in another scope.
+  *
+  * This class is meant to provide access to some scope of data inside context of application to the user.
+  * We don't want to pass all ProcessingType's data to every service because it would complicate testing of services
+  * and would broke isolation between areas of application. Due to that, this class is a `Functor`
+  * (to be precise `BiFunctor` but more on that below) which allows to transform the scope of `Data`.
+  *
+  * Sometimes it is necessary to have access also to combination of data across all ProcessingTypes. Due to that
+  * this class is a `BiFunctor` which second value named as `CombinedData`
+  *
+  * This class caches `Data` and `CombinedData` wrapped in `ProcessingTypeDataState` to avoid computations of
+  * transformations during each lookup to `Data`/`CombinedData`. It behave similar to `Observable` where given
+  * transformed `ProcessingTypeDataProvider` check its parent if `ProcessingTypeDataState.stateIdentity` changed.
+  *
+  * ProcessingType is associated with Category e.g. Fraud Detection, Marketing. Given user has access to certain
+  * categories see `LoggedUser.can`. Due to that, during each access to `Data`, user is authorized if he/she
+  * has access to category.
+  */
 trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: replace with proper forType handling
@@ -38,7 +43,7 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
     .get(processingType)
     .map(_.getOrElse(throw new UnauthorizedError()))
 
-  def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
+  final def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
     (k, v)
   }
 
@@ -51,19 +56,19 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: We should return a generic type that can produce views for users with access rights to certain categories only.
   //       Thanks to that we will be sure that no sensitive data leak
-  def combined: CombinedData = state.getCombined()
+  final def combined: CombinedData = state.getCombined()
 
   private[processingtypedata] def state: ProcessingTypeDataState[Data, CombinedData]
 
-  def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
+  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataProvider[TT, CombinedData] =
     new TransformingProcessingTypeDataProvider[Data, CombinedData, TT, CombinedData](this, _.mapValues(fun))
 
-  def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] =
+  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataProvider[Data, CC] =
     new TransformingProcessingTypeDataProvider[Data, CombinedData, Data, CC](this, _.mapCombined(fun))
 
 }
 
-class TransformingProcessingTypeDataProvider[T, C, TT, CC](
+private[processingtypedata] class TransformingProcessingTypeDataProvider[T, C, TT, CC](
     observed: ProcessingTypeDataProvider[T, C],
     transformState: ProcessingTypeDataState[T, C] => ProcessingTypeDataState[TT, CC]
 ) extends ProcessingTypeDataProvider[TT, CC] {
@@ -124,38 +129,39 @@ object ProcessingTypeDataProvider {
 
 }
 
-trait ProcessingTypeDataState[+T, +C] {
-  def all: Map[ProcessingType, ValueWithPermission[T]]
+// It keeps a state (Data and CombinedData) that is cached and restricted by ProcessingTypeDataProvider
+private[processingtypedata] trait ProcessingTypeDataState[+Data, +CombinedData] {
+  def all: Map[ProcessingType, ValueWithPermission[Data]]
 
   // It returns function because we want to sometimes throw Exception instead of return value and we want to
   // transform values without touch combined part
-  def getCombined: () => C
+  def getCombined: () => CombinedData
 
   // We keep stateIdentity as a separate value to avoid frequent computation of this.all.equals(that.all)
   // Also, it is easier to provide one (source) state identity than provide it for all observers
   def stateIdentity: Any
 
-  final def mapValues[TT](fun: T => TT): ProcessingTypeDataState[TT, C] =
-    ProcessingTypeDataState[TT, C](all.mapValuesNow(_.map(fun)), getCombined, stateIdentity)
+  final def mapValues[TT](fun: Data => TT): ProcessingTypeDataState[TT, CombinedData] =
+    ProcessingTypeDataState[TT, CombinedData](all.mapValuesNow(_.map(fun)), getCombined, stateIdentity)
 
-  final def mapCombined[CC](fun: C => CC): ProcessingTypeDataState[T, CC] = {
+  final def mapCombined[CC](fun: CombinedData => CC): ProcessingTypeDataState[Data, CC] = {
     val newCombined = fun(getCombined())
-    ProcessingTypeDataState[T, CC](all, () => newCombined, stateIdentity)
+    ProcessingTypeDataState[Data, CC](all, () => newCombined, stateIdentity)
   }
 
 }
 
-object ProcessingTypeDataState {
+private[processingtypedata] object ProcessingTypeDataState {
 
-  def apply[T, C](
-      allValues: Map[ProcessingType, ValueWithPermission[T]],
-      getCombinedValue: () => C,
+  def apply[Data, CombinedData](
+      allValues: Map[ProcessingType, ValueWithPermission[Data]],
+      getCombinedValue: () => CombinedData,
       stateIdentityValue: Any
-  ): ProcessingTypeDataState[T, C] =
-    new ProcessingTypeDataState[T, C] {
-      override def all: Map[ProcessingType, ValueWithPermission[T]] = allValues
-      override def getCombined: () => C                             = getCombinedValue
-      override def stateIdentity: Any                               = stateIdentityValue
+  ): ProcessingTypeDataState[Data, CombinedData] =
+    new ProcessingTypeDataState[Data, CombinedData] {
+      override def all: Map[ProcessingType, ValueWithPermission[Data]] = allValues
+      override def getCombined: () => CombinedData                     = getCombinedValue
+      override def stateIdentity: Any                                  = stateIdentityValue
     }
 
 }
@@ -171,6 +177,8 @@ object ValueWithPermission {
 sealed trait ValueAccessPermission
 
 object ValueAccessPermission {
+  // This permission is mainly to provide easier testing where we want to simulate simple setup without
+  // `ProcessingTypeData` reload, without category access control.
   case object AnyUser                                               extends ValueAccessPermission
   final case class UserWithAccessRightsToCategory(category: String) extends ValueAccessPermission
 }
