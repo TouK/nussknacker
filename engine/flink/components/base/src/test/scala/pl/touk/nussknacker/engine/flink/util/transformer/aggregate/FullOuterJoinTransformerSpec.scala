@@ -465,7 +465,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
+    val processValidator = ProcessValidator.default(model, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -515,7 +515,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       ConfigFactory.empty(),
       new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
     )
-    val processValidator = ProcessValidator.default(model, None, TestFixedValuesPresetProvider)
+    val processValidator = ProcessValidator.default(model, TestFixedValuesPresetProvider)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }

@@ -55,7 +55,7 @@ class UIProcessValidator(
 ) {
 
   private val validatorProvider = modelDataProvider.mapValues { modelData =>
-    val validator = ProcessValidator.default(modelData)
+    val validator = ProcessValidator.default(modelData, fixedValuesPresetProvider)
     expressionParsers
       .map(validator.withExpressionParsers)
       .getOrElse(validator)
