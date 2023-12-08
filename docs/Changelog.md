@@ -31,7 +31,7 @@
 * [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
 * [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
-* [#5182](https://github.com/TouK/nussknacker/pull/5182) Component API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) Component and User API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 
 1.12.5 (1 Dec 2023)
 ------------------------
