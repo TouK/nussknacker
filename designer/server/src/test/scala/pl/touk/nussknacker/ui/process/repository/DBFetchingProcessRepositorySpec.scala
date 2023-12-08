@@ -16,7 +16,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -52,7 +52,7 @@ class DBFetchingProcessRepositorySpec
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 

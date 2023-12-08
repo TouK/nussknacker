@@ -21,19 +21,20 @@ import pl.touk.nussknacker.engine.api.deployment.{
   StateStatus,
   StatusDetails
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataProvider,
+  ProcessingTypeDataState,
+  ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
@@ -42,7 +43,7 @@ import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
 class DeploymentServiceSpec
@@ -78,14 +79,18 @@ class DeploymentServiceSpec
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
-      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[DeploymentManager] =
-        all.get(processingType)
 
-      override def all(implicit user: LoggedUser): Map[ProcessingType, DeploymentManager] = Map(
-        TestProcessingTypes.Streaming -> deploymentManager
-      )
+      override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
+        new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
-      override def combined: Nothing = ???
+          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
+            TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
+          )
+
+          override def getCombined: () => Nothing = noCombinedDataFun
+          override def stateIdentity: Any         = deploymentManager
+        }
+
     }
 
   private val dmDispatcher =
@@ -105,7 +110,7 @@ class DeploymentServiceSpec
       fetchingProcessRepository,
       actionRepository,
       dbioRunner,
-      processValidator,
+      processValidatorByProcessingType,
       TestFactory.scenarioResolver,
       listener,
       scenarioStateTimeout = scenarioStateTimeout

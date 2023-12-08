@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -40,7 +41,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   lazy val validation: UIProcessValidator = {
-
     val processDefinition = ProcessDefinition[ObjectDefinition](
       services = Map("ref" -> objectDefinition(List.empty, Some(Unknown))),
       sourceFactories = Map("sourceRef" -> objectDefinition(List.empty, Some(Unknown))),
@@ -65,12 +65,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       settings = ClassExtractionSettings.Default
     )
 
-    UIProcessValidator(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
-      ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
+    new UIProcessValidator(
+      ProcessValidator.default(new StubModelDataWithProcessDefinition(processDefinition)),
+      FlinkStreamingPropertiesConfig.properties,
+      Nil,
       sampleResolver
     )
   }
