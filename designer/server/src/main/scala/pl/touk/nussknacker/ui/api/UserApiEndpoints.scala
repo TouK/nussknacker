@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
@@ -27,6 +26,7 @@ class UserApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoin
         )
       )
       .withSecurity(auth)
+
 }
 
 @derive(schema, encoder, decoder)
