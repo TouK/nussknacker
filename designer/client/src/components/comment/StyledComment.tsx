@@ -55,7 +55,7 @@ export const CommentButton = styled(NkButton)(
     border-radius: 3px !important;
     cursor: pointer;
     &:hover {
-        background-color: ${theme.custom.colors.pictonBlue} !important;
+        background-color: #3d3d3d !important;
     }
 `,
 );
@@ -66,7 +66,7 @@ export const PanelComment = styled("div")(
     font-size: 12px;
     word-break: break-word;
     a {
-        color: #359af1 !important;
+        color: ${theme.custom.colors.pictonBlue} !important;
     }
     p {
         width: 90%;
