@@ -46,10 +46,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   lazy val validation: UIProcessValidator = {
     val modelDefinition = ModelDefinition[ComponentStaticDefinition](
-      services = Map("ref" -> wrapWithStaticServiceDefinition(List.empty, Some(Unknown))),
-      sourceFactories = Map("sourceRef" -> wrapWithStaticSourceDefinition(List.empty, Some(Unknown))),
-      sinkFactories = Map(),
-      customStreamTransformers = Map(),
+      List.empty,
       expressionConfig = ExpressionDefinition(
         Map.empty,
         List.empty,
@@ -67,7 +64,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         customConversionsProviders = List.empty
       ),
       settings = ClassExtractionSettings.Default
-    )
+    ).addComponent("ref", wrapWithStaticServiceDefinition(List.empty, Some(Unknown)))
+      .addComponent("sourceRef", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
 
     new UIProcessValidator(
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),

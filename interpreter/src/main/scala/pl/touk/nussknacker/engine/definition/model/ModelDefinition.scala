@@ -1,108 +1,83 @@
 package pl.touk.nussknacker.engine.definition.model
 
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentInfo
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
+import pl.touk.nussknacker.engine.definition.component.{BaseComponentDefinition, ComponentIdProvider}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition.checkDuplicates
 
-case class ModelDefinition[T](
-    services: Map[String, T],
-    sourceFactories: Map[String, T],
-    sinkFactories: Map[String, T],
-    customStreamTransformers: Map[String, T],
+case class ModelDefinition[T <: BaseComponentDefinition] private (
+    components: Map[ComponentInfo, T],
     expressionConfig: ExpressionDefinition[T],
     settings: ClassExtractionSettings
 ) {
 
-  import pl.touk.nussknacker.engine.util.Implicits._
-
-  val componentNames: List[String] = {
-    val names = services.keys ++
-      sourceFactories.keys ++
-      sinkFactories.keys ++
-      customStreamTransformers.keys
-
-    names.toList
+  def addComponent(componentName: String, component: T): ModelDefinition[T] = {
+    addComponents(List(ComponentInfo(component.componentType, componentName) -> component))
   }
 
-  private def servicesWithIds(
-      componentIdProvider: ComponentIdProvider,
-      processingType: String
-  ): List[(ComponentIdWithName, T)] =
-    services.map { case (name, obj) =>
-      val id = componentIdProvider.createComponentId(
-        processingType,
-        ComponentInfo(ComponentType.Service, name)
-      )
-      ComponentIdWithName(id, name) -> obj
-    }.toList
+  def addComponents(componentsToAdd: List[(ComponentInfo, T)]): ModelDefinition[T] = {
+    val newComponents = components.toList ++ componentsToAdd
+    checkDuplicates(newComponents)
+    copy(components = newComponents.toMap)
+  }
 
-  private def customStreamTransformersWithIds(
-      componentIdProvider: ComponentIdProvider,
-      processingType: String
-  ): List[(ComponentIdWithName, T)] =
-    customStreamTransformers.map { case (name, obj) =>
-      val id = componentIdProvider.createComponentId(
-        processingType,
-        ComponentInfo(ComponentType.CustomComponent, name)
-      )
-      ComponentIdWithName(id, name) -> obj
-    }.toList
+  def getComponent(componentType: ComponentType, componentName: String): Option[T] =
+    components.get(ComponentInfo(componentType, componentName))
 
-  private def sinkFactoriesWithIds(
-      componentIdProvider: ComponentIdProvider,
-      processingType: String
-  ): List[(ComponentIdWithName, T)] =
-    sinkFactories.map { case (name, obj) =>
-      val id = componentIdProvider.createComponentId(
-        processingType,
-        ComponentInfo(ComponentType.Sink, name)
-      )
-      ComponentIdWithName(id, name) -> obj
-    }.toList
+  import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def sourceFactoriesWithIds(
-      componentIdProvider: ComponentIdProvider,
-      processingType: String
-  ): List[(ComponentIdWithName, T)] =
-    sourceFactories.map { case (name, obj) =>
-      val id = componentIdProvider.createComponentId(
-        processingType,
-        ComponentInfo(ComponentType.Source, name)
-      )
-      ComponentIdWithName(id, name) -> obj
-    }.toList
-
+  // FIXME: remove from here and move ComponentIdProvider outside of interpreter
   def withComponentIds(
       componentIdProvider: ComponentIdProvider,
       processingType: String
-  ): ModelDefinitionWithComponentIds[T] =
+  ): ModelDefinitionWithComponentIds[T] = {
+    val transformedComponents =
+      components.toList.map { case (info, component) =>
+        val id = componentIdProvider.createComponentId(processingType, info)
+        ComponentIdWithName(id, info.name) -> component
+      }
     ModelDefinitionWithComponentIds(
-      servicesWithIds(componentIdProvider, processingType),
-      sourceFactoriesWithIds(componentIdProvider, processingType),
-      sinkFactoriesWithIds(componentIdProvider, processingType),
-      customStreamTransformersWithIds(componentIdProvider, processingType),
+      transformedComponents,
       expressionConfig,
       settings
     )
-
-  val allDefinitions: Map[String, T] =
-    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers
+  }
 
   def filter(predicate: T => Boolean): ModelDefinition[T] = copy(
-    services.filter(kv => predicate(kv._2)),
-    sourceFactories.filter(kv => predicate(kv._2)),
-    sinkFactories.filter(kv => predicate(kv._2)),
-    customStreamTransformers.filter(ct => predicate(ct._2)),
+    components.filter(kv => predicate(kv._2)),
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2)))
   )
 
-  def transform[R](f: T => R): ModelDefinition[R] = copy(
-    services.mapValuesNow(f),
-    sourceFactories.mapValuesNow(f),
-    sinkFactories.mapValuesNow(f),
-    customStreamTransformers.mapValuesNow(f),
+  def transform[R <: BaseComponentDefinition](f: T => R): ModelDefinition[R] = copy(
+    components.mapValuesNow(f),
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
+
+}
+
+object ModelDefinition {
+
+  def apply[T <: BaseComponentDefinition](
+      components: List[(ComponentInfo, T)],
+      expressionConfig: ExpressionDefinition[T],
+      settings: ClassExtractionSettings
+  ): ModelDefinition[T] = {
+    checkDuplicates(components)
+    new ModelDefinition(components.toMap, expressionConfig, settings)
+  }
+
+  private def checkDuplicates(components: List[(ComponentInfo, _)]): Unit = {
+    components
+      .groupBy(_._1)
+      .foreach { case (_, duplicatedComponents) =>
+        if (duplicatedComponents.length > 1) {
+          throw new IllegalArgumentException(
+            s"Found duplicate components: ${duplicatedComponents.mkString(", ")}, please correct configuration"
+          )
+        }
+      }
+  }
 
 }

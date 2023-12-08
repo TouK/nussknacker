@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -66,7 +67,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
         ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming),
         category = None
       )
-      .sourceFactories
+      .filter(_.componentType == ComponentType.Source)
+      .components
       .head
       ._2
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]

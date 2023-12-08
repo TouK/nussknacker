@@ -140,16 +140,13 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
   test("return custom nodes with correct group") {
     val initialDefinition = ProcessTestData.modelDefinitionWithIds
-    val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
-      customStreamTransformers = initialDefinition.customStreamTransformers.map { case (name, componentDef) =>
-        (
-          name,
-          componentDef.copy(componentConfig =
-            componentDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
-          )
+    val definitionWithCustomNodesInSomeCategory = initialDefinition.transform {
+      case component if component.componentType == ComponentType.CustomComponent =>
+        component.copy(componentConfig =
+          component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
         )
-      }
-    )
+      case other => other
+    }
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
@@ -246,7 +243,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentStaticDefinition]()
-    val dynamicComponentsConfig = modelDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
+    val dynamicComponentsConfig = modelDefinition.components.toMap.map { case (idWithName, value) =>
       idWithName.name -> value.componentConfig
     }
     val fixedComponentsConfig =

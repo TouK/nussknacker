@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableProvidedInRuntime,
@@ -41,7 +42,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract additional variables info from annotation") {
     val methodDef = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformer1")
+      .getComponent(ComponentType.CustomComponent, "transformer1")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .implementationInvoker
       .asInstanceOf[MethodBasedComponentImplementationInvoker]
@@ -61,7 +63,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {
-    val definition = modelDefinitionWithTypes(None).modelDefinition.services("configurable1")
+    val definition =
+      modelDefinitionWithTypes(None).modelDefinition.getComponent(ComponentType.CustomComponent, "configurable1").value
 
     definition
       .asInstanceOf[DynamicComponentDefinitionWithImplementation]
@@ -72,7 +75,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract definition with generic params") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerWithGenericParam")
+      .getComponent(ComponentType.CustomComponent, "transformerWithGenericParam")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -81,16 +85,19 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract definition using ContextTransformation") {
     modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")
+      .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithOutputVariable")
+      .value
       .returnType shouldBe defined
     modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")
+      .getComponent(ComponentType.CustomComponent, "transformerReturningContextTransformationWithoutOutputVariable")
+      .value
       .returnType shouldBe empty
   }
 
   test("extract validators based on editor") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerWithFixedValueParam")
+      .getComponent(ComponentType.CustomComponent, "transformerWithFixedValueParam")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -103,7 +110,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract default value from annotation") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerWithDefaultValueForParameter")
+      .getComponent(ComponentType.CustomComponent, "transformerWithDefaultValueForParameter")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -113,7 +121,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("default value from annotation should have higher priority than optionality") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerWithOptionalDefaultValueForParameter")
+      .getComponent(ComponentType.CustomComponent, "transformerWithOptionalDefaultValueForParameter")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 1
@@ -123,7 +132,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract definition with branch params") {
     val definition = modelDefinitionWithTypes(None).modelDefinition
-      .customStreamTransformers("transformerWithBranchParam")
+      .getComponent(ComponentType.CustomComponent, "transformerWithBranchParam")
+      .value
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
 
     definition.parameters should have size 2
@@ -158,7 +168,8 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   test("extracts validators from config") {
     val definition =
       modelDefinitionWithTypes(None).modelDefinition
-        .customStreamTransformers("transformer1")
+        .getComponent(ComponentType.CustomComponent, "transformer1")
+        .value
         .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(
@@ -170,11 +181,13 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
   }
 
   test("extract components that are only in specified category") {
-    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.customStreamTransformers
+    val customTransformers = modelDefinitionWithTypes(Some(SomeCategory)).modelDefinition.components
 
-    customTransformers should contain key "transformer1"
-    customTransformers should contain key "transformedInSomeCategory"
-    customTransformers should not contain key("transformedInSomeOtherCategory")
+    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformer1")
+    customTransformers should contain key ComponentInfo(ComponentType.CustomComponent, "transformedInSomeCategory")
+    customTransformers should not contain key(
+      ComponentInfo(ComponentType.CustomComponent, "transformedInSomeOtherCategory")
+    )
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = ModelDefinitionWithClasses(

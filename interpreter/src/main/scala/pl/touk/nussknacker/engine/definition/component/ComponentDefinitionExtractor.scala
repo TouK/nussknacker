@@ -22,10 +22,9 @@ import scala.runtime.BoxedUnit
 object ComponentDefinitionExtractor {
 
   def extract[T <: Component](
-      objWithCategories: WithCategories[T],
-      mergedComponentConfig: SingleComponentConfig
+      componentWithConfig: WithCategories[T]
   ): ComponentDefinitionWithImplementation = {
-    val obj = objWithCategories.value
+    val obj = componentWithConfig.value
 
     val (componentType, methodDefinitionExtractor, componentTypeSpecificData) = obj match {
       case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source, NoComponentTypeSpecificData)
@@ -48,8 +47,8 @@ object ComponentDefinitionExtractor {
         componentType,
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
-        objWithCategories.categories,
-        mergedComponentConfig,
+        componentWithConfig.categories,
+        componentWithConfig.componentConfig,
         componentTypeSpecificData
       )
       val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
@@ -69,15 +68,15 @@ object ComponentDefinitionExtractor {
             componentType,
             implementationInvoker,
             e,
-            objWithCategories.categories,
-            mergedComponentConfig,
+            componentWithConfig.categories,
+            componentWithConfig.componentConfig,
             componentTypeSpecificData
           )
         )
       case _ =>
         methodDefinitionExtractor
           .asInstanceOf[MethodDefinitionExtractor[T]]
-          .extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig)
+          .extractMethodDefinition(obj, findMethodToInvoke(obj), componentWithConfig.componentConfig)
           .map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 

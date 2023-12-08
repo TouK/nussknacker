@@ -47,46 +47,24 @@ class FlinkProcessCompilerWithTestComponents(
     val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
     val definitions                         = definitionWithTypes.modelDefinition
     val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
-    val testServicesDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[Service],
+    val testComponents = ComponentDefinitionWithImplementation.forList(
+      testComponentsWithCategories,
       componentsUiConfig
     )
-    val testCustomStreamTransformerDefs = ComponentDefinitionWithImplementation
-      .forMap(
-        testComponentsWithCategories[CustomStreamTransformer],
-        componentsUiConfig
-      )
-    val testSourceDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[SourceFactory],
-      componentsUiConfig
-    )
-    val testSinkDefs = ComponentDefinitionWithImplementation.forMap(
-      testComponentsWithCategories[SinkFactory],
-      componentsUiConfig
-    )
-    val servicesWithTests                = definitions.services ++ testServicesDefs
-    val sourcesWithTests                 = definitions.sourceFactories ++ testSourceDefs
-    val sinksWithTests                   = definitions.sinkFactories ++ testSinkDefs
-    val customStreamTransformerWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
-
-    val expressionConfigWithTests = definitions.expressionConfig.copy(
-      definitions.expressionConfig.globalVariables ++
-        GlobalVariableDefinitionExtractor.extractDefinitions(
-          testExtensionsHolder.globalVariables.view.map { case (key, value) =>
-            key -> WithCategories.anyCategory(value)
-          }.toMap
+    val definitionsWithTestComponentsAndGlobalVariables = definitions
+      .addComponents(testComponents)
+      .copy(
+        expressionConfig = definitions.expressionConfig.copy(
+          definitions.expressionConfig.globalVariables ++
+            GlobalVariableDefinitionExtractor.extractDefinitions(
+              testExtensionsHolder.globalVariables.view.map { case (key, value) =>
+                key -> WithCategories.anyCategory(value)
+              }.toMap
+            )
         )
-    )
+      )
 
-    val definitionsWithTestComponents = definitions.copy(
-      services = servicesWithTests,
-      sinkFactories = sinksWithTests,
-      sourceFactories = sourcesWithTests,
-      customStreamTransformers = customStreamTransformerWithTests,
-      expressionConfig = expressionConfigWithTests
-    )
-
-    (ModelDefinitionWithClasses(definitionsWithTestComponents), dictRegistry)
+    (ModelDefinitionWithClasses(definitionsWithTestComponentsAndGlobalVariables), dictRegistry)
   }
 
   override protected def adjustListeners(
@@ -119,11 +97,9 @@ class FlinkProcessCompilerWithTestComponents(
       )
   }
 
-  private def testComponentsWithCategories[T <: Component: ClassTag] =
-    testExtensionsHolder
-      .components[T]
-      .map(cd => cd.name -> WithCategories.anyCategory(cd.component.asInstanceOf[T]))
-      .toMap
+  private def testComponentsWithCategories =
+    testExtensionsHolder.components
+      .map(cd => cd.name -> WithCategories.anyCategory(cd.component))
 
   def this(
       testExtensionsHolder: TestExtensionsHolder,

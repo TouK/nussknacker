@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -22,6 +23,8 @@ case class MethodBasedComponentDefinitionWithImplementation(
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
     copy(implementationInvoker = implementationInvoker)
+
+  override def componentType: ComponentType = staticDefinition.componentType
 
   def parameters: List[Parameter] = staticDefinition.parameters
 

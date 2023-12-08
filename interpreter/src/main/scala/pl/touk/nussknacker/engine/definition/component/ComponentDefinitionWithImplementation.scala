@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 // into definition. Implementation should be mainly used via implementationInvoker which can be transformed
 // (e.g.) for purpose of stubbing.
 // TODO: This class currently is used also for global variables. We should rather extract some other class for them
-trait ComponentDefinitionWithImplementation {
+trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
 
   // TODO: It should be exposed only for real components - not for global variables
   def implementationInvoker: ComponentImplementationInvoker
@@ -39,24 +39,25 @@ object ComponentDefinitionWithImplementation {
 
   import cats.syntax.semigroup._
 
-  def forMap[T <: Component](
-      objs: Map[String, WithCategories[_ <: T]],
+  def forList[T <: Component](
+      components: List[(String, WithCategories[_ <: T])],
       externalConfig: Map[String, SingleComponentConfig]
-  ): Map[String, ComponentDefinitionWithImplementation] = {
-    objs
-      .map { case (id, obj) =>
-        val config = externalConfig.getOrElse(id, SingleComponentConfig.zero) |+| obj.componentConfig
-        id -> (obj, config)
+  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] = {
+    components
+      .map { case (componentName, component) =>
+        val config = externalConfig.getOrElse(componentName, SingleComponentConfig.zero) |+| component.componentConfig
+        componentName -> (component, config)
       }
       .collect {
-        case (id, (obj, config)) if !config.disabled =>
-          id -> ComponentDefinitionExtractor.extract[T](obj, config)
+        case (componentName, (component, config)) if !config.disabled =>
+          val componentDefWithImpl = ComponentDefinitionExtractor.extract[T](component.withComponentConfig(config))
+          ComponentInfo(componentDefWithImpl.componentType, componentName) -> componentDefWithImpl
       }
   }
 
   def withEmptyConfig[T <: Component](
       obj: T
   ): ComponentDefinitionWithImplementation =
-    ComponentDefinitionExtractor.extract[T](WithCategories.anyCategory(obj), SingleComponentConfig.zero)
+    ComponentDefinitionExtractor.extract[T](WithCategories.anyCategory(obj))
 
 }

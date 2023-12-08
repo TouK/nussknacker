@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.util.test.{TestExtensionsHolder, TestScenarioRunner}
 
@@ -24,10 +25,11 @@ class TestResultService extends Service {
 object TestResultService {
 
   def extractFromTestComponentsHolder[R](testExtensionsHolder: TestExtensionsHolder): List[R] = {
-    testExtensionsHolder
-      .components[Service]
-      .find(_.name == TestScenarioRunner.testResultService)
-      .map(_.component)
+    testExtensionsHolder.components
+      .collectFirst {
+        case ComponentDefinition(name, component: Service, _, _) if name == TestScenarioRunner.testResultService =>
+          component
+      }
       .getOrElse(throw new IllegalStateException(s"No ${TestScenarioRunner.testResultService} service registered"))
       .asInstanceOf[TestResultService]
       .data[R]()

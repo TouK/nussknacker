@@ -6,22 +6,18 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinitio
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 case class ModelDefinitionWithComponentIds[T](
-    services: List[(ComponentIdWithName, T)],
-    sourceFactories: List[(ComponentIdWithName, T)],
-    sinkFactories: List[(ComponentIdWithName, T)],
-    customStreamTransformers: List[(ComponentIdWithName, T)],
+    components: List[(ComponentIdWithName, T)],
     expressionConfig: ExpressionDefinition[T],
     settings: ClassExtractionSettings
 ) {
 
-  val allDefinitions: List[(ComponentIdWithName, T)] =
-    services ++ sourceFactories ++ sinkFactories ++ customStreamTransformers
+  def filter(predicate: T => Boolean): ModelDefinitionWithComponentIds[T] = copy(
+    components.filter(kv => predicate(kv._2)),
+    expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2)))
+  )
 
   def transform[R](f: T => R): ModelDefinitionWithComponentIds[R] = copy(
-    services.map { case (idWithName, value) => (idWithName, f(value)) },
-    sourceFactories.map { case (idWithName, value) => (idWithName, f(value)) },
-    sinkFactories.map { case (idWithName, value) => (idWithName, f(value)) },
-    customStreamTransformers.map { case (idWithName, value) => (idWithName, f(value)) },
+    components.map { case (idWithName, component) => (idWithName, f(component)) },
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
 

@@ -6,13 +6,13 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 case class ComponentStaticDefinition(
-    componentType: ComponentType,
+    override val componentType: ComponentType,
     parameters: List[Parameter],
     returnType: Option[TypingResult],
     categories: Option[List[String]],
     componentConfig: SingleComponentConfig,
     componentTypeSpecificData: ComponentTypeSpecificData
-) {
+) extends BaseComponentDefinition {
 
   def withComponentConfig(componentConfig: SingleComponentConfig): ComponentStaticDefinition =
     copy(componentConfig = componentConfig)

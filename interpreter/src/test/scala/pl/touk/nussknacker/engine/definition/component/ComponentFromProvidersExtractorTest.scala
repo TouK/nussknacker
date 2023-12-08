@@ -36,7 +36,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
         "auto"        -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe (1 to 7)
+    components shouldBe (1 to 7)
       .map(i => {
         val service = DynamicService(s"v$i")
         s"component-v$i" -> WithCategories(service, None, SingleComponentConfig.zero)
@@ -53,7 +53,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       )
     )
 
-    components.services shouldBe ((1 to 2).map(i => {
+    components shouldBe ((1 to 2).map(i => {
       s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
     }) ++
       (1 to 3).map(i => {
@@ -82,17 +82,17 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     }.getMessage should include("component")
   }
 
-  test("should discaver components with same name and different component type for same provider") {
+  test("should discover components with same name and different component type for same provider") {
     val components = extractComponents[Component](
       "components" -> Map(
         "dynamic1" -> Map("providerType" -> "sameNameDifferentComponentTypeProvider"),
         "auto"     -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe Map(
+    components shouldBe Map(
       "component" -> WithCategories(DynamicService("component"), None, SingleComponentConfig.zero)
     )
-    components.sinkFactories.size shouldBe 1
+    components.size shouldBe 1
   }
 
   test("should skip disabled providers") {
@@ -103,7 +103,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
         "auto"     -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe Map(
+    components shouldBe Map(
       "t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero)
     )
   }
@@ -122,7 +122,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   test("should load auto loadable component") {
     val components = extractComponents[Service]()
     val service    = AutoService
-    components.services shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero))
+    components shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero))
   }
 
   test("should skip incompatible auto loadable providers") {
@@ -162,7 +162,9 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
   }
 
-  private def extractComponents[T <: Component](map: (String, Any)*): ComponentFromProvidersExtractor.ComponentsGroupedByType =
+  private def extractComponents[T <: Component](
+      map: (String, Any)*
+  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] =
     extractComponents(map.toMap, ComponentFromProvidersExtractor(_))
 
   private def extractComponents[T <: Component](

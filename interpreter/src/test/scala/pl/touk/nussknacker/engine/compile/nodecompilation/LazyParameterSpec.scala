@@ -99,7 +99,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       customConversionsProviders = List.empty
     )
     val processDef: ModelDefinition[ComponentDefinitionWithImplementation] =
-      ModelDefinition(Map.empty, Map.empty, Map.empty, Map.empty, exprDef, ClassExtractionSettings.Default)
+      ModelDefinition(List.empty, exprDef, ClassExtractionSettings.Default)
     val definitionWithTypes = ModelDefinitionWithClasses(processDef)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(definitionWithTypes)
 

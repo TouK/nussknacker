@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 
 case class DynamicComponentDefinitionWithImplementation(
-    componentType: ComponentType,
+    override val componentType: ComponentType,
     override val implementationInvoker: ComponentImplementationInvoker,
     implementation: GenericNodeTransformation[_],
     override protected[definition] val categories: Option[List[String]],

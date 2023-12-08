@@ -4,6 +4,7 @@ import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -110,7 +111,7 @@ object UIProcessObjectsFactory {
   private def toComponentsUiConfig(
       modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition]
   ): ComponentsUiConfig =
-    modelDefinition.allDefinitions.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+    modelDefinition.components.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
 
   private def finalizeModelDefinition(
       modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
@@ -129,10 +130,7 @@ object UIProcessObjectsFactory {
     }
 
     modelDefinitionWithIds.copy(
-      services = modelDefinitionWithIds.services.map(finalizeComponentConfig),
-      sourceFactories = modelDefinitionWithIds.sourceFactories.map(finalizeComponentConfig),
-      sinkFactories = modelDefinitionWithIds.sinkFactories.map(finalizeComponentConfig),
-      customStreamTransformers = modelDefinitionWithIds.customStreamTransformers.map(finalizeComponentConfig),
+      components = modelDefinitionWithIds.components.map(finalizeComponentConfig)
     )
   }
 
@@ -141,8 +139,10 @@ object UIProcessObjectsFactory {
       fragmentComponents: Map[String, FragmentStaticDefinition],
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig       = fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-    val modelDefinitionComponentsConfig = modelDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val fragmentsComponentsConfig = fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
+    val modelDefinitionComponentsConfig = modelDefinition.components.map { case (info, component) =>
+      info.name -> component.componentConfig
+    }
 
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?
@@ -211,13 +211,21 @@ object UIProcessObjectsFactory {
     def createUIFragmentComponentDef(fragmentDef: FragmentStaticDefinition) =
       createUIFragmentComponentDefinition(fragmentDef, processCategoryService)
 
+    def filterByTypeAndTransform(componentType: ComponentType): Map[String, UIComponentDefinition] =
+      modelDefinition.components
+        .filter(_._2.componentType == componentType)
+        .map { case (idWithName, value) =>
+          idWithName.name -> createUIComponentDefinition(value, processCategoryService)
+        }
+        .toMap
+
     val transformed = modelDefinition.transform(createUIComponentDef)
     UIModelDefinition(
-      services = mapByName(transformed.services),
-      sourceFactories = mapByName(transformed.sourceFactories),
-      sinkFactories = mapByName(transformed.sinkFactories),
+      services = filterByTypeAndTransform(ComponentType.Service),
+      sourceFactories = filterByTypeAndTransform(ComponentType.Source),
+      sinkFactories = filterByTypeAndTransform(ComponentType.Sink),
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentComponentDef),
-      customStreamTransformers = mapByName(transformed.customStreamTransformers),
+      customStreamTransformers = filterByTypeAndTransform(ComponentType.CustomComponent),
       typesInformation = types
     )
   }
@@ -242,9 +250,6 @@ object UIProcessObjectsFactory {
     val determinedValidators = ScenarioPropertyValidatorDeterminerChain(config).determine()
     UiScenarioPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
   }
-
-  private def mapByName[T](mapByNameWithId: List[(ComponentIdWithName, T)]): Map[String, T] =
-    mapByNameWithId.map { case (idWithName, value) => idWithName.name -> value }.toMap
 
 }
 

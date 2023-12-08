@@ -10,8 +10,7 @@ import java.util.UUID
 import scala.reflect.ClassTag
 
 case class TestExtensionsHolder(runId: TestRunId) extends Serializable {
-
-  def components[T <: Component: ClassTag]: List[ComponentDefinition] = TestExtensionsHolder.componentsForId[T](runId)
+  def components: List[ComponentDefinition] = TestExtensionsHolder.componentsForId(runId)
 
   def globalVariables: Map[String, AnyRef] = TestExtensionsHolder.globalVariablesForId(runId)
 
@@ -23,10 +22,8 @@ object TestExtensionsHolder {
 
   private var extensions = Map[TestRunId, Extensions]()
 
-  def componentsForId[T <: Component: ClassTag](id: TestRunId): List[ComponentDefinition] =
-    extensions(id).components.collect { case ComponentDefinition(name, component: T, _, _) =>
-      ComponentDefinition(name, component)
-    }
+  def componentsForId(id: TestRunId): List[ComponentDefinition] =
+    extensions(id).components
 
   def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = extensions(id).globalVariables
 
@@ -62,7 +59,7 @@ class TestComponentsProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    TestExtensionsHolder.componentsForId[Component](TestRunId(config.getString(testRunIdConfig)))
+    TestExtensionsHolder.componentsForId(TestRunId(config.getString(testRunIdConfig)))
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

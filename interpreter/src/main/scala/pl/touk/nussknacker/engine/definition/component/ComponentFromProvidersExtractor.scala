@@ -4,11 +4,8 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor.{ComponentsGroupedByType, componentConfigPath}
+import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-
-import scala.reflect.ClassTag
 
 object ComponentFromProvidersExtractor {
 
@@ -18,13 +15,6 @@ object ComponentFromProvidersExtractor {
     ComponentFromProvidersExtractor(classLoader, NussknackerVersion.current)
   }
 
-  case class ComponentsGroupedByType(
-      services: Map[String, WithCategories[Service]],
-      sourceFactories: Map[String, WithCategories[SourceFactory]],
-      sinkFactories: Map[String, WithCategories[SinkFactory]],
-      customTransformers: Map[String, WithCategories[CustomStreamTransformer]]
-  )
-
 }
 
 case class ComponentFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
@@ -33,6 +23,13 @@ case class ComponentFromProvidersExtractor(classLoader: ClassLoader, nussknacker
     ScalaServiceLoader
       .load[ComponentProvider](classLoader)
       .groupBy(_.providerName)
+  }
+
+  def extractComponents(
+      processObjectDependencies: ProcessObjectDependencies
+  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] = {
+    loadCorrectProviders(processObjectDependencies.config).toList
+      .flatMap { case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies) }
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
@@ -75,12 +72,6 @@ case class ComponentFromProvidersExtractor(classLoader: ClassLoader, nussknacker
     autoLoadedProvidersWithConfig
   }
 
-  def extractComponents(processObjectDependencies: ProcessObjectDependencies): ComponentsGroupedByType = {
-    val components = loadCorrectProviders(processObjectDependencies.config).toList
-      .flatMap { case (_, (config, provider)) => extractOneProviderConfig(config, provider, processObjectDependencies) }
-    groupByComponentType(components)
-  }
-
   def loadAdditionalConfig(inputConfig: Config, configWithDefaults: Config): Config = {
     val resolvedConfigs = loadCorrectProviders(configWithDefaults).map { case (name, (config, provider)) =>
       name -> provider.resolveConfigForExecution(config.config)
@@ -94,47 +85,22 @@ case class ComponentFromProvidersExtractor(classLoader: ClassLoader, nussknacker
       config: ComponentProviderConfig,
       provider: ComponentProvider,
       processObjectDependencies: ProcessObjectDependencies
-  ): List[(String, WithCategories[Component])] = {
-    provider.create(config.config, processObjectDependencies).map { cd =>
-      val finalName = config.componentPrefix.map(_ + cd.name).getOrElse(cd.name)
-      finalName -> WithCategories(
-        cd.component,
+  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] = {
+    provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
+      val componentName =
+        config.componentPrefix.map(_ + inputComponentDefinition.name).getOrElse(inputComponentDefinition.name)
+      val componentWithConfig = WithCategories(
+        inputComponentDefinition.component,
         None,
-        SingleComponentConfig.zero.copy(docsUrl = cd.docsUrl, icon = cd.icon)
+        SingleComponentConfig.zero
+          .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
       )
+      val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
+      ComponentInfo(componentDefWithImpl.componentType, componentName) -> componentDefWithImpl
     }
   }
 
-  private def groupByComponentType(definitions: List[(String, WithCategories[Component])]) = {
-    def checkDuplicates[T <: Component: ClassTag](components: List[(String, WithCategories[Component])]): Unit = {
-      components
-        .groupBy(_._1)
-        .foreach { case (_, duplicatedComponents) =>
-          if (duplicatedComponents.length > 1) {
-            throw new IllegalArgumentException(
-              s"Found duplicate keys: ${duplicatedComponents.mkString(", ")}, please correct configuration"
-            )
-          }
-        }
-    }
-
-    def forClass[T <: Component: ClassTag] = {
-      val defs = definitions.collect { case (id, a @ WithCategories(definition: T, _, _)) =>
-        id -> a.copy(value = definition)
-      }
-      checkDuplicates(defs)
-      defs.toMap
-    }
-
-    ComponentsGroupedByType(
-      services = forClass[Service],
-      sourceFactories = forClass[SourceFactory],
-      sinkFactories = forClass[SinkFactory],
-      customTransformers = forClass[CustomStreamTransformer]
-    )
-  }
-
-  def findSingleCompatible(
+  private def findSingleCompatible(
       name: String,
       providerName: String,
       componentProviders: List[ComponentProvider]

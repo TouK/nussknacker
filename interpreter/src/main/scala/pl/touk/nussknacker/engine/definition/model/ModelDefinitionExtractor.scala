@@ -14,7 +14,6 @@ object ModelDefinitionExtractor {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
   // TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
   def extractModelDefinition(
       creator: ProcessConfigCreator,
@@ -23,79 +22,11 @@ object ModelDefinitionExtractor {
       // It won't be needed to pass category after we get rid of ProcessConfigCreator API
       category: Option[String]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-
-    val componentsFromProviders = extractFromComponentProviders(classLoader, processObjectDependencies)
-    val services                = creator.services(processObjectDependencies) ++ componentsFromProviders.services
-    val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ componentsFromProviders.sourceFactories
-    val sinkFactories   = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
-    val customStreamTransformers =
-      creator.customStreamTransformers(processObjectDependencies) ++ componentsFromProviders.customTransformers
-
-    val expressionConfig   = creator.expressionConfig(processObjectDependencies)
-    val componentsUiConfig = ComponentsUiConfigParser.parse(processObjectDependencies.config)
-
-    val servicesDefs =
-      ComponentDefinitionWithImplementation.forMap(
-        services,
-        componentsUiConfig
-      )
-
-    val customStreamTransformersDefs = ComponentDefinitionWithImplementation.forMap(
-      customStreamTransformers,
-      componentsUiConfig
-    )
-
-    val sourceFactoriesDefs =
-      ComponentDefinitionWithImplementation.forMap(
-        sourceFactories,
-        componentsUiConfig
-      )
-
-    val sinkFactoriesDefs =
-      ComponentDefinitionWithImplementation.forMap(
-        sinkFactories,
-        componentsUiConfig
-      )
-
-    val settings = creator.classExtractionSettings(processObjectDependencies)
-
-    val definition = ModelDefinition[ComponentDefinitionWithImplementation](
-      servicesDefs,
-      sourceFactoriesDefs,
-      sinkFactoriesDefs,
-      customStreamTransformersDefs,
-      toExpressionDefinition(expressionConfig),
-      settings
-    )
-
-    category
-      .map(c => definition.filter(_.availableForCategory(c)))
-      .getOrElse(definition)
-  }
-
-  private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
-    ExpressionDefinition(
-      GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables),
-      expressionConfig.globalImports,
-      expressionConfig.additionalClasses,
-      expressionConfig.languages,
-      expressionConfig.optimizeCompilation,
-      expressionConfig.strictTypeChecking,
-      expressionConfig.dictionaries,
-      expressionConfig.hideMetaVariable,
-      expressionConfig.strictMethodsChecking,
-      expressionConfig.staticMethodInvocationsChecking,
-      expressionConfig.methodExecutionForUnknownAllowed,
-      expressionConfig.dynamicPropertyAccessAllowed,
-      expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders
-    )
-
-  private def extractFromComponentProviders(
-      classLoader: ClassLoader,
-      processObjectDependencies: ProcessObjectDependencies
-  ): ComponentFromProvidersExtractor.ComponentsGroupedByType = {
-    ComponentFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies)
+    val modelDefinitionBasedOnConfigCreator =
+      ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(creator, processObjectDependencies, category)
+    val componentsFromProviders =
+      ComponentFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies)
+    modelDefinitionBasedOnConfigCreator.addComponents(componentsFromProviders)
   }
 
 }

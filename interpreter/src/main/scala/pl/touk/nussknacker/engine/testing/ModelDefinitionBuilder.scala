@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -26,12 +26,9 @@ object ModelDefinitionBuilder {
 
   def empty: ModelDefinition[ComponentStaticDefinition] =
     ModelDefinition(
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      Map.empty,
+      List.empty[(ComponentInfo, ComponentStaticDefinition)],
       ExpressionDefinition(
-        Map.empty,
+        Map.empty[String, ComponentStaticDefinition],
         List.empty,
         defaultAdditionalClasses,
         languages = LanguageConfiguration.default,
@@ -52,16 +49,10 @@ object ModelDefinitionBuilder {
   def withNullImplementation(
       definition: ModelDefinition[ComponentStaticDefinition]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-    val expressionConfig     = definition.expressionConfig
-    val expressionDefinition = toExpressionDefinition(expressionConfig)
-    ModelDefinition(
-      definition.services.mapValuesNow(wrapWithNullImplementation(_, classOf[Future[_]])),
-      definition.sourceFactories.mapValuesNow(wrapWithNullImplementation(_)),
-      definition.sinkFactories.mapValuesNow(wrapWithNullImplementation(_)),
-      definition.customStreamTransformers.mapValuesNow(wrapWithNullImplementation(_)),
-      expressionDefinition,
-      definition.settings
-    )
+    definition.transform { component =>
+      val realType = if (component.componentType == ComponentType.Service) classOf[Future[_]] else classOf[Any]
+      wrapWithNullImplementation(component, realType)
+    }
   }
 
   def toExpressionDefinition(
@@ -86,13 +77,13 @@ object ModelDefinitionBuilder {
 
   private def wrapWithNullImplementation(
       staticDefinition: ComponentStaticDefinition,
-      realType: Class[_] = classOf[Any]
+      runtimeClass: Class[_] = classOf[Any]
   ): ComponentDefinitionWithImplementation =
     MethodBasedComponentDefinitionWithImplementation(
       ComponentImplementationInvoker.nullImplementationInvoker,
       null,
       staticDefinition,
-      realType
+      runtimeClass
     )
 
   implicit class ComponentDefinitionBuilder(definition: ModelDefinition[ComponentStaticDefinition]) {
@@ -110,57 +101,51 @@ object ModelDefinitionBuilder {
       )
 
     def withService(
-        id: String,
+        name: String,
         returnType: Option[TypingResult],
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(services =
-        definition.services + (id -> wrapWithStaticServiceDefinition(params.toList, returnType))
-      )
+      definition.addComponent(name, wrapWithStaticServiceDefinition(params.toList, returnType))
 
-    def withService(id: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(services =
-        definition.services + (id -> wrapWithStaticServiceDefinition(params.toList, Some(Unknown)))
-      )
+    def withService(name: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
+      definition.addComponent(name, wrapWithStaticServiceDefinition(params.toList, Some(Unknown)))
 
-    def withSourceFactory(typ: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(sourceFactories =
-        definition.sourceFactories + (typ -> wrapWithStaticSourceDefinition(params.toList, Some(Unknown)))
-      )
+    def withSourceFactory(name: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
+      definition.addComponent(name, wrapWithStaticSourceDefinition(params.toList, Some(Unknown)))
 
     def withSourceFactory(
-        typ: String,
+        name: String,
         category: String,
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(sourceFactories =
-        definition.sourceFactories + (typ -> ComponentStaticDefinition(
+      definition.addComponent(
+        name,
+        ComponentStaticDefinition(
           ComponentType.Source,
           params.toList,
           Some(Unknown),
           Some(List(category)),
           SingleComponentConfig.zero,
           componentTypeSpecificData = NoComponentTypeSpecificData
-        ))
+        )
       )
 
-    def withSinkFactory(typ: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(sinkFactories =
-        definition.sinkFactories + (typ -> wrapWithStaticSinkDefinition(params.toList, None))
-      )
+    def withSinkFactory(name: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
+      definition.addComponent(name, wrapWithStaticSinkDefinition(params.toList, None))
 
     def withCustomStreamTransformer(
-        id: String,
+        name: String,
         returnType: Option[TypingResult],
         componentSpecificData: CustomComponentSpecificData,
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> wrapWithStaticCustomComponentDefinition(
+      definition.addComponent(
+        name,
+        wrapWithStaticCustomComponentDefinition(
           params.toList,
           returnType,
           componentSpecificData
-        ))
+        )
       )
 
   }

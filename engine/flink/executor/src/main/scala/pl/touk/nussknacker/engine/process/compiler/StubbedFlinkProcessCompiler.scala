@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -52,13 +53,14 @@ abstract class StubbedFlinkProcessCompiler(
       ComponentDefinitionContext(userCodeClassLoader, originalDefinitionWithTypes, originalDictRegistry)
     val usedSourceTypes = collectedSources.map(_.ref.typ)
     val stubbedSources =
-      usedSourceTypes.map { sourceType =>
-        val sourceDefinition = originalDefinition.sourceFactories.getOrElse(
-          sourceType,
-          throw new IllegalArgumentException(s"Source $sourceType cannot be stubbed - missing definition")
-        )
+      usedSourceTypes.map { sourceName =>
+        val sourceDefinition = originalDefinition
+          .getComponent(ComponentType.Source, sourceName)
+          .getOrElse(
+            throw new IllegalArgumentException(s"Source $sourceName cannot be stubbed - missing definition")
+          )
         val stubbedDefinition = prepareSourceFactory(sourceDefinition, context)
-        sourceType -> stubbedDefinition
+        ComponentInfo(ComponentType.Source, sourceName) -> stubbedDefinition
       }
 
     def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
@@ -67,19 +69,21 @@ abstract class StubbedFlinkProcessCompiler(
       ).createSourceDefinition(frag)
     }
 
-    val stubbedSourceForFragment: Seq[(String, ComponentDefinitionWithImplementation)] =
+    val stubbedSourceForFragment: Seq[(ComponentInfo, ComponentDefinitionWithImplementation)] =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
-        frag.id -> prepareSourceFactory(sourceDefForFragment(frag), context)
+        ComponentInfo(ComponentType.Fragment, frag.id) -> prepareSourceFactory(sourceDefForFragment(frag), context)
       }
 
-    val stubbedServices = originalDefinition.services.mapValuesNow(prepareService(_, context))
+    val stubbedServices = originalDefinition
+      .filter(_.componentType == ComponentType.Service)
+      .components
+      .mapValuesNow(prepareService(_, context))
 
     (
       ModelDefinitionWithClasses(
         originalDefinition
           .copy(
-            sourceFactories = originalDefinition.sourceFactories ++ stubbedSources ++ stubbedSourceForFragment,
-            services = stubbedServices
+            components = originalDefinition.components ++ stubbedSources ++ stubbedSourceForFragment ++ stubbedServices
           )
       ),
       originalDictRegistry
