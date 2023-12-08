@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.component.{BaseComponentDefinition, ComponentIdProvider}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition.checkDuplicates
+import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
 case class ModelDefinition[T <: BaseComponentDefinition] private (
     components: Map[ComponentInfo, T],
@@ -69,15 +70,17 @@ object ModelDefinition {
   }
 
   private def checkDuplicates(components: List[(ComponentInfo, _)]): Unit = {
-    components
-      .groupBy(_._1)
-      .foreach { case (_, duplicatedComponents) =>
-        if (duplicatedComponents.length > 1) {
-          throw new IllegalArgumentException(
-            s"Found duplicate components: ${duplicatedComponents.mkString(", ")}, please correct configuration"
-          )
-        }
-      }
+    val duplicates = components.toGroupedMap
+      .filter(_._2.size > 1)
+      .keys
+      .map(_.toString)
+      .toList
+      .sorted
+    if (duplicates.nonEmpty) {
+      throw new IllegalArgumentException(
+        s"Found duplicated components: ${duplicates.mkString(", ")}. Please correct model configuration."
+      )
+    }
   }
 
 }

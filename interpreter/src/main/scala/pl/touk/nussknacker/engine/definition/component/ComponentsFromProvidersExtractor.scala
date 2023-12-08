@@ -4,20 +4,20 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor.componentConfigPath
+import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-object ComponentFromProvidersExtractor {
+object ComponentsFromProvidersExtractor {
 
   val componentConfigPath = "components"
 
-  def apply(classLoader: ClassLoader): ComponentFromProvidersExtractor = {
-    ComponentFromProvidersExtractor(classLoader, NussknackerVersion.current)
+  def apply(classLoader: ClassLoader): ComponentsFromProvidersExtractor = {
+    ComponentsFromProvidersExtractor(classLoader, NussknackerVersion.current)
   }
 
 }
 
-case class ComponentFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
+case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknackerVersion: NussknackerVersion) {
 
   private lazy val providers: Map[String, List[ComponentProvider]] = {
     ScalaServiceLoader

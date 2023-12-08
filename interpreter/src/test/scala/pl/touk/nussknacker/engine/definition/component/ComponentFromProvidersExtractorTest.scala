@@ -114,7 +114,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         Map("components.dynamicTest.valueCount" -> 7),
-        (cl: ClassLoader) => ComponentFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
+        (cl: ClassLoader) => ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -131,7 +131,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     intercept[IllegalArgumentException] {
       extractComponents[Service](
         Map.empty[String, Any],
-        (cl: ClassLoader) => ComponentFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
+        (cl: ClassLoader) => ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -165,11 +165,11 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   private def extractComponents[T <: Component](
       map: (String, Any)*
   ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] =
-    extractComponents(map.toMap, ComponentFromProvidersExtractor(_))
+    extractComponents(map.toMap, ComponentsFromProvidersExtractor(_))
 
   private def extractComponents[T <: Component](
       map: Map[String, Any],
-      makeExtractor: ClassLoader => ComponentFromProvidersExtractor
+      makeExtractor: ClassLoader => ComponentsFromProvidersExtractor
   ) = {
     ClassLoaderWithServices.withCustomServices(
       List(
@@ -188,7 +188,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
-      val extractor = ComponentFromProvidersExtractor(cl)
+      val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))

@@ -49,7 +49,6 @@ object ProcessTestData {
   val existingSinkFactory            = "barSink"
   val existingSinkFactory2           = "barSink2"
   val existingSinkFactoryKafkaString = "kafka-string"
-  val otherExistingSinkFactory       = "barSink"
 
   val existingServiceId         = "barService"
   val otherExistingServiceId    = "fooService"
@@ -78,7 +77,6 @@ object ProcessTestData {
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
       .withSourceFactory(csvSourceFactory)
-      .withSinkFactory(otherExistingSinkFactory)
       .withSinkFactory(existingSinkFactory)
       .withSinkFactory(
         existingSinkFactoryKafkaString,

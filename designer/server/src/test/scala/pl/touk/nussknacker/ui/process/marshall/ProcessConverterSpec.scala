@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.component.ComponentInfo
 import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -46,9 +47,9 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   lazy val validation: UIProcessValidator = {
     val modelDefinition = ModelDefinition[ComponentStaticDefinition](
-      List.empty,
+      List.empty[(ComponentInfo, ComponentStaticDefinition)],
       expressionConfig = ExpressionDefinition(
-        Map.empty,
+        Map.empty[String, ComponentStaticDefinition],
         List.empty,
         List.empty,
         LanguageConfiguration.default,
