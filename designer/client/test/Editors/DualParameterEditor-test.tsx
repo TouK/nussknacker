@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { DualParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DualParameterEditor";
 import { DualEditorMode, EditorType } from "../../src/components/graph/node-modal/editors/expression/Editor";
-import { mockErrors, mockValueChange } from "./helpers";
+import { mockFieldError, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -16,7 +16,7 @@ describe(DualParameterEditor.name, () => {
                 className={""}
                 isMarked={false}
                 onValueChange={mockValueChange}
-                fieldErrors={mockErrors}
+                fieldError={mockFieldError}
                 editorConfig={{
                     simpleEditor: { type: EditorType.CRON_EDITOR },
                     defaultMode: DualEditorMode.SIMPLE,

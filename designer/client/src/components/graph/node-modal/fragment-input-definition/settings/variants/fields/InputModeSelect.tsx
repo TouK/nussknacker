@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
 import { SettingLabelStyled, SettingRow } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
-import { FixedValuesPresets } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
+import { FixedValuesPresets, NodeValidationError } from "../../../../../../../types";
+import { getValidationErrorForField } from "../../../../editors/Validators";
 
 interface Props {
     onChange: (path: string, value: onChangeType) => void;
@@ -15,11 +15,11 @@ interface Props {
     inputModeOptions: Option[];
     readOnly: boolean;
     fixedValuesPresets: FixedValuesPresets;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
 export default function InputModeSelect(props: Props) {
-    const { onChange, path, item, inputModeOptions, fixedValuesPresets, fieldsErrors } = props;
+    const { onChange, path, item, inputModeOptions, fixedValuesPresets, errors } = props;
     const { t } = useTranslation();
     const { temporaryUserDefinedList } = useSettings();
 
@@ -84,8 +84,7 @@ export default function InputModeSelect(props: Props) {
                     }}
                     value={inputModeOptions.find((inputModeOption) => inputModeOption.value === value)}
                     options={inputModeOptions}
-                    fieldName={`$param.${item.name}.$inputMode`}
-                    fieldErrors={fieldsErrors}
+                    fieldError={getValidationErrorForField(errors, `$param.${item.name}.$inputMode`)}
                 />
             </SettingRow>
         </>

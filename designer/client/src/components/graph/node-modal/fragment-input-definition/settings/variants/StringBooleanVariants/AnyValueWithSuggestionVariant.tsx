@@ -5,7 +5,7 @@ import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
-import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
+import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { Error } from "../../../../editors/Validators";
 
 interface Props {
@@ -15,18 +15,10 @@ interface Props {
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export const AnyValueWithSuggestionVariant = ({
-    item,
-    path,
-    onChange,
-    variableTypes,
-    fixedValuesPresets,
-    readOnly,
-    fieldsErrors,
-}: Props) => {
+export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTypes, fixedValuesPresets, readOnly, errors }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -48,7 +40,7 @@ export const AnyValueWithSuggestionVariant = ({
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
@@ -61,7 +53,7 @@ export const AnyValueWithSuggestionVariant = ({
                 options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>

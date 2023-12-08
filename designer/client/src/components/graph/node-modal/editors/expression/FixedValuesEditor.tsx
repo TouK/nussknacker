@@ -3,11 +3,11 @@ import Creatable from "react-select/creatable";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
-import { ExtendedEditor } from "./Editor";
-import { NodeValidationError } from "../../../../../types";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
+import { ExtendedEditor } from "./Editor";
+import { FieldError } from "../Validators";
 
 type Props = {
     editorConfig: $TodoType;
@@ -17,7 +17,7 @@ type Props = {
     className: string;
     param?: $TodoType;
     showValidation: boolean;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
 };
 
 interface Option {
@@ -37,17 +37,7 @@ function getOptions(
     }));
 }
 
-export const FixedValuesEditor: ExtendedEditor<Props> = ({
-    expressionObj,
-    readOnly,
-    onValueChange,
-    className,
-    showValidation,
-    fieldErrors,
-    editorConfig,
-}: Props) => {
-    const getCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
-const FixedValuesEditorComponent = (props: Props) => {
+export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
@@ -56,12 +46,10 @@ const FixedValuesEditorComponent = (props: Props) => {
         ); // just leave undefined and let the user explicitly select one
     };
 
-    const { expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig } = props;
+    const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldError } = props;
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
-    const options = getOptions(editorConfig.possibleValues);
-    const currentOption = getCurrentOption(expressionObj, options);
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
     return (
@@ -99,30 +87,7 @@ const FixedValuesEditorComponent = (props: Props) => {
                 }}
             />
 
-            {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
-        </div>
-    );
-};
-
-export default FixedValuesEditorComponent;
-
-FixedValuesEditorComponent.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
-    editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
-FixedValuesEditorComponent.switchableToHint = () => "Switch to basic mode";
-FixedValuesEditorComponent.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
-    return (
-        <div className={`node-value-select ${className}`}>
-            <Creatable
-                classNamePrefix={styles.nodeValueSelect}
-                value={currentOption}
-                onChange={(newValue) => onValueChange(newValue.value)}
-                options={options}
-                isDisabled={readOnly}
-                formatCreateLabel={(x) => x}
-                menuPortalTarget={document.body}
-                createOptionPosition={"first"}
-            />
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && <ValidationLabels fieldError={fieldError} />}
         </div>
     );
 };

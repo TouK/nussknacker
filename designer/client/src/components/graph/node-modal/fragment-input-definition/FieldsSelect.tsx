@@ -1,12 +1,9 @@
 import React, { useCallback, useMemo } from "react";
-import { Parameter } from "../../../../types";
-import MapKey from "../editors/map/MapKey";
-import { DndItems } from "./DndItems";
-import { FieldsRow } from "./FieldsRow";
-import { NodeRowFields } from "./NodeRowFields";
-import { TypeSelect } from "./TypeSelect";
-import { useDiffMark } from "../PathsToMark";
-import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
+import { FixedValuesPresets, NodeValidationError, Parameter, VariableTypes } from "../../../../types";
+import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator, Error } from "../editors/Validators";
+import { DndItems } from "../../../common/dndItems/DndItems";
+import { NodeRowFieldsProvider } from "../node-row-fields-provider";
+import { Item, onChangeType, FragmentInputParameter } from "./item";
 
 export interface Option {
     value: string;
@@ -25,7 +22,7 @@ interface FieldsSelectProps {
     showValidation?: boolean;
     variableTypes: VariableTypes;
     fixedValuesPresets: FixedValuesPresets;
-    fieldErrors: Error[];
+    errors: NodeValidationError[];
 }
 
 export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
@@ -41,7 +38,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
         readOnly,
         showValidation,
         fixedValuesPresets,
-        fieldErrors,
+        errors,
     } = props;
 
     const ItemElement = useCallback(
@@ -49,26 +46,18 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             index,
             item,
             validators,
-            fieldsErrors,
+            errors,
         }: {
             index: number;
             item: FragmentInputParameter;
             validators: Validator[];
-            fieldsErrors: Error[];
+            errors: NodeValidationError[];
         }) => {
             return (
                 <Item
                     index={index}
                     item={item}
-                    fieldErrors={validators
-                            .filter((validator) => !validator.isValid(item.name))
-                            .map((validator) => ({
-                                message: validator.message(),
-                                typ: "",
-                                description: validator.description(),
-                                fieldName: item.name,
-                                errorType: "SaveAllowed",
-                            }))}
+                    validators={validators}
                     namespace={namespace}
                     onChange={onChange}
                     options={options}
@@ -76,7 +65,7 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     variableTypes={variableTypes}
                     showValidation={showValidation}
                     fixedValuesPresets={fixedValuesPresets}
-                    fieldsErrors={fieldsErrors}
+                    errors={errors}
                 />
             );
         },
@@ -100,13 +89,13 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                  * Display settings errors only when the name is correct, for now, the name is used in the fieldName to recognize the list item,
                  * but it can be a situation where that name is not unique or is empty in a few parameters, in this case, there is a problem with a correct error display
                  */
-                const displayableErrors = allValid(validators, item.name) ? fieldErrors : [];
+                const displayableErrors = allValid(validators, item.name) ? errors : [];
                 return {
                     item,
-                    el: <ItemElement key={index} index={index} item={item} validators={validators} fieldsErrors={displayableErrors} />,
+                    el: <ItemElement key={index} index={index} item={item} validators={validators} errors={displayableErrors} />,
                 };
             }),
-        [ItemElement, fieldErrors, fields],
+        [ItemElement, errors, fields],
     );
 
     return (

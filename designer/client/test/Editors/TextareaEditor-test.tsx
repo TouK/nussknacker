@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
 import { TextareaEditor } from "../../src/components/graph/node-modal/editors/expression/TextareaEditor";
-import { mockErrors, mockFormatter } from "./helpers";
+import { mockFieldError, mockFormatter } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -14,7 +14,7 @@ describe(TextareaEditor.name, () => {
                 onValueChange={jest.fn()}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}
-                fieldErrors={mockErrors}
+                fieldError={mockFieldError}
                 showValidation={true}
             />,
         );

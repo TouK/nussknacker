@@ -2,8 +2,7 @@ import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
 import { cx } from "@emotion/css";
-import { isEmpty } from "lodash";
-import { NodeValidationError } from "../../../../../types";
+import { FieldError } from "../Validators";
 
 export interface InputProps
     extends Pick<
@@ -12,7 +11,7 @@ export interface InputProps
     > {
     value: string;
     inputClassName?: string;
-    fieldErrors?: NodeValidationError[];
+    fieldError: FieldError;
     isMarked?: boolean;
     showValidation?: boolean;
 }
@@ -23,7 +22,7 @@ export default function Input(props: InputProps): JSX.Element {
         showValidation,
         className,
         value,
-        fieldErrors,
+        fieldError,
         type = "text",
         inputClassName,
         autoFocus,
@@ -32,6 +31,7 @@ export default function Input(props: InputProps): JSX.Element {
         onFocus,
         onChange,
     } = props;
+
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
@@ -43,15 +43,12 @@ export default function Input(props: InputProps): JSX.Element {
                         onChange={onChange}
                         onFocus={onFocus}
                         type={type}
-                        className={cx([
-                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
-                            inputClassName,
-                        ])}
+                        className={cx([!showValidation || !fieldError ? "node-input" : "node-input node-input-with-error", inputClassName])}
                         value={value || ""}
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && <ValidationLabels fieldError={fieldError} />}
         </div>
     );
 }

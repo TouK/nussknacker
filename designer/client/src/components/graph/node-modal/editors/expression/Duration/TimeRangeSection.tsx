@@ -5,22 +5,21 @@ import React from "react";
 import { Duration } from "./DurationEditor";
 import { Period } from "./PeriodEditor";
 import { TimeRangeStyled } from "./TimeRangeStyled";
-import { isEmpty } from "lodash";
-import { NodeValidationError } from "../../../../../../types";
+import { FieldError } from "../../Validators";
 
 type Props = {
     components: Array<TimeRange>;
     onComponentValueChange: UnknownFunction;
     readOnly: boolean;
     showValidation: boolean;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     value: Duration | Period;
     expression: string;
     isMarked: boolean;
 };
 
 export default function TimeRangeSection(props: Props): JSX.Element {
-    const { components, onComponentValueChange, readOnly, showValidation, fieldErrors, value, expression, isMarked } = props;
+    const { components, onComponentValueChange, readOnly, showValidation, fieldError, value, isMarked } = props;
 
     return (
         <TimeRangeStyled>
@@ -33,12 +32,12 @@ export default function TimeRangeSection(props: Props): JSX.Element {
                         value={value}
                         readOnly={readOnly}
                         isMarked={isMarked}
-                        isValid={isEmpty(fieldErrors)}
+                        isValid={!fieldError}
                         showValidation={showValidation}
                     />
                 ))}
             </div>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && <ValidationLabels fieldError={fieldError} />}
         </TimeRangeStyled>
     );
 }

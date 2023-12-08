@@ -3,7 +3,7 @@ import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { AnyValueParameterVariant, onChangeType } from "../../../item";
-import { VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { Error } from "../../../../editors/Validators";
 
@@ -13,10 +13,10 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, fieldsErrors }: Props) => {
+export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes, errors }: Props) => {
     const { t } = useTranslation();
 
     return (
@@ -28,7 +28,7 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                 onChange={onChange}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>

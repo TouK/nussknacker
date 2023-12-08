@@ -11,23 +11,24 @@ import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
 import { NodeField } from "./NodeField";
 
+interface Props {
+    isEditMode?: boolean;
+    node: NodeType;
+    renderFieldLabel: (paramName: string) => JSX.Element;
+    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    showSwitch?: boolean;
+    errors?: NodeValidationError[];
+    showValidation?: boolean;
+}
 export function Properties({
-    fieldErrors,
+    errors = [],
     isEditMode,
     node,
     renderFieldLabel,
     setProperty,
     showSwitch,
     showValidation,
-}: {
-    isEditMode?: boolean;
-    node: NodeType;
-    renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
-    showSwitch?: boolean;
-    fieldErrors?: NodeValidationError[];
-    showValidation?: boolean;
-}): JSX.Element {
+}: Props): JSX.Element {
     const scenarioPropertiesConfig = useSelector(getScenarioPropertiesConfig);
     //fixme move this configuration to some better place?
     //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
@@ -44,7 +45,7 @@ export function Properties({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                errors={fieldErrors}
+                errors={errors}
             />
             {node.isFragment && (
                 <NodeField
@@ -55,8 +56,8 @@ export function Properties({
                     setProperty={setProperty}
                     fieldType={FieldType.input}
                     fieldLabel={"Documentation url"}
-                    fieldProperty={"additionalFields.properties.docsUrl"}
-                    validators={[errorValidator(fieldErrors || [], "docsUrl")]}
+                    fieldName={"additionalFields.properties.docsUrl"}
+                    errors={errors}
                     autoFocus
                 />
             )}
@@ -67,7 +68,7 @@ export function Properties({
                     showValidation={showValidation}
                     propertyName={propName}
                     propertyConfig={propConfig}
-                    fieldErrors={fieldErrors || []}
+                    errors={errors}
                     onChange={setProperty}
                     renderFieldLabel={renderFieldLabel}
                     editedNode={node}
@@ -80,6 +81,7 @@ export function Properties({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
         </NodeTableBody>
     );

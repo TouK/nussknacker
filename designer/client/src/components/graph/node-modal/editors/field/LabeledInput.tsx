@@ -3,7 +3,7 @@ import Input, { InputProps } from "./Input";
 import { NodeRow } from "../../NodeDetailsContent/NodeStyled";
 
 export type LabeledInputProps = PropsWithChildren<
-    Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "fieldErrors" | "onChange">
+    Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "fieldError" | "onChange">
 >;
 
 export default function LabeledInput({ children, ...props }: LabeledInputProps): JSX.Element {

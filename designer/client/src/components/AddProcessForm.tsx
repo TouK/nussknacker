@@ -3,20 +3,20 @@ import React, { useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { getWritableCategories } from "../reducers/selectors/settings";
 import { ChangeableValue } from "./ChangeableValue";
-import { Validator } from "./graph/node-modal/editors/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable, NodeTableBody } from "./graph/node-modal/NodeDetailsContent/NodeTable";
 import { NodeInput, SelectNodeWithFocus } from "./withFocus";
 import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
 import { NodeLabelStyled } from "./graph/node-modal/node";
+import { FieldError } from "./graph/node-modal/editors/Validators";
 
 type FormValue = { processId: string; processCategory: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
-    nameValidators: Validator[];
+    fieldError: FieldError;
 }
 
-export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFormProps): JSX.Element {
+export function AddProcessForm({ value, onChange, fieldError }: AddProcessFormProps): JSX.Element {
     const categories = useSelector(getWritableCategories);
 
     const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
@@ -48,7 +48,7 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
                                 value={value.processId}
                                 onChange={(e) => onFieldChange("processId", e.target.value)}
                             />
-                            <ValidationLabels fieldErrors={[]} />
+                            <ValidationLabels fieldError={fieldError} />
                         </div>
                     </NodeRow>
                     <NodeRow>

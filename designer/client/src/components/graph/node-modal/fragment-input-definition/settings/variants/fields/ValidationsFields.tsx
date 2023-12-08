@@ -4,7 +4,7 @@ import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
 import { onChangeType, AnyValueWithSuggestionsParameterVariant, AnyValueParameterVariant, DefaultParameterVariant } from "../../../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
-import { VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 
 interface ValidationsFields {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
@@ -12,10 +12,11 @@ interface ValidationsFields {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
+    errors: NodeValidationError[];
 }
 
 export function ValidationsFields(props: ValidationsFields) {
-    const { onChange, path, variableTypes, item, readOnly } = props;
+    const { onChange, path, variableTypes, item, readOnly, errors } = props;
     const [validation, setValidation] = useState(true);
 
     return (
@@ -49,6 +50,7 @@ export function ValidationsFields(props: ValidationsFields) {
                     validationExpression={item.validationExpression}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
+                    errors={errors}
                 />
             )}
         </>

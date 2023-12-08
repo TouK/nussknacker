@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useMemo } from "react";
-import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
 import { Error, mandatoryValueValidator, uniqueListValueValidator } from "../Validators";
 import { useDiffMark } from "../../PathsToMark";
@@ -12,7 +12,7 @@ interface MapProps<F extends Field> {
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
-    fieldErrors: Error[];
+    errors: NodeValidationError[];
     fields: F[];
     label: string;
     namespace: string;
@@ -26,7 +26,7 @@ export const MapItemsCtx = createContext<{
     showValidation?: boolean;
     setProperty: (path: string, newValue: unknown) => void;
     isMarked: (path: string) => boolean;
-    fieldErrors: Error[];
+    errors: NodeValidationError[];
     variableTypes: VariableTypes;
 }>(null);
 
@@ -41,7 +41,7 @@ export function Map<F extends Field>({
     expressionType,
     showValidation,
     variableTypes,
-    fieldErrors,
+    errors,
 }: MapProps<F>): JSX.Element {
     const [isMarked] = useDiffMark();
 
@@ -62,15 +62,6 @@ export function Map<F extends Field>({
     );
 
     const changeOrder = useCallback((value) => setProperty(namespace, value), [namespace, setProperty]);
-
-    const uniqueNameValidator = useCallback(
-        (index: number) =>
-            uniqueListValueValidator(
-                fields?.map((v) => v.name),
-                index,
-            ),
-        [fields],
-    );
 
     const items = useMemo(
         () =>
@@ -93,7 +84,7 @@ export function Map<F extends Field>({
                     isMarked: (path) => isMarked(`${namespace}.${path}`),
                     setProperty: (path, value) => setProperty(`${namespace}.${path}`, value),
                     showValidation,
-                    fieldErrors,
+                    errors,
                     variableTypes,
                 }}
             >

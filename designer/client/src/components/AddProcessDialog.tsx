@@ -6,24 +6,22 @@ import { useProcessNameValidators } from "../containers/hooks/useProcessNameVali
 import HttpService from "../http/HttpService";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm } from "./AddProcessForm";
-import { allValid, errorValidator } from "./graph/node-modal/editors/Validators";
+import { allValid, extendErrors, getValidationErrorForField } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
+import { NodeValidationError } from "../types";
+import { FormatterType } from "./graph/node-modal/editors/expression/Formatter";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
+    errors: NodeValidationError[];
 }
 
 export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
-    const { isFragment, ...passProps } = props;
+    const { t } = useTranslation();
+    const { isFragment, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
 
     const [value, setState] = useState({ processId: "", processCategory: "" });
-    const [processNameError, setProcessNameError] = useState({
-        fieldName: "processName",
-        message: "",
-        description: "",
-        typ: "",
-    });
 
     const isValid = useMemo(() => value.processCategory && allValid(nameValidators, [value.processId]), [nameValidators, value]);
 
@@ -31,22 +29,12 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const createProcess = useCallback(async () => {
         if (isValid) {
             const { processId, processCategory } = value;
-            try {
-                await HttpService.createProcess(processId, processCategory, isFragment);
-                passProps.close();
-                navigate(visualizationUrl(processId));
-            } catch (error) {
-                if (error?.response?.status == 400) {
-                    //TODO: change to pass error from BE as whole object not just the message
-                    setProcessNameError({ fieldName: "processName", message: error?.response?.data, description: "", typ: "" });
-                } else {
-                    throw error;
-                }
-            }
+            await HttpService.createProcess(processId, processCategory, isFragment);
+            passProps.close();
+            navigate(visualizationUrl(processId));
         }
     }, [isFragment, isValid, navigate, passProps, value]);
 
-    const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
@@ -55,12 +43,24 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         [createProcess, isValid, passProps, t],
     );
 
+    const nameErrors: NodeValidationError[] = nameValidators
+        .filter((nameValidator) => !nameValidator.isValid(value))
+        .map((nameValidator) => ({
+            errorType: "SaveAllowed",
+            fieldName: "processName",
+            message: nameValidator.message(),
+            description: nameValidator.description(),
+            typ: FormatterType.String,
+        }));
+
+    nameErrors.forEach((nameError) => errors.push(nameError));
+
     return (
         <WindowContent buttons={buttons} {...passProps}>
             <AddProcessForm
                 value={value}
                 onChange={setState}
-                nameValidators={nameValidators.concat(errorValidator([processNameError], "processName"))}
+                fieldError={getValidationErrorForField(extendErrors(errors, value.processId, "processName", nameValidators), "processName")}
             />
         </WindowContent>
     );

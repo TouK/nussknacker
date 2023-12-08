@@ -40,8 +40,8 @@ describe(Item.name, () => {
                                 refClazzName: "java.lang.String",
                             } as ReturnedType,
                         }}
+                        errors={[]}
                         variableTypes={{}}
-                        fieldsErrors={[]}
                         onChange={mockOnChange}
                         validators={[]}
                         fixedValuesPresets={{}}

@@ -7,14 +7,14 @@ import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { CronEditorStyled } from "./CronEditorStyled";
 import { ExtendedEditor } from "../Editor";
-import { NodeValidationError } from "src/types";
+import { FieldError } from "../../Validators";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -28,7 +28,7 @@ const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     const node = useRef(null);
 
-    const { expressionObj, fieldErrors, isMarked, onValueChange, showValidation, readOnly, formatter } = props;
+    const { expressionObj, isMarked, onValueChange, showValidation, readOnly, formatter, fieldError } = props;
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
@@ -76,7 +76,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
         <CronEditorStyled ref={node}>
             <Input
                 value={value}
-                fieldErrors={fieldErrors}
+                fieldError={fieldError}
                 isMarked={isMarked}
                 onFocus={onInputFocus}
                 showValidation={showValidation}

@@ -9,7 +9,7 @@ import { BranchParameterRowStyled } from "../focusableStyled";
 export interface BranchParametersProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    fieldErrors: NodeValidationError[];
+    errors: NodeValidationError[];
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     testResultsToShow: NodeResultsForContext;
@@ -21,7 +21,7 @@ export interface BranchParametersProps {
 export default function BranchParameters({
     node,
     showValidation,
-    fieldErrors,
+    errors,
     showSwitch,
     isEditMode,
     parameterDefinitions,
@@ -32,7 +32,7 @@ export default function BranchParameters({
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
 
-    console.log("BranchParameters", fieldErrors);
+    console.log("BranchParameters", errors);
     return (
         <>
             {branchParameters?.map((param) => {
@@ -78,7 +78,7 @@ export default function BranchParameters({
                                                     testResultsToShow={testResultsToShow}
                                                     renderFieldLabel={() => false}
                                                     variableTypes={variables}
-                                                    fieldErrors={fieldErrors}
+                                                    errors={errors}
                                                 />
                                             </div>
                                         </BranchParameterRowStyled>

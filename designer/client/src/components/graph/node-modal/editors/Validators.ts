@@ -1,5 +1,7 @@
 import { chain, isEmpty } from "lodash";
 import i18next from "i18next";
+import { NodeValidationError } from "../../../../types";
+import { FormatterType } from "./expression/Formatter";
 
 export enum ValidatorType {
     Frontend,
@@ -20,18 +22,6 @@ export enum HandledErrorType {
     LowerThanRequiredParameter = "LowerThanRequiredParameter",
     GreaterThanRequiredParameter = "GreaterThanRequiredParameter",
     JsonRequiredParameter = "JsonRequiredParameter",
-}
-
-/* eslint-disable i18next/no-literal-string */
-export enum BackendValidator {
-    MandatoryParameterValidator = "MandatoryParameterValidator",
-    NotBlankParameterValidator = "NotBlankParameterValidator",
-    FixedValuesValidator = "FixedValuesValidator",
-    RegExpParameterValidator = "RegExpParameterValidator",
-    LiteralIntegerValidator = "LiteralIntegerValidator",
-    MinimalNumberValidator = "MinimalNumberValidator",
-    MaximalNumberValidator = "MaximalNumberValidator",
-    JsonValidator = "JsonValidator",
 }
 
 export type Validator = {
@@ -59,7 +49,6 @@ export interface Error {
     typ: string;
 }
 
-// TODO: after removing FE validators we can simply pass filtered errors instead of a filtering validator
 export const errorValidator = (errors: Error[], fieldName: string): Validator => {
     const error = errors?.find((error) => error.fieldName === fieldName || error.fieldName === `$${fieldName}`);
     return {
@@ -95,16 +84,6 @@ export const uniqueScenarioValueValidator: typeof uniqueValueValidator = (otherV
     message: () => i18next.t("uniqueScenarioValueValidator.message", "This field has to be unique across scenario"),
 });
 
-export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
-    isValid: (value) => possibleValues.map((pv) => pv.expression).includes(value),
-    message: () =>
-        i18next.t("fixedValueValidator.message", "This value has to be one of: ") +
-        possibleValues.map((value) => value.expression).join(", "),
-    description: () => i18next.t("Validator.fixed.description", "Please choose one of available values"),
-    handledErrorType: HandledErrorType.InvalidPropertyFixedValue,
-    validatorType: ValidatorType.Frontend,
-});
-
 const regExpPattern = (pattern: string) => new RegExp(pattern);
 
 export const notBlankValueValidator: Validator = {
@@ -114,15 +93,6 @@ export const notBlankValueValidator: Validator = {
     handledErrorType: HandledErrorType.BlankParameter,
     validatorType: ValidatorType.Frontend,
 };
-
-export const regExpValueValidator = (pattern: string, message: string, description: string): Validator => ({
-    //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || regExpPattern(pattern).test(value.trim()),
-    message: () => message,
-    description: () => description,
-    handledErrorType: HandledErrorType.MismatchParameter,
-    validatorType: ValidatorType.Frontend,
-});
 
 export const literalIntegerValueValidator: Validator = {
     //Blank value should be not validate - we want to chain validators
@@ -163,27 +133,6 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
     validatorType: ValidatorType.Frontend,
 });
 
-const isJsonValid = (value: string): boolean => {
-    const trimmedValue = value.replace(/^'/, "").replace(/'$/, "");
-
-    try {
-        JSON.parse(trimmedValue);
-    } catch (e) {
-        return false;
-    }
-
-    return true;
-};
-
-export const jsonValidator: Validator = {
-    //Blank value should be not validate - we want to chain validators
-    isValid: (value) => isEmpty(value) || isJsonValid(value),
-    message: () => i18next.t("jsonValidator.message", `This field value has to be a valid json`),
-    description: () => i18next.t("jsonValidator.description", "Please fill field with valid json"),
-    handledErrorType: HandledErrorType.JsonRequiredParameter,
-    validatorType: ValidatorType.Frontend,
-};
-
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
     return isEmpty(validators)
         ? []
@@ -202,13 +151,35 @@ export function allValid(validators: Array<Validator>, values: Array<string>): b
     return withoutDuplications(validators).every((validator) => validator.isValid(...values));
 }
 
-export const validators: Record<BackendValidator, (...args: any[]) => Validator> = {
-    [BackendValidator.MandatoryParameterValidator]: () => mandatoryValueValidator,
-    [BackendValidator.NotBlankParameterValidator]: () => notBlankValueValidator,
-    [BackendValidator.LiteralIntegerValidator]: () => literalIntegerValueValidator,
-    [BackendValidator.FixedValuesValidator]: ({ possibleValues }) => fixedValueValidator(possibleValues),
-    [BackendValidator.RegExpParameterValidator]: ({ pattern, message, description }) => regExpValueValidator(pattern, message, description),
-    [BackendValidator.MinimalNumberValidator]: ({ minimalNumber }) => minimalNumberValidator(minimalNumber),
-    [BackendValidator.MaximalNumberValidator]: ({ maximalNumber }) => maximalNumberValidator(maximalNumber),
-    [BackendValidator.JsonValidator]: () => jsonValidator,
+export type FieldError = Pick<Error, "message" | "description"> | undefined;
+
+export const getValidationErrorForField = (errors: NodeValidationError[], fieldName: string) => {
+    const validator = errorValidator(errors, fieldName);
+
+    const fieldError: FieldError = !validator.isValid()
+        ? {
+              message: validator.message && validator.message(),
+              description: validator.description && validator.description(),
+          }
+        : undefined;
+    return fieldError;
+};
+
+export const extendErrors = (
+    errors: NodeValidationError[],
+    value: string,
+    fieldName: string,
+    validators: Validator[],
+): NodeValidationError[] => {
+    const customValidatorErrors: NodeValidationError[] = validators
+        .filter((validator) => !validator.isValid(value))
+        .map((validator) => ({
+            errorType: "SaveAllowed",
+            fieldName,
+            typ: FormatterType.String,
+            description: validator.description(),
+            message: validator.message(),
+        }));
+
+    return [...errors, ...customValidatorErrors];
 };

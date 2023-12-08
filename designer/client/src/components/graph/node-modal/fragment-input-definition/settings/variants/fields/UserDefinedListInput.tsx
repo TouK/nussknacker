@@ -6,8 +6,8 @@ import { ListItems } from "./ListItems";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldName, FixedValuesOption, onChangeType } from "../../../item";
-import { ReturnedType, VariableTypes } from "../../../../../../../types";
-import { Error, uniqueValueValidator, validators } from "../../../../editors/Validators";
+import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import { getValidationErrorForField, mandatoryValueValidator, uniqueValueValidator } from "../../../../editors/Validators";
 import HttpService from "../../../../../../../http/HttpService";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../../../../../reducers/selectors/graph";
@@ -22,7 +22,7 @@ interface Props {
     fixedValuesList: FixedValuesOption[];
     variableTypes: VariableTypes;
     readOnly: boolean;
-    errors: Error[];
+    errors: NodeValidationError[];
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
@@ -42,7 +42,7 @@ export const UserDefinedListInput = ({
     const { t } = useTranslation();
     const [temporaryListItem, setTemporaryListItem] = useState("");
     const [temporaryValuesTyping, setTemporaryValuesTyping] = useState(false);
-    const [temporaryValueErrors, setTemporaryValueErrors] = useState<Error[]>([]);
+    const [temporaryValueErrors, setTemporaryValueErrors] = useState<NodeValidationError[]>([]);
 
     const { handleTemporaryUserDefinedList } = useSettings();
 
@@ -87,16 +87,16 @@ export const UserDefinedListInput = ({
 
     const handleAddNewListItem = () => {
         const isUniqueValueValidator = uniqueValueValidator(fixedValuesList.map((fixedValuesList) => fixedValuesList.label));
-        const mandatoryParameterValidator = validators.MandatoryParameterValidator();
 
-        if (!mandatoryParameterValidator.isValid(temporaryListItem)) {
+        if (!mandatoryValueValidator.isValid(temporaryListItem)) {
             setTemporaryValueErrors((prevState) => [
                 ...prevState,
                 {
+                    errorType: "SaveAllowed",
                     fieldName: temporaryItemName,
                     typ: temporaryListItemTyp.refClazzName,
-                    description: mandatoryParameterValidator.description(),
-                    message: mandatoryParameterValidator.message(),
+                    description: mandatoryValueValidator.description(),
+                    message: mandatoryValueValidator.message(),
                 },
             ]);
             return;
@@ -106,6 +106,7 @@ export const UserDefinedListInput = ({
             setTemporaryValueErrors((prevState) => [
                 ...prevState,
                 {
+                    errorType: "SaveAllowed",
                     fieldName: temporaryItemName,
                     typ: temporaryListItemTyp.refClazzName,
                     description: isUniqueValueValidator.description(),
@@ -163,7 +164,6 @@ export const UserDefinedListInput = ({
             <SettingLabelStyled>{t("fragment.addListItem", "Add list item:")}</SettingLabelStyled>
             <EditableEditor
                 validationLabelInfo={temporaryValuesTyping && "Typing..."}
-                fieldName={temporaryItemName}
                 expressionObj={{ language: ExpressionLang.SpEL, expression: temporaryListItem }}
                 onValueChange={(value) => {
                     setTemporaryListItem(value);
@@ -179,7 +179,7 @@ export const UserDefinedListInput = ({
                     }
                 }}
                 param={{ validators: [], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
-                errors={temporaryValueErrors}
+                fieldError={getValidationErrorForField(temporaryValueErrors, temporaryItemName)}
                 showValidation
             />
             {userDefinedListOptions?.length > 0 && (

@@ -5,14 +5,14 @@ import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { isQuoted } from "./SpelQuotesUtils";
-import { NodeValidationError } from "src/types";
+import { FieldError } from "../Validators";
 
 type Props = {
     expressionObj: $TodoType;
     onValueChange: (value: string) => void;
     className: string;
     formatter: Formatter;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     showValidation: boolean;
 };
 const splitConcats = (value: string) => {

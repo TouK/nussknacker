@@ -8,9 +8,8 @@ import { EdgeFields } from "./EdgeFields";
 import { ExpressionLang } from "./editors/expression/types";
 import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption } from "./EdgeTypeSelect";
-import { Error, errorValidator, mandatoryValueValidator } from "./editors/Validators";
 import { defaultsDeep } from "lodash";
-import { ValidationError } from "../../modals/ValidationLabels";
+import { FieldError } from "./editors/Validators";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -27,7 +26,7 @@ interface Props {
     edgeTypes: EdgeType[];
     ordered?: boolean;
     variableTypes?: VariableTypes;
-    fieldErrors?: NodeValidationError[];
+    fieldError: FieldError;
 }
 
 export type WithTempId<T> = T & { _id?: string };
@@ -66,7 +65,7 @@ function withDefaults<T extends Edge>(edge: Partial<T>): T {
 }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
-    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, fieldErrors = [] } = props;
+    const { nodeId, label, readOnly, value, onChange, ordered, variableTypes, fieldError } = props;
     const process = useSelector(getProcessToDisplay);
     const [edges, setEdges] = useState<WithTempId<Edge>[]>(() => value || process.edges.filter(({ from }) => from === nodeId));
 
@@ -118,12 +117,12 @@ export function EdgesDndComponent(props: Props): JSX.Element {
                         edges={array}
                         types={types}
                         variableTypes={variableTypes}
-                        fieldErrors={fieldErrors}
+                        fieldError={fieldError}
                     />
                 ),
             };
         });
-    }, [edgeTypes, edges, fieldErrors, readOnly, replaceEdge, variableTypes]);
+    }, [edgeTypes, edges, fieldError, readOnly, replaceEdge, variableTypes]);
 
     const namespace = `edges`;
 

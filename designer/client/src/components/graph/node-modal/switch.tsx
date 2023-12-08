@@ -1,6 +1,6 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { errorValidator } from "./editors/Validators";
+import { errorValidator, getValidationErrorForField } from "./editors/Validators";
 import { isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
@@ -15,23 +15,9 @@ import { DescriptionField } from "./DescriptionField";
 import React from "react";
 import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 
-export function Switch({
-    edges,
-    fieldErrors,
-    findAvailableVariables,
-    isEditMode,
-    node,
-    parameterDefinitions,
-    processDefinitionData,
-    renderFieldLabel,
-    setEditedEdges,
-    setProperty,
-    showSwitch,
-    showValidation,
-    variableTypes,
-}: {
+interface Props {
     edges: Edge[];
-    fieldErrors?: NodeValidationError[];
+    errors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
@@ -43,11 +29,27 @@ export function Switch({
     showSwitch?: boolean;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
-}): JSX.Element {
+}
+
+export function Switch({
+    edges,
+    errors = [],
+    findAvailableVariables,
+    isEditMode,
+    node,
+    parameterDefinitions,
+    processDefinitionData,
+    renderFieldLabel,
+    setEditedEdges,
+    setProperty,
+    showSwitch,
+    showValidation,
+    variableTypes,
+}: Props): JSX.Element {
     const definition = processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node;
     const currentExpression = node["expression"];
     const currentExprVal = node["exprVal"];
-    const exprValValidator = errorValidator(fieldErrors || [], "exprVal");
+    const exprValValidator = errorValidator(errors, "exprVal");
     const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression;
     const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal;
     const [, isCompareView] = useDiffMark();
@@ -62,7 +64,7 @@ export function Switch({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                errors={fieldErrors}
+                errors={errors}
             />
             {showExpression ? (
                 <StaticExpressionField
@@ -72,7 +74,7 @@ export function Switch({
                     node={node}
                     findAvailableVariables={findAvailableVariables}
                     parameterDefinitions={parameterDefinitions}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     fieldLabel={"Expression (deprecated)"}
@@ -87,8 +89,8 @@ export function Switch({
                     setProperty={setProperty}
                     fieldType={FieldType.input}
                     fieldLabel={"exprVal (deprecated)"}
-                    fieldProperty={"exprVal"}
-                    validators={[errorValidator(fieldErrors || [], "exprVal")]}
+                    fieldName={"exprVal"}
+                    errors={errors}
                 />
             ) : null}
             {!isCompareView ? (
@@ -108,7 +110,7 @@ export function Switch({
                               }
                             : variableTypes
                     }
-                    fieldErrors={fieldErrors || []}
+                    fieldError={getValidationErrorForField(errors, "exprVal")}
                 />
             ) : null}
             <DescriptionField
@@ -117,6 +119,7 @@ export function Switch({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
         </NodeTableBody>
     );

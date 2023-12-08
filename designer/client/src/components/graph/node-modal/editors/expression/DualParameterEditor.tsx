@@ -2,10 +2,11 @@ import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, 
 import React, { useCallback, useMemo, useState } from "react";
 import { ExpressionObj } from "./types";
 import { RawEditor } from "./RawEditor";
-import { NodeValidationError, VariableTypes } from "../../../../../types";
+import { VariableTypes } from "../../../../../types";
 import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
+import { FieldError } from "../Validators";
 
 type Props = {
     editorConfig: {
@@ -17,8 +18,7 @@ type Props = {
     expressionObj: ExpressionObj;
     readOnly?: boolean;
     valueClassName?: string;
-
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     isMarked?: boolean;
     showValidation: boolean;
     onValueChange: (value: string) => void;
@@ -28,7 +28,6 @@ type Props = {
 };
 
 export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
-    console.log("DualParameterEditor fieldErrors", props.fieldErrors);
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 

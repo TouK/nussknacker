@@ -7,7 +7,7 @@ import React from "react";
 
 export function VariableBuilder({
     addElement,
-    fieldErrors,
+    errors,
     isEditMode,
     node,
     removeElement,
@@ -17,7 +17,7 @@ export function VariableBuilder({
     variableTypes,
 }: {
     addElement: (...args: any[]) => any;
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     isEditMode?: boolean;
     node: NodeType;
     removeElement: (property: keyof NodeType, uuid: string) => void;
@@ -39,7 +39,7 @@ export function VariableBuilder({
             readOnly={!isEditMode}
             showValidation={showValidation}
             variableTypes={variableTypes}
-            fieldErrors={fieldErrors || []}
+            errors={errors || []}
             expressionType={nodeExpressionType}
         />
     );

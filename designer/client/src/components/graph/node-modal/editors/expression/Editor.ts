@@ -15,14 +15,15 @@ import JsonEditor from "./JsonEditor";
 import { DualParameterEditor } from "./DualParameterEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
-import { NodeValidationError, VariableTypes } from "../../../../../types";
+import { VariableTypes } from "../../../../../types";
+import { FieldError } from "../Validators";
 
 export type EditorProps = {
     onValueChange?: (value: string) => void;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     formatter?: Formatter;
     expressionInfo?: string;
     expressionObj?: ExpressionObj;
@@ -30,6 +31,7 @@ export type EditorProps = {
     showSwitch?: boolean;
     showValidation: boolean;
     variableTypes?: VariableTypes;
+    ref?: React.Ref<unknown>;
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =

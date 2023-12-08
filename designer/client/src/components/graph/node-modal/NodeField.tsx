@@ -1,15 +1,15 @@
 import Field, { FieldType } from "./editors/field/Field";
-import { allValid, Validator } from "./editors/Validators";
-import { get } from "lodash";
+import { FieldError, getValidationErrorForField } from "./editors/Validators";
+import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType } from "../../../types";
+import { NodeType, NodeValidationError } from "../../../types";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
     defaultValue?: V;
     fieldLabel: string;
-    fieldProperty: N;
+    fieldName: N;
     fieldType: FieldType;
     isEditMode?: boolean;
     node: NodeType;
@@ -17,14 +17,14 @@ type NodeFieldProps<N extends string, V> = {
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
-    validators?: Validator[];
+    errors: NodeValidationError[];
 };
 
 export function NodeField<N extends string, V>({
     autoFocus,
     defaultValue,
     fieldLabel,
-    fieldProperty,
+    fieldName,
     fieldType,
     isEditMode,
     node,
@@ -32,23 +32,25 @@ export function NodeField<N extends string, V>({
     renderFieldLabel,
     setProperty,
     showValidation,
-    validators = [],
+    errors,
 }: NodeFieldProps<N, V>): JSX.Element {
     const readOnly = !isEditMode || readonly;
-    const value = get(node, fieldProperty, null) ?? defaultValue;
-    const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error";
-    const onChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue);
+    const value = get(node, fieldName, null) ?? defaultValue;
+    const fieldError = getValidationErrorForField(errors, fieldName);
+
+    const className = !showValidation || !fieldError ? "node-input" : "node-input node-input-with-error";
+    const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
     const [isMarked] = useDiffMark();
 
     return (
         <Field
             type={fieldType}
-            isMarked={isMarked(`${fieldProperty}`)}
+            isMarked={isMarked(`${fieldName}`)}
             readOnly={readOnly}
             showValidation={showValidation}
             autoFocus={autoFocus}
             className={className}
-            validators={validators}
+            fieldError={fieldError}
             value={value}
             onChange={onChange}
         >

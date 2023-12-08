@@ -1,39 +1,28 @@
-import classNames from "classnames";
+import { cx } from "@emotion/css";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import React, { ChangeEvent, FC } from "react";
+import React, { ChangeEvent } from "react";
 import { TextAreaWithFocus } from "../../../../withFocus";
-import { isEmpty } from "lodash";
-import { NodeValidationError } from "../../../../../types";
+import { FieldError } from "../Validators";
 
 interface Props {
     isMarked: boolean;
-    value: string;
+    value: string | number;
     readOnly: boolean;
     autoFocus: boolean;
     showValidation: boolean;
-    fieldErrors: NodeValidationError[];
-    onChange: (e: ChangeEvent<{ value: string }>) => void;
+    onChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
     placeholder: string;
     formattedValue: string;
     className: string;
     type: string;
     inputClassName: string;
     onFocus: () => void;
+    fieldError: FieldError;
 }
+export function Textarea(props: Props) {
+    const { isMarked, showValidation, className, placeholder, autoFocus, onChange, value, readOnly, inputClassName, onFocus, fieldError } =
+        props;
 
-export const Textarea: FC<Props> = ({
-    isMarked,
-    showValidation,
-    className,
-    placeholder,
-    autoFocus,
-    onChange,
-    value,
-    fieldErrors,
-    readOnly,
-    inputClassName,
-    onFocus,
-}) => {
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
@@ -42,17 +31,14 @@ export const Textarea: FC<Props> = ({
                         autoFocus={autoFocus}
                         readOnly={readOnly}
                         placeholder={placeholder}
-                        className={classNames([
-                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
-                            inputClassName,
-                        ])}
+                        className={cx([!showValidation || !fieldError ? "node-input" : "node-input node-input-with-error", inputClassName])}
                         value={value || ""}
                         onChange={onChange}
                         onFocus={onFocus}
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels fieldErrors={[]} />}
+            {showValidation && <ValidationLabels fieldError={fieldError} />}
         </div>
     );
-};
+}

@@ -1,15 +1,16 @@
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
-import ExpressionSuggest from "./ExpressionSuggest";
-import { NodeValidationError, VariableTypes } from "../../../../../types";
+import { ExpressionSuggest } from "./ExpressionSuggest";
+import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
 import { NodeInputCss } from "../../../../NodeInput";
 import { useTheme } from "@mui/material";
 import { cx } from "@emotion/css";
+import { FieldError } from "../Validators";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     isMarked?: boolean;
     showValidation: boolean;
     readOnly?: boolean;
@@ -25,7 +26,7 @@ export type RawEditorProps = {
 const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
-        fieldErrors,
+        fieldError,
         isMarked,
         showValidation,
         readOnly,
@@ -63,7 +64,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}
-                fieldErrors={fieldErrors}
+                fieldError={fieldError}
                 isMarked={isMarked}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}

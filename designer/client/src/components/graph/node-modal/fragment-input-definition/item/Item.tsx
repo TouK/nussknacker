@@ -1,9 +1,9 @@
 import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import { TypeSelect } from "../TypeSelect";
-import { Validator, Error } from "../../editors/Validators";
+import { Validator, getValidationErrorForField } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
-import { FixedValuesPresets, ReturnedType, VariableTypes } from "../../../../../types";
+import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
@@ -25,23 +25,11 @@ interface ItemProps {
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
     fixedValuesPresets: FixedValuesPresets;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
 export function Item(props: ItemProps): JSX.Element {
-    const {
-        index,
-        item,
-        validators,
-        namespace,
-        variableTypes,
-        readOnly,
-        showValidation,
-        onChange,
-        options,
-        fixedValuesPresets,
-        fieldsErrors,
-    } = props;
+    const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, fixedValuesPresets, errors } = props;
     const { getIsOpen, toggleIsOpen } = useFieldsContext();
 
     const isOpen = getIsOpen(item.uuid);
@@ -71,8 +59,8 @@ export function Item(props: ItemProps): JSX.Element {
                         isMarked={isMarked(`${path}.name`)}
                         onChange={(e) => onChange(`${path}.name`, e.target.value)}
                         value={item.name}
-                        validators={validators}
                         placeholder="Field name"
+                        fieldError={getValidationErrorForField(errors, "$id")}
                     />
                 </NodeValue>
                 <TypeSelect
@@ -84,6 +72,7 @@ export function Item(props: ItemProps): JSX.Element {
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
+                    fieldError={getValidationErrorForField(errors, `${path}.typ.refClazzName`)}
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>
@@ -96,7 +85,7 @@ export function Item(props: ItemProps): JSX.Element {
                         variableTypes={variableTypes}
                         fixedValuesPresets={fixedValuesPresets}
                         readOnly={readOnly}
-                        fieldsErrors={fieldsErrors}
+                        errors={errors}
                         data-testid={`settings:${index}`}
                     />
                 )}

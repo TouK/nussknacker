@@ -7,7 +7,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
-    fieldErrors,
+    errors,
     fieldLabel,
     findAvailableVariables,
     isEditMode,
@@ -18,7 +18,7 @@ export function StaticExpressionField({
     showSwitch,
     showValidation,
 }: {
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     fieldLabel: string;
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
@@ -46,7 +46,7 @@ export function StaticExpressionField({
             testResultsToShow={testResultsState.testResultsToShow}
             renderFieldLabel={renderFieldLabel}
             variableTypes={findAvailableVariables(node.id, undefined)}
-            fieldErrors={fieldErrors || []}
+            errors={errors || []}
         />
     );
 }

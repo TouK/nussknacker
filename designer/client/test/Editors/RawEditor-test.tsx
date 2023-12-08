@@ -5,7 +5,7 @@ import { jest } from "@jest/globals";
 import { RawEditor } from "../../src/components/graph/node-modal/editors/expression/RawEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
-import { mockErrors, mockValueChange } from "./helpers";
+import { mockFieldError, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -35,7 +35,7 @@ describe(RawEditor.name, () => {
                     className={""}
                     isMarked={false}
                     onValueChange={mockValueChange}
-                    fieldErrors={mockErrors}
+                    fieldError={mockFieldError}
                     expressionObj={{ language: "spel", expression: "test" }}
                     showValidation={true}
                     variableTypes={{}}

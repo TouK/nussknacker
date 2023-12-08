@@ -53,7 +53,7 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 fixedValuesPresets={definitionData.fixedValuesPresets}
-                fieldErrors={passProps.fieldErrors}
+                errors={passProps.errors}
             />
         </NodeCommonDetailsDefinition>
     );

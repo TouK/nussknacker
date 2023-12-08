@@ -39,7 +39,7 @@ describe("test validation labels", () => {
             render(
                 <NuThemeProvider>
                     <I18nextProvider i18n={i18n}>
-                        <ValidationLabels fieldErrors={[]} />
+                        <ValidationLabels errors={[]} />
                     </I18nextProvider>
                 </NuThemeProvider>,
             );

@@ -4,8 +4,7 @@ import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 import ValidationLabels from "../../../modals/ValidationLabels";
-import { errorValidator, Error } from "../editors/Validators";
-import { FieldName } from "./item";
+import { FieldError } from "../editors/Validators";
 
 export interface Option {
     value: string;
@@ -19,8 +18,7 @@ interface RowSelectProps {
     isMarked?: boolean;
     value: Option;
     placeholder?: string;
-    fieldErrors?: Error[];
-    fieldName?: FieldName;
+    fieldError: FieldError;
 }
 
 function useCaptureEsc() {
@@ -39,16 +37,7 @@ function useCaptureEsc() {
     return { setCaptureEsc, preventEsc };
 }
 
-export function TypeSelect({
-    isMarked,
-    options,
-    readOnly,
-    value,
-    onChange,
-    placeholder,
-    fieldErrors,
-    fieldName,
-}: RowSelectProps): JSX.Element {
+export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder, fieldError }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
@@ -91,7 +80,7 @@ export function TypeSelect({
                     singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
                 }}
             />
-            <ValidationLabels validators={[errorValidator(fieldErrors, fieldName)]} values={[]} />
+            <ValidationLabels fieldError={fieldError} />
         </NodeValue>
     );
 }

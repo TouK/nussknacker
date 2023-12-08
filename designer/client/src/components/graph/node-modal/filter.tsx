@@ -8,10 +8,11 @@ import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
+import { getValidationErrorForField } from "./editors/Validators";
 
 export function Filter({
     edges,
-    fieldErrors,
+    errors,
     findAvailableVariables,
     isEditMode,
     node,
@@ -23,7 +24,7 @@ export function Filter({
     showValidation,
 }: {
     edges: Edge[];
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
@@ -43,7 +44,7 @@ export function Filter({
                 node={node}
                 setProperty={setProperty}
                 renderFieldLabel={renderFieldLabel}
-                errors={fieldErrors}
+                errors={errors}
             />
             <StaticExpressionField
                 renderFieldLabel={renderFieldLabel}
@@ -53,7 +54,7 @@ export function Filter({
                 showSwitch={showSwitch}
                 findAvailableVariables={findAvailableVariables}
                 showValidation={showValidation}
-                fieldErrors={fieldErrors}
+                errors={errors}
                 isEditMode={isEditMode}
                 node={node}
             />
@@ -63,6 +64,7 @@ export function Filter({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
             {!isCompareView ? (
                 <EdgesDndComponent
@@ -75,7 +77,7 @@ export function Filter({
                         { value: EdgeKind.filterFalse, onlyOne: true },
                     ]}
                     readOnly={!isEditMode}
-                    fieldErrors={fieldErrors || []}
+                    fieldError={getValidationErrorForField(errors, "outputs")}
                 />
             ) : null}
             <DescriptionField
@@ -84,6 +86,7 @@ export function Filter({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
         </NodeTableBody>
     );

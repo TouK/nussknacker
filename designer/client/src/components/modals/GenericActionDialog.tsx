@@ -12,12 +12,12 @@ import { NodeTable, NodeTableBody } from "../graph/node-modal/NodeDetailsContent
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
 import { validateGenericActionParameters } from "../../actions/nk/genericAction";
-import { getProcessProperties } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { getGenericActionValidation } from "../../reducers/selectors/genericActionState";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { isEmpty } from "lodash";
 import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
+import { getValidationErrorForField } from "../graph/node-modal/editors/Validators";
 
 export type GenericActionLayout = {
     name: string;
@@ -41,16 +41,14 @@ interface GenericAction extends GenericActionParameters {
 
 interface GenericActionDialogProps {
     action: GenericAction;
-    fieldErrors: NodeValidationError[];
+    errors: NodeValidationError[];
     value: { [p: string]: Expression };
     setValue: (value: ((prevState: { [p: string]: Expression }) => { [p: string]: Expression }) | { [p: string]: Expression }) => void;
 }
 
 function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
-    const { value, setValue, action, fieldErrors } = props;
+    const { value, setValue, action, errors } = props;
     const dispatch = useDispatch();
-    const processId = useSelector(getProcessId);
-    const processProperties = useSelector(getProcessProperties);
     const setParam = useCallback(
         (name: string) => (value: any) => {
             action.onParamUpdate(name)(value);
@@ -91,7 +89,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                     <Editor
                                         editorConfig={param?.editor}
                                         className={"node-value"}
-                                        fieldErrors={fieldErrors}
+                                        fieldError={getValidationErrorForField(errors, fieldName)}
                                         formatter={formatter}
                                         expressionInfo={null}
                                         onValueChange={setParam(fieldName)}
@@ -146,7 +144,7 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
     return (
         <WindowContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
-                <GenericActionForm action={action} fieldErrors={validationErrors} value={value} setValue={setValue} />
+                <GenericActionForm action={action} errors={validationErrors} value={value} setValue={setValue} />
             </div>
         </WindowContent>
     );

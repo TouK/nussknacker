@@ -4,7 +4,7 @@ import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 
 interface SourceProps {
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     parameterDefinitions: UIParameter[];
     showSwitch?: boolean;
@@ -19,7 +19,7 @@ export function Source({
     renderFieldLabel,
     setProperty,
     showSwitch,
-    fieldErrors,
+    errors,
     findAvailableVariables,
     node,
     parameterDefinitions,
@@ -34,7 +34,7 @@ export function Source({
             node={node}
             findAvailableVariables={findAvailableVariables}
             parameterDefinitions={parameterDefinitions}
-            fieldErrors={fieldErrors}
+            errors={errors}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
         />

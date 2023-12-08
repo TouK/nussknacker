@@ -4,6 +4,7 @@ import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
+import { getValidationErrorForField } from "./editors/Validators";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;
@@ -11,7 +12,7 @@ export interface NodeDetailsProps<F extends Field> {
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
-    fieldErrors: NodeValidationError[];
+    errors: NodeValidationError[];
 }
 
 interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChildren<NodeDetailsProps<F>> {
@@ -20,7 +21,7 @@ interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChi
 }
 
 export function NodeCommonDetailsDefinition<F extends Field>({ children, ...props }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
-    const { node, setProperty, readOnly, showValidation, renderFieldLabel, fieldErrors, outputField, outputName } = props;
+    const { node, setProperty, readOnly, showValidation, renderFieldLabel, errors, outputField, outputName } = props;
 
     const onInputChange = useCallback(
         (path: string, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -39,7 +40,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("id")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                fieldErrors={fieldErrors}
+                fieldError={getValidationErrorForField(errors, "$id")}
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
@@ -50,7 +51,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                     isMarked={isMarked(outputField)}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    fieldErrors={fieldErrors}
+                    fieldError={getValidationErrorForField(errors, outputField)}
                 >
                     {renderFieldLabel(outputName)}
                 </LabeledInput>
@@ -64,6 +65,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("additionalFields.description")}
                 readOnly={readOnly}
                 className={"node-input"}
+                fieldError={getValidationErrorForField(errors, "additionalFields.description")}
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>

@@ -5,21 +5,15 @@ import moment from "moment";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { Formatter } from "../Formatter";
 import { DTPicker } from "../../../../../common/DTPicker";
-import { isEmpty } from "lodash";
-import { NodeValidationError } from "../../../../../../types";
 import { cx } from "@emotion/css";
-
-/* eslint-disable i18next/no-literal-string */
-export enum JavaTimeTypes {
-    LOCAL_DATE_TIME = "LocalDateTime",
-}
+import { FieldError } from "../../Validators";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly: boolean;
     className: string;
     onValueChange: (value: string) => void;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     showValidation: boolean;
     isMarked: boolean;
     editorFocused: boolean;
@@ -35,7 +29,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
         expressionObj,
         onValueChange,
         readOnly,
-        fieldErrors,
+        fieldError,
         showValidation,
         isMarked,
         editorFocused,
@@ -69,8 +63,6 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
         onChange(value);
     }, [onChange, value]);
 
-    const isValid = isEmpty(fieldErrors);
-
     return (
         <div className={className}>
             <DTPicker
@@ -79,7 +71,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 inputProps={{
                     className: cx([
                         "node-input",
-                        showValidation && !isValid && "node-input-with-error",
+                        showValidation && !fieldError && "node-input-with-error",
                         isMarked && "marked",
                         editorFocused && "focused",
                         readOnly && "read-only",
@@ -89,7 +81,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 }}
                 {...other}
             />
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {showValidation && <ValidationLabels fieldError={fieldError} />}
         </div>
     );
 }

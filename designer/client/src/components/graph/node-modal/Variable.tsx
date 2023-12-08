@@ -10,6 +10,7 @@ import { RootState } from "../../../reducers";
 import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selectors";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { IdField } from "./IdField";
+import { getValidationErrorForField } from "./editors/Validators";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -22,7 +23,7 @@ interface Props {
     node: NodeType;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation: boolean;
-    fieldErrors: NodeValidationError[];
+    errors: NodeValidationError[];
     showSwitch?: boolean;
     variableTypes: VariableTypes;
     renderFieldLabel: (paramName: string) => JSX.Element;
@@ -33,7 +34,7 @@ export default function Variable({
     setProperty,
     isEditMode,
     showValidation,
-    fieldErrors,
+    errors,
     variableTypes,
     renderFieldLabel,
 }: Props): JSX.Element {
@@ -46,6 +47,7 @@ export default function Variable({
         return ProcessUtils.humanReadableType(varExprType);
     });
     const readOnly = !isEditMode;
+
     return (
         <NodeTableBody className="node-variable-builder-body">
             <IdField
@@ -54,7 +56,7 @@ export default function Variable({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                errors={fieldErrors}
+                errors={errors}
             />
             <LabeledInput
                 value={node.varName}
@@ -62,12 +64,11 @@ export default function Variable({
                 isMarked={isMarked("varName")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                fieldErrors={fieldErrors}
+                fieldError={getValidationErrorForField(errors, "varName")}
             >
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
             <EditableEditor
-                fieldName="$expression"
                 fieldLabel={"Expression"}
                 renderFieldLabel={renderFieldLabel}
                 expressionObj={node.value}
@@ -75,7 +76,7 @@ export default function Variable({
                 readOnly={readOnly}
                 showValidation={showValidation}
                 showSwitch={false}
-                fieldErrors={fieldErrors}
+                fieldError={getValidationErrorForField(errors, "$expression")}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
             />
@@ -85,7 +86,7 @@ export default function Variable({
                 isMarked={isMarked("additionalFields.description")}
                 readOnly={readOnly}
                 className={"node-input"}
-                fieldErrors={fieldErrors}
+                fieldError={getValidationErrorForField(errors, "additionalFields.description")}
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>

@@ -1,11 +1,11 @@
 import { styled } from "@mui/material";
-import { isEmpty } from "lodash";
 import React from "react";
 import { LimitedValidationLabel } from "../common/ValidationLabel";
-import { NodeValidationError } from "../../types";
+import { isEmpty } from "lodash";
+import { FieldError } from "../graph/node-modal/editors/Validators";
 
 type Props = {
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     validationLabelInfo?: string;
 };
 
@@ -23,28 +23,18 @@ const LabelsContainer = styled("div")({
 });
 
 export default function ValidationLabels(props: Props) {
-    const { fieldErrors, validationLabelInfo } = props;
-
-    const isValid: boolean = isEmpty(fieldErrors);
-
-    const renderErrorLabels = () =>
-        fieldErrors.map((validationError) => {
-            // we don't pass description as tooltip message until we make changes on the backend
-            return (
-                <LimitedValidationLabel key={validationError.message} title={validationError.message} type="ERROR">
-                    {validationError.message}
-                </LimitedValidationLabel>
-            );
-        });
+    const { fieldError, validationLabelInfo } = props;
 
     // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
     // It's possible that expression is valid and it's type is known, but a different type is expected.
     return (
         <LabelsContainer>
-            {isValid ? (
+            {isEmpty(fieldError) ? (
                 <LimitedValidationLabel title={validationLabelInfo}>{validationLabelInfo}</LimitedValidationLabel>
             ) : (
-                renderErrorLabels()
+                <LimitedValidationLabel key={fieldError.message} title={fieldError.message} type="ERROR">
+                    {fieldError.message}
+                </LimitedValidationLabel>
             )}
         </LabelsContainer>
     );

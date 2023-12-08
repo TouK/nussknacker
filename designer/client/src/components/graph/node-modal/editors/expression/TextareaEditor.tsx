@@ -5,6 +5,7 @@ import React from "react";
 import { Textarea } from "../field/Textarea";
 import { ExpressionLang } from "./types";
 import { NodeValidationError } from "src/types";
+import { FieldError } from "../Validators";
 
 type Props = {
     expressionObj?: $TodoType;
@@ -13,7 +14,7 @@ type Props = {
     className?: string;
     inputClassName?: string;
     formatter?: Formatter;
-    fieldErrors: NodeValidationError[];
+    fieldError: FieldError;
     showValidation: boolean;
     isMarked?: boolean;
     autoFocus?: boolean;
@@ -31,7 +32,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     formatter,
     isMarked,
     autoFocus,
-    fieldErrors,
+    fieldError,
     showValidation,
     placeholder,
     readOnly,
@@ -42,7 +43,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     return (
         <Textarea
             isMarked={isMarked}
-            fieldErrors={fieldErrors}
+            fieldError={fieldError}
             showValidation={showValidation}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
             value={stringFormatter.decode(expressionObj.expression) as string}

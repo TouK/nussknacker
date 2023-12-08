@@ -5,7 +5,7 @@ import React from "react";
 import ProcessUtils from "../../../common/ProcessUtils";
 
 interface SinkProps {
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
@@ -17,7 +17,7 @@ interface SinkProps {
 }
 
 export function Sink({
-    fieldErrors,
+    errors,
     findAvailableVariables,
     isEditMode,
     node,
@@ -35,7 +35,7 @@ export function Sink({
             node={node}
             findAvailableVariables={findAvailableVariables}
             parameterDefinitions={parameterDefinitions}
-            fieldErrors={fieldErrors}
+            errors={errors}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
         >
@@ -46,6 +46,7 @@ export function Sink({
                     node={node}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
+                    errors={errors}
                 />
             </div>
         </SourceSinkCommon>

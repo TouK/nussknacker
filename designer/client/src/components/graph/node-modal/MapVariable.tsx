@@ -12,7 +12,7 @@ export interface MapVariableProps<F extends Field> {
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
-    fieldErrors: NodeValidationError[];
+    errors: NodeValidationError[];
     removeElement: (namespace: string, uuid: string) => void;
     addElement: (property: string, element: F) => void;
     variableTypes: VariableTypes;
@@ -20,7 +20,7 @@ export interface MapVariableProps<F extends Field> {
 }
 
 function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
-    const { removeElement, addElement, variableTypes, expressionType, fieldErrors, ...passProps } = props;
+    const { removeElement, addElement, variableTypes, expressionType, errors, ...passProps } = props;
     const { node, ...mapProps } = passProps;
 
     const addField = useCallback(
@@ -32,10 +32,10 @@ function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
     );
 
     return (
-        <NodeCommonDetailsDefinition {...props} fieldErrors={fieldErrors} outputName="Variable Name" outputField="varName">
+        <NodeCommonDetailsDefinition {...props} errors={errors} outputName="Variable Name" outputField="varName">
             <Map
                 {...mapProps}
-                fieldErrors={fieldErrors}
+                errors={errors}
                 label="Fields"
                 namespace="fields"
                 fields={node.fields}

@@ -28,7 +28,6 @@ function FragmentOutputDefinition<F extends Field>(props: Props<F>): JSX.Element
         [addElement],
     );
 
-    console.log("FragmentOutputDefinition", props.fieldErrors);
     return (
         <NodeCommonDetailsDefinition {...passProps} readOnly={readOnly} outputName="Output name" outputField="outputName">
             <Map
