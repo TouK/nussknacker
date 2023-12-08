@@ -444,6 +444,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DisplayableUser'
+              examples:
+                Example0:
+                  summary: Common user info
+                  value:
+                    id: reader
+                    username: reader
+                    isAdmin: false
+                    categories:
+                    - Category1
+                    categoryPermissions:
+                      Category1:
+                      - Read
+                    globalPermissions: []
+                Example1:
+                  summary: Admin user info
+                  value:
+                    id: admin
+                    username: admin
+                    isAdmin: true
+                    categories:
+                    - Category1
+                    - Category2
+                    categoryPermissions: {}
+                    globalPermissions: []
         '401':
           description: ''
           content:
