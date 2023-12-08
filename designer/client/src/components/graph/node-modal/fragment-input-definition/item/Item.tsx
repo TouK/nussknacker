@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { isEqual } from "lodash";
 import { TypeSelect } from "../TypeSelect";
-import { Validator, getValidationErrorForField } from "../../editors/Validators";
+import { getValidationErrorForField } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
 import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
@@ -17,7 +17,6 @@ import { SettingsProvider } from "../settings/SettingsProvider";
 interface ItemProps {
     index: number;
     item: FragmentInputParameter;
-    validators: Validator[];
     namespace: string;
     readOnly?: boolean;
     showValidation?: boolean;
@@ -60,7 +59,7 @@ export function Item(props: ItemProps): JSX.Element {
                         onChange={(e) => onChange(`${path}.name`, e.target.value)}
                         value={item.name}
                         placeholder="Field name"
-                        fieldError={getValidationErrorForField(errors, "$id")}
+                        fieldError={getValidationErrorForField(errors, "name")}
                     />
                 </NodeValue>
                 <TypeSelect
@@ -72,7 +71,7 @@ export function Item(props: ItemProps): JSX.Element {
                     value={getCurrentOption(item.typ)}
                     isMarked={isMarked(`${path}.typ.refClazzName`)}
                     options={options}
-                    fieldError={getValidationErrorForField(errors, `${path}.typ.refClazzName`)}
+                    fieldError={getValidationErrorForField(errors, `type`)}
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>

@@ -1,4 +1,4 @@
-import { chain, isEmpty } from "lodash";
+import { isEmpty } from "lodash";
 import i18next from "i18next";
 import { NodeValidationError } from "../../../../types";
 import { FormatterType } from "./expression/Formatter";
@@ -86,14 +86,6 @@ export const uniqueScenarioValueValidator: typeof uniqueValueValidator = (otherV
 
 const regExpPattern = (pattern: string) => new RegExp(pattern);
 
-export const notBlankValueValidator: Validator = {
-    isValid: (value) => !regExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
-    message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
-    description: () => i18next.t("validator.notBlank.description", "Please fill field value for this parameter"),
-    handledErrorType: HandledErrorType.BlankParameter,
-    validatorType: ValidatorType.Frontend,
-};
-
 export const literalIntegerValueValidator: Validator = {
     //Blank value should be not validate - we want to chain validators
     isValid: (value) => isEmpty(value) || regExpPattern("^-?[0-9]+$").test(value),
@@ -132,24 +124,6 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
     handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
     validatorType: ValidatorType.Frontend,
 });
-
-export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
-    return isEmpty(validators)
-        ? []
-        : chain(validators)
-              .groupBy((validator) => validator.handledErrorType)
-              .map((value, key) =>
-                  chain(value)
-                      .sortBy((validator) => validator.validatorType)
-                      .head()
-                      .value(),
-              )
-              .value();
-}
-
-export function allValid(validators: Array<Validator>, values: Array<string>): boolean {
-    return withoutDuplications(validators).every((validator) => validator.isValid(...values));
-}
 
 export type FieldError = Pick<Error, "message" | "description"> | undefined;
 

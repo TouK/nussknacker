@@ -6,10 +6,9 @@ import { useProcessNameValidators } from "../containers/hooks/useProcessNameVali
 import HttpService from "../http/HttpService";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm } from "./AddProcessForm";
-import { allValid, extendErrors, getValidationErrorForField } from "./graph/node-modal/editors/Validators";
+import { extendErrors, getValidationErrorForField } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
-import { FormatterType } from "./graph/node-modal/editors/expression/Formatter";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
@@ -23,45 +22,29 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
 
     const [value, setState] = useState({ processId: "", processCategory: "" });
 
-    const isValid = useMemo(() => value.processCategory && allValid(nameValidators, [value.processId]), [nameValidators, value]);
+    const fieldError = getValidationErrorForField(extendErrors(errors, value.processId, "processName", nameValidators), "processName");
 
     const navigate = useNavigate();
     const createProcess = useCallback(async () => {
-        if (isValid) {
+        if (!fieldError) {
             const { processId, processCategory } = value;
             await HttpService.createProcess(processId, processCategory, isFragment);
             passProps.close();
             navigate(visualizationUrl(processId));
         }
-    }, [isFragment, isValid, navigate, passProps, value]);
+    }, [isFragment, fieldError, navigate, passProps, value]);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
-            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: !isValid },
+            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: Boolean(fieldError) },
         ],
-        [createProcess, isValid, passProps, t],
+        [createProcess, fieldError, passProps, t],
     );
-
-    const nameErrors: NodeValidationError[] = nameValidators
-        .filter((nameValidator) => !nameValidator.isValid(value))
-        .map((nameValidator) => ({
-            errorType: "SaveAllowed",
-            fieldName: "processName",
-            message: nameValidator.message(),
-            description: nameValidator.description(),
-            typ: FormatterType.String,
-        }));
-
-    nameErrors.forEach((nameError) => errors.push(nameError));
 
     return (
         <WindowContent buttons={buttons} {...passProps}>
-            <AddProcessForm
-                value={value}
-                onChange={setState}
-                fieldError={getValidationErrorForField(extendErrors(errors, value.processId, "processName", nameValidators), "processName")}
-            />
+            <AddProcessForm value={value} onChange={setState} fieldError={fieldError} />
         </WindowContent>
     );
 }

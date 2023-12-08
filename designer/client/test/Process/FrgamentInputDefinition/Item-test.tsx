@@ -43,7 +43,6 @@ describe(Item.name, () => {
                         errors={[]}
                         variableTypes={{}}
                         onChange={mockOnChange}
-                        validators={[]}
                         fixedValuesPresets={{}}
                         options={[
                             {

@@ -3,7 +3,6 @@ import { Field, NodeType, NodeValidationError, TypedObjectTypingResult, Variable
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import { Error } from "./editors/Validators";
 import { v4 as uuid4 } from "uuid";
 
 export interface MapVariableProps<F extends Field> {

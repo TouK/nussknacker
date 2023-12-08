@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo } from "react";
 import { FixedValuesPresets, NodeValidationError, Parameter, VariableTypes } from "../../../../types";
-import { allValid, mandatoryValueValidator, uniqueListValueValidator, Validator, Error } from "../editors/Validators";
+import { mandatoryValueValidator, uniqueListValueValidator, extendErrors } from "../editors/Validators";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { Item, onChangeType, FragmentInputParameter } from "./item";
+import { isEmpty } from "lodash";
 
 export interface Option {
     value: string;
@@ -42,22 +43,11 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     } = props;
 
     const ItemElement = useCallback(
-        ({
-            index,
-            item,
-            validators,
-            errors,
-        }: {
-            index: number;
-            item: FragmentInputParameter;
-            validators: Validator[];
-            errors: NodeValidationError[];
-        }) => {
+        ({ index, item, errors }: { index: number; item: FragmentInputParameter; errors: NodeValidationError[] }) => {
             return (
                 <Item
                     index={index}
                     item={item}
-                    validators={validators}
                     namespace={namespace}
                     onChange={onChange}
                     options={options}
@@ -77,22 +67,22 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
     const items = useMemo(
         () =>
             fields.map((item: any, index, list) => {
-                const validators = [
+                const nameErrors = extendErrors([], item.name, "name", [
                     mandatoryValueValidator,
                     uniqueListValueValidator(
                         list.map((v) => v.name),
                         index,
                     ),
-                ];
+                ]);
 
                 /*
                  * Display settings errors only when the name is correct, for now, the name is used in the fieldName to recognize the list item,
                  * but it can be a situation where that name is not unique or is empty in a few parameters, in this case, there is a problem with a correct error display
                  */
-                const displayableErrors = allValid(validators, item.name) ? errors : [];
+                const displayableErrors = isEmpty(nameErrors) ? errors : nameErrors;
                 return {
                     item,
-                    el: <ItemElement key={index} index={index} item={item} validators={validators} errors={displayableErrors} />,
+                    el: <ItemElement key={index} index={index} item={item} errors={displayableErrors} />,
                 };
             }),
         [ItemElement, errors, fields],
