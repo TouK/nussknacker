@@ -9,10 +9,15 @@ import scala.concurrent.Future
 
 class NuDesignerExposedApiHttpService(
     appApiHttpService: AppApiHttpService,
-    componentsApiHttpService: ComponentApiHttpService
+    componentsApiHttpService: ComponentApiHttpService,
+    userApiHttpService: UserApiHttpService
 ) {
 
-  private val apiEndpoints        = appApiHttpService.serverEndpoints ++ componentsApiHttpService.serverEndpoints
+  private val apiEndpoints =
+    appApiHttpService.serverEndpoints ++
+      componentsApiHttpService.serverEndpoints ++
+      userApiHttpService.serverEndpoints
+
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 
   private val swaggerEndpoints: List[ServerEndpoint[Any, Future]] =

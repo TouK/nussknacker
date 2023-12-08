@@ -1,32 +1,36 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.server.{Directives, Route}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
+import derevo.circe.{decoder, encoder}
+import derevo.derive
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
+import sttp.model.StatusCode.Ok
+import sttp.tapir.derevo.schema
+import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.{EndpointInput, statusCode}
 
-import scala.concurrent.ExecutionContext
+class UserApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-class UserResources(getProcessCategoryService: () => ProcessCategoryService)(implicit ec: ExecutionContext)
-    extends Directives
-    with FailFastCirceSupport
-    with RouteWithUser {
-
-  def securedRoute(implicit user: LoggedUser): Route =
-    path("user") {
-      get {
-        complete {
-          val allUserAccessibleCategories = new UserCategoryService(getProcessCategoryService()).getUserCategories(user)
-          DisplayableUser(user, allUserAccessibleCategories)
-        }
-      }
-    }
+  lazy val userInfoEndpoint: SecuredEndpoint[Unit, Unit, DisplayableUser, Any] =
+    baseNuApiEndpoint
+      .summary("Logged user info service")
+      .tag("User")
+      .get
+      .in("user")
+      .out(
+        statusCode(Ok).and(
+          jsonBody[DisplayableUser]
+        )
+      )
+      .withSecurity(auth)
 
 }
 
-@JsonCodec final case class DisplayableUser private (
+@derive(schema, encoder, decoder)
+final case class DisplayableUser private (
     id: String,
     username: String,
     isAdmin: Boolean,
