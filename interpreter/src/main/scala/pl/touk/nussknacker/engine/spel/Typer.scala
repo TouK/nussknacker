@@ -197,7 +197,7 @@ private[spel] class Typer(
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case TypedUnion(possibleTypes)       => typeUnion(e, possibleTypes)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
-        case TypedObjectTypingResult(fields, _, _) =>
+        case TypedObjectTypingResult(fields, _, _) if e.childrenHead.isInstanceOf[StringLiteral] =>
           def stringValue(s: StringLiteral): String = {
             s.toString.substring(1, s.toString.length - 1)
           }
@@ -205,13 +205,11 @@ private[spel] class Typer(
             case impl: StringLiteral => Some(stringValue(impl))
             case _                   => None
           }
-          val fieldOpt = for {
+          val fieldIndexedByLiteralStringOpt = for {
             indexKey <- indexKeyOpt
             field    <- fields.find(_._1 == indexKey)
           } yield field
-
-          val result = fieldOpt.map(f => validNodeResult(f._2)).getOrElse(validNodeResult(Unknown))
-          if (dynamicPropertyAccessAllowed) result else result.tell(List(DynamicPropertyAccessError))
+          fieldIndexedByLiteralStringOpt.map(f => validNodeResult(f._2)).getOrElse(validNodeResult(Unknown))
         // TODO: type null or return error for indexing on null?
         // TODO: add indexing on strings
         // TODO: how to handle other cases?
