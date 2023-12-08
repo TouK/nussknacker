@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 case class ComponentStaticDefinition(
+    componentType: ComponentType,
     parameters: List[Parameter],
     returnType: Option[TypingResult],
     categories: Option[List[String]],

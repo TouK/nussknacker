@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
@@ -32,8 +32,9 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
   private val fragmentReturnType          = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
 
   def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
-    val staticDefinition = ComponentStaticDefinition(Nil, Some(fragmentReturnType), None, SingleComponentConfig.zero)
-    val inputParameters  = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+    val staticDefinition =
+      ComponentStaticDefinition(ComponentType.Fragment, Nil, Some(fragmentReturnType), None, SingleComponentConfig.zero)
+    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
 
     methodbased.MethodBasedComponentDefinitionWithImplementation(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),

@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine.definition.model
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
   ComponentFromProvidersExtractor
 }
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.{ExpressionDefinition, GlobalVariableDefinitionExtractor}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
@@ -35,23 +35,27 @@ object ModelDefinitionExtractor {
     val componentsUiConfig = ComponentsUiConfigParser.parse(processObjectDependencies.config)
 
     val servicesDefs =
-      ComponentDefinitionWithImplementation.forMap(services, MethodDefinitionExtractor.Service, componentsUiConfig)
+      ComponentDefinitionWithImplementation.forMap(
+        services,
+        componentsUiConfig
+      )
 
     val customStreamTransformersDefs = ComponentDefinitionWithImplementation.forMap(
       customStreamTransformers,
-      MethodDefinitionExtractor.CustomStreamTransformer,
       componentsUiConfig
     )
 
     val sourceFactoriesDefs =
       ComponentDefinitionWithImplementation.forMap(
         sourceFactories,
-        MethodDefinitionExtractor.Source,
         componentsUiConfig
       )
 
     val sinkFactoriesDefs =
-      ComponentDefinitionWithImplementation.forMap(sinkFactories, MethodDefinitionExtractor.Sink, componentsUiConfig)
+      ComponentDefinitionWithImplementation.forMap(
+        sinkFactories,
+        componentsUiConfig
+      )
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
@@ -94,8 +98,8 @@ object ModelDefinitionExtractor {
     ComponentFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies)
   }
 
-  private def extractCustomTransformerData(compomentWithImpl: ComponentDefinitionWithImplementation) = {
-    val transformer = compomentWithImpl.implementation.asInstanceOf[CustomStreamTransformer]
+  private def extractCustomTransformerData(componentWithImpl: ComponentDefinitionWithImplementation) = {
+    val transformer = componentWithImpl.implementation.asInstanceOf[CustomStreamTransformer]
     CustomTransformerAdditionalData(transformer.canHaveManyInputs, transformer.canBeEnding)
   }
 

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
@@ -47,13 +46,11 @@ class FlinkProcessCompilerWithTestComponents(
     val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
     val testServicesDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[Service],
-      MethodDefinitionExtractor.Service,
       componentsUiConfig
     )
     val testCustomStreamTransformerDefs = ComponentDefinitionWithImplementation
       .forMap(
         testComponentsWithCategories[CustomStreamTransformer],
-        MethodDefinitionExtractor.CustomStreamTransformer,
         componentsUiConfig
       )
       .map { case (name, el) =>
@@ -66,12 +63,10 @@ class FlinkProcessCompilerWithTestComponents(
       }
     val testSourceDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[SourceFactory],
-      MethodDefinitionExtractor.Source,
       componentsUiConfig
     )
     val testSinkDefs = ComponentDefinitionWithImplementation.forMap(
       testComponentsWithCategories[SinkFactory],
-      MethodDefinitionExtractor.Sink,
       componentsUiConfig
     )
     val servicesWithTests                = definitions.services ++ testServicesDefs

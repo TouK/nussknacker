@@ -1,11 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
-import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter}
+import pl.touk.nussknacker.engine.api.component.{Component, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.WithCategories
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 // This class represents component's definition and implementation.
 // Implementation part is in implementation field. It should be rarely used - instead we should extract information
@@ -40,9 +37,8 @@ object ComponentDefinitionWithImplementation {
 
   import cats.syntax.semigroup._
 
-  def forMap[T](
+  def forMap[T <: Component](
       objs: Map[String, WithCategories[_ <: T]],
-      methodExtractor: MethodDefinitionExtractor[T],
       externalConfig: Map[String, SingleComponentConfig]
   ): Map[String, ComponentDefinitionWithImplementation] = {
     objs
@@ -52,16 +48,13 @@ object ComponentDefinitionWithImplementation {
       }
       .collect {
         case (id, (obj, config)) if !config.disabled =>
-          id -> new ComponentDefinitionExtractor(methodExtractor).extract(obj, config)
+          id -> ComponentDefinitionExtractor.extract[T](obj, config)
       }
   }
 
-  def withEmptyConfig[T](
-      obj: T,
-      methodExtractor: MethodDefinitionExtractor[T]
-  ): ComponentDefinitionWithImplementation = {
-    new ComponentDefinitionExtractor(methodExtractor)
-      .extract(WithCategories.anyCategory(obj), SingleComponentConfig.zero)
-  }
+  def withEmptyConfig[T <: Component](
+      obj: T
+  ): ComponentDefinitionWithImplementation =
+    ComponentDefinitionExtractor.extract[T](WithCategories.anyCategory(obj), SingleComponentConfig.zero)
 
 }

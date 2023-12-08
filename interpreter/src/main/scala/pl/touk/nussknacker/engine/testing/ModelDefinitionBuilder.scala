@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
@@ -87,7 +88,7 @@ object ModelDefinitionBuilder {
       staticDefinition: ComponentStaticDefinition,
       realType: Class[_] = classOf[Any]
   ): ComponentDefinitionWithImplementation =
-    methodbased.MethodBasedComponentDefinitionWithImplementation(
+    MethodBasedComponentDefinitionWithImplementation(
       ComponentImplementationInvoker.nullImplementationInvoker,
       null,
       staticDefinition,
@@ -99,7 +100,11 @@ object ModelDefinitionBuilder {
     def withGlobalVariable(name: String, typ: TypingResult): ModelDefinition[ComponentStaticDefinition] =
       definition.copy(expressionConfig =
         definition.expressionConfig.copy(globalVariables =
-          definition.expressionConfig.globalVariables + (name -> wrapWithStaticDefinition(List.empty, Some(typ)))
+          definition.expressionConfig.globalVariables + (name -> wrapWithStaticDefinition(
+            ComponentType.BuiltIn,
+            List.empty,
+            Some(typ)
+          ))
         )
       )
 
@@ -108,14 +113,18 @@ object ModelDefinitionBuilder {
         returnType: Option[TypingResult],
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(services = definition.services + (id -> wrapWithStaticDefinition(params.toList, returnType)))
+      definition.copy(services =
+        definition.services + (id -> wrapWithStaticServiceDefinition(params.toList, returnType))
+      )
 
     def withService(id: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(services = definition.services + (id -> wrapWithStaticDefinition(params.toList, Some(Unknown))))
+      definition.copy(services =
+        definition.services + (id -> wrapWithStaticServiceDefinition(params.toList, Some(Unknown)))
+      )
 
     def withSourceFactory(typ: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
       definition.copy(sourceFactories =
-        definition.sourceFactories + (typ -> wrapWithStaticDefinition(params.toList, Some(Unknown)))
+        definition.sourceFactories + (typ -> wrapWithStaticSourceDefinition(params.toList, Some(Unknown)))
       )
 
     def withSourceFactory(
@@ -125,6 +134,7 @@ object ModelDefinitionBuilder {
     ): ModelDefinition[ComponentStaticDefinition] =
       definition.copy(sourceFactories =
         definition.sourceFactories + (typ -> ComponentStaticDefinition(
+          ComponentType.Source,
           params.toList,
           Some(Unknown),
           Some(List(category)),
@@ -133,7 +143,9 @@ object ModelDefinitionBuilder {
       )
 
     def withSinkFactory(typ: String, params: Parameter*): ModelDefinition[ComponentStaticDefinition] =
-      definition.copy(sinkFactories = definition.sinkFactories + (typ -> wrapWithStaticDefinition(params.toList, None)))
+      definition.copy(sinkFactories =
+        definition.sinkFactories + (typ -> wrapWithStaticSinkDefinition(params.toList, None))
+      )
 
     def withCustomStreamTransformer(
         id: String,
@@ -142,19 +154,51 @@ object ModelDefinitionBuilder {
         params: Parameter*
     ): ModelDefinition[ComponentStaticDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (wrapWithStaticDefinition(
+        definition.customStreamTransformers + (id -> (wrapWithStaticCustomComponentDefinition(
           params.toList,
           returnType
-        ), additionalData))
+        ),
+        additionalData))
       )
 
   }
 
-  def wrapWithStaticDefinition(
+  def wrapWithStaticSourceDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult]
+  ): ComponentStaticDefinition =
+    wrapWithStaticDefinition(ComponentType.Source, parameters, returnType)
+
+  def wrapWithStaticSinkDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult]
+  ): ComponentStaticDefinition =
+    wrapWithStaticDefinition(ComponentType.Sink, parameters, returnType)
+
+  def wrapWithStaticServiceDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult]
+  ): ComponentStaticDefinition =
+    wrapWithStaticDefinition(ComponentType.Service, parameters, returnType)
+
+  def wrapWithStaticCustomComponentDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult]
+  ): ComponentStaticDefinition =
+    wrapWithStaticDefinition(ComponentType.CustomComponent, parameters, returnType)
+
+  def wrapWithStaticGlobalVariableDefinition(
+      parameters: List[Parameter],
+      returnType: Option[TypingResult]
+  ): ComponentStaticDefinition =
+    wrapWithStaticDefinition(ComponentType.BuiltIn, parameters, returnType)
+
+  private def wrapWithStaticDefinition(
+      componentType: ComponentType,
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition = {
-    ComponentStaticDefinition(parameters, returnType, None, SingleComponentConfig.zero)
+    ComponentStaticDefinition(componentType, parameters, returnType, None, SingleComponentConfig.zero)
   }
 
 }

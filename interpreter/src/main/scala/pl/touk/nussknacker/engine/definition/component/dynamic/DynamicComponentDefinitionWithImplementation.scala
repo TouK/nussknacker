@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
 import pl.touk.nussknacker.engine.api.definition.OutputVariableNameDependency
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 
 case class DynamicComponentDefinitionWithImplementation(
+    componentType: ComponentType,
     override val implementationInvoker: ComponentImplementationInvoker,
     implementation: GenericNodeTransformation[_],
     override protected[definition] val categories: Option[List[String]],

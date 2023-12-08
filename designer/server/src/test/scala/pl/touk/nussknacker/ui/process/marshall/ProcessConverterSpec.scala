@@ -23,7 +23,10 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.wrapWithStaticDefinition
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{
+  wrapWithStaticServiceDefinition,
+  wrapWithStaticSourceDefinition
+}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
@@ -43,8 +46,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   lazy val validation: UIProcessValidator = {
     val modelDefinition = ModelDefinition[ComponentStaticDefinition](
-      services = Map("ref" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
-      sourceFactories = Map("sourceRef" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
+      services = Map("ref" -> wrapWithStaticServiceDefinition(List.empty, Some(Unknown))),
+      sourceFactories = Map("sourceRef" -> wrapWithStaticSourceDefinition(List.empty, Some(Unknown))),
       sinkFactories = Map(),
       customStreamTransformers = Map(),
       expressionConfig = ExpressionDefinition(

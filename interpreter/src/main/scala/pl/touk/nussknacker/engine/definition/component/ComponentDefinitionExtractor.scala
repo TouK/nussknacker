@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   DynamicComponentImplementationInvoker
@@ -19,26 +19,36 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
 import java.lang.reflect.Method
 import scala.runtime.BoxedUnit
 
-class ComponentDefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
+object ComponentDefinitionExtractor {
 
-  def extract(
+  def extract[T <: Component](
       objWithCategories: WithCategories[T],
       mergedComponentConfig: SingleComponentConfig
   ): ComponentDefinitionWithImplementation = {
     val obj = objWithCategories.value
+
+    val (componentType, methodDefinitionExtractor) = obj match {
+      case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source)
+      case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink)
+      case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service)
+      case _: CustomStreamTransformer =>
+        (ComponentType.CustomComponent, MethodDefinitionExtractor.CustomStreamTransformer)
+      case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
+    }
 
     def fromMethodDefinition(methodDef: MethodDefinition): MethodBasedComponentDefinitionWithImplementation = {
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
       def notReturnAnything(typ: TypingResult) =
         Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
       val staticDefinition = ComponentStaticDefinition(
+        componentType,
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         objWithCategories.categories,
         mergedComponentConfig
       )
       val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
-      methodbased.MethodBasedComponentDefinitionWithImplementation(
+      MethodBasedComponentDefinitionWithImplementation(
         implementationInvoker,
         obj,
         staticDefinition,
@@ -51,6 +61,7 @@ class ComponentDefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitio
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
           DynamicComponentDefinitionWithImplementation(
+            componentType,
             implementationInvoker,
             e,
             objWithCategories.categories,
@@ -59,6 +70,7 @@ class ComponentDefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitio
         )
       case _ =>
         methodDefinitionExtractor
+          .asInstanceOf[MethodDefinitionExtractor[T]]
           .extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig)
           .map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)

@@ -26,8 +26,6 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition._
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation,
@@ -47,7 +45,14 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{ComponentDefinitionBuilder, wrapWithStaticDefinition}
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.{
+  ComponentDefinitionBuilder,
+  wrapWithStaticCustomComponentDefinition,
+  wrapWithStaticGlobalVariableDefinition,
+  wrapWithStaticServiceDefinition,
+  wrapWithStaticSinkDefinition,
+  wrapWithStaticSourceDefinition
+}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
@@ -62,33 +67,36 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
   private val baseDefinition = ModelDefinition[ComponentStaticDefinition](
-    Map(
-      "sampleEnricher"    -> wrapWithStaticDefinition(List.empty, Some(Typed[SimpleRecord])),
-      "withParamsService" -> wrapWithStaticDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord]))
+    services = Map(
+      "sampleEnricher"    -> wrapWithStaticServiceDefinition(List.empty, Some(Typed[SimpleRecord])),
+      "withParamsService" -> wrapWithStaticServiceDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord]))
     ),
-    Map(
-      "source"            -> wrapWithStaticDefinition(List.empty, Some(Typed[SimpleRecord])),
-      "sourceWithUnknown" -> wrapWithStaticDefinition(List.empty, Some(Unknown)),
-      "sourceWithParam"   -> wrapWithStaticDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
-      "typedMapSource" -> wrapWithStaticDefinition(
+    sourceFactories = Map(
+      "source"            -> wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])),
+      "sourceWithUnknown" -> wrapWithStaticSourceDefinition(List.empty, Some(Unknown)),
+      "sourceWithParam"   -> wrapWithStaticSourceDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
+      "typedMapSource" -> wrapWithStaticSourceDefinition(
         List(Parameter[TypedObjectDefinition]("type")),
         Some(Typed[TypedMap])
       )
     ),
-    Map(
-      "sink" -> wrapWithStaticDefinition(List.empty, None),
-      "sinkWithLazyParam" -> wrapWithStaticDefinition(
+    sinkFactories = Map(
+      "sink" -> wrapWithStaticSinkDefinition(List.empty, None),
+      "sinkWithLazyParam" -> wrapWithStaticSinkDefinition(
         List(Parameter[String]("lazyString").copy(isLazyParameter = true)),
         None
       )
     ),
-    Map(
-      "customTransformer" -> (wrapWithStaticDefinition(List.empty, Some(Typed[SimpleRecord])), emptyQueryNamesData),
-      "withParamsTransformer" -> (wrapWithStaticDefinition(
+    customStreamTransformers = Map(
+      "customTransformer" -> (wrapWithStaticCustomComponentDefinition(
+        List.empty,
+        Some(Typed[SimpleRecord])
+      ), emptyQueryNamesData),
+      "withParamsTransformer" -> (wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("par1")),
         Some(Typed[SimpleRecord])
       ), emptyQueryNamesData),
-      "manyParams" -> (wrapWithStaticDefinition(
+      "manyParams" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("par1").copy(isLazyParameter = true),
           Parameter[String]("par2"),
@@ -97,7 +105,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         ),
         Some(Typed[SimpleRecord])
       ), emptyQueryNamesData),
-      "withManyParameters" -> (wrapWithStaticDefinition(
+      "withManyParameters" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("lazyString").copy(isLazyParameter = true),
           Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
@@ -105,41 +113,44 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         ),
         Some(Typed[SimpleRecord])
       ), emptyQueryNamesData),
-      "withoutReturnType" -> (wrapWithStaticDefinition(List(Parameter[String]("par1")), None), emptyQueryNamesData),
-      "withMandatoryParams" -> (wrapWithStaticDefinition(
+      "withoutReturnType" -> (wrapWithStaticCustomComponentDefinition(
+        List(Parameter[String]("par1")),
+        None
+      ), emptyQueryNamesData),
+      "withMandatoryParams" -> (wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("mandatoryParam")),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withNotBlankParams" -> (wrapWithStaticDefinition(
+      "withNotBlankParams" -> (wrapWithStaticCustomComponentDefinition(
         List(NotBlankParameter("notBlankParam", Typed[String])),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withNullableLiteralIntegerParam" -> (wrapWithStaticDefinition(
+      "withNullableLiteralIntegerParam" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[Integer]("nullableLiteralIntegerParam")
             .copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withRegExpParam" -> (wrapWithStaticDefinition(
+      "withRegExpParam" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[Integer]("regExpParam").copy(validators = List(CompileTimeEvaluableValueValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withJsonParam" -> (wrapWithStaticDefinition(
+      "withJsonParam" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withCustomValidatorParam" -> (wrapWithStaticDefinition(
+      "withCustomValidatorParam" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withAdditionalVariable" -> (wrapWithStaticDefinition(
+      "withAdditionalVariable" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(
             additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]),
@@ -148,15 +159,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         ),
         Some(Unknown)
       ), emptyQueryNamesData),
-      "withVariablesToHide" -> (wrapWithStaticDefinition(
+      "withVariablesToHide" -> (wrapWithStaticCustomComponentDefinition(
         List(
           Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
         ),
         Some(Unknown)
       ), emptyQueryNamesData)
     ),
-    ExpressionDefinition(
-      Map("processHelper" -> wrapWithStaticDefinition(List(), Some(Typed(ProcessHelper.getClass)))),
+    expressionConfig = ExpressionDefinition(
+      Map("processHelper" -> wrapWithStaticGlobalVariableDefinition(List(), Some(Typed(ProcessHelper.getClass)))),
       List.empty,
       List.empty,
       LanguageConfiguration.default,
@@ -171,7 +182,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty
     ),
-    ClassExtractionSettings.Default
+    settings = ClassExtractionSettings.Default
   )
 
   test("enable method execution for Unknown") {
@@ -1253,7 +1264,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.copy(services =
       base.services + ("returningTypeService" ->
-        new ComponentDefinitionExtractor(MethodDefinitionExtractor.Service)
+        ComponentDefinitionExtractor
           .extract(WithCategories.anyCategory(ServiceReturningTypeSample), SingleComponentConfig.zero))
     )
 
@@ -1283,7 +1294,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.copy(services =
       base.services + ("returningTypeService" ->
-        new ComponentDefinitionExtractor(MethodDefinitionExtractor.Service)
+        ComponentDefinitionExtractor
           .extract(
             WithCategories.anyCategory(ServiceReturningTypeWithExplicitMethodSample),
             SingleComponentConfig.zero
@@ -1315,7 +1326,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val withServiceRef = base.copy(services =
       base.services + ("withCustomValidation" ->
-        new ComponentDefinitionExtractor(MethodDefinitionExtractor.Service)
+        ComponentDefinitionExtractor
           .extract(WithCategories.anyCategory(ServiceWithCustomValidation), SingleComponentConfig.zero))
     )
 
@@ -1654,7 +1665,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private val definitionWithTypedSource =
     baseDefinition.copy(sourceFactories =
-      Map("source" -> wrapWithStaticDefinition(List.empty, Some(Typed[SimpleRecord])))
+      Map("source" -> wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
     )
 
   private val definitionWithTypedSourceAndTransformNode =
