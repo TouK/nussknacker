@@ -116,7 +116,8 @@ class FragmentParameterValidator(
       case Some(valueEditor) if !valueEditor.allowOtherValue =>
         getEffectiveFixedValuesList(valueEditor, usedFixedValuesPresets) match {
           case Some(fixedValuesList) => validateFixedValuesList(fixedValuesList, fragmentParameter, fragmentInputId)
-          case None => Valid(()) // PresetIdNotFoundInProvidedPresets, caught in FragmentComponentDefinitionExtractor
+          case None =>
+            Valid(()) // PresetIdNotFoundInProvidedPresets are caught earlier in FragmentComponentDefinitionExtractor
         }
 
       case _ => Valid(())

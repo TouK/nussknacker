@@ -84,9 +84,7 @@ case class FixedValuesPresetParameterEditor(
 object FixedValuesPresetParameterEditor {
 
   implicit val encode: Encoder[FixedValuesPresetParameterEditor] = (a: FixedValuesPresetParameterEditor) =>
-    Json.obj(
-      ("presetId", Json.fromString(a.presetId)),
-    )
+    Json.obj(("presetId", Json.fromString(a.presetId)))
 
   implicit val decode: Decoder[FixedValuesPresetParameterEditor] = {
     Decoder.decodeString.at("presetId").map(FixedValuesPresetParameterEditor(_, None))
