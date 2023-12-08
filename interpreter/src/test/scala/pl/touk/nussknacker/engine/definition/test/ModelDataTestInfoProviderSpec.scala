@@ -39,12 +39,12 @@ class ModelDataTestInfoProviderSpec
           processObjectDependencies: ProcessObjectDependencies
       ): Map[String, WithCategories[SourceFactory]] = {
         Map(
-          "genericSource"                   -> WithCategories(new GenericParametersSource),
-          "genericSourceNoSupport"          -> WithCategories(new GenericParametersSourceNoTestSupport),
-          "genericSourceNoGenerate"         -> WithCategories(new GenericParametersSourceNoGenerate),
-          "genericSourceWithTestParameters" -> WithCategories(new SourceWithTestParameters),
-          "sourceEmptyTimestamp"            -> WithCategories(SourceGeneratingEmptyTimestamp),
-          "sourceGeneratingEmptyData"       -> WithCategories(SourceGeneratingEmptyData),
+          "genericSource"                   -> WithCategories.anyCategory(new GenericParametersSource),
+          "genericSourceNoSupport"          -> WithCategories.anyCategory(new GenericParametersSourceNoTestSupport),
+          "genericSourceNoGenerate"         -> WithCategories.anyCategory(new GenericParametersSourceNoGenerate),
+          "genericSourceWithTestParameters" -> WithCategories.anyCategory(new SourceWithTestParameters),
+          "sourceEmptyTimestamp"            -> WithCategories.anyCategory(SourceGeneratingEmptyTimestamp),
+          "sourceGeneratingEmptyData"       -> WithCategories.anyCategory(SourceGeneratingEmptyData),
         )
       }
 

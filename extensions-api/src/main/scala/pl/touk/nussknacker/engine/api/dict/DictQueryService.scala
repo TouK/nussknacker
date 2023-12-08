@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.dict
 
 import cats.data.Validated
-import io.circe.generic.JsonCodec
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -13,4 +12,4 @@ trait DictQueryService extends AutoCloseable {
 
 }
 
-@JsonCodec case class DictEntry(key: String, label: String)
+case class DictEntry(key: String, label: String)

@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.{CategoriesConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
+import pl.touk.nussknacker.engine.{CategoryConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetProvider
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -26,7 +26,8 @@ import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDe
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   MapBasedProcessingTypeDataProvider,
   ProcessingTypeDataConfigurationReader,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataProvider,
+  ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -161,8 +162,12 @@ object TestFactory extends TestPermissions {
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
     LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
-  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] =
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(data: _*))
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
+    // TODO: tests for user privileges
+    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(
+      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+    )
+  }
 
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
     MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
@@ -182,7 +187,7 @@ object TestFactory extends TestPermissions {
       designerConfig,
       ProcessingTypeDataConfigurationReader
         .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(CategoriesConfig(_))
+        .mapValuesNow(CategoryConfig(_))
     )
 
 }

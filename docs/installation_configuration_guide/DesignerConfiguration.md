@@ -743,7 +743,6 @@ You can configure `secondaryEnvironment` to allow for
 
 Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
 [users permissions](/installation_configuration_guide/DesignerConfiguration/#users-roles-and-permissions).
-You can also [configure](/installation_configuration_guide/model/ModelConfiguration/#configuration-of-component-providers) in which category given components will be visible
 
 For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 

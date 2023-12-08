@@ -16,7 +16,7 @@ type ValidationError = {
 };
 
 const LabelsContainer = styled("div")({
-    display: "inline-grid",
+    display: "block",
     maxWidth: "fit-content",
 });
 

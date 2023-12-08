@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.graph.node.CustomNode
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 import scala.reflect.ClassTag
 
@@ -16,6 +17,8 @@ class GroupByMigrationSpec extends AnyFunSuite {
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val migrations = ProcessMigrations.listOf(GroupByMigration)
+
+  private implicit val user: LoggedUser = AdminUser("admin", "admin")
 
   test("should migrate custom aggregation node keyBy parameter name to groupBy") {
     val testMigration = newTestModelMigrations(migrations)

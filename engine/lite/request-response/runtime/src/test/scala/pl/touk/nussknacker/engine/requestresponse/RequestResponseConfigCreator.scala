@@ -42,34 +42,34 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
   override def customStreamTransformers(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "sorter"       -> WithCategories(Sorter),
-    "extractor"    -> WithCategories(CustomExtractor),
-    "customFilter" -> WithCategories(CustomFilter),
-    "collect"      -> WithCategories(CollectTransformer)
+    "sorter"       -> WithCategories.anyCategory(Sorter),
+    "extractor"    -> WithCategories.anyCategory(CustomExtractor),
+    "customFilter" -> WithCategories.anyCategory(CustomFilter),
+    "collect"      -> WithCategories.anyCategory(CollectTransformer)
   )
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map(
-      "enricherService"         -> WithCategories(new EnricherService),
-      "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-      "eagerEnricherWithOpen"   -> WithCategories(eagerEnricher),
-      "processorService"        -> WithCategories(processorService),
-      "collectingEager"         -> WithCategories(CollectingEagerService)
+      "enricherService"         -> WithCategories.anyCategory(new EnricherService),
+      "enricherWithOpenService" -> WithCategories.anyCategory(new EnricherWithOpenService),
+      "eagerEnricherWithOpen"   -> WithCategories.anyCategory(eagerEnricher),
+      "processorService"        -> WithCategories.anyCategory(processorService),
+      "collectingEager"         -> WithCategories.anyCategory(CollectingEagerService)
     )
 
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-post-source"     -> WithCategories(new JsonRequestResponseSourceFactory[Request1]),
-    "request-list-post-source" -> WithCategories(new JsonRequestResponseSourceFactory[RequestNumber])
+    "request1-post-source"     -> WithCategories.anyCategory(new JsonRequestResponseSourceFactory[Request1]),
+    "request-list-post-source" -> WithCategories.anyCategory(new JsonRequestResponseSourceFactory[RequestNumber])
   )
 
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink"          -> WithCategories(RequestResponseSinkFactory),
-    "parameterResponse-sink" -> WithCategories(ParameterResponseSinkFactory),
-    "failing-sink"           -> WithCategories(new FailingSinkFactory())
+    "response-sink"          -> WithCategories.anyCategory(RequestResponseSinkFactory),
+    "parameterResponse-sink" -> WithCategories.anyCategory(ParameterResponseSinkFactory),
+    "failing-sink"           -> WithCategories.anyCategory(new FailingSinkFactory())
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(

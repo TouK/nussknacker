@@ -133,7 +133,7 @@ class Creator(input: List[TestRecord], collectingListener: ResultsCollectingList
   ): Map[String, WithCategories[SourceFactory]] = {
     implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
     Map(
-      "start" -> WithCategories(
+      "start" -> WithCategories.anyCategory(
         SourceFactory.noParam[TestRecord](
           EmitWatermarkAfterEachElementCollectionSource
             .create[TestRecord](input, _.timestamp, Duration.ofHours(1))

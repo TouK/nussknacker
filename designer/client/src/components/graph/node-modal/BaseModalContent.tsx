@@ -6,7 +6,7 @@ import NodeErrors from "./NodeErrors";
 import { EdgeKind, NodeValidationError } from "../../../types";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
 import { NodeTable, NodeTableBody } from "./NodeDetailsContent/NodeTable";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
+import { NodeLabelStyled } from "./node";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 interface Props {

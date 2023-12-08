@@ -11,9 +11,17 @@ import pl.touk.nussknacker.engine.api.fixedvaluespresets.TestFixedValuesPresetPr
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{CategoriesConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
+import pl.touk.nussknacker.restmodel.component.{
+  ComponentLink,
+  ComponentListElement,
+  ComponentUsagesInScenario,
+  NodeUsageData
+}
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -33,7 +41,7 @@ import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
 import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -236,8 +244,8 @@ class DefaultComponentServiceSpec
   private val categoryService = ConfigProcessCategoryService(
     ConfigFactory.empty,
     Map(
-      Streaming -> CategoriesConfig(CategoryMarketing),
-      Fraud     -> CategoriesConfig(CategoryFraud)
+      Streaming -> CategoryConfig(CategoryMarketing),
+      Fraud     -> CategoryConfig(CategoryFraud)
     )
   )
 
@@ -493,12 +501,12 @@ class DefaultComponentServiceSpec
       new MockDeploymentManager,
       modelData,
       ConfigFactory.empty(),
-      CategoriesConfig(category)
+      CategoryConfig(category)
     )
   }
 
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(
-    processingTypeDataMap,
+    processingTypeDataMap.mapValuesNow(ProcessingTypeDataReader.toValueWithPermission),
     (ComponentIdProviderFactory.createUnsafe(processingTypeDataMap, categoryService), categoryService)
   )
 
@@ -587,7 +595,7 @@ class DefaultComponentServiceSpec
         new MockDeploymentManager,
         modelData,
         ConfigFactory.empty(),
-        CategoriesConfig(category)
+        CategoryConfig(category)
       )
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)

@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 object ProcessTestData {
@@ -39,10 +40,9 @@ object ProcessTestData {
   import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
 
-  val existingSourceFactory       = "barSource"
-  val otherExistingSourceFactory  = "fooSource"
-  val secretExistingSourceFactory = "secretSource"
-  val csvSourceFactory            = "csv-source"
+  val existingSourceFactory      = "barSource"
+  val otherExistingSourceFactory = "fooSource"
+  val csvSourceFactory           = "csv-source"
 
   val existingSinkFactory            = "barSink"
   val existingSinkFactory2           = "barSink2"
@@ -76,7 +76,6 @@ object ProcessTestData {
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
       .withSourceFactory(csvSourceFactory)
-      .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
       .withSinkFactory(otherExistingSinkFactory)
       .withSinkFactory(existingSinkFactory)
       .withSinkFactory(
@@ -167,7 +166,8 @@ object ProcessTestData {
       espProcess: CanonicalProcess,
       category: String = TestCategories.Category1
   ): ValidatedDisplayableProcess = {
-    val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
+    implicit val user: LoggedUser = AdminUser("admin", "admin")
+    val displayable               = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
     ValidatedDisplayableProcess.withValidationResult(displayable, processValidator.validate(displayable))
   }
 

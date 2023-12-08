@@ -11,6 +11,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 /**
@@ -23,17 +24,18 @@ class UIProcessResolver(
     substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
 ) {
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
-    val v = validator.withExpressionParsers { case spel: SpelExpressionParser =>
-      spel.typingDictLabels
-    }
-    v.validate(displayable)
+  private val beforeUiResolvingValidator = validator.withExpressionParsers { case spel: SpelExpressionParser =>
+    spel.typingDictLabels
+  }
+
+  def validateBeforeUiResolving(displayable: DisplayableProcess)(implicit user: LoggedUser): ValidationResult = {
+    beforeUiResolvingValidator.validate(displayable)
   }
 
   def resolveExpressions(
       displayable: DisplayableProcess,
       typingInfo: Map[String, Map[String, ExpressionTypingInfo]]
-  ): CanonicalProcess = {
+  )(implicit user: LoggedUser): CanonicalProcess = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
     substitutorByProcessingType
       .forType(displayable.processingType)
@@ -45,7 +47,7 @@ class UIProcessResolver(
       canonical: CanonicalProcess,
       processingType: ProcessingType,
       category: Category
-  ): ValidationResult =
+  )(implicit user: LoggedUser): ValidationResult =
     validator.processingTypeValidationWithTypingInfo(canonical, processingType, category)
 
   def reverseResolveExpressions(
@@ -53,7 +55,7 @@ class UIProcessResolver(
       processingType: ProcessingType,
       category: Category,
       validationResult: ValidationResult
-  ): ValidatedDisplayableProcess = {
+  )(implicit user: LoggedUser): ValidatedDisplayableProcess = {
     val substituted = substitutorByProcessingType
       .forType(processingType)
       .map(_.reversed.substitute(canonical, validationResult.typingInfo))

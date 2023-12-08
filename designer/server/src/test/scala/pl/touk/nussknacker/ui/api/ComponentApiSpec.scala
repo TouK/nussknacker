@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultCompon
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 
-class ComponentResourcesApiSpec
+class ComponentApiSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
@@ -362,7 +362,7 @@ class ComponentResourcesApiSpec
           .statusCode(405)
           .body(
             equalTo(
-              s"HTTP method not allowed, supported methods: GET"
+              s"Method Not Allowed"
             )
           )
       }

@@ -25,7 +25,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
   test("should generated statically defined query paramsForSingleMode") {
     val params = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map.empty[ProcessingType, ProcessingTypeUsageStatistics]
+      _ => Map.empty[ProcessingType, ProcessingTypeUsageStatistics]
     ).determineQueryParams()
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
@@ -35,7 +35,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
   test("should generated random fingerprint if configured is blank") {
     val params = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(""), None),
-      Map.empty[ProcessingType, ProcessingTypeUsageStatistics]
+      _ => Map.empty[ProcessingType, ProcessingTypeUsageStatistics]
     ).determineQueryParams()
     params("fingerprint") should startWith("gen-")
   }
@@ -47,7 +47,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     FileUtils.writeStringToFile(fingerprintFile, savedFingerprint, StandardCharsets.UTF_8)
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, None, None),
-      Map.empty,
+      _ => Map.empty,
       fingerprintFile
     ).determineQueryParams()
     params.get("fingerprint").value shouldEqual savedFingerprint
@@ -58,7 +58,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     fingerprintFile.deleteOnExit()
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, None, None),
-      Map.empty,
+      _ => Map.empty,
       fingerprintFile
     ).determineQueryParams()
     val generatedFingerprint = params.get("fingerprint").value
@@ -70,7 +70,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val givenDm1 = "flinkStreaming"
     val paramsForSingleDm = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenDm1), None))
+      _ => Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenDm1), None))
     ).determineQueryParams()
     paramsForSingleDm should contain("single_dm" -> givenDm1)
     paramsForSingleDm should contain("dm_" + givenDm1 -> "1")
@@ -78,11 +78,12 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val givenDm2 = "lite-k8s"
     val paramsForMultipleDms = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map(
-        "streaming"  -> ProcessingTypeUsageStatistics(Some(givenDm1), None),
-        "streaming2" -> ProcessingTypeUsageStatistics(Some(givenDm2), None),
-        "streaming3" -> ProcessingTypeUsageStatistics(Some(givenDm1), None)
-      )
+      _ =>
+        Map(
+          "streaming"  -> ProcessingTypeUsageStatistics(Some(givenDm1), None),
+          "streaming2" -> ProcessingTypeUsageStatistics(Some(givenDm2), None),
+          "streaming3" -> ProcessingTypeUsageStatistics(Some(givenDm1), None)
+        )
     ).determineQueryParams()
     paramsForMultipleDms should contain("single_dm" -> "multiple")
     paramsForMultipleDms should contain("dm_" + givenDm1 -> "2")
@@ -93,7 +94,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val streamingMode = "streaming"
     val paramsForSingleMode = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode)))
+      _ => Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode)))
     ).determineQueryParams()
     paramsForSingleMode should contain("single_m" -> streamingMode)
     paramsForSingleMode should contain("m_" + streamingMode -> "1")
@@ -101,11 +102,12 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val requestResponseMode = "request-response"
     val paramsForMultipleModes = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map(
-        "streaming"  -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode)),
-        "streaming2" -> ProcessingTypeUsageStatistics(Some("barDm"), Some(requestResponseMode)),
-        "streaming3" -> ProcessingTypeUsageStatistics(Some("bazDm"), Some(streamingMode))
-      )
+      _ =>
+        Map(
+          "streaming"  -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode)),
+          "streaming2" -> ProcessingTypeUsageStatistics(Some("barDm"), Some(requestResponseMode)),
+          "streaming3" -> ProcessingTypeUsageStatistics(Some("bazDm"), Some(streamingMode))
+        )
     ).determineQueryParams()
     paramsForMultipleModes should contain("single_m" -> "multiple")
     paramsForMultipleModes should contain("m_" + streamingMode -> "2")
@@ -116,7 +118,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val givenCustomDm = "customDm"
     val paramsForSingleDm = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenCustomDm), None))
+      _ => Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenCustomDm), None))
     ).determineQueryParams()
     paramsForSingleDm should contain("single_dm" -> "custom")
     paramsForSingleDm should contain("dm_custom" -> "1")
@@ -124,7 +126,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
     val customMode = "customMode"
     val paramsForSingleMode = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(customMode)))
+      _ => Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(customMode)))
     ).determineQueryParams()
     paramsForSingleMode should contain("single_m" -> "custom")
     paramsForSingleMode should contain("m_custom" -> "1")
@@ -133,7 +135,7 @@ class UsageStatisticsReportsSettingsDeterminerTest extends AnyFunSuite with Matc
   test("should handle missing manager type") {
     val paramsForSingleDmWithoutType = UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(None, None))
+      _ => Map("streaming" -> ProcessingTypeUsageStatistics(None, None))
     ).determineQueryParams()
     paramsForSingleDmWithoutType should contain("single_dm" -> "custom")
     paramsForSingleDmWithoutType should contain("dm_custom" -> "1")

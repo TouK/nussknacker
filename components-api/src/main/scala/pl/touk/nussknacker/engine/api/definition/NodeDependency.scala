@@ -128,6 +128,124 @@ case class Parameter(
     hintText: Option[String]
 ) extends NodeDependency {
 
+  def copy(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+  ): Parameter = {
+    copy(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText = None
+    )
+  }
+
+  def copy(
+      name: String = this.name,
+      typ: TypingResult = this.typ,
+      editor: Option[ParameterEditor] = this.editor,
+      validators: List[ParameterValidator] = this.validators,
+      defaultValue: Option[Expression] = this.defaultValue,
+      additionalVariables: Map[String, AdditionalVariable] = this.additionalVariables,
+      variablesToHide: Set[String] = this.variablesToHide,
+      branchParam: Boolean = this.branchParam,
+      isLazyParameter: Boolean = this.isLazyParameter,
+      scalaOptionParameter: Boolean = this.scalaOptionParameter,
+      javaOptionalParameter: Boolean = this.javaOptionalParameter,
+      hintText: Option[String] = this.hintText
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText
+    )
+  }
+
+  def apply(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+      hintText: Option[String]
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText
+    )
+  }
+
+  def apply(
+      name: String,
+      typ: TypingResult,
+      editor: Option[ParameterEditor],
+      validators: List[ParameterValidator],
+      defaultValue: Option[Expression],
+      additionalVariables: Map[String, AdditionalVariable],
+      variablesToHide: Set[String],
+      branchParam: Boolean,
+      isLazyParameter: Boolean,
+      scalaOptionParameter: Boolean,
+      javaOptionalParameter: Boolean,
+  ): Parameter = {
+    new Parameter(
+      name,
+      typ,
+      editor,
+      validators,
+      defaultValue,
+      additionalVariables,
+      variablesToHide,
+      branchParam,
+      isLazyParameter,
+      scalaOptionParameter,
+      javaOptionalParameter,
+      hintText = None
+    )
+  }
+
   // we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
   if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {
     throw new IllegalArgumentException(

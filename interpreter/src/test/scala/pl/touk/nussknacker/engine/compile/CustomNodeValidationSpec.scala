@@ -33,31 +33,37 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "myCustomStreamTransformer"                  -> WithCategories(SimpleStreamTransformer),
-      "addingVariableStreamTransformer"            -> WithCategories(AddingVariableStreamTransformer),
-      "clearingContextStreamTransformer"           -> WithCategories(ClearingContextStreamTransformer),
-      "producingTupleTransformer"                  -> WithCategories(ProducingTupleTransformer),
-      "unionTransformer"                           -> WithCategories(UnionTransformer),
-      "unionTransformerWithMainBranch"             -> WithCategories(UnionTransformerWithMainBranch),
-      "nonEndingCustomNodeReturningTransformation" -> WithCategories(NonEndingCustomNodeReturningTransformation),
-      "nonEndingCustomNodeReturningUnit"           -> WithCategories(NonEndingCustomNodeReturningUnit),
-      "addingVariableOptionalEndingCustomNode"     -> WithCategories(AddingVariableOptionalEndingStreamTransformer),
-      "optionalEndingTransformer"                  -> WithCategories(OptionalEndingStreamTransformer),
-      "noBranchParameters"                         -> WithCategories(DynamicNoBranchParameterJoinTransformer)
+      "myCustomStreamTransformer"        -> WithCategories.anyCategory(SimpleStreamTransformer),
+      "addingVariableStreamTransformer"  -> WithCategories.anyCategory(AddingVariableStreamTransformer),
+      "clearingContextStreamTransformer" -> WithCategories.anyCategory(ClearingContextStreamTransformer),
+      "producingTupleTransformer"        -> WithCategories.anyCategory(ProducingTupleTransformer),
+      "unionTransformer"                 -> WithCategories.anyCategory(UnionTransformer),
+      "unionTransformerWithMainBranch"   -> WithCategories.anyCategory(UnionTransformerWithMainBranch),
+      "nonEndingCustomNodeReturningTransformation" -> WithCategories.anyCategory(
+        NonEndingCustomNodeReturningTransformation
+      ),
+      "nonEndingCustomNodeReturningUnit" -> WithCategories.anyCategory(NonEndingCustomNodeReturningUnit),
+      "addingVariableOptionalEndingCustomNode" -> WithCategories.anyCategory(
+        AddingVariableOptionalEndingStreamTransformer
+      ),
+      "optionalEndingTransformer" -> WithCategories.anyCategory(OptionalEndingStreamTransformer),
+      "noBranchParameters"        -> WithCategories.anyCategory(DynamicNoBranchParameterJoinTransformer)
     )
 
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] = Map("mySource" -> WithCategories(SimpleStringSource))
+    ): Map[String, WithCategories[SourceFactory]] = Map("mySource" -> WithCategories.anyCategory(SimpleStringSource))
 
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] = Map("dummySink" -> WithCategories(SinkFactory.noParam(new Sink {})))
+    ): Map[String, WithCategories[SinkFactory]] = Map(
+      "dummySink" -> WithCategories.anyCategory(SinkFactory.noParam(new Sink {}))
+    )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
-        "stringService" -> WithCategories(SimpleStringService),
-        "enricher"      -> WithCategories(Enricher)
+        "stringService" -> WithCategories.anyCategory(SimpleStringService),
+        "enricher"      -> WithCategories.anyCategory(Enricher)
       )
 
   }
@@ -69,7 +75,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(
     configCreator,
     getClass.getClassLoader,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader))
+    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)),
+    category = None
   )
 
   private val validator = ProcessValidator.default(

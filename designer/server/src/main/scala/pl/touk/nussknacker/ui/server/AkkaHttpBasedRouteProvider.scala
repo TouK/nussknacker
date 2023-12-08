@@ -52,8 +52,18 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerExposedApiHttpService}
+import pl.touk.nussknacker.ui.services.{
+  AppApiHttpService,
+  ComponentApiHttpService,
+  NuDesignerExposedApiHttpService,
+  UserApiHttpService
+}
+import pl.touk.nussknacker.ui.security.api.{
+  AuthenticationConfiguration,
+  AuthenticationResources,
+  LoggedUser,
+  NussknackerInternalUser
+}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -203,6 +213,16 @@ class AkkaHttpBasedRouteProvider(
         () => getProcessCategoryService().getAllCategories
       )
 
+      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
+
+      val componentService = DefaultComponentService(
+        ComponentLinksConfigExtractor.extract(resolvedConfig),
+        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
+        processService,
+        additionalUIConfigProvider,
+        fixedValuesPresetProvider
+      )
+
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
@@ -213,15 +233,16 @@ class AkkaHttpBasedRouteProvider(
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         getProcessCategoryService = getProcessCategoryService
       )
-
-      val additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
-
-      val componentService = DefaultComponentService(
-        ComponentLinksConfigExtractor.extract(resolvedConfig),
-        typeToConfig.mapCombined(combined => (combined.componentIdProvider, combined.categoryService)),
-        processService,
-        additionalUIConfigProvider,
-        fixedValuesPresetProvider
+      val componentsApiHttpService = new ComponentApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService,
+        componentService = componentService
+      )
+      val userApiHttpService = new UserApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService
       )
 
       val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
@@ -272,10 +293,8 @@ class AkkaHttpBasedRouteProvider(
             additionalUIConfigProvider,
             fixedValuesPresetProvider
           ),
-          new UserResources(getProcessCategoryService),
           new NotificationResources(notificationService),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
-          new ComponentResource(componentService),
           new AttachmentResources(
             new ProcessAttachmentService(
               AttachmentsConfig.create(resolvedConfig),
@@ -328,7 +347,8 @@ class AkkaHttpBasedRouteProvider(
         authenticationResources.routeWithPathPrefix,
       )
 
-      val nuDesignerApi = new NuDesignerExposedApiHttpService(appApiHttpService)
+      val nuDesignerApi =
+        new NuDesignerExposedApiHttpService(appApiHttpService, componentsApiHttpService, userApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
@@ -460,7 +480,7 @@ class AkkaHttpBasedRouteProvider(
         release = provider =>
           IO {
             val (processingTypeDataProvider, _) = provider
-            processingTypeDataProvider.all.values.foreach(_.close())
+            processingTypeDataProvider.all(NussknackerInternalUser.instance).values.foreach(_.close())
           }
       )
   }

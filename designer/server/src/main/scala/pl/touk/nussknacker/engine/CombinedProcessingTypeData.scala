@@ -24,7 +24,7 @@ object CombinedProcessingTypeData {
       designerConfig: ConfigWithUnresolvedVersion
   ): CombinedProcessingTypeData = {
     val categoryService: ProcessCategoryService =
-      ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoriesConfig))
+      ConfigProcessCategoryService(designerConfig.resolved, processingTypes.mapValuesNow(_.categoryConfig))
     CombinedProcessingTypeData(
       statusNameToStateDefinitionsMapping =
         ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),

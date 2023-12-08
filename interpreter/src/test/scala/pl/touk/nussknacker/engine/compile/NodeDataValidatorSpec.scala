@@ -88,9 +88,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         override def customStreamTransformers(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-          "genericJoin"        -> WithCategories(DynamicParameterJoinTransformer),
-          "genericTransformer" -> WithCategories(GenericParametersTransformer),
-          "genericTransformerUsingParameterValidator" -> WithCategories(
+          "genericJoin"        -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
+          "genericTransformer" -> WithCategories.anyCategory(GenericParametersTransformer),
+          "genericTransformerUsingParameterValidator" -> WithCategories.anyCategory(
             GenericParametersTransformerUsingParameterValidator
           )
         )
@@ -98,21 +98,23 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] = Map(
-          "stringService"                               -> WithCategories(SimpleStringService),
-          "genericParametersThrowingException"          -> WithCategories(GenericParametersThrowingException),
-          "missingParamHandleGenericNodeTransformation" -> WithCategories(MissingParamHandleGenericNodeTransformation)
+          "stringService"                      -> WithCategories.anyCategory(SimpleStringService),
+          "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException),
+          "missingParamHandleGenericNodeTransformation" -> WithCategories.anyCategory(
+            MissingParamHandleGenericNodeTransformation
+          )
         )
 
         override def sourceFactories(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[SourceFactory]] = Map(
-          "genericParametersSource" -> WithCategories(new GenericParametersSource)
+          "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
         )
 
         override def sinkFactories(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[SinkFactory]] = Map(
-          "genericParametersSink" -> WithCategories(GenericParametersSink)
+          "genericParametersSink" -> WithCategories.anyCategory(GenericParametersSink)
         )
       }
     )

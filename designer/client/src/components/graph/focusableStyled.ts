@@ -1,6 +1,7 @@
 import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
 import { alpha } from "../../containers/theme/helpers";
+import { ButtonWithFocus } from "../withFocus";
 
 export const buttonBase = (theme: Theme) => css`
     border: 1px solid ${theme.custom.colors.doveGray};
@@ -20,6 +21,16 @@ export const buttonBase = (theme: Theme) => css`
         background-color: ${theme.custom.colors.charcoal};
     }
 `;
+
+export const StyledButtonWithFocus = styled(ButtonWithFocus)(
+    ({ theme }) => css`
+        ${buttonBase(theme)};
+        width: 35px;
+        height: 35px;
+        font-weight: bold;
+        font-size: 20px;
+    `,
+);
 
 const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties["color"]) => css`
     overflow: auto;

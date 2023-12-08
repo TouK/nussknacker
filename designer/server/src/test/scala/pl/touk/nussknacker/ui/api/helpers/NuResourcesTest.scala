@@ -75,7 +75,9 @@ trait NuResourcesTest
 
   private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
 
-  private implicit val user: LoggedUser = TestFactory.adminUser("user")
+  protected val adminUser: LoggedUser = TestFactory.adminUser("user")
+
+  private implicit val implicitAdminUser: LoggedUser = adminUser
 
   protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(testDbRef)
 

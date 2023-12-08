@@ -796,7 +796,13 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % "test", componentsApi % "test->test")
+  .dependsOn(
+    flinkComponentsUtils,
+    interpreter,
+    flinkExtensionsApi,
+    flinkTestUtils % "test",
+    componentsApi  % "test->test"
+  )
 
 lazy val interpreter = (project in file("interpreter"))
   .settings(commonSettings)
@@ -1204,7 +1210,13 @@ lazy val liteBaseComponents = (project in lite("components/base"))
   .settings(
     name := "nussknacker-lite-base-components",
   )
-  .dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test", componentsApi % "test->test")
+  .dependsOn(
+    liteComponentsApi % "provided",
+    componentsUtils   % Provided,
+    testUtils         % "test",
+    liteEngineRuntime % "test",
+    componentsApi     % "test->test"
+  )
 
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka"))
   .settings(commonSettings)
@@ -1691,7 +1703,7 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     componentsUtils        % Provided,
     flinkComponentsTestkit % "it, test",
     kafkaTestUtils         % "it,test",
-    componentsApi % "test->test"
+    componentsApi          % "test->test"
   )
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))
@@ -1718,7 +1730,13 @@ lazy val prepareItLibs = taskKey[Unit]("Prepare jar libraries needed for integra
 lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-restmodel"
+    name := "nussknacker-restmodel",
+    libraryDependencies ++= {
+      Seq(
+        "com.softwaremill.sttp.tapir" %% "tapir-core"       % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV
+      )
+    }
   )
   .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 
@@ -1866,7 +1884,7 @@ lazy val designer = (project in file("designer/server"))
     requestResponseRuntime            % "provided",
     developmentTestsDeploymentManager % "provided",
     devPeriodicDM                     % "provided",
-    componentsApi % "test->test"
+    componentsApi                     % "test->test"
   )
 
 /*

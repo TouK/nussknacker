@@ -1,7 +1,7 @@
 import { isEqual } from "lodash";
 import React from "react";
 import { Expression, VariableTypes } from "../../../../../types";
-import { NodeValue } from "../../fragment-input-definition/NodeValue";
+import { NodeValue } from "../../node";
 import EditableEditor from "../EditableEditor";
 import { Error, Validator } from "../Validators";
 

@@ -63,7 +63,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
       .extractObjectWithMethods(
         new CreatorWithComponent(sourceFactory),
         getClass.getClassLoader,
-        ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming)
+        ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming),
+        category = None
       )
       .sourceFactories
       .head
@@ -133,7 +134,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
-      Map("one" -> WithCategories(component))
+      Map("one" -> WithCategories.anyCategory(component))
 
   }
 
