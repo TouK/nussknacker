@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
-import scala.util.Using
+import scala.util.{Try, Using}
 
 private object testComponents {
 
@@ -84,10 +84,12 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       testDataSourceComponent: ComponentDefinition
   ): RunnerListResult[R] = {
-    val testComponents      = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runResult =>
-      collectResults(testComponentHolder, runResult)
+    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultServiceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder).map { runResult =>
+          collectResults(testComponentHolder, runResult)
+        }
     }
   }
 
@@ -95,10 +97,12 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    val testComponents      = noopSourceComponent :: testResultServiceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder).map { runResult =>
-      collectResults(testComponentHolder, runResult)
+    val testComponents = noopSourceComponent :: testResultServiceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder).map { runResult =>
+          collectResults(testComponentHolder, runResult)
+        }
     }
   }
 
@@ -108,9 +112,11 @@ class FlinkTestScenarioRunner(
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents      = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
-    val testComponentHolder = TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)
-    run(scenario, testComponentHolder)
+    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+      testComponentHolder =>
+        run(scenario, testComponentHolder)
+    }
   }
 
   private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {

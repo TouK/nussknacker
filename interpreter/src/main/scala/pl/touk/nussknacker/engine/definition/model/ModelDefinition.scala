@@ -5,8 +5,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.component.{BaseComponentDefinition, ComponentIdProvider}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.model.ModelDefinition.checkDuplicates
-import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 
 case class ModelDefinition[T <: BaseComponentDefinition] private (
     components: Map[ComponentInfo, T],
@@ -15,11 +13,13 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
 ) {
 
   def addComponent(componentName: String, component: T): ModelDefinition[T] = {
-    addComponents(List(ComponentInfo(component.componentType, componentName) -> component))
+    addComponents(List(componentName -> component))
   }
 
-  def addComponents(componentsToAdd: List[(ComponentInfo, T)]): ModelDefinition[T] = {
-    val newComponents = components.toList ++ componentsToAdd
+  def addComponents(componentsToAdd: List[(String, T)]): ModelDefinition[T] = {
+    val newComponents = components.toList ++ componentsToAdd.map { case (componentName, component) =>
+      ComponentInfo(component.componentType, componentName) -> component
+    }
     checkDuplicates(newComponents)
     copy(components = newComponents.toMap)
   }
@@ -56,19 +56,6 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
 
-}
-
-object ModelDefinition {
-
-  def apply[T <: BaseComponentDefinition](
-      components: List[(ComponentInfo, T)],
-      expressionConfig: ExpressionDefinition[T],
-      settings: ClassExtractionSettings
-  ): ModelDefinition[T] = {
-    checkDuplicates(components)
-    new ModelDefinition(components.toMap, expressionConfig, settings)
-  }
-
   private def checkDuplicates(components: List[(ComponentInfo, _)]): Unit = {
     val duplicates = components.toGroupedMap
       .filter(_._2.size > 1)
@@ -82,5 +69,16 @@ object ModelDefinition {
       )
     }
   }
+
+}
+
+object ModelDefinition {
+
+  def apply[T <: BaseComponentDefinition](
+      components: List[(String, T)],
+      expressionConfig: ExpressionDefinition[T],
+      settings: ClassExtractionSettings
+  ): ModelDefinition[T] =
+    new ModelDefinition(Map.empty, expressionConfig, settings).addComponents(components)
 
 }

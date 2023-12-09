@@ -164,7 +164,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
   private def extractComponents[T <: Component](
       map: (String, Any)*
-  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] =
+  ): List[(String, ComponentDefinitionWithImplementation)] =
     extractComponents(map.toMap, ComponentsFromProvidersExtractor(_))
 
   private def extractComponents[T <: Component](

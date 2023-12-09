@@ -105,14 +105,18 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withThisAsContextClassLoader {
-      ModelDefinitionExtractor.extractModelDefinition(
-        configCreator,
-        modelClassLoader.classLoader,
-        ProcessObjectDependencies(modelConfig, objectNaming),
-        category
-      )
+      extractModelDefinition
     }
     ModelDefinitionWithClasses(modelDefinitions)
+  }
+
+  protected def extractModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] = {
+    ModelDefinitionExtractor.extractModelDefinition(
+      configCreator,
+      modelClassLoader.classLoader,
+      ProcessObjectDependencies(modelConfig, objectNaming),
+      category
+    )
   }
 
   final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =

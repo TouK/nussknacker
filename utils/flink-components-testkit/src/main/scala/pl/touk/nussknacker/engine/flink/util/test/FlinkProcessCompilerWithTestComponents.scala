@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
-import pl.touk.nussknacker.engine.util.test.TestExtensionsHolder
 
 import scala.reflect.ClassTag
 

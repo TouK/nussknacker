@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -20,6 +20,22 @@ import java.lang.reflect.Method
 import scala.runtime.BoxedUnit
 
 object ComponentDefinitionExtractor {
+
+  def extract(
+      inputComponentDefinition: ComponentDefinition,
+      componentPrefix: Option[String]
+  ): (String, ComponentDefinitionWithImplementation) = {
+    val componentName =
+      componentPrefix.map(_ + inputComponentDefinition.name).getOrElse(inputComponentDefinition.name)
+    val componentWithConfig = WithCategories(
+      inputComponentDefinition.component,
+      None,
+      SingleComponentConfig.zero
+        .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
+    )
+    val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
+    componentName -> componentDefWithImpl
+  }
 
   def extract[T <: Component](
       componentWithConfig: WithCategories[T]

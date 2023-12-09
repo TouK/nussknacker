@@ -42,7 +42,7 @@ object ComponentDefinitionWithImplementation {
   def forList[T <: Component](
       components: List[(String, WithCategories[_ <: T])],
       externalConfig: Map[String, SingleComponentConfig]
-  ): List[(ComponentInfo, ComponentDefinitionWithImplementation)] = {
+  ): List[(String, ComponentDefinitionWithImplementation)] = {
     components
       .map { case (componentName, component) =>
         val config = externalConfig.getOrElse(componentName, SingleComponentConfig.zero) |+| component.componentConfig
@@ -51,7 +51,7 @@ object ComponentDefinitionWithImplementation {
       .collect {
         case (componentName, (component, config)) if !config.disabled =>
           val componentDefWithImpl = ComponentDefinitionExtractor.extract[T](component.withComponentConfig(config))
-          ComponentInfo(componentDefWithImpl.componentType, componentName) -> componentDefWithImpl
+          componentName -> componentDefWithImpl
       }
   }
 

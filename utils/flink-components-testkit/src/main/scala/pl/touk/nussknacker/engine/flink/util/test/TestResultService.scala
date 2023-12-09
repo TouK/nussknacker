@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.util.test.{TestExtensionsHolder, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}

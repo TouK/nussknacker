@@ -26,7 +26,7 @@ object ModelDefinitionBuilder {
 
   def empty: ModelDefinition[ComponentStaticDefinition] =
     ModelDefinition(
-      List.empty[(ComponentInfo, ComponentStaticDefinition)],
+      List.empty[(String, ComponentStaticDefinition)],
       ExpressionDefinition(
         Map.empty[String, ComponentStaticDefinition],
         List.empty,

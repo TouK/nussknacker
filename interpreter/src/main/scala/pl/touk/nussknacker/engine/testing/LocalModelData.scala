@@ -2,10 +2,16 @@ package pl.touk.nussknacker.engine.testing
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentInfo, ComponentProvider}
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionExtractor,
+  ComponentDefinitionWithImplementation
+}
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
@@ -19,6 +25,7 @@ object LocalModelData {
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
       objectNaming: ObjectNaming = DefaultNamespacedObjectNaming,
+      components: List[ComponentDefinition] = List.empty
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -27,7 +34,8 @@ object LocalModelData {
       configCreator,
       migrations,
       modelClassLoader,
-      objectNaming
+      objectNaming,
+      components
     )
 
 }
@@ -39,5 +47,19 @@ case class LocalModelData(
     configCreator: ProcessConfigCreator,
     migrations: ProcessMigrations,
     modelClassLoader: ModelClassLoader,
-    objectNaming: ObjectNaming
-) extends ModelData
+    objectNaming: ObjectNaming,
+    components: List[ComponentDefinition]
+) extends ModelData {
+
+  override protected def extractModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] = {
+    // To avoid classloading magic, for local model we load components manuall
+    ModelDefinitionFromConfigCreatorExtractor
+      .extractModelDefinition(
+        configCreator,
+        ProcessObjectDependencies(modelConfig, objectNaming),
+        category
+      )
+      .addComponents(components.map(ComponentDefinitionExtractor.extract(_, None)))
+  }
+
+}
