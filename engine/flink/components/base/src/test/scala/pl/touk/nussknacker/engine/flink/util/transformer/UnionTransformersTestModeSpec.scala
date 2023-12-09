@@ -91,7 +91,7 @@ class UnionTransformersTestModeSpec
               .branchEnd(rightBranchId, unionNodeId)
           ),
         unionPart
-          .emptySink(endSinkId, endSinkId)
+          .emptySink(endSinkId, "dead-end")
       )
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     val modelData          = createModelData(data, collectingListener)

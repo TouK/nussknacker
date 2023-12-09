@@ -8,19 +8,15 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.management.sample.modelconfig.SampleModelConfigLoader
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, process}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+import pl.touk.nussknacker.engine.{ModelData, process}
 
 class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
   override protected lazy val config = ConfigFactory.empty()
-
-  private val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator
 
   test("detects component service") {
     val process =
@@ -41,9 +37,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val loadedConfig = new SampleModelConfigLoader()
-      .resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(config), getClass.getClassLoader)
-    val modelData = LocalModelData(loadedConfig.config, configCreator, List.empty)
+    val modelData = ModelData(config, ModelClassLoader(List.empty), None)
     registrar = process.registrar.FlinkProcessRegistrar(
       new FlinkProcessCompiler(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)

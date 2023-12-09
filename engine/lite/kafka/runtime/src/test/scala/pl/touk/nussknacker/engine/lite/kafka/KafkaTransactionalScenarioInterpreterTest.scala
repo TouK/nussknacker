@@ -15,6 +15,8 @@ import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
+import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -41,7 +43,6 @@ class KafkaTransactionalScenarioInterpreterTest
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import KafkaTransactionalScenarioInterpreter._
-  import KafkaFactory._
 
   private val metricRegistry = new MetricRegistry
   private val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
@@ -362,7 +363,7 @@ class KafkaTransactionalScenarioInterpreterTest
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient
-        .sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes)
+        .sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.FailingInputValue.getBytes)
         .futureValue
       val error =
         kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](fixture.errorTopic).take(1).head.message()
@@ -447,10 +448,14 @@ class KafkaTransactionalScenarioInterpreterTest
     output
   }
 
-  private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator, List.empty)
+  private def modelData(config: Config) =
+    LocalModelData(
+      config,
+      new EmptyProcessConfigCreator,
+      TestComponentProvider.Components ::: LiteBaseComponentProvider.Components
+    )
 
   private def adjustConfig(errorTopic: String, config: Config) = config
-    .withValue("components.kafkaSources.enabled", fromAnyRef(true))
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
     .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))

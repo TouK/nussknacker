@@ -52,8 +52,6 @@ object LiteKafkaTestScenarioRunner {
           .empty()
           .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
           .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
-          // we disable default kafka components to replace them by mocked
-          .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
       )
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
@@ -79,8 +77,8 @@ case class LiteKafkaTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
-    copy(components = extraComponents)
+  override def withComponents(components: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
+    copy(components = components)
 
   override def withGlobalVariables(
       globalVariables: Map[String, AnyRef]

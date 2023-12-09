@@ -33,7 +33,7 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
             Some("out4"),
             List(("union1", List[(String, Expression)](("Output expression", generator.throwFromString()))))
           )
-          .emptySink("end3", "empty"),
+          .emptySink("end3", "dead-end"),
         GraphBuilder
           .join(
             "union2",
@@ -47,7 +47,7 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
             ),
             "stateTimeout" -> durationExpression
           )
-          .emptySink("end4", "empty")
+          .emptySink("end4", "dead-end")
       )
     }
   }

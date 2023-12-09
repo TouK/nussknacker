@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.streaming.embedded
 
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
   ProcessingTypeDeploymentServiceStub
 }
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -87,13 +88,12 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
     val configToUse = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
-      .withValue("components.kafka.enabled", fromAnyRef(false))
-      .withValue("components.kafka.disabled", fromAnyRef(true))
-      .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true))
-      .withValue("components.mockKafkaLite.disabled", fromAnyRef(false))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
+
+    val kafkaComponentProviderConfig = ConfigFactory
+      .empty()
       .withValue(
-        "components.mockKafkaFlink.kafkaProperties",
+        "kafkaProperties",
         fromMap(
           Map[String, Any](
             //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
@@ -106,7 +106,10 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
         )
       )
 
-    val modelData         = LocalModelData(configToUse, new EmptyProcessConfigCreator, List.empty)
+    val kafkaComponents = new MockLiteKafkaComponentProvider()
+      .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
+
+    val modelData         = LocalModelData(configToUse, new EmptyProcessConfigCreator, kafkaComponents)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {

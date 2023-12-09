@@ -22,17 +22,28 @@ class LiteBaseComponentProvider extends ComponentProvider {
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val docsConfig: DocsConfig = DocsConfig(config)
+    LiteBaseComponentProvider.create(docsConfig)
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = true
+
+  override def isAutoLoaded: Boolean = true
+}
+
+object LiteBaseComponentProvider {
+
+  val Components: List[ComponentDefinition] = create(DocsConfig.Default)
+
+  def create(docsConfig: DocsConfig): List[ComponentDefinition] = {
     import docsConfig._
     List(
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
       ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend")
     )
+
   }
 
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-
-  override def isAutoLoaded: Boolean = true
 }
 
 object DeadEndSink extends LiteSink[Nothing] {

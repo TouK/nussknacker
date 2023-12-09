@@ -65,6 +65,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
     ComponentDefinitionExtractor
       .extract(ComponentDefinition("one", sourceFactory))
+      ._2
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .parameters
   }

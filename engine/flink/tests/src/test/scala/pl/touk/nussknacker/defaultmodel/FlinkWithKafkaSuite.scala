@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
@@ -56,7 +57,9 @@ abstract class FlinkWithKafkaSuite
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator, List.empty)
+    val components =
+      new MockFlinkKafkaComponentProvider().create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config))
+    val modelData = LocalModelData(config, creator, components)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
@@ -80,33 +83,29 @@ abstract class FlinkWithKafkaSuite
 
   protected def avroAsJsonSerialization = false
 
-  override lazy val config: Config = ConfigFactory
-    .load()
+  private lazy val kafkaComponentsConfig = ConfigFactory
+    .empty()
     .withValue(
-      KafkaConfigProperties.bootstrapServersProperty("components.mockKafkaFlink.config"),
+      KafkaConfigProperties.bootstrapServersProperty("config"),
       fromAnyRef(kafkaServer.kafkaAddress)
     )
     .withValue(
-      KafkaConfigProperties.property("components.mockKafkaFlink.config", "schema.registry.url"),
+      KafkaConfigProperties.property("config", "schema.registry.url"),
       fromAnyRef("not_used")
     )
     .withValue(
-      KafkaConfigProperties.property("components.mockKafkaFlink.config", "auto.offset.reset"),
+      KafkaConfigProperties.property("config", "auto.offset.reset"),
       fromAnyRef("earliest")
     )
-    .withValue("components.mockKafkaFlink.config.lowLevelComponentsEnabled", fromAnyRef(false))
-    .withValue("components.kafka.disabled", fromAnyRef(true))
-    .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
-    .withValue("components.mockKafkaFlink.disabled", fromAnyRef(false))
-    // For tests we want to read from the beginning...
-    .withValue("components.mockKafkaFlink.config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
+    .withValue("config.lowLevelComponentsEnabled", fromAnyRef(false))
+    .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(
-      s"components.mockKafkaFlink.config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
+      s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
       fromAnyRef(false)
     )
 
-  lazy val kafkaConfig: KafkaConfig                = KafkaConfig.parseConfig(config, "components.mockKafkaFlink.config")
+  lazy val kafkaConfig: KafkaConfig                = KafkaConfig.parseConfig(config, "config")
   protected val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj = avroEncoder.encodeRecordOrError(

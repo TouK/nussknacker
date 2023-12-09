@@ -11,7 +11,7 @@ class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProces
   test(
     "should extract valid type definitions from source based on GenericNodeTransformation with explicit type definitions"
   ) {
-    val extractedTypes = modelDefinitionWithTypes.classDefinitions.all
+    val extractedTypes = modelData.modelDefinitionWithClasses.classDefinitions.all
 
     // Here we are checking explicit type extraction for sources based on GenericNodeTransformation
     // with defined explicit type extraction.

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManagerProvider
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -35,15 +36,10 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
-
     val modelData = LocalModelData(
-      ConfigFactory
-        .empty()
-        .withValue("components.kafka.disabled", fromAnyRef(true))
-        .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
-        .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true)),
+      ConfigFactory.empty(),
       new EmptyProcessConfigCreator,
-      List.empty
+      RequestResponseComponentProvider.Components
     )
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
       initiallyDeployedScenarios

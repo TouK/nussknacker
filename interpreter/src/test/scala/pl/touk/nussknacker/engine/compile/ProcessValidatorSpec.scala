@@ -10,7 +10,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
@@ -865,7 +865,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("find usage of fields that does not exist in object") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .filter("sampleFilter1", "#input.value1.value2 > 10")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
@@ -887,7 +887,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("find not existing variables after custom node") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
@@ -911,7 +911,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("find not existing variables after split") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .split(
         "split1",
         GraphBuilder.emptySink("id2", "sink"),
@@ -949,7 +949,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("validate custom node return type") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'")
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'")
       .filter("sampleFilter1", "#out1.value2 > 0")
@@ -975,7 +975,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("doesn't allow unknown vars in custom node params") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .customNode("cNode1", "out1", "custom", "par1" -> "#strangeVar")
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
@@ -998,7 +998,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("validate service params") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .enricher("enricher1", "out", "withParamsService")
       .emptySink("id2", "sink")
 
@@ -1010,7 +1010,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("find usage of fields that does not exist in option object") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
@@ -1031,7 +1031,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("return field/property names in errors") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .split(
         "split",
         GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
@@ -1063,7 +1063,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to overwrite variable by variable node") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildSimpleVariable("var1overwrite", "var1", "''")
       .emptySink("id2", "sink")
@@ -1082,7 +1082,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to overwrite variable by switch node") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildSimpleVariable("var1", "var1", "''")
       .switch("var1overwrite", "''", "var1", GraphBuilder.emptySink("id2", "sink"))
 
@@ -1094,7 +1094,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to overwrite variable by enricher node") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildSimpleVariable("var1", "var1", "''")
       .enricher("var1overwrite", "var1", "sampleEnricher")
       .emptySink("id2", "sink")
@@ -1107,7 +1107,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to overwrite variable by variable builder") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildSimpleVariable("var1", "var1", "''")
       .buildVariable("var1overwrite", "var1", "a" -> "''")
       .emptySink("id2", "sink")
@@ -1119,7 +1119,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("validate variable builder fields usage") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildVariable("valr", "var1", "a" -> "''", "b" -> "11")
       .buildSimpleVariable("working", "var2", "#var1.b > 10")
       .buildSimpleVariable("notWorking", "var3", "#var1.a > 10")
@@ -1143,7 +1143,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to overwrite variable by custom node") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .buildSimpleVariable("var1", "var1", "''")
       .customNode("var1overwrite", "var1", "custom", "par1" -> "''")
       .emptySink("id2", "sink")
@@ -1156,7 +1156,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("allow different vars in branches") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .switch(
         "switch",
         "''",
@@ -1187,7 +1187,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("not allow to use vars from different branches") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .switch(
         "switch",
         "''",
@@ -1214,7 +1214,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   test("validates case expressions in switch") {
     val process = ScenarioBuilder
       .streaming("process1")
-      .source("id1", "source")
+      .source("id1", "typed-source")
       .switch("switch", "''", "var2", Case("#notExist", GraphBuilder.emptySink("end1", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
@@ -1279,11 +1279,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
     val failingDefinition = base
-      .transform(
-        _.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
-          throw new RuntimeException("You passed incorrect parameter, cannot proceed")
-        })
-      )
+      .transform {
+        case component if component.componentType == ComponentType.Source =>
+          component.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+            throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+          })
+        case other => other
+      }
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
@@ -1698,7 +1700,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   }
 
   private val definitionWithTypedSource =
-    baseDefinition.addComponent("source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
+    baseDefinition.addComponent("typed-source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer(

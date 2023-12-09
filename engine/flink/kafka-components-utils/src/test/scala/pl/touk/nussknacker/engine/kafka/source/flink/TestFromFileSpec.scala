@@ -7,6 +7,9 @@ import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -26,12 +29,13 @@ import java.util.Collections
 
 class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
-  private lazy val creator = new KafkaSourceFactoryProcessConfigCreator()
-
   private lazy val config = ConfigFactory
     .empty()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
     .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
+
+  protected lazy val modelData: ModelData =
+    LocalModelData(config, new KafkaSourceFactoryProcessConfigCreator, List.empty)
 
   test("Should pass correct timestamp from test data") {
 
@@ -96,7 +100,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
-        LocalModelData(config, creator, List.empty),
+        modelData,
         process,
         scenarioTestData,
         FlinkTestConfiguration.configuration(),

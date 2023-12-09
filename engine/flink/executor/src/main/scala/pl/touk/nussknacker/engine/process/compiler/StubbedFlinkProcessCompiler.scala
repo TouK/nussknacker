@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
@@ -66,20 +67,21 @@ abstract class StubbedFlinkProcessCompiler(
         ComponentInfo(ComponentType.Source, sourceName) -> stubbedDefinition
       }
 
+    // TODO: This is an ugly hack. We shouldn't create ModelData again for this purpose. It is a top-level service
+    val fragmentSourceFactory = new StubbedFragmentInputDefinitionSource(
+      LocalModelData(
+        modelConfig,
+        creator,
+        components = List.empty
+      )
+    )
     def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
-      new StubbedFragmentInputDefinitionSource(
-        LocalModelData(
-          modelConfig,
-          creator,
-          components = List.empty,
-          modelClassLoader = ModelClassLoader(userCodeClassLoader, List())
-        )
-      ).createSourceDefinition(frag)
+      fragmentSourceFactory.createSourceDefinition(frag)
     }
 
     val stubbedSourceForFragment: Seq[(ComponentInfo, ComponentDefinitionWithImplementation)] =
       process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
-        ComponentInfo(ComponentType.Fragment, frag.id) -> prepareSourceFactory(sourceDefForFragment(frag), context)
+        ComponentInfo(ComponentType.Source, frag.id) -> prepareSourceFactory(sourceDefForFragment(frag), context)
       }
 
     val stubbedServices = originalDefinition

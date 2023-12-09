@@ -116,6 +116,8 @@ class FlinkProcessCompiler(
     )
   }
 
+  // TODO: We already passed extractModelDefinition function to compiler - we shouldn't transform this definition again.
+  //       It should be merged
   protected def definitions(
       processObjectDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
