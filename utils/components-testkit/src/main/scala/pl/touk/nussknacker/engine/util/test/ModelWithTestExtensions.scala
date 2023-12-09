@@ -19,7 +19,7 @@ object ModelWithTestExtensions {
       globalVariables: Map[String, AnyRef]
   )(action: ModelData => T): T = {
     val configCreator = new EmptyProcessConfigCreator {
-      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies) = {
+      override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
         val globalProcessVariables = globalVariables.map { case (key, value) =>
           key -> WithCategories.anyCategory(value)
         }
