@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -17,8 +18,8 @@ import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
 class FlinkProcessCompilerWithTestComponents(
-    modelData: ModelData,
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
@@ -27,6 +28,7 @@ class FlinkProcessCompilerWithTestComponents(
     resultsCollectingListener: ResultsCollectingListener,
 ) extends FlinkProcessCompiler(
       creator,
+      extractModelDefinition,
       modelConfig,
       diskStateBackendSupport,
       objectNaming,
@@ -100,8 +102,8 @@ class FlinkProcessCompilerWithTestComponents(
       modelData: ModelData,
       componentUseCase: ComponentUseCase
   ) = this(
-    modelData,
     modelData.configCreator,
+    modelData.extractModelDefinitionFun,
     modelData.modelConfig,
     false,
     modelData.objectNaming,

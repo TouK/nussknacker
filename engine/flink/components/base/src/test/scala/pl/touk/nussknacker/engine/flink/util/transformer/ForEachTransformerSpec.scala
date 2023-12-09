@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
@@ -80,13 +81,20 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def modelData(
       list: List[TestRecord] = List(),
       collectingListener: ResultsCollectingListener
-  ): LocalModelData = LocalModelData(
-    ConfigFactory
+  ): LocalModelData = {
+    val modelConfig = ConfigFactory
       .empty()
-      .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-    new Creator(list, collectingListener),
-    List.empty
-  )
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    val sourceComponent = SourceFactory.noParam[TestRecord](
+      EmitWatermarkAfterEachElementCollectionSource
+        .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+    )
+    LocalModelData(
+      modelConfig,
+      new Creator(collectingListener),
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
+    )
+  }
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
     ScenarioBuilder
@@ -125,22 +133,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
 }
 
-class Creator(input: List[TestRecord], collectingListener: ResultsCollectingListener)
-    extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
-    Map(
-      "start" -> WithCategories.anyCategory(
-        SourceFactory.noParam[TestRecord](
-          EmitWatermarkAfterEachElementCollectionSource
-            .create[TestRecord](input, _.timestamp, Duration.ofHours(1))
-        )
-      )
-    )
-  }
+class Creator(collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     List(collectingListener)

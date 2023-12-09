@@ -19,10 +19,13 @@ class FlinkBaseComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig: DocsConfig = new DocsConfig(config)
-    import docsConfig._
-
+    val docsConfig             = DocsConfig(config)
     val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(config)
+    create(docsConfig, aggregateWindowsConfig)
+  }
+
+  def create(docsConfig: DocsConfig, aggregateWindowsConfig: AggregateWindowsConfig): List[ComponentDefinition] = {
+    import docsConfig._
 
     // When adding/changing stateful components, corresponding changes should be done in LiteBaseComponentProvider!
     val statelessComponents = List(
@@ -60,4 +63,11 @@ class FlinkBaseComponentProvider extends ComponentProvider {
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def isAutoLoaded: Boolean = true
+}
+
+object FlinkBaseComponentProvider {
+
+  def Components: List[ComponentDefinition] =
+    new FlinkBaseComponentProvider().create(DocsConfig.Default, AggregateWindowsConfig.Default)
+
 }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
@@ -23,12 +24,14 @@ import shapeless.syntax.typeable._
 abstract class StubbedFlinkProcessCompiler(
     process: CanonicalProcess,
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase
 ) extends FlinkProcessCompiler(
       creator,
+      extractModelDefinition,
       modelConfig,
       diskStateBackendSupport,
       objectNaming,

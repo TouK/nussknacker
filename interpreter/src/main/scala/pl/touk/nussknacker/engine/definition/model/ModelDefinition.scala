@@ -12,6 +12,8 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
     settings: ClassExtractionSettings
 ) {
 
+  import pl.touk.nussknacker.engine.util.Implicits._
+
   def addComponent(componentName: String, component: T): ModelDefinition[T] = {
     addComponents(List(componentName -> component))
   }
@@ -26,8 +28,6 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
 
   def getComponent(componentType: ComponentType, componentName: String): Option[T] =
     components.get(ComponentInfo(componentType, componentName))
-
-  import pl.touk.nussknacker.engine.util.Implicits._
 
   // FIXME: remove from here and move ComponentIdProvider outside of interpreter
   def withComponentIds(
@@ -56,7 +56,7 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
     expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f))
   )
 
-  private def checkDuplicates(components: List[(ComponentInfo, _)]): Unit = {
+  private def checkDuplicates(components: List[(ComponentInfo, T)]): Unit = {
     val duplicates = components.toGroupedMap
       .filter(_._2.size > 1)
       .keys

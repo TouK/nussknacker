@@ -4,12 +4,13 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test._
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -28,10 +29,8 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
-  private val configCreator = new EmptyProcessConfigCreator()
-
   test("should handle exceptions in aggregate keys") {
-    checkExceptions(configCreator) { case (graph, generator) =>
+    checkExceptions(FlinkBaseComponentProvider.Components) { case (graph, generator) =>
       NonEmptyList.one(
         graph
           .customNode(
@@ -133,9 +132,10 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
 
     val runId  = UUID.randomUUID().toString
     val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)
-    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
-    val env              = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, recordingCreator, List.empty), scenario)
+    val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
+    val enrichedComponents        = sourceComponentDefinition :: FlinkBaseComponentProvider.Components
+    val env                       = flinkMiniCluster.createExecutionEnvironment()
+    registerInEnvironment(env, LocalModelData(config, new EmptyProcessConfigCreator, enrichedComponents), scenario)
 
     env.executeAndWaitForFinished("test")()
 

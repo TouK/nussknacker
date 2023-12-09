@@ -7,5 +7,8 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 case class ProcessObjectDependencies(config: Config, objectNaming: ObjectNaming) extends Serializable
 
 object ProcessObjectDependencies {
-  def empty: ProcessObjectDependencies = ProcessObjectDependencies(ConfigFactory.empty(), ObjectNaming.OriginalNames)
+  def empty: ProcessObjectDependencies = withConfig(ConfigFactory.empty())
+
+  def withConfig(config: Config): ProcessObjectDependencies =
+    ProcessObjectDependencies(config, ObjectNaming.OriginalNames)
 }

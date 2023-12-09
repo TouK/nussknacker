@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObje
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentInfo, ComponentProvider}
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.component.{
 }
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.testing.LocalModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 object LocalModelData {
@@ -38,6 +40,29 @@ object LocalModelData {
       components
     )
 
+  class ExtractDefinitionFunImpl(
+      configCreator: ProcessConfigCreator,
+      category: Option[String],
+      components: List[ComponentDefinition]
+  ) extends ExtractDefinitionFun
+      with Serializable {
+
+    override def apply(
+        classLoader: ClassLoader,
+        modelDependencies: ProcessObjectDependencies
+    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      // To avoid classloading magic, for local model we load components manuall
+      ModelDefinitionFromConfigCreatorExtractor
+        .extractModelDefinition(
+          configCreator,
+          modelDependencies,
+          category
+        )
+        .addComponents(components.map(ComponentDefinitionExtractor.extract))
+    }
+
+  }
+
 }
 
 case class LocalModelData(
@@ -51,15 +76,6 @@ case class LocalModelData(
     components: List[ComponentDefinition]
 ) extends ModelData {
 
-  override protected def extractModelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] = {
-    // To avoid classloading magic, for local model we load components manuall
-    ModelDefinitionFromConfigCreatorExtractor
-      .extractModelDefinition(
-        configCreator,
-        ProcessObjectDependencies(modelConfig, objectNaming),
-        category
-      )
-      .addComponents(components.map(ComponentDefinitionExtractor.extract))
-  }
+  override val extractModelDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category, components)
 
 }

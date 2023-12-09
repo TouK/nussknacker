@@ -21,7 +21,7 @@ class LiteBaseComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig: DocsConfig = new DocsConfig(config)
+    val docsConfig: DocsConfig = DocsConfig(config)
     import docsConfig._
     List(
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),

@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
@@ -28,7 +27,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("not_used"))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
 
-    val components = provider.create(config, ProcessObjectDependencies(config, ObjectNaming.OriginalNames))
+    val components = provider.create(config, ProcessObjectDependencies.withConfig(config))
 
     components.size shouldBe 11
   }

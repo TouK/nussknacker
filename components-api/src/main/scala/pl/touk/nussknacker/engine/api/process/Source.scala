@@ -59,10 +59,10 @@ trait SourceFactory extends Serializable with Component
 
 object SourceFactory {
 
-  def noParam(source: Source, inputType: TypingResult): SourceFactory =
+  def noParam(source: => Source, inputType: TypingResult): SourceFactory =
     NoParamSourceFactory(_ => source, inputType)
 
-  def noParam[T: TypeTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
+  def noParam[T: TypeTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
     NoParamSourceFactory(_ => source, Typed.fromDetailedType[T])
 
   def noParam[T: TypeTag](createSource: NodeId => Source)(implicit ev: T =:!= Nothing): SourceFactory =

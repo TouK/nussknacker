@@ -8,10 +8,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{
@@ -28,6 +30,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.editor.Paramete
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -52,12 +55,16 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val config = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    val sourceComponent = SourceFactory.noParam[TestRecord](
+      EmitWatermarkAfterEachElementCollectionSource
+        .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+    )
     LocalModelData(
       tumblingAggregateOffset
         .map(o => config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
         .getOrElse(config),
-      new Creator(list),
-      List.empty
+      new EmptyProcessConfigCreator,
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
     )
   }
 
@@ -718,24 +725,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
 
     FragmentResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
-  }
-
-}
-
-class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
-    Map(
-      "start" -> WithCategories.anyCategory(
-        SourceFactory.noParam[TestRecord](
-          EmitWatermarkAfterEachElementCollectionSource
-            .create[TestRecord](input, _.timestamp, Duration.ofHours(1))
-        )
-      )
-    )
   }
 
 }

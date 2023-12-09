@@ -20,7 +20,7 @@ import javax.annotation.Nullable
 
 object DelayTransformer extends DelayTransformer
 
-class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
 
   @MethodToInvoke(returnType = classOf[Void])
   def invoke(

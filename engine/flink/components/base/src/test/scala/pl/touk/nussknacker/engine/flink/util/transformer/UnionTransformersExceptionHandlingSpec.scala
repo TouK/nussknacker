@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.CustomStreamTransformer
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, MiniClusterExecutionEnvironment}
@@ -22,20 +20,8 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
-  private val configCreator = new EmptyProcessConfigCreator() {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(
-        "union"      -> WithCategories.anyCategory(UnionTransformer),
-        "union-memo" -> WithCategories.anyCategory(UnionWithMemoTransformer)
-      )
-
-  }
-
   test("should handle exceptions in union keys") {
-    checkExceptions(configCreator) { case (graph, generator) =>
+    checkExceptions(FlinkBaseComponentProvider.Components) { case (graph, generator) =>
       val prepared = graph
         .split("branches", GraphBuilder.branchEnd("union1", "union1"), GraphBuilder.branchEnd("union2", "union2"))
       NonEmptyList.of(
