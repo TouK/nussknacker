@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers.{contain, convertToAnyShouldWrapper}
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class LiteKafkaComponentProviderTest extends AnyFunSuite {
@@ -16,7 +16,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
       .load()
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("not_used"))
 
-    val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
+    val components = provider.create(config, ProcessObjectDependencies.empty)
 
     components.size shouldBe 2
   }
@@ -28,7 +28,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("not_used"))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
 
-    val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
+    val components = provider.create(config, ProcessObjectDependencies(config, ObjectNaming.OriginalNames))
 
     components.size shouldBe 11
   }

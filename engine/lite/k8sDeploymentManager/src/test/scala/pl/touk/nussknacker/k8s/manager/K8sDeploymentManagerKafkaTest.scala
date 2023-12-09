@@ -373,7 +373,8 @@ class K8sDeploymentManagerKafkaTest
       .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")),
-    new EmptyProcessConfigCreator
+    new EmptyProcessConfigCreator,
+    List.empty
   )
 
   private def prepareManager(

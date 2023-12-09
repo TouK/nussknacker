@@ -23,10 +23,7 @@ object ComponentDefinitionExtractor {
 
   def extract(
       inputComponentDefinition: ComponentDefinition,
-      componentPrefix: Option[String]
   ): (String, ComponentDefinitionWithImplementation) = {
-    val componentName =
-      componentPrefix.map(_ + inputComponentDefinition.name).getOrElse(inputComponentDefinition.name)
     val componentWithConfig = WithCategories(
       inputComponentDefinition.component,
       None,
@@ -34,26 +31,29 @@ object ComponentDefinitionExtractor {
         .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     )
     val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
-    componentName -> componentDefWithImpl
+    inputComponentDefinition.name -> componentDefWithImpl
   }
 
-  def extract[T <: Component](
-      componentWithConfig: WithCategories[T]
+  // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor, remove category from
+  //       ComponentDefinitionWithImplementation
+  def extract(
+      componentWithConfig: WithCategories[Component]
   ): ComponentDefinitionWithImplementation = {
-    val obj = componentWithConfig.value
+    val component = componentWithConfig.value
 
-    val (componentType, methodDefinitionExtractor, componentTypeSpecificData) = obj match {
-      case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source, NoComponentTypeSpecificData)
-      case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink, NoComponentTypeSpecificData)
-      case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service, NoComponentTypeSpecificData)
-      case custom: CustomStreamTransformer =>
-        (
-          ComponentType.CustomComponent,
-          MethodDefinitionExtractor.CustomStreamTransformer,
-          CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
-        )
-      case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
-    }
+    val (componentType, methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
+      component match {
+        case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source, NoComponentTypeSpecificData)
+        case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink, NoComponentTypeSpecificData)
+        case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service, NoComponentTypeSpecificData)
+        case custom: CustomStreamTransformer =>
+          (
+            ComponentType.CustomComponent,
+            MethodDefinitionExtractor.CustomStreamTransformer,
+            CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
+          )
+        case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
+      }
 
     def fromMethodDefinition(methodDef: MethodDefinition): MethodBasedComponentDefinitionWithImplementation = {
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
@@ -67,16 +67,16 @@ object ComponentDefinitionExtractor {
         componentWithConfig.componentConfig,
         componentTypeSpecificData
       )
-      val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
+      val implementationInvoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
       MethodBasedComponentDefinitionWithImplementation(
         implementationInvoker,
-        obj,
+        component,
         staticDefinition,
         methodDef.runtimeClass
       )
     }
 
-    (obj match {
+    (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
@@ -91,8 +91,7 @@ object ComponentDefinitionExtractor {
         )
       case _ =>
         methodDefinitionExtractor
-          .asInstanceOf[MethodDefinitionExtractor[T]]
-          .extractMethodDefinition(obj, findMethodToInvoke(obj), componentWithConfig.componentConfig)
+          .extractMethodDefinition(component, findMethodToInvoke(component), componentWithConfig.componentConfig)
           .map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 

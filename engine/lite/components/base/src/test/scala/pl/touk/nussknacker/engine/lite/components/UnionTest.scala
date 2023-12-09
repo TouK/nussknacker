@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -76,18 +77,14 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
           .processorEnd("end", "dumb")
       )
 
-    val configCreator = new EmptyProcessConfigCreator {
-      override def sourceFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SourceFactory]] =
-        Map("typed-source" -> WithCategories.anyCategory(TypedSourceFactory))
-
-      override def services(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[Service]] =
-        Map("dumb" -> WithCategories.anyCategory(DumbService))
-    }
-    val modelData        = LocalModelData(ConfigFactory.empty(), configCreator)
+    val modelData = LocalModelData(
+      ConfigFactory.empty(),
+      new EmptyProcessConfigCreator,
+      List(
+        ComponentDefinition("typed-source", TypedSourceFactory),
+        ComponentDefinition("dumb", DumbService)
+      )
+    )
     val validator        = ProcessValidator.default(modelData)
     val validationResult = validator.validate(scenario)
     validationResult

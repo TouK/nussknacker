@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.definition.component.{
 
 object ModelDefinitionExtractor {
 
-  // TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
   def extractModelDefinition(
       creator: ProcessConfigCreator,
       classLoader: ClassLoader,

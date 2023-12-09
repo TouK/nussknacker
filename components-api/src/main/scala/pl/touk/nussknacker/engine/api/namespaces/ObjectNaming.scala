@@ -14,6 +14,25 @@ trait ObjectNaming extends Serializable {
   def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String]
 }
 
+object ObjectNaming {
+  val OriginalNames: ObjectNaming = OriginalNamesObjectNaming
+}
+
+object OriginalNamesObjectNaming extends ObjectNaming {
+  override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String = originalName
+
+  override def objectNamingParameters(
+      originalName: String,
+      config: Config,
+      namingContext: NamingContext
+  ): Option[ObjectNamingParameters] = None
+
+  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = Some(
+    preparedName
+  )
+
+}
+
 trait ObjectNamingParameters {
 
   /**

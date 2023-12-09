@@ -149,7 +149,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener),
+      List.empty
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -200,7 +201,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener),
+      List.empty
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -219,7 +221,8 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   )(action: => Unit): Unit = {
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener),
+      List.empty
     )
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =

@@ -406,7 +406,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   private def validate(params: (String, Expression)*): TransformationResult = {
 
-    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator, List.empty)
 
     val validator = new GenericNodeTransformationValidator(
       ExpressionCompiler.withoutOptimization(modelData),

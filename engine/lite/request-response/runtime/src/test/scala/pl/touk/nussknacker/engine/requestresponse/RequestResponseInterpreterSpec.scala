@@ -449,7 +449,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
       engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): InterpreterType = {
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
+    val simpleModelData = LocalModelData(ConfigFactory.load(), creator, List.empty)
 
     import FutureBasedRequestResponseScenarioInterpreter._
     val maybeinterpreter = RequestResponseInterpreter[Future](

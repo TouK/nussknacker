@@ -59,7 +59,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, configCreator)
+    val modelData = LocalModelData(config, configCreator, List.empty)
     registrar = process.registrar.FlinkProcessRegistrar(
       new FlinkProcessCompiler(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)

@@ -49,7 +49,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config, creator, List.empty)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 

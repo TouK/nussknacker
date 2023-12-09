@@ -26,7 +26,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
+  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator, List.empty)
 
   private val sourceId = "start"
 

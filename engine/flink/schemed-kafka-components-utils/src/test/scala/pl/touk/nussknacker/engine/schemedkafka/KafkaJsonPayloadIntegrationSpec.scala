@@ -50,7 +50,8 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
     val modelData = LocalModelData(
       config
         .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)),
-      creator
+      creator,
+      List.empty
     )
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }

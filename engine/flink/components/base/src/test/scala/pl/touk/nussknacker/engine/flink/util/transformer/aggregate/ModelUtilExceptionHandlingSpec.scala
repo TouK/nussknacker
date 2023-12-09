@@ -135,7 +135,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
     val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
     val env              = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
+    registerInEnvironment(env, LocalModelData(config, recordingCreator, List.empty), scenario)
 
     env.executeAndWaitForFinished("test")()
 

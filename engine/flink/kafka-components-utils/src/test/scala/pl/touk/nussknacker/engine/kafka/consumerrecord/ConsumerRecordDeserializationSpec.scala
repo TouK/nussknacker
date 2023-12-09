@@ -23,7 +23,7 @@ class ConsumerRecordDeserializationSpec
     with KafkaSourceFactoryMixin
     with FlinkTypeInformationSerializationMixin {
 
-  private val emptyModel = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+  private val emptyModel = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator, List.empty)
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
 

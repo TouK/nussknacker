@@ -141,7 +141,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
-        LocalModelData(config, creator),
+        LocalModelData(config, creator, List.empty),
         process,
         scenarioTestData,
         FlinkTestConfiguration.configuration(),

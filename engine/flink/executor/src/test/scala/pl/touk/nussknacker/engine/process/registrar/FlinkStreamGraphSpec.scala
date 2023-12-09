@@ -29,7 +29,7 @@ trait FlinkStreamGraphSpec
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
 
     val env       = flinkMiniCluster.createExecutionEnvironment()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config, creator, List.empty)
     FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
       .register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.getStreamGraph

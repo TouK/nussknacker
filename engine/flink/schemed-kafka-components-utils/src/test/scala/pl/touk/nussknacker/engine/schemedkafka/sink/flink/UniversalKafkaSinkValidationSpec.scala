@@ -33,7 +33,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
   private def validate(params: (String, Expression)*): TransformationResult = {
-    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator, List.empty)
     val validator = new GenericNodeTransformationValidator(
       ExpressionCompiler.withoutOptimization(modelData),
       modelData.modelDefinition.expressionConfig

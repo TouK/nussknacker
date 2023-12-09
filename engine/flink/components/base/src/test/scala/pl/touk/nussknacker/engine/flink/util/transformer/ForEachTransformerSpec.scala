@@ -84,7 +84,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-    new Creator(list, collectingListener)
+    new Creator(list, collectingListener),
+    List.empty
   )
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =

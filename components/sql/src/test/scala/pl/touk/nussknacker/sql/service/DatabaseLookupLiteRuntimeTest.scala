@@ -5,10 +5,11 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils._
 
 import scala.jdk.CollectionConverters._
@@ -29,25 +30,23 @@ class DatabaseLookupLiteRuntimeTest
 
   private val config = ConfigFactory.parseMap(
     Map(
-      "components" -> Map(
-        "databaseEnricher" -> Map(
-          "type" -> "databaseEnricher",
-          "config" -> Map(
-            "databaseLookupEnricher" -> Map(
-              "name"   -> "sql-lookup-enricher",
-              "dbPool" -> hsqlConfigValues.asJava
-            ).asJava,
-            "databaseQueryEnricher" -> Map(
-              "name"   -> "sql-query-enricher",
-              "dbPool" -> hsqlConfigValues.asJava
-            ).asJava
-          ).asJava
+      "config" -> Map(
+        "databaseLookupEnricher" -> Map(
+          "name"   -> "sql-lookup-enricher",
+          "dbPool" -> hsqlConfigValues.asJava
+        ).asJava,
+        "databaseQueryEnricher" -> Map(
+          "name"   -> "sql-query-enricher",
+          "dbPool" -> hsqlConfigValues.asJava
         ).asJava
       ).asJava
     ).asJava
   )
 
-  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
+  private val components = new DatabaseEnricherComponentProvider().create(config, ProcessObjectDependencies.empty)
+
+  override val modelData: LocalModelData =
+    LocalModelData(ConfigFactory.empty(), new RequestResponseConfigCreator, components)
 
   test("should enrich input with data from db") {
     val process = ScenarioBuilder

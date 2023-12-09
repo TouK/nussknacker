@@ -58,7 +58,7 @@ class K8sDeploymentManagerOnMocksTest
     val clientIdleTimeout = 1.second
     val k8sConfig         = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
     val manager = new K8sDeploymentManager(
-      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator(), List.empty),
       k8sConfig,
       ConfigFactory.empty()
     ) {

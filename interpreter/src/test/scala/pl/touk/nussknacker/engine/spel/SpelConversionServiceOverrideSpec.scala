@@ -103,7 +103,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       spelCustomConversionsProviderOpt: Option[SpelConversionsProvider],
       inputValue: Any
   ) = {
-    val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
+    val modelData =
+      LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt), List.empty)
     val compilerData = ProcessCompilerData.prepare(
       process,
       modelData.modelConfig,

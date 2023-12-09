@@ -42,7 +42,8 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
         .withValue("components.kafka.disabled", fromAnyRef(true))
         .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
         .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true)),
-      new EmptyProcessConfigCreator
+      new EmptyProcessConfigCreator,
+      List.empty
     )
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
       initiallyDeployedScenarios

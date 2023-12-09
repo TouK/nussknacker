@@ -185,7 +185,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     ProcessingTypeData.createProcessingTypeData(
       MockManagerProvider,
       deploymentManager,
-      LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
+      LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator, List.empty),
       ConfigFactory.empty(),
       CategoryConfig(category)
     )

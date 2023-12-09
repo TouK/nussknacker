@@ -10,22 +10,19 @@ object ModelDefinitionFromConfigCreatorExtractor {
   def extractModelDefinition(
       creator: ProcessConfigCreator,
       processObjectDependencies: ProcessObjectDependencies,
-      category: Option[String]
+      categoryOpt: Option[String]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
 
     val sourceFactories          = creator.sourceFactories(processObjectDependencies).toList
     val sinkFactories            = creator.sinkFactories(processObjectDependencies).toList
     val services                 = creator.services(processObjectDependencies).toList
     val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies).toList
+    val allComponents            = sourceFactories ++ sinkFactories ++ services ++ customStreamTransformers
 
-    val expressionConfig   = creator.expressionConfig(processObjectDependencies)
+    val expressionConfig = creator.expressionConfig(processObjectDependencies)
+
     val componentsUiConfig = ComponentsUiConfigParser.parse(processObjectDependencies.config)
-
-    val components =
-      ComponentDefinitionWithImplementation.forList(
-        sourceFactories ++ sinkFactories ++ services ++ customStreamTransformers,
-        componentsUiConfig
-      )
+    val components         = ComponentDefinitionWithImplementation.forList(allComponents, componentsUiConfig)
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
@@ -34,7 +31,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
       toExpressionDefinition(expressionConfig),
       settings
     )
-    category
+    categoryOpt
       .map(c => modelDefinition.filter(_.availableForCategory(c)))
       .getOrElse(modelDefinition)
   }

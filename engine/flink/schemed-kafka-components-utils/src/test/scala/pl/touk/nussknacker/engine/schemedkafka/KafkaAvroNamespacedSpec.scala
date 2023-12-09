@@ -45,7 +45,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator, objectNaming = objectNaming)
+    val modelData = LocalModelData(config, creator, List.empty, objectNaming = objectNaming)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 

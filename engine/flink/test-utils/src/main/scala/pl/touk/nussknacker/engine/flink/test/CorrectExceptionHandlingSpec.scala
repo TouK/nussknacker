@@ -34,7 +34,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
     val recordingCreator          = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
+    registerInEnvironment(env, LocalModelData(config, recordingCreator, List.empty), scenario)
 
     env.executeAndWaitForFinished("test")()
     RecordingExceptionConsumer.dataFor(runId) should have length generator.count

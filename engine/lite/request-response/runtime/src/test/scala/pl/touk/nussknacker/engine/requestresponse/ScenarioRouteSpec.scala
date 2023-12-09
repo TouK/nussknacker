@@ -43,7 +43,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     .source("start", "request")
     .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
+  private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator, List.empty)
 
   private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
 

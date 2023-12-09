@@ -65,7 +65,12 @@ abstract class StubbedFlinkProcessCompiler(
 
     def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
       new StubbedFragmentInputDefinitionSource(
-        LocalModelData(modelConfig, creator, modelClassLoader = ModelClassLoader(userCodeClassLoader, List()))
+        LocalModelData(
+          modelConfig,
+          creator,
+          components = List.empty,
+          modelClassLoader = ModelClassLoader(userCodeClassLoader, List())
+        )
       ).createSourceDefinition(frag)
     }
 

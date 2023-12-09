@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentInfo, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -25,6 +25,7 @@ trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
   // TODO: it should be available only for MethodBasedComponentDefinitionWithImplementation
   def returnType: Option[TypingResult]
 
+  // TODO: remove from here
   protected[definition] def categories: Option[List[String]]
 
   def availableForCategory(category: String): Boolean = categories.isEmpty || categories.exists(_.contains(category))
@@ -39,8 +40,10 @@ object ComponentDefinitionWithImplementation {
 
   import cats.syntax.semigroup._
 
-  def forList[T <: Component](
-      components: List[(String, WithCategories[_ <: T])],
+  // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor, remove category from
+  //       ComponentDefinitionWithImplementation
+  def forList(
+      components: List[(String, WithCategories[Component])],
       externalConfig: Map[String, SingleComponentConfig]
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     components
@@ -50,14 +53,12 @@ object ComponentDefinitionWithImplementation {
       }
       .collect {
         case (componentName, (component, config)) if !config.disabled =>
-          val componentDefWithImpl = ComponentDefinitionExtractor.extract[T](component.withComponentConfig(config))
+          val componentDefWithImpl = ComponentDefinitionExtractor.extract(component.withComponentConfig(config))
           componentName -> componentDefWithImpl
       }
   }
 
-  def withEmptyConfig[T <: Component](
-      obj: T
-  ): ComponentDefinitionWithImplementation =
-    ComponentDefinitionExtractor.extract[T](WithCategories.anyCategory(obj))
+  def withEmptyConfig(obj: Component): ComponentDefinitionWithImplementation =
+    ComponentDefinitionExtractor.extract(WithCategories.anyCategory(obj))
 
 }

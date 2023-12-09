@@ -20,12 +20,12 @@ object LocalModelData {
   def apply(
       inputConfig: Config,
       configCreator: ProcessConfigCreator,
+      components: List[ComponentDefinition],
       category: Option[String] = None,
       migrations: ProcessMigrations = ProcessMigrations.empty,
       modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader,
       modelClassLoader: ModelClassLoader = ModelClassLoader.empty,
-      objectNaming: ObjectNaming = DefaultNamespacedObjectNaming,
-      components: List[ComponentDefinition] = List.empty
+      objectNaming: ObjectNaming = DefaultNamespacedObjectNaming
   ): LocalModelData =
     new LocalModelData(
       InputConfigDuringExecution(inputConfig),
@@ -59,7 +59,7 @@ case class LocalModelData(
         ProcessObjectDependencies(modelConfig, objectNaming),
         category
       )
-      .addComponents(components.map(ComponentDefinitionExtractor.extract(_, None)))
+      .addComponents(components.map(ComponentDefinitionExtractor.extract))
   }
 
 }

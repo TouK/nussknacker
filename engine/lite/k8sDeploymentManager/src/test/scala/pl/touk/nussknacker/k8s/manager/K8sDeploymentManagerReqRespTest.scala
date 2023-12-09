@@ -262,7 +262,7 @@ class K8sDeploymentManagerReqRespTest
     K8sDeploymentManagerConfig.parse(ficusConfig)
   }
 
-  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
+  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator, List.empty)
 
   private def createReqRespFixture(
       givenScenarioName: String,

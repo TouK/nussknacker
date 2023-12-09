@@ -469,7 +469,8 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener),
+      List.empty
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -519,7 +520,8 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val model = LocalModelData(
       ConfigFactory.empty(),
-      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener)
+      new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener),
+      List.empty
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -548,7 +550,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   ) = {
     val creator = new FullOuterJoinTransformerSpec.Creator(input1, input2, collectingListener)
     creator.resetElementsAdded()
-    LocalModelData(ConfigFactory.empty(), creator)
+    LocalModelData(ConfigFactory.empty(), creator, List.empty)
   }
 
 }

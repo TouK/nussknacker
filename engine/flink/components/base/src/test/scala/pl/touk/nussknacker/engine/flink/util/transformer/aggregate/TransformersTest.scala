@@ -56,7 +56,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       tumblingAggregateOffset
         .map(o => config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
         .getOrElse(config),
-      new Creator(list)
+      new Creator(list),
+      List.empty
     )
   }
 

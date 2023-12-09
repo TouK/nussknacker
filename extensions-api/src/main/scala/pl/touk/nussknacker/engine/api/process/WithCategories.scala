@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 
-// TODO: Remove categories when ConfigCreator will be removed. After that rename it to WithConfig and move out of API module
+// TODO: This is deprecated API, remove it after ConfiCreator API will be removed
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
+
+  def availableForCategory(category: String): Boolean = categories.isEmpty || categories.exists(_.contains(category))
 
   def map[Y](f: T => Y): WithCategories[Y] = {
     copy(value = f(value))

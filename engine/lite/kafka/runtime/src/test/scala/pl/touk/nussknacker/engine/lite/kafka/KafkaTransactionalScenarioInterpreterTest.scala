@@ -447,7 +447,7 @@ class KafkaTransactionalScenarioInterpreterTest
     output
   }
 
-  private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator)
+  private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator, List.empty)
 
   private def adjustConfig(errorTopic: String, config: Config) = config
     .withValue("components.kafkaSources.enabled", fromAnyRef(true))

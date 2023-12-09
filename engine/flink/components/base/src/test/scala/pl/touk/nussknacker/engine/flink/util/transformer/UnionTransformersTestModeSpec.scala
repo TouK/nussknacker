@@ -114,7 +114,8 @@ class UnionTransformersTestModeSpec
   ): LocalModelData = {
     LocalModelData(
       ConfigFactory.empty(),
-      new UnionTransformersTestModeSpec.Creator(inputElements, collectingListener)
+      new UnionTransformersTestModeSpec.Creator(inputElements, collectingListener),
+      List.empty
     )
   }
 

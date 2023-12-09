@@ -16,7 +16,7 @@ class DefaultClassDiscoveryTest extends ClassDiscoveryBaseTest {
         KafkaConfigProperties.property("components.kafka.config", "schema.registry.url"),
         fromAnyRef("notused:1111")
       )
-    LocalModelData(config, new DefaultConfigCreator)
+    LocalModelData(config, new DefaultConfigCreator, List.empty)
   }
 
   protected override val outputResource = "/extractedTypes/defaultModel.json"

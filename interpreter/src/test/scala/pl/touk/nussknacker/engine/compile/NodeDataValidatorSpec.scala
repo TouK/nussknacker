@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
@@ -67,39 +68,20 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   def getModelData(aConfig: Config = defaultConfig): LocalModelData = {
     LocalModelData(
       aConfig,
-      new EmptyProcessConfigCreator {
-        override def customStreamTransformers(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-          "genericJoin"        -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
-          "genericTransformer" -> WithCategories.anyCategory(GenericParametersTransformer),
-          "genericTransformerUsingParameterValidator" -> WithCategories.anyCategory(
-            GenericParametersTransformerUsingParameterValidator
-          )
-        )
-
-        override def services(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[Service]] = Map(
-          "stringService"                      -> WithCategories.anyCategory(SimpleStringService),
-          "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException),
-          "missingParamHandleGenericNodeTransformation" -> WithCategories.anyCategory(
-            MissingParamHandleGenericNodeTransformation
-          )
-        )
-
-        override def sourceFactories(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[SourceFactory]] = Map(
-          "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
-        )
-
-        override def sinkFactories(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[SinkFactory]] = Map(
-          "genericParametersSink" -> WithCategories.anyCategory(GenericParametersSink)
-        )
-      }
+      new EmptyProcessConfigCreator,
+      List(
+        ComponentDefinition("genericJoin", DynamicParameterJoinTransformer),
+        ComponentDefinition("genericTransformer", GenericParametersTransformer),
+        ComponentDefinition(
+          "genericTransformerUsingParameterValidator",
+          GenericParametersTransformerUsingParameterValidator
+        ),
+        ComponentDefinition("stringService", SimpleStringService),
+        ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
+        ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleGenericNodeTransformation),
+        ComponentDefinition("genericParametersSource", new GenericParametersSource),
+        ComponentDefinition("genericParametersSink", GenericParametersSink)
+      )
     )
   }
 

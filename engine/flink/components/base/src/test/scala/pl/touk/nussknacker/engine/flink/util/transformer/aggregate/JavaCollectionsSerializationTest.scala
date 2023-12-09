@@ -72,7 +72,8 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-    new AggregateCreator(list)
+    new AggregateCreator(list),
+    List.empty
   )
 
   protected def runProcess(

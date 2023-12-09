@@ -21,7 +21,10 @@ object ComponentsFromProvidersExtractor {
       processObjectDependencies: ProcessObjectDependencies
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
-      ComponentDefinitionExtractor.extract(inputComponentDefinition, config.componentPrefix)
+      val withPrefix = config.componentPrefix
+        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+        .getOrElse(inputComponentDefinition)
+      ComponentDefinitionExtractor.extract(withPrefix)
     }
   }
 

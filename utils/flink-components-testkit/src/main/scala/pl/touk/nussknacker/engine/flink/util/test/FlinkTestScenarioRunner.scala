@@ -120,7 +120,12 @@ class FlinkTestScenarioRunner(
   }
 
   private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {
-    val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(
+      inputConfig = config,
+      configCreator = new EmptyProcessConfigCreator,
+      // We can't just pass components because we don't want to serialize them by Flink
+      components = List.empty
+    )
 
     // TODO: get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()

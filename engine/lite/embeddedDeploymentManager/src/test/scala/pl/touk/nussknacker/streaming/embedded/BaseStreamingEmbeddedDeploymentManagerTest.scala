@@ -106,7 +106,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
         )
       )
 
-    val modelData         = LocalModelData(configToUse, new EmptyProcessConfigCreator)
+    val modelData         = LocalModelData(configToUse, new EmptyProcessConfigCreator, List.empty)
     val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {

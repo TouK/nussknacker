@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{
   EmptyProcessConfigCreator,
   ProcessObjectDependencies,
@@ -40,7 +41,17 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
-    val modelData = LocalModelData(configWithExceptionHandler, new ExceptionTestConfigCreator())
+    val modelData = LocalModelData(
+      configWithExceptionHandler,
+      new EmptyProcessConfigCreator,
+      List(
+        ComponentDefinition(
+          "source",
+          SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date()) :: Nil)
+        ),
+        ComponentDefinition("sink", SinkFactory.noParam(SampleNodes.MonitorEmptySink))
+      )
+    )
     registrar =
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
@@ -66,23 +77,5 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     }
 
   }
-
-}
-
-class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = Map(
-    "source" -> WithCategories.anyCategory(
-      SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date()) :: Nil)
-    )
-  )
-
-  override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SinkFactory]] = Map(
-    "sink" -> WithCategories.anyCategory(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
-  )
 
 }

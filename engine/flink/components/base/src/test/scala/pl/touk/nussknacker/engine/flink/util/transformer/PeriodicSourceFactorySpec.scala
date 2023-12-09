@@ -24,7 +24,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with Matchers
     val input  = "some value"
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
-    val model              = LocalModelData(ConfigFactory.empty(), WithListener(collectingListener))
+    val model              = LocalModelData(ConfigFactory.empty(), WithListener(collectingListener), List.empty)
     val scenario = ScenarioBuilder
       .streaming("test")
       .source(

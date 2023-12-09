@@ -43,7 +43,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
     super.beforeAll()
     val loadedConfig = new SampleModelConfigLoader()
       .resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(config), getClass.getClassLoader)
-    val modelData = LocalModelData(loadedConfig.config, configCreator)
+    val modelData = LocalModelData(loadedConfig.config, configCreator, List.empty)
     registrar = process.registrar.FlinkProcessRegistrar(
       new FlinkProcessCompiler(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)

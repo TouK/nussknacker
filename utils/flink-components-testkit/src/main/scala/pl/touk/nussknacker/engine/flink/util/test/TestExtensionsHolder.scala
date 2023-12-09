@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.flink.util.test
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
+// This class is because we don't want Flink to serialize components - we want to allow the communication between
+// the test case code and the component code.
 case class TestExtensionsHolder(runId: TestRunId) extends Serializable with AutoCloseable {
   def components: List[ComponentDefinition] = TestExtensionsHolder.componentsForId(runId)
 

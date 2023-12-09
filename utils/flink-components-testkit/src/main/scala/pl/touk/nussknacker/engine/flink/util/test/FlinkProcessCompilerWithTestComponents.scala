@@ -4,23 +4,17 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionWithImplementation,
-  CustomComponentSpecificData
-}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
-
-import scala.reflect.ClassTag
 
 class FlinkProcessCompilerWithTestComponents(
     modelData: ModelData,

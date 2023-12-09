@@ -50,7 +50,7 @@ trait KafkaSourceFactoryProcessMixin
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config, creator, List.empty)
     registrar =
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }

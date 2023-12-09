@@ -66,7 +66,7 @@ object sample {
 
   type StateType[M] = State[Map[String, Double], M]
 
-  val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
+  val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator, List.empty)
 
   def run(
       scenario: CanonicalProcess,

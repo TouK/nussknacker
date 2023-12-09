@@ -29,7 +29,9 @@ class StubbedFragmentInputDefinitionSourceSpec extends AnyFunSuite with Matchers
       )
     )
     val stubbedSource =
-      new StubbedFragmentInputDefinitionSource(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()))
+      new StubbedFragmentInputDefinitionSource(
+        LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator, List.empty)
+      )
     val parameters: Seq[Parameter] = stubbedSource
       .createSourceDefinition(fragmentInputDefinition)
       .implementationInvoker

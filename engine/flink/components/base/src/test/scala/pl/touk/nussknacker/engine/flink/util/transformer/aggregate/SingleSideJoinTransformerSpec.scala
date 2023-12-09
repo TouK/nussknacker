@@ -134,7 +134,11 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener
   ) =
-    LocalModelData(ConfigFactory.empty(), new SingleSideJoinTransformerSpec.Creator(input1, input2, collectingListener))
+    LocalModelData(
+      ConfigFactory.empty(),
+      new SingleSideJoinTransformerSpec.Creator(input1, input2, collectingListener),
+      List.empty
+    )
 
 }
 

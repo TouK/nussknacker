@@ -5,10 +5,12 @@ import org.scalatest.Inside.inside
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
@@ -30,20 +32,18 @@ class IgniteEnrichmentLiteRuntimeTest
 
   private val config = ConfigFactory.parseMap(
     Map(
-      "components" -> Map(
-        "databaseEnricher" -> Map(
-          "config" -> Map(
-            "databaseLookupEnricher" -> Map(
-              "name"   -> "ignite-lookup-enricher",
-              "dbPool" -> igniteConfigValues.asJava
-            ).asJava
-          ).asJava
+      "config" -> Map(
+        "databaseLookupEnricher" -> Map(
+          "name"   -> "ignite-lookup-enricher",
+          "dbPool" -> igniteConfigValues.asJava
         ).asJava
       ).asJava
     ).asJava
   )
 
-  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator)
+  private val components = new DatabaseEnricherComponentProvider().create(config, ProcessObjectDependencies.empty)
+
+  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator, components)
 
   test("should enrich input ignite lookup enricher") {
     val process = ScenarioBuilder
