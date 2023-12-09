@@ -23,7 +23,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     val expressionConfig = creator.expressionConfig(modelDependencies)
 
-    val components = ComponentDefinitionWithImplementation.forList(allComponents, componentsUiConfig)
+    val components = ComponentDefinitionWithImplementation.forListWithCategories(allComponents, componentsUiConfig)
 
     val settings = creator.classExtractionSettings(modelDependencies)
 

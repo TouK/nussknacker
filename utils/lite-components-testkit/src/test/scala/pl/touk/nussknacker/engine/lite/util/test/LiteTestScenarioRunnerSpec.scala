@@ -29,21 +29,18 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val scenario = ScenarioBuilder
       .streamingLite("t1")
       .source("source", TestScenarioRunner.testDataSource)
-      // we test component created manually
       .enricher("customByHand", "o1", "customByHand", "param" -> "#input")
-      // we test component registered via normal ConfigProvider
-      .enricher("custom", "o2", "custom", "param" -> "#input")
-      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "{#o1, #o2}")
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#o1")
 
     val runner = new LiteTestScenarioRunner(
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
       Map.empty,
-      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")),
+      ConfigFactory.empty,
       EngineRuntime
     )
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
-    result.validValue shouldBe RunResult.success(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
+    result.validValue shouldBe RunResult.success("myPrefix:t1")
   }
 
   test("should access source property") {
@@ -145,17 +142,6 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
 }
 
 private case class SourceData(field: String)
-
-class CustomComponentProvider extends ComponentProvider {
-  override def providerName: String = "custom"
-
-  override def resolveConfigForExecution(config: Config): Config = config
-
-  override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] =
-    List(ComponentDefinition("custom", new CustomComponent(config.getString("prefix"))))
-
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-}
 
 class CustomComponent(prefix: String) extends Service {
   @MethodToInvoke

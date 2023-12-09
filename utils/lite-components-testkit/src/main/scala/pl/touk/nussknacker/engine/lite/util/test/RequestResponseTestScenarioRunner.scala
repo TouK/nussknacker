@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.util.test.{
@@ -59,7 +60,11 @@ class RequestResponseTestScenarioRunner(
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
-    ModelWithTestExtensions.withExtensions(config, components, globalVariables) { modelData =>
+    ModelWithTestExtensions.withExtensions(
+      config,
+      RequestResponseComponentProvider.Components ::: components,
+      globalVariables
+    ) { modelData =>
       RequestResponseInterpreter[Id](
         scenario,
         ProcessVersion.empty,

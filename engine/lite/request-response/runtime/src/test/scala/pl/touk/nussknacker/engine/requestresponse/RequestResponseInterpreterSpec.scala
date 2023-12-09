@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator}
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
@@ -17,6 +17,8 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -46,7 +48,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val creator   = new RequestResponseConfigCreator
+    val creator   = new RequestResponseSampleComponents
     val contextId = firstIdForFirstSource(process)
     val result    = runProcess(process, Request1("a", "b"), creator)
 
@@ -79,7 +81,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val creator        = new RequestResponseConfigCreator
+    val creator        = new RequestResponseSampleComponents
     val metricRegistry = new MetricRegistry
 
     Using.resource(prepareInterpreter(process, creator, metricRegistry)) { interpreter =>
@@ -146,7 +148,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
       .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1")
 
-    val creator = new RequestResponseConfigCreator
+    val creator = new RequestResponseSampleComponents
     val result  = runProcess(process, Request1("a", "b"), creator)
 
     result shouldBe Valid(List("truetrue"))
@@ -170,7 +172,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val metricRegistry = new MetricRegistry
 
     Using.resource(
-      prepareInterpreter(process, new RequestResponseConfigCreator, metricRegistry = metricRegistry)
+      prepareInterpreter(process, new RequestResponseSampleComponents, metricRegistry = metricRegistry)
     ) { interpreter =>
       interpreter.open()
       val result = invokeInterpreter(interpreter, Request1("a", "b"))
@@ -268,7 +270,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .source("start", "request1-post-source")
       .emptySink("sinkId", "failing-sink", "fail" -> "true")
 
-    val creator   = new RequestResponseConfigCreator
+    val creator   = new RequestResponseSampleComponents
     val contextId = firstIdForFirstSource(process)
     val result    = runProcess(process, Request1("a", "b"), creator, contextId = Some(contextId))
 
@@ -417,14 +419,14 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
   def runProcess(
       process: CanonicalProcess,
       input: Any,
-      creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
+      creator: RequestResponseSampleComponents = new RequestResponseSampleComponents,
       metricRegistry: MetricRegistry = new MetricRegistry,
       contextId: Option[String] = None
   ): ValidatedNel[ErrorType, List[Any]] =
     Using.resource(
       prepareInterpreter(
         process = process,
-        creator = creator,
+        sampleComponents = creator,
         metricRegistry = metricRegistry
       )
     ) { interpreter =>
@@ -434,22 +436,28 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   def prepareInterpreter(
       process: CanonicalProcess,
-      creator: RequestResponseConfigCreator,
+      sampleComponents: RequestResponseSampleComponents,
       metricRegistry: MetricRegistry
   ): InterpreterType = {
     prepareInterpreter(
       process,
-      creator,
+      sampleComponents,
       new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
     )
   }
 
   def prepareInterpreter(
       process: CanonicalProcess,
-      creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
+      sampleComponents: RequestResponseSampleComponents = new RequestResponseSampleComponents,
       engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp
   ): InterpreterType = {
-    val simpleModelData = LocalModelData(ConfigFactory.load(), creator, List.empty)
+    val simpleModelData =
+      LocalModelData(
+        ConfigFactory.load(),
+        new EmptyProcessConfigCreator,
+        sampleComponents.components :::
+          RequestResponseComponentProvider.Components ::: LiteBaseComponentProvider.Components
+      )
 
     import FutureBasedRequestResponseScenarioInterpreter._
     val maybeinterpreter = RequestResponseInterpreter[Future](

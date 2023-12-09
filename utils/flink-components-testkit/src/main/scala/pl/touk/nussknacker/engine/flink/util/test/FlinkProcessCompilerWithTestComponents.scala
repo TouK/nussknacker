@@ -9,7 +9,10 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionExtractor,
+  ComponentDefinitionWithImplementation
+}
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
@@ -42,10 +45,9 @@ class FlinkProcessCompilerWithTestComponents(
     val (definitionWithTypes, dictRegistry) = super.definitions(processObjectDependencies, userCodeClassLoader)
     val definitions                         = definitionWithTypes.modelDefinition
     val componentsUiConfig                  = ComponentsUiConfigParser.parse(processObjectDependencies.config)
-    val testComponents = ComponentDefinitionWithImplementation.forList(
-      testComponentsWithCategories,
-      componentsUiConfig
-    )
+    val testComponents =
+      ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, componentsUiConfig)
+
     val definitionsWithTestComponentsAndGlobalVariables = definitions
       .addComponents(testComponents)
       .copy(
@@ -91,10 +93,6 @@ class FlinkProcessCompilerWithTestComponents(
         classLoader
       )
   }
-
-  private def testComponentsWithCategories =
-    testExtensionsHolder.components
-      .map(cd => cd.name -> WithCategories.anyCategory(cd.component))
 
   def this(
       testExtensionsHolder: TestExtensionsHolder,

@@ -58,7 +58,9 @@ abstract class FlinkWithKafkaSuite
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val components =
-      new MockFlinkKafkaComponentProvider().create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config))
+      new MockFlinkKafkaComponentProvider()
+        .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
+        FlinkBaseComponentProvider.Components
     val modelData = LocalModelData(config, creator, components)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }

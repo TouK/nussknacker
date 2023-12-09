@@ -83,9 +83,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def sinkFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryFactory         = createSchemaRegistryClientFactory(processObjectDependencies)
-    val avroPayloadSerdeProvider      = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryFactory)
-    val universalPayloadSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryFactory)
+    val schemaRegistryFactory    = createSchemaRegistryClientFactory(processObjectDependencies)
+    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryFactory)
     Map(
       "sendSms"           -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor"           -> categories(SinkFactory.noParam(EmptySink)),
@@ -105,14 +104,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           processObjectDependencies,
           FlinkKafkaAvroSinkImplFactory
         )
-      ),
-      "kafka" -> all(
-        new UniversalKafkaSinkFactory(
-          schemaRegistryFactory,
-          universalPayloadSerdeProvider,
-          processObjectDependencies,
-          FlinkKafkaUniversalSinkImplFactory
-        )
       )
     )
   }
@@ -131,12 +122,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       processObjectDependencies,
       new FlinkKafkaSourceImplFactory(None)
     )
-    val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](
-      schemaRegistryFactory,
-      universalMessagesSerdeProvider,
-      processObjectDependencies,
-      new FlinkKafkaSourceImplFactory(None)
-    )
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](processObjectDependencies, new SimpleStringSchema())),
       "real-kafka-json-SampleProduct" -> all(
@@ -148,7 +133,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         )
       ),
       "real-kafka-avro"                  -> all(avroSourceFactory),
-      "kafka"                            -> all(universalSourceFactory),
       "kafka-transaction"                -> all(SourceFactory.noParam[String](new NoEndingSource)),
       "boundedSource"                    -> all(BoundedSource),
       "oneSource"                        -> categories(SourceFactory.noParam[String](new OneSource)),

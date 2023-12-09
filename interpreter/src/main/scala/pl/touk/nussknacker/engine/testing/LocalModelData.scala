@@ -56,10 +56,8 @@ object LocalModelData {
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies
     ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-      val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
-      val componentsDefWithImpl = components.map(component =>
-        ComponentDefinitionExtractor.extract(component, componentsUiConfig.getConfigByComponentName(component.name))
-      )
+      val componentsUiConfig    = ComponentsUiConfigParser.parse(modelDependencies.config)
+      val componentsDefWithImpl = ComponentDefinitionWithImplementation.forList(components, componentsUiConfig)
       // To avoid classloading magic, for local model we load components manually and skip componentprovider's loading
       ModelDefinitionFromConfigCreatorExtractor
         .extractModelDefinition(

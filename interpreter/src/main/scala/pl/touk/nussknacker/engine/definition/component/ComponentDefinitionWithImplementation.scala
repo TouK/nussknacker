@@ -41,9 +41,18 @@ object ComponentDefinitionWithImplementation {
 
   import cats.syntax.semigroup._
 
+  def forList(
+      components: List[ComponentDefinition],
+      externalConfig: ComponentsUiConfig
+  ): List[(String, ComponentDefinitionWithImplementation)] = {
+    components.map { component =>
+      ComponentDefinitionExtractor.extract(component, externalConfig.getConfigByComponentName(component.name))
+    }
+  }
+
   // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor, remove category from
   //       ComponentDefinitionWithImplementation
-  def forList(
+  def forListWithCategories(
       components: List[(String, WithCategories[Component])],
       externalConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {

@@ -112,12 +112,14 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       processObjectDependencies: ProcessObjectDependencies,
       componentsUiConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
-    provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
-      val withPrefix = config.componentPrefix
-        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
-        .getOrElse(inputComponentDefinition)
-      ComponentDefinitionExtractor.extract(withPrefix, componentsUiConfig.getConfigByComponentName(withPrefix.name))
-    }
+    ComponentDefinitionWithImplementation.forList(
+      provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
+        config.componentPrefix
+          .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+          .getOrElse(inputComponentDefinition)
+      },
+      componentsUiConfig
+    )
   }
 
 }

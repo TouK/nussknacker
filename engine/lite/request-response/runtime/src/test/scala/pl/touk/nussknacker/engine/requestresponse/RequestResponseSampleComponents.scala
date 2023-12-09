@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -24,11 +25,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-object RequestResponseConfigCreator {
+object RequestResponseSampleComponents {
   var processorService = new ThreadLocal[ProcessorService]
 }
 
-class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging {
+class RequestResponseSampleComponents extends LazyLogging {
 
   val processorService = new ProcessorService
 
@@ -36,50 +37,25 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
 
   {
     // this is lame, but statics are not reliable
-    RequestResponseConfigCreator.processorService.set(processorService)
+    RequestResponseSampleComponents.processorService.set(processorService)
   }
 
-  override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "sorter"       -> WithCategories.anyCategory(Sorter),
-    "extractor"    -> WithCategories.anyCategory(CustomExtractor),
-    "customFilter" -> WithCategories.anyCategory(CustomFilter),
-    "collect"      -> WithCategories.anyCategory(CollectTransformer)
+  val components: List[ComponentDefinition] = List(
+    ComponentDefinition("sorter", Sorter),
+    ComponentDefinition("extractor", CustomExtractor),
+    ComponentDefinition("customFilter", CustomFilter),
+    ComponentDefinition("enricherService", new EnricherService),
+    ComponentDefinition("enricherWithOpenService", new EnricherWithOpenService),
+    ComponentDefinition("eagerEnricherWithOpen", eagerEnricher),
+    ComponentDefinition("processorService", processorService),
+    ComponentDefinition("collectingEager", CollectingEagerService),
+    ComponentDefinition("request1-post-source", new JsonRequestResponseSourceFactory[Request1]),
+    ComponentDefinition("request-list-post-source", new JsonRequestResponseSourceFactory[RequestNumber]),
+    ComponentDefinition("response-sink", RequestResponseSinkFactory),
+    ComponentDefinition("parameterResponse-sink", ParameterResponseSinkFactory),
+    ComponentDefinition("failing-sink", new FailingSinkFactory())
   )
 
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-    Map(
-      "enricherService"         -> WithCategories.anyCategory(new EnricherService),
-      "enricherWithOpenService" -> WithCategories.anyCategory(new EnricherWithOpenService),
-      "eagerEnricherWithOpen"   -> WithCategories.anyCategory(eagerEnricher),
-      "processorService"        -> WithCategories.anyCategory(processorService),
-      "collectingEager"         -> WithCategories.anyCategory(CollectingEagerService)
-    )
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = Map(
-    "request1-post-source"     -> WithCategories.anyCategory(new JsonRequestResponseSourceFactory[Request1]),
-    "request-list-post-source" -> WithCategories.anyCategory(new JsonRequestResponseSourceFactory[RequestNumber])
-  )
-
-  override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SinkFactory]] = Map(
-    "response-sink"          -> WithCategories.anyCategory(RequestResponseSinkFactory),
-    "parameterResponse-sink" -> WithCategories.anyCategory(ParameterResponseSinkFactory),
-    "failing-sink"           -> WithCategories.anyCategory(new FailingSinkFactory())
-  )
-
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(
-    LoggingListener
-  )
-
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-    ExpressionConfig(Map.empty, List.empty)
-
-  override def buildInfo(): Map[String, String] = Map.empty
 }
 
 @JsonCodec final case class Request1(field1: String, field2: String) {

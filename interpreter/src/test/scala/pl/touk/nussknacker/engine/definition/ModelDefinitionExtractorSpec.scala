@@ -64,7 +64,7 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
 
   test("extract definition from WithExplicitMethodToInvoke") {
     val definition =
-      modelDefinitionWithTypes(None).modelDefinition.getComponent(ComponentType.CustomComponent, "configurable1").value
+      modelDefinitionWithTypes(None).modelDefinition.getComponent(ComponentType.Service, "configurable1").value
 
     definition
       .asInstanceOf[DynamicComponentDefinitionWithImplementation]

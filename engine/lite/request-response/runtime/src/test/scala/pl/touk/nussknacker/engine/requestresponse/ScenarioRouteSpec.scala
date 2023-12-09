@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import io.circe.parser._
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 
 import scala.concurrent.Future
 
@@ -43,7 +44,8 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     .source("start", "request")
     .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator, List.empty)
+  private val modelData =
+    LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator, RequestResponseComponentProvider.Components)
 
   private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
 
