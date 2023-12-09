@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentType}
+import pl.touk.nussknacker.engine.api.component.{
+  BuiltInComponentInfo,
+  ComponentGroupName,
+  ComponentType,
+  SingleComponentConfig
+}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
@@ -15,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
@@ -254,7 +259,8 @@ object ComponentDefinitionPreparer {
         componentName: String,
         baseComponentGroupName: ComponentGroupName
     ): Option[ComponentGroupName] = {
-      val groupName = componentsConfig.get(componentName).flatMap(_.componentGroup).getOrElse(baseComponentGroupName)
+      val groupName =
+        componentsConfig.getConfigByComponentName(componentName).componentGroup.getOrElse(baseComponentGroupName)
       componentsGroupMapping.getOrElse(groupName, Some(groupName))
     }
 

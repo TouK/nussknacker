@@ -93,7 +93,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         "tst1",
         SinkRef(
           "genericParametersSink",
-          List(par("par1", "'a,b'"), par("lazyPar1", "#aVar + 3"), par("a", "'a'"), par("b", "'dd'"))
+          List(
+            par("par1", "'a,b'"),
+            par("lazyPar1", "#aVar + 3"),
+            par("a", "'a'"),
+            par("b", "'dd'")
+          )
         )
       ),
       ValidationContext(Map("aVar" -> Typed[Long]))

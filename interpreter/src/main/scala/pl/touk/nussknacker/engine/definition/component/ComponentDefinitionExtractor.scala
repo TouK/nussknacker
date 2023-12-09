@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
@@ -23,12 +24,14 @@ object ComponentDefinitionExtractor {
 
   def extract(
       inputComponentDefinition: ComponentDefinition,
+      additionalConfig: SingleComponentConfig
   ): (String, ComponentDefinitionWithImplementation) = {
+    val configBasedOnDefinition = SingleComponentConfig.zero
+      .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
     val componentWithConfig = WithCategories(
       inputComponentDefinition.component,
       None,
-      SingleComponentConfig.zero
-        .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
+      configBasedOnDefinition |+| additionalConfig
     )
     val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
     inputComponentDefinition.name -> componentDefWithImpl

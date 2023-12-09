@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithComponentI
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -173,58 +174,72 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("should prefer config over code configuration") {
-    val fixed = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+    val fixed = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+      )
     )
 
-    val dynamic = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+    val dynamic = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
+        "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+      )
     )
 
-    val expected = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+    val expected = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+        "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+      )
     )
 
     ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
   }
 
   test("should merge default value maps") {
-    val fixed = Map(
-      "service" -> SingleComponentConfig(
-        Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
-        None,
-        Some("doc"),
-        None,
-        None
+    val fixed = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
+          None,
+          Some("doc"),
+          None,
+          None
+        )
       )
     )
 
-    val dynamic = Map(
-      "service" -> SingleComponentConfig(
-        Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
-        None,
-        Some("doc1"),
-        None,
-        None
+    val dynamic = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
+          None,
+          Some("doc1"),
+          None,
+          None
+        )
       )
     )
 
-    val expected = Map(
-      "service" -> SingleComponentConfig(
-        Some(
-          Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))
-        ),
-        None,
-        Some("doc"),
-        None,
-        None
+    val expected = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(
+            Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv =>
+              ParameterConfig(Some(dv), None, None, None, None)
+            )
+          ),
+          None,
+          Some("doc"),
+          None,
+          None
+        )
       )
     )
 
@@ -243,11 +258,13 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentStaticDefinition]()
-    val dynamicComponentsConfig = modelDefinition.components.toMap.map { case (idWithName, value) =>
+    val dynamicComponentsConfig = ComponentsUiConfig(modelDefinition.components.toMap.map { case (idWithName, value) =>
       idWithName.name -> value.componentConfig
-    }
+    })
     val fixedComponentsConfig =
-      fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+      ComponentsUiConfig(
+        fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+      )
     val componentsConfig =
       ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
@@ -273,7 +290,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       modelDefinition = modelDefinition,
       fragmentComponents = Map.empty,
       isFragment = false,
-      componentsConfig = Map(),
+      componentsConfig = ComponentsUiConfig(Map.empty),
       componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
       TestProcessingTypes.Streaming

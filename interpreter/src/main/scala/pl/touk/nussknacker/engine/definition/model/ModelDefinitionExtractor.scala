@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentsFromProvidersExtractor
 }
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
 
 object ModelDefinitionExtractor {
 
@@ -15,10 +16,16 @@ object ModelDefinitionExtractor {
       // It won't be needed to pass category after we get rid of ProcessConfigCreator API
       category: Option[String]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+    val componentsUiConfig = ComponentsUiConfigParser.parse(processObjectDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
-      ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(creator, processObjectDependencies, category)
+      ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
+        creator,
+        category,
+        processObjectDependencies,
+        componentsUiConfig
+      )
     val componentsFromProviders =
-      ComponentsFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies)
+      ComponentsFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies, componentsUiConfig)
     modelDefinitionBasedOnConfigCreator.addComponents(componentsFromProviders)
   }
 

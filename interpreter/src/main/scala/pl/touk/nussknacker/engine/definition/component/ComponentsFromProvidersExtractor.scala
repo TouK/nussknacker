@@ -4,7 +4,8 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.{componentConfigPath, extract}
+import pl.touk.nussknacker.engine.definition.component.ComponentsFromProvidersExtractor.componentConfigPath
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 object ComponentsFromProvidersExtractor {
@@ -13,19 +14,6 @@ object ComponentsFromProvidersExtractor {
 
   def apply(classLoader: ClassLoader): ComponentsFromProvidersExtractor = {
     ComponentsFromProvidersExtractor(classLoader, NussknackerVersion.current)
-  }
-
-  def extract(
-      config: ComponentProviderConfig,
-      provider: ComponentProvider,
-      processObjectDependencies: ProcessObjectDependencies
-  ): List[(String, ComponentDefinitionWithImplementation)] = {
-    provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
-      val withPrefix = config.componentPrefix
-        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
-        .getOrElse(inputComponentDefinition)
-      ComponentDefinitionExtractor.extract(withPrefix)
-    }
   }
 
 }
@@ -39,10 +27,13 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
   }
 
   def extractComponents(
-      processObjectDependencies: ProcessObjectDependencies
+      processObjectDependencies: ProcessObjectDependencies,
+      componentsUiConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     loadCorrectProviders(processObjectDependencies.config).toList
-      .flatMap { case (_, (config, provider)) => extract(config, provider, processObjectDependencies) }
+      .flatMap { case (_, (config, provider)) =>
+        extract(config, provider, processObjectDependencies, componentsUiConfig)
+      }
   }
 
   private def loadCorrectProviders(config: Config): Map[String, (ComponentProviderConfig, ComponentProvider)] = {
@@ -112,6 +103,20 @@ case class ComponentsFromProvidersExtractor(classLoader: ClassLoader, nussknacke
       case x :: Nil => x
       case _ :: _ =>
         throw new IllegalArgumentException(s"Multiple providers for provider name $providerName (for component $name)")
+    }
+  }
+
+  private def extract(
+      config: ComponentProviderConfig,
+      provider: ComponentProvider,
+      processObjectDependencies: ProcessObjectDependencies,
+      componentsUiConfig: ComponentsUiConfig
+  ): List[(String, ComponentDefinitionWithImplementation)] = {
+    provider.create(config.config, processObjectDependencies).map { inputComponentDefinition =>
+      val withPrefix = config.componentPrefix
+        .map(prefix => inputComponentDefinition.copy(name = prefix + inputComponentDefinition.name))
+        .getOrElse(inputComponentDefinition)
+      ComponentDefinitionExtractor.extract(withPrefix, componentsUiConfig.getConfigByComponentName(withPrefix.name))
     }
   }
 

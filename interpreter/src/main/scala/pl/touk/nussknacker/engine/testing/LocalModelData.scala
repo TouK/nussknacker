@@ -13,7 +13,12 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation
 }
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionFromConfigCreatorExtractor}
-import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
+import pl.touk.nussknacker.engine.modelconfig.{
+  ComponentsUiConfigParser,
+  DefaultModelConfigLoader,
+  InputConfigDuringExecution,
+  ModelConfigLoader
+}
 import pl.touk.nussknacker.engine.testing.LocalModelData.ExtractDefinitionFunImpl
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
@@ -51,14 +56,19 @@ object LocalModelData {
         classLoader: ClassLoader,
         modelDependencies: ProcessObjectDependencies
     ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-      // To avoid classloading magic, for local model we load components manuall
+      val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
+      val componentsDefWithImpl = components.map(component =>
+        ComponentDefinitionExtractor.extract(component, componentsUiConfig.getConfigByComponentName(component.name))
+      )
+      // To avoid classloading magic, for local model we load components manually and skip componentprovider's loading
       ModelDefinitionFromConfigCreatorExtractor
         .extractModelDefinition(
           configCreator,
+          category,
           modelDependencies,
-          category
+          componentsUiConfig
         )
-        .addComponents(components.map(ComponentDefinitionExtractor.extract))
+        .addComponents(componentsDefWithImpl)
     }
 
   }

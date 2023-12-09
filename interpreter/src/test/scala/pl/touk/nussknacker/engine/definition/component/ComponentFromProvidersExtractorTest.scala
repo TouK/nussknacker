@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
-import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
+import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
@@ -182,7 +182,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     ) { cl =>
       val extractor = makeExtractor(cl)
       val resolved  = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
     }
   }
 
@@ -191,7 +191,7 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
       val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
     }
   }
 

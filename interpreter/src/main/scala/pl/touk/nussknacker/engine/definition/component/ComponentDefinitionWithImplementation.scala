@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 // This class represents component's definition and implementation.
 // Implementation part is in implementation field. It should be rarely used - instead we should extract information
@@ -44,11 +45,11 @@ object ComponentDefinitionWithImplementation {
   //       ComponentDefinitionWithImplementation
   def forList(
       components: List[(String, WithCategories[Component])],
-      externalConfig: Map[String, SingleComponentConfig]
+      externalConfig: ComponentsUiConfig
   ): List[(String, ComponentDefinitionWithImplementation)] = {
     components
       .map { case (componentName, component) =>
-        val config = externalConfig.getOrElse(componentName, SingleComponentConfig.zero) |+| component.componentConfig
+        val config = externalConfig.getConfigByComponentName(componentName) |+| component.componentConfig
         componentName -> (component, config)
       }
       .collect {

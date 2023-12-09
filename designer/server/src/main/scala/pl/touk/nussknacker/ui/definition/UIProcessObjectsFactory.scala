@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.definition.model.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -91,7 +91,7 @@ object UIProcessObjectsFactory {
         modelDataForType.modelDefinitionWithClasses.classDefinitions.all.map(prepareClazzDefinition),
         processCategoryService
       ),
-      componentsConfig = finalComponentsConfig,
+      componentsConfig = finalComponentsConfig.config,
       scenarioPropertiesConfig =
         if (!isFragment) {
           (additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig)
@@ -110,12 +110,15 @@ object UIProcessObjectsFactory {
 
   private def toComponentsUiConfig(
       modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition]
-  ): ComponentsUiConfig =
-    modelDefinition.components.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+  ): ComponentsUiConfig = {
+    ComponentsUiConfig(
+      modelDefinition.components.map { case (idWithName, value) => idWithName.name -> value.componentConfig }.toMap
+    )
+  }
 
   private def finalizeModelDefinition(
       modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
-      combinedComponentsConfig: Map[String, SingleComponentConfig],
+      combinedComponentsConfig: ComponentsUiConfig,
       additionalComponentsUiConfig: Map[ComponentId, SingleComponentConfig]
   ) = {
 
@@ -123,7 +126,7 @@ object UIProcessObjectsFactory {
         : ((ComponentIdWithName, ComponentStaticDefinition)) => (ComponentIdWithName, ComponentStaticDefinition) = {
       case (idWithName, value) =>
         val finalConfig = additionalComponentsUiConfig.getOrElse(idWithName.id, SingleComponentConfig.zero) |+|
-          combinedComponentsConfig.getOrElse(idWithName.name, SingleComponentConfig.zero) |+|
+          combinedComponentsConfig.getConfigByComponentName(idWithName.name) |+|
           value.componentConfig
 
         idWithName -> value.withComponentConfig(finalConfig)
@@ -139,10 +142,12 @@ object UIProcessObjectsFactory {
       fragmentComponents: Map[String, FragmentStaticDefinition],
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig = fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-    val modelDefinitionComponentsConfig = modelDefinition.components.map { case (info, component) =>
+    val fragmentsComponentsConfig = ComponentsUiConfig(
+      fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
+    )
+    val modelDefinitionComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, component) =>
       info.name -> component.componentConfig
-    }
+    })
 
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?
