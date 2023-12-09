@@ -131,7 +131,7 @@ class OpenApiScenarioIntegrationTest
     // TODO: switch to liteBased after adding ability to override components there (currently there is only option to append not conflicting once) and rename class to *FunctionalTest
     TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .withExtraComponents(List(stubComponent))
+      .withComponents(List(stubComponent))
       .build()
   }
 

@@ -97,7 +97,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(
       typeConfig.modelConfig.resolved,
-      new EmptyProcessConfigCreator() {
+      // TODO: add componentGroup to ComponentDefinition and switch to components in LocalModelData
+      new EmptyProcessConfigCreator {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =

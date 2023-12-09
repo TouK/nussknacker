@@ -72,7 +72,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val runResults =
       TestScenarioRunner
         .liteBased(ConfigFactory.empty())
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .build()
         .runWithData(scenario, List(input))
 
@@ -92,7 +92,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val runResults =
       TestScenarioRunner
         .liteBased(ConfigFactory.empty())
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .inTestRuntimeMode
         .build()
         .runWithData(scenario, List(input))
@@ -113,7 +113,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val runResults =
       TestScenarioRunner
         .liteBased(ConfigFactory.empty())
-        .withExtraGlobalVariables(Map("DATE" -> dateHelper))
+        .withGlobalVariables(Map("DATE" -> dateHelper))
         .build()
         .runWithData[String, String](scenario, List("input"))
 

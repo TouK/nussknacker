@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util.test
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{

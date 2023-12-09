@@ -54,9 +54,9 @@ trait TestScenarioRunner
 
 trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunnerBuilder[R, _]] {
 
-  def withExtraComponents(components: List[ComponentDefinition]): B
+  def withComponents(components: List[ComponentDefinition]): B
 
-  def withExtraGlobalVariables(globalVariables: Map[String, AnyRef]): B
+  def withGlobalVariables(globalVariables: Map[String, AnyRef]): B
 
   def inTestRuntimeMode: B
 

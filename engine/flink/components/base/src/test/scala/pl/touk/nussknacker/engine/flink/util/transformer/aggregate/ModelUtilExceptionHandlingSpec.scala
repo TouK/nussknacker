@@ -69,7 +69,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                 "windowLength" -> durationExpression,
                 "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
               )
-              .emptySink("end", "empty"),
+              .emptySink("end", "dead-end"),
             GraphBuilder
               .customNode(
                 "aggregate-session",
@@ -82,7 +82,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                 "endSessionCondition" -> "true",
                 "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
               )
-              .emptySink("end2", "empty"),
+              .emptySink("end2", "dead-end"),
             GraphBuilder.branchEnd("union1", "union1"),
             GraphBuilder.branchEnd("union2", "union2"),
           )
@@ -127,7 +127,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
             "aggregateBy"  -> s"'aggregate' + ${generator.throwFromString()}",
             "windowLength" -> durationExpression
           )
-          .emptySink("end4", "empty")
+          .emptySink("end4", "dead-end")
       )
 
     val runId  = UUID.randomUUID().toString

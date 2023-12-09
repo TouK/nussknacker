@@ -36,7 +36,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val runResults =
       TestScenarioRunner
         .flinkBased(config, flinkMiniCluster)
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .build()
         .runWithData[String, String](scenario, List(input))
 
@@ -56,7 +56,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val runResults =
       TestScenarioRunner
         .flinkBased(config, flinkMiniCluster)
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .inTestRuntimeMode
         .build()
         .runWithData[String, String](scenario, List(input))
@@ -77,7 +77,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val runResults =
       TestScenarioRunner
         .flinkBased(config, flinkMiniCluster)
-        .withExtraGlobalVariables(Map("DATE" -> dateHelper))
+        .withGlobalVariables(Map("DATE" -> dateHelper))
         .build()
         .runWithData[String, String](scenario, List("lcl"))
 

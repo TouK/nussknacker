@@ -1,27 +1,25 @@
 package pl.touk.nussknacker.sql.service
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Inside.inside
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
-import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
 class IgniteEnrichmentLiteRuntimeTest
     extends AnyFunSuite
     with Matchers
-    with LiteRuntimeTest
     with BeforeAndAfterAll
-    with WithIgniteDB {
+    with WithIgniteDB
+    with ValidatedValuesDetailedMessage {
 
   override val prepareIgniteDDLs: List[String] = List(
     s"""DROP TABLE CITIES IF EXISTS;""",
@@ -41,34 +39,33 @@ class IgniteEnrichmentLiteRuntimeTest
     ).asJava
   )
 
-  private val components = new DatabaseEnricherComponentProvider().create(config, ProcessObjectDependencies.empty)
+  private val components = DatabaseEnricherComponentProvider.create(config)
 
-  override val modelData: LocalModelData = LocalModelData(config, new RequestResponseConfigCreator, components)
+  private val testScenarioRunner = TestScenarioRunner
+    .liteBased()
+    .withComponents(components)
+    .build()
 
   test("should enrich input ignite lookup enricher") {
     val process = ScenarioBuilder
       .streaming("")
-      .source("request", "request")
+      .source("request", TestScenarioRunner.testDataSource)
       .enricher(
         "ignite-lookup-enricher",
         "output",
         "ignite-lookup-enricher",
         "Table"      -> "'CITIES'",
         "Key column" -> "'ID'",
-        "Key value"  -> "#input.id",
+        "Key value"  -> "#input",
         "Cache TTL"  -> ""
       )
-      .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.NAME")
 
-    val validatedResult = runProcess(process, TestRequest(1))
-    validatedResult shouldBe Symbol("valid")
+    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
 
-    val resultList = validatedResult.getOrElse(throw new AssertionError())
+    val resultList = validatedResult.validValue.success
     resultList should have length 1
-
-    inside(resultList.head) { case resp: TestResponse =>
-      resp.name shouldEqual "Warszawa"
-    }
+    resultList.head shouldEqual "Warszawa"
   }
 
 }

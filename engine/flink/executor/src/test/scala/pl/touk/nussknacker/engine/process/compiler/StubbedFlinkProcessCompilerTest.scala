@@ -6,22 +6,12 @@ import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.api.process.{
-  ProcessObjectDependencies,
-  SourceFactory,
-  TestWithParametersSupport,
-  WithCategories
-}
-import pl.touk.nussknacker.engine.api.test.{
-  ScenarioTestData,
-  ScenarioTestJsonRecord,
-  ScenarioTestParametersRecord,
-  TestRecord,
-  TestRecordParser
-}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
@@ -29,7 +19,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -71,8 +61,26 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     .withValue("exceptionHandler.type", fromAnyRef("BrieflyLogging"))
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
+  private val components = List(
+    ComponentDefinition("test-source", SourceFactory.noParam[Int](SampleTestSupportSource)),
+    ComponentDefinition("test-source2", SourceFactory.noParam[Int](SampleTestSupportSource)),
+    ComponentDefinition(
+      "test-source-with-parameters-test",
+      SourceFactory.noParam[Int](SampleTestSupportParametersSource)
+    ),
+    ComponentDefinition("source-no-test-support", SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int]))),
+    ComponentDefinition("mockService", new MockService)
+  )
+
+  private val modelData =
+    LocalModelData(
+      minimalFlinkConfig,
+      new EmptyProcessConfigCreator,
+      components,
+      objectNaming = DefaultNamespacedObjectNaming
+    )
+
   test("stubbing for verification purpose should stub all sources") {
-    val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator, List.empty)
     val verificationCompiler = VerificationFlinkProcessCompiler(
       scenarioWithMultipleSources,
       modelData
@@ -140,9 +148,6 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private val modelData =
-    LocalModelData(minimalFlinkConfig, SampleConfigCreator, List.empty, objectNaming = DefaultNamespacedObjectNaming)
-
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
     val testCompiler = new TestFlinkProcessCompiler(
       modelData.configCreator,
@@ -159,25 +164,6 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
         getClass.getClassLoader
       )
       .compileProcessOrFail()
-  }
-
-  object SampleConfigCreator extends BaseSampleConfigCreator[Int](List.empty) {
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] = {
-      super.sourceFactories(processObjectDependencies) ++ Map(
-        "test-source"  -> WithCategories.anyCategory(SourceFactory.noParam[Int](SampleTestSupportSource)),
-        "test-source2" -> WithCategories.anyCategory(SourceFactory.noParam[Int](SampleTestSupportSource)),
-        "test-source-with-parameters-test" -> WithCategories.anyCategory(
-          SourceFactory.noParam[Int](SampleTestSupportParametersSource)
-        ),
-        "source-no-test-support" -> WithCategories.anyCategory(
-          SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int]))
-        )
-      )
-    }
-
   }
 
   object SampleTestSupportParametersSource

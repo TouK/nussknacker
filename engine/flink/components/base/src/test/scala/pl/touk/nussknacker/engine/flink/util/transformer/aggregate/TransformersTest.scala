@@ -48,10 +48,14 @@ import java.util
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-  def modelData(list: List[TestRecord] = List(), tumblingAggregateOffset: Option[String] = None): LocalModelData = {
+  def modelData(
+      list: List[TestRecord] = List(),
+      aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default
+  ): LocalModelData = {
     val config = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
@@ -60,11 +64,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
     )
     LocalModelData(
-      tumblingAggregateOffset
-        .map(o => config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
-        .getOrElse(config),
+      config,
       new EmptyProcessConfigCreator,
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.create(
+        DocsConfig.Default,
+        aggregateWindowsConfig
+      )
     )
   }
 
@@ -219,7 +224,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           TestRecordWithTimestamp(id, t1b, 5, "b"),
           TestRecordWithTimestamp(id, t2, 7, "b"),
         ),
-        Some("PT-3H")
+        AggregateWindowsConfig(Some(Duration.parse("PT-3H")))
       )
 
       val testProcess = tumbling(

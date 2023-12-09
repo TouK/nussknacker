@@ -70,7 +70,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
 
 }
 
-object SamplesComponent {
+object SamplesComponent extends Serializable {
 
   def create(samplesCount: Int): SourceFactory = {
     def createSource = {

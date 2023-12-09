@@ -21,8 +21,18 @@ class FlinkBaseComponentProvider extends ComponentProvider {
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
     val docsConfig             = DocsConfig(config)
     val aggregateWindowsConfig = AggregateWindowsConfig.loadOrDefault(config)
-    create(docsConfig, aggregateWindowsConfig)
+    FlinkBaseComponentProvider.create(docsConfig, aggregateWindowsConfig)
   }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = true
+
+  override def isAutoLoaded: Boolean = true
+}
+
+object FlinkBaseComponentProvider {
+
+  def Components: List[ComponentDefinition] =
+    create(DocsConfig.Default, AggregateWindowsConfig.Default)
 
   def create(docsConfig: DocsConfig, aggregateWindowsConfig: AggregateWindowsConfig): List[ComponentDefinition] = {
     import docsConfig._
@@ -59,15 +69,5 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
     statefulComponents ++ statelessComponents
   }
-
-  override def isCompatible(version: NussknackerVersion): Boolean = true
-
-  override def isAutoLoaded: Boolean = true
-}
-
-object FlinkBaseComponentProvider {
-
-  def Components: List[ComponentDefinition] =
-    new FlinkBaseComponentProvider().create(DocsConfig.Default, AggregateWindowsConfig.Default)
 
 }

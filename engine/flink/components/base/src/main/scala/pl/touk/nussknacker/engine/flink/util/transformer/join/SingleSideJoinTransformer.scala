@@ -177,7 +177,11 @@ class SingleSideJoinTransformer(
       convertToEngineRuntimeContext
     )
 
-  override def typesToExtract: List[typing.TypedClass] = List(Typed.typedClass[BranchType])
+  override def typesToExtract: List[typing.TypedClass] = List(
+    Typed.typedClass[BranchType],
+    Typed.typedClass[AggregateHelper]
+  )
+
 }
 
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {

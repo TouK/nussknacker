@@ -47,10 +47,10 @@ case class LiteTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(components: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
+  override def withComponents(components: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
     copy(components = components)
 
-  override def withExtraGlobalVariables(
+  override def withGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): LiteTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)

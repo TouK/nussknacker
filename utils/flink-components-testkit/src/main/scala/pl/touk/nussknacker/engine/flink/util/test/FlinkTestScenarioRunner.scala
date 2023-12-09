@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -25,7 +24,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
-import scala.util.{Try, Using}
+import scala.util.Using
 
 private object testComponents {
 
@@ -198,11 +197,11 @@ case class FlinkTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
+  override def withComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
 
-  override def withExtraGlobalVariables(
+  override def withGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): FlinkTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)

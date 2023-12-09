@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -85,14 +86,17 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     val modelConfig = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
-    val sourceComponent = SourceFactory.noParam[TestRecord](
-      EmitWatermarkAfterEachElementCollectionSource
-        .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+    val sourceComponent = ComponentDefinition(
+      "start",
+      SourceFactory.noParam[TestRecord](
+        EmitWatermarkAfterEachElementCollectionSource
+          .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
+      )
     )
     LocalModelData(
       modelConfig,
-      new Creator(collectingListener),
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
+      new ConfigCreatorWithListener(collectingListener),
+      sourceComponent :: FlinkBaseComponentProvider.Components
     )
   }
 
@@ -131,12 +135,6 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 
-}
-
-class Creator(collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
-
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(collectingListener)
 }
 
 case class TestRecord(id: String = "1", timeHours: Int = 0, eId: Int = 1, str: String = "a") {

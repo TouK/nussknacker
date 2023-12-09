@@ -16,6 +16,16 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    DatabaseEnricherComponentProvider.create(config)
+  }
+
+  override def isCompatible(version: NussknackerVersion): Boolean = true
+
+}
+
+object DatabaseEnricherComponentProvider {
+
+  def create(config: Config): List[ComponentDefinition] = {
     val docsConfig = DocsConfig(config)
     import docsConfig._
 
@@ -37,9 +47,8 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
       )
 
     List(dbQueryEnricher, dbLookupEnricher).filter(_.isDefined).map(_.get)
-  }
 
-  override def isCompatible(version: NussknackerVersion): Boolean = true
+  }
 
   private def readEnricherConfigIfPresent(config: Config, path: String): Option[DbEnricherConfig] =
     if (config.hasPath(path)) {

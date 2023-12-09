@@ -20,7 +20,7 @@ class StubModelDataWithModelDefinition(
 
   override def migrations: ProcessMigrations = ProcessMigrations.empty
 
-  override def configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator()
+  override def configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator
 
   override def modelClassLoader: ModelClassLoader = ModelClassLoader.empty
 

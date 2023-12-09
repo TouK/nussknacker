@@ -1660,13 +1660,10 @@ lazy val sqlComponents = (project in component("sql"))
     ),
   )
   .dependsOn(
-    componentsUtils                % Provided,
-    componentsApi                  % Provided,
-    commonUtils                    % Provided,
-    requestResponseRuntime         % "test",
-    requestResponseComponentsUtils % "test",
-    flinkTestUtils                 % "test",
-    kafkaTestUtils                 % "test"
+    componentsUtils       % Provided,
+    componentsApi         % Provided,
+    commonUtils           % Provided,
+    liteComponentsTestkit % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))

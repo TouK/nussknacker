@@ -41,10 +41,6 @@ class UnionTransformerSpec
   }
 
   test("should unify streams with union-memo") {
-    val testScenarioRunner = TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
-
     val scenario = ScenarioBuilder
       .streaming("sample-union-memo")
       .sources(
@@ -73,8 +69,6 @@ class UnionTransformerSpec
   }
 
   test("should unify streams with union when one branch is empty") {
-    val testScenarioRunner = TestScenarioRunner.flinkBased(config, flinkMiniCluster).build()
-
     val scenario = ScenarioBuilder
       .streaming("sample-union")
       .sources(
@@ -102,10 +96,6 @@ class UnionTransformerSpec
   }
 
   test("should unify streams with union when both branches emit data") {
-    val testScenarioRunner = TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
-
     val scenario = ScenarioBuilder
       .streaming("sample-union")
       .sources(
@@ -134,10 +124,6 @@ class UnionTransformerSpec
   }
 
   test("should throw when contexts are different") {
-    val testScenarioRunner = TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
-
     val scenario = ScenarioBuilder
       .streaming("sample-union")
       .sources(
@@ -166,9 +152,6 @@ class UnionTransformerSpec
 
   test("should throw when one branch emits error") {
     val data = List(10, 20, 30, 40)
-    val testScenarioRunner = TestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
 
     val scenario = ScenarioBuilder
       .streaming("sample-union")
@@ -205,5 +188,11 @@ class UnionTransformerSpec
       "Expression [#input / (#input % 4)] evaluation failed, message: EL1072E: An exception occurred whilst evaluating a compiled expression"
     )
   }
+
+  private def testScenarioRunner =
+    TestScenarioRunner
+      .flinkBased(config, flinkMiniCluster)
+      .withComponents(FlinkBaseComponentProvider.Components)
+      .build()
 
 }

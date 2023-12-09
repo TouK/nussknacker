@@ -95,12 +95,12 @@ case class RequestResponseTestScenarioRunnerBuilder(
 
   import TestScenarioRunner._
 
-  override def withExtraComponents(
+  override def withComponents(
       components: List[ComponentDefinition]
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(components = components)
 
-  override def withExtraGlobalVariables(
+  override def withGlobalVariables(
       globalVariables: Map[String, AnyRef]
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(globalVariables = globalVariables)

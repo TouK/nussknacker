@@ -22,7 +22,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
   private val baseRunner: RequestResponseTestScenarioRunner =
     TestScenarioRunner
       .requestResponseBased()
-      .withExtraComponents(List(ComponentDefinition(failingComponent, FailingService)))
+      .withComponents(List(ComponentDefinition(failingComponent, FailingService)))
       .build()
 
   test("runs tests") {
@@ -79,7 +79,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
     val runResults =
       TestScenarioRunner
         .requestResponseBased()
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .build()
         .runWithRequests(scenario) { invoker =>
           val result = invoker(HttpRequest(HttpMethods.POST, entity = Map("field1" -> input).asJson.spaces2))
@@ -104,7 +104,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
     val runResults =
       TestScenarioRunner
         .requestResponseBased()
-        .withExtraComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
+        .withComponents(List(ComponentDefinition(TestService.ServiceId, TestService)))
         .inTestRuntimeMode
         .build()
         .runWithRequests(scenario) { invoker =>
@@ -131,7 +131,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
     val runResults =
       TestScenarioRunner
         .requestResponseBased()
-        .withExtraGlobalVariables(Map("DATE" -> dateHelper))
+        .withGlobalVariables(Map("DATE" -> dateHelper))
         .build()
         .runWithRequests(scenario) { invoker =>
           val result = invoker(HttpRequest(HttpMethods.POST, entity = Map("field1" -> "input").asJson.spaces2))

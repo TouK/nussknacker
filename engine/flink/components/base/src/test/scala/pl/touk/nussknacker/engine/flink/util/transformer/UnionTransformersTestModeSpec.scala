@@ -6,18 +6,19 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -112,10 +113,18 @@ class UnionTransformersTestModeSpec
       inputElements: List[String] = List(),
       collectingListener: ResultsCollectingListener
   ): LocalModelData = {
+    val sourceComponent = ComponentDefinition(
+      "start",
+      SourceFactory.noParam[String](
+        CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])(
+          TypeInformation.of(classOf[String])
+        )
+      )
+    )
     LocalModelData(
       ConfigFactory.empty(),
-      new UnionTransformersTestModeSpec.Creator(inputElements, collectingListener),
-      List.empty
+      new ConfigCreatorWithListener(collectingListener),
+      sourceComponent :: FlinkBaseComponentProvider.Components
     )
   }
 
@@ -138,44 +147,6 @@ class UnionTransformersTestModeSpec
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(stoppableEnv, scenario, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(scenario.id)()
-  }
-
-}
-
-object UnionTransformersTestModeSpec {
-
-  class Creator(inputElements: List[String], collectingListener: ProcessListener) extends EmptyProcessConfigCreator {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(
-        "union"      -> WithCategories.anyCategory(new UnionTransformer(None)),
-        "union-memo" -> WithCategories.anyCategory(new UnionWithMemoTransformer(None)),
-      )
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] = {
-      implicit val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
-
-      Map(
-        "start" -> WithCategories.anyCategory(
-          SourceFactory.noParam[String](
-            CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])
-          )
-        )
-      )
-    }
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] = {
-      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
-    }
-
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      List(collectingListener)
   }
 
 }
