@@ -1,6 +1,7 @@
-package pl.touk.nussknacker.ui.notifications
+package pl.touk.nussknacker.ui.api
 
-import io.restassured.RestAssured.`given`
+import io.restassured.RestAssured.given
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
-import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 
 class NotificationApiTest
     extends AnyFreeSpecLike
