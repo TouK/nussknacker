@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ValidationExpression,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
@@ -191,7 +192,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           required = true,
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
-          valueEditor = None
+          valueEditor = None,
+          validationExpression = None
         )
       )
     )
@@ -226,7 +228,8 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
               allowOtherValue = true,
               fixedValuesList = fixedValuesList
             )
-          )
+          ),
+          validationExpression = None
         )
       )
     )
@@ -247,6 +250,39 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     parameter.validators should contain theSameElementsAs List()
     parameter.defaultValue shouldBe Some(Expression("spel", ""))
     parameter.hintText shouldBe None
+  }
+
+  test("should generate fragment parameter with spel expression validator") {
+    val fragmentDefinitionExtractor =
+      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+    val fragmentInputDefinition = FragmentInputDefinition(
+      "",
+      List(
+        FragmentParameter(
+          "name",
+          FragmentClazzRef[String],
+          required = false,
+          initialValue = None,
+          hintText = None,
+          valueEditor = None,
+          validationExpression =
+            Some(ValidationExpression(Expression.spel("#name.length() < 100"), Some("some validation error")))
+        )
+      )
+    )
+    val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
+    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+
+    parameter.name shouldBe "name"
+    parameter.typ shouldBe Typed(classOf[String])
+    parameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+    parameter.validators.head should matchPattern {
+      case ValidationExpressionParameterValidator(_, Some("some validation error")) =>
+    }
+    val validationExpression =
+      parameter.validators.head.asInstanceOf[ValidationExpressionParameterValidator].validationExpression
+    validationExpression.original shouldBe "#name.length() < 100"
+    validationExpression.language shouldBe "spel"
   }
 
 }

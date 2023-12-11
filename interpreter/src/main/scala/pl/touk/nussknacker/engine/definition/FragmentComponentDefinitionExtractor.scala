@@ -139,6 +139,19 @@ class FragmentComponentDefinitionExtractor(
         )
       }
       .getOrElse(EditorExtractor.extract(parameterData, config))
+
+    val customExpressionValidator = fragmentParameter.validationExpression.flatMap(expr => {
+      expressionCompiler
+        .compileWithoutContextValidation(expr.expression, fragmentParameter.name, Typed[Boolean])
+        .toOption
+        .map { expression =>
+          ValidationExpressionParameterValidator(
+            expression,
+            fragmentParameter.validationExpression.flatMap(_.failedMessage)
+          )
+        }
+    })
+
     val isOptional = !fragmentParameter.required
 
     Parameter
@@ -148,7 +161,7 @@ class FragmentComponentDefinitionExtractor(
         validators = ValidatorsExtractor
           .extract(
             ValidatorExtractorParameters(parameterData, isOptional, config, extractedEditor)
-          ),
+          ) ++ customExpressionValidator,
         defaultValue = fragmentParameter.initialValue
           .map(i => Expression.spel(i.expression))
           .orElse(

@@ -734,7 +734,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              validationExpression = None
             )
           ),
         ),
@@ -772,7 +773,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              validationExpression = None
             )
           ),
         ),
@@ -806,7 +808,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              validationExpression = None
             )
           ),
         ),
@@ -839,7 +842,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                   fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
                   allowOtherValue = false
                 )
-              )
+              ),
+              validationExpression = None
             )
           ),
         ),
@@ -868,7 +872,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = None,
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              validationExpression = None
             ),
             FragmentParameter(
               "param1",
@@ -876,7 +881,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              validationExpression = None
             )
           ),
         ),
@@ -904,7 +910,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              validationExpression = None
             )
           ),
         ),
@@ -933,7 +940,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               required = false,
               initialValue = None,
               hintText = None,
-              valueEditor = None
+              valueEditor = None,
+              validationExpression = None
             )
           ),
         ),
