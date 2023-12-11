@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{
+  Context,
   FragmentSpecificData,
   MetaData,
   ProcessListener,
@@ -127,7 +128,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       sliding("#AGG.sum", "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+    nodeResults.map(_.get[Number]("fooVar").get) shouldBe List(1, 2, 5)
   }
 
   test("sum aggregate for out of order elements") {
@@ -294,7 +295,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val model =
       modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
 
-    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
+    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun)
 
     the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
@@ -313,9 +314,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
 
-    nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+    nodeResults.map(_.get[Number]("fooVar").get) shouldBe List(1, 2, 5)
 
-    val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
+    val aggregateVariables = nodeResults.map(_.get[java.util.List[Number]]("fragmentResult").get)
     // TODO: reverse order in aggregate
     aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
   }
@@ -406,7 +407,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
+    nodeResults.flatMap(_.get[TestRecordHours]("input")) shouldBe Nil
   }
 
   test("sum session aggregate on event with context") {
@@ -429,7 +430,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(3), asList(4, 3), asList(5))
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe testRecords
+    nodeResults.flatMap(_.get[TestRecordHours]("input")) shouldBe testRecords
   }
 
   test("map aggregate") {
@@ -503,11 +504,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ): _*
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerRun
     runProcess(model, testProcess, collectingListener)
     val lastResult = variablesForKey(collectingListener, id).last
     aggregates.foreach { case (name, expected) =>
-      lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
+      lastResult.get[AnyRef](s"fragmentResult$name").get shouldBe expected
     }
   }
 
@@ -516,15 +517,15 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       model: LocalModelData,
       testProcess: CanonicalProcess
   ): List[T] = {
-    runCollectOutputVariables(key, model, testProcess).map(_.variableTyped[T]("fragmentResult").get)
+    runCollectOutputVariables(key, model, testProcess).map(_.get[T]("fragmentResult").get)
   }
 
   private def runCollectOutputVariables(
       key: String,
       model: LocalModelData,
       testProcess: CanonicalProcess
-  ): List[TestProcess.NodeResult[Any]] = {
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+  ): List[Context] = {
+    val collectingListener = ResultsCollectingListenerHolder.registerRun
     runProcess(model, testProcess, collectingListener)
     variablesForKey(collectingListener, key)
   }
@@ -553,11 +554,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def variablesForKey(
       collectingListener: ResultsCollectingListener,
       key: String
-  ): List[TestProcess.NodeResult[Any]] = {
-    collectingListener
-      .results[Any]
+  ): List[Context] = {
+    collectingListener.results
       .nodeResults("end")
-      .filter(_.variableTyped(VariableConstants.KeyVariableName).contains(key))
+      .filter(_.get(VariableConstants.KeyVariableName).contains(key))
   }
 
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {

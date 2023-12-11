@@ -150,7 +150,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      ResultsCollectingListenerHolder.registerRun(identity),
+      ResultsCollectingListenerHolder.registerRun,
       scenario,
       modelData.objectNaming,
       scenarioTestData

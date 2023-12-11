@@ -62,7 +62,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
-    val testResultVars = results.nodeResults("end").head.context.variables
+    val testResultVars = results.nodeResults("end").head.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
     testResultVars.get("inputMeta") shouldBe Some(inputMeta)
   }
@@ -95,14 +95,13 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.nodeResults shouldBe Symbol("nonEmpty")
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
         modelData,
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration(),
-        identity
+        FlinkTestConfiguration.configuration()
       )
     }
   }

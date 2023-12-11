@@ -26,7 +26,6 @@ class DictsFlowTest
     with OptionValues
     with EitherValuesDetailedMessage {
 
-  private val DictId         = "dict"
   private val VariableNodeId = "variableCheck"
   private val VariableName   = "variableToCheck"
   private val EndNodeId      = "end"
@@ -246,7 +245,6 @@ class DictsFlowTest
       .downField("nodeResults")
       .downField(EndNodeId)
       .downArray
-      .downField("context")
       .downField("variables")
       .downField(VariableName)
       .downField("pretty")
