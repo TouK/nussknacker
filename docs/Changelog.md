@@ -2,6 +2,7 @@
 
 1.13.0 (Not released yet)
 -------------------------
+* [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
 * [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`

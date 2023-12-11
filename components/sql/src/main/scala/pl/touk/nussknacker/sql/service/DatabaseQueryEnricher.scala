@@ -45,8 +45,7 @@ object DatabaseQueryEnricher {
 
   val ResultStrategyParam: Parameter = {
     val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name).map {
-      strategyName =>
-        FixedExpressionValue(s"'$strategyName'", strategyName)
+      strategyName => FixedExpressionValue(s"'$strategyName'", strategyName)
     }
     Parameter(ResultStrategyParamName, Typed[String]).copy(
       editor = Some(FixedValuesParameterEditor(strategyNames))
@@ -69,11 +68,8 @@ TODO:
 1. Named parameters. Maybe we can make use of Spring's NamedJdbcParameterTemplate?
 2. Typed parameters - currently we type them as Objects/Unknowns
  */
-class DatabaseQueryEnricher(
-    val dbPoolConfig: DBPoolConfig,
-    val dbMetaDataProvider: DbMetaDataProvider,
-    displayDbErrors: Boolean
-) extends EagerService
+class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
+    extends EagerService
     with TimeMeasuringService
     with SingleInputGenericNodeTransformation[ServiceInvoker]
     with LazyLogging {
@@ -173,12 +169,8 @@ class DatabaseQueryEnricher(
   }
 
   private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
-    case e: SQLSyntaxErrorException =>
-      e.getMessage
-    case e => // For some users full error msg can be significant. Allow to choose full error message in config
-      val userErrorMessageDetails = if (displayDbErrors) e else e.getClass.getSimpleName
-      logger.info(s"Failed to execute query: $query", e)
-      s"Failed to execute query: $userErrorMessageDetails"
+    case e: SQLSyntaxErrorException => e.getMessage
+    case e                          => s"Failed to execute query: $e"
   }
 
   protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =

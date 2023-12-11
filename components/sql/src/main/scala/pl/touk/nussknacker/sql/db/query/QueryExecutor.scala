@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.sql.db.query
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 
 import java.sql.{PreparedStatement, ResultSet}
@@ -22,7 +21,7 @@ trait QueryExecutor {
 
 }
 
-class UpdateQueryExecutor() extends QueryExecutor {
+class UpdateQueryExecutor extends QueryExecutor {
 
   override type QueryResult = UpdateResultStrategy.updateResultType
 
