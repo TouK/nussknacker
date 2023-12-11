@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -15,16 +14,15 @@ import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
 
-  private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
-
+  import KafkaFactory._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
-  import KafkaFactory._
 
   override lazy val config = ConfigFactory
     .load()
@@ -59,7 +57,8 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, configCreator)
+    val modelData =
+      LocalModelData(config, List.empty, configCreator = configCreator, objectNaming = DefaultNamespacedObjectNaming)
     registrar = process.registrar.FlinkProcessRegistrar(
       new FlinkProcessCompiler(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)

@@ -11,7 +11,7 @@ import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -262,7 +262,7 @@ class K8sDeploymentManagerReqRespTest
     K8sDeploymentManagerConfig.parse(ficusConfig)
   }
 
-  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
+  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, List.empty)
 
   private def createReqRespFixture(
       givenScenarioName: String,

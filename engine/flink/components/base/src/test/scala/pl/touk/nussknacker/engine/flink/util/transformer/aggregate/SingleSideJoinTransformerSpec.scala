@@ -7,7 +7,8 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.{ValueWithContext, _}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWa
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -80,7 +82,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
             "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT2H')",
             "aggregateBy" -> "{last: #input.value, list: #input.value, approxCardinality: #input.value, sum: #input.value } "
           )
-          .emptySink(EndNodeId, "end")
+          .emptySink(EndNodeId, "dead-end")
       )
 
     val key    = "fooKey"
@@ -134,7 +136,11 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener
   ) =
-    LocalModelData(ConfigFactory.empty(), new SingleSideJoinTransformerSpec.Creator(input1, input2, collectingListener))
+    LocalModelData(
+      ConfigFactory.empty(),
+      prepareComponents(input1, input2),
+      configCreator = new ConfigCreatorWithListener(collectingListener),
+    )
 
 }
 
@@ -144,18 +150,28 @@ object SingleSideJoinTransformerSpec {
 
   private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
-  val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
+  private val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
-  class Creator(
+  private def prepareComponents(
       mainRecordsSource: BlockingQueueSource[OneRecord],
-      joinedRecords: List[OneRecord],
-      collectingListener: ResultsCollectingListener
-  ) extends EmptyProcessConfigCreator {
+      joinedRecords: List[OneRecord]
+  ): List[ComponentDefinition] = {
+    ComponentDefinition("start-main", SourceFactory.noParam[OneRecord](mainRecordsSource)) ::
+      ComponentDefinition(
+        "start-joined",
+        SourceFactory.noParam[OneRecord](
+          EmitWatermarkAfterEachElementCollectionSource
+            .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
+        )
+      ) ::
+      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)) ::
+      joinComponentDefinition :: Nil
+  }
 
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map(customElementName -> WithCategories.anyCategory(new SingleSideJoinTransformer(None) {
+  private val joinComponentDefinition =
+    ComponentDefinition(
+      customElementName,
+      new SingleSideJoinTransformer(None) {
 
         override protected def prepareAggregatorFunction(
             aggregator: Aggregator,
@@ -181,30 +197,8 @@ object SingleSideJoinTransformerSpec {
           }
         }
 
-      }))
-
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      Seq(collectingListener)
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map(
-        "start-main" -> WithCategories.anyCategory(SourceFactory.noParam[OneRecord](mainRecordsSource)),
-        "start-joined" -> WithCategories.anyCategory(
-          SourceFactory.noParam[OneRecord](
-            EmitWatermarkAfterEachElementCollectionSource
-              .create[OneRecord](joinedRecords, _.timestamp, Duration.ofHours(1))
-          )
-        )
-      )
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories.anyCategory(SinkFactory.noParam(EmptySink)))
-
-  }
+      }
+    )
 
   case class OneRecord(key: String, timeHours: Int, value: Int) {
     def timestamp: Long = timeHours * 3600L * 1000

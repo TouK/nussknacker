@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
-  ComponentStaticDefinition
+  ComponentStaticDefinition,
+  ComponentTypeSpecificData
 }
 
 case class MethodBasedComponentDefinitionWithImplementation(
@@ -17,17 +18,17 @@ case class MethodBasedComponentDefinitionWithImplementation(
     runtimeClass: Class[_]
 ) extends ComponentDefinitionWithImplementation {
 
-  override def withImplementationInvoker(
+  final override def withImplementationInvoker(
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
     copy(implementationInvoker = implementationInvoker)
 
-  def parameters: List[Parameter] = staticDefinition.parameters
+  final override def componentType: ComponentType = staticDefinition.componentType
 
-  override def returnType: Option[TypingResult] = staticDefinition.returnType
+  final def parameters: List[Parameter] = staticDefinition.parameters
 
-  override protected[definition] def categories: Option[List[String]] = staticDefinition.categories
+  final override def returnType: Option[TypingResult] = staticDefinition.returnType
 
-  override def componentConfig: SingleComponentConfig = staticDefinition.componentConfig
+  final override def componentTypeSpecificData: ComponentTypeSpecificData = staticDefinition.componentTypeSpecificData
 
 }

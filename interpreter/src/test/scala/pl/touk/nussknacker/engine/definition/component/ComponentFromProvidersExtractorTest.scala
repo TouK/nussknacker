@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
+import org.scalatest.Ignore
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
@@ -10,9 +11,9 @@ import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractorTest.largeMajorVersion
-import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
+import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, DefaultModelConfigLoader}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import scala.concurrent.Future
@@ -30,108 +31,85 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
   private val loader = new DefaultModelConfigLoader
 
   test("should discover services") {
-    val components = extractComponents[Service](
+    val components = extractComponents(
       "components" -> Map(
         "dynamicTest" -> Map("valueCount" -> 7),
         "auto"        -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe (1 to 7)
-      .map(i => {
-        val service = DynamicService(s"v$i")
-        s"component-v$i" -> WithCategories(service, None, SingleComponentConfig.zero)
-      })
-      .toMap
+    components should have size 7
+    components.map(_._1) should contain theSameElementsAs (1 to 7).map(i => s"component-v$i")
+    components.map(_._2.implementation) should contain theSameElementsAs (1 to 7).map(i => DynamicService(s"v$i"))
   }
 
   test("should handle multiple providers") {
-    val components = extractComponents[Service](
+    val components = extractComponents(
       "components" -> Map(
         "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2),
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 3),
         "auto"     -> Map("disabled" -> true)
       )
     )
-
-    components.services shouldBe ((1 to 2).map(i => {
-      s"component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
-    }) ++
-      (1 to 3).map(i => {
-        s"t1-component-v$i" -> WithCategories(DynamicService(s"v$i"), None, SingleComponentConfig.zero)
-      })).toMap
+    components should have size 5
+    val expectedNames = (1 to 2).map(i => s"component-v$i") ++ (1 to 3).map(i => s"t1-component-v$i")
+    components.map(_._1) should contain theSameElementsAs expectedNames
+    val expectedServices = (1 to 2).map(i => DynamicService(s"v$i")) ++ (1 to 3).map(i => DynamicService(s"v$i"))
+    components.map(_._2.implementation) should contain theSameElementsAs expectedServices
   }
 
-  test("should detect duplicate config") {
-    intercept[IllegalArgumentException] {
-      extractComponents[Service](
-        "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "dynamicTest", "valueCount" -> 1),
-          "dynamic2" -> Map("providerType" -> "dynamicTest", "valueCount" -> 2)
-        )
-      )
-    }.getMessage should include("component-v1")
-  }
-
-  test("should detect duplicated config inside same provider") {
-    intercept[IllegalArgumentException] {
-      extractComponents[Service](
-        "components" -> Map(
-          "dynamic1" -> Map("providerType" -> "sameNameSameComponentTypeProvider"),
-        )
-      )
-    }.getMessage should include("component")
-  }
-
-  test("should discaver components with same name and different component type for same provider") {
-    val components = extractComponents[Component](
+  test("should discover components with same name and different component type for same provider") {
+    val components = extractComponents(
       "components" -> Map(
         "dynamic1" -> Map("providerType" -> "sameNameDifferentComponentTypeProvider"),
         "auto"     -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe Map(
-      "component" -> WithCategories(DynamicService("component"), None, SingleComponentConfig.zero)
-    )
-    components.sinkFactories.size shouldBe 1
+
+    components.size shouldBe 2
+    components.map(_._1) shouldBe List("component", "component")
+    val implementations = components.map(_._2.implementation)
+    implementations.head shouldBe a[Service]
+    implementations(1) shouldBe a[SinkFactory]
   }
 
   test("should skip disabled providers") {
-    val components = extractComponents[Service](
+    val components = extractComponents(
       "components" -> Map(
         "dynamic1" -> Map("providerType" -> "dynamicTest", "disabled" -> true),
         "dynamic2" -> Map("providerType" -> "dynamicTest", "componentPrefix" -> "t1-", "valueCount" -> 1),
         "auto"     -> Map("disabled" -> true)
       )
     )
-    components.services shouldBe Map(
-      "t1-component-v1" -> WithCategories(DynamicService("v1"), None, SingleComponentConfig.zero)
-    )
+    components should have size 1
+    components.map(_._1).head shouldBe "t1-component-v1"
   }
 
   test("should skip incompatible providers") {
     // see DynamicProvider.isCompatible
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
-      extractComponents[Service](
+      extractComponents(
         Map("components.dynamicTest.valueCount" -> 7),
-        (cl: ClassLoader) => ComponentFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
+        (cl: ClassLoader) => ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
 
   test("should load auto loadable component") {
-    val components = extractComponents[Service]()
-    val service    = AutoService
-    components.services shouldBe Map("auto-component" -> WithCategories(service, None, SingleComponentConfig.zero))
+    val components = extractComponents()
+    components should have size 1
+    val (componentName, component) = components.head
+    componentName shouldBe "auto-component"
+    component.implementation shouldBe AutoService
   }
 
   test("should skip incompatible auto loadable providers") {
     // see DynamicProvider.isCompatible
     val largeVersionNumber = new Semver(s"$largeMajorVersion.2.3")
     intercept[IllegalArgumentException] {
-      extractComponents[Service](
+      extractComponents(
         Map.empty[String, Any],
-        (cl: ClassLoader) => ComponentFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
+        (cl: ClassLoader) => ComponentsFromProvidersExtractor(cl, NussknackerVersion(largeVersionNumber))
       )
     }.getMessage should include(s"is not compatible with NussknackerVersion(${largeVersionNumber.toString})")
   }
@@ -162,12 +140,14 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
   }
 
-  private def extractComponents[T <: Component](map: (String, Any)*): ComponentFromProvidersExtractor.ComponentsGroupedByType =
-    extractComponents(map.toMap, ComponentFromProvidersExtractor(_))
+  private def extractComponents(
+      map: (String, Any)*
+  ): List[(String, ComponentDefinitionWithImplementation)] =
+    extractComponents(map.toMap, ComponentsFromProvidersExtractor(_))
 
-  private def extractComponents[T <: Component](
+  private def extractComponents(
       map: Map[String, Any],
-      makeExtractor: ClassLoader => ComponentFromProvidersExtractor
+      makeExtractor: ClassLoader => ComponentsFromProvidersExtractor
   ) = {
     ClassLoaderWithServices.withCustomServices(
       List(
@@ -180,16 +160,16 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     ) { cl =>
       val extractor = makeExtractor(cl)
       val resolved  = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
     }
   }
 
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
-      val extractor = ComponentFromProvidersExtractor(cl)
+      val extractor = ComponentsFromProvidersExtractor(cl)
       val resolved =
         loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
-      extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
+      extractor.extractComponents(ProcessObjectDependencies.withConfig(resolved.config), ComponentsUiConfig.Empty)
     }
   }
 

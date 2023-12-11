@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
@@ -27,7 +27,6 @@ import sttp.model.{Method, StatusCode}
 import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
-import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -443,7 +442,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         new ProcessingTypeDeploymentServiceStub(List.empty)
       val manager = new FlinkRestManager(
         config = config.copy(restUrl = wireMockServer.baseUrl(), scenarioStateRequestTimeout = clientRequestTimeout),
-        modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+        modelData = LocalModelData(ConfigFactory.empty, List.empty),
         mainClassName = "UNUSED"
       )
 
@@ -472,7 +471,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     )
     new FlinkRestManager(
       config = config,
-      modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+      modelData = LocalModelData(ConfigFactory.empty, List.empty),
       mainClassName = "UNUSED"
     )
   }

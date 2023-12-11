@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{TopicParamName, nullTopicOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -29,15 +29,15 @@ object KafkaUniversalComponentTransformer {
   def extractValidationMode(value: String): ValidationMode =
     ValidationMode.fromString(value, SinkValidationModeParameterName)
 
+  // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+  // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+  private val nullTopicOption: FixedExpressionValue = FixedExpressionValue("", "")
+
 }
 
 trait KafkaUniversalComponentTransformer[T]
     extends SingleInputGenericNodeTransformation[T]
     with WithCachedTopicsExistenceValidator {
-
-  // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
-  // TODO: add addNullOption feature flag to FixedValuesParameterEditor
-  val nullTopicOption: FixedExpressionValue = FixedExpressionValue("", "")
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
@@ -50,11 +50,12 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
 
-  protected val kafkaConfig: KafkaConfig = prepareKafkaConfig
+  @transient protected lazy val kafkaConfig: KafkaConfig = prepareKafkaConfig
 
-  protected val schemaSupportDispatcher: UniversalSchemaSupportDispatcher = UniversalSchemaSupportDispatcher(
-    kafkaConfig
-  )
+  @transient protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher =
+    UniversalSchemaSupportDispatcher(
+      kafkaConfig
+    )
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(processObjectDependencies.config)
@@ -174,9 +175,9 @@ trait KafkaUniversalComponentTransformer[T]
   def paramsDeterminedAfterSchema: List[Parameter]
 
   // edge case - for some reason Topic is not defined
-  protected val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
+  @transient protected lazy val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
 
   // override it if you use other parameter name for topic
-  protected val topicParamName: String = TopicParamName
+  @transient protected lazy val topicParamName: String = TopicParamName
 
 }

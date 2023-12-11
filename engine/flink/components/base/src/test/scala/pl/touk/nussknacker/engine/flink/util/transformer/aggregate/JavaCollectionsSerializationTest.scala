@@ -6,20 +6,16 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SourceFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.flink.util.transformer.DelayTransformer
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -68,12 +64,17 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     result shouldBe List(Some(record))
   }
 
-  def modelData(list: List[Record] = List()): LocalModelData = LocalModelData(
-    ConfigFactory
-      .empty()
-      .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-    new AggregateCreator(list)
-  )
+  def modelData(list: List[Record] = List()): LocalModelData = {
+    val sourceComponent = SourceFactory.noParam[Record](
+      CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])(TypeInformation.of(classOf[Record]))
+    )
+    LocalModelData(
+      ConfigFactory
+        .empty()
+        .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
+    )
+  }
 
   protected def runProcess(
       model: LocalModelData,
@@ -94,29 +95,6 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     )
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
-  }
-
-}
-
-class AggregateCreator(input: List[Record]) extends EmptyProcessConfigCreator {
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    val inputType = Typed.fromDetailedType[List[Record]]
-    Map(
-      "start" -> WithCategories.anyCategory(
-        SourceFactory.noParam[Record](
-          CollectionSource[Record](input, None, inputType)(TypeInformation.of(classOf[Record]))
-        )
-      )
-    )
-  }
-
-  override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[CustomStreamTransformer]] = {
-    Map("delay" -> WithCategories.anyCategory(new DelayTransformer))
   }
 
 }

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.GenericNodeTransformat
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 //   that parameters will be available in the scenario, even with a default values
 class ToStaticComponentDefinitionTransformer(
     objectParametersExpressionCompiler: ExpressionCompiler,
-    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
     createMetaData: ProcessName => MetaData
 ) extends LazyLogging {
 
@@ -39,9 +39,15 @@ class ToStaticComponentDefinitionTransformer(
   ): ComponentStaticDefinition = {
     componentDefWithImpl match {
       case standard: MethodBasedComponentDefinitionWithImplementation => standard.staticDefinition
-      case generic: DynamicComponentDefinitionWithImplementation =>
-        val parameters = determineInitialParameters(generic)
-        ComponentStaticDefinition(parameters, generic.returnType, generic.categories, generic.componentConfig)
+      case dynamic: DynamicComponentDefinitionWithImplementation =>
+        val parameters = determineInitialParameters(dynamic)
+        ComponentStaticDefinition(
+          parameters,
+          dynamic.returnType,
+          dynamic.categories,
+          dynamic.componentConfig,
+          dynamic.componentTypeSpecificData
+        )
     }
   }
 

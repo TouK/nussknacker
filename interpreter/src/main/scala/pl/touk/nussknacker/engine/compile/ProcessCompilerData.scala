@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -38,7 +39,8 @@ object ProcessCompilerData {
       componentUseCase: ComponentUseCase,
       customProcessValidator: CustomProcessValidator
   ): ProcessCompilerData = {
-    val servicesDefs = definitionWithTypes.modelDefinition.services
+    val servicesDefs = definitionWithTypes.modelDefinition.components
+      .filter(_._1.`type` == ComponentType.Service)
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
@@ -84,7 +86,7 @@ object ProcessCompilerData {
       interpreter,
       process,
       listeners,
-      servicesDefs.mapValuesNow(_.implementation.asInstanceOf[Lifecycle])
+      servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
     )
 
   }

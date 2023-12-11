@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{
   StaticMethodDefinition
 }
 import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
@@ -113,13 +113,13 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     )
   )
 
-  private val expressionConfig: ExpressionDefinition[ComponentStaticDefinition] =
+  private val expressionConfig: ExpressionConfigDefinition[ComponentStaticDefinition] =
     ModelDefinitionBuilder.empty
       .withGlobalVariable("util", Typed[Util])
       .expressionConfig
 
   private val expressionSuggester = new ExpressionSuggester(
-    ModelDefinitionBuilder.toExpressionDefinition(expressionConfig),
+    ModelDefinitionBuilder.toDefinitionWithImpl(expressionConfig),
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,

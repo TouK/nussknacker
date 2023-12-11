@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.definition.component
 
-import pl.touk.nussknacker.engine.api.MethodToInvoke
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import cats.implicits.catsSyntaxSemigroup
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
 import pl.touk.nussknacker.engine.definition.component.dynamic.{
   DynamicComponentDefinitionWithImplementation,
   DynamicComponentImplementationInvoker
@@ -19,13 +20,42 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.{
 import java.lang.reflect.Method
 import scala.runtime.BoxedUnit
 
-class ComponentDefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
+object ComponentDefinitionExtractor {
 
   def extract(
-      objWithCategories: WithCategories[T],
-      mergedComponentConfig: SingleComponentConfig
+      inputComponentDefinition: ComponentDefinition,
+      additionalConfig: SingleComponentConfig
+  ): (String, ComponentDefinitionWithImplementation) = {
+    val configBasedOnDefinition = SingleComponentConfig.zero
+      .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
+    val componentWithConfig = WithCategories(
+      inputComponentDefinition.component,
+      None,
+      configBasedOnDefinition |+| additionalConfig
+    )
+    val componentDefWithImpl = ComponentDefinitionExtractor.extract(componentWithConfig)
+    inputComponentDefinition.name -> componentDefWithImpl
+  }
+
+  // TODO: Move this WithCategories extraction to ModelDefinitionFromConfigCreatorExtractor. Here should be passed
+  //       Component and SingleComponentConfig. It will possible when we remove categories from ComponentDefinitionWithImplementation
+  def extract(
+      componentWithConfig: WithCategories[Component]
   ): ComponentDefinitionWithImplementation = {
-    val obj = objWithCategories.value
+    val component = componentWithConfig.value
+
+    val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
+      component match {
+        case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
+        case _: SinkFactory   => (MethodDefinitionExtractor.Sink, SinkSpecificData)
+        case _: Service       => (MethodDefinitionExtractor.Service, ServiceSpecificData)
+        case custom: CustomStreamTransformer =>
+          (
+            MethodDefinitionExtractor.CustomStreamTransformer,
+            CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
+          )
+        case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
+      }
 
     def fromMethodDefinition(methodDef: MethodDefinition): MethodBasedComponentDefinitionWithImplementation = {
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
@@ -34,38 +64,40 @@ class ComponentDefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitio
       val staticDefinition = ComponentStaticDefinition(
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
-        objWithCategories.categories,
-        mergedComponentConfig
+        componentWithConfig.categories,
+        componentWithConfig.componentConfig,
+        componentTypeSpecificData
       )
-      val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
-      methodbased.MethodBasedComponentDefinitionWithImplementation(
+      val implementationInvoker = new MethodBasedComponentImplementationInvoker(component, methodDef)
+      MethodBasedComponentDefinitionWithImplementation(
         implementationInvoker,
-        obj,
+        component,
         staticDefinition,
         methodDef.runtimeClass
       )
     }
 
-    (obj match {
+    (component match {
       case e: GenericNodeTransformation[_] =>
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
           DynamicComponentDefinitionWithImplementation(
             implementationInvoker,
             e,
-            objWithCategories.categories,
-            mergedComponentConfig
+            componentWithConfig.categories,
+            componentWithConfig.componentConfig,
+            componentTypeSpecificData
           )
         )
       case _ =>
         methodDefinitionExtractor
-          .extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig)
+          .extractMethodDefinition(component, findMainComponentMethod(component), componentWithConfig.componentConfig)
           .map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
 
-  private def findMethodToInvoke(obj: Any): Method = {
+  private def findMainComponentMethod(obj: Any): Method = {
     val methodsToInvoke = obj.getClass.getMethods.toList.filter { m =>
       m.getAnnotation(classOf[MethodToInvoke]) != null
     }

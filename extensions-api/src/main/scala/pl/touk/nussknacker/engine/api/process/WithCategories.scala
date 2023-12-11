@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 
-// TODO: rename it? its no longer just a value with categories
+// TODO: This is deprecated API, remove it after ConfiCreator API will be removed
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
 
   def map[Y](f: T => Y): WithCategories[Y] = {

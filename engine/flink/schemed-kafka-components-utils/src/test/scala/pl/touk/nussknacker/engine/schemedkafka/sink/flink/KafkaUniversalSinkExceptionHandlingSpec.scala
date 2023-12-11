@@ -5,12 +5,8 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SinkFactory,
-  WithCategories
-}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -48,27 +44,16 @@ class KafkaUniversalSinkExceptionHandlingSpec
   test("should handle exceptions in kafka sinks") {
     registerSchema(topic, FullNameV1.schema, isKey = false)
 
-    val configCreator = new EmptyProcessConfigCreator {
+    val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
+    val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+    val kafkaComponent = new UniversalKafkaSinkFactory(
+      schemaRegistryClientFactory,
+      universalProvider,
+      ProcessObjectDependencies.withConfig(config),
+      FlinkKafkaUniversalSinkImplFactory
+    )
 
-      override def sinkFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SinkFactory]] = {
-        val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-        val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
-        Map(
-          "kafka" -> WithCategories.anyCategory(
-            new UniversalKafkaSinkFactory(
-              schemaRegistryClientFactory,
-              universalProvider,
-              processObjectDependencies,
-              FlinkKafkaUniversalSinkImplFactory
-            )
-          ),
-        )
-      }
-    }
-
-    checkExceptions(configCreator) { case (graph, generator) =>
+    checkExceptions(List(ComponentDefinition("kafka", kafkaComponent))) { case (graph, generator) =>
       NonEmptyList.one(
         graph.split(
           "split",

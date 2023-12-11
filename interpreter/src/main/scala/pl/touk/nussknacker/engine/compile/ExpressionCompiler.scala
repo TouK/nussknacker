@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -25,7 +25,7 @@ object ExpressionCompiler {
   def withOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionDefinition[_],
+      expressionConfig: ExpressionConfigDefinition[_],
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, classDefinitionSet)
@@ -33,7 +33,7 @@ object ExpressionCompiler {
   def withoutOptimization(
       loader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionDefinition[_],
+      expressionConfig: ExpressionConfigDefinition[_],
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler =
     default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, classDefinitionSet)
@@ -50,7 +50,7 @@ object ExpressionCompiler {
   private def default(
       classLoader: ClassLoader,
       dictRegistry: DictRegistry,
-      expressionConfig: ExpressionDefinition[_],
+      expressionConfig: ExpressionConfigDefinition[_],
       optimizeCompilation: Boolean,
       classDefinitionSet: ClassDefinitionSet
   ): ExpressionCompiler = {
