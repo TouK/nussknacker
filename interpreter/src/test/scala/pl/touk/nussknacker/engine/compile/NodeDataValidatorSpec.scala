@@ -10,7 +10,11 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{
+  DualParameterEditor,
+  StringParameterEditor,
+  ValidationExpressionParameterValidator
+}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -34,6 +38,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
+  ValidationExpression,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -953,6 +958,124 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       error.fieldName shouldBe paramName
       error.refClazzName shouldBe invalidType
       error.nodeIds shouldBe Set(nodeId)
+    }
+  }
+
+  test("shouldn't fail on valid validation expression") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              validationExpression = Some(
+                ValidationExpression(
+                  s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                  Some("some failed message")
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("should fail on invalid validation expression") {
+    val nodeId: String   = "in"
+    val paramName        = "param1"
+    val invalidReference = "#invalidReference"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              validationExpression =
+                Some(ValidationExpression(Expression.spel(invalidReference), Some("some failed message"))),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Unresolved reference 'invalidReference'",
+                nodeId,
+                paramName,
+                invalidReference
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should fail on non-boolean-result-type validation expression") {
+    val nodeId: String   = "in"
+    val paramName        = "param1"
+    val stringExpression = "'a' + 'b'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              validationExpression =
+                Some(ValidationExpression(Expression.spel(stringExpression), Some("some failed message"))),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Bad expression type, expected: Boolean, found: String(ab)",
+                nodeId,
+                paramName,
+                stringExpression
+              )
+            ),
+            None,
+            None
+          ) =>
     }
   }
 

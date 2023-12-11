@@ -38,6 +38,7 @@
 * 1.12.5 (1 Dec 2023)
 ------------------------
 * [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions
+* [#TODO](TODO) FragmentParameter uses `ValidationExpressionParameterValidator` through new field: `validationExpression`
 
 1.12.4 (14 Nov 2023)
 ------------------------

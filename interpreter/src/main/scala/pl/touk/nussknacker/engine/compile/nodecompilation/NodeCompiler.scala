@@ -144,7 +144,7 @@ class NodeCompiler(
           validationContext: ValidationContext
       ) = {
         def paramValidationErrors = params.map { param =>
-          fragmentParameterValidator.validate(param, id, validationContext)
+          fragmentParameterValidator.validate(param, validationContext)
         }.sequence
 
         compiledObject.andThen(v =>

@@ -501,6 +501,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                     )
                   ),
                   validationExpression = None
+                ),
+                FragmentParameter(
+                  "subParam3",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  validationExpression = Some(ValidationExpression(Expression.spel("'a' + 'b'"), None))
                 )
               )
             )
@@ -532,6 +541,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "InvalidValidationExpression",
+              "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
+              "There is a problem with validation expression: 'a' + 'b'",
+              Some("$param.subParam3.$validationExpression"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>
@@ -980,8 +996,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            validationExpression =
-              Some(ValidationExpression(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"))
+            validationExpression = Some(
+              ValidationExpression(
+                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                Some("some failed message")
+              )
+            )
           )
         )
       )
@@ -1014,7 +1034,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            validationExpression = Some(ValidationExpression(s"#$paramName.length() < 7"))
+            validationExpression = Some(
+              ValidationExpression(
+                s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
+                Some("some failed message")
+              )
+            )
           )
         )
       )
@@ -1030,8 +1055,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             List(
               NodeValidationError(
                 "CustomParameterValidationError",
-                _,
-                _,
+                "some failed message",
+                "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some(paramName),
                 NodeValidationErrorType.SaveAllowed
               )
