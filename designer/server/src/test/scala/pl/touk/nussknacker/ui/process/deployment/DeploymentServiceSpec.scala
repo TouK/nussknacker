@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances.DB
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.LoneElement._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -27,7 +28,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
@@ -150,6 +151,22 @@ class DeploymentServiceSpec
           .status shouldBe SimpleStateStatus.DuringCancel
       }
     }
+  }
+
+  test("should mark Action ExecutionFinished and publish an event as finished") {
+
+    val processName: ProcessName = generateProcessName
+    val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
+
+    deploymentService.markActionExecutionFinished(Streaming, actionId).futureValue
+    eventually {
+      val action =
+        actionRepository.getFinishedProcessActions(processId, Some(Set(ProcessActionType.Deploy))).dbioActionValues
+
+      action.loneElement.state shouldBe ProcessActionState.ExecutionFinished
+      listener.events.toArray.filter(_.isInstanceOf[OnActionExecutionFinished]) should have length 1
+    }
+
   }
 
   test("Should mark finished process as finished") {
