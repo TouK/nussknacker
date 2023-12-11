@@ -2,10 +2,9 @@ package pl.touk.nussknacker.ui.process.repository
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.restmodel.component.ComponentIdParts
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
   existingSinkFactory,
   existingSinkFactory2,
@@ -35,13 +34,13 @@ class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
     val usages = ScenarioComponentsUsagesHelper.compute(scenario)
 
     usages.value shouldBe Map(
-      ComponentIdParts(Some(existingSourceFactory), ComponentType.Source) -> List("source"),
-      ComponentIdParts(None, ComponentType.Filter)                        -> List("checkId", "checkId2"),
-      ComponentIdParts(None, ComponentType.Variable)                      -> List("var1"),
-      ComponentIdParts(Some("barfragment"), ComponentType.Fragments)      -> List("fragment1"),
-      ComponentIdParts(None, ComponentType.Switch)                        -> List("switch1"),
-      ComponentIdParts(Some(existingSinkFactory), ComponentType.Sink)     -> List("out1"),
-      ComponentIdParts(Some(existingSinkFactory2), ComponentType.Sink)    -> List("out2"),
+      ComponentInfo(ComponentType.Source, existingSourceFactory) -> List("source"),
+      BuiltInComponentInfo.Filter                                -> List("checkId", "checkId2"),
+      BuiltInComponentInfo.Variable                              -> List("var1"),
+      ComponentInfo(ComponentType.Fragment, "barfragment")       -> List("fragment1"),
+      BuiltInComponentInfo.Choice                                -> List("switch1"),
+      ComponentInfo(ComponentType.Sink, existingSinkFactory)     -> List("out1"),
+      ComponentInfo(ComponentType.Sink, existingSinkFactory2)    -> List("out2"),
     )
   }
 

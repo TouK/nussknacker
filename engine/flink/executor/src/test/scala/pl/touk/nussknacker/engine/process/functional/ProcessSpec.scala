@@ -333,7 +333,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
       exception.throwable shouldBe a[NonTransientException]
       exception.nodeComponentInfo shouldBe Some(
-        NodeComponentInfo("throwingNonTransientErrorsNodeId", "throwingNonTransientErrors", ComponentType.Enricher)
+        NodeComponentInfo("throwingNonTransientErrorsNodeId", ComponentType.Service, "throwingNonTransientErrors")
       )
       SinkForStrings.data.loneElement shouldBe "b"
     }

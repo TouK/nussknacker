@@ -37,7 +37,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any],
       deploymentService: DeploymentService
-  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val processingTypesConfig      = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val selectedScenarioTypeFilter = createSelectedScenarioTypeFilter(config) tupled
     val processingTypesData = processingTypesConfig
@@ -50,9 +50,11 @@ trait ProcessingTypeDataReader extends LazyLogging {
     // to assert the loaded configuration is correct (fail-fast approach).
     val combinedData = createCombinedData(processingTypesData, config)
 
-    new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](
+    ProcessingTypeDataState(
       processingTypesData.mapValuesNow(toValueWithPermission),
-      combinedData
+      () => combinedData,
+      // We pass here new Object to enforce update of observers
+      new Object
     )
   }
 

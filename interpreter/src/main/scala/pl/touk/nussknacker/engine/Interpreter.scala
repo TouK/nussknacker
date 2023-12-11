@@ -46,7 +46,7 @@ private class InterpreterInternal[F[_]](
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
   private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
-    NuExceptionInfo(Some(NodeComponentInfoExtractor.fromNode(node)), _, ctx)
+    NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
   @silent("deprecated")

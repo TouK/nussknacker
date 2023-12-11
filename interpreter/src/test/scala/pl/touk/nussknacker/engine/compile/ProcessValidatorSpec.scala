@@ -368,9 +368,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .buildVariable(
         "bv1",
         "vars",
-        "v1"           -> "42",
-        "mapVariable"  -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
-        "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
+        "v1"             -> "42",
+        "recordVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
+        "spelVariable"   -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
       .emptySink("id2", "sink")
 
@@ -427,7 +427,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val varsType =
       compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
     varsType.fields.get("v1").value shouldEqual Typed.fromInstance(42)
-    varsType.fields.get("mapVariable").value shouldEqual TypedObjectTypingResult(
+    varsType.fields.get("recordVariable").value shouldEqual TypedObjectTypingResult(
       ListMap(
         "Field1" -> Typed.fromInstance("Field1Value"),
         "Field2" -> Typed.fromInstance("Field2Value"),

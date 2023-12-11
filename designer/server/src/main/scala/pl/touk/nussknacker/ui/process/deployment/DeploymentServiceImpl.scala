@@ -10,10 +10,9 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Depl
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
@@ -23,6 +22,7 @@ import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
@@ -33,9 +33,9 @@ import slick.dbio.{DBIO, DBIOAction}
 import java.time.Clock
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.language.higherKinds
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
-import scala.language.higherKinds
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
@@ -46,7 +46,7 @@ class DeploymentServiceImpl(
     processRepository: FetchingProcessRepository[DB],
     actionRepository: DbProcessActionRepository[DB],
     dbioRunner: DBIOActionRunner,
-    processValidator: UIProcessValidator,
+    processValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     scenarioResolver: ScenarioResolver,
     processChangeListener: ProcessChangeListener,
     scenarioStateTimeout: Option[FiniteDuration],
@@ -181,11 +181,12 @@ class DeploymentServiceImpl(
   private def validateProcess(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser): Unit = {
-    val validationResult = processValidator.processingTypeValidationWithTypingInfo(
-      processDetails.json,
-      processDetails.processingType,
-      processDetails.processCategory
-    )
+    val validationResult = processValidator
+      .forTypeUnsafe(processDetails.processingType)
+      .validateCanonicalProcess(
+        processDetails.json,
+        processDetails.processCategory
+      )
     if (validationResult.hasErrors) {
       throw DeployingInvalidScenarioError(validationResult.errors)
     }
