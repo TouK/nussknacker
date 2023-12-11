@@ -123,7 +123,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val outValues = collectingListener.results
       .nodeResults(EndNodeId)
-      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+      .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
       .map(_.mapValuesNow {
         case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
         case x                                                      => x

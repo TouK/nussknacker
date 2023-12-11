@@ -121,11 +121,11 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def extractResultValues(results: TestProcess.TestResults): List[String] = results
     .nodeResults(sinkId)
-    .map(_.variableTyped[String](resultVariableName).get)
+    .map(_.get[String](resultVariableName).get)
 
   private def extractContextIds(results: TestProcess.TestResults): List[String] = results
     .nodeResults(forEachNodeResultId)
-    .map(_.context.id)
+    .map(_.id)
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()

@@ -6,14 +6,14 @@ import pl.touk.nussknacker.engine.api.{Context, ContextId}
 object TestProcess {
 
   case class TestResults(
-      nodeResults: Map[String, List[NodeResult]],
+      nodeResults: Map[String, List[Context]],
       invocationResults: Map[String, List[ExpressionInvocationResult]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult]],
       exceptions: List[NuExceptionInfo[_ <: Throwable]]
   ) {
 
     def updateNodeResult(nodeId: String, context: Context): TestResults = {
-      copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ NodeResult(context))))
+      copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ context)))
     }
 
     def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any): TestResults = {
@@ -42,14 +42,6 @@ object TestProcess {
       res.contextId == invocationResult.contextId && res.name == invocationResult.name
     ) :+ invocationResult
 
-  }
-
-  /**
-    * We have to be careful not to put too much into results, as they are serialized to JSON.
-    * TODO: Does it really have any sense? Why not use Context instead of it?
-    */
-  case class NodeResult(context: Context) {
-    def variableTyped[T](name: String): Option[T] = context.get(name)
   }
 
   case class ExpressionInvocationResult(contextId: String, name: String, value: Any)

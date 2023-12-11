@@ -83,7 +83,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     def outValues = {
       collectingListener.results
         .nodeResults(EndNodeId)
-        .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
+        .map(_.get[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
     }
 
     withProcess(process, sourceFoo, sourceBar, collectingListener) {

@@ -106,8 +106,8 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
     val outValues = collectingListener.results
       .nodeResults(EndNodeId)
-      .filter(_.variableTyped(KeyVariableName).contains(key))
-      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
+      .filter(_.get(KeyVariableName).contains(key))
+      .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
     outValues shouldEqual List(
       Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),

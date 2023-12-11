@@ -62,7 +62,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
-    val testResultVars = results.nodeResults("end").head.context.variables
+    val testResultVars = results.nodeResults("end").head.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
     testResultVars.get("inputMeta") shouldBe Some(inputMeta)
   }

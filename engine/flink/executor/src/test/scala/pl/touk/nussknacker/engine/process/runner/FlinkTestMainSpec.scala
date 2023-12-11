@@ -11,7 +11,11 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
+import pl.touk.nussknacker.engine.flink.test.{
+  FlinkTestConfiguration,
+  RecordingExceptionConsumer,
+  RecordingExceptionConsumerProvider
+}
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -384,7 +388,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
     val nodeResults = results.nodeResults
 
-    nodeResults("out").map(_.context.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
+    nodeResults("out").map(_.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
 
   }
 
@@ -613,13 +617,13 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): NodeResult =
+  private def nodeResult(count: Int, vars: (String, Any)*): Context =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): NodeResult =
-    NodeResult(Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*)))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
 
-  private def nodeResult(count: Int, sourceId: String, branchId: String, vars: (String, Any)*): NodeResult =
-    NodeResult(Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*)))
+  private def nodeResult(count: Int, sourceId: String, branchId: String, vars: (String, Any)*): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
 
 }

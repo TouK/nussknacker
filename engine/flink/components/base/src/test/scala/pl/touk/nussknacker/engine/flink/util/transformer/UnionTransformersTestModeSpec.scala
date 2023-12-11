@@ -139,7 +139,7 @@ class UnionTransformersTestModeSpec
 
   private def extractContextIds(results: TestProcess.TestResults): List[String] = results
     .nodeResults(endSinkId)
-    .map(_.context.id)
+    .map(_.id)
 
   private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()

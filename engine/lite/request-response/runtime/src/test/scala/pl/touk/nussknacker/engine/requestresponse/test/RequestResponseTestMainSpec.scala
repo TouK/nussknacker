@@ -58,8 +58,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val secondId   = contextIds.nextContextId()
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(Context(firstId, Map("input" -> Request1("a", "b")))),
-      NodeResult(Context(secondId, Map("input" -> Request1("c", "d"))))
+      Context(firstId, Map("input" -> Request1("a", "b"))),
+      Context(secondId, Map("input" -> Request1("c", "d")))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -127,7 +127,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(Context(firstId, Map("input" -> Request1("a", "b"))))
+      Context(firstId, Map("input" -> Request1("a", "b")))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
@@ -168,7 +168,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
-    val unionContextIds = results.nodeResults("union1").map(_.context.id)
+    val unionContextIds = results.nodeResults("union1").map(_.id)
     unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     results.nodeResults("union1") shouldBe results.nodeResults("collect1")

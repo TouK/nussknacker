@@ -62,6 +62,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4956](https://github.com/TouK/nussknacker/pull/4956) Refactor: Cleanup TestResults
   * Changed signature `DeploymentManager.test` method, and removed `variableEncoder` param
   * Classes `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` don't depend on `T`
+  * Classes `NodeResult` is removed. Instead, `Context` is used directly
   * Removed `variableEncoder` from `ResultsCollectingListenerHolder.registerRun`
   * Removed `ResultContext`, please use `Context` instead of it
 

@@ -57,7 +57,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     val result = collectingListener.results
       .nodeResults("end")
       .map {
-        _.variableTyped("input")
+        _.get("input")
       }
 
     result shouldBe List(Some(record))

@@ -69,13 +69,12 @@ object ManagementResources {
         "variables" -> a.variables.asJson
       )
 
-    implicit val nodeResultEncoder: Encoder[NodeResult]               = deriveConfiguredEncoder
     implicit val componentInfoEncoder: Encoder[ComponentInfo]         = deriveConfiguredEncoder
     implicit val nodeComponentInfoEncoder: Encoder[NodeComponentInfo] = deriveConfiguredEncoder
 
     val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
-    // FIXME: It has to be done manually, some reason deriveConfiguredEncoder doesn't work properly with value: Any
+    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
     implicit val externalInvocationResultEncoder: Encoder[ExternalInvocationResult] =
       (value: ExternalInvocationResult) =>
         Json.obj(
@@ -84,7 +83,7 @@ object ManagementResources {
           "value"     -> value.value.asJson,
         )
 
-    // FIXME: It has to be done manually, some reason deriveConfiguredEncoder doesn't work properly with value: Any
+    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
     implicit val expressionInvocationResultEncoder: Encoder[ExpressionInvocationResult] =
       (value: ExpressionInvocationResult) =>
         Json.obj(
@@ -104,7 +103,7 @@ object ManagementResources {
     override def apply(a: TestResults): Json = a match {
       case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
         Json.obj(
-          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
+          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
           "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
           "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
             node -> list.sortBy(_.contextId)
