@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.ui.notifications
 
-import io.circe.generic.JsonCodec
+import derevo.circe.{decoder, encoder}
+import derevo.derive
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
+import sttp.tapir.Schema
+import sttp.tapir.derevo.schema
 
-@JsonCodec final case class Notification(
+@derive(encoder, decoder, schema)
+final case class Notification(
     id: String,
     scenarioName: Option[ProcessName],
     message: String,
@@ -17,6 +21,9 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 )
 
 object Notification {
+
+  implicit val processNameSchema: Schema[ProcessName] =
+    Schema.string
 
   def actionFailedNotification(
       id: String,
