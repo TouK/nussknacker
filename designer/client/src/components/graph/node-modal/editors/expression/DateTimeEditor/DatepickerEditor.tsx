@@ -72,7 +72,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 inputProps={{
                     className: cx([
                         "node-input",
-                        showValidation && isEmpty(fieldErrors) && "node-input-with-error",
+                        showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                         isMarked && "marked",
                         editorFocused && "focused",
                         readOnly && "read-only",

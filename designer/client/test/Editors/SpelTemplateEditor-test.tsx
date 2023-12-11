@@ -2,14 +2,12 @@ import * as React from "react";
 import "ace-builds/src-noconflict/ace";
 
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
 import "ace-builds/src-noconflict/ext-language_tools";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 import { SpelTemplateEditor } from "../../src/components/graph/node-modal/editors/expression/SpelTemplateEditor";
-import { mockFieldError, mockValueChange } from "./helpers";
-
-jest.mock("../../src/containers/theme");
+import { mockFieldErrors, mockValueChange } from "./helpers";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore();
 
@@ -25,24 +23,26 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { processToDisplay: {} },
+    graphReducer: { history: { present: [] }, processToDisplay: {} },
 });
 
 describe(SpelTemplateEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <Provider store={store}>
-                <SpelTemplateEditor
-                    readOnly={false}
-                    isMarked={false}
-                    onValueChange={mockValueChange}
-                    fieldErrors={mockFieldError}
-                    expressionObj={{ language: "spel", expression: "" }}
-                    showValidation={true}
-                    className={""}
-                    variableTypes={{}}
-                />
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <SpelTemplateEditor
+                        readOnly={false}
+                        isMarked={false}
+                        onValueChange={mockValueChange}
+                        fieldErrors={mockFieldErrors}
+                        expressionObj={{ language: "spel", expression: "" }}
+                        showValidation={true}
+                        className={""}
+                        variableTypes={{}}
+                    />
+                </Provider>
+            </NuThemeProvider>,
         );
 
         expect(screen.getByText("validation error")).toBeInTheDocument();

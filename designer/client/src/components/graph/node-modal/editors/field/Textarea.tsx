@@ -27,20 +27,18 @@ export function Textarea(props: Props) {
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
-                {
-                    <TextAreaWithFocus
-                        autoFocus={autoFocus}
-                        readOnly={readOnly}
-                        placeholder={placeholder}
-                        className={cx([
-                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
-                            inputClassName,
-                        ])}
-                        value={value || ""}
-                        onChange={onChange}
-                        onFocus={onFocus}
-                    />
-                }
+                <TextAreaWithFocus
+                    autoFocus={autoFocus}
+                    readOnly={readOnly}
+                    placeholder={placeholder}
+                    className={cx([
+                        !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                        inputClassName,
+                    ])}
+                    value={value || ""}
+                    onChange={onChange}
+                    onFocus={onFocus}
+                />
             </div>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>

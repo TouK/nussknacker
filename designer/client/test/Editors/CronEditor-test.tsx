@@ -2,24 +2,24 @@ import * as React from "react";
 
 import { CronEditor } from "../../src/components/graph/node-modal/editors/expression/Cron/CronEditor";
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
-import { mockFieldError, mockFormatter, mockValueChange } from "./helpers";
-
-jest.mock("../../src/containers/theme");
+import { mockFieldErrors, mockFormatter, mockValueChange } from "./helpers";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 
 describe(CronEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <CronEditor
-                readOnly={false}
-                className={""}
-                isMarked={false}
-                onValueChange={mockValueChange}
-                fieldErrors={mockFieldError}
-                expressionObj={{ language: "spel", expression: "" }}
-                formatter={mockFormatter}
-                showValidation={true}
-            />,
+            <NuThemeProvider>
+                <CronEditor
+                    readOnly={false}
+                    className={""}
+                    isMarked={false}
+                    onValueChange={mockValueChange}
+                    fieldErrors={mockFieldErrors}
+                    expressionObj={{ language: "spel", expression: "" }}
+                    formatter={mockFormatter}
+                    showValidation={true}
+                />
+            </NuThemeProvider>,
         );
 
         expect(screen.getByRole("textbox")).toHaveClass("node-input-with-error");

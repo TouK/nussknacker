@@ -2,24 +2,24 @@ import * as React from "react";
 import "ace-builds/src-noconflict/ace";
 
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
 import { JsonEditor } from "../../src/components/graph/node-modal/editors/expression/JsonEditor";
 import "ace-builds/src-noconflict/ext-language_tools";
-import { mockFieldError, mockValueChange } from "./helpers";
-
-jest.mock("../../src/containers/theme");
+import { mockFieldErrors, mockValueChange } from "./helpers";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 
 describe(JsonEditor.name, () => {
     it("should display validation error when the field is required", () => {
         render(
-            <JsonEditor
-                onValueChange={mockValueChange}
-                fieldErrors={mockFieldError}
-                expressionObj={{ language: "spel", expression: "" }}
-                showValidation={true}
-                className={""}
-                fieldName={""}
-            />,
+            <NuThemeProvider>
+                <JsonEditor
+                    onValueChange={mockValueChange}
+                    fieldErrors={mockFieldErrors}
+                    expressionObj={{ language: "spel", expression: "" }}
+                    showValidation={true}
+                    className={""}
+                    fieldName={""}
+                />
+            </NuThemeProvider>,
         );
 
         expect(screen.getByText("validation error")).toBeInTheDocument();

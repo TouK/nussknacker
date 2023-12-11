@@ -1,10 +1,9 @@
+import React from "react";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import { EditorType, ExtendedEditor } from "./Editor";
 import i18next from "i18next";
-import React from "react";
 import { Textarea } from "../field/Textarea";
 import { ExpressionLang } from "./types";
-import { NodeValidationError } from "src/types";
 import { FieldError } from "../Validators";
 
 type Props = {

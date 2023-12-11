@@ -1,13 +1,11 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
 import { RawEditor } from "../../src/components/graph/node-modal/editors/expression/RawEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
-import { mockFieldError, mockValueChange } from "./helpers";
-
-jest.mock("../../src/containers/theme");
+import { mockFieldErrors, mockValueChange } from "./helpers";
+import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 
 const mockStore = configureMockStore();
 
@@ -23,24 +21,26 @@ const store = mockStore({
             defaultAsyncInterpretation: true,
         },
     },
-    graphReducer: { processToDisplay: {} },
+    graphReducer: { history: { present: [] }, processToDisplay: {} },
 });
 
 describe(RawEditor.name, () => {
     it("should display validation error when the field is required", () => {
         const { container } = render(
-            <Provider store={store}>
-                <RawEditor
-                    readOnly={false}
-                    className={""}
-                    isMarked={false}
-                    onValueChange={mockValueChange}
-                    fieldErrors={mockFieldError}
-                    expressionObj={{ language: "spel", expression: "test" }}
-                    showValidation={true}
-                    variableTypes={{}}
-                />
-            </Provider>,
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <RawEditor
+                        readOnly={false}
+                        className={""}
+                        isMarked={false}
+                        onValueChange={mockValueChange}
+                        fieldErrors={mockFieldErrors}
+                        expressionObj={{ language: "spel", expression: "test" }}
+                        showValidation={true}
+                        variableTypes={{}}
+                    />
+                </Provider>
+            </NuThemeProvider>,
         );
 
         const inputErrorIndicator = container.getElementsByClassName("node-input-with-error");
