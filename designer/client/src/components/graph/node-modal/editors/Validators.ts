@@ -3,20 +3,12 @@ import i18next from "i18next";
 import { NodeValidationError } from "../../../../types";
 import { FormatterType } from "./expression/Formatter";
 
-/* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
-    AlreadyExists = "AlreadyExists",
     EmptyMandatoryParameter = "EmptyMandatoryParameter",
     UniqueParameter = "UniqueParameter",
-    BlankParameter = "BlankParameter",
-    WrongDateFormat = "WrongDateFormat",
-    InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
     InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
-    ErrorValidator = "ErrorValidator",
-    MismatchParameter = "MismatchParameter",
     LowerThanRequiredParameter = "LowerThanRequiredParameter",
     GreaterThanRequiredParameter = "GreaterThanRequiredParameter",
-    JsonRequiredParameter = "JsonRequiredParameter",
 }
 
 export type Validator = {
