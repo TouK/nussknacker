@@ -5,9 +5,11 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentStaticDefinition,
+  ToStaticComponentDefinitionTransformer
+}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 final case class ProcessingTypeData private (
     deploymentManager: DeploymentManager,
     modelData: ModelData,
-    staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
+    staticModelDefinition: ModelDefinition[ComponentStaticDefinition],
     metaDataInitializer: MetaDataInitializer,
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
@@ -89,17 +91,17 @@ object ProcessingTypeData {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     val scenarioProperties =
-      deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.processConfig
+      deploymentManagerProvider.scenarioPropertiesConfig(managerConfig) ++ modelData.modelConfig
         .getOrElse[Map[String, ScenarioPropertyConfig]]("scenarioPropertiesConfig", Map.empty)
 
     val metaDataInitializer = deploymentManagerProvider.metaDataInitializer(managerConfig)
-    val staticObjectsDefinition =
-      ToStaticObjectDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
+    val staticModelDefinition =
+      ToStaticComponentDefinitionTransformer.transformModel(modelData, metaDataInitializer.create(_, Map.empty))
 
     ProcessingTypeData(
       manager,
       modelData,
-      staticObjectsDefinition,
+      staticModelDefinition,
       metaDataInitializer,
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),

@@ -30,7 +30,7 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
     val registrar: FlinkProcessRegistrar = FlinkProcessRegistrar(compiler, prepareExecutionConfig)
     registrar.register(env, process, processVersion, deploymentData)
     val preparedName =
-      modelData.objectNaming.prepareName(process.id, modelData.processConfig, new NamingContext(FlinkUsageKey))
+      modelData.objectNaming.prepareName(process.id, modelData.modelConfig, new NamingContext(FlinkUsageKey))
     env.execute(preparedName)
   }
 

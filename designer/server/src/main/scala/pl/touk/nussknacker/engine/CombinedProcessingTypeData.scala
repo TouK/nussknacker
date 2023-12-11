@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine
 
-import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.component.ComponentIdProviderFactory
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
 import pl.touk.nussknacker.ui.process.{

@@ -3,26 +3,27 @@ package pl.touk.nussknacker.ui.suggester
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSuggester}
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExpressionSuggester(
-    expressionDefinition: ExpressionDefinition[ObjectWithMethodDef],
-    typeDefinitions: TypeDefinitionSet,
+    expressionDefinition: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    classDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader,
     scenarioPropertiesNames: Iterable[String]
 ) {
 
   private val spelExpressionSuggester =
-    new SpelExpressionSuggester(expressionDefinition, typeDefinitions, uiDictServices, classLoader)
+    new SpelExpressionSuggester(expressionDefinition, classDefinitions, uiDictServices, classLoader)
 
   private val validationContextGlobalVariablesOnly =
     GlobalVariablesPreparer(expressionDefinition).emptyLocalVariablesValidationContext(scenarioPropertiesNames)
@@ -52,8 +53,8 @@ object ExpressionSuggester {
   def apply(modelData: ModelData, scenarioPropertiesNames: Iterable[String]): ExpressionSuggester = {
     new ExpressionSuggester(
       modelData.modelDefinition.expressionConfig,
-      modelData.modelDefinitionWithTypes.typeDefinitions,
-      modelData.uiDictServices,
+      modelData.modelDefinitionWithClasses.classDefinitions,
+      modelData.designerDictServices,
       modelData.modelClassLoader.classLoader,
       scenarioPropertiesNames
     )

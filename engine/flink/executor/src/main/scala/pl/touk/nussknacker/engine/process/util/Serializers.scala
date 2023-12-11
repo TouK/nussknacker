@@ -5,8 +5,8 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.serialization.{SerializerWithSpecifiedClass, SerializersRegistrar}
-import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.util.{Failure, Try}
@@ -24,7 +24,7 @@ object Serializers extends LazyLogging {
     (CaseClassSerializer :: SpelHack :: SpelMapHack :: Nil).map(_.registerIn(config))
     ScalaServiceLoader
       .load[SerializersRegistrar](getClass.getClassLoader)
-      .foreach(_.register(modelData.processConfig, config))
+      .foreach(_.register(modelData.modelConfig, config))
     TimeSerializers.addDefaultSerializers(config)
   }
 
@@ -77,7 +77,7 @@ object Serializers extends LazyLogging {
       val constructors           = obj.getConstructors
 
       if (constructorParamsCount == 0 && constructors.isEmpty) {
-        Try(EspTypeUtils.companionObject(obj)).recoverWith { case e =>
+        Try(ClassDefinitionExtractor.companionObject(obj)).recoverWith { case e =>
           logger.error(s"Failed to load companion for $obj"); Failure(e)
         }.get
       } else {

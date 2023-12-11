@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromScenarioNode
+import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -405,7 +405,7 @@ object FlinkProcessRegistrar {
   }
 
   def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
-    val config = compiler.processConfig
+    val config = compiler.modelConfig
 
     val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
     val rocksDBStateBackendConfig =

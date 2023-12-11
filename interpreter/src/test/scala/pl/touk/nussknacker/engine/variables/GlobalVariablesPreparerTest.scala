@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.WithCategories
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.definition.GlobalVariableDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 
 class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 

@@ -19,7 +19,8 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      processDefinition: UIProcessDefinition,
+      // TODO: rename
+      processDefinition: UIModelDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
@@ -29,16 +30,16 @@ package object definition {
 
   // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
   // this would also make config merging logic in `UIProcessObjectsFactory.prepareUIProcessObjects` simpler
-  @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
-      services: Map[String, UIObjectDefinition],
-      sourceFactories: Map[String, UIObjectDefinition],
-      sinkFactories: Map[String, UIObjectDefinition],
-      customStreamTransformers: Map[String, UIObjectDefinition],
-      typesInformation: Set[UIClazzDefinition],
-      fragmentInputs: Map[String, UIFragmentObjectDefinition]
+  @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
+      services: Map[String, UIComponentDefinition],
+      sourceFactories: Map[String, UIComponentDefinition],
+      sinkFactories: Map[String, UIComponentDefinition],
+      customStreamTransformers: Map[String, UIComponentDefinition],
+      typesInformation: Set[UIClassDefinition],
+      fragmentInputs: Map[String, UIFragmentComponentDefinition]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIClazzDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
       clazzName: TypingResult
   )
 
@@ -60,7 +61,7 @@ package object definition {
       hintText: Option[String]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
@@ -70,15 +71,12 @@ package object definition {
 
   }
 
-  @JsonCodec(encodeOnly = true) final case class UIFragmentObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
       categories: List[String]
-  ) {
-    def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories)
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
@@ -93,20 +91,19 @@ package object definition {
 
   import pl.touk.nussknacker.engine.graph.node.NodeData._
 
-  object ComponentTemplate {
+  object ComponentNodeTemplate {
 
     def create(
         componentInfo: ComponentInfo,
         node: NodeData,
         categories: List[String],
         branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
-    ): ComponentTemplate =
-      ComponentTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
+    ): ComponentNodeTemplate =
+      ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
 
   }
 
-  // TODO: Rename to ComponentNodeTemplate
-  @JsonCodec(encodeOnly = true) final case class ComponentTemplate(
+  @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
       `type`: ComponentType,
       // TODO: Rename to name
       label: String,
@@ -123,7 +120,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class ComponentGroup(
       name: ComponentGroupName,
-      components: List[ComponentTemplate]
+      components: List[ComponentNodeTemplate]
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(

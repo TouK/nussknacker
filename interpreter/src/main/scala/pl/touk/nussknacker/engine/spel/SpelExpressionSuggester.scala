@@ -6,12 +6,11 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
 import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -23,13 +22,13 @@ import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
     expressionDefinition: ExpressionDefinition[_],
-    typeDefinitions: TypeDefinitionSet,
+    clssDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader
 ) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
   private val typer =
-    Typer.default(classLoader, expressionDefinition, new LabelsDictTyper(uiDictServices.dictRegistry), typeDefinitions)
+    Typer.default(classLoader, expressionDefinition, new LabelsDictTyper(uiDictServices.dictRegistry), clssDefinitions)
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
@@ -68,11 +67,11 @@ class SpelExpressionSuggester(
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
-              typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+              clssDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectWithValue, staticContext) =>
             Future.successful(
-              typeDefinitions
+              clssDefinitions
                 .get(to.underlying.klass)
                 .map(c => filterClassMethods(c, p.getName, staticContext))
                 .getOrElse(Nil)
@@ -81,7 +80,7 @@ class SpelExpressionSuggester(
             val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map {
               case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
             }
-            val suggestionsFromClass = typeDefinitions
+            val suggestionsFromClass = clssDefinitions
               .get(to.objType.klass)
               .map(c =>
                 filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)
@@ -93,7 +92,7 @@ class SpelExpressionSuggester(
               tu.possibleTypes
                 .map(_.objType.klass)
                 .flatMap(klass =>
-                  typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
+                  clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
                 )
             )
           case TypingResultWithContext(td: TypedDict, _) =>
@@ -106,7 +105,7 @@ class SpelExpressionSuggester(
     }
 
     def filterClassMethods(
-        classDefinition: ClazzDefinition,
+        classDefinition: ClassDefinition,
         name: String,
         staticContext: Boolean,
         fromClass: Boolean = false
@@ -196,7 +195,7 @@ class SpelExpressionSuggester(
                 } else {
                   q.toStringAST
                 }
-                typeDefinitions.typeDefinitions.keys
+                clssDefinitions.classDefinitionsMap.keys
                   .filter { klass =>
                     klass.getName.startsWith(name)
                   }

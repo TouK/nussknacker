@@ -1,14 +1,24 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import pl.touk.nussknacker.engine.MetaDataInitializer
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
-import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition._
+import pl.touk.nussknacker.engine.definition.component.{ComponentIdProvider, ComponentStaticDefinition}
+import pl.touk.nussknacker.engine.definition.model.{
+  CustomTransformerAdditionalData,
+  ModelDefinition,
+  ModelDefinitionWithComponentIds
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -16,27 +26,22 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentInfo}
-import pl.touk.nussknacker.engine.api.displayedgraph.displayablenode.Edge
-import pl.touk.nussknacker.engine.api.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
-import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 object ProcessTestData {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   val existingSourceFactory      = "barSource"
   val otherExistingSourceFactory = "fooSource"
@@ -69,8 +74,8 @@ object ProcessTestData {
     def nodeToComponentId(processingType: String, node: NodeData): Option[ComponentId] = ???
   }
 
-  private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] =
-    ProcessDefinitionBuilder.empty
+  private val modelDefinition: ModelDefinition[ComponentStaticDefinition] =
+    ModelDefinitionBuilder.empty
       .withSourceFactory(existingSourceFactory)
       .withSourceFactory(otherExistingSourceFactory)
       .withSourceFactory(csvSourceFactory)
@@ -115,12 +120,11 @@ object ProcessTestData {
         CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true)
       )
 
-  val processDefinitionWithIds
-      : ProcessDefinitionExtractor.ProcessDefinitionWithComponentIds[DefinitionExtractor.ObjectDefinition] =
-    processDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
+  val modelDefinitionWithIds: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
+    modelDefinition.withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
 
   def processValidator: UIProcessValidator = new UIProcessValidator(
-    ProcessValidator.default(new StubModelDataWithProcessDefinition(processDefinition)),
+    ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
     Map.empty,
     List.empty,
     new FragmentResolver(new StubFragmentRepository(Set.empty))

@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.variables
 
-import pl.touk.nussknacker.engine.api.{Hidden, MetaData}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithType
+import pl.touk.nussknacker.engine.api.{Hidden, MetaData}
 
 final case class MetaVariables(processName: String, properties: TypedMap)
 

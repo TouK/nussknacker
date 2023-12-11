@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -67,13 +66,13 @@ class InterpreterSetup[T: ClassTag] {
       )
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(
+    val definitions = ModelDefinitionExtractor.extractModelDefinition(
       configCreator,
       getClass.getClassLoader,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)),
       category = None
     )
-    val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
+    val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
     ProcessCompilerData.prepare(
       process,

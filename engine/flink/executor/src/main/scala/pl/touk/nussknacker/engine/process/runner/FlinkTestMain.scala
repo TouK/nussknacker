@@ -65,7 +65,7 @@ class FlinkTestMain(
     FlinkProcessRegistrar(
       new TestFlinkProcessCompiler(
         modelData.configCreator,
-        modelData.processConfig,
+        modelData.modelConfig,
         collectingListener,
         process,
         modelData.objectNaming,

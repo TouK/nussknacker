@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
@@ -1269,14 +1269,14 @@ private object UIProcessValidatorSpec {
       fragment: CanonicalProcess,
       execConfig: Config = ConfigFactory.empty()
   ): UIProcessValidator = {
-    import ProcessDefinitionBuilder._
+    import ModelDefinitionBuilder._
 
-    val processDefinition = ProcessDefinitionBuilder.empty
+    val modelDefinition = ModelDefinitionBuilder.empty
       .withSourceFactory(sourceTypeName)
       .withSinkFactory(sinkTypeName)
 
     new UIProcessValidator(
-      ProcessValidator.default(new StubModelDataWithProcessDefinition(processDefinition, execConfig)),
+      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
       FlinkStreamingPropertiesConfig.properties,
       List(SampleCustomProcessValidator),
       new FragmentResolver(

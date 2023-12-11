@@ -20,7 +20,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
   )
 
-  private lazy val modelDataConfig = modelData.processConfig
+  private lazy val modelDataConfig = modelData.modelConfig
 
   private def classLoader = {
     getClass.getClassLoader

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.component
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.{ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 object ComponentIdProviderFactory extends LazyLogging {

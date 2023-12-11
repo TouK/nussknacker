@@ -5,7 +5,7 @@ import io.circe.Json
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.EspTables
+import pl.touk.nussknacker.ui.db.NuTables
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
@@ -31,7 +31,7 @@ trait SlickMigration extends BaseJavaMigration {
 
 }
 
-trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLogging {
+trait ProcessJsonMigration extends SlickMigration with NuTables with LazyLogging {
 
   import profile.api._
   import slick.dbio.DBIOAction

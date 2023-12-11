@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.spel
 
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
+import pl.touk.nussknacker.engine.definition.clazz.MethodDefinition
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, GenericFunctionError}
 
-case class SpelExpressionParseErrorConverter(methodInfo: MethodInfo, invocationArguments: List[TypingResult]) {
+case class SpelExpressionParseErrorConverter(methodInfo: MethodDefinition, invocationArguments: List[TypingResult]) {
 
   def convert(error: GenericFunctionTypingError): ExpressionParseError = {
     val givenSignature = Signature(invocationArguments, None)

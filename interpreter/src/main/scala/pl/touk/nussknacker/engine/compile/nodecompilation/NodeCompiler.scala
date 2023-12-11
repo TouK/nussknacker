@@ -24,23 +24,20 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ExpressionCompiler,
+  FactoryComponentInvoker,
   NodeValidationExceptionHandler,
-  ProcessObjectFactory,
   StubbedFragmentInputTestSource
 }
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
-  FinalStateValue,
-  GenericNodeTransformationMethodDef,
-  ObjectWithMethodDef,
-  StandardObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.component.dynamic.{
+  DynamicComponentDefinitionWithImplementation,
+  FinalStateValue
 }
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{
-  DefaultServiceInvoker,
-  FragmentComponentDefinitionExtractor,
-  ProcessDefinitionExtractor
-}
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
@@ -50,11 +47,11 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object NodeCompiler {
 
@@ -75,7 +72,7 @@ object NodeCompiler {
 }
 
 class NodeCompiler(
-    definitions: ProcessDefinition[ObjectWithMethodDef],
+    definitions: ModelDefinition[ComponentDefinitionWithImplementation],
     fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor,
     objectParametersExpressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
@@ -98,13 +95,13 @@ class NodeCompiler(
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  private val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[ObjectWithMethodDef] =
+  private val expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation] =
     definitions.expressionConfig
 
   // FIXME: should it be here?
   private val expressionEvaluator =
     ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(expressionConfig))
-  private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
+  private val factory: FactoryComponentInvoker = new FactoryComponentInvoker(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
   private val fragmentParameterValidator = new FragmentParameterValidator(objectParametersExpressionCompiler)
@@ -339,11 +336,11 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.services.get(n.id) match {
-      case Some(objectWithMethodDef) if objectWithMethodDef.obj.isInstanceOf[EagerService] =>
-        compileEagerService(n, objectWithMethodDef, validationContext, outputVar)
-      case Some(static: StandardObjectWithMethodDef) =>
+      case Some(componentDefWithImpl) if componentDefWithImpl.implementation.isInstanceOf[EagerService] =>
+        compileEagerService(n, componentDefWithImpl, validationContext, outputVar)
+      case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
-      case Some(_: GenericNodeTransformationMethodDef) =>
+      case Some(_: DynamicComponentDefinitionWithImplementation) =>
         val error = invalid(
           CustomNodeError(
             "Not supported service implementation: GenericNodeTransformation can be mixed only with EagerService",
@@ -351,6 +348,10 @@ class NodeCompiler(
           )
         ).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
+      case Some(notSupportedComponentDefWithImpl) =>
+        throw new IllegalStateException(
+          s"Not supported ComponentDefinitionWithImplementation: ${notSupportedComponentDefWithImpl.getClass}"
+        )
       case None =>
         val error = invalid(MissingService(n.id)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(validationContext), error)
@@ -359,14 +360,14 @@ class NodeCompiler(
 
   private def compileEagerService(
       serviceRef: ServiceRef,
-      objectWithMethodDef: ObjectWithMethodDef,
+      componentDefWithImpl: ComponentDefinitionWithImplementation,
       validationContext: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId, metaData: MetaData): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
     val ctx: Option[_] => ValidatedNel[ProcessCompilationError, ValidationContext] = invoker =>
       outputVar match {
         case Some(out) =>
-          objectWithMethodDef.returnType
+          componentDefWithImpl.returnType
             .map(Valid(_))
             .getOrElse(Invalid(NonEmptyList.of(RedundantParameters(Set("OutputVariable")))))
             .andThen(validationContext.withVariable(out, _))
@@ -402,7 +403,7 @@ class NodeCompiler(
       Nil,
       Left(validationContext),
       outputVar.map(_.outputName),
-      objectWithMethodDef,
+      componentDefWithImpl,
       ctx
     )
     compilationResult.map { case (invoker, nodeParams) =>
@@ -425,7 +426,7 @@ class NodeCompiler(
       node: CustomNodeData,
       ending: Boolean,
       branchCtx: GenericValidationContext,
-      nodeDefinition: ObjectWithMethodDef
+      nodeDefinition: ComponentDefinitionWithImplementation
   )(
       implicit nodeId: NodeId,
       metaData: MetaData
@@ -495,11 +496,11 @@ class NodeCompiler(
       branchParameters: List[evaluatedparam.BranchParameters],
       ctx: GenericValidationContext,
       outputVar: Option[String],
-      nodeDefinition: ObjectWithMethodDef,
+      nodeDefinition: ComponentDefinitionWithImplementation,
       defaultCtxForCreatedObject: Option[T] => ValidatedNel[ProcessCompilationError, ValidationContext]
   )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[(T, List[evaluatedparam.Parameter])] = {
     nodeDefinition match {
-      case generic: GenericNodeTransformationMethodDef =>
+      case generic: DynamicComponentDefinitionWithImplementation =>
         val afterValidation = validateGenericTransformer(ctx, parameters, branchParameters, outputVar, generic).map {
           case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
             val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
@@ -529,7 +530,7 @@ class NodeCompiler(
           afterValidation.map(_._3),
           afterValidation.andThen(_._4)
         )
-      case static: StandardObjectWithMethodDef =>
+      case static: MethodBasedComponentDefinitionWithImplementation =>
         val (typingInfo, validProcessObject) = createProcessObject[T](
           nodeDefinition,
           parameters,
@@ -548,7 +549,7 @@ class NodeCompiler(
     }
   }
 
-  private def returnType(nodeDefinition: ObjectWithMethodDef, obj: Any): Option[TypingResult] =
+  private def returnType(nodeDefinition: ComponentDefinitionWithImplementation, obj: Any): Option[TypingResult] =
     obj match {
       case returningType: ReturningType =>
         Some(returningType.returnType)
@@ -557,7 +558,7 @@ class NodeCompiler(
     }
 
   private def createProcessObject[T](
-      nodeDefinition: ObjectWithMethodDef,
+      nodeDefinition: ComponentDefinitionWithImplementation,
       parameters: List[evaluatedparam.Parameter],
       branchParameters: List[BranchParameters],
       outputVariableNameOpt: Option[String],
@@ -582,7 +583,7 @@ class NodeCompiler(
       )
       .andThen { compiledParameters =>
         factory
-          .createObject[T](
+          .invokeCreateMethod[T](
             nodeDefinition,
             compiledParameters,
             outputVariableNameOpt,
@@ -636,9 +637,9 @@ class NodeCompiler(
       parameters: List[evaluatedparam.Parameter],
       branchParameters: List[BranchParameters],
       outputVar: Option[String],
-      genericDefinition: GenericNodeTransformationMethodDef
+      genericDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (genericDefinition.obj, eitherSingleOrJoin) match {
+    (genericDefinition.implementation, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
         nodeValidator.validateNode(single, parameters, branchParameters, outputVar, genericDefinition.componentConfig)(
           singleCtx
@@ -666,7 +667,7 @@ class NodeCompiler(
     def compile(
         n: ServiceRef,
         outputVar: Option[OutputVar],
-        objWithMethod: StandardObjectWithMethodDef,
+        objWithMethod: MethodBasedComponentDefinitionWithImplementation,
         ctx: ValidationContext
     )(implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
       val computedParameters =
@@ -683,7 +684,7 @@ class NodeCompiler(
       val serviceRef = computedParameters.map { params =>
         compiledgraph.service.ServiceRef(
           n.id,
-          DefaultServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
+          MethodBasedServiceInvoker(metaData, nodeId, outputVar, objWithMethod),
           params,
           resultCollector
         )

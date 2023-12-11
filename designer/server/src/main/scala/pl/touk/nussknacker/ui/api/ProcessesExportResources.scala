@@ -33,7 +33,7 @@ class ProcessesExportResources(
     with FailFastCirceSupport
     with RouteWithUser
     with ProcessDirectives
-    with EspPathMatchers {
+    with NuPathMatchers {
 
   private implicit final val string: FromEntityUnmarshaller[String] =
     Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

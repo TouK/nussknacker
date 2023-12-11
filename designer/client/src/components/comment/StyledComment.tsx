@@ -60,13 +60,18 @@ export const CommentButton = styled(NkButton)(
 `,
 );
 
-export const PanelComment = styled("div")`
+export const PanelComment = styled("div")(
+    ({ theme }) => `
     margin-top: 1px;
     font-size: 12px;
     word-break: break-word;
+    a {
+        color: ${theme.custom.colors.pictonBlue} !important;
+    }
     p {
         width: 90%;
         margin-left: 0;
         margin-right: 0;
     }
-`;
+  `,
+);

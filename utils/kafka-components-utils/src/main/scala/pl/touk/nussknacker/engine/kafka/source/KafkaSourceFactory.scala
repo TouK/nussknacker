@@ -56,7 +56,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   // Example:
   // - validation context indicates that #input is TypedClass(classOf(SampleProduct)), that is used by node compilation and validation
   // - definition extractor provides detailed definition of "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"
-  // See also ProcessDefinitionExtractor.
   override def typesToExtract: List[TypedClass] =
     List(keyTypingResult, valueTypingResult, Typed.typedClass[TimestampType])
 

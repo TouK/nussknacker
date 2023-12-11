@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.engine.benchmarks.suggester
 
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionExtractor, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import java.time.{Duration, LocalDateTime}
@@ -30,18 +29,18 @@ class ExpressionSuggesterBenchmarkSetup() {
 
   private val dictServices = UiDictServices(dictRegistry, new SimpleDictQueryService(dictRegistry, 10))
 
-  private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(
+  private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      EspTypeUtils.clazzDefinition(classOf[Foo]),
-      EspTypeUtils.clazzDefinition(classOf[Bar]),
-      EspTypeUtils.clazzDefinition(classOf[String]),
-      EspTypeUtils.clazzDefinition(classOf[LocalDateTime]),
-      EspTypeUtils.clazzDefinition(classOf[Duration]),
+      ClassDefinitionExtractor.extract(classOf[Foo]),
+      ClassDefinitionExtractor.extract(classOf[Bar]),
+      ClassDefinitionExtractor.extract(classOf[String]),
+      ClassDefinitionExtractor.extract(classOf[LocalDateTime]),
+      ClassDefinitionExtractor.extract(classOf[Duration]),
     )
   )
 
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.toExpressionDefinition(ProcessDefinitionBuilder.empty.expressionConfig),
+    ModelDefinitionBuilder.toExpressionDefinition(ModelDefinitionBuilder.empty.expressionConfig),
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,
