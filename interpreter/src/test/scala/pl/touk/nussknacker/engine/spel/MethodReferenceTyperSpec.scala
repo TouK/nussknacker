@@ -5,14 +5,13 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
 import pl.touk.nussknacker.engine.api.generics._
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionDiscovery, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
-import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
 class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
 
@@ -46,10 +45,10 @@ class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
   }
 
   private val methodReferenceTyper = {
-    val typeDefinitionSet = TypeDefinitionSet(
-      TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Helper]))(ClassExtractionSettings.Default)
+    val classDefinitionSet = ClassDefinitionSet(
+      ClassDefinitionDiscovery.discoverClassesFromTypes(List(Typed[Helper]))(ClassExtractionSettings.Default)
     )
-    new MethodReferenceTyper(typeDefinitionSet, methodExecutionForUnknownAllowed = false)
+    new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed = false)
   }
 
   private def extractMethod(name: String, args: List[TypingResult]): Either[ExpressionParseError, TypingResult] = {

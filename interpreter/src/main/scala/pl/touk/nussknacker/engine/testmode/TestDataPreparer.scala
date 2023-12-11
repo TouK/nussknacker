@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.testmode
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.implicits._
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -14,17 +13,19 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 class TestDataPreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
+    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
     dictRegistry: EngineDictRegistry,
-    typeDefinitionSet: TypeDefinitionSet,
+    classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData
 ) {
 
@@ -33,7 +34,7 @@ class TestDataPreparer(
   private lazy val validationContext       = globalVariablesPreparer.emptyLocalVariablesValidationContext(metaData)
   private lazy val evaluator: ExpressionEvaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private lazy val expressionCompiler: ExpressionCompiler =
-    ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, typeDefinitionSet)
+    ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet)
 
   def prepareRecordForTest[T](source: Source, record: ScenarioTestRecord): T = {
     implicit val implicitNodeId: NodeId = record.sourceId
@@ -82,7 +83,7 @@ object TestDataPreparer {
       modelData.modelClassLoader.classLoader,
       modelData.modelDefinition.expressionConfig,
       modelData.engineDictRegistry,
-      modelData.modelDefinitionWithTypes.typeDefinitions,
+      modelData.modelDefinitionWithClasses.classDefinitions,
       process.metaData
     )
 

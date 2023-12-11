@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{
   FragmentInput,
   FragmentInputDefinition,

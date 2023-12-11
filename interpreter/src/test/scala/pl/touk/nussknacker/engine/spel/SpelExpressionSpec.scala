@@ -9,7 +9,6 @@ import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
@@ -21,20 +20,10 @@ import pl.touk.nussknacker.engine.api.generics.{
   TypingFunction
 }
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  KnownTypingResult,
-  SingleTypingResult,
-  Typed,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedUnion,
-  TypingResult
-}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, GeneratedAvroClass, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   InvalidMethodReference,
@@ -45,17 +34,10 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
   UnknownClassError,
   UnknownMethodError
 }
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{
-  DivisionByZeroError,
-  ModuloZeroError,
-  OperatorMismatchTypeError,
-  OperatorNonNumericError,
-  OperatorNotComparableError
-}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.math.{BigDecimal, BigInteger}
@@ -171,7 +153,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed
   ) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig.copy(
+    val expressionConfig = ModelDefinitionBuilder.empty.expressionConfig.copy(
       globalImports = imports,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking = staticMethodInvocationsChecking,
@@ -185,7 +167,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       new SimpleDictRegistry(dictionaries),
       enableSpelForceCompile = true,
       flavour,
-      typeDefinitionSetWithCustomClasses(globalVariableTypes)
+      classDefinitionSetWithCustomClasses(globalVariableTypes)
     )
   }
 
@@ -201,7 +183,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     )
   }
 
-  private def typeDefinitionSetWithCustomClasses(globalVariableTypes: Seq[TypingResult]): TypeDefinitionSet = {
+  private def classDefinitionSetWithCustomClasses(globalVariableTypes: Seq[TypingResult]): ClassDefinitionSet = {
     val typesFromGlobalVariables = globalVariableTypes
       .flatMap(_.asInstanceOf[KnownTypingResult] match {
         case single: SingleTypingResult => Set(single)
@@ -221,7 +203,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       classOf[SampleValue],
       Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject")
     )
-    TypeDefinitionSet.forClasses(typesFromGlobalVariables ++ customClasses: _*)
+    ClassDefinitionSet.forClasses(typesFromGlobalVariables ++ customClasses: _*)
   }
 
   test("parsing first selection on array") {

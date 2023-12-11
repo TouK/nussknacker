@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -319,17 +319,17 @@ object ProcessValidator {
 
   def default(modelData: ModelData): ProcessValidator = {
     default(
-      modelData.modelDefinitionWithTypes,
-      modelData.processConfig,
-      modelData.uiDictServices.dictRegistry,
+      modelData.modelDefinitionWithClasses,
+      modelData.modelConfig,
+      modelData.designerDictServices.dictRegistry,
       modelData.customProcessValidator,
       modelData.modelClassLoader.classLoader
     )
   }
 
   def default(
-      definitionWithTypes: ModelDefinitionWithTypes,
-      processConfig: Config,
+      definitionWithTypes: ModelDefinitionWithClasses,
+      modelConfig: Config,
       dictRegistry: DictRegistry,
       customProcessValidator: CustomProcessValidator,
       classLoader: ClassLoader = getClass.getClassLoader
@@ -339,10 +339,10 @@ object ProcessValidator {
       classLoader,
       dictRegistry,
       modelDefinition.expressionConfig,
-      definitionWithTypes.typeDefinitions
+      definitionWithTypes.classDefinitions
     )
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
-      processConfig,
+      modelConfig,
       classLoader,
       expressionCompiler
     )

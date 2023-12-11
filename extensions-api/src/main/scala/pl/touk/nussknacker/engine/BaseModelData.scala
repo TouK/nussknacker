@@ -14,7 +14,10 @@ trait BaseModelData {
 
   def inputConfigDuringExecution: InputConfigDuringExecution
 
-  def processConfig: Config
+  // Deprecated, use modelConfig instead
+  final def processConfig: Config = modelConfig
+
+  def modelConfig: Config
 
   def modelClassLoaderUrls: List[URL]
 

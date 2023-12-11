@@ -22,8 +22,18 @@ export interface InvocationResult {
     value: unknown;
 }
 
-export interface Error {
+interface NodeComponentInfo {
     nodeId: NodeId;
+    componentInfo: ComponentInfo;
+}
+
+interface ComponentInfo {
+    type: string;
+    name: string;
+}
+
+export interface Error {
+    nodeComponentInfo: NodeComponentInfo;
     context: Context;
     throwable;
 }
@@ -117,7 +127,7 @@ class TestResultUtils {
     }
 
     private _errors(results: TestResults, nodeId: NodeId): Error[] {
-        return results?.exceptions?.filter((ex) => ex.nodeId === nodeId);
+        return results?.exceptions?.filter((ex) => ex.nodeComponentInfo.nodeId === nodeId);
     }
 
     private _contextDisplay = (context: Context): string => {

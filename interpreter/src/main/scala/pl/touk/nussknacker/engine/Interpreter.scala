@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
-import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}

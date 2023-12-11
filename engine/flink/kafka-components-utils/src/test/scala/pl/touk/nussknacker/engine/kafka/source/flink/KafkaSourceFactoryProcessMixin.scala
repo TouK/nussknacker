@@ -8,9 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
@@ -40,9 +38,9 @@ trait KafkaSourceFactoryProcessMixin
 
   protected lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
 
-  protected lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes =
-    ModelDefinitionWithTypes(
-      ProcessDefinitionExtractor.extractObjectWithMethods(
+  protected lazy val modelDefinitionWithTypes: ModelDefinitionWithClasses =
+    ModelDefinitionWithClasses(
+      ModelDefinitionExtractor.extractModelDefinition(
         creator,
         getClass.getClassLoader,
         process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)),

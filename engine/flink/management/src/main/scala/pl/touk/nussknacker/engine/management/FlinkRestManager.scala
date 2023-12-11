@@ -34,7 +34,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
     val preparedName =
-      modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
+      modelData.objectNaming.prepareName(name.value, modelData.modelConfig, new NamingContext(FlinkUsageKey))
     client
       .findJobsByName(preparedName)
       .flatMap(jobs =>
