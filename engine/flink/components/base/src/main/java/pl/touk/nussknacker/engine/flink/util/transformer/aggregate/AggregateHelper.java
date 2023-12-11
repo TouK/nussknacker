@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import pl.touk.nussknacker.engine.api.Hidden;
@@ -19,7 +20,7 @@ import scala.collection.JavaConverters;
  *
  * You should define `#AGG` global variable, because it is used in editors.
  */
-public class AggregateHelper {
+public class AggregateHelper implements Serializable {
 
     public static final SimpleParameterEditor SIMPLE_EDITOR = new FixedValuesParameterEditor(JavaConverters.collectionAsScalaIterableConverter(Arrays.asList(
             new FixedExpressionValue("#AGG.first", "First"),
