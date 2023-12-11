@@ -48,6 +48,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.services.{
   AppApiHttpService,
   ComponentApiHttpService,
+  NotificationApiHttpService,
   NuDesignerExposedApiHttpService,
   UserApiHttpService
 }
@@ -214,8 +215,8 @@ class AkkaHttpBasedRouteProvider(
         processService,
         additionalUIConfigProvider
       )
-
-      val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
+      val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
+      val processAuthorizer   = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -236,8 +237,12 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         getProcessCategoryService = getProcessCategoryService
       )
-
-      val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
+      val notificationApiHttpService = new NotificationApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        getProcessCategoryService = getProcessCategoryService,
+        notificationService = notificationService
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -284,7 +289,7 @@ class AkkaHttpBasedRouteProvider(
             getProcessCategoryService,
             additionalUIConfigProvider
           ),
-          new NotificationResources(notificationService),
+//          new NotificationResources(notificationService),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(
             new ProcessAttachmentService(
@@ -339,7 +344,12 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val nuDesignerApi =
-        new NuDesignerExposedApiHttpService(appApiHttpService, componentsApiHttpService, userApiHttpService)
+        new NuDesignerExposedApiHttpService(
+          appApiHttpService,
+          componentsApiHttpService,
+          userApiHttpService,
+          notificationApiHttpService
+        )
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
