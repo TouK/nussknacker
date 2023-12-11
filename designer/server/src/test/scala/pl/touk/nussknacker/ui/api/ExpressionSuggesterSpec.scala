@@ -2,21 +2,25 @@ package pl.touk.nussknacker.ui.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Documentation, MetaData, StreamMetaData, VariableConstants}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.api.{Documentation, VariableConstants}
+import pl.touk.nussknacker.engine.definition.clazz.{
+  ClassDefinition,
+  ClassDefinitionExtractor,
+  ClassDefinitionSet,
+  StaticMethodDefinition
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 
@@ -72,23 +76,25 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
 
   private val dictServices = UiDictServices(dictRegistry, new SimpleDictQueryService(dictRegistry, 10))
 
-  private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(
+  private val clazzDefinitions: ClassDefinitionSet = ClassDefinitionSet(
     Set(
-      EspTypeUtils.clazzDefinition(classOf[A]),
-      EspTypeUtils.clazzDefinition(classOf[B]),
-      EspTypeUtils.clazzDefinition(classOf[C]),
-      EspTypeUtils.clazzDefinition(classOf[AA]),
-      EspTypeUtils.clazzDefinition(classOf[WithList]),
-      ClazzDefinition(
+      ClassDefinitionExtractor.extract(classOf[A]),
+      ClassDefinitionExtractor.extract(classOf[B]),
+      ClassDefinitionExtractor.extract(classOf[C]),
+      ClassDefinitionExtractor.extract(classOf[AA]),
+      ClassDefinitionExtractor.extract(classOf[WithList]),
+      ClassDefinition(
         Typed.typedClass[String],
-        Map("toUpperCase" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toUpperCase", None))),
+        Map(
+          "toUpperCase" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toUpperCase", None))
+        ),
         Map.empty
       ),
-      ClazzDefinition(
+      ClassDefinition(
         Typed.typedClass[LocalDateTime],
         Map(
           "isBefore" -> List(
-            StaticMethodInfo(
+            StaticMethodDefinition(
               MethodTypeInfo(List(GenericsParameter("arg0", Typed[LocalDateTime])), None, Typed[Boolean]),
               "isBefore",
               None
@@ -97,23 +103,23 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
         ),
         Map.empty
       ),
-      EspTypeUtils.clazzDefinition(classOf[Util]),
-      EspTypeUtils.clazzDefinition(classOf[Duration]),
-      ClazzDefinition(
+      ClassDefinitionExtractor.extract(classOf[Util]),
+      ClassDefinitionExtractor.extract(classOf[Duration]),
+      ClassDefinition(
         Typed.typedClass[java.util.Map[_, _]],
-        Map("empty" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
+        Map("empty" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
         Map.empty
       ),
     )
   )
 
-  private val expressionConfig: ProcessDefinitionExtractor.ExpressionDefinition[DefinitionExtractor.ObjectDefinition] =
-    ProcessDefinitionBuilder.empty
+  private val expressionConfig: ExpressionDefinition[ComponentStaticDefinition] =
+    ModelDefinitionBuilder.empty
       .withGlobalVariable("util", Typed[Util])
       .expressionConfig
 
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.toExpressionDefinition(expressionConfig),
+    ModelDefinitionBuilder.toExpressionDefinition(expressionConfig),
     clazzDefinitions,
     dictServices,
     getClass.getClassLoader,

@@ -1,15 +1,15 @@
 package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
@@ -30,14 +30,14 @@ trait BaseSpelSpec {
 
   private val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
-    ProcessDefinitionBuilder.empty.expressionConfig,
+    ModelDefinitionBuilder.empty.expressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
     SpelExpressionParser.Standard,
-    typeDefinitions,
+    classDefinitions,
   )
 
-  private lazy val typeDefinitions = TypeDefinitionSet.forClasses(
+  private lazy val classDefinitions = ClassDefinitionSet.forClasses(
     collection.getClass,
     classOf[DateUtils],
     classOf[DateFormatUtils],

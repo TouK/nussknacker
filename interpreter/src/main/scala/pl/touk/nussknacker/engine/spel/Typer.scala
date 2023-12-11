@@ -11,10 +11,8 @@ import org.springframework.expression.common.{CompositeStringExpression, Literal
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
 import org.springframework.expression.{EvaluationContext, Expression}
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{
@@ -23,8 +21,9 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
   SupertypeClassResolutionStrategy
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, SpelDictTyper}
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
@@ -66,7 +65,7 @@ private[spel] class Typer(
     dictTyper: SpelDictTyper,
     strictMethodsChecking: Boolean,
     staticMethodInvocationsChecking: Boolean,
-    typeDefinitionSet: TypeDefinitionSet,
+    classDefinitionSet: ClassDefinitionSet,
     evaluationContextPreparer: EvaluationContextPreparer,
     methodExecutionForUnknownAllowed: Boolean,
     dynamicPropertyAccessAllowed: Boolean
@@ -77,9 +76,9 @@ private[spel] class Typer(
   private lazy val evaluationContext: EvaluationContext =
     evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
 
-  private val methodReferenceTyper = new MethodReferenceTyper(typeDefinitionSet, methodExecutionForUnknownAllowed)
+  private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed)
 
-  private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, typeDefinitionSet)
+  private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, classDefinitionSet)
 
   type TypingR[T]       = Writer[List[ExpressionParseError], T]
   type NodeTypingResult = TypingR[CollectedTypingResult]
@@ -233,7 +232,7 @@ private[spel] class Typer(
           val className  = e.getChild(0).toStringAST
           val classToUse = Try(evaluationContext.getTypeLocator.findType(className)).toOption
           // TODO: validate constructor parameters...
-          val clazz = classToUse.flatMap(kl => typeDefinitionSet.get(kl).map(_.clazzName))
+          val clazz = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
           clazz match {
             case Some(typedClass) => valid(typedClass)
             case None             => invalid(ConstructionOfUnknown(classToUse))
@@ -611,7 +610,7 @@ private[spel] class Typer(
   }
 
   private def propertyTypeBasedOnMethod(typedClass: TypedClass, e: PropertyOrFieldReference) = {
-    typeDefinitionSet.get(typedClass.klass).flatMap(_.getPropertyOrFieldType(e.getName))
+    classDefinitionSet.get(typedClass.klass).flatMap(_.getPropertyOrFieldType(e.getName))
   }
 
   private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
@@ -675,7 +674,7 @@ private[spel] class Typer(
       dictTyper,
       strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking,
-      typeDefinitionSet,
+      classDefinitionSet,
       evaluationContextPreparer,
       methodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed
@@ -689,7 +688,7 @@ object Typer {
       classLoader: ClassLoader,
       expressionConfig: ExpressionDefinition[_],
       spelDictTyper: SpelDictTyper,
-      typeDefinitionSet: TypeDefinitionSet
+      classDefinitionSet: ClassDefinitionSet
   ): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 
@@ -702,7 +701,7 @@ object Typer {
       spelDictTyper,
       expressionConfig.strictMethodsChecking,
       expressionConfig.staticMethodInvocationsChecking,
-      typeDefinitionSet,
+      classDefinitionSet,
       evaluationContextPreparer,
       expressionConfig.methodExecutionForUnknownAllowed,
       expressionConfig.dynamicPropertyAccessAllowed

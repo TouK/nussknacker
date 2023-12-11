@@ -118,7 +118,7 @@ class AkkaHttpBasedRouteProvider(
           processingTypeData.additionalValidators,
           fragmentResolver
         )
-        val substitutor = ProcessDictSubstitutor(processingTypeData.modelData.uiDictServices.dictRegistry)
+        val substitutor = ProcessDictSubstitutor(processingTypeData.modelData.designerDictServices.dictRegistry)
         val resolver    = new UIProcessResolver(validator, substitutor)
         (validator, resolver)
       }

@@ -26,7 +26,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should load model.conf and override with given") {
-    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).processConfig
+    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).modelConfig
 
     config.getString("property1") shouldBe "value1"
     config.getString("property2") shouldBe "value1Suffix"
@@ -44,7 +44,7 @@ class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
   }
 
   test("should not load application.conf") {
-    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).processConfig
+    val config = LocalModelData(inputConfig, new EmptyProcessConfigCreator).modelConfig
 
     config.hasPath("shouldNotLoad") shouldBe false
 

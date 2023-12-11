@@ -21,7 +21,7 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.definition.{ComponentIdProvider, DefaultComponentIdProvider}
+import pl.touk.nussknacker.engine.definition.component.{ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 

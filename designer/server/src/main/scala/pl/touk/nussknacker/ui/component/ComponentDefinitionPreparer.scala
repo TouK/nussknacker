@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentType}
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
+import pl.touk.nussknacker.engine.definition.model.{
   ComponentIdWithName,
   CustomTransformerAdditionalData,
-  ProcessDefinitionWithComponentIds
+  ModelDefinitionWithComponentIds
 }
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -20,8 +22,6 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
-import pl.touk.nussknacker.engine.api.process.ProcessingType
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
 import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -39,8 +39,8 @@ object ComponentDefinitionPreparer {
 
   def prepareComponentsGroupList(
       user: LoggedUser,
-      processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
-      fragmentInputs: Map[String, FragmentObjectDefinition],
+      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
+      fragmentComponents: Map[String, FragmentStaticDefinition],
       isFragment: Boolean,
       componentsConfig: ComponentsUiConfig,
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
@@ -53,36 +53,39 @@ object ComponentDefinitionPreparer {
     val processingTypeCategories     = List(processCategoryService.getProcessingTypeCategoryUnsafe(processingType))
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
-    def filterCategories(objectDefinition: ObjectDefinition): List[String] = userProcessingTypeCategories.intersect(
-      objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
-    )
+    def filterCategories(componentDefinition: ComponentStaticDefinition): List[String] =
+      userProcessingTypeCategories.intersect(
+        componentDefinition.categories.getOrElse(processCategoryService.getAllCategories)
+      )
 
-    def objDefParams(objDefinition: ObjectDefinition): List[Parameter] =
-      EvaluatedParameterPreparer.prepareEvaluatedParameter(objDefinition.parameters)
+    def componentDefParams(componentDefinition: ComponentStaticDefinition): List[Parameter] =
+      EvaluatedParameterPreparer.prepareEvaluatedParameter(componentDefinition.parameters)
 
-    def objDefBranchParams(objDefinition: ObjectDefinition): List[Parameter] =
-      EvaluatedParameterPreparer.prepareEvaluatedBranchParameter(objDefinition.parameters)
+    def componentDefBranchParams(componentDefinition: ComponentStaticDefinition): List[Parameter] =
+      EvaluatedParameterPreparer.prepareEvaluatedBranchParameter(componentDefinition.parameters)
 
-    def serviceRef(idWithName: ComponentIdWithName, objDefinition: ObjectDefinition) =
-      ServiceRef(idWithName.name, objDefParams(objDefinition))
+    def serviceRef(idWithName: ComponentIdWithName, componentDefinition: ComponentStaticDefinition) =
+      ServiceRef(idWithName.name, componentDefParams(componentDefinition))
 
     val returnsUnit =
-      ((_: ComponentIdWithName, objectDefinition: ObjectDefinition) => objectDefinition.hasNoReturn).tupled
+      (
+          (_: ComponentIdWithName, componentDefinition: ComponentStaticDefinition) => componentDefinition.hasNoReturn
+      ).tupled
 
     // TODO: make it possible to configure other defaults here.
     val base = ComponentGroup(
       BaseGroupName,
       List(
-        ComponentTemplate
+        ComponentNodeTemplate
           .create(BuiltInComponentInfo.Filter, Filter("", Expression.spel("true")), userProcessingTypeCategories),
-        ComponentTemplate.create(BuiltInComponentInfo.Split, Split(""), userProcessingTypeCategories),
-        ComponentTemplate.create(BuiltInComponentInfo.Choice, Switch(""), userProcessingTypeCategories),
-        ComponentTemplate.create(
+        ComponentNodeTemplate.create(BuiltInComponentInfo.Split, Split(""), userProcessingTypeCategories),
+        ComponentNodeTemplate.create(BuiltInComponentInfo.Choice, Switch(""), userProcessingTypeCategories),
+        ComponentNodeTemplate.create(
           BuiltInComponentInfo.Variable,
           Variable("", "varName", Expression.spel("'value'")),
           userProcessingTypeCategories
         ),
-        ComponentTemplate.create(
+        ComponentNodeTemplate.create(
           BuiltInComponentInfo.RecordVariable,
           VariableBuilder("", "varName", List(Field("fieldName", Expression.spel("'value'")))),
           userProcessingTypeCategories
@@ -92,28 +95,28 @@ object ComponentDefinitionPreparer {
 
     val services = ComponentGroup(
       ServicesGroupName,
-      processDefinition.services
+      modelDefinition.services
         .filter(returnsUnit)
-        .map { case (idWithName, objDefinition) =>
-          ComponentTemplate(
+        .map { case (idWithName, componentDefinition) =>
+          ComponentNodeTemplate(
             ComponentType.Service,
             idWithName.name,
-            Processor("", serviceRef(idWithName, objDefinition)),
-            filterCategories(objDefinition)
+            Processor("", serviceRef(idWithName, componentDefinition)),
+            filterCategories(componentDefinition)
           )
         }
     )
 
     val enrichers = ComponentGroup(
       EnrichersGroupName,
-      processDefinition.services
+      modelDefinition.services
         .filterNot(returnsUnit)
-        .map { case (idWithName, objDefinition) =>
-          ComponentTemplate(
+        .map { case (idWithName, componentDefinition) =>
+          ComponentNodeTemplate(
             ComponentType.Service,
             idWithName.name,
-            Enricher("", serviceRef(idWithName, objDefinition), "output"),
-            filterCategories(objDefinition),
+            Enricher("", serviceRef(idWithName, componentDefinition), "output"),
+            filterCategories(componentDefinition),
             isEnricher = Some(true)
           )
         }
@@ -121,67 +124,67 @@ object ComponentDefinitionPreparer {
 
     val customTransformers = ComponentGroup(
       CustomGroupName,
-      processDefinition.customStreamTransformers.collect {
+      modelDefinition.customStreamTransformers.collect {
         // branchParameters = List.empty can be tricky here. We moved template for branch parameters to NodeToAdd because
         // branch parameters inside node.Join are branchId -> List[Parameter] and on node template level we don't know what
         // branches will be. After moving this parameters to BranchEnd it will disappear from here.
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
-        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).manyInputs =>
-          ComponentTemplate(
+        case (idWithName, (componentDefinition, _)) if customTransformerAdditionalData(idWithName.id).manyInputs =>
+          ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
             node.Join(
               "",
-              if (objectDefinition.hasNoReturn) None else Some("outputVar"),
+              if (componentDefinition.hasNoReturn) None else Some("outputVar"),
               idWithName.name,
-              objDefParams(objectDefinition),
+              componentDefParams(componentDefinition),
               List.empty
             ),
-            filterCategories(objectDefinition),
-            objDefBranchParams(objectDefinition)
+            filterCategories(componentDefinition),
+            componentDefBranchParams(componentDefinition)
           )
-        case (idWithName, (objectDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
-          ComponentTemplate(
+        case (idWithName, (componentDefinition, _)) if !customTransformerAdditionalData(idWithName.id).canBeEnding =>
+          ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
             CustomNode(
               "",
-              if (objectDefinition.hasNoReturn) None else Some("outputVar"),
+              if (componentDefinition.hasNoReturn) None else Some("outputVar"),
               idWithName.name,
-              objDefParams(objectDefinition)
+              componentDefParams(componentDefinition)
             ),
-            filterCategories(objectDefinition)
+            filterCategories(componentDefinition)
           )
       }
     )
 
     val optionalEndingCustomTransformers = ComponentGroup(
       OptionalEndingCustomGroupName,
-      processDefinition.customStreamTransformers.collect {
-        case (idWithName, (objectDefinition, _)) if customTransformerAdditionalData(idWithName.id).canBeEnding =>
-          ComponentTemplate(
+      modelDefinition.customStreamTransformers.collect {
+        case (idWithName, (componentDefinition, _)) if customTransformerAdditionalData(idWithName.id).canBeEnding =>
+          ComponentNodeTemplate(
             ComponentType.CustomComponent,
             idWithName.name,
             CustomNode(
               "",
-              if (objectDefinition.hasNoReturn) None else Some("outputVar"),
+              if (componentDefinition.hasNoReturn) None else Some("outputVar"),
               idWithName.name,
-              objDefParams(objectDefinition)
+              componentDefParams(componentDefinition)
             ),
-            filterCategories(objectDefinition)
+            filterCategories(componentDefinition)
           )
       }
     )
 
     val sinks = ComponentGroup(
       SinksGroupName,
-      processDefinition.sinkFactories.map { case (idWithName, objectDefinition) =>
-        ComponentTemplate(
+      modelDefinition.sinkFactories.map { case (idWithName, comopnentDefinition) =>
+        ComponentNodeTemplate(
           ComponentType.Sink,
           idWithName.name,
-          Sink("", SinkRef(idWithName.name, objDefParams(objectDefinition))),
-          filterCategories(objectDefinition)
+          Sink("", SinkRef(idWithName.name, componentDefParams(comopnentDefinition))),
+          filterCategories(comopnentDefinition)
         )
       }
     )
@@ -189,12 +192,12 @@ object ComponentDefinitionPreparer {
     val inputs = if (!isFragment) {
       ComponentGroup(
         SourcesGroupName,
-        processDefinition.sourceFactories.map { case (idWithName, objDefinition) =>
-          ComponentTemplate(
+        modelDefinition.sourceFactories.map { case (idWithName, componentDefinition) =>
+          ComponentNodeTemplate(
             ComponentType.Source,
             idWithName.name,
-            Source("", SourceRef(idWithName.name, objDefParams(objDefinition))),
-            filterCategories(objDefinition)
+            Source("", SourceRef(idWithName.name, componentDefParams(componentDefinition))),
+            filterCategories(componentDefinition)
           )
         }
       )
@@ -202,12 +205,12 @@ object ComponentDefinitionPreparer {
       ComponentGroup(
         FragmentsDefinitionGroupName,
         List(
-          ComponentTemplate.create(
+          ComponentNodeTemplate.create(
             BuiltInComponentInfo.FragmentInputDefinition,
             FragmentInputDefinition("", List()),
             userProcessingTypeCategories
           ),
-          ComponentTemplate.create(
+          ComponentNodeTemplate.create(
             BuiltInComponentInfo.FragmentOutputDefinition,
             FragmentOutputDefinition("", "output", List.empty),
             userProcessingTypeCategories
@@ -221,13 +224,13 @@ object ComponentDefinitionPreparer {
       List(
         ComponentGroup(
           FragmentsGroupName,
-          fragmentInputs.map { case (id, definition) =>
-            val nodes   = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.objectDefinition.parameters)
-            val outputs = definition.outputsDefinition.map(name => (name, name)).toMap
+          fragmentComponents.map { case (id, definition) =>
+            val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.componentDefinition.parameters)
+            val outputs = definition.outputNames.map(name => (name, name)).toMap
             val categories = userProcessingTypeCategories.intersect(
-              definition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories)
+              definition.componentDefinition.categories.getOrElse(processCategoryService.getAllCategories)
             )
-            ComponentTemplate(
+            ComponentNodeTemplate(
               ComponentType.Fragment,
               id,
               FragmentInput("", FragmentRef(id, nodes, outputs)),
@@ -273,19 +276,19 @@ object ComponentDefinitionPreparer {
         (virtualGroupIndex, componentGroupName.toLowerCase)
       }
       // we need to merge nodes in the same category but in other virtual group
-      .foldLeft(ListMap.empty[ComponentGroupName, List[ComponentTemplate]]) {
+      .foldLeft(ListMap.empty[ComponentGroupName, List[ComponentNodeTemplate]]) {
         case (acc, ((_, componentGroupName), elements)) =>
           val accElements = acc.getOrElse(componentGroupName, List.empty) ++ elements
           acc + (componentGroupName -> accElements)
       }
       .toList
-      .map { case (componentGroupName, elements: List[ComponentTemplate]) =>
+      .map { case (componentGroupName, elements: List[ComponentNodeTemplate]) =>
         SortedComponentGroup(componentGroupName, elements)
       }
   }
 
   def prepareEdgeTypes(
-      processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition],
+      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition],
       isFragment: Boolean,
       fragmentsDetails: Set[FragmentDetails]
   ): List[NodeEdges] = {
@@ -306,7 +309,7 @@ object ComponentDefinitionPreparer {
           )
         }
 
-    val joinInputs = processDefinition.customStreamTransformers.collect {
+    val joinInputs = modelDefinition.customStreamTransformers.collect {
       case (idWithName, value) if value._2.manyInputs =>
         NodeEdges(NodeTypeId("Join", Some(idWithName.name)), List(), canChooseNodes = true, isForInputDefinition = true)
     }

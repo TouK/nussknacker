@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.component.ComponentInfoExtractor
+import pl.touk.nussknacker.engine.node.ComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 

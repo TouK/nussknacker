@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.process.ProcessService.{FetchScenarioGraph, GetScenarioWithDetailsOptions}
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{EspPathMatchers, ProcessComparator}
+import pl.touk.nussknacker.ui.util.{NuPathMatchers, ProcessComparator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +31,7 @@ class RemoteEnvironmentResources(
     with RouteWithUser
     with AuthorizeProcessDirectives
     with ProcessDirectives
-    with EspPathMatchers {
+    with NuPathMatchers {
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("remoteEnvironment") {

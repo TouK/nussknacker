@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
-import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
@@ -86,7 +86,7 @@ trait ProcessRepository[F[_]] {
 
 class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeDataProvider[Int, _])
     extends ProcessRepository[DB]
-    with EspTables
+    with NuTables
     with LazyLogging
     with CommentActions
     with ProcessDBQueryRepository[DB] {

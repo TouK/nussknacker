@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.api.{
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
-import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
+import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource

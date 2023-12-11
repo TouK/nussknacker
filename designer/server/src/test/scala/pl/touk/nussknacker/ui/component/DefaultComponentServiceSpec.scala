@@ -7,12 +7,12 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentInfo, ComponentGroupName, ComponentId, ComponentInfo}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}

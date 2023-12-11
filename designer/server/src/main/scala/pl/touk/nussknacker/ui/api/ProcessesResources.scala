@@ -39,7 +39,7 @@ class ProcessesResources(
 )(implicit val ec: ExecutionContext, mat: Materializer)
     extends Directives
     with FailFastCirceSupport
-    with EspPathMatchers
+    with NuPathMatchers
     with RouteWithUser
     with LazyLogging
     with AuthorizeProcessDirectives

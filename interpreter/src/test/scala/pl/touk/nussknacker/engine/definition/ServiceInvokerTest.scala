@@ -5,7 +5,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.compile.nodecompilation
+import pl.touk.nussknacker.engine.compile.nodecompilation.MethodBasedServiceInvoker
+import pl.touk.nussknacker.engine.definition.component.methodbased.{
+  MethodBasedComponentDefinitionWithImplementation,
+  MethodDefinitionExtractor
+}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -28,10 +34,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef
-      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
-      .asInstanceOf[StandardObjectWithMethodDef]
-    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
+    val definition = ComponentDefinitionWithImplementation
+      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+    val invoker = MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
@@ -40,10 +46,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef
-      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
-      .asInstanceOf[StandardObjectWithMethodDef]
-    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
+    val definition = ComponentDefinitionWithImplementation
+      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+    val invoker = nodecompilation.MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
       invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere"))
@@ -52,10 +58,10 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
   it should "invoke service method with CompletionStage return type" in {
     val mock = new MockCompletionStageService(jobData)
-    val definition = ObjectWithMethodDef
-      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
-      .asInstanceOf[StandardObjectWithMethodDef]
-    val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
+    val definition = ComponentDefinitionWithImplementation
+      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
+    val invoker = nodecompilation.MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
     whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
