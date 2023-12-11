@@ -4,6 +4,7 @@ import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 interface ParameterExpressionField {
     errors: NodeValidationError[];
@@ -53,7 +54,7 @@ export function ParameterExpressionField(props: ParameterExpressionField): JSX.E
                 node.id,
                 parameterDefinitions?.find((p) => p.name === parameter.name),
             )}
-            errors={errors || []}
+            fieldErrors={getValidationErrorsForField(errors, parameter.name)}
         />
     );
 }

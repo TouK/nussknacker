@@ -4,6 +4,7 @@ import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
@@ -46,7 +47,7 @@ export function StaticExpressionField({
             testResultsToShow={testResultsState.testResultsToShow}
             renderFieldLabel={renderFieldLabel}
             variableTypes={findAvailableVariables(node.id, undefined)}
-            errors={errors || []}
+            fieldErrors={getValidationErrorsForField(errors, `$${fieldName}`)}
         />
     );
 }

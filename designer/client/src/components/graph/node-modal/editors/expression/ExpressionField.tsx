@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../../../types";
+import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import { UnknownFunction } from "../../../../../types/common";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
@@ -7,7 +7,7 @@ import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
-import { getValidationErrorsForField } from "../Validators";
+import { FieldError } from "../Validators";
 
 type Props = {
     fieldName: string;
@@ -21,8 +21,8 @@ type Props = {
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     testResultsToShow: NodeResultsForContext;
     renderFieldLabel: UnknownFunction;
-    errors: NodeValidationError[];
     variableTypes: VariableTypes;
+    fieldErrors: FieldError[];
 };
 
 function ExpressionField(props: Props): JSX.Element {
@@ -38,8 +38,8 @@ function ExpressionField(props: Props): JSX.Element {
         setNodeDataAt,
         testResultsToShow,
         renderFieldLabel,
-        errors,
         variableTypes,
+        fieldErrors,
     } = props;
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
@@ -62,7 +62,7 @@ function ExpressionField(props: Props): JSX.Element {
                 onValueChange={onValueChange}
                 variableTypes={variableTypes}
                 showValidation={showValidation}
-                fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                fieldErrors={fieldErrors}
             />
         );
     }
@@ -80,7 +80,7 @@ function ExpressionField(props: Props): JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                fieldErrors={fieldErrors}
             />
         </ExpressionTestResults>
     );

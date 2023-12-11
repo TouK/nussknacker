@@ -5,6 +5,7 @@ import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 import { BranchParameterRowStyled } from "../focusableStyled";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -32,7 +33,6 @@ export default function BranchParameters({
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
 
-    console.log("BranchParameters", errors);
     return (
         <>
             {branchParameters?.map((param) => {
@@ -78,7 +78,7 @@ export default function BranchParameters({
                                                     testResultsToShow={testResultsToShow}
                                                     renderFieldLabel={() => false}
                                                     variableTypes={variables}
-                                                    errors={errors}
+                                                    fieldErrors={getValidationErrorsForField(errors, paramName)}
                                                 />
                                             </div>
                                         </BranchParameterRowStyled>
