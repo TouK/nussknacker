@@ -19,49 +19,51 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
   * validation of process created in UI and before process save.
   * Also it handles "reverse" resolving process done before returning process to UI
   */
-class UIProcessResolver(
-    validator: UIProcessValidator,
-    substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor, _]
-) {
+class UIProcessResolver(uiValidator: UIProcessValidator, substitutor: ProcessDictSubstitutor) {
 
-  private val beforeUiResolvingValidator = validator.withExpressionParsers { case spel: SpelExpressionParser =>
-    spel.typingDictLabels
+  private val beforeUiResolvingValidator = uiValidator.withValidator(_.withExpressionParsers {
+    case spel: SpelExpressionParser =>
+      spel.typingDictLabels
+  })
+
+  def validateAndResolve(displayable: DisplayableProcess): CanonicalProcess = {
+    val validationResult = validateBeforeUiResolving(displayable)
+    resolveExpressions(displayable, validationResult.typingInfo)
   }
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess)(implicit user: LoggedUser): ValidationResult = {
+  def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
     beforeUiResolvingValidator.validate(displayable)
   }
 
   def resolveExpressions(
       displayable: DisplayableProcess,
       typingInfo: Map[String, Map[String, ExpressionTypingInfo]]
-  )(implicit user: LoggedUser): CanonicalProcess = {
+  ): CanonicalProcess = {
     val canonical = ProcessConverter.fromDisplayable(displayable)
-    substitutorByProcessingType
-      .forType(displayable.processingType)
-      .map(_.substitute(canonical, typingInfo))
-      .getOrElse(canonical)
+    substitutor.substitute(canonical, typingInfo)
   }
 
-  def validateBeforeUiReverseResolving(
+  def validateAndReverseResolve(
       canonical: CanonicalProcess,
       processingType: ProcessingType,
       category: Category
-  )(implicit user: LoggedUser): ValidationResult =
-    validator.processingTypeValidationWithTypingInfo(canonical, processingType, category)
+  ): ValidatedDisplayableProcess = {
+    val validationResult = validateBeforeUiReverseResolving(canonical, category)
+    reverseResolveExpressions(canonical, processingType, category, validationResult)
+  }
 
-  def reverseResolveExpressions(
+  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, category: Category): ValidationResult =
+    uiValidator.validateCanonicalProcess(canonical, category)
+
+  private def reverseResolveExpressions(
       canonical: CanonicalProcess,
       processingType: ProcessingType,
       category: Category,
       validationResult: ValidationResult
-  )(implicit user: LoggedUser): ValidatedDisplayableProcess = {
-    val substituted = substitutorByProcessingType
-      .forType(processingType)
-      .map(_.reversed.substitute(canonical, validationResult.typingInfo))
-      .getOrElse(canonical)
+  ): ValidatedDisplayableProcess = {
+    val substituted   = substitutor.reversed.substitute(canonical, validationResult.typingInfo)
     val displayable   = ProcessConverter.toDisplayable(substituted, processingType, category)
-    val uiValidations = validator.uiValidation(displayable)
+    val uiValidations = uiValidator.uiValidation(displayable)
     ValidatedDisplayableProcess.withValidationResult(displayable, uiValidations.add(validationResult))
   }
 

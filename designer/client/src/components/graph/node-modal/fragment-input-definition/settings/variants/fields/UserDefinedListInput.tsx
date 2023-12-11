@@ -86,6 +86,10 @@ export const UserDefinedListInput = ({
     };
 
     const handleAddNewListItem = () => {
+        if (temporaryValuesTyping) {
+            return;
+        }
+
         const isUniqueValueValidator = uniqueValueValidator(fixedValuesList.map((fixedValuesList) => fixedValuesList.label));
 
         if (!mandatoryValueValidator.isValid(temporaryListItem)) {
@@ -116,7 +120,7 @@ export const UserDefinedListInput = ({
             return;
         }
 
-        if (temporaryValueErrors.length === 0 && !temporaryValuesTyping) {
+        if (temporaryValueErrors.length === 0) {
             const updatedList = [...fixedValuesList, { expression: temporaryListItem, label: temporaryListItem }];
             handleChangeFixedValuesList(updatedList);
             setTemporaryListItem("");

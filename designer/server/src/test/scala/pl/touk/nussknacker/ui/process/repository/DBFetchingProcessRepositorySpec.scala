@@ -4,19 +4,18 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.scenariodetails
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -40,8 +39,6 @@ class DBFetchingProcessRepositorySpec
     with PatientScalaFutures
     with TestPermissions {
 
-  import cats.syntax.either._
-
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
   private val writingRepo =
@@ -52,7 +49,7 @@ class DBFetchingProcessRepositorySpec
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    DbProcessActionRepository.create(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
@@ -259,8 +256,8 @@ class DBFetchingProcessRepositorySpec
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
     latestDetails.json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
-        ComponentIdParts(Some("sink"), ComponentType.Sink)     -> List("sink1"),
+        ComponentInfo(ComponentType.Source, "source") -> List("source1"),
+        ComponentInfo(ComponentType.Sink, "sink")     -> List("sink1"),
       )
     )
 
@@ -273,8 +270,8 @@ class DBFetchingProcessRepositorySpec
 
     fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(
       Map(
-        ComponentIdParts(Some("source"), ComponentType.Source)  -> List("source1"),
-        ComponentIdParts(Some("otherSink"), ComponentType.Sink) -> List("sink1"),
+        ComponentInfo(ComponentType.Source, "source")  -> List("source1"),
+        ComponentInfo(ComponentType.Sink, "otherSink") -> List("sink1"),
       )
     )
   }

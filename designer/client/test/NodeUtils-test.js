@@ -19,7 +19,7 @@ describe("edgeType retrieved", () => {
             edges: [{ type: "edge3" }],
         });
         expect(NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Filter" }, processDefinitionData)).toEqual({
-            nodeId: { type: "Filter" },
+            nodeId: { type: "Filter", id: "filter" },
             edges: [{ type: "edge1" }, { type: "edge2" }],
         });
     });
@@ -230,7 +230,7 @@ describe("isAvailable", () => {
 const processDefinitionData = {
     edgesForNodes: [
         {
-            nodeId: { type: "Filter" },
+            nodeId: { type: "Filter", id: "filter" },
             edges: [{ type: "edge1" }, { type: "edge2" }],
         },
         {
@@ -266,10 +266,10 @@ const createProcess = (groups) => ({
 const simpleProcessDefinition = () => {
     return {
         edgesForNodes: [
-            { nodeId: { type: "Filter" }, edges: [{ type: "FilterTrue" }, { type: "FilterFalse" }], canChooseNodes: false },
-            { nodeId: { type: "Split" }, edges: [], canChooseNodes: true },
+            { nodeId: { type: "Filter", id: "filter" }, edges: [{ type: "FilterTrue" }, { type: "FilterFalse" }], canChooseNodes: false },
+            { nodeId: { type: "Split", id: "split" }, edges: [], canChooseNodes: true },
             {
-                nodeId: { type: "Switch" },
+                nodeId: { type: "Switch", id: "choice" },
                 edges: [{ type: "NextSwitch", condition: { language: "spel", expression: "true" } }, { type: "SwitchDefault" }],
                 canChooseNodes: true,
             },

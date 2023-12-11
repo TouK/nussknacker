@@ -30,10 +30,9 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, scenariodetails}
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -44,7 +43,8 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
   ProcessingTypeDataProvider,
-  ProcessingTypeDataReader
+  ProcessingTypeDataReader,
+  ProcessingTypeDataState
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -107,7 +107,7 @@ trait NuResourcesTest
       fetchingProcessRepository,
       actionRepository,
       dbioRunner,
-      processValidator,
+      processValidatorByProcessingType,
       scenarioResolver,
       processChangeListener,
       None
@@ -147,7 +147,7 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
-    ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
+    ProcessingTypeDataProvider(ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig)))
 
   protected val customActionInvokerService =
     new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
@@ -185,12 +185,11 @@ trait NuResourcesTest
       deploymentService,
       newProcessPreparer,
       () => processCategoryService,
-      processResolver,
+      processResolverByProcessingType,
       dbioRunner,
       futureFetchingProcessRepository,
       actionRepository,
-      writeProcessRepository,
-      processValidator
+      writeProcessRepository
     )
 
   protected def createScenarioTestService(
@@ -200,7 +199,7 @@ trait NuResourcesTest
       testInfoProviders,
       featureTogglesConfig.testDataSettings,
       new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-      processResolver,
+      processResolverByProcessingType,
       new ProcessCounter(TestFactory.prepareSampleFragmentRepository),
       testExecutorService
     )

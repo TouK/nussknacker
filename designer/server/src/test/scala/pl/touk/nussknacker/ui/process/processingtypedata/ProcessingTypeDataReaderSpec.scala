@@ -59,8 +59,11 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val scenarioTypes = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
+    val scenarioTypes = provider
       .all(AdminUser("admin", "admin"))
 
     scenarioTypes.keySet shouldEqual Set("foo")
@@ -80,8 +83,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val provider = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 

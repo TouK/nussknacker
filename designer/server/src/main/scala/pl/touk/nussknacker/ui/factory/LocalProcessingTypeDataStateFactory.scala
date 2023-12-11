@@ -7,8 +7,7 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   DefaultProcessingTypeDeploymentService,
-  MapBasedProcessingTypeDataProvider,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataState
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 import _root_.sttp.client3.SttpBackend
@@ -18,11 +17,11 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReade
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
 
-class LocalProcessingTypeDataProviderFactory(
+class LocalProcessingTypeDataStateFactory(
     modelData: ModelData,
     deploymentManagerProvider: DeploymentManagerProvider,
     managerConfig: Config
-) extends ProcessingTypeDataProviderFactory {
+) extends ProcessingTypeDataStateFactory {
 
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
@@ -31,7 +30,7 @@ class LocalProcessingTypeDataProviderFactory(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
       sttpBackend: SttpBackend[Future, Any]
-  ): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+  ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
     val deploymentService: DeploymentService = deploymentServiceSupplier.get()
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
       new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
@@ -40,7 +39,7 @@ class LocalProcessingTypeDataProviderFactory(
       ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, categoriesConfig)
     val processingTypes = Map(typeName -> data)
     val combinedData    = CombinedProcessingTypeData.create(processingTypes, designerConfig)
-    new MapBasedProcessingTypeDataProvider(processingTypes.mapValuesNow(toValueWithPermission), combinedData)
+    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithPermission), () => combinedData, new Object)
   }
 
 }
