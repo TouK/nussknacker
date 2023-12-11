@@ -12,8 +12,6 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 
 class NotificationApiTest
     extends AnyFreeSpecLike
@@ -28,7 +26,6 @@ class NotificationApiTest
   "The endpoint for getting notifications when" - {
     "authenticated should" - {
       "return empty list if no notifications are present" in {
-
         given()
           .auth()
           .basic("admin", "admin")
@@ -40,8 +37,8 @@ class NotificationApiTest
             equalTo("[]")
           )
       }
-      "return a list of notifications" in {
 
+      "return a list of notifications" in {
         given()
           .auth()
           .basic("admin", "admin")
@@ -53,8 +50,9 @@ class NotificationApiTest
             equalTo("[]")
           )
 
-        val canceledProcessName = ProcessName("process-execution-canceled")
-        createDeployedCanceledProcess(canceledProcessName)
+        val deployedProcessName = ProcessName("process-execution-canceled")
+        val processId           = createDeployedProcess(deployedProcessName)
+
         given()
           .auth()
           .basic("admin", "admin")
@@ -66,21 +64,16 @@ class NotificationApiTest
             matchJsonWithRegexValues(
               s"""[{
                    |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                   |  "scenarioName": "$canceledProcessName",
+                   |  "scenarioName": "$deployedProcessName",
                    |  "message": "Deployment finished",
-                   |  "type": null,
-                   |  "toRefresh": [ "versions", "activity", "state" ]
-                   |  },
-                   |  {
-                   |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
-                   |  "scenarioName": "$canceledProcessName",
-                   |  "message": "Cancel finished",
                    |  "type": null,
                    |  "toRefresh": [ "versions", "activity", "state" ]
                    |}]""".stripMargin
             )
           )
-//        createDeployedProcess(canceledProcessName)
+
+        prepareCancel(processId)
+
         given()
           .auth()
           .basic("admin", "admin")
@@ -88,9 +81,27 @@ class NotificationApiTest
           .get(s"$nuDesignerHttpAddress/api/notifications")
           .Then()
           .statusCode(200)
-
+          .body(
+            matchJsonWithRegexValues(
+              s"""[{
+                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |  "scenarioName": "$deployedProcessName",
+                 |  "message": "Deployment finished",
+                 |  "type": null,
+                 |  "toRefresh": [ "versions", "activity", "state" ]
+                 |},
+                 |{
+                 |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |   "scenarioName": "$deployedProcessName",
+                 |   "message": "Cancel finished",
+                 |   "type": null,
+                 |   "toRefresh": [ "versions", "activity", "state" ]
+                 |}]""".stripMargin
+            )
+          )
       }
     }
+
     "not authenticated should" - {
       "forbid access" in {
         given()
