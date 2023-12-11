@@ -100,6 +100,20 @@ class NotificationApiTest
             )
           )
       }
+      "return 405 when invalid HTTP method is passed" in {
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .put(s"$nuDesignerHttpAddress/api/notifications")
+          .Then()
+          .statusCode(405)
+          .body(
+            equalTo(
+              s"HTTP method not allowed, supported methods: GET"
+            )
+          )
+      }
     }
 
     "not authenticated should" - {
