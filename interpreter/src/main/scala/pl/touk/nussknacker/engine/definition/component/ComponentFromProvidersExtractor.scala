@@ -5,7 +5,10 @@ import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor.{ComponentsGroupedByType, componentConfigPath}
+import pl.touk.nussknacker.engine.definition.component.ComponentFromProvidersExtractor.{
+  ComponentsGroupedByType,
+  componentConfigPath
+}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 import scala.reflect.ClassTag

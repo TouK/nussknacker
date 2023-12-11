@@ -162,7 +162,9 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
     )
   }
 
-  private def extractComponents[T <: Component](map: (String, Any)*): ComponentFromProvidersExtractor.ComponentsGroupedByType =
+  private def extractComponents[T <: Component](
+      map: (String, Any)*
+  ): ComponentFromProvidersExtractor.ComponentsGroupedByType =
     extractComponents(map.toMap, ComponentFromProvidersExtractor(_))
 
   private def extractComponents[T <: Component](

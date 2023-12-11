@@ -2,9 +2,15 @@ package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
-import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
+import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
+  DefaultValueDeterminerChain,
+  DefaultValueDeterminerParameters
+}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
-import pl.touk.nussknacker.engine.definition.component.parameter.validator.{EditorBasedValidatorExtractor, ValidatorExtractorParameters}
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
+  EditorBasedValidatorExtractor,
+  ValidatorExtractorParameters
+}
 
 /*
   For parameters defined explicitly in code (e.g. by GenericNodeTransformation or using WithExplicitMethod) we want to define sensible fallback/defaults:
