@@ -36,7 +36,7 @@ import org.springframework.util.ClassUtils;
 //this is code taken from org.springframework.expression.spel.support.ReflectionHelper
 //to make it better optimized. Our goal is to make TypeDescriptor with null Annotation[] parameter - it's a bit more expensive to use
 //we overload code in createTypeDescriptor method
-class SpelEspReflectionHelper {
+class SpelReflectionHelper {
 
     /**
      * Takes an input set of argument values and converts them to the types specified as the

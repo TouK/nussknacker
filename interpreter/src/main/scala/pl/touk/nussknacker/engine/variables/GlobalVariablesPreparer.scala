@@ -5,11 +5,12 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.util.Implicits._
 
+// TODO: Types part and implementation part should be separated
 class GlobalVariablesPreparer(
-    globalVariablesWithMethodDef: Map[String, ComponentDefinitionWithImplementation],
+    globalVariablesDefWithImpl: Map[String, ComponentDefinitionWithImplementation],
     hideMetaVariable: Boolean
 ) {
 
@@ -32,7 +33,7 @@ class GlobalVariablesPreparer(
   )
 
   def prepareGlobalVariables(metaData: MetaData): Map[String, ObjectWithType] = {
-    val globalVariablesWithType = globalVariablesWithMethodDef.mapValuesNow(toGlobalVariable(_, metaData))
+    val globalVariablesWithType = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariable(_, metaData))
     if (hideMetaVariable) {
       globalVariablesWithType
     } else {
@@ -41,7 +42,7 @@ class GlobalVariablesPreparer(
   }
 
   private def prepareGlobalVariablesTypes(scenarioPropertiesNames: Iterable[String]): Map[String, TypingResult] = {
-    val globalVariablesWithType = globalVariablesWithMethodDef.mapValuesNow(toGlobalVariableType)
+    val globalVariablesWithType = globalVariablesDefWithImpl.mapValuesNow(toGlobalVariableType)
     if (hideMetaVariable) {
       globalVariablesWithType
     } else {
@@ -84,7 +85,7 @@ class GlobalVariablesPreparer(
 object GlobalVariablesPreparer {
 
   def apply(
-      expressionDefinition: ExpressionDefinition[ComponentDefinitionWithImplementation]
+      expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
   ): GlobalVariablesPreparer = {
     new GlobalVariablesPreparer(expressionDefinition.globalVariables, expressionDefinition.hideMetaVariable)
   }

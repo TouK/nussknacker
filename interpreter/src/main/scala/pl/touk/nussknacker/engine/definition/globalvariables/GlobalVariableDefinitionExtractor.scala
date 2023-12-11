@@ -5,10 +5,10 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
-  BuiltInSpecificData,
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
-  ComponentStaticDefinition
+  ComponentStaticDefinition,
+  GlobalVariablesSpecificData
 }
 
 object GlobalVariableDefinitionExtractor {
@@ -31,7 +31,7 @@ object GlobalVariableDefinitionExtractor {
       returnType = Some(returnType),
       categories = varWithCategories.categories,
       componentConfig = varWithCategories.componentConfig,
-      componentTypeSpecificData = BuiltInSpecificData
+      componentTypeSpecificData = GlobalVariablesSpecificData
     )
     MethodBasedComponentDefinitionWithImplementation(
       // Global variables are always accessed by MethodBasedComponentDefinitionWithImplementation.obj - see GlobalVariablesPreparer

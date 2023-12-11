@@ -4,11 +4,11 @@ import pl.touk.nussknacker.engine.api.component.ComponentInfo
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.definition.component.{BaseComponentDefinition, ComponentIdProvider}
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 
 case class ModelDefinition[T <: BaseComponentDefinition] private (
     components: Map[ComponentInfo, T],
-    expressionConfig: ExpressionDefinition[T],
+    expressionConfig: ExpressionConfigDefinition[T],
     settings: ClassExtractionSettings
 ) {
 
@@ -73,7 +73,7 @@ object ModelDefinition {
 
   def apply[T <: BaseComponentDefinition](
       components: List[(String, T)],
-      expressionConfig: ExpressionDefinition[T],
+      expressionConfig: ExpressionConfigDefinition[T],
       settings: ClassExtractionSettings
   ): ModelDefinition[T] =
     new ModelDefinition(Map.empty, expressionConfig, settings).withComponents(components)

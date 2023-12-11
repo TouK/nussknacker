@@ -50,7 +50,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   private val modelDefinition = ModelDefinition(
     ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
-    ModelDefinitionBuilder.toExpressionDefinition(ModelDefinitionBuilder.emptyExpressionDefinition),
+    ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
     ClassExtractionSettings.Default
   )
 

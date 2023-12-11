@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.definition.model
 
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 case class ModelDefinitionWithComponentIds[T](
     components: List[(ComponentIdWithName, T)],
-    expressionConfig: ExpressionDefinition[T],
+    expressionConfig: ExpressionConfigDefinition[T],
     settings: ClassExtractionSettings
 ) {
 

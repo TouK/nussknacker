@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Language
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 object ModelDefinitionBuilder {
 
-  val emptyExpressionDefinition: ExpressionDefinition[ComponentStaticDefinition] = ExpressionDefinition(
+  val emptyExpressionConfig: ExpressionConfigDefinition[ComponentStaticDefinition] = ExpressionConfigDefinition(
     Map.empty[String, ComponentStaticDefinition],
     List.empty,
     defaultAdditionalClasses,
@@ -37,7 +37,7 @@ object ModelDefinitionBuilder {
 
     ModelDefinition(
       List.empty[(String, ComponentStaticDefinition)],
-      emptyExpressionDefinition,
+      emptyExpressionConfig,
       ClassExtractionSettings.Default
     )
   }
@@ -51,10 +51,10 @@ object ModelDefinitionBuilder {
     }
   }
 
-  def toExpressionDefinition(
-      expressionConfig: ExpressionDefinition[ComponentStaticDefinition]
-  ): ExpressionDefinition[ComponentDefinitionWithImplementation] =
-    ExpressionDefinition(
+  def toDefinitionWithImpl(
+      expressionConfig: ExpressionConfigDefinition[ComponentStaticDefinition]
+  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
+    ExpressionConfigDefinition(
       expressionConfig.globalVariables.mapValuesNow(wrapWithNullImplementation(_)),
       expressionConfig.globalImports,
       expressionConfig.additionalClasses,
@@ -90,7 +90,7 @@ object ModelDefinitionBuilder {
           definition.expressionConfig.globalVariables + (name -> wrapWithStaticDefinition(
             List.empty,
             Some(typ),
-            BuiltInSpecificData
+            GlobalVariablesSpecificData
           ))
         )
       )
@@ -173,7 +173,7 @@ object ModelDefinitionBuilder {
       parameters: List[Parameter],
       returnType: Option[TypingResult]
   ): ComponentStaticDefinition =
-    wrapWithStaticDefinition(parameters, returnType, BuiltInSpecificData)
+    wrapWithStaticDefinition(parameters, returnType, GlobalVariablesSpecificData)
 
   private def wrapWithStaticDefinition(
       parameters: List[Parameter],

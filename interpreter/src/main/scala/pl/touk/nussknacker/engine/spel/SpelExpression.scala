@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
@@ -249,7 +249,7 @@ object SpelExpressionParser extends LazyLogging {
   // caching?
   def default(
       classLoader: ClassLoader,
-      expressionConfig: ExpressionDefinition[_],
+      expressionConfig: ExpressionConfigDefinition[_],
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,

@@ -86,7 +86,7 @@ public class OmitAnnotationsMethodExecutor extends ReflectiveMethodExecutor {
             if (arguments != null) {
                 this.argumentConversionOccurred =
                         //Nussknacker: here we invoke different implementation
-                        SpelEspReflectionHelper.convertArguments(context.getTypeConverter(), arguments, this.method, this.varargsPosition);
+                        SpelReflectionHelper.convertArguments(context.getTypeConverter(), arguments, this.method, this.varargsPosition);
             }
             if (this.method.isVarArgs()) {
                 arguments = ReflectionHelper.setupArgumentsForVarargsInvocation(this.method.getParameterTypes(), arguments);

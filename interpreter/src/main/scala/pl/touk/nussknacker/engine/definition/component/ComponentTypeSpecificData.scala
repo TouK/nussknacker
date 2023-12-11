@@ -24,7 +24,7 @@ final case class CustomComponentSpecificData(manyInputs: Boolean, canBeEnding: B
   override def componentType: ComponentType = ComponentType.CustomComponent
 }
 
-case object BuiltInSpecificData extends ComponentTypeSpecificData {
+case object GlobalVariablesSpecificData extends ComponentTypeSpecificData {
   override def componentType: ComponentType = ComponentType.BuiltIn
 }
 

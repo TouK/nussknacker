@@ -5,7 +5,7 @@ import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, internal}
 
 import java.util
@@ -78,7 +78,7 @@ class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extend
 
 object EvaluationContextPreparer {
 
-  def default(classLoader: ClassLoader, expressionConfig: ExpressionDefinition[_]): EvaluationContextPreparer = {
+  def default(classLoader: ClassLoader, expressionConfig: ExpressionConfigDefinition[_]): EvaluationContextPreparer = {
     val conversionService = determineConversionService(expressionConfig)
     val propertyAccessors = internal.propertyAccessors.configured()
     new EvaluationContextPreparer(
@@ -90,7 +90,7 @@ object EvaluationContextPreparer {
     )
   }
 
-  private def determineConversionService(expressionConfig: ExpressionDefinition[_]) = {
+  private def determineConversionService(expressionConfig: ExpressionConfigDefinition[_]) = {
     val spelConversionServices = expressionConfig.customConversionsProviders.collect {
       case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
     }

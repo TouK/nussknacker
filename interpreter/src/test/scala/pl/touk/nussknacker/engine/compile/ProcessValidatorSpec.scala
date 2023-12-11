@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentStaticDefinition,
   CustomComponentSpecificData
 }
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
@@ -65,7 +65,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   private val baseDefinition = ModelDefinition[ComponentStaticDefinition](
     components = List.empty,
-    expressionConfig = ExpressionDefinition(
+    expressionConfig = ExpressionConfigDefinition(
       Map("processHelper" -> wrapWithStaticGlobalVariableDefinition(List(), Some(Typed(ProcessHelper.getClass)))),
       List.empty,
       List.empty,

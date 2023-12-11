@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
@@ -97,7 +97,7 @@ class TestFlinkProcessCompiler(
 
 class StubbedSourcePreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
     dictRegistry: EngineDictRegistry,
     classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData,

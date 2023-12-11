@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
@@ -96,7 +96,7 @@ class NodeCompiler(
 
   private lazy val globalVariablesPreparer          = GlobalVariablesPreparer(expressionConfig)
   private implicit val typeableJoin: Typeable[Join] = Typeable.simpleTypeable(classOf[Join])
-  private val expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation] =
+  private val expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation] =
     definitions.expressionConfig
 
   // FIXME: should it be here?

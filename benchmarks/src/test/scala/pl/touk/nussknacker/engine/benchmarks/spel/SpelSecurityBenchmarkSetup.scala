@@ -2,35 +2,19 @@ package pl.touk.nussknacker.engine.benchmarks.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
 class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
 
-  private val expressionDefinition = ExpressionDefinition(
-    globalVariables = Map(),
-    globalImports = Nil,
-    additionalClasses = List(),
-    languages = LanguageConfiguration.default,
-    optimizeCompilation = true,
-    strictTypeChecking = true,
-    dictionaries = Map.empty,
-    hideMetaVariable = false,
-    strictMethodsChecking = true,
-    staticMethodInvocationsChecking = false,
-    methodExecutionForUnknownAllowed = true,
-    dynamicPropertyAccessAllowed = false,
-    spelExpressionExcludeList = SpelExpressionExcludeList.default,
-    customConversionsProviders = List.empty
-  )
+  private val expressionDefinition = ModelDefinitionBuilder.emptyExpressionConfig
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
     getClass.getClassLoader,

@@ -13,7 +13,10 @@ import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionExtractor,
   ComponentDefinitionWithImplementation
 }
-import pl.touk.nussknacker.engine.definition.globalvariables.{ExpressionDefinition, GlobalVariableDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.globalvariables.{
+  ExpressionConfigDefinition,
+  GlobalVariableDefinitionExtractor
+}
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 
 object ModelDefinitionFromConfigCreatorExtractor {
@@ -39,7 +42,7 @@ object ModelDefinitionFromConfigCreatorExtractor {
 
     ModelDefinition[ComponentDefinitionWithImplementation](
       components,
-      toExpressionDefinition(expressionConfig, categoryOpt),
+      toDefinition(expressionConfig, categoryOpt),
       settings
     )
   }
@@ -58,15 +61,15 @@ object ModelDefinitionFromConfigCreatorExtractor {
     }
   }
 
-  private def toExpressionDefinition(
+  private def toDefinition(
       expressionConfig: ExpressionConfig,
       categoryOpt: Option[String],
-  ): ExpressionDefinition[ComponentDefinitionWithImplementation] = {
+  ): ExpressionConfigDefinition[ComponentDefinitionWithImplementation] = {
     val filteredVariables = filterUsingComponentConfig(expressionConfig.globalProcessVariables.toList, categoryOpt)
     val variables = filteredVariables.map { case (name, variable) =>
       name -> GlobalVariableDefinitionExtractor.extractDefinition(variable)
     }.toMap
-    ExpressionDefinition(
+    ExpressionConfigDefinition(
       variables,
       expressionConfig.globalImports,
       expressionConfig.additionalClasses,

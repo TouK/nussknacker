@@ -4,7 +4,9 @@ import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 
-case class ExpressionDefinition[T](
+// TODO: We should get rid of this. Most of these fields should be parsed from configuration instead of keeping in code
+//       globalVariables and dictionaries should be moved into dedicated services loaded by ServiceLoader
+case class ExpressionConfigDefinition[T](
     globalVariables: Map[String, T],
     globalImports: List[String],
     additionalClasses: List[Class[_]],
