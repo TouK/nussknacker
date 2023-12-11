@@ -1,10 +1,9 @@
 import { get } from "lodash";
 import EditableEditor from "./editors/EditableEditor";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { ExpressionLang } from "./editors/expression/types";
-import { errorValidator, getValidationErrorsForField, PossibleValue } from "./editors/Validators";
+import { getValidationErrorsForField, PossibleValue } from "./editors/Validators";
 import { NodeType, NodeValidationError } from "../../../types";
-import { ValidationError } from "../../modals/ValidationLabels";
 
 export interface ScenarioPropertyConfig {
     editor: any;

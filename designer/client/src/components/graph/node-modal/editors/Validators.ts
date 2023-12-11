@@ -49,17 +49,6 @@ export interface Error {
     typ: string;
 }
 
-export const errorValidator = (errors: Error[], fieldName: string): Validator => {
-    const error = errors?.find((error) => error.fieldName === fieldName || error.fieldName === `$${fieldName}`);
-    return {
-        isValid: () => !error,
-        message: () => error?.message,
-        description: () => error?.description,
-        handledErrorType: error?.typ ? HandledErrorType[error?.typ] : HandledErrorType.ErrorValidator,
-        validatorType: ValidatorType.Backend,
-    };
-};
-
 export const mandatoryValueValidator: Validator = {
     isValid: (value) => !isEmpty(value),
     message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),

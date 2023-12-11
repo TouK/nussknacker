@@ -33,13 +33,18 @@ describe("test validation labels", () => {
     testCases.forEach(({ description, errorType, expectedBackendValidationLabels }) => {
         it(description, () => {
             //given
-            const validators = [mandatoryValueValidator, errorValidator([backendError(errorType)], fieldName)];
+            const fieldErrors = [
+                {
+                    message: "error description",
+                    description: "error description",
+                },
+            ];
 
             //when
             render(
                 <NuThemeProvider>
                     <I18nextProvider i18n={i18n}>
-                        <ValidationLabels errors={[]} />
+                        <ValidationLabels fieldErrors={fieldErrors} />
                     </I18nextProvider>
                 </NuThemeProvider>,
             );

@@ -182,7 +182,7 @@ export const UserDefinedListInput = ({
                         ref.editor.commands.addCommand(aceEditorEnterCommand);
                     }
                 }}
-                param={{ validators: [], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
                 fieldErrors={getValidationErrorsForField(temporaryValueErrors, temporaryItemName)}
                 showValidation
             />

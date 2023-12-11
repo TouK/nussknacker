@@ -1,7 +1,7 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { errorValidator, getValidationErrorsForField } from "./editors/Validators";
-import { isEqual } from "lodash";
+import { getValidationErrorsForField } from "./editors/Validators";
+import { isEmpty, isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../reducers";
@@ -49,9 +49,9 @@ export function Switch({
     const definition = processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node;
     const currentExpression = node["expression"];
     const currentExprVal = node["exprVal"];
-    const exprValValidator = errorValidator(errors, "exprVal");
+    const fieldErrors = getValidationErrorsForField(errors, "exprVal");
     const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression;
-    const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal;
+    const showExprVal = !isEmpty(fieldErrors) || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal;
     const [, isCompareView] = useDiffMark();
 
     const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
@@ -110,7 +110,7 @@ export function Switch({
                               }
                             : variableTypes
                     }
-                    fieldErrors={getValidationErrorsForField(errors, "exprVal")}
+                    errors={errors}
                 />
             ) : null}
             <DescriptionField

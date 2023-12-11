@@ -5,7 +5,6 @@ import React, { useMemo } from "react";
 import { sortBy } from "lodash";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { IdField } from "./IdField";
-import { errorValidator } from "./editors/Validators";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
 import { FieldType } from "./editors/field/Field";
