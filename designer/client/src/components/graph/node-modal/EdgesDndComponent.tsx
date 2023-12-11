@@ -9,7 +9,7 @@ import { ExpressionLang } from "./editors/expression/types";
 import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption } from "./EdgeTypeSelect";
 import { defaultsDeep } from "lodash";
-import { FieldError, getValidationErrorsForField } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;

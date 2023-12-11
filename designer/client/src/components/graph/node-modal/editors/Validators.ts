@@ -3,11 +3,6 @@ import i18next from "i18next";
 import { NodeValidationError } from "../../../../types";
 import { FormatterType } from "./expression/Formatter";
 
-export enum ValidatorType {
-    Frontend,
-    Backend,
-}
-
 /* eslint-disable i18next/no-literal-string */
 export enum HandledErrorType {
     AlreadyExists = "AlreadyExists",
@@ -29,7 +24,6 @@ export type Validator = {
     message: () => string;
     description: () => string;
     handledErrorType: HandledErrorType;
-    validatorType: ValidatorType;
 };
 
 export type PossibleValue = {
@@ -54,7 +48,6 @@ export const mandatoryValueValidator: Validator = {
     message: () => i18next.t("mandatoryValueValidator.message", "This field is mandatory and can not be empty"),
     description: () => i18next.t("validator.mandatory.description", "Please fill field for this parameter"),
     handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-    validatorType: ValidatorType.Frontend,
 };
 
 export const uniqueValueValidator: (otherValues: string[]) => Validator = (otherValues) => ({
@@ -62,7 +55,6 @@ export const uniqueValueValidator: (otherValues: string[]) => Validator = (other
     message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique"),
     description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),
     handledErrorType: HandledErrorType.UniqueParameter,
-    validatorType: ValidatorType.Frontend,
 });
 export const uniqueListValueValidator = (list: string[], currentIndex: number): Validator => ({
     ...uniqueValueValidator(list.filter((v, i) => i !== currentIndex)),
@@ -81,7 +73,6 @@ export const literalIntegerValueValidator: Validator = {
     message: () => i18next.t("literalIntegerValueValidator.message", "This field value has to be an integer number"),
     description: () => i18next.t("literalIntegerValueValidator.description", "Please fill field by proper integer type"),
     handledErrorType: HandledErrorType.InvalidIntegerLiteralParameter,
-    validatorType: ValidatorType.Frontend,
 };
 
 //It's kind of hack.. Because from SPeL we get string with "L" or others number's mark.
@@ -99,7 +90,6 @@ export const minimalNumberValidator = (minimalNumber: number): Validator => ({
         }),
     description: () => i18next.t("minNumberValidator.description", "Please fill field by proper number"),
     handledErrorType: HandledErrorType.LowerThanRequiredParameter,
-    validatorType: ValidatorType.Frontend,
 });
 
 export const maximalNumberValidator = (maximalNumber: number): Validator => ({
@@ -111,7 +101,6 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
         }),
     description: () => i18next.t("maxNumberValidator.description", "Please fill field by proper number"),
     handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
-    validatorType: ValidatorType.Frontend,
 });
 
 export type FieldError = Pick<Error, "message" | "description">;

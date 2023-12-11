@@ -1,5 +1,5 @@
 import React from "react";
-import { errorValidator, HandledErrorType, mandatoryValueValidator } from "../src/components/graph/node-modal/editors/Validators";
+import { HandledErrorType, mandatoryValueValidator } from "../src/components/graph/node-modal/editors/Validators";
 import ValidationLabels from "../src/components/modals/ValidationLabels";
 import { render } from "@testing-library/react";
 import { getAllByText, queryAllByText } from "@testing-library/dom";
@@ -8,14 +8,7 @@ import i18n from "../src/i18n";
 import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 describe("test validation labels", () => {
-    const fieldName = "fieldName";
     const backendErrorMessage = "backend error message";
-    const backendError = (errorType) => ({
-        message: backendErrorMessage,
-        description: "backend error description",
-        typ: errorType,
-        fieldName: fieldName,
-    });
 
     const testCases = [
         {
@@ -30,7 +23,7 @@ describe("test validation labels", () => {
         },
     ];
 
-    testCases.forEach(({ description, errorType, expectedBackendValidationLabels }) => {
+    testCases.forEach(({ description, _, expectedBackendValidationLabels }) => {
         it(description, () => {
             //given
             const fieldErrors = [
