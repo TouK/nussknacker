@@ -138,8 +138,8 @@ export const NodeTableStyled = styled("div")(
             min-height: 35px;
             outline: 1px solid rgba(255, 255, 255, 0.075);
             &.focused {
-                outline: 2px solid ${theme.custom.colors.cobalt} !important;
-                outline-offset: -1px !important;
+                outline: 2px solid ${theme.custom.colors.cobalt};
+                outline-offset: -1px;
             }
         }
         .node-input:-moz-disabled {
@@ -177,6 +177,7 @@ export const NodeTableStyled = styled("div")(
         }
         .node-input-with-error {
             outline: 1px solid ${theme.custom.colors.error} !important;
+            outline-offset: initial !important;
             border-radius: 2px;
         }
         .testResultDownload {

@@ -1001,7 +1001,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
               ),
               List(
                 ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
-                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("par1"), _)
+                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("$fields-0-$value"), _)
               )
             )
           ) =>
@@ -1254,7 +1254,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withServiceRef = base.copy(services =
       base.services + ("returningTypeService" ->
         new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
-          .extract(WithCategories(ServiceReturningTypeSample), SingleComponentConfig.zero))
+          .extract(WithCategories.anyCategory(ServiceReturningTypeSample), SingleComponentConfig.zero))
     )
 
     val process =
@@ -1284,7 +1284,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withServiceRef = base.copy(services =
       base.services + ("returningTypeService" ->
         new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
-          .extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleComponentConfig.zero))
+          .extract(
+            WithCategories.anyCategory(ServiceReturningTypeWithExplicitMethodSample),
+            SingleComponentConfig.zero
+          ))
     )
 
     val process =
@@ -1313,7 +1316,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withServiceRef = base.copy(services =
       base.services + ("withCustomValidation" ->
         new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
-          .extract(WithCategories(ServiceWithCustomValidation), SingleComponentConfig.zero))
+          .extract(WithCategories.anyCategory(ServiceWithCustomValidation), SingleComponentConfig.zero))
     )
 
     val process =

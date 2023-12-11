@@ -18,7 +18,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
@@ -79,7 +79,7 @@ class RemoteEnvironmentResourcesSpec
   }
 
   it should "invoke migration for found scenario" in {
-    val category   = TestCat
+    val category   = Category1
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression.spel("#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
@@ -130,8 +130,8 @@ class RemoteEnvironmentResourcesSpec
       testPermissionRead
     )
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), Category1) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), Category1) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
@@ -163,8 +163,8 @@ class RemoteEnvironmentResourcesSpec
       readWritePermissions
     )
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), Category1) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), Category1) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
@@ -213,7 +213,7 @@ class RemoteEnvironmentResourcesSpec
 
     override def testMigration(
         processToInclude: ScenarioWithDetails => Boolean
-    )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
+    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
 

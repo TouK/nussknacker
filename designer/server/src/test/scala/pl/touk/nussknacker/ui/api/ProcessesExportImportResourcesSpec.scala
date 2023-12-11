@@ -19,7 +19,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 
 import scala.language.higherKinds
 
@@ -75,7 +75,7 @@ class ProcessesExportImportResourcesSpec
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
@@ -101,7 +101,7 @@ class ProcessesExportImportResourcesSpec
 
   test("export process in new version") {
     val description   = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     val processWithDescription = processToSave.copy(properties =
       processToSave.properties.copy(additionalFields =
         ProcessAdditionalFields(Some(description), Map.empty, StreamMetaData.typeName)
@@ -134,7 +134,7 @@ class ProcessesExportImportResourcesSpec
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Category1)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
 

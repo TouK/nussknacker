@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterVali
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.net.URI
@@ -57,7 +57,8 @@ package object definition {
       defaultValue: Expression,
       additionalVariables: Map[String, TypingResult],
       variablesToHide: Set[String],
-      branchParam: Boolean
+      branchParam: Boolean,
+      hintText: Option[String]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
@@ -91,7 +92,7 @@ package object definition {
       isForInputDefinition: Boolean
   )
 
-  import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   object ComponentTemplate {
 

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime._
 import pl.touk.nussknacker.restmodel.scenariodetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
@@ -153,8 +153,8 @@ class NotificationServiceTest
     )
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
-    when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
-    when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)
+    when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
+    when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
     val config              = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
     val deploymentService = new DeploymentServiceImpl(
@@ -190,7 +190,14 @@ class NotificationServiceTest
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
     val action =
-      CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isFragment = false, forwardedUserName = None)
+      CreateProcessAction(
+        processName,
+        Category1,
+        sampleScenario,
+        Streaming,
+        isFragment = false,
+        forwardedUserName = None
+      )
     writeProcessRepository
       .saveNewProcess(action)(TestFactory.adminUser())
       .map(_.value.processId)

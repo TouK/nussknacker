@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -45,7 +44,8 @@ object PeriodicDeploymentManager {
   )(
       implicit ec: ExecutionContext,
       system: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any]
+      sttpBackend: SttpBackend[Future, Any],
+      deploymentService: ProcessingTypeDeploymentService
   ): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
@@ -127,6 +127,9 @@ class PeriodicDeploymentManager private[periodic] (
           scheduleProperty,
           processVersion,
           canonicalProcess,
+          deploymentData.deploymentId.toActionIdOpt.getOrElse(
+            throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
+          ),
           cancel(processVersion.processName, deploymentData.user)
         )
         .map(_ => None)

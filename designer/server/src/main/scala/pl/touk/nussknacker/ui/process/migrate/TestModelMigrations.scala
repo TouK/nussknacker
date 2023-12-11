@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class TestModelMigrations(
     migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
@@ -27,14 +28,14 @@ class TestModelMigrations(
   def testMigrations(
       processes: List[ScenarioWithDetails],
       fragments: List[ScenarioWithDetails]
-  ): List[TestMigrationResult] = {
+  )(implicit user: LoggedUser): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidator.withFragmentResolver(
+    val validator = processValidator.withFragmentResolver(
       new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory))))
     )
     (migratedFragments ++ migratedProcesses).map { migrationDetails =>
-      val validationResult = validation.validate(migrationDetails.newProcess)
+      val validationResult = validator.validate(migrationDetails.newProcess)
       val newErrors        = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
         ValidatedDisplayableProcess.withValidationResult(migrationDetails.newProcess, validationResult),
@@ -44,7 +45,9 @@ class TestModelMigrations(
     }
   }
 
-  private def migrateProcess(process: ScenarioWithDetails): Option[MigratedProcessDetails] = {
+  private def migrateProcess(
+      process: ScenarioWithDetails
+  )(implicit user: LoggedUser): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(

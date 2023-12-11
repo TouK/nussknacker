@@ -5,7 +5,7 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.{CategoriesConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
+import pl.touk.nussknacker.engine.{CategoryConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -26,7 +26,8 @@ import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDe
 import pl.touk.nussknacker.ui.process.processingtypedata.{
   MapBasedProcessingTypeDataProvider,
   ProcessingTypeDataConfigurationReader,
-  ProcessingTypeDataProvider
+  ProcessingTypeDataProvider,
+  ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -56,8 +57,8 @@ object TestFactory extends TestPermissions {
 
   // FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
-    TestCategories.TestCat  -> Permission.ALL_PERMISSIONS,
-    TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
+    TestCategories.Category1 -> Permission.ALL_PERMISSIONS,
+    TestCategories.Category2 -> Permission.ALL_PERMISSIONS
   )
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
@@ -83,7 +84,7 @@ object TestFactory extends TestPermissions {
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
   def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(
-    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.TestCat))
+    Set(FragmentDetails(ProcessTestData.sampleFragment, TestCategories.Category1))
   )
 
   def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
@@ -161,8 +162,12 @@ object TestFactory extends TestPermissions {
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
     LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
-  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] =
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(data: _*))
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
+    // TODO: tests for user privileges
+    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(
+      Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
+    )
+  }
 
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
     MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
@@ -181,7 +186,7 @@ object TestFactory extends TestPermissions {
       designerConfig,
       ProcessingTypeDataConfigurationReader
         .readProcessingTypeConfig(ConfigWithUnresolvedVersion(designerConfig))
-        .mapValuesNow(CategoriesConfig(_))
+        .mapValuesNow(CategoryConfig(_))
     )
 
 }

@@ -122,32 +122,32 @@ object sample {
     override def customStreamTransformers(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("sum" -> WithCategories(SumTransformerFactory))
+      Map("sum" -> WithCategories.anyCategory(SumTransformerFactory))
 
     override def sourceFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SourceFactory]] =
       Map(
-        "start"               -> WithCategories(SimpleSourceFactory),
-        "parametersSupport"   -> WithCategories(SimpleSourceWithParameterTestingFactory),
-        "failOnNumber1Source" -> WithCategories(FailOnNumber1SourceFactory)
+        "start"               -> WithCategories.anyCategory(SimpleSourceFactory),
+        "parametersSupport"   -> WithCategories.anyCategory(SimpleSourceWithParameterTestingFactory),
+        "failOnNumber1Source" -> WithCategories.anyCategory(FailOnNumber1SourceFactory)
       )
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
-        "failOnNumber1" -> WithCategories(FailOnNumber1),
-        "noOpProcessor" -> WithCategories(NoOpProcessor),
-        "sumNumbers"    -> WithCategories(SumNumbers),
+        "failOnNumber1" -> WithCategories.anyCategory(FailOnNumber1),
+        "noOpProcessor" -> WithCategories.anyCategory(NoOpProcessor),
+        "sumNumbers"    -> WithCategories.anyCategory(SumNumbers),
       )
 
     override def sinkFactories(
         processObjectDependencies: ProcessObjectDependencies
     ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories(SimpleSinkFactory))
+      Map("end" -> WithCategories.anyCategory(SimpleSinkFactory))
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
       ExpressionConfig(
-        Map("UTIL" -> anyCategory(new UtilHelpers)),
+        Map("UTIL" -> WithCategories.anyCategory(new UtilHelpers)),
         List()
       )
 

@@ -50,13 +50,15 @@ class ScenarioTestService(
     testExecutorService: ScenarioTestExecutorService,
 ) extends LazyLogging {
 
-  def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
+  def getTestingCapabilities(displayableProcess: DisplayableProcess)(implicit user: LoggedUser): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     val canonical        = toCanonicalProcess(displayableProcess)
     testInfoProvider.getTestingCapabilities(canonical)
   }
 
-  def testParametersDefinition(displayableProcess: DisplayableProcess): List[UISourceParameters] = {
+  def testParametersDefinition(
+      displayableProcess: DisplayableProcess
+  )(implicit user: LoggedUser): List[UISourceParameters] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     val canonical        = toCanonicalProcess(displayableProcess)
     testInfoProvider
@@ -65,7 +67,9 @@ class ScenarioTestService(
       .toList
   }
 
-  def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
+  def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int)(
+      implicit user: LoggedUser
+  ): Either[String, RawScenarioTestData] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     val canonical        = toCanonicalProcess(displayableProcess)
 
@@ -129,7 +133,9 @@ class ScenarioTestService(
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }
 
-  private def toCanonicalProcess(displayableProcess: DisplayableProcess): CanonicalProcess = {
+  private def toCanonicalProcess(
+      displayableProcess: DisplayableProcess
+  )(implicit user: LoggedUser): CanonicalProcess = {
     val validationResult = processResolver.validateBeforeUiResolving(displayableProcess)
     processResolver.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }

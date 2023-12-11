@@ -12,6 +12,8 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{
 }
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 import _root_.sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
 
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,12 +35,12 @@ class LocalProcessingTypeDataProviderFactory(
     val deploymentService: DeploymentService = deploymentServiceSupplier.get()
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
       new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
-    val categoriesConfig = new CategoriesConfig(Some(List(category)))
+    val categoriesConfig = new CategoryConfig(Some(category))
     val data =
       ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig, categoriesConfig)
     val processingTypes = Map(typeName -> data)
     val combinedData    = CombinedProcessingTypeData.create(processingTypes, designerConfig)
-    new MapBasedProcessingTypeDataProvider(processingTypes, combinedData)
+    new MapBasedProcessingTypeDataProvider(processingTypes.mapValuesNow(toValueWithPermission), combinedData)
   }
 
 }

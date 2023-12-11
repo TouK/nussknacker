@@ -78,9 +78,12 @@ class DeploymentServiceSpec
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
-      override def forType(typ: ProcessingType): Option[DeploymentManager] = all.get(typ)
+      override def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[DeploymentManager] =
+        all.get(processingType)
 
-      override def all: Map[ProcessingType, DeploymentManager] = Map(TestProcessingTypes.Streaming -> deploymentManager)
+      override def all(implicit user: LoggedUser): Map[ProcessingType, DeploymentManager] = Map(
+        TestProcessingTypes.Streaming -> deploymentManager
+      )
 
       override def combined: Nothing = ???
     }
@@ -808,7 +811,7 @@ class DeploymentServiceSpec
       .emptySink("sink", existingSinkFactory)
     val action = CreateProcessAction(
       processName,
-      TestCat,
+      Category1,
       canonicalProcess,
       Streaming,
       isFragment = false,
@@ -824,7 +827,7 @@ class DeploymentServiceSpec
 
     val action = CreateProcessAction(
       processName,
-      TestCat,
+      Category1,
       canonicalProcess,
       Streaming,
       isFragment = true,

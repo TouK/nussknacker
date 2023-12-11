@@ -610,7 +610,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       config: Config = ConfigFactory.load()
   ): TestResults[Any] = {
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData(config, ModelClassLoader.empty)
+    val modelData = ModelData(config, ModelClassLoader.empty, None)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration(), identity)
     }

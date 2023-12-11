@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -27,20 +27,25 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.{FragmentOutput, NextSwitch}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue,
+  FragmentClazzRef,
+  FragmentParameter,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
+class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with TableDrivenPropertyChecks {
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
@@ -66,9 +71,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         override def customStreamTransformers(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-          "genericJoin"        -> WithCategories(DynamicParameterJoinTransformer),
-          "genericTransformer" -> WithCategories(GenericParametersTransformer),
-          "genericTransformerUsingParameterValidator" -> WithCategories(
+          "genericJoin"        -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
+          "genericTransformer" -> WithCategories.anyCategory(GenericParametersTransformer),
+          "genericTransformerUsingParameterValidator" -> WithCategories.anyCategory(
             GenericParametersTransformerUsingParameterValidator
           )
         )
@@ -76,21 +81,23 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] = Map(
-          "stringService"                               -> WithCategories(SimpleStringService),
-          "genericParametersThrowingException"          -> WithCategories(GenericParametersThrowingException),
-          "missingParamHandleGenericNodeTransformation" -> WithCategories(MissingParamHandleGenericNodeTransformation)
+          "stringService"                      -> WithCategories.anyCategory(SimpleStringService),
+          "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException),
+          "missingParamHandleGenericNodeTransformation" -> WithCategories.anyCategory(
+            MissingParamHandleGenericNodeTransformation
+          )
         )
 
         override def sourceFactories(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[SourceFactory]] = Map(
-          "genericParametersSource" -> WithCategories(new GenericParametersSource)
+          "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
         )
 
         override def sinkFactories(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[SinkFactory]] = Map(
-          "genericParametersSink" -> WithCategories(GenericParametersSink)
+          "genericParametersSink" -> WithCategories.anyCategory(GenericParametersSink)
         )
       }
     )
@@ -169,6 +176,25 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
       case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
+    }
+  }
+
+  test("should not allow null values in filter") {
+    forAll(ExpressionsTestData.nullExpressions) { filterExpression =>
+      validate(Filter("filter", filterExpression), ValidationContext.empty) should matchPattern {
+        case ValidationPerformed(
+              (
+                EmptyMandatoryParameter(
+                  "This field is required and can not be null",
+                  _,
+                  NodeExpressionId.DefaultExpressionId,
+                  "filter"
+                )
+              ) :: Nil,
+              _,
+              _
+            ) =>
+      }
     }
   }
 
@@ -267,6 +293,25 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should validate empty or blank variable expression") {
+    forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
+      validate(Variable("var1", "specialVariable_2", e), ValidationContext.empty) should matchPattern {
+        case ValidationPerformed(
+              (
+                EmptyMandatoryParameter(
+                  "This field is mandatory and can not be empty",
+                  _,
+                  NodeExpressionId.DefaultExpressionId,
+                  "var1"
+                )
+              ) :: Nil,
+              _,
+              _
+            ) =>
+      }
+    }
+  }
+
   test("should validate variable definition") {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
@@ -310,6 +355,89 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         ValidationContext(localVariables = Map("var1" -> typing.Unknown))
       )
     ) { case ValidationPerformed(OverwrittenVariable("var1", "var1", _) :: Nil, None, _) =>
+    }
+  }
+
+  test("should not allow duplicated field names in variable builder") {
+    inside(
+      validate(
+        VariableBuilder("mapVariable", "var1", Field("field", "null") :: Field("field", "null") :: Nil),
+        ValidationContext.empty
+      )
+    ) {
+      case ValidationPerformed(
+            CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-0-$key",
+              "mapVariable"
+            ) :: CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-1-$key",
+              "mapVariable"
+            ) :: Nil,
+            None,
+            _
+          ) =>
+    }
+  }
+
+  test("should not allow duplicated field names in variable builder when cannot compile") {
+    inside(
+      validate(
+        VariableBuilder("mapVariable", "var1", Field("field", "unresolvedReference") :: Field("field", "null") :: Nil),
+        ValidationContext.empty
+      )
+    ) {
+      case ValidationPerformed(
+            ExpressionParserCompilationError(
+              "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
+              "mapVariable",
+              Some("$fields-0-$value"),
+              "unresolvedReference"
+            ) ::
+            CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-0-$key",
+              "mapVariable"
+            ) :: CustomParameterValidationError(
+              "The key of a record has to be unique",
+              _,
+              "$fields-1-$key",
+              "mapVariable"
+            ) :: Nil,
+            None,
+            _
+          ) =>
+    }
+  }
+
+  test("should not allow empty values in variable builder") {
+    forAll(ExpressionsTestData.emptyOrBlankExpressions) { e =>
+      inside(
+        validate(
+          VariableBuilder("mapVariable", "var1", Field("field1", e) :: Field("field2", e) :: Nil),
+          ValidationContext.empty
+        )
+      ) {
+        case ValidationPerformed(
+              EmptyMandatoryParameter(
+                "This field is mandatory and can not be empty",
+                _,
+                "$fields-0-$value",
+                "mapVariable"
+              ) :: EmptyMandatoryParameter(
+                "This field is mandatory and can not be empty",
+                _,
+                "$fields-1-$value",
+                "mapVariable"
+              ) :: Nil,
+              None,
+              _
+            ) =>
+      }
     }
   }
 
@@ -550,12 +678,269 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+  test("should not allow null values in choice expressions") {
+    forAll(ExpressionsTestData.nullExpressions) { e =>
+      inside(
+        validate(
+          Switch("switchId", None, None),
+          ValidationContext.empty,
+          Map.empty,
+          List(OutgoingEdge("caseTarget", Some(NextSwitch(e))))
+        )
+      ) {
+        case ValidationPerformed(
+              EmptyMandatoryParameter(
+                "This field is required and can not be null",
+                _,
+                "caseTarget",
+                "switchId"
+              ) :: Nil,
+              None,
+              None
+            ) =>
+      }
+    }
+  }
+
   test("should validate node id in all cases") {
     forAll(IdValidationTestData.nodeIdErrorCases) { (nodeId: String, expectedErrors: List[ProcessCompilationError]) =>
       validate(Variable(nodeId, "varName", "1", None), ValidationContext()) match {
         case ValidationPerformed(errors, _, _) => errors shouldBe expectedErrors
         case ValidationNotPerformed            => fail("should not happen")
       }
+    }
+  }
+
+  test("should validate fragment parameter fixed values are of supported type") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[Int],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("1", "someLabel")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              UnsupportedFixedValuesType("param1", "int", nodes),
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value outside possible values in FragmentInputDefinition") {
+    val nodeId: String = "in"
+    val nodes          = Set(nodeId)
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FragmentInputDefinition.FixedExpressionValue("'someValue'", "someValue")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InitialValueNotPresentInPossibleValues("param1", nodes)
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
+  test("should validate initial value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'someString'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
+    }
+  }
+
+  test("should validate fixed value of invalid type in FragmentInputDefinition") {
+    val nodeId: String   = "in"
+    val stringExpression = "'someString'"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[java.lang.Boolean],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = Some(
+                ValueInputWithFixedValuesProvided(
+                  fixedValuesList = List(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
+                  allowOtherValue = false
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Bad expression type, expected: Boolean, found: String(someString)")
+    }
+
+  }
+
+  test("should allow expressions that reference other parameters in FragmentInputDefinition") {
+    val nodeId: String        = "in"
+    val referencingExpression = "#otherStringParam"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "otherStringParam",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None
+            ),
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed(errors, None, None) =>
+      errors shouldBe empty
+    }
+  }
+
+  test("shouldn't allow expressions that reference unknown variables in FragmentInputDefinition") {
+    val nodeId: String               = "in"
+    val invalidReferencingExpression = "#unknownVar"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              "param1",
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: ExpressionParserCompilationErrorInFragmentDefinition) :: Nil, None, None) =>
+      error.message should include("Unresolved reference 'unknownVar'")
+    }
+  }
+
+  test("should fail on unresolvable type in FragmentInputDefinition parameter") {
+    val nodeId: String = "in"
+    val invalidType    = "thisTypeDoesntExist"
+    val paramName      = "param1"
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef(invalidType),
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) { case ValidationPerformed((error: FragmentParamClassLoadError) :: _, None, None) =>
+      error.fieldName shouldBe paramName
+      error.refClazzName shouldBe invalidType
+      error.nodeIds shouldBe Set(nodeId)
     }
   }
 
@@ -586,5 +971,21 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression.spel(expr))
+
+}
+
+object ExpressionsTestData extends TableDrivenPropertyChecks {
+
+  val nullExpressions: TableFor1[String] = Table(
+    "",
+    "  ",
+    "null",
+    "true ? null : null"
+  )
+
+  val emptyOrBlankExpressions: TableFor1[String] = Table(
+    "",
+    "  "
+  )
 
 }

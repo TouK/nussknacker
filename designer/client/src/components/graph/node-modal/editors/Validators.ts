@@ -79,7 +79,7 @@ export const mandatoryValueValidator: Validator = {
     validatorType: ValidatorType.Frontend,
 };
 
-const uniqueValueValidator: (otherValues: string[]) => Validator = (otherValues) => ({
+export const uniqueValueValidator: (otherValues: string[]) => Validator = (otherValues) => ({
     isValid: (value) => !otherValues.includes(value),
     message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique"),
     description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),

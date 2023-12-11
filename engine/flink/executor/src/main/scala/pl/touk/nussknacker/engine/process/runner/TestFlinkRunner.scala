@@ -27,18 +27,4 @@ object TestFlinkRunner {
     registrar.register(env, scenario, version, deploymentData, resultCollector)
   }
 
-  def registerInEnvironment(
-      env: environment.StreamExecutionEnvironment,
-      configCreator: ProcessConfigCreator,
-      config: Config = ConfigFactory.empty()
-  )(
-      scenario: CanonicalProcess,
-      deploymentData: DeploymentData = DeploymentData.empty,
-      version: ProcessVersion = ProcessVersion.empty,
-      resultCollector: ResultCollector = ProductionServiceInvocationCollector
-  ): Unit = {
-    val modelData = LocalModelData(config, configCreator)
-    registerInEnvironmentWithModel(env, modelData)(scenario, deploymentData, version, resultCollector)
-  }
-
 }

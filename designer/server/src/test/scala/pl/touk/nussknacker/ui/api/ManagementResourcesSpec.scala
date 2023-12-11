@@ -72,7 +72,7 @@ class ManagementResourcesSpec
   }
 
   test("process during deploy cannot be deployed again") {
-    createDeployedProcess(processName, TestCat)
+    createDeployedProcess(processName, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
@@ -82,7 +82,7 @@ class ManagementResourcesSpec
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledProcess(processName, TestCat)
+    createDeployedCanceledProcess(processName, Category1)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
@@ -104,7 +104,7 @@ class ManagementResourcesSpec
   }
 
   test("can't deploy fragment") {
-    val id                = createValidProcess(processName, TestCat, isFragment = true)
+    val id                = createValidProcess(processName, Category1, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -114,7 +114,7 @@ class ManagementResourcesSpec
   }
 
   test("can't cancel fragment") {
-    val id                = createValidProcess(processName, TestCat, isFragment = true)
+    val id                = createValidProcess(processName, Category1, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -190,7 +190,7 @@ class ManagementResourcesSpec
   }
 
   test("deploy technical process and mark it as deployed") {
-    createValidProcess(processName, TestCat, false)
+    createValidProcess(processName, Category1, false)
 
     deployProcess(processName.value) ~> checkThatEventually {
       status shouldBe StatusCodes.OK

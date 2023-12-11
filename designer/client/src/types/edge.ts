@@ -16,6 +16,7 @@ export type EdgeType = {
 };
 
 export type Edge = {
+    _id?: string;
     from: NodeId;
     to: NodeId;
     edgeType?: EdgeType;

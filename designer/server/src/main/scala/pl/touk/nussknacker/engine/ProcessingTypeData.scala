@@ -20,7 +20,7 @@ final case class ProcessingTypeData private (
     scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
     additionalValidators: List[CustomProcessValidator],
     usageStatistics: ProcessingTypeUsageStatistics,
-    categoriesConfig: CategoriesConfig
+    categoryConfig: CategoryConfig
 ) {
 
   def close(): Unit = {
@@ -32,15 +32,15 @@ final case class ProcessingTypeData private (
 
 // TODO: remove Option after fully switch to categories inside processing types configuration format -
 //       see ConfigProcessCategoryService for details
-case class CategoriesConfig(categories: Option[List[String]])
+case class CategoryConfig(category: Option[String])
 
-object CategoriesConfig {
+object CategoryConfig {
 
-  def apply(processTypeConfig: ProcessingTypeConfig): CategoriesConfig = new CategoriesConfig(
-    processTypeConfig.categories
+  def apply(processTypeConfig: ProcessingTypeConfig): CategoryConfig = new CategoryConfig(
+    processTypeConfig.category
   )
 
-  def apply(categories: List[String]): CategoriesConfig = new CategoriesConfig(Some(categories))
+  def apply(category: String): CategoryConfig = new CategoryConfig(Some(category))
 
 }
 
@@ -60,7 +60,7 @@ object ProcessingTypeData {
       deploymentManagerProvider,
       ModelData(processTypeConfig),
       managerConfig,
-      CategoriesConfig(processTypeConfig)
+      CategoryConfig(processTypeConfig)
     )
   }
 
@@ -68,7 +68,7 @@ object ProcessingTypeData {
       deploymentManagerProvider: DeploymentManagerProvider,
       modelData: ModelData,
       managerConfig: Config,
-      categoriesConfig: CategoriesConfig
+      categoriesConfig: CategoryConfig
   )(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
@@ -84,7 +84,7 @@ object ProcessingTypeData {
       manager: DeploymentManager,
       modelData: ModelData,
       managerConfig: Config,
-      categoriesConfig: CategoriesConfig
+      categoriesConfig: CategoryConfig
   ): ProcessingTypeData = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._

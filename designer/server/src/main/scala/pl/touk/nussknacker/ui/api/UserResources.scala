@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, UserCategoryService}
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 
@@ -18,7 +18,8 @@ class UserResources(getProcessCategoryService: () => ProcessCategoryService)(imp
     path("user") {
       get {
         complete {
-          DisplayableUser(user, getProcessCategoryService().getAllCategories)
+          val allUserAccessibleCategories = new UserCategoryService(getProcessCategoryService()).getUserCategories(user)
+          DisplayableUser(user, allUserAccessibleCategories)
         }
       }
     }
@@ -37,13 +38,13 @@ class UserResources(getProcessCategoryService: () => ProcessCategoryService)(imp
 object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def apply(user: LoggedUser, allCategories: List[String]): DisplayableUser = user match {
+  def apply(user: LoggedUser, allUserAccessibleCategories: List[String]): DisplayableUser = user match {
     case CommonUser(id, username, categoryPermissions, globalPermissions) =>
       new DisplayableUser(
         id = id,
         isAdmin = false,
         username = username,
-        categories = allCategories.sorted,
+        categories = allUserAccessibleCategories,
         categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
         globalPermissions = globalPermissions
       )
@@ -52,7 +53,7 @@ object DisplayableUser {
         id = id,
         isAdmin = true,
         username = username,
-        categories = allCategories.sorted,
+        categories = allUserAccessibleCategories,
         categoryPermissions = Map.empty,
         globalPermissions = Nil
       )

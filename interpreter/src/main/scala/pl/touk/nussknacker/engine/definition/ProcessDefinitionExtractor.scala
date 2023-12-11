@@ -29,7 +29,9 @@ object ProcessDefinitionExtractor {
   def extractObjectWithMethods(
       creator: ProcessConfigCreator,
       classLoader: ClassLoader,
-      processObjectDependencies: ProcessObjectDependencies
+      processObjectDependencies: ProcessObjectDependencies,
+      // It won't be needed to pass category after we get rid of ProcessConfigCreator API
+      category: Option[String]
   ): ProcessDefinition[ObjectWithMethodDef] = {
 
     val componentsFromProviders = extractFromComponentProviders(classLoader, processObjectDependencies)
@@ -59,7 +61,7 @@ object ProcessDefinitionExtractor {
 
     val settings = creator.classExtractionSettings(processObjectDependencies)
 
-    ProcessDefinition[ObjectWithMethodDef](
+    val definition = ProcessDefinition[ObjectWithMethodDef](
       servicesDefs,
       sourceFactoriesDefs,
       sinkFactoriesDefs,
@@ -67,17 +69,21 @@ object ProcessDefinitionExtractor {
       toExpressionDefinition(expressionConfig),
       settings
     )
+
+    category
+      .map(c => definition.filter(_.availableForCategory(c)))
+      .getOrElse(definition)
   }
 
   private def toExpressionDefinition(expressionConfig: ExpressionConfig) =
     ExpressionDefinition(
       GlobalVariableDefinitionExtractor.extractDefinitions(expressionConfig.globalProcessVariables),
-      expressionConfig.globalImports.map(_.value),
+      expressionConfig.globalImports,
       expressionConfig.additionalClasses,
       expressionConfig.languages,
       expressionConfig.optimizeCompilation,
       expressionConfig.strictTypeChecking,
-      expressionConfig.dictionaries.mapValuesNow(_.value),
+      expressionConfig.dictionaries,
       expressionConfig.hideMetaVariable,
       expressionConfig.strictMethodsChecking,
       expressionConfig.staticMethodInvocationsChecking,
@@ -106,14 +112,6 @@ object ProcessDefinitionExtractor {
     @transient lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(
       ProcessDefinitionExtractor.extractTypes(modelDefinition)
     )
-
-    def filter(predicate: ObjectWithMethodDef => Boolean): ModelDefinitionWithTypes = {
-      ModelDefinitionWithTypes(modelDefinition.filter(predicate))
-    }
-
-    def transform(f: ObjectWithMethodDef => ObjectWithMethodDef): ModelDefinitionWithTypes = {
-      ModelDefinitionWithTypes(modelDefinition.transform(f))
-    }
 
   }
 

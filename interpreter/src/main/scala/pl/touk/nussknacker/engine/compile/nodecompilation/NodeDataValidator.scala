@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
@@ -69,8 +69,8 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))
         case a: CustomNode =>
           toValidationResponse(compiler.compileCustomNodeObject(a, Left(validationContext), ending = false))
-        case a: Source => toValidationResponse(compiler.compileSource(a))
-        case a: Sink   => toValidationResponse(compiler.compileSink(a, validationContext))
+        case a: SourceNodeData => toValidationResponse(compiler.compileSource(a))
+        case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
         case a: Enricher =>
           toValidationResponse(
             compiler.compileEnricher(a, validationContext, outputVar = Some(OutputVar.enricher(a.output)))
@@ -78,16 +78,11 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
         case a: Filter =>
           toValidationResponse(
-            compiler.compileExpression(a.expression, validationContext, expectedType = Typed[Boolean], outputVar = None)
+            compiler.compileFilter(a, validationContext)
           )
         case a: Variable =>
           toValidationResponse(
-            compiler.compileExpression(
-              a.value,
-              validationContext,
-              expectedType = typing.Unknown,
-              outputVar = Some(OutputVar.variable(a.varName))
-            )
+            compiler.compileVariable(a, validationContext)
           )
         case a: VariableBuilder =>
           toValidationResponse(
@@ -106,7 +101,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
             )
           )
         case a: FragmentInput => validateFragment(validationContext, outgoingEdges, compiler, a)
-        case Split(_, _) | FragmentUsageOutput(_, _, _, _) | FragmentInputDefinition(_, _, _) | BranchEndData(_) =>
+        case Split(_, _) | FragmentUsageOutput(_, _, _, _) | BranchEndData(_) =>
           ValidationNotPerformed
       }
 

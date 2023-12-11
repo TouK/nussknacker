@@ -7,8 +7,9 @@ import enumeratum._
 import io.circe.syntax.EncoderOps
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
-import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.ui.security.api.AuthCredentials
+import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
+import BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -189,7 +190,7 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
                 value = UserCategoriesWithProcessingTypesDto(
                   Map(
                     "Category1" -> "streaming",
-                    "Category2" -> "streaming"
+                    "Category2" -> "streaming2"
                   )
                 )
               )

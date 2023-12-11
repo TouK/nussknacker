@@ -14,4 +14,7 @@ object DeploymentData {
 
   val empty: DeploymentData = DeploymentData(DeploymentId(""), systemUser, Map.empty)
 
+  def withDeploymentId(deploymentIdString: String) =
+    DeploymentData(DeploymentId(deploymentIdString), systemUser, Map.empty)
+
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -20,8 +20,8 @@ import pl.touk.nussknacker.engine.api.expression.{
 }
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{
   ExpressionCompiler,
   NodeValidationExceptionHandler,
@@ -43,7 +43,7 @@ import pl.touk.nussknacker.engine.definition.{
 }
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.branchParameterExpressionId
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node._
@@ -54,6 +54,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object NodeCompiler {
 
@@ -69,19 +70,6 @@ object NodeCompiler {
 
     def map[R](f: T => R): NodeCompilationResult[R] = copy(compiledObject = compiledObject.map(f))
 
-  }
-
-  private case class ExpressionCompilation[R](
-      fieldName: String,
-      typedExpression: Option[TypedExpression],
-      validated: ValidatedNel[ProcessCompilationError, R]
-  ) {
-
-    val typingResult: TypingResult =
-      typedExpression.map(_.returnType).getOrElse(Unknown)
-
-    val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
-      typedExpression.map(te => (fieldName, te.typingInfo)).toMap
   }
 
 }
@@ -119,6 +107,8 @@ class NodeCompiler(
   private val factory: ProcessObjectFactory = new ProcessObjectFactory(expressionEvaluator)
   private val nodeValidator =
     new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
+  private val fragmentParameterValidator = new FragmentParameterValidator(objectParametersExpressionCompiler)
+  private val baseNodeCompiler           = new BaseNodeCompiler(objectParametersExpressionCompiler)
 
   def compileSource(
       nodeData: SourceNodeData
@@ -149,35 +139,66 @@ class NodeCompiler(
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
     case frag @ FragmentInputDefinition(id, params, _) =>
+      def withFragmentParameterErrors[T](
+          compiledObject: ValidatedNel[ProcessCompilationError, T],
+          validationContext: ValidationContext
+      ) = {
+        def paramValidationErrors = params.map { param =>
+          fragmentParameterValidator.validate(param, id, validationContext)
+        }.sequence
+
+        compiledObject.andThen(v =>
+          paramValidationErrors match {
+            case Invalid(errors) => Invalid(errors)
+            case Valid(_)        => Valid(v)
+          }
+        )
+      }
+
       definitions.sourceFactories.get(id) match {
         case Some(definition) =>
           val parameters                           = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val validationContext = Valid(
-            contextWithOnlyGlobalVariables.copy(localVariables =
-              contextWithOnlyGlobalVariables.globalVariables ++ variables
-            )
-          )
+          val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
-          compileObjectWithTransformation[Source](
+          val compilationResult = compileObjectWithTransformation[Source](
             Nil,
             Nil,
             Left(contextWithOnlyGlobalVariables),
             None,
             definition,
-            _ => validationContext
+            _ => Valid(validationContext)
           ).map(_._1)
-        case None =>
-          NodeCompilationResult(
-            Map.empty,
-            None,
-            Valid(
-              contextWithOnlyGlobalVariables.copy(localVariables =
-                params.map(p => p.name -> loadFromParameter(p)).toMap
-              )
-            ),
-            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+
+          compilationResult.copy(compiledObject =
+            withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
           )
+
+        case None =>
+          loadParametersTypeMap(params) match {
+            case Valid(paramTypeMap) =>
+              val validationContext =
+                contextWithOnlyGlobalVariables.copy(localVariables = paramTypeMap)
+
+              val compilationResult = NodeCompilationResult(
+                Map.empty,
+                None,
+                Valid(validationContext),
+                Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource())
+              )
+
+              compilationResult.copy(compiledObject =
+                withFragmentParameterErrors(compilationResult.compiledObject, validationContext)
+              )
+
+            case Invalid(errors) =>
+              NodeCompilationResult(
+                Map.empty,
+                None,
+                Invalid(errors),
+                Invalid(errors)
+              )
+          }
       }
   }
 
@@ -265,34 +286,19 @@ class NodeCompiler(
   )(
       implicit nodeId: NodeId
   ): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
+    baseNodeCompiler.compileSwitch(expressionRaw, choices, ctx)
+  }
 
-    // the frontend uses empty string to delete deprecated expression.
-    val expression = expressionRaw.filterNot(_._1.isEmpty)
+  def compileFilter(filter: Filter, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): NodeCompilationResult[expression.Expression] = {
+    baseNodeCompiler.compileFilter(filter, ctx)
+  }
 
-    val expressionCompilation = expression.map { case (output, expression) =>
-      compileExpression(expression, ctx, Unknown, NodeExpressionId.DefaultExpressionId, Some(OutputVar.switch(output)))
-    }
-    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
-
-    val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
-    val caseExpressions = choices.map { case (outEdge, caseExpr) =>
-      compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
-    }
-    val expressionTypingInfos = caseExpressions
-      .map(_.expressionTypingInfo)
-      .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)) {
-        _ ++ _
-      }
-
-    val objCases = caseExpressions.map(_.compiledObject).sequence
-
-    NodeCompilationResult(
-      expressionTypingInfos,
-      None,
-      expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
-      objExpression.product(objCases),
-      expressionCompilation.flatMap(_.expressionType)
-    )
+  def compileVariable(variable: Variable, ctx: ValidationContext)(
+      implicit nodeId: NodeId
+  ): NodeCompilationResult[expression.Expression] = {
+    baseNodeCompiler.compileVariable(variable, ctx)
   }
 
   def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field], ctx: ValidationContext)(
@@ -310,62 +316,7 @@ class NodeCompiler(
       ctx: ValidationContext,
       outputVar: Option[OutputVar]
   )(implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.variable.Field]] = {
-    val compilationResult
-        : ValidatedNel[ProcessCompilationError, List[ExpressionCompilation[compiledgraph.variable.Field]]] =
-      fields.map { field =>
-        objectParametersExpressionCompiler
-          .compile(field.expression, Some(field.name), ctx, Unknown)
-          .map(typedExpression =>
-            ExpressionCompilation(
-              field.name,
-              Some(typedExpression),
-              Valid(compiledgraph.variable.Field(field.name, typedExpression.expression))
-            )
-          )
-      }.sequence
-
-    val typedObject = compilationResult
-      .map { fieldsComp =>
-        TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
-      }
-      .valueOr(_ => Unknown)
-
-    val fieldsTypingInfo = compilationResult
-      .map { compilations =>
-        compilations.flatMap(_.expressionTypingInfo).toMap
-      }
-      .getOrElse(Map.empty)
-
-    val compiledFields = compilationResult.andThen(_.map(_.validated).sequence)
-
-    NodeCompilationResult(
-      expressionTypingInfo = fieldsTypingInfo,
-      parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, typedObject)).getOrElse(Valid(ctx)),
-      compiledObject = compiledFields,
-      expressionType = Some(typedObject)
-    )
-  }
-
-  def compileExpression(
-      expr: Expression,
-      ctx: ValidationContext,
-      expectedType: TypingResult,
-      fieldName: String = DefaultExpressionId,
-      outputVar: Option[OutputVar]
-  )(implicit nodeId: NodeId): NodeCompilationResult[api.expression.Expression] = {
-    val expressionCompilation = objectParametersExpressionCompiler
-      .compile(expr, Some(fieldName), ctx, expectedType)
-      .map(typedExpr => ExpressionCompilation(fieldName, Some(typedExpr), Valid(typedExpr.expression)))
-      .valueOr(err => ExpressionCompilation(fieldName, None, Invalid(err)))
-
-    NodeCompilationResult(
-      expressionTypingInfo = expressionCompilation.expressionTypingInfo,
-      parameters = None,
-      validationContext = outputVar.map(ctx.withVariable(_, expressionCompilation.typingResult)).getOrElse(Valid(ctx)),
-      compiledObject = expressionCompilation.validated,
-      expressionType = Some(expressionCompilation.typingResult)
-    )
+    baseNodeCompiler.compileFields(fields, ctx, outputVar)
   }
 
   def compileProcessor(
@@ -504,16 +455,40 @@ class NodeCompiler(
     }
   }
 
-  // TODO: better classloader error handling
-  private def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
-    fragmentParameter.typ
-      .toRuntimeClass(classLoader)
-      .map(Typed(_))
-      .getOrElse(
-        throw new IllegalArgumentException(
-          s"Failed to load scenario fragment parameter: ${fragmentParameter.typ.refClazzName} for ${nodeId.id}"
-        )
+  def loadParametersTypeMap(
+      params: List[FragmentParameter]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Map[String, TypingResult]] = {
+    val paramTypeMap = params.map(p => p.name -> loadFromParameter(p)).toMap
+    val paramTypeResolveErrors = paramTypeMap.values.flatMap {
+      case Valid(_)   => List.empty
+      case Invalid(e) => e.toList
+    }.toList
+
+    paramTypeResolveErrors match {
+      case head :: tail => Invalid(NonEmptyList(head, tail))
+      case Nil          => Valid(paramTypeMap.mapValuesNow(_.toOption.get))
+    }
+  }
+
+  private def loadFromParameter(
+      fragmentParameter: FragmentParameter
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult] =
+    Validated
+      .fromTry(
+        fragmentParameter.typ
+          .toRuntimeClass(classLoader)
+          .map(Typed(_))
       )
+      .leftMap { _ =>
+        NonEmptyList(
+          FragmentParamClassLoadError(
+            fragmentParameter.name,
+            fragmentParameter.typ.refClazzName,
+            nodeId.id
+          ),
+          Nil
+        )
+      }
 
   private def compileObjectWithTransformation[T](
       parameters: List[evaluatedparam.Parameter],

@@ -10,9 +10,12 @@ import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,6 +25,14 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   import system.dispatcher
   implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
   implicit val deploymentService: DeploymentService  = null
+
+  private val processingTypeBasicConfig =
+    """deploymentConfig {
+      |  type: FooDeploymentManager
+      |}
+      |modelConfig {
+      |  classPath: []
+      |}""".stripMargin
 
   test("load only scenario types assigned to configured categories") {
     val config = ConfigFactory.parseString("""
@@ -34,7 +45,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |    modelConfig {
         |      classPath: []
         |    }
-        |    categories: ["Default"]
+        |    category: "Default"
         |  }
         |  bar {
         |    deploymentConfig {
@@ -43,14 +54,49 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |    modelConfig {
         |      classPath: []
         |    }
-        |    categories: ["Default"]
+        |    category: "Default"
         |  }
         |}
         |""".stripMargin)
 
-    val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(config)).all
+    val scenarioTypes = StubbedProcessingTypeDataReader
+      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+      .all(AdminUser("admin", "admin"))
 
     scenarioTypes.keySet shouldEqual Set("foo")
+  }
+
+  test("allow to access to processing type data only users that has read access to associated category") {
+    val config = ConfigFactory.parseString(s"""
+        |scenarioTypes {
+        |  foo {
+        |    $processingTypeBasicConfig
+        |    category: "foo"
+        |  }
+        |  bar {
+        |    $processingTypeBasicConfig
+        |    category: "bar"
+        |  }
+        |}
+        |""".stripMargin)
+
+    val provider = StubbedProcessingTypeDataReader
+      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+
+    val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
+
+    provider.forType("foo")(fooCategoryUser)
+    an[UnauthorizedError] shouldBe thrownBy {
+      provider.forType("bar")(fooCategoryUser)
+    }
+    provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
+
+    val mappedProvider = provider.mapValues(_ => ())
+    mappedProvider.forType("foo")(fooCategoryUser)
+    an[UnauthorizedError] shouldBe thrownBy {
+      mappedProvider.forType("bar")(fooCategoryUser)
+    }
+    mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
   }
 
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {
@@ -69,7 +115,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None),
-        CategoriesConfig(List.empty)
+        CategoryConfig(typeConfig.category)
       )
     }
 
@@ -80,8 +126,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       CombinedProcessingTypeData(
         statusNameToStateDefinitionsMapping = Map.empty,
         componentIdProvider = new DefaultComponentIdProvider(Map.empty),
-        categoryService =
-          ConfigProcessCategoryService(designerConfig.resolved, valueMap.mapValuesNow(_.categoriesConfig))
+        categoryService = ConfigProcessCategoryService(designerConfig.resolved, valueMap.mapValuesNow(_.categoryConfig))
       )
     }
 

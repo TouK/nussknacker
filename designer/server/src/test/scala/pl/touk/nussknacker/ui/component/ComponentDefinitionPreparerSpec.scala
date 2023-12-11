@@ -205,7 +205,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("should merge default value maps") {
     val fixed = Map(
       "service" -> SingleComponentConfig(
-        Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
+        Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
         None,
         Some("doc"),
         None,
@@ -215,7 +215,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     val dynamic = Map(
       "service" -> SingleComponentConfig(
-        Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
+        Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
         None,
         Some("doc1"),
         None,
@@ -225,7 +225,9 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     val expected = Map(
       "service" -> SingleComponentConfig(
-        Some(Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
+        Some(
+          Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))
+        ),
         None,
         Some("doc"),
         None,
