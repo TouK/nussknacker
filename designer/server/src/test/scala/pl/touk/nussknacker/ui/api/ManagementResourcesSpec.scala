@@ -340,7 +340,6 @@ class ManagementResourcesSpec
         .downField("nodeResults")
         .downField("endsuffix")
         .downArray
-        .downField("context")
         .downField("variables")
 
       ctx
