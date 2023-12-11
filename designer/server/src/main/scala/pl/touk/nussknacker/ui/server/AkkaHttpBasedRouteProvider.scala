@@ -289,7 +289,6 @@ class AkkaHttpBasedRouteProvider(
             getProcessCategoryService,
             additionalUIConfigProvider
           ),
-//          new NotificationResources(notificationService),
           new TestInfoResources(processAuthorizer, processService, scenarioTestService),
           new AttachmentResources(
             new ProcessAttachmentService(
