@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class NotificationApiHttpService(
     config: Config,
@@ -22,13 +22,14 @@ class NotificationApiHttpService(
   private val notificationApiEndpoints = new NotificationApiEndpoints(authenticator.authenticationMethod())
 
   expose {
+//    Was before ->  Symbol("after").as[Instant].optional
     val notificationsAfter = Some(Instant.now())
 
     notificationApiEndpoints.notificationEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogic { user: LoggedUser => _ =>
         notificationService
-          .notifications(notificationsAfter = notificationsAfter)(user, executionContext)
+          .notifications(notificationsAfter)(user, executionContext)
           .map { notificationList => success(notificationList) }
       }
   }
