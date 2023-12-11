@@ -4,6 +4,7 @@ import { NodeValidationError } from "../../../../types";
 import { FormatterType } from "./expression/Formatter";
 
 export enum HandledErrorType {
+    AlreadyExists = "AlreadyExists",
     EmptyMandatoryParameter = "EmptyMandatoryParameter",
     UniqueParameter = "UniqueParameter",
     InvalidIntegerLiteralParameter = "InvalidIntegerLiteralParameter",
@@ -22,13 +23,6 @@ export type PossibleValue = {
     expression: string;
     label: string;
 };
-
-export interface Error {
-    fieldName: string;
-    message: string;
-    description: string;
-    typ: string;
-}
 
 export const mandatoryValueValidator: Validator = {
     isValid: (value) => !isEmpty(value),
@@ -90,7 +84,7 @@ export const maximalNumberValidator = (maximalNumber: number): Validator => ({
     handledErrorType: HandledErrorType.GreaterThanRequiredParameter,
 });
 
-export type FieldError = Pick<Error, "message" | "description">;
+export type FieldError = Pick<NodeValidationError, "message" | "description">;
 
 export const getValidationErrorsForField = (errors: NodeValidationError[], fieldName: string) => {
     const fieldErrors: FieldError[] = errors

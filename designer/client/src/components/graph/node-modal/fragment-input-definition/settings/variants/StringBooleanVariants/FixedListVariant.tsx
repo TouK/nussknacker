@@ -6,7 +6,6 @@ import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: FixedListParameterVariant;

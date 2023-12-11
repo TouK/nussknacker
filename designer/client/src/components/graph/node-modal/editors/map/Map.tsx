@@ -1,7 +1,6 @@
 import React, { createContext, useCallback, useMemo } from "react";
 import { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
 import { NodeRowFieldsProvider } from "../../node-row-fields-provider";
-import { Error, mandatoryValueValidator, uniqueListValueValidator } from "../Validators";
 import { useDiffMark } from "../../PathsToMark";
 import { DndItems } from "../../../../common/dndItems/DndItems";
 import MapRow from "./MapRow";

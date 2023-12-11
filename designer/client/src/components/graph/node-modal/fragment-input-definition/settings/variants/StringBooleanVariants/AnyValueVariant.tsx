@@ -5,7 +5,6 @@ import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
-import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueParameterVariant;

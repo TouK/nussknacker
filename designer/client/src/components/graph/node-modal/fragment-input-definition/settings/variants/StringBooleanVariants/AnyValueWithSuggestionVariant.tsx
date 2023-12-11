@@ -6,7 +6,6 @@ import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType 
 import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
