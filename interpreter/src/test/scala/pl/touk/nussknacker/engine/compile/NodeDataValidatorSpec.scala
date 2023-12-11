@@ -980,7 +980,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               validationExpression = Some(
                 ValidationExpression(
                   s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
-                  Some("some failed message")
+                  "some failed message"
                 )
               )
             )
@@ -1013,7 +1013,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = None,
               validationExpression =
-                Some(ValidationExpression(Expression.spel(invalidReference), Some("some failed message"))),
+                Some(ValidationExpression(Expression.spel(invalidReference), "some failed message")),
             )
           ),
         ),
@@ -1055,7 +1055,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               hintText = None,
               valueEditor = None,
               validationExpression =
-                Some(ValidationExpression(Expression.spel(stringExpression), Some("some failed message"))),
+                Some(ValidationExpression(Expression.spel(stringExpression), "some failed message")),
             )
           ),
         ),

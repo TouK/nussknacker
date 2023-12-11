@@ -99,7 +99,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
           )
         ),
         validationExpression =
-          Some(ValidationExpression(Expression.spel("#value.length() < 7"), Some("some failed message"))),
+          Some(ValidationExpression(Expression.spel("#value.length() < 7"), "some failed message")),
       )
     )
   }

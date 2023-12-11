@@ -147,7 +147,7 @@ class FragmentComponentDefinitionExtractor(
         .map { expression =>
           ValidationExpressionParameterValidator(
             expression,
-            fragmentParameter.validationExpression.flatMap(_.failedMessage)
+            fragmentParameter.validationExpression.map(_.failedMessage)
           )
         }
     })

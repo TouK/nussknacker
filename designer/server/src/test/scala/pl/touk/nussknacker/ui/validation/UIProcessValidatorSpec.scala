@@ -509,7 +509,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  validationExpression = Some(ValidationExpression(Expression.spel("'a' + 'b'"), None))
+                  validationExpression = Some(ValidationExpression(Expression.spel("'a' + 'b'"), "some failed message"))
                 )
               )
             )
@@ -999,7 +999,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             validationExpression = Some(
               ValidationExpression(
                 s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
-                Some("some failed message")
+                "some failed message"
               )
             )
           )
@@ -1037,7 +1037,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             validationExpression = Some(
               ValidationExpression(
                 s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
-                Some("some failed message")
+                "some failed message"
               )
             )
           )

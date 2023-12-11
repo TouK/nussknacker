@@ -266,7 +266,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           hintText = None,
           valueEditor = None,
           validationExpression =
-            Some(ValidationExpression(Expression.spel("#name.length() < 100"), Some("some validation error")))
+            Some(ValidationExpression(Expression.spel("#name.length() < 100"), "some validation error"))
         )
       )
     )

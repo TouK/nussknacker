@@ -353,7 +353,7 @@ object node {
 
     }
 
-    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: Option[String])
+    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: String)
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
