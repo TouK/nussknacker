@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -83,7 +82,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       case Invalid(
             NonEmptyList(
               NuExceptionInfo(
-                Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Enricher)))),
+                Some(NodeComponentInfo("invoke-service", Some(ComponentInfo(ComponentType.Service, "service")))),
                 ex,
                 _
               ),
@@ -109,8 +108,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
     val compilerData = ProcessCompilerData.prepare(
       process,
-      modelData.processConfig,
-      modelData.modelDefinitionWithTypes,
+      modelData.modelConfig,
+      modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,
       getClass.getClassLoader,

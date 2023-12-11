@@ -13,6 +13,7 @@ import org.springframework.expression.spel.{
   SpelParserConfiguration,
   standard
 }
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
@@ -21,14 +22,14 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpress
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
 
 import scala.util.control.NonFatal
 
@@ -252,7 +253,7 @@ object SpelExpressionParser extends LazyLogging {
       dictRegistry: DictRegistry,
       enableSpelForceCompile: Boolean,
       flavour: Flavour,
-      typeDefinitionSet: TypeDefinitionSet
+      classDefinitionSet: ClassDefinitionSet
   ): SpelExpressionParser = {
 
     val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
@@ -261,7 +262,7 @@ object SpelExpressionParser extends LazyLogging {
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
     val validator = new SpelExpressionValidator(
-      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), typeDefinitionSet)
+      Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), classDefinitionSet)
     )
     new SpelExpressionParser(
       parser,

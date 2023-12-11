@@ -5,11 +5,11 @@ import cats.data.ValidatedNel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
-import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -79,7 +79,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     new KeysDictTyper(dict),
     strictMethodsChecking,
     staticMethodInvocationsChecking,
-    TypeDefinitionSet.forDefaultAdditionalClasses,
+    ClassDefinitionSet.forDefaultAdditionalClasses,
     evaluationContextPreparer = null,
     methodExecutionForUnknownAllowed,
     dynamicPropertyAccessAllowed

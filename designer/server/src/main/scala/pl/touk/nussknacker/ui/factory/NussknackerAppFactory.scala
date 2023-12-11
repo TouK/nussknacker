@@ -16,11 +16,11 @@ import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
-class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory) extends LazyLogging {
+class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataStateFactory) extends LazyLogging {
 
   def this() = {
     this(
-      ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory
+      ProcessingTypeDataReaderBasedProcessingTypeDataStateFactory
     )
   }
 
@@ -36,7 +36,7 @@ class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDat
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
       db              <- DbRef.create(config.resolved)
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataProviderFactory)(system, materializer),
+        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory)(system, materializer),
         system,
         materializer
       )(IORuntime.global)

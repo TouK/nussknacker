@@ -5,38 +5,37 @@ import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.{CategoryConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.model
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testing.{LocalModelData, ProcessDefinitionBuilder}
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessingType}
+import pl.touk.nussknacker.engine.{CategoryConfig, ConfigWithUnresolvedVersion, CustomProcessValidatorLoader}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{
-  MapBasedProcessingTypeDataProvider,
   ProcessingTypeDataConfigurationReader,
   ProcessingTypeDataProvider,
   ValueWithPermission
 }
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, NewProcessPreparer, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters._
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions {
@@ -65,18 +64,20 @@ object TestFactory extends TestPermissions {
 
   val processValidator: UIProcessValidator = ProcessTestData.processValidator.withFragmentResolver(sampleResolver)
 
+  val processValidatorByProcessingType: ProcessingTypeDataProvider[UIProcessValidator, _] =
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processValidator)
+
   val flinkProcessValidator: UIProcessValidator = ProcessTestData.processValidator
     .withFragmentResolver(sampleResolver)
-    .withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
-    )
+    .withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
 
   val processResolver = new UIProcessResolver(
     processValidator,
-    mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
-    )
+    ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))
   )
+
+  val processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _] =
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> processResolver)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 
@@ -164,17 +165,17 @@ object TestFactory extends TestPermissions {
 
   def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(
+    ProcessingTypeDataProvider.withEmptyCombinedData(
       Map(data: _*).mapValuesNow(ValueWithPermission.anyUser)
     )
   }
 
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] =
-    MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+    ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
-  def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
+  def createValidator(modelDefinition: ModelDefinition[ComponentStaticDefinition]): ProcessValidator = {
     ProcessValidator.default(
-      ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)),
+      ModelDefinitionWithClasses(ModelDefinitionBuilder.withNullImplementation(modelDefinition)),
       ConfigFactory.empty(),
       new SimpleDictRegistry(Map.empty),
       CustomProcessValidatorLoader.emptyCustomProcessValidator

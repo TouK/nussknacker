@@ -54,7 +54,7 @@ object sinks {
         ctx =>
           implicitly[Monad[F]].pure(
             // FIXME: figure out how to pass componentName here
-            withErrors(context, Some(ComponentInfo("unknown", ComponentType.Sink)), ctx) {
+            withErrors(context, Some(ComponentInfo(ComponentType.Sink, "unknown")), ctx) {
               interpreter(ctx)
             }
           )

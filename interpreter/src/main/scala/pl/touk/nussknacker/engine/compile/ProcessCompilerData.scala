@@ -7,11 +7,10 @@ import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyInterpreterDependencies, NodeCompiler}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
+import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
@@ -30,8 +29,8 @@ object ProcessCompilerData {
 
   def prepare(
       process: CanonicalProcess,
-      processConfig: Config,
-      definitionWithTypes: ModelDefinitionWithTypes,
+      modelConfig: Config,
+      definitionWithTypes: ModelDefinitionWithClasses,
       dictRegistry: EngineDictRegistry,
       listeners: Seq[ProcessListener],
       userCodeClassLoader: ClassLoader,
@@ -39,24 +38,23 @@ object ProcessCompilerData {
       componentUseCase: ComponentUseCase,
       customProcessValidator: CustomProcessValidator
   ): ProcessCompilerData = {
-    import definitionWithTypes.modelDefinition
-    val servicesDefs = modelDefinition.services
+    val servicesDefs = definitionWithTypes.modelDefinition.services
 
     val expressionCompiler = ExpressionCompiler.withOptimization(
       userCodeClassLoader,
       dictRegistry,
-      modelDefinition.expressionConfig,
-      definitionWithTypes.typeDefinitions
+      definitionWithTypes.modelDefinition.expressionConfig,
+      definitionWithTypes.classDefinitions
     )
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(
-      processConfig,
+      modelConfig,
       userCodeClassLoader,
       expressionCompiler
     )
 
     // for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(
-      modelDefinition,
+      definitionWithTypes.modelDefinition,
       fragmentDefinitionExtractor,
       expressionCompiler,
       userCodeClassLoader,
@@ -67,12 +65,12 @@ object ProcessCompilerData {
     val processCompiler = new ProcessCompiler(
       userCodeClassLoader,
       subCompiler,
-      GlobalVariablesPreparer(modelDefinition.expressionConfig),
+      GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig),
       nodeCompiler,
       customProcessValidator
     )
 
-    val globalVariablesPreparer = GlobalVariablesPreparer(modelDefinition.expressionConfig)
+    val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
 
     val expressionEvaluator =
       ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
@@ -86,7 +84,7 @@ object ProcessCompilerData {
       interpreter,
       process,
       listeners,
-      servicesDefs.mapValuesNow(_.obj.asInstanceOf[Lifecycle])
+      servicesDefs.mapValuesNow(_.implementation.asInstanceOf[Lifecycle])
     )
 
   }

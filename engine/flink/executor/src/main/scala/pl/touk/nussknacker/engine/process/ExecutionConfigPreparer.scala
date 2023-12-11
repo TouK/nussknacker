@@ -46,14 +46,14 @@ object ExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  class ProcessSettingsPreparer(processConfig: Config, objectNaming: ObjectNaming, buildInfo: String)
+  class ProcessSettingsPreparer(modelConfig: Config, objectNaming: ObjectNaming, buildInfo: String)
       extends ExecutionConfigPreparer {
 
     override def prepareExecutionConfig(
         config: ExecutionConfig
     )(jobData: JobData, deploymentData: DeploymentData): Unit = {
       val namingParameters = objectNaming
-        .objectNamingParameters(jobData.metaData.id, processConfig, new NamingContext(FlinkUsageKey))
+        .objectNamingParameters(jobData.metaData.id, modelConfig, new NamingContext(FlinkUsageKey))
         .map(p => NamingParameters(p.toTags))
 
       NkGlobalParameters.setInContext(
@@ -61,7 +61,7 @@ object ExecutionConfigPreparer extends LazyLogging {
         NkGlobalParameters.create(
           buildInfo,
           jobData.processVersion,
-          processConfig,
+          modelConfig,
           namingParameters,
           prepareMap(jobData.processVersion, deploymentData)
         )
@@ -90,7 +90,7 @@ object ExecutionConfigPreparer extends LazyLogging {
 
     def apply(modelData: ModelData): ExecutionConfigPreparer = {
       val buildInfo = Encoder[Map[String, String]].apply(modelData.configCreator.buildInfo()).spaces2
-      new ProcessSettingsPreparer(modelData.processConfig, modelData.objectNaming, buildInfo)
+      new ProcessSettingsPreparer(modelData.modelConfig, modelData.objectNaming, buildInfo)
     }
 
   }
@@ -98,7 +98,7 @@ object ExecutionConfigPreparer extends LazyLogging {
   class SerializationPreparer(modelData: ModelData) extends ExecutionConfigPreparer {
 
     protected def enableObjectReuse: Boolean =
-      modelData.processConfig.getOrElse[Boolean]("enableObjectReuse", true)
+      modelData.modelConfig.getOrElse[Boolean]("enableObjectReuse", true)
 
     override def prepareExecutionConfig(
         config: ExecutionConfig

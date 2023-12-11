@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
@@ -46,23 +47,25 @@ class NodesResourcesSpec
 
   private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.Category1)
 
-  private val validation = UIProcessValidator(
-    typeToConfig.mapValues(_.modelData),
-    typeToConfig.mapValues(_.scenarioPropertiesConfig),
-    typeToConfig.mapValues(_.additionalValidators),
-    new FragmentResolver(fragmentRepository)
+  private val typeToValidator = typeToConfig.mapValues(processingTypeData =>
+    new UIProcessValidator(
+      ProcessValidator.default(processingTypeData.modelData),
+      processingTypeData.scenarioPropertiesConfig,
+      processingTypeData.additionalValidators,
+      new FragmentResolver(fragmentRepository)
+    )
   )
 
   private val nodeRoute = new NodesResources(
     processService,
     typeToConfig.mapValues(_.modelData),
-    validation,
+    typeToValidator,
     typeToConfig.mapValues(v => new NodeValidator(v.modelData, fragmentRepository)),
     typeToConfig.mapValues(v =>
       new ExpressionSuggester(
         v.modelData.modelDefinition.expressionConfig,
-        v.modelData.modelDefinitionWithTypes.typeDefinitions,
-        v.modelData.uiDictServices,
+        v.modelData.modelDefinitionWithClasses.classDefinitions,
+        v.modelData.designerDictServices,
         v.modelData.modelClassLoader.classLoader,
         v.scenarioPropertiesConfig.keys
       )

@@ -2,6 +2,7 @@ import CommentContent from "../src/components/comment/CommentContent";
 import React from "react";
 import { render } from "@testing-library/react";
 import { describe, expect } from "@jest/globals";
+import { NuThemeProvider } from "../src/containers/theme/nuThemeProvider";
 
 describe("CommentContent#newContent", () => {
     const content = "This is a BUG-123";
@@ -10,7 +11,11 @@ describe("CommentContent#newContent", () => {
 
     it("replaces matched expressions with links", () => {
         const commentSettings = { substitutionPattern: "(BUG-[0-9]*)", substitutionLink: "http://bugs/$1" };
-        const { container } = render(<CommentContent content={content} commentSettings={commentSettings} />);
+        const { container } = render(
+            <NuThemeProvider>
+                <CommentContent content={content} commentSettings={commentSettings} />
+            </NuThemeProvider>,
+        );
         //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
         // @ts-ignore
         expect(container).toContainHTML('This is a <a href="http://bugs/BUG-123" target="_blank">BUG-123</a>');
@@ -18,7 +23,11 @@ describe("CommentContent#newContent", () => {
 
     it("replaces multiple matched expressions with links", () => {
         const commentSettings = { substitutionPattern: "(BUG-[0-9]*)", substitutionLink: "http://bugs/$1" };
-        const { container } = render(<CommentContent content={multiContent} commentSettings={commentSettings} />);
+        const { container } = render(
+            <NuThemeProvider>
+                <CommentContent content={multiContent} commentSettings={commentSettings} />
+            </NuThemeProvider>,
+        );
         //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
         // @ts-ignore
         expect(container).toContainHTML(
@@ -28,7 +37,11 @@ describe("CommentContent#newContent", () => {
 
     it("leaves content unchanged when it does not match with expression", () => {
         const commentSettings = { substitutionPattern: "(BUGZ-[0-9]*)", substitutionLink: "http://bugs/$1" };
-        const { container } = render(<CommentContent content={content} commentSettings={commentSettings} />);
+        const { container } = render(
+            <NuThemeProvider>
+                <CommentContent content={content} commentSettings={commentSettings} />
+            </NuThemeProvider>,
+        );
         //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
         // @ts-ignore
         expect(container).toContainHTML("This is a BUG-123");
@@ -36,7 +49,11 @@ describe("CommentContent#newContent", () => {
 
     it("leaves content unchanged when settings are not provided", () => {
         const commentSettings = {};
-        const { container } = render(<CommentContent content={content} commentSettings={commentSettings} />);
+        const { container } = render(
+            <NuThemeProvider>
+                <CommentContent content={content} commentSettings={commentSettings} />
+            </NuThemeProvider>,
+        );
         //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
         // @ts-ignore
         expect(container).toContainHTML("This is a BUG-123");

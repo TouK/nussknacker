@@ -84,7 +84,7 @@ class UnionParametersMigrationSpec extends AnyFunSuite {
   private def newTestModelMigrations(testMigrations: ProcessMigrations): TestModelMigrations = {
     new TestModelMigrations(
       TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations),
-      TestFactory.processValidator
+      TestFactory.processValidatorByProcessingType
     )
   }
 

@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentGroupName}
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.restmodel.definition.{ComponentTemplate, UIProcessObjects}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.restmodel.definition.{ComponentNodeTemplate, UIProcessObjects}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -11,7 +11,8 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 private[component] final case class ComponentObjects(
-    templates: List[(ComponentGroupName, ComponentTemplate)],
+    // TODO: We shouldn't base on ComponentTemplate here - it is final DTO which should be used only for encoding
+    templates: List[(ComponentGroupName, ComponentNodeTemplate)],
     config: ComponentsUiConfig
 )
 
@@ -68,7 +69,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
   ): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
-      processDefinition = processingTypeData.staticObjectsDefinition,
+      modelDefinition = processingTypeData.staticModelDefinition,
       deploymentManager = processingTypeData.deploymentManager,
       user = user,
       fragmentsDetails = fragments,

@@ -7,9 +7,9 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.definition.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
@@ -59,8 +59,11 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val scenarioTypes = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
+    val scenarioTypes = provider
       .all(AdminUser("admin", "admin"))
 
     scenarioTypes.keySet shouldEqual Set("foo")
@@ -80,8 +83,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    val provider = StubbedProcessingTypeDataReader
-      .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(ConfigWithUnresolvedVersion(config))
+    )
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 

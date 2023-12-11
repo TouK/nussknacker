@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
-import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -43,7 +43,7 @@ private class InterpreterInternal[F[_]: Monad](
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
   private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
-    NuExceptionInfo(Some(NodeComponentInfoExtractor.fromNode(node)), _, ctx)
+    NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
   @silent("deprecated")

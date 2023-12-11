@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
@@ -10,8 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
+import pl.touk.nussknacker.engine.definition.component.{
+  ComponentDefinitionWithImplementation,
+  ComponentImplementationInvoker
+}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -20,13 +22,13 @@ import shapeless.syntax.typeable._
 abstract class StubbedFlinkProcessCompiler(
     process: CanonicalProcess,
     creator: ProcessConfigCreator,
-    processConfig: Config,
+    modelConfig: Config,
     diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase
 ) extends FlinkProcessCompiler(
       creator,
-      processConfig,
+      modelConfig,
       diskStateBackendSupport,
       objectNaming,
       componentUseCase,
@@ -37,7 +39,7 @@ abstract class StubbedFlinkProcessCompiler(
   override protected def definitions(
       processObjectDependencies: ProcessObjectDependencies,
       userCodeClassLoader: ClassLoader
-  ): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+  ): (ModelDefinitionWithClasses, EngineDictRegistry) = {
     val (originalDefinitionWithTypes, originalDictRegistry) =
       super.definitions(processObjectDependencies, userCodeClassLoader)
     val originalDefinition = originalDefinitionWithTypes.modelDefinition
@@ -59,20 +61,21 @@ abstract class StubbedFlinkProcessCompiler(
         sourceType -> stubbedDefinition
       }
 
-    def sourceDefForFragment(frag: FragmentInputDefinition): ObjectWithMethodDef = {
+    def sourceDefForFragment(frag: FragmentInputDefinition): ComponentDefinitionWithImplementation = {
       new StubbedFragmentInputDefinitionSource(
-        LocalModelData(processConfig, creator, modelClassLoader = ModelClassLoader(userCodeClassLoader, List()))
+        LocalModelData(modelConfig, creator, modelClassLoader = ModelClassLoader(userCodeClassLoader, List()))
       ).createSourceDefinition(frag)
     }
 
-    val stubbedSourceForFragment: Seq[(String, ObjectWithMethodDef)] = process.allStartNodes.map(_.head.data).collect {
-      case frag: FragmentInputDefinition => frag.id -> prepareSourceFactory(sourceDefForFragment(frag), context)
-    }
+    val stubbedSourceForFragment: Seq[(String, ComponentDefinitionWithImplementation)] =
+      process.allStartNodes.map(_.head.data).collect { case frag: FragmentInputDefinition =>
+        frag.id -> prepareSourceFactory(sourceDefForFragment(frag), context)
+      }
 
     val stubbedServices = originalDefinition.services.mapValuesNow(prepareService(_, context))
 
     (
-      ModelDefinitionWithTypes(
+      ModelDefinitionWithClasses(
         originalDefinition
           .copy(
             sourceFactories = originalDefinition.sourceFactories ++ stubbedSources ++ stubbedSourceForFragment,
@@ -83,18 +86,21 @@ abstract class StubbedFlinkProcessCompiler(
     )
   }
 
-  protected def prepareService(service: ObjectWithMethodDef, context: ComponentDefinitionContext): ObjectWithMethodDef
+  protected def prepareService(
+      service: ComponentDefinitionWithImplementation,
+      context: ComponentDefinitionContext
+  ): ComponentDefinitionWithImplementation
 
   protected def prepareSourceFactory(
-      sourceFactory: ObjectWithMethodDef,
+      sourceFactory: ComponentDefinitionWithImplementation,
       context: ComponentDefinitionContext
-  ): ObjectWithMethodDef
+  ): ComponentDefinitionWithImplementation
 
 }
 
 case class ComponentDefinitionContext(
     userCodeClassLoader: ClassLoader,
-    originalDefinitionWithTypes: ModelDefinitionWithTypes,
+    originalDefinitionWithTypes: ModelDefinitionWithClasses,
     originalDictRegistry: EngineDictRegistry
 )
 
@@ -102,7 +108,7 @@ abstract class StubbedComponentImplementationInvoker(
     original: ComponentImplementationInvoker,
     originalReturnType: Option[TypingResult]
 ) extends ComponentImplementationInvoker {
-  def this(componentDefinitionWithImpl: ObjectWithMethodDef) =
+  def this(componentDefinitionWithImpl: ComponentDefinitionWithImplementation) =
     this(componentDefinitionWithImpl.implementationInvoker, componentDefinitionWithImpl.returnType)
 
   override def invokeMethod(

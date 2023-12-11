@@ -10,8 +10,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
@@ -21,29 +23,28 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.wrapWithStaticDefinition
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeTypingData,
   NodeValidationError,
   NodeValidationErrorType,
   ValidationResult
 }
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, sampleResolver}
-import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.validation.ValidatedDisplayableProcess
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.sampleResolver
+import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithModelDefinition, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
+import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   lazy val validation: UIProcessValidator = {
-
-    val processDefinition = ProcessDefinition[ObjectDefinition](
-      services = Map("ref" -> objectDefinition(List.empty, Some(Unknown))),
-      sourceFactories = Map("sourceRef" -> objectDefinition(List.empty, Some(Unknown))),
+    val modelDefinition = ModelDefinition[ComponentStaticDefinition](
+      services = Map("ref" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
+      sourceFactories = Map("sourceRef" -> wrapWithStaticDefinition(List.empty, Some(Unknown))),
       sinkFactories = Map(),
       customStreamTransformers = Map(),
       expressionConfig = ExpressionDefinition(
@@ -65,12 +66,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       settings = ClassExtractionSettings.Default
     )
 
-    UIProcessValidator(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)
-      ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
+    new UIProcessValidator(
+      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),
+      FlinkStreamingPropertiesConfig.properties,
+      Nil,
       sampleResolver
     )
   }

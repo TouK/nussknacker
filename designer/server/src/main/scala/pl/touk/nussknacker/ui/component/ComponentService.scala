@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.engine.definition.ComponentIdProvider
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -12,8 +11,9 @@ import pl.touk.nussknacker.restmodel.component.{
   NodeUsageData,
   ScenarioComponentsUsages
 }
-import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
+import pl.touk.nussknacker.restmodel.definition.ComponentNodeTemplate
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{
@@ -58,17 +58,17 @@ object DefaultComponentService {
     )
   }
 
-  private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): String =
+  private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentNodeTemplate): String =
     componentConfig(componentsUiConfig, com)
       .flatMap(_.icon)
-      .getOrElse(DefaultsComponentIcon.fromComponentType(com.`type`))
+      .getOrElse(DefaultsComponentIcon.fromComponentInfo(com.componentInfo, com.isEnricher))
 
-  private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): Option[String] =
+  private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentNodeTemplate): Option[String] =
     componentConfig(componentsUiConfig, com).flatMap(_.docsUrl)
 
   private def componentConfig(
       componentsUiConfig: ComponentsUiConfig,
-      com: ComponentTemplate
+      com: ComponentNodeTemplate
   ): Option[SingleComponentConfig] =
     componentsUiConfig.get(com.label)
 
@@ -202,7 +202,7 @@ class DefaultComponentService private (
   ): List[ComponentListElement] = {
     componentObjects.templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, com.componentInfo)
         val icon        = getComponentIcon(componentObjects.config, com)
         val links       = createComponentLinks(componentId, com, componentObjects.config)
 
@@ -221,7 +221,7 @@ class DefaultComponentService private (
 
   private def createComponentLinks(
       componentId: ComponentId,
-      component: ComponentTemplate,
+      component: ComponentNodeTemplate,
       componentsConfig: ComponentsUiConfig
   ): List[ComponentLink] = {
     val componentLinks = componentLinksConfig

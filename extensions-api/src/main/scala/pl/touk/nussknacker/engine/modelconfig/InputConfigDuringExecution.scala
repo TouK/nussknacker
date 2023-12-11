@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution.serialize
 
 //intermediate representation of Config, suitable for compact serialization (see ModelConfigLoader). This config should *not* be
-//used directly, only after resolving (mainly via ModelData.processConfig)
+//used directly, only after resolving (mainly via ModelData.modelConfig)
 case class InputConfigDuringExecution(config: Config) {
 
   lazy val serialized: String = serialize(config)

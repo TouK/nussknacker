@@ -4,32 +4,22 @@ import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentGroupName,
-  ComponentId,
-  ComponentType,
-  ParameterConfig,
-  SingleComponentConfig
-}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
-  CustomTransformerAdditionalData,
-  ProcessDefinitionWithComponentIds
-}
+import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
+import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithComponentIds}
+import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
-import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.engine.graph.EdgeType._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
-import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
-import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SimpleTestComponentIdProvider
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
 
@@ -58,7 +48,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo", "alaMaKota", "BarFilter"))
     groups.map(_.components.map(n => n.label)) shouldBe List(
-      List("choice", "filter", "mapVariable", "split", "variable"),
+      List("choice", "filter", "record-variable", "split", "variable"),
       List("alaMaKota", "BarFilter", "foo")
     )
   }
@@ -67,15 +57,25 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.loadFragments(Map.empty)
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
-      processDefinition = ProcessTestData.processDefinitionWithIds,
+      modelDefinition = ProcessTestData.modelDefinitionWithIds,
       isFragment = false,
       fragmentsDetails = fragmentsDetails
     )
 
     edgeTypes.toSet shouldBe Set(
-      NodeEdges(NodeTypeId("Split"), List(), true, false),
-      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression.spel("true")), SwitchDefault), true, false),
-      NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
+      NodeEdges(NodeTypeId("Split", Some(BuiltInComponentInfo.Split.name)), List(), true, false),
+      NodeEdges(
+        NodeTypeId("Switch", Some(BuiltInComponentInfo.Choice.name)),
+        List(NextSwitch(Expression.spel("true")), SwitchDefault),
+        true,
+        false
+      ),
+      NodeEdges(
+        NodeTypeId("Filter", Some(BuiltInComponentInfo.Filter.name)),
+        List(FilterTrue, FilterFalse),
+        false,
+        false
+      ),
       NodeEdges(
         NodeTypeId("FragmentInput", Some("sub1")),
         List(FragmentOutput("out1"), FragmentOutput("out2")),
@@ -104,8 +104,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
   }
 
@@ -129,8 +129,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val baseComponents = baseComponentsGroups.flatMap(_.components)
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
-    baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.componentInfo == BuiltInComponentInfo.Filter) should have size 1
+    baseComponents.filter(n => n.`type` == ComponentType.CustomComponent) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
@@ -139,15 +139,15 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return custom nodes with correct group") {
-    val initialDefinition = ProcessTestData.processDefinitionWithIds
+    val initialDefinition = ProcessTestData.modelDefinitionWithIds
     val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
       customStreamTransformers =
-        initialDefinition.customStreamTransformers.map { case (name, (objectDef, additionalData)) =>
+        initialDefinition.customStreamTransformers.map { case (name, (componentDef, additionalData)) =>
           (
             name,
             (
-              objectDef.copy(componentConfig =
-                objectDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
+              componentDef.copy(componentConfig =
+                componentDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
               ),
               additionalData
             )
@@ -163,7 +163,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return default value defined in parameter") {
     val defaultValueExpression = Expression("fooLang", "'fooDefault'")
     val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
-    val definition = ProcessDefinitionBuilder.empty
+    val definition = ModelDefinitionBuilder.empty
       .withCustomStreamTransformer(
         "fooTransformer",
         Some(Unknown),
@@ -245,11 +245,12 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroups(
       fixedConfig: Map[String, String],
       componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-      processDefinition: ProcessDefinitionWithComponentIds[ObjectDefinition] = ProcessTestData.processDefinitionWithIds
+      modelDefinition: ModelDefinitionWithComponentIds[ComponentStaticDefinition] =
+        ProcessTestData.modelDefinitionWithIds
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
-    val fragmentInputs = Map[String, FragmentObjectDefinition]()
-    val dynamicComponentsConfig = processDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
+    val fragmentInputs = Map[String, FragmentStaticDefinition]()
+    val dynamicComponentsConfig = modelDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
       idWithName.name -> value.componentConfig
     }
     val fixedComponentsConfig =
@@ -259,13 +260,13 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = processDefinition,
-      fragmentInputs = fragmentInputs,
+      modelDefinition = modelDefinition,
+      fragmentComponents = fragmentInputs,
       isFragment = false,
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.map {
+      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
         case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
       }.toMap,
       TestProcessingTypes.Streaming
@@ -274,18 +275,18 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   private def prepareGroupsOfNodes(services: List[String]): List[ComponentGroup] = {
-    val processDefinition = services
-      .foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
+    val modelDefinition = services
+      .foldRight(ModelDefinitionBuilder.empty)((s, p) => p.withService(s))
       .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = processDefinition,
-      fragmentInputs = Map.empty,
+      modelDefinition = modelDefinition,
+      fragmentComponents = Map.empty,
       isFragment = false,
       componentsConfig = Map(),
       componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.map {
+      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
         case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
       }.toMap,
       TestProcessingTypes.Streaming

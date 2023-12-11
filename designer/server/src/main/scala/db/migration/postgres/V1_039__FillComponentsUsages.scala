@@ -1,8 +1,8 @@
 package db.migration.postgres
 
-import db.migration.V1_039__FillComponentsUsagesDefinition
+import db.migration.InvalidateComponentsUsagesCache
 import slick.jdbc.{JdbcProfile, PostgresProfile}
 
-class V1_039__FillComponentsUsages extends V1_039__FillComponentsUsagesDefinition {
+class V1_039__FillComponentsUsages extends InvalidateComponentsUsagesCache {
   override protected lazy val profile: JdbcProfile = PostgresProfile
 }

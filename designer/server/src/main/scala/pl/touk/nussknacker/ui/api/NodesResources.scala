@@ -34,7 +34,7 @@ import scala.concurrent.ExecutionContext
 class NodesResources(
     protected val processService: ProcessService,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
-    processValidator: UIProcessValidator,
+    typeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
@@ -92,7 +92,7 @@ class NodesResources(
                 process.processingType,
                 process.processCategory
               )
-              val result = processValidator.validate(scenario)
+              val result = typeToProcessValidator.forTypeUnsafe(process.processingType).validate(scenario)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,

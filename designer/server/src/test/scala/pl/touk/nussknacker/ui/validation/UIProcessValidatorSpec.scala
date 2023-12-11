@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAd
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
@@ -35,7 +36,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
@@ -271,32 +272,22 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("not fail with exception when no processtype validator present") {
-    val process = createProcess(
-      List(
-        Source("in", SourceRef(existingSourceFactory, List())),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("in", "out", None)),
-      `type` = TestProcessingTypes.RequestResponse
-    )
-    configuredValidator.validate(process) should matchPattern {
-      case ValidationResult(
-            ValidationErrors(_, Nil, errors),
-            ValidationWarnings.success,
-            _
-          ) if errors == List(PrettyValidationErrors.noValidatorKnown(TestProcessingTypes.RequestResponse)) =>
-    }
-  }
-
   test("not allow required scenario fields") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> (Map(
-          "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-          "field2" -> ScenarioPropertyConfig(None, None, None, Some("label2"))
-        ) ++ FlinkStreamingPropertiesConfig.properties)
-      )
+      Map(
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label1")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = None,
+          label = Some("label2")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
     processValidator.validate(
@@ -337,12 +328,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   test("don't validate properties on fragment") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> (Map(
-          "field1" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-          "field2" -> ScenarioPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
-        ) ++ FlinkStreamingPropertiesConfig.properties)
-      )
+      Map(
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label1")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(MandatoryParameterValidator)),
+          label = Some("label2")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
     val process = validProcessWithFields(Map())
@@ -361,22 +360,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   test("validate type scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> (Map(
-          "field1" -> ScenarioPropertyConfig(
-            None,
-            Some(FixedValuesParameterEditor(possibleValues)),
-            Some(List(FixedValuesValidator(possibleValues))),
-            Some("label")
-          ),
-          "field2" -> ScenarioPropertyConfig(
-            None,
-            None,
-            Some(List(LiteralIntegerValidator)),
-            Some("label")
-          )
-        ) ++ FlinkStreamingPropertiesConfig.properties)
-      )
+      Map(
+        "field1" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = Some(FixedValuesParameterEditor(possibleValues)),
+          validators = Some(List(FixedValuesValidator(possibleValues))),
+          label = Some("label")
+        ),
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(LiteralIntegerValidator)),
+          label = Some("label")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
     processValidator.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
@@ -390,16 +387,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
 
   test("handle unknown properties validation") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> (Map(
-          "field2" -> ScenarioPropertyConfig(
-            None,
-            None,
-            Some(List(CompileTimeEvaluableValueValidator)),
-            Some("label")
-          )
-        ) ++ FlinkStreamingPropertiesConfig.properties)
-      )
+      Map(
+        "field2" -> ScenarioPropertyConfig(
+          defaultValue = None,
+          editor = None,
+          validators = Some(List(CompileTimeEvaluableValueValidator)),
+          label = Some("label")
+        )
+      ) ++ FlinkStreamingPropertiesConfig.properties
     )
 
     val result = processValidator.validate(validProcessWithFields(Map("field1" -> "true")))
@@ -1011,19 +1006,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
       List.empty
     ).copy(id = " ")
     val result = TestFactory.flinkProcessValidator.validate(incompleteScenarioWithBlankIds)
-    inside(result) {
-      case ValidationResult(errors, _, _) => {
-        inside(errors) {
-          case ValidationErrors(nodeErrors, propertiesErrors, _) => {
-            nodeErrors should contain key " "
-            nodeErrors(" ") should contain(
-              PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
-            )
-            propertiesErrors shouldBe List(
-              PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, " ", isFragment = false))
-            )
-          }
-        }
+    inside(result) { case ValidationResult(errors, _, _) =>
+      inside(errors) { case ValidationErrors(nodeErrors, propertiesErrors, _) =>
+        nodeErrors should contain key " "
+        nodeErrors(" ") should contain(
+          PrettyValidationErrors.formatErrorMessage(NodeIdValidationError(BlankId, " "))
+        )
+        propertiesErrors shouldBe List(
+          PrettyValidationErrors.formatErrorMessage(ScenarioIdError(BlankId, " ", isFragment = false))
+        )
       }
     }
   }
@@ -1044,28 +1035,26 @@ private object UIProcessValidatorSpec {
     )
 
   val configuredValidator: UIProcessValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
-    mapProcessingTypeDataProvider(
-      TestProcessingTypes.Streaming -> (Map(
-        "requiredStringProperty" -> ScenarioPropertyConfig(
-          None,
-          Some(StringParameterEditor),
-          Some(List(MandatoryParameterValidator)),
-          Some("label")
-        ),
-        "numberOfThreads" -> ScenarioPropertyConfig(
-          None,
-          Some(FixedValuesParameterEditor(possibleValues)),
-          Some(List(FixedValuesValidator(possibleValues))),
-          None
-        ),
-        "maxEvents" -> ScenarioPropertyConfig(
-          None,
-          None,
-          Some(List(CompileTimeEvaluableValueValidator)),
-          Some("label")
-        )
-      ) ++ FlinkStreamingPropertiesConfig.properties)
-    )
+    Map(
+      "requiredStringProperty" -> ScenarioPropertyConfig(
+        defaultValue = None,
+        editor = Some(StringParameterEditor),
+        validators = Some(List(MandatoryParameterValidator)),
+        label = Some("label")
+      ),
+      "numberOfThreads" -> ScenarioPropertyConfig(
+        defaultValue = None,
+        editor = Some(FixedValuesParameterEditor(possibleValues)),
+        validators = Some(List(FixedValuesValidator(possibleValues))),
+        label = None
+      ),
+      "maxEvents" -> ScenarioPropertyConfig(
+        defaultValue = None,
+        editor = None,
+        validators = Some(List(CompileTimeEvaluableValueValidator)),
+        label = Some("label")
+      )
+    ) ++ FlinkStreamingPropertiesConfig.properties
   )
 
   val validFlinkProcess: DisplayableProcess = createProcess(
@@ -1175,18 +1164,16 @@ private object UIProcessValidatorSpec {
       fragment: CanonicalProcess,
       execConfig: Config = ConfigFactory.empty()
   ): UIProcessValidator = {
-    import ProcessDefinitionBuilder._
+    import ModelDefinitionBuilder._
 
-    val processDefinition = ProcessDefinitionBuilder.empty
+    val modelDefinition = ModelDefinitionBuilder.empty
       .withSourceFactory(sourceTypeName)
       .withSinkFactory(sinkTypeName)
 
-    UIProcessValidator(
-      mapProcessingTypeDataProvider(
-        TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition, execConfig)
-      ),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> List(SampleCustomProcessValidator)),
+    new UIProcessValidator(
+      ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
+      FlinkStreamingPropertiesConfig.properties,
+      List(SampleCustomProcessValidator),
       new FragmentResolver(
         new StubFragmentRepository(
           Set(

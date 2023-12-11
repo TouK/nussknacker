@@ -57,7 +57,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
       ).swap.toOption.get.head
 
       firstError.nodeComponentInfo shouldBe Some(
-        NodeComponentInfo("fail", Some(ComponentInfo(failingComponent, ComponentType.Enricher)))
+        NodeComponentInfo("fail", Some(ComponentInfo(ComponentType.Service, failingComponent)))
       )
       firstError.throwable.getMessage shouldBe FailingService.failMessage
 

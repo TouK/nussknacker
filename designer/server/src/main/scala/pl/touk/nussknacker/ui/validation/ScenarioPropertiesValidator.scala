@@ -12,13 +12,12 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.util.Try
 
 class ScenarioPropertiesValidator(
-    scenarioPropertiesConfig: ProcessingTypeDataProvider[Map[String, ScenarioPropertyConfig], _]
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
 ) {
 
   import cats.implicits._
@@ -27,29 +26,23 @@ class ScenarioPropertiesValidator(
 
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
-  def validate(process: DisplayableProcess)(implicit user: LoggedUser): ValidationResult =
-    scenarioPropertiesConfig.forType(process.processingType) match {
-      case None =>
-        ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
+  def validate(process: DisplayableProcess): ValidationResult = {
+    val scenarioProperties = process.properties.additionalFields.properties.toList
 
-      case Some(config) => {
-        val scenarioProperties = process.properties.additionalFields.properties.toList
+    val validated = (
+      getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties),
+      getMissingRequiredPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties),
+      getUnknownPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties)
+    )
+      .mapN { (_, _, _) => () }
 
-        val validated = (
-          getConfiguredValidationsResults(config, scenarioProperties),
-          getMissingRequiredPropertyValidationResults(config, scenarioProperties),
-          getUnknownPropertyValidationResults(config, scenarioProperties)
-        )
-          .mapN { (_, _, _) => () }
-
-        val processPropertiesErrors = validated match {
-          case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList
-          case Valid(_)   => List.empty
-        }
-
-        ValidationResult.errors(Map(), processPropertiesErrors, List())
-      }
+    val processPropertiesErrors = validated match {
+      case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList
+      case Valid(_)   => List.empty
     }
+
+    ValidationResult.errors(Map(), processPropertiesErrors, List())
+  }
 
   private def getConfiguredValidationsResults(config: PropertyConfig, scenarioProperties: List[(String, String)]) = {
     val validatorsByPropertyName = config

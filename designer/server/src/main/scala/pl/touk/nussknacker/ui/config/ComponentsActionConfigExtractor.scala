@@ -14,6 +14,7 @@ final case class ComponentLinkConfig(
     title: String,
     icon: URI,
     url: URI,
+    // FIXME: It should be supportedComponentInfos or even supportedComponentIds - currently this filtering is unusable
     supportedComponentTypes: Option[List[ComponentType]]
 ) {
   import ComponentLinkConfig._
@@ -34,16 +35,7 @@ object ComponentLinkConfig {
   val ComponentIdTemplate   = "$componentId"
   val ComponentNameTemplate = "$componentName"
 
-  def create(
-      id: String,
-      title: String,
-      icon: String,
-      url: String,
-      supportedComponentTypes: Option[List[ComponentType]]
-  ): ComponentLinkConfig =
-    ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes)
-
-  def fillByComponentData(
+  private def fillByComponentData(
       text: String,
       componentId: ComponentId,
       componentName: String,

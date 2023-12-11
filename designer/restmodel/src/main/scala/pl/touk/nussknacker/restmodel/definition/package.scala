@@ -5,14 +5,13 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.net.URI
 
@@ -20,7 +19,8 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      processDefinition: UIProcessDefinition,
+      // TODO: rename
+      processDefinition: UIModelDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
       edgesForNodes: List[NodeEdges],
@@ -30,16 +30,16 @@ package object definition {
 
   // TODO: in the future, we would like to map components by ComponentId, not by `label` like currently, and keep `label` in SingleComponentConfig
   // this would also make config merging logic in `UIProcessObjectsFactory.prepareUIProcessObjects` simpler
-  @JsonCodec(encodeOnly = true) final case class UIProcessDefinition(
-      services: Map[String, UIObjectDefinition],
-      sourceFactories: Map[String, UIObjectDefinition],
-      sinkFactories: Map[String, UIObjectDefinition],
-      customStreamTransformers: Map[String, UIObjectDefinition],
-      typesInformation: Set[UIClazzDefinition],
-      fragmentInputs: Map[String, UIFragmentObjectDefinition]
+  @JsonCodec(encodeOnly = true) final case class UIModelDefinition(
+      services: Map[String, UIComponentDefinition],
+      sourceFactories: Map[String, UIComponentDefinition],
+      sinkFactories: Map[String, UIComponentDefinition],
+      customStreamTransformers: Map[String, UIComponentDefinition],
+      typesInformation: Set[UIClassDefinition],
+      fragmentInputs: Map[String, UIFragmentComponentDefinition]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIClazzDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIClassDefinition(
       clazzName: TypingResult
   )
 
@@ -61,7 +61,7 @@ package object definition {
       hintText: Option[String]
   )
 
-  @JsonCodec(encodeOnly = true) final case class UIObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
       parameters: List[UIParameter],
       returnType: Option[TypingResult],
       categories: List[String],
@@ -71,15 +71,12 @@ package object definition {
 
   }
 
-  @JsonCodec(encodeOnly = true) final case class UIFragmentObjectDefinition(
+  @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
       parameters: List[UIParameter],
       outputParameters: List[String],
       returnType: Option[TypingResult],
       categories: List[String]
-  ) {
-    def toUIObjectDefinition: UIObjectDefinition =
-      UIObjectDefinition(parameters, returnType, categories)
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
@@ -94,29 +91,36 @@ package object definition {
 
   import pl.touk.nussknacker.engine.graph.node.NodeData._
 
-  object ComponentTemplate {
+  object ComponentNodeTemplate {
 
     def create(
-        `type`: ComponentType,
+        componentInfo: ComponentInfo,
         node: NodeData,
         categories: List[String],
         branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
-    ): ComponentTemplate =
-      ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
+    ): ComponentNodeTemplate =
+      ComponentNodeTemplate(componentInfo.`type`, componentInfo.name, node, categories, branchParametersTemplate)
 
   }
 
-  @JsonCodec(encodeOnly = true) final case class ComponentTemplate(
+  @JsonCodec(encodeOnly = true) final case class ComponentNodeTemplate(
       `type`: ComponentType,
+      // TODO: Rename to name
       label: String,
       node: NodeData,
+      // TODO: remove
       categories: List[String],
-      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty
-  )
+      branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty,
+      // TODO: This field is added temporary to pick correct icon - we shouldn't use this class for other purposes than encoding to json
+      isEnricher: Option[Boolean] = None
+  ) {
+    // TODO: This is temporary - we shouldn't use this class for other purposes than encoding to json
+    def componentInfo: ComponentInfo = ComponentInfo(`type`, label)
+  }
 
   @JsonCodec(encodeOnly = true) final case class ComponentGroup(
       name: ComponentGroupName,
-      components: List[ComponentTemplate]
+      components: List[ComponentNodeTemplate]
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(

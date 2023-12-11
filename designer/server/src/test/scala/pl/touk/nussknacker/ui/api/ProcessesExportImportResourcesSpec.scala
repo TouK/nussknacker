@@ -46,7 +46,7 @@ class ProcessesExportImportResourcesSpec
       futureFetchingProcessRepository,
       processService,
       processActivityRepository,
-      processResolver
+      processResolverByProcessingType
     )
 
   private val routeWithAllPermissions =

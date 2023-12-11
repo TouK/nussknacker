@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.component
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.definition.ComponentIdProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.definition.component.ComponentIdProvider
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{
   ComponentGroupNameAttribute,
@@ -37,7 +37,7 @@ private[component] object ComponentsValidator {
   ): List[ComponentValidationData] = {
     componentObjects.templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, com.componentInfo)
         val icon        = getComponentIcon(componentObjects.config, com)
 
         ComponentValidationData(
@@ -55,11 +55,12 @@ private[component] object ComponentsValidator {
   ): ValidatedNel[ComponentWrongConfiguration[_], Unit] = {
     val wrongComponents = components
       .groupBy(_.id)
+      .toList
+      .sortBy(_._1.value)
       .flatMap {
         case (_, _ :: Nil)             => Nil
         case (componentId, components) => computeWrongConfigurations(componentId, components)
       }
-      .toList
     NonEmptyList.fromList(wrongComponents) match {
       case None                          => Validated.valid(())
       case Some(nonEmptyWrongComponents) => Validated.invalid(nonEmptyWrongComponents)
@@ -81,16 +82,19 @@ private[component] object ComponentsValidator {
 
     val wrongConfiguredNames = checkUniqueAttributeValue(NameAttribute, components.map(_.name))
     val wrongConfiguredIcons = checkUniqueAttributeValue(IconAttribute, components.map(_.icon))
-    val wrongConfiguredGroups =
-      checkUniqueAttributeValue(ComponentGroupNameAttribute, components.map(_.componentGroupName))
     val wrongConfiguredTypes = checkUniqueAttributeValue(ComponentTypeAttribute, components.map(_.componentType))
+    val wrongConfiguredGroups = checkUniqueAttributeValue(
+      ComponentGroupNameAttribute,
+      components.map(_.componentGroupName)
+    )
     val wrongConfigurations =
-      wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
+      wrongConfiguredNames ++ wrongConfiguredIcons ++ wrongConfiguredTypes ++ wrongConfiguredGroups
     wrongConfigurations.toList
   }
 
 }
 
+// TODO: validate component's initial parameters as well
 private final case class ComponentValidationData(
     id: ComponentId,
     name: String,
