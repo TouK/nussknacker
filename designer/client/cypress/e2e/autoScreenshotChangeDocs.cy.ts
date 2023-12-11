@@ -114,7 +114,7 @@ describe("Auto Screenshot Change Docs - ", () => {
     });
 
     it("fragments - Inputs", () => {
-        cy.visitNewProcess(seed, "docsFragmentsInputs#0");
+        cy.visitNewProcess(seed, "docsFragments#0");
         cy.layoutScenario();
         cy.get('[model-id="input"]').dblclick();
         cy.get('[title="Name"]').click();
@@ -122,10 +122,8 @@ describe("Auto Screenshot Change Docs - ", () => {
     });
 
     it("fragments - Outputs", () => {
-        cy.visitNewProcess(seed, "docsFragmentsOutputs#0");
+        cy.visitNewProcess(seed, "docsFragments#0");
         cy.layoutScenario();
-        cy.get('[model-id="output"]').dblclick();
-        cy.get('[title="Name"]').click();
         takeGraphScreenshot();
     });
 });
