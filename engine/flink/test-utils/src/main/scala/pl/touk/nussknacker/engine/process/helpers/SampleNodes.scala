@@ -183,6 +183,7 @@ object SampleNodes {
 
   object EagerLifecycleService extends EagerService with WithLifecycle with Serializable {
 
+    @transient
     var list: List[(String, WithLifecycle)] = Nil
 
     override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
