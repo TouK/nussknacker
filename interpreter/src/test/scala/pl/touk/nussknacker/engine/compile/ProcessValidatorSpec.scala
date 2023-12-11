@@ -82,34 +82,34 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       customConversionsProviders = List.empty
     ),
     settings = ClassExtractionSettings.Default
-  ).addComponent("sampleEnricher", wrapWithStaticServiceDefinition(List.empty, Some(Typed[SimpleRecord])))
-    .addComponent(
+  ).withComponent("sampleEnricher", wrapWithStaticServiceDefinition(List.empty, Some(Typed[SimpleRecord])))
+    .withComponent(
       "withParamsService",
       wrapWithStaticServiceDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord]))
     )
-    .addComponent("source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
-    .addComponent("sourceWithUnknown", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
-    .addComponent(
+    .withComponent("source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
+    .withComponent("sourceWithUnknown", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
+    .withComponent(
       "sourceWithParam",
       wrapWithStaticSourceDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord]))
     )
-    .addComponent(
+    .withComponent(
       "typedMapSource",
       wrapWithStaticSourceDefinition(
         List(Parameter[TypedObjectDefinition]("type")),
         Some(Typed[TypedMap])
       )
     )
-    .addComponent("sink", wrapWithStaticSinkDefinition(List.empty, None))
-    .addComponent(
+    .withComponent("sink", wrapWithStaticSinkDefinition(List.empty, None))
+    .withComponent(
       "sinkWithLazyParam",
       wrapWithStaticSinkDefinition(List(Parameter[String]("lazyString").copy(isLazyParameter = true)), None)
     )
-    .addComponent(
+    .withComponent(
       "customTransformer",
       wrapWithStaticCustomComponentDefinition(List.empty, Some(Typed[SimpleRecord]), emptyQueryNamesData)
     )
-    .addComponent(
+    .withComponent(
       "withParamsTransformer",
       wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("par1")),
@@ -117,7 +117,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "manyParams",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -130,7 +130,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withManyParameters",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -142,11 +142,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withoutReturnType",
       wrapWithStaticCustomComponentDefinition(List(Parameter[String]("par1")), None, emptyQueryNamesData)
     )
-    .addComponent(
+    .withComponent(
       "withMandatoryParams",
       wrapWithStaticCustomComponentDefinition(
         List(Parameter[String]("mandatoryParam")),
@@ -154,7 +154,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withNotBlankParams",
       wrapWithStaticCustomComponentDefinition(
         List(NotBlankParameter("notBlankParam", Typed[String])),
@@ -162,7 +162,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withNullableLiteralIntegerParam",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -172,7 +172,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withRegExpParam",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -182,7 +182,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withJsonParam",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -192,7 +192,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withCustomValidatorParam",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -202,7 +202,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withAdditionalVariable",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -215,7 +215,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         emptyQueryNamesData
       )
     )
-    .addComponent(
+    .withComponent(
       "withVariablesToHide",
       wrapWithStaticCustomComponentDefinition(
         List(
@@ -1304,7 +1304,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   test("should be able to derive type from ServiceReturningType") {
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
-    val withServiceRef = base.addComponent(
+    val withServiceRef = base.withComponent(
       "returningTypeService",
       ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceReturningTypeSample))
     )
@@ -1333,7 +1333,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
-    val withServiceRef = base.addComponent(
+    val withServiceRef = base.withComponent(
       "returningTypeService",
       ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceReturningTypeWithExplicitMethodSample))
     )
@@ -1361,7 +1361,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   test("should be able to run custom validation using ServiceReturningType") {
     val base = ModelDefinitionBuilder.withNullImplementation(baseDefinition)
-    val withServiceRef = base.addComponent(
+    val withServiceRef = base.withComponent(
       "withCustomValidation",
       ComponentDefinitionExtractor.extract(WithCategories.anyCategory(ServiceWithCustomValidation))
     )
@@ -1700,7 +1700,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   }
 
   private val definitionWithTypedSource =
-    baseDefinition.addComponent("typed-source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
+    baseDefinition.withComponent("typed-source", wrapWithStaticSourceDefinition(List.empty, Some(Typed[SimpleRecord])))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer(

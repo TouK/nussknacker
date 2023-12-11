@@ -5,8 +5,6 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentCon
 // TODO: This is deprecated API, remove it after ConfiCreator API will be removed
 case class WithCategories[+T](value: T, categories: Option[List[String]], componentConfig: SingleComponentConfig) {
 
-  def availableForCategory(category: String): Boolean = categories.isEmpty || categories.exists(_.contains(category))
-
   def map[Y](f: T => Y): WithCategories[Y] = {
     copy(value = f(value))
   }

@@ -67,8 +67,9 @@ class ComponentFromProvidersExtractorTest extends AnyFunSuite with Matchers {
 
     components.size shouldBe 2
     components.map(_._1) shouldBe List("component", "component")
-    components.map(_._2.implementation).head shouldBe a[Service]
-    components.map(_._2.implementation)(1) shouldBe a[SinkFactory]
+    val implementations = components.map(_._2.implementation)
+    implementations.head shouldBe a[Service]
+    implementations(1) shouldBe a[SinkFactory]
   }
 
   test("should skip disabled providers") {

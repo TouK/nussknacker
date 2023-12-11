@@ -14,11 +14,11 @@ case class ModelDefinition[T <: BaseComponentDefinition] private (
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def addComponent(componentName: String, component: T): ModelDefinition[T] = {
-    addComponents(List(componentName -> component))
+  def withComponent(componentName: String, component: T): ModelDefinition[T] = {
+    withComponents(List(componentName -> component))
   }
 
-  def addComponents(componentsToAdd: List[(String, T)]): ModelDefinition[T] = {
+  def withComponents(componentsToAdd: List[(String, T)]): ModelDefinition[T] = {
     val newComponents = components.toList ++ componentsToAdd.map { case (componentName, component) =>
       ComponentInfo(component.componentType, componentName) -> component
     }
@@ -76,6 +76,6 @@ object ModelDefinition {
       expressionConfig: ExpressionDefinition[T],
       settings: ClassExtractionSettings
   ): ModelDefinition[T] =
-    new ModelDefinition(Map.empty, expressionConfig, settings).addComponents(components)
+    new ModelDefinition(Map.empty, expressionConfig, settings).withComponents(components)
 
 }

@@ -31,7 +31,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
 
 object FlinkBaseComponentProvider {
 
-  def Components: List[ComponentDefinition] =
+  val Components: List[ComponentDefinition] =
     create(DocsConfig.Default, AggregateWindowsConfig.Default)
 
   def create(docsConfig: DocsConfig, aggregateWindowsConfig: AggregateWindowsConfig): List[ComponentDefinition] = {

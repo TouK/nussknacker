@@ -26,7 +26,7 @@ object ModelDefinitionExtractor {
       )
     val componentsFromProviders =
       ComponentsFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies, componentsUiConfig)
-    modelDefinitionBasedOnConfigCreator.addComponents(componentsFromProviders)
+    modelDefinitionBasedOnConfigCreator.withComponents(componentsFromProviders)
   }
 
 }

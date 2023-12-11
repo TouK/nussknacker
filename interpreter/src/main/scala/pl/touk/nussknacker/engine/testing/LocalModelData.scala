@@ -68,7 +68,7 @@ object LocalModelData {
           modelDependencies,
           componentsUiConfig
         )
-        .addComponents(componentsDefWithImpl)
+        .withComponents(componentsDefWithImpl)
     }
 
   }

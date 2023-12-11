@@ -42,8 +42,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   lazy val validation: UIProcessValidator = {
     val modelDefinition = ModelDefinitionBuilder.empty
-      .addComponent("ref", wrapWithStaticServiceDefinition(List.empty, Some(Unknown)))
-      .addComponent("sourceRef", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
+      .withComponent("ref", wrapWithStaticServiceDefinition(List.empty, Some(Unknown)))
+      .withComponent("sourceRef", wrapWithStaticSourceDefinition(List.empty, Some(Unknown)))
 
     new UIProcessValidator(
       ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition)),

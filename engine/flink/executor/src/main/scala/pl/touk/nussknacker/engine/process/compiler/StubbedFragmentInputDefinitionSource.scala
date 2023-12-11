@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{
@@ -18,11 +18,7 @@ import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentStaticDefinition,
-  NoComponentTypeSpecificData,
-  methodbased
-}
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData, methodbased}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -38,12 +34,11 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
   def createSourceDefinition(frag: FragmentInputDefinition): MethodBasedComponentDefinitionWithImplementation = {
     val staticDefinition =
       ComponentStaticDefinition(
-        componentType = ComponentType.Fragment,
         parameters = Nil,
         returnType = Some(fragmentReturnType),
         categories = None,
         componentConfig = SingleComponentConfig.zero,
-        componentTypeSpecificData = NoComponentTypeSpecificData
+        componentTypeSpecificData = FragmentSpecificData
       )
     val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
 

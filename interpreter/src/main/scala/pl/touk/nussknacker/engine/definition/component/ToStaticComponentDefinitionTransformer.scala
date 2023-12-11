@@ -42,7 +42,6 @@ class ToStaticComponentDefinitionTransformer(
       case dynamic: DynamicComponentDefinitionWithImplementation =>
         val parameters = determineInitialParameters(dynamic)
         ComponentStaticDefinition(
-          dynamic.componentType,
           parameters,
           dynamic.returnType,
           dynamic.categories,

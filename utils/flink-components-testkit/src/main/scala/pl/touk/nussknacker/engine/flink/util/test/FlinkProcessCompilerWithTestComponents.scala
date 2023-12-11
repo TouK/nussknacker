@@ -49,7 +49,7 @@ class FlinkProcessCompilerWithTestComponents(
       ComponentDefinitionWithImplementation.forList(testExtensionsHolder.components, componentsUiConfig)
 
     val definitionsWithTestComponentsAndGlobalVariables = definitions
-      .addComponents(testComponents)
+      .withComponents(testComponents)
       .copy(
         expressionConfig = definitions.expressionConfig.copy(
           definitions.expressionConfig.globalVariables ++

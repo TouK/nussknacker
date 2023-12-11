@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
-import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -44,14 +44,13 @@ object ComponentDefinitionExtractor {
   ): ComponentDefinitionWithImplementation = {
     val component = componentWithConfig.value
 
-    val (componentType, methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
+    val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
       component match {
-        case _: SourceFactory => (ComponentType.Source, MethodDefinitionExtractor.Source, NoComponentTypeSpecificData)
-        case _: SinkFactory   => (ComponentType.Sink, MethodDefinitionExtractor.Sink, NoComponentTypeSpecificData)
-        case _: Service       => (ComponentType.Service, MethodDefinitionExtractor.Service, NoComponentTypeSpecificData)
+        case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
+        case _: SinkFactory   => (MethodDefinitionExtractor.Sink, SinkSpecificData)
+        case _: Service       => (MethodDefinitionExtractor.Service, ServiceSpecificData)
         case custom: CustomStreamTransformer =>
           (
-            ComponentType.CustomComponent,
             MethodDefinitionExtractor.CustomStreamTransformer,
             CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
           )
@@ -63,7 +62,6 @@ object ComponentDefinitionExtractor {
       def notReturnAnything(typ: TypingResult) =
         Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
       val staticDefinition = ComponentStaticDefinition(
-        componentType,
         methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         componentWithConfig.categories,
@@ -84,7 +82,6 @@ object ComponentDefinitionExtractor {
         val implementationInvoker = new DynamicComponentImplementationInvoker(e)
         Right(
           DynamicComponentDefinitionWithImplementation(
-            componentType,
             implementationInvoker,
             e,
             componentWithConfig.categories,
