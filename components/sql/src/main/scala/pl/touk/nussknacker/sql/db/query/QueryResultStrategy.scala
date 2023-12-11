@@ -36,5 +36,5 @@ case object SingleResultStrategy extends QueryResultStrategy {
 
 case object UpdateResultStrategy extends QueryResultStrategy {
   type updateResultType = Integer
-  val name: String = "Update result"
+  val name: String = "Updates count"
 }

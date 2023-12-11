@@ -37,8 +37,7 @@ object DatabaseEnricherComponentProvider {
           name = queryConfig.name,
           component = new DatabaseQueryEnricher(
             queryConfig.dbPool,
-            factory.create(queryConfig.dbPool),
-            queryConfig.displayDbErrors
+            factory.create(queryConfig.dbPool)
           )
         ).withRelativeDocs("Enrichers#databasequeryenricher")
       )
@@ -46,11 +45,7 @@ object DatabaseEnricherComponentProvider {
       .map(lookupConfig =>
         ComponentDefinition(
           name = lookupConfig.name,
-          component = new DatabaseLookupEnricher(
-            lookupConfig.dbPool,
-            factory.create(lookupConfig.dbPool),
-            lookupConfig.displayDbErrors
-          )
+          component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))
         ).withRelativeDocs("Enrichers#databaselookupenricher")
       )
 
