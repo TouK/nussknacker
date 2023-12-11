@@ -203,10 +203,6 @@ object ClassExtractionSettings {
       MemberNamePredicate(
         SuperClassPredicate(ClassNamePredicate("org.apache.avro.generic.IndexedRecord")),
         Set("get", "getSchema", "compareTo", "put")
-      ),
-      MemberNamePatternPredicate(
-        SuperClassPredicate(ClassNamePredicate("org.apache.avro.specific.SpecificRecordBase")),
-        Pattern.compile("(getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)")
       )
     )
 

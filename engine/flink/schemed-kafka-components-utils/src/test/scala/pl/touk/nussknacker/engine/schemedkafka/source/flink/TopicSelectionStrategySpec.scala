@@ -32,7 +32,6 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
         ArrayOfRecordsTopic,
         InvalidDefaultsTopic,
         PaymentDateTopic,
-        GeneratedWithLogicalTypesTopic
       )
     )
   }

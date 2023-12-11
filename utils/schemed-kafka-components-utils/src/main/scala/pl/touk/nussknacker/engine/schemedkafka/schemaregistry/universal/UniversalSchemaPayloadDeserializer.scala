@@ -61,8 +61,6 @@ class AvroPayloadDeserializer(
 
 object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 
-  private val converter = new JsonPayloadToAvroConverter(None)
-
   override def deserialize(
       expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]],
       writerSchemaData: RuntimeSchemaData[ParsedSchema],
@@ -71,7 +69,7 @@ object JsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
     val avroSchema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
     val bytes      = new Array[Byte](buffer.remaining())
     buffer.get(bytes)
-    converter.convert(buffer.array(), avroSchema)
+    JsonPayloadToAvroConverter.convert(buffer.array(), avroSchema)
   }
 
 }

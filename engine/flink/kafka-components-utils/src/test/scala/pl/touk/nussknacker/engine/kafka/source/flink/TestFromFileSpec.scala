@@ -36,7 +36,6 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
 
   test("Should pass correct timestamp from test data") {
-
     val topic             = "simple"
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta =
@@ -46,7 +45,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .streaming("test")
       .source(
         "start",
-        "kafka-GenericJsonSourceFactory",
+        "kafka-jsonValueWithMeta",
         TopicParamName -> s"'$topic'",
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
@@ -57,7 +56,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .apply(inputMeta)
       .mapObject(
         _.add("key", Null)
-          .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
+          .add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
       )
 
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))

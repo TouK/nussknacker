@@ -57,7 +57,6 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   protected def pushMessage(
       kafkaSerializer: serialization.KafkaSerializationSchema[Any],
       obj: AnyRef,
-      topic: String,
       partition: Option[Int] = None,
       timestamp: Long = 0L
   ): RecordMetadata = {

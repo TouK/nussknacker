@@ -2,36 +2,14 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json
 
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
-
-/**
-  * RecordFormatter factory for kafka avro sources with json payload.
-  *
-  * Test data record is a simple record representing data of ConsumerRecord. It does not contain schema ids.
-  * Creates instance of ConsumerRecordToJsonFormatter with fixed key-value types (key and value are always deserialized to Json).
-  */
-class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
-
-  override def create[K: ClassTag, V: ClassTag](
-      kafkaConfig: KafkaConfig,
-      kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
-  ): RecordFormatter = {
-    val asJsonDeserializerFactory = new KafkaJsonKeyValueDeserializationSchemaFactory
-    val asJsonDeserializer        = asJsonDeserializerFactory.create[Json, Json](kafkaConfig, None, None)
-
-    new ConsumerRecordToJsonFormatter[Json, Json](asJsonDeserializer)
-  }
-
-}
 
 class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
 
