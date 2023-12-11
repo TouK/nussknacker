@@ -23,11 +23,6 @@ export type PossibleValue = {
     label: string;
 };
 
-export type PosibleValues = {
-    expression: PossibleValue;
-    label: PossibleValue;
-};
-
 export interface Error {
     fieldName: string;
     message: string;

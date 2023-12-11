@@ -6,7 +6,7 @@ import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
-import { FieldError, PosibleValues } from "./Validators";
+import { FieldError, PossibleValue } from "./Validators";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 import { cx } from "@emotion/css";
 
@@ -17,7 +17,7 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     param?: ParamType;
-    values?: Array<PosibleValues>;
+    values?: Array<PossibleValue>;
     isMarked?: boolean;
     showValidation: boolean;
     onValueChange: (value: string) => void;
