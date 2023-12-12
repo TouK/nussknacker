@@ -13,6 +13,7 @@ describe("Fragment", () => {
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
+
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='SettingsButton']").click();
         };
