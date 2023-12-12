@@ -9,7 +9,7 @@ import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
 
 let preloadedIndex = 0;
-const preloadBeImage = memoize((src: string): string | null => {
+export const preloadBeImage = memoize((src: string): string | null => {
     if (!src) {
         return null;
     }

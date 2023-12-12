@@ -4,7 +4,7 @@ import { cloneDeepWith, get, isEmpty, toString } from "lodash";
 import customAttrs from "../../../assets/json/nodeAttributes.json";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
-import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
+import { getComponentIconSrc, preloadBeImage } from "../../toolbars/creator/ComponentIcon";
 import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import { Events } from "../types";
@@ -116,6 +116,9 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
         const { text: bodyContent } = getBodyContent(node.id);
 
         const iconHref = getComponentIconSrc(node, processDefinitionData);
+        const infoHref = preloadBeImage("/assets/icons/info.svg");
+
+        console.log(node);
 
         const attributes: shapes.devs.ModelAttributes = {
             id: node.id,
@@ -141,8 +144,13 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                     disabled: node.isDisabled,
                 },
                 info: {
-                    xlinkHref: iconHref,
-                    opacity: node.additionalFields.description !== null && node.additionalFields.description.length >= 1 ? 1 : 0,
+                    xlinkHref: infoHref,
+                    opacity:
+                        node.additionalFields &&
+                        node.additionalFields.description !== undefined &&
+                        node.additionalFields.description.length >= 1
+                            ? 1
+                            : 0,
                 },
             },
             rankDir: "R",
