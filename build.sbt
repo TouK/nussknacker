@@ -928,10 +928,10 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"   % flinkV               % "provided",
-        "org.apache.flink" % "flink-avro"             % flinkV,
-        "org.apache.flink" % s"flink-connector-kafka" % flinkConnectorKafkaV % "test",
-        "org.scalatest"   %% "scalatest"              % scalaTestV           % "test"
+        "org.apache.flink" % "flink-streaming-java"  % flinkV               % "provided",
+        "org.apache.flink" % "flink-avro"            % flinkV,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV % "test",
+        "org.scalatest"   %% "scalatest"             % scalaTestV           % "test"
       )
     }
   )
