@@ -245,6 +245,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                 left: event.bounds.x + event.localEventX,
             },
             column: colIndex,
+            row: -1,
         });
     }, []);
 
@@ -414,8 +415,9 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                     options={supportedTypes}
                 />
                 <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
-                    {cellMenuData?.column >= 0 ? (
+                    {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
                         <ResetColumnWidthMenuItem
+                            disabled={!columns[cellMenuData.column][2]}
                             indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
                             onClick={(indexes) => {
                                 dispatch({

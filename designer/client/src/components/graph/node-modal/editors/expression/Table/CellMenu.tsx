@@ -54,9 +54,18 @@ export function DeleteRowMenuItem({ onClick, indexes = [] }: { indexes: number[]
     );
 }
 
-export function ResetColumnWidthMenuItem({ indexes, onClick }: { indexes: number[]; onClick: (indexes: number[]) => void }) {
+export function ResetColumnWidthMenuItem({
+    indexes,
+    onClick,
+    disabled,
+}: {
+    disabled?: boolean;
+    indexes: number[];
+    onClick: (indexes: number[]) => void;
+}) {
     return (
         <MenuItem
+            disabled={disabled}
             onClick={() => {
                 onClick(indexes);
             }}
