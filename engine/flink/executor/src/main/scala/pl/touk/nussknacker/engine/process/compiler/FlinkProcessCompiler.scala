@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
@@ -151,15 +149,7 @@ class FlinkProcessCompiler(
       listeners: Seq[ProcessListener],
       classLoader: ClassLoader
   ): FlinkExceptionHandler = {
-    componentUseCase match {
-      case ComponentUseCase.TestRuntime =>
-        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
-          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
-          override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
-        }
-      case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
-    }
+    new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
   }
 
 }

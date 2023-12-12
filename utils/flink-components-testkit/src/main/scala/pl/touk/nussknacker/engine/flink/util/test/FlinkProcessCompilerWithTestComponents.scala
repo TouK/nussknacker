@@ -1,22 +1,17 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.definition.component.{
-  ComponentDefinitionExtractor,
-  ComponentDefinitionWithImplementation
-}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, TestFlinkExceptionHandler}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
@@ -76,22 +71,9 @@ class FlinkProcessCompilerWithTestComponents(
       classLoader: ClassLoader
   ): FlinkExceptionHandler = componentUseCase match {
     case ComponentUseCase.TestRuntime => // We want to be consistent with exception handling in test mode, therefore we have disabled the default exception handler
-      new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
-        override def restartStrategy: RestartStrategies.RestartStrategyConfiguration =
-          RestartStrategies.noRestart()
-
-        override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
-          resultsCollectingListener.exceptionThrown(exceptionInfo)
-        }
-
-      }
+      new TestFlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
     case _ =>
-      new FlinkExceptionHandler(
-        metaData,
-        processObjectDependencies,
-        listeners,
-        classLoader
-      )
+      super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
   }
 
   def this(
