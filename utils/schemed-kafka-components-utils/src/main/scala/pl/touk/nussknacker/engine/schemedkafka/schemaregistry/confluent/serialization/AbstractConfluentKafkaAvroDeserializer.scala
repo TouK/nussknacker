@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
+import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId

@@ -34,6 +34,7 @@
 * [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) Component and User API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Breaking change: some components changed identifier - url's and identifiers in node errors are changed
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Component `mapVariable` was renamed to `record-variable`
+* [#5223](https://github.com/TouK/nussknacker/pull/5223) Legacy low level kafka components were removed
 
 * 1.12.5 (1 Dec 2023)
 ------------------------

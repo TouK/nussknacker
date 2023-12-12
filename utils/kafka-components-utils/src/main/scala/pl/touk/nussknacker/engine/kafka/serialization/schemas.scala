@@ -1,18 +1,11 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
-import io.circe.{Decoder, Encoder, Json, JsonObject}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Headers
-import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
-import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
-import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
+import java.lang
 import java.nio.charset.StandardCharsets
-import java.util.Collections
-import java.{lang, util}
 
 object schemas {
 
@@ -85,53 +78,5 @@ object schemas {
     }
 
   }
-
-  class JsonSerializationSchema[T: Encoder](topic: String, keySerializer: T => String = (_: T) => null)
-      extends SimpleSerializationSchema[T](
-        topic,
-        ToStringSerializer[T](v => implicitly[Encoder[T]].apply(v).noSpaces),
-        ToStringSerializer[T](keySerializer)
-      )
-
-  // deserialization
-
-  import scala.jdk.CollectionConverters._
-
-  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] =
-    BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
-
-  private implicit val mapDecoder: Decoder[java.util.Map[_, _]] = Decoder[Json].map(deserializeToMap)
-
-  def jsonFormatterFactory = new ConsumerRecordToJsonFormatterFactory[String, java.util.Map[_, _]]()
-
-  // It is important that object returned by this schema is consistent with types from TypingUtils.typeMapDefinition, i.e. collections type must match etc.
-  def deserializeToTypedMap(message: Array[Byte]): TypedMap = TypedMap(deserializeToMap(message).asScala.toMap)
-
-  def deserializeToMap(message: Array[Byte]): java.util.Map[String, _] = deserializeToMap(toJson(message))
-
-  // FIXME: handle numeric conversion and validation here??
-  // how should we treat json that is non-object?
-  private def deserializeToMap(json: Json): java.util.Map[String, _] =
-    json.asObject.map(jsonObjectToMap).getOrElse(Collections.emptyMap[String, Any])
-
-  def toJson(jsonBytes: Array[Byte]): Json = {
-    val value = new String(jsonBytes, StandardCharsets.UTF_8)
-    CirceUtil.decodeJsonUnsafe[Json](value, s"invalid message ($value)")
-  }
-
-  private def jsonToMap(jo: Json): Any = jo.fold(
-    jsonNull = null,
-    jsonBoolean = identity,
-    // TODO: how to handle fractions here? using BigDecimal is not always good way to go...
-    jsonNumber = number => {
-      val d = number.toDouble
-      if (d.isWhole) d.toLong else d
-    },
-    jsonString = identity,
-    jsonArray = _.map(jsonToMap).asJava,
-    jsonObject = jsonObjectToMap
-  )
-
-  private def jsonObjectToMap(jo: JsonObject): util.Map[String, Any] = jo.toMap.mapValuesNow(jsonToMap).asJava
 
 }

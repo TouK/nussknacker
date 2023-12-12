@@ -1,34 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 import org.apache.avro.generic.GenericData
-import org.apache.avro.specific.SpecificRecordBase
-import org.apache.avro.{AvroRuntimeException, Schema}
 
-case class FullNameV2(var first: CharSequence, var middle: CharSequence, var last: CharSequence)
-    extends SpecificRecordBase {
-  def this() = this(null, null, null)
-
-  override def getSchema: Schema = FullNameV2.schema
-
-  override def get(field: Int): AnyRef =
-    field match {
-      case 0 => first
-      case 1 => middle
-      case 2 => last
-      case _ => throw new AvroRuntimeException("Bad index")
-    }
-
-  override def put(field: Int, value: scala.Any): Unit =
-    field match {
-      case 0 => first = value.asInstanceOf[CharSequence]
-      case 1 => middle = value.asInstanceOf[CharSequence]
-      case 2 => last = value.asInstanceOf[CharSequence]
-      case _ => throw new AvroRuntimeException("Bad index")
-    }
-
-}
-
-object FullNameV2 extends TestSchemaWithSpecificRecord {
+object FullNameV2 extends TestSchemaWithRecord {
   final val BaseMiddle = "SP"
 
   val stringSchema: String =
@@ -48,12 +22,6 @@ object FullNameV2 extends TestSchemaWithSpecificRecord {
 
   def createRecord(first: String, middle: String, last: String): GenericData.Record =
     avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle), schema)
-
-  def createSpecificRecord(first: String, middle: String, last: String): FullNameV2 =
-    new FullNameV2(first, middle, last)
-
-  lazy val specificRecord: SpecificRecordBase =
-    createSpecificRecord(FullNameV1.BaseFirst, BaseMiddle, FullNameV1.BaseLast)
 
   def migratedGenericRecordFromV1: GenericData.Record =
     avroEncoder.encodeRecordOrError(

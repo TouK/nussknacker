@@ -28,11 +28,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   MockSchemaRegistryClientFactory,
   UniversalSchemaBasedSerdeProvider
 }
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  SchemaBasedSerdeProvider,
-  SchemaRegistryClientFactory,
-  SchemaVersionOption
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -84,10 +80,10 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        s"$TopicParamName"          -> s"'${topic}'",
+        s"$TopicParamName"          -> s"'$topic'",
         s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
-        s"$TimestampFieldParamName" -> s"${timestampField}",
-        s"$DelayParameterName"      -> s"${delay}"
+        s"$TimestampFieldParamName" -> s"$timestampField",
+        s"$DelayParameterName"      -> s"$delay"
       )
       .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
   }
@@ -103,7 +99,7 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
       "kafka-universal-delayed" -> defaultCategory(
         new DelayedUniversalKafkaSourceFactory[String, GenericRecord](
           schemaRegistryClientFactory,
-          createSchemaBasedMessagesSerdeProvider,
+          UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
           processObjectDependencies,
           new FlinkKafkaDelayedSourceImplFactory(None, UniversalTimestampFieldAssigner(_))
         )
@@ -127,9 +123,6 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
-
-  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
-    UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
