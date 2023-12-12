@@ -11,8 +11,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="pl.touk" level="DEBUG"/>
-    <logger name="org.flywaydb" level="INFO"/>
-    <logger name="nu-test" level="INFO"/>
+    <logger name="pl.touk" level="INGO"/>
 
 </configuration>
