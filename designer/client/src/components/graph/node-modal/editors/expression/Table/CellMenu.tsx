@@ -3,8 +3,7 @@ import { PopoverPosition } from "@mui/material/Popover/Popover";
 import { ClickAwayListener, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { AutoAwesome, DeleteForever } from "@mui/icons-material";
 import React, { PropsWithChildren, useMemo } from "react";
-
-import { tableTheme } from "./tableTheme";
+import { useTableTheme } from "./tableTheme";
 
 interface ColumnMenuParams {
     anchorPosition: PopoverPosition | null;
@@ -13,6 +12,7 @@ interface ColumnMenuParams {
 
 export function CellMenu({ anchorPosition, onClose, children }: PropsWithChildren<ColumnMenuParams>) {
     const open = useMemo(() => Boolean(anchorPosition) && React.Children.toArray(children).length > 0, [anchorPosition, children]);
+    const tableTheme = useTableTheme();
     return (
         <ClickAwayListener onClickAway={onClose}>
             <Menu

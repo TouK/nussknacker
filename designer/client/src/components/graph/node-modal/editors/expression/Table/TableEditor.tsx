@@ -24,9 +24,9 @@ import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/da
 import { ActionTypes, useTableState } from "./tableState";
 import { TypesMenu } from "./TypesMenu";
 import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
-import { tableTheme } from "./tableTheme";
-import { ColumnHeaderButton } from "./ColumnHeaderButton";
+import { useTableTheme } from "./tableTheme";
 import i18next from "i18next";
+import { Box } from "@mui/material";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -36,6 +36,44 @@ const SUPPORTED_TYPES = [
     "java.time.LocalDate",
     "java.time.LocalDateTime",
 ];
+
+const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
+    const tableTheme = useTableTheme();
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                background: tableTheme.borderColor,
+                "&>button": {
+                    border: "none",
+                    outline: "none",
+                    height: "37px",
+                    width: "37px",
+                    fontSize: "24px",
+                    backgroundColor: tableTheme.bgHeader,
+                    color: tableTheme.textHeader,
+                    borderBottom: `1px solid ${tableTheme.borderColor}`,
+                    transition: "background-color 200ms",
+                    cursor: "pointer",
+                    "&:hover": {
+                        backgroundColor: tableTheme.bgHeaderHovered,
+                    },
+                },
+            }}
+        >
+            <button
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onColumnAppend();
+                }}
+            >
+                +
+            </button>
+        </Box>
+    );
+};
 
 export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
     const tableDateContext = useTableState(expressionObj);
@@ -83,6 +121,8 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
         });
     }, [columns, supportedTypes]);
 
+    const tableTheme = useTableTheme();
+
     const getCellContent = useCallback(
         ([col, row]: Item): GridCell => {
             const value = tableRows[row]?.[col];
@@ -100,7 +140,7 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                         : null,
             };
         },
-        [additionalRows.length, tableRows],
+        [additionalRows.length, tableRows, tableTheme.accentColor],
     );
 
     const onCellsEdited: DataEditorProps["onCellsEdited"] = useCallback(
@@ -216,33 +256,29 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
         [],
     );
 
-    const onColumnAppend = useCallback(
-        (event: React.MouseEvent<HTMLButtonElement>) => {
-            event.stopPropagation();
-            dispatch({
-                type: ActionTypes.expand,
-                rows: 0,
-                columns: 1,
-                dataType: defaultTypeOption.value,
-            });
-            ref.current.focus();
-            setSelection(() => ({
-                columns: CompactSelection.empty(),
-                rows: CompactSelection.empty(),
-                current: {
-                    cell: [columns.length, 0],
-                    range: {
-                        x: columns.length,
-                        y: 0,
-                        width: 1,
-                        height: 1,
-                    },
-                    rangeStack: [],
+    const onColumnAppend = useCallback(() => {
+        dispatch({
+            type: ActionTypes.expand,
+            rows: 0,
+            columns: 1,
+            dataType: defaultTypeOption.value,
+        });
+        ref.current.focus();
+        setSelection(() => ({
+            columns: CompactSelection.empty(),
+            rows: CompactSelection.empty(),
+            current: {
+                cell: [columns.length, 0],
+                range: {
+                    x: columns.length,
+                    y: 0,
+                    width: 1,
+                    height: 1,
                 },
-            }));
-        },
-        [columns.length, defaultTypeOption.value, dispatch],
-    );
+                rangeStack: [],
+            },
+        }));
+    }, [columns.length, defaultTypeOption.value, dispatch]);
 
     const closeCellMenu = () => {
         setCellMenuData((current) => ({ ...current, position: null }));
@@ -318,20 +354,30 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
         [dispatch, typesMenuData?.column, setTypesMenuData],
     );
 
-    const trailingRowOptions = useMemo(
+    const trailingRowOptions = useMemo<DataEditorProps["trailingRowOptions"]>(
         () => ({
-            tint: true,
             sticky: !overflowY,
         }),
         [overflowY],
     );
-    const rightElement = useMemo(() => <ColumnHeaderButton onClick={onColumnAppend}>+</ColumnHeaderButton>, [onColumnAppend]);
+
+    const rightElement = useMemo<DataEditorProps["rightElement"]>(() => <RightElement onColumnAppend={onColumnAppend} />, [onColumnAppend]);
 
     return (
         <NuThemeProvider>
             <ErrorBoundary>
-                <Sizer overflowY={overflowY} data-testid="table-container">
+                <Sizer
+                    overflowY={overflowY}
+                    data-testid="table-container"
+                    sx={{
+                        border: "1px solid",
+                        borderColor: tableTheme.borderColor,
+                    }}
+                >
                     <DataEditor
+                        getRowThemeOverride={(row) => ({
+                            bgCell: row >= tableRows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
+                        })}
                         ref={ref}
                         className={overrideGroupRenameInput}
                         columns={tableColumns}
@@ -369,45 +415,43 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                 />
                 <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
                     {cellMenuData?.column >= 0 ? (
-                        <>
-                            <ResetColumnWidthMenuItem
-                                indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
-                                onClick={(indexes) => {
-                                    dispatch({
-                                        type: ActionTypes.resetColumnsSize,
-                                        columns: indexes,
-                                    });
-                                    closeCellMenu();
-                                }}
-                            />
-                            <DeleteColumnMenuItem
-                                indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
-                                onClick={(indexes) => {
-                                    dispatch({
-                                        type: ActionTypes.deleteColumns,
-                                        columns: indexes,
-                                    });
-                                    clearSelection();
-                                    closeCellMenu();
-                                }}
-                            />
-                        </>
+                        <ResetColumnWidthMenuItem
+                            indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.resetColumnsSize,
+                                    columns: indexes,
+                                });
+                                closeCellMenu();
+                            }}
+                        />
+                    ) : null}
+                    {cellMenuData?.column >= 0 ? (
+                        <DeleteColumnMenuItem
+                            indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.deleteColumns,
+                                    columns: indexes,
+                                });
+                                clearSelection();
+                                closeCellMenu();
+                            }}
+                        />
                     ) : null}
                     {cellMenuData?.row >= 0 ? (
-                        <>
-                            <DeleteRowMenuItem
-                                indexes={selection.rows.toArray().length > 0 ? selection.rows.toArray() : [cellMenuData?.row]}
-                                onClick={(indexes) => {
-                                    dispatch({
-                                        type: ActionTypes.deleteRows,
-                                        rows: indexes.map((i) => i - additionalRows.length),
-                                        columnData: indexes.map((i) => i + hiddenAdditionalRows.length),
-                                    });
-                                    clearSelection();
-                                    closeCellMenu();
-                                }}
-                            />
-                        </>
+                        <DeleteRowMenuItem
+                            indexes={selection.rows.toArray().length > 0 ? selection.rows.toArray() : [cellMenuData?.row]}
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.deleteRows,
+                                    rows: indexes.map((i) => i - additionalRows.length),
+                                    columnData: indexes.map((i) => i + hiddenAdditionalRows.length),
+                                });
+                                clearSelection();
+                                closeCellMenu();
+                            }}
+                        />
                     ) : null}
                 </CellMenu>
             </ErrorBoundary>

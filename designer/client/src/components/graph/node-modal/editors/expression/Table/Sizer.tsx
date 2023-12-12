@@ -18,16 +18,17 @@ export function Sizer({ overflowY, ...props }: SizerProps) {
 
     return (
         <Box
+            {...props}
             sx={{
-                flex: 1,
                 overflow: "hidden",
-                resize: "vertical",
+                boxSizing: "border-box",
+                ...props.sx,
+                flex: 1,
                 position: "relative",
-                minHeight: 150,
+                minHeight: 100,
                 maxHeight: overflowY ? "unset" : height * 0.8,
             }}
             ref={callback}
-            {...props}
         />
     );
 }
