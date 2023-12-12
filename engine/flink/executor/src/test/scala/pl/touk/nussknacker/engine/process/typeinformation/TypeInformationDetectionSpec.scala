@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, ProcessVersion, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ProcessVersion, ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.CaseClassTypeInfo
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   TypeInformationDetection,
@@ -40,7 +40,7 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
       ctx: ValidationContext
   ): TypeInformation[ValidationContext] = {
     val tr = detection.forContext(ctx)
-    tr.asInstanceOf[CaseClassTypeInfo[Context]].getTypeAt("variables")
+    tr.asInstanceOf[CaseClassTypeInfo[ScenarioProcessingContext]].getTypeAt("variables")
   }
 
   test("Uses TypingResultAware by default") {
@@ -94,7 +94,7 @@ class CustomTypeInformationCustomisation extends TypingResultAwareTypeInformatio
 
 class CustomTypeInformationDetection extends TypeInformationDetection {
 
-  override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
+  override def forContext(validationContext: ValidationContext): TypeInformation[ScenarioProcessingContext] =
     throw new IllegalArgumentException("Checking loader :)")
 
   override def forValueWithContext[T](

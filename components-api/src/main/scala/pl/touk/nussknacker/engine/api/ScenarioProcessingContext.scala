@@ -26,7 +26,7 @@ object ScenarioProcessingContext {
 
 }
 
-case class ContextId(value: String)
+case class ScenarioProcessingContextId(value: String)
 
 /**
  * Context is container for variables used in expression evaluation
@@ -47,7 +47,7 @@ case class ScenarioProcessingContext(
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
 
-  def getOrElse[T](name: String, default: => T) =
+  def getOrElse[T](name: String, default: => T): T =
     get(name).getOrElse(default)
 
   def get[T](name: String): Option[T] =

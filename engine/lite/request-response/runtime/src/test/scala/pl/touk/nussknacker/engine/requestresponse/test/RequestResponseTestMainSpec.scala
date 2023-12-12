@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -95,7 +95,11 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExpressionInvocationResult(secondId, "expression", true)
     )
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe Context(firstId, Map("input" -> Request1("a", "b")), None)
+    results.exceptions.head.context shouldBe ScenarioProcessingContext(
+      firstId,
+      Map("input" -> Request1("a", "b")),
+      None
+    )
     results.exceptions.head.nodeComponentInfo.map(_.nodeId) shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
   }

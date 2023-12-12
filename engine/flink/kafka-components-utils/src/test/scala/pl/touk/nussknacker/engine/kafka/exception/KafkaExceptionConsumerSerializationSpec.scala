@@ -6,7 +6,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{
+  CirceUtil,
+  MetaData,
+  ScenarioProcessingContext,
+  StreamMetaData,
+  VariableConstants
+}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -32,7 +38,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   private val variables = Map(VariableConstants.InputVariableName -> Map("name" -> "lcl", "age" -> 36))
 
-  private val context = Context("ctxId", variables, None)
+  private val context = ScenarioProcessingContext("ctxId", variables, None)
 
   private val exception = NuExceptionInfo(
     Some(NodeComponentInfo("nodeId", ComponentType.Service, "componentName")),

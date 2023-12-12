@@ -24,7 +24,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
 
   override def prepareEvaluator(
       compilerInterpreter: LazyParameterInterpreter
-  )(implicit ec: ExecutionContext): Context => Future[T] = {
+  )(implicit ec: ExecutionContext): ScenarioProcessingContext => Future[T] = {
     val compilerLazyInterpreter = compilerInterpreter.asInstanceOf[CompilerLazyParameterInterpreter]
     val compiledExpression = compilerLazyInterpreter.deps.expressionCompiler
       .compileWithoutContextValidation(expression, parameterDef.name, parameterDef.typ)(nodeId)
@@ -34,7 +34,7 @@ case class ExpressionLazyParameter[T <: AnyRef](
     val evaluator = compilerLazyInterpreter.deps.expressionEvaluator
     val compiledParameter =
       compiledgraph.evaluatedparam.Parameter(TypedExpression(compiledExpression, Unknown, null), parameterDef)
-    context: Context =>
+    context: ScenarioProcessingContext =>
       Future
         .successful(evaluator.evaluateParameter(compiledParameter, context)(nodeId, compilerLazyInterpreter.metaData))
         .map(_.value.asInstanceOf[T])(ec)
@@ -53,18 +53,20 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
   private[nodecompilation] def createInterpreter[T <: AnyRef](
       ec: ExecutionContext,
       definition: LazyParameter[T]
-  ): Context => Future[T] = {
+  ): ScenarioProcessingContext => Future[T] = {
     definition match {
       case e: EvaluableLazyParameter[T] => e.prepareEvaluator(this)(ec)
       case _ => throw new IllegalArgumentException(s"LazyParameter $definition is not supported")
     }
   }
 
-  override def syncInterpretationFunction[T <: AnyRef](lazyInterpreter: LazyParameter[T]): Context => T = {
+  override def syncInterpretationFunction[T <: AnyRef](
+      lazyInterpreter: LazyParameter[T]
+  ): ScenarioProcessingContext => T = {
 
-    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.ctx
+    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
     val interpreter                   = createInterpreter(ec, lazyInterpreter)
-    v1: Context => Await.result(interpreter(v1), deps.processTimeout)
+    v1: ScenarioProcessingContext => Await.result(interpreter(v1), deps.processTimeout)
   }
 
 }

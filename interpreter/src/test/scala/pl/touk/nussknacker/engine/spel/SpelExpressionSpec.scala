@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.generics.{
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, GeneratedAvroClass, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
@@ -58,7 +58,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   private implicit class EvaluateSync(expression: Expression) {
-    def evaluateSync[T](ctx: Context = ctx): T = expression.evaluate(ctx, Map.empty)
+    def evaluateSync[T](ctx: ScenarioProcessingContext = ctx): T = expression.evaluate(ctx, Map.empty)
   }
 
   private implicit val nid: NodeId = NodeId("")
@@ -69,11 +69,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private val testValue = Test("1", 2, List(Test("3", 4), Test("5", 6)).asJava, bigValue)
 
-  private val ctx = Context("abc").withVariables(
+  private val ctx = ScenarioProcessingContext("abc").withVariables(
     Map("obj" -> testValue, "strVal" -> "", "mapValue" -> Map("foo" -> "bar").asJava)
   )
 
-  private val ctxWithGlobal: Context = ctx
+  private val ctxWithGlobal: ScenarioProcessingContext = ctx
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
@@ -100,7 +100,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   private def parse[T: TypeTag](
       expr: String,
-      context: Context = ctx,
+      context: ScenarioProcessingContext = ctx,
       dictionaries: Map[String, DictDefinition] = Map.empty,
       flavour: Flavour = Standard,
       strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
@@ -798,7 +798,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .toOption
       .get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
+    val ctx = ScenarioProcessingContext("").withVariable("input", TypedMap(Map("int" -> 1)))
 
     parseV[Long]("#input.int.longValue", ctxWithMap).validExpression.evaluateSync[Long](ctx) shouldBe 1L
   }
@@ -813,7 +813,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .toOption
       .get
 
-    val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
+    val ctx = ScenarioProcessingContext("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
 
     parseV[String]("#input.str", valCtxWithMap).validExpression.evaluateSync[String](ctx) shouldBe "aaa"
     parseV[Long]("#input.lon", valCtxWithMap).validExpression.evaluateSync[Long](ctx) shouldBe 3444

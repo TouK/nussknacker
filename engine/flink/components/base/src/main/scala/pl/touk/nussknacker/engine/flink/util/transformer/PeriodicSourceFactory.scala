@@ -53,13 +53,13 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
       override def sourceStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
-      ): DataStream[Context] = {
+      ): DataStream[ScenarioProcessingContext] = {
 
         val count     = Option(nullableCount).map(_.toInt).getOrElse(1)
         val processId = flinkNodeContext.metaData.id
         val stream = env
           .addSource(new PeriodicFunction(period))
-          .map(_ => Context(processId))
+          .map(_ => ScenarioProcessingContext(processId))
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .flatMap { (v: ValueWithContext[AnyRef], c: Collector[AnyRef]) =>
             1.to(count).map(_ => v.value).foreach(c.collect)

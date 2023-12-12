@@ -62,7 +62,7 @@ object LazyParameter {
 
 trait LazyParameterInterpreter {
 
-  def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): Context => T
+  def syncInterpretationFunction[T <: AnyRef](parameter: LazyParameter[T]): ScenarioProcessingContext => T
 
   def close(): Unit
 

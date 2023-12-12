@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.resultcollector
 
 import cats.Monad
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.ContextId
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContextId
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -22,7 +22,7 @@ trait ResultCollector extends Serializable {
     @names - in more complex scenarios we may want to distinguish different invocations
    */
   def collectWithResponse[A, F[_]: Monad](
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       nodeId: NodeId,
       serviceRef: String,
       request: => ToCollect,
@@ -37,7 +37,7 @@ trait ResultCollector extends Serializable {
 object ProductionServiceInvocationCollector extends ResultCollector {
 
   override def collectWithResponse[A, F[_]: Monad](
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       nodeId: NodeId,
       serviceRef: String,
       request: => ToCollect,
@@ -54,7 +54,7 @@ object ProductionServiceInvocationCollector extends ResultCollector {
 object PreventInvocationCollector extends ResultCollector {
 
   override def collectWithResponse[A, F[_]: Monad](
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       nodeId: NodeId,
       serviceRef: String,
       request: => ToCollect,

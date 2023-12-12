@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -62,7 +62,7 @@ class FlinkKafkaSource[T](
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context] = {
+  ): DataStream[ScenarioProcessingContext] = {
     val consumerGroupId =
       overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
     val sourceFunction = flinkSourceFunction(consumerGroupId, flinkNodeContext)

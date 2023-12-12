@@ -3,25 +3,28 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.streaming.api.datastream.DataStream
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 
 object FlinkCustomStreamTransformation {
-  def apply(fun: DataStream[Context] => DataStream[ValueWithContext[AnyRef]]): FlinkCustomStreamTransformation =
+
+  def apply(
+      fun: DataStream[ScenarioProcessingContext] => DataStream[ValueWithContext[AnyRef]]
+  ): FlinkCustomStreamTransformation =
     apply((data, _) => fun(data))
 
   def apply(
-      fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]]
-  ): FlinkCustomStreamTransformation = (start: DataStream[Context], context: FlinkCustomNodeContext) =>
-    fun(start, context)
+      fun: (DataStream[ScenarioProcessingContext], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]]
+  ): FlinkCustomStreamTransformation =
+    (start: DataStream[ScenarioProcessingContext], context: FlinkCustomNodeContext) => fun(start, context)
 
   def apply(
-      fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
+      fun: (DataStream[ScenarioProcessingContext], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
       rType: TypingResult
   ): FlinkCustomStreamTransformation with ReturningType =
     new FlinkCustomStreamTransformation with ReturningType {
 
       override def transform(
-          start: DataStream[Context],
+          start: DataStream[ScenarioProcessingContext],
           context: FlinkCustomNodeContext
       ): DataStream[ValueWithContext[AnyRef]] = fun(start, context)
 
@@ -33,7 +36,10 @@ object FlinkCustomStreamTransformation {
 trait FlinkCustomStreamTransformation {
 
   // TODO: To be consistent with ContextTransformation should return Context
-  def transform(start: DataStream[Context], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]]
+  def transform(
+      start: DataStream[ScenarioProcessingContext],
+      context: FlinkCustomNodeContext
+  ): DataStream[ValueWithContext[AnyRef]]
 
 }
 
@@ -52,7 +58,7 @@ trait FlinkCustomJoinTransformation {
 
   // TODO: To be consistent with ContextTransformation should return Context
   def transform(
-      inputs: Map[String, DataStream[Context]],
+      inputs: Map[String, DataStream[ScenarioProcessingContext]],
       context: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[AnyRef]]
 

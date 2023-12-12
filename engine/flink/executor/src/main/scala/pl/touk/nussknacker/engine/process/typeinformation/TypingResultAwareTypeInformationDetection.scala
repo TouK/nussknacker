@@ -5,7 +5,7 @@ import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   TypeInformationDetection,
   TypingResultAwareTypeInformationCustomisation
@@ -57,7 +57,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
   )
 
-  def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
+  def forContext(validationContext: ValidationContext): TypeInformation[ScenarioProcessingContext] = {
     val variables = forType(
       TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
     )

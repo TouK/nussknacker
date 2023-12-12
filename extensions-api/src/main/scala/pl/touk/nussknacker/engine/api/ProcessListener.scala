@@ -6,17 +6,17 @@ import scala.util.Try
 
 trait ProcessListener extends Lifecycle {
 
-  def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit
+  def nodeEntered(nodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit
 
-  def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit
+  def endEncountered(nodeId: String, ref: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit
 
-  def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit
+  def deadEndEncountered(lastNodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit
 
   def expressionEvaluated(
       nodeId: String,
       expressionId: String,
       expression: String,
-      context: Context,
+      context: ScenarioProcessingContext,
       processMetaData: MetaData,
       result: Any
   ): Unit
@@ -24,7 +24,7 @@ trait ProcessListener extends Lifecycle {
   def serviceInvoked(
       nodeId: String,
       id: String,
-      context: Context,
+      context: ScenarioProcessingContext,
       processMetaData: MetaData,
       params: Map[String, Any],
       result: Try[Any]
@@ -35,17 +35,26 @@ trait ProcessListener extends Lifecycle {
 }
 
 trait EmptyProcessListener extends ProcessListener {
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+  override def nodeEntered(nodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit = {}
 
-  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
+  override def endEncountered(
+      nodeId: String,
+      ref: String,
+      context: ScenarioProcessingContext,
+      processMetaData: MetaData
+  ): Unit = {}
 
-  override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+  override def deadEndEncountered(
+      lastNodeId: String,
+      context: ScenarioProcessingContext,
+      processMetaData: MetaData
+  ): Unit = {}
 
   override def expressionEvaluated(
       nodeId: String,
       expressionId: String,
       expression: String,
-      context: Context,
+      context: ScenarioProcessingContext,
       processMetaData: MetaData,
       result: Any
   ): Unit = {}
@@ -53,7 +62,7 @@ trait EmptyProcessListener extends ProcessListener {
   override def serviceInvoked(
       nodeId: String,
       id: String,
-      context: Context,
+      context: ScenarioProcessingContext,
       processMetaData: MetaData,
       params: Map[String, Any],
       result: Try[Any]

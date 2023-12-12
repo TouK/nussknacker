@@ -59,7 +59,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
       componentUseCase
     )(
       implicitly[Monad[F]],
-      SynchronousExecutionContextAndIORuntime.ctx,
+      SynchronousExecutionContextAndIORuntime.syncEc,
       implicitly[InterpreterShape[F]],
       implicitly[CapabilityTransformer[F]]
     ) match {

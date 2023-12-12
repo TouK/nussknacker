@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -28,7 +28,8 @@ case class FlinkCustomNodeContext(
 ) {
   def metaData: MetaData = jobData.metaData
 
-  lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(asOneOutputContext)
+  lazy val contextTypeInfo: TypeInformation[ScenarioProcessingContext] =
+    typeInformationDetection.forContext(asOneOutputContext)
 
   val valueWithContextInfo = new valueWithContextInfo
 

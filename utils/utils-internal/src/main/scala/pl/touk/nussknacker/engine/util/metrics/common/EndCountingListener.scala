@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
+import pl.touk.nussknacker.engine.api.{EmptyProcessListener, MetaData, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.graph.node.{DeadEndingData, EndingNodeData, NodeData}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, RateMeter, WithMetrics}
@@ -29,11 +29,20 @@ private[engine] class EndCountingListener(allNodes: Iterable[NodeData]) extends 
     )
   }
 
-  override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {
+  override def deadEndEncountered(
+      lastNodeId: String,
+      context: ScenarioProcessingContext,
+      processMetaData: MetaData
+  ): Unit = {
     deadEndRateMeters.mark(lastNodeId)
   }
 
-  override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {
+  override def endEncountered(
+      nodeId: String,
+      ref: String,
+      context: ScenarioProcessingContext,
+      processMetaData: MetaData
+  ): Unit = {
     endRateMeters.mark(nodeId)
   }
 

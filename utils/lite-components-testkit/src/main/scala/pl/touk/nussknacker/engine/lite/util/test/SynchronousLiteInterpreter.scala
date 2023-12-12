@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransf
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler
 
@@ -30,15 +29,15 @@ object SynchronousLiteInterpreter {
 
   type SynchronousResult = Validated[NonEmptyList[ProcessCompilationError], (List[ErrorType], List[EndResult[AnyRef]])]
 
-  implicit val ec: ExecutionContext                             = SynchronousExecutionContextAndIORuntime.ctx
+  implicit val ec: ExecutionContext                             = SynchronousExecutionContextAndIORuntime.syncEc
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
 
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 
     private val waitTime = 10 seconds
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] =
-      f => Await.result(transform(f), waitTime)
+    override def fromFuture[T]: Future[T] => Id[Either[T, Throwable]] =
+      f => Await.result(transform(f)(SynchronousExecutionContextAndIORuntime.syncEc), waitTime)
   }
   // TODO: add generate test data support
 

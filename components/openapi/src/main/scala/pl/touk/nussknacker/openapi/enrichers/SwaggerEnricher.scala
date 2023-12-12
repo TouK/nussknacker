@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContextId}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, TimeMeasuringService}
 import pl.touk.nussknacker.http.backend.{
   FixedAsyncHttpClientBackendProvider,
@@ -60,7 +60,7 @@ class SwaggerEnricher(
   override def invoke(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] =

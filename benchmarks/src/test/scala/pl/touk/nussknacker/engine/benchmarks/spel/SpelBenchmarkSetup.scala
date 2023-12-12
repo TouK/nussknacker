@@ -5,7 +5,7 @@ import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
@@ -50,7 +50,7 @@ class SpelBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) {
       case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")
     }
 
-  private val ctx = Context("id", vars, None)
+  private val ctx = ScenarioProcessingContext("id", vars, None)
 
   def test(): AnyRef = {
     compiledExpression.evaluate[AnyRef](ctx, Map.empty)

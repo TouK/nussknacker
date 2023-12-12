@@ -4,7 +4,7 @@ import org.springframework.core.convert.{ConversionService, TypeDescriptor}
 import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
 import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, internal}
 
@@ -21,7 +21,7 @@ class EvaluationContextPreparer(
 ) {
 
   // this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
-  def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
+  def prepareEvaluationContext(ctx: ScenarioProcessingContext, globals: Map[String, Any]): EvaluationContext = {
     val optimized = new OptimizedEvaluationContext(ctx, globals)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
@@ -59,7 +59,8 @@ class EvaluationContextPreparer(
 
 }
 
-class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extends StandardEvaluationContext {
+class OptimizedEvaluationContext(ctx: ScenarioProcessingContext, globals: Map[String, Any])
+    extends StandardEvaluationContext {
 
   // We *don't* want to initialize any Maps here, as this code is in our tightest loop
   override def lookupVariable(name: String): AnyRef = {

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{Context, EmptyProcessListener, MetaData}
+import pl.touk.nussknacker.engine.api.{EmptyProcessListener, MetaData, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{Counter, MetricIdentifier, WithMetrics}
 
@@ -19,7 +19,7 @@ private[engine] class NodeCountingListener(nodeIds: Iterable[String]) extends Em
       .toMap
   }
 
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
+  override def nodeEntered(nodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit = {
     val counter = counters
       .getOrElse(nodeId, throw new RuntimeException(s"Unexpected node: ${nodeId}, known nodes: ${counters.keySet}"))
     counter.update(1)

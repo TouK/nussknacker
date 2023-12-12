@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.{Context, MetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.{Parameter, TypedParameter}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
-  private val contextToUse: Context = Context("objectCreate")
+  private val contextToUse: ScenarioProcessingContext = ScenarioProcessingContext("objectCreate")
 
   def prepareParameter(
       typedParameter: TypedParameter,
@@ -72,7 +72,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
 
   private def evaluateSync(
       param: Parameter,
-      ctx: Context
+      ctx: ScenarioProcessingContext
   )(implicit processMetaData: MetaData, nodeId: NodeId): AnyRef = {
     expressionEvaluator.evaluateParameter(param, ctx).value
   }

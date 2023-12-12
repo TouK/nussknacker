@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
 
 /**
@@ -33,7 +33,7 @@ trait ContextInitializer[Raw] extends Serializable {
 
 }
 
-trait ContextInitializingFunction[Raw] extends (Raw => Context)
+trait ContextInitializingFunction[Raw] extends (Raw => ScenarioProcessingContext)
 
 /**
   * Basic implementation of context initializer. Used when raw event produced by source does not need further transformations and
@@ -67,9 +67,9 @@ class BasicContextInitializer[Raw](
 class BasicContextInitializingFunction[Raw](contextIdGenerator: ContextIdGenerator, outputVariableName: String)
     extends ContextInitializingFunction[Raw] {
 
-  override def apply(input: Raw): Context =
+  override def apply(input: Raw): ScenarioProcessingContext =
     newContext.withVariable(outputVariableName, input)
 
-  protected def newContext: Context = Context(contextIdGenerator.nextContextId())
+  protected def newContext: ScenarioProcessingContext = ScenarioProcessingContext(contextIdGenerator.nextContextId())
 
 }

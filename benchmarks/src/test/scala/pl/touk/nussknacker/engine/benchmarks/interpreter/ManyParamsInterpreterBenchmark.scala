@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, ScenarioProcessingContext, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -26,27 +26,27 @@ class ManyParamsInterpreterBenchmark {
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")
 
-  private val interpreterSyncIO  = prepareIoInterpreter(SynchronousExecutionContextAndIORuntime.ctx)
+  private val interpreterSyncIO  = prepareIoInterpreter(SynchronousExecutionContextAndIORuntime.syncEc)
   private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    interpreterSyncIO(Context("")).unsafeRunSync()
+    interpreterSyncIO(ScenarioProcessingContext("")).unsafeRunSync()
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    interpreterAsyncIO(Context("")).unsafeRunSync()
+    interpreterAsyncIO(ScenarioProcessingContext("")).unsafeRunSync()
   }
 
   private def prepareIoInterpreter(executionContext: ExecutionContext) = {
     val setup = new InterpreterSetup[String]
       .sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
-    (ctx: Context) => setup(ctx, executionContext)
+    (ctx: ScenarioProcessingContext) => setup(ctx, executionContext)
   }
 
 }

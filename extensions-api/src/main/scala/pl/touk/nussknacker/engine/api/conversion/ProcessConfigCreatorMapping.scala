@@ -55,7 +55,7 @@ object ProcessConfigCreatorMapping {
       }
       override def asyncExecutionContextPreparer(
           processObjectDependencies: ProcessObjectDependencies
-      ): Option[AsyncExecutionContextPreparer] = {
+      ): Option[ServiceExecutionContextPreparer] = {
         Option(jcreator.asyncExecutionContextPreparer(processObjectDependencies).orElse(null))
       }
       override def classExtractionSettings(

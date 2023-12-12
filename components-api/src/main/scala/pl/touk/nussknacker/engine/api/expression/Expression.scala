@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.expression
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait Expression {
@@ -9,7 +9,7 @@ trait Expression {
 
   def original: String
 
-  def evaluate[T](ctx: Context, globals: Map[String, Any]): T
+  def evaluate[T](ctx: ScenarioProcessingContext, globals: Map[String, Any]): T
 }
 
 sealed trait TypedValue

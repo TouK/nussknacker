@@ -9,7 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
+import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.kafka.serialization
 
@@ -62,7 +62,7 @@ object FlinkSerializationSchemaConversions extends LazyLogging {
       exceptionHandler
         .handling(
           Some(NodeComponentInfo(nodeId.id, ComponentType.Source, "unknown")),
-          Context(contextIdGenerator.nextContextId())
+          ScenarioProcessingContext(contextIdGenerator.nextContextId())
         ) {
           deserializationSchema.deserialize(record)
         }

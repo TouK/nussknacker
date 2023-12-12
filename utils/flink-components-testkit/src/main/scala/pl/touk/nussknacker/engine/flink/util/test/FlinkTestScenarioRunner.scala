@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ProcessVersion, ScenarioProcessingContext}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
@@ -11,7 +12,6 @@ import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.Interpreter.IOShape
-import cats.effect.IO
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -23,9 +23,9 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.text.ParseException
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
@@ -122,11 +122,20 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val compiledNode =
       compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
 
-    val inputContext                = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
+    val inputContext = ScenarioProcessingContext("foo").withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
     Validated
       .fromEither(
-        compilerData.interpreter.interpret[IO](compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap
+        compilerData.interpreter
+          .interpret[IO](
+            compiledNode,
+            parts.metaData,
+            inputContext,
+            ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
+          )
+          .unsafeRunSync()
+          .head
+          .swap
       )
       .toValidatedNel
   }

@@ -22,7 +22,9 @@ class FlinkLazyParameterFunctionHelper(
         .keyBy(_.value)
         @see AggregateTransformer
    */
-  def lazyMapFunction[T <: AnyRef](parameter: LazyParameter[T]): FlatMapFunction[Context, ValueWithContext[T]] =
+  def lazyMapFunction[T <: AnyRef](
+      parameter: LazyParameter[T]
+  ): FlatMapFunction[ScenarioProcessingContext, ValueWithContext[T]] =
     new LazyParameterMapFunction[T](parameter, this)
 
   /*
@@ -30,7 +32,7 @@ class FlinkLazyParameterFunctionHelper(
      stream.filter(ctx.nodeServices.lazyFilterFunction(expression))
      @see CustomFilter class
    */
-  def lazyFilterFunction(parameter: LazyParameter[java.lang.Boolean]): FilterFunction[Context] =
+  def lazyFilterFunction(parameter: LazyParameter[java.lang.Boolean]): FilterFunction[ScenarioProcessingContext] =
     new LazyParameterFilterFunction(parameter, this)
 
 }
@@ -39,9 +41,9 @@ class LazyParameterFilterFunction(
     parameter: LazyParameter[java.lang.Boolean],
     lazyParameterHelper: FlinkLazyParameterFunctionHelper
 ) extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper)
-    with FilterFunction[Context] {
+    with FilterFunction[ScenarioProcessingContext] {
 
-  override def filter(value: Context): Boolean = {
+  override def filter(value: ScenarioProcessingContext): Boolean = {
     val handled: Option[Boolean] = handlingErrors(value) {
       evaluateParameter(value)
     }
@@ -54,9 +56,9 @@ class LazyParameterMapFunction[T <: AnyRef](
     parameter: LazyParameter[T],
     lazyParameterHelper: FlinkLazyParameterFunctionHelper
 ) extends AbstractOneParamLazyParameterFunction(parameter, lazyParameterHelper)
-    with FlatMapFunction[Context, ValueWithContext[T]] {
+    with FlatMapFunction[ScenarioProcessingContext, ValueWithContext[T]] {
 
-  override def flatMap(value: Context, out: Collector[ValueWithContext[T]]): Unit = {
+  override def flatMap(value: ScenarioProcessingContext, out: Collector[ValueWithContext[T]]): Unit = {
     collectHandlingErrors(value, out) {
       ValueWithContext(evaluateParameter(value), value)
     }
@@ -81,9 +83,9 @@ trait OneParamLazyParameterFunction[T <: AnyRef] extends LazyParameterInterprete
 
   protected def parameter: LazyParameter[T]
 
-  private var _evaluateParameter: Context => T = _
+  private var _evaluateParameter: ScenarioProcessingContext => T = _
 
-  protected def evaluateParameter(ctx: Context): T =
+  protected def evaluateParameter(ctx: ScenarioProcessingContext): T =
     _evaluateParameter(ctx)
 
   override def open(parameters: Configuration): Unit = {
@@ -122,18 +124,20 @@ trait LazyParameterInterpreterFunction { self: RichFunction =>
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation
     */
-  def handlingErrors[T](context: Context)(action: => T): Option[T] =
+  def handlingErrors[T](context: ScenarioProcessingContext)(action: => T): Option[T] =
     exceptionHandler.handling(Some(lazyParameterHelper.exceptionComponentInfo), context)(action)
 
   /**
     * This method should be use to handle exception that can occur during e.g. LazyParameter evaluation in
     * flatMap-like operators/functions
     */
-  def collectIterableHandlingErrors[T](context: Context, collector: Collector[T])(action: => Iterable[T]): Unit =
+  def collectIterableHandlingErrors[T](context: ScenarioProcessingContext, collector: Collector[T])(
+      action: => Iterable[T]
+  ): Unit =
     handlingErrors(context)(action)
       .foreach(data => data.foreach(collector.collect))
 
-  def collectHandlingErrors[T](context: Context, collector: Collector[T])(action: => T): Unit =
+  def collectHandlingErrors[T](context: ScenarioProcessingContext, collector: Collector[T])(action: => T): Unit =
     collectIterableHandlingErrors(context, collector)(List(action))
 
 }

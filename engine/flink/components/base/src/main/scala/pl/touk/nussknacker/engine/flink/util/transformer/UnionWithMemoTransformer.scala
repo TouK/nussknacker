@@ -57,7 +57,7 @@ class UnionWithMemoTransformer(
         new FlinkCustomJoinTransformation {
 
           override def transform(
-              inputs: Map[String, DataStream[Context]],
+              inputs: Map[String, DataStream[ScenarioProcessingContext]],
               context: FlinkCustomNodeContext
           ): DataStream[ValueWithContext[AnyRef]] = {
 

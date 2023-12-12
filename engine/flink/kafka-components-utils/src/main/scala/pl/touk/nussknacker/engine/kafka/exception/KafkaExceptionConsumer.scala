@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -76,7 +76,7 @@ case class SharedProducerKafkaExceptionConsumer(
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
     sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(
-      SynchronousExecutionContextAndIORuntime.ctx
+      SynchronousExecutionContextAndIORuntime.syncEc
     )
   }
 

@@ -32,7 +32,7 @@ object OnEventTriggerWindowOperator {
 
   // We use ThreadLocal to pass context from WindowOperator.processElement to ProcessWindowFunction
   // without modifying too much Flink code. This assumes that window is triggered only on event
-  val elementHolder = new ThreadLocal[api.Context]
+  val elementHolder = new ThreadLocal[api.ScenarioProcessingContext]
 
   // WindowOperatorBuilder.WINDOW_STATE_NAME - should be the same for compatibility
   val stateDescriptorName = "window-contents"
@@ -111,7 +111,7 @@ private class ValueEmittingWindowFunction(
       out: Collector[ValueWithContext[AnyRef]]
   ): Unit = {
     elements.forEach { element =>
-      val ctx = Option(elementHolder.get()).getOrElse(api.Context(contextIdGenerator.nextContextId()))
+      val ctx = Option(elementHolder.get()).getOrElse(api.ScenarioProcessingContext(contextIdGenerator.nextContextId()))
       out.collect(ValueWithContext(element, KeyEnricher.enrichWithKey(ctx, key)))
     }
   }

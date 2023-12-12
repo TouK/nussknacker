@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.api.utils
 import cats.Monad
 import cats.implicits._
 import cats.kernel.Monoid
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.commonTypes._
@@ -26,7 +26,7 @@ object transformers {
     def createSingleTransformation[F[_]: Monad, Result](
         continuation: DataBatch => F[ResultType[Result]],
         context: CustomComponentContext[F]
-    ): Context => F[ResultType[Result]]
+    ): ScenarioProcessingContext => F[ResultType[Result]]
 
   }
 
@@ -37,12 +37,14 @@ object transformers {
     final override def createSingleTransformation[F[_]: Monad, Result](
         continuation: DataBatch => F[ResultType[Result]],
         context: CustomComponentContext[F]
-    ): Context => F[ResultType[Result]] = {
+    ): ScenarioProcessingContext => F[ResultType[Result]] = {
       val transformation = createStateTransformation[F](context)
       ctx => transformation(ctx).flatMap(newCtx => continuation(DataBatch(newCtx :: Nil)))
     }
 
-    def createStateTransformation[F[_]: Monad](context: CustomComponentContext[F]): Context => F[Context]
+    def createStateTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): ScenarioProcessingContext => F[ScenarioProcessingContext]
 
   }
 

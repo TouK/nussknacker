@@ -357,7 +357,7 @@ class ModelDefinitionExtractorSpec extends AnyFunSuite with Matchers with Option
     override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        contextId: ScenarioProcessingContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = ???

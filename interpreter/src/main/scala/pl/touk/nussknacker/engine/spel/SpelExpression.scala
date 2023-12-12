@@ -14,7 +14,7 @@ import org.springframework.expression.spel.{
   standard
 }
 import pl.touk.nussknacker.engine.api
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -102,7 +102,7 @@ class SpelExpression(
     }
 
   // TODO: better interoperability with scala type, mainly: scala.math.BigDecimal, scala.math.BigInt and collections
-  override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = logOnException(ctx) {
+  override def evaluate[T](ctx: ScenarioProcessingContext, globals: Map[String, Any]): T = logOnException(ctx) {
     if (expectedClass == classOf[SpelExpressionRepr]) {
       return SpelExpressionRepr(parsed.parsed, ctx, globals, original).asInstanceOf[T]
     }
@@ -110,7 +110,7 @@ class SpelExpression(
     parsed.getValue[T](evaluationContext, expectedClass)
   }
 
-  private def logOnException[A](ctx: Context)(block: => A): A = {
+  private def logOnException[A](ctx: ScenarioProcessingContext)(block: => A): A = {
     try {
       block
     } catch {

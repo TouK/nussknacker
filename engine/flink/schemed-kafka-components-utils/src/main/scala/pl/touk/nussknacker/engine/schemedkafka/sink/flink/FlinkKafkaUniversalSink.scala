@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{LazyParameter, ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed
@@ -45,7 +45,7 @@ class FlinkKafkaUniversalSink(
       .addSink(toFlinkFunction)
 
   def prepareValue(
-      ds: DataStream[Context],
+      ds: DataStream[ScenarioProcessingContext],
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]] = {
     val typeInfo = keyed.typeInfo(flinkNodeContext, key, value)

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ScenarioProcessingContextId}
 
 object TestProcess {
 
@@ -13,20 +13,25 @@ object TestProcess {
       variableEncoder: Any => T
   ) {
 
-    def updateNodeResult(nodeId: String, context: Context) = {
+    def updateNodeResult(nodeId: String, context: ScenarioProcessingContext) = {
       copy(nodeResults =
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ NodeResult(toResult(context))))
       )
     }
 
-    def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any) = {
+    def updateExpressionResult(nodeId: String, context: ScenarioProcessingContext, name: String, result: Any) = {
       val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
       )
     }
 
-    def updateExternalInvocationResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
+    def updateExternalInvocationResult(
+        nodeId: String,
+        contextId: ScenarioProcessingContextId,
+        name: String,
+        result: Any
+    ) = {
       val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))
@@ -45,7 +50,7 @@ object TestProcess {
       res.contextId == invocationResult.contextId && res.name == invocationResult.name
     ) :+ invocationResult
 
-    private def toResult(context: Context): ResultContext[T] =
+    private def toResult(context: ScenarioProcessingContext): ResultContext[T] =
       ResultContext(context.id, context.variables.map { case (k, v) => k -> variableEncoder(v) })
 
   }

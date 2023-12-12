@@ -103,7 +103,7 @@ object TypedSourceFactory extends SourceFactory {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
-      ): Any => ValidatedNel[ErrorType, Context] = ???
+      ): Any => ValidatedNel[ErrorType, ScenarioProcessingContext] = ???
 
       override def returnType: typing.TypingResult = value.returnType
     }

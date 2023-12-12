@@ -98,7 +98,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   def invoke(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[Any]
@@ -114,7 +114,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
+          contextId: ScenarioProcessingContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] =
         invoke(params ++ eagerParameters)

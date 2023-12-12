@@ -10,7 +10,12 @@ import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInf
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, Source}
+import pl.touk.nussknacker.engine.api.process.{
+  ComponentUseCase,
+  ProcessObjectDependencies,
+  ServiceExecutionContext,
+  Source
+}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,7 +27,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
@@ -185,7 +189,7 @@ object ScenarioInterpreterFactory {
               NuExceptionInfo(
                 Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
-                Context("")
+                ScenarioProcessingContext("")
               ) :: Nil,
               Nil
             )
@@ -321,10 +325,12 @@ object ScenarioInterpreterFactory {
       })
     }
 
-    private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
+    private def invokeInterpreterOnContext(
+        node: Node
+    )(ctx: ScenarioProcessingContext): F[ResultType[InterpretationResult]] = {
       implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
       processCompilerData.interpreter
-        .interpret[F](node, processCompilerData.metaData, ctx)
+        .interpret[F](node, processCompilerData.metaData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value
@@ -380,7 +386,7 @@ object ScenarioInterpreterFactory {
 
     private def compileSource(
         sourcePart: SourcePart
-    ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
+    ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, ScenarioProcessingContext]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
@@ -401,8 +407,8 @@ object ScenarioInterpreterFactory {
 
           override def createTransformation[F[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[F]
-          ): Input => ValidatedNel[ErrorType, Context] = { input =>
-            Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+          ): Input => ValidatedNel[ErrorType, ScenarioProcessingContext] = { input =>
+            Valid(ScenarioProcessingContext(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
           }
 
         }
@@ -438,8 +444,9 @@ object ScenarioInterpreterFactory {
 
   private sealed trait PartResult
 
-  private case class EndPartResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
+  private case class EndPartResult[Result](nodeId: String, context: ScenarioProcessingContext, result: Result)
+      extends PartResult
 
-  private case class JoinResult(reference: JoinReference, context: Context) extends PartResult
+  private case class JoinResult(reference: JoinReference, context: ScenarioProcessingContext) extends PartResult
 
 }

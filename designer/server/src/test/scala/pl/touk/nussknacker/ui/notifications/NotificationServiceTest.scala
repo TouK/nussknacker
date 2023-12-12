@@ -74,7 +74,7 @@ class NotificationServiceTest
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] =
-      notificationService.notifications(after)(user, ctx).futureValue
+      notificationService.notifications(after)(user, syncEc).futureValue
 
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
@@ -84,7 +84,7 @@ class NotificationServiceTest
         deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
-      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
+      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, syncEc).flatten.futureValue
     }
 
     val userForSuccess = TestFactory.adminUser("successUser", "successUser")
@@ -128,17 +128,17 @@ class NotificationServiceTest
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
-      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
+      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, syncEc).flatten.futureValue
     }
 
     val user = TestFactory.adminUser("fooUser", "fooUser")
     deployProcess(Success(None), user)
-    val notificationsAfterDeploy = notificationService.notifications(None)(user, ctx).futureValue
+    val notificationsAfterDeploy = notificationService.notifications(None)(user, syncEc).futureValue
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
-    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, ctx).futureValue
+    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, syncEc).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId

@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContext, ScenarioProcessingContextId, ServiceInvoker}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
@@ -22,27 +22,38 @@ object service {
       id: String,
       invoker: ServiceInvoker,
       parameters: List[Parameter],
-      resultCollector: ResultCollector
+      resultCollector: ResultCollector,
   ) {
 
-    def invoke(ctx: Context, expressionEvaluator: ExpressionEvaluator)(
+    def invoke(
+        ctx: ScenarioProcessingContext,
+        expressionEvaluator: ExpressionEvaluator,
+        serviceExecutionContext: ServiceExecutionContext
+    )(
         implicit nodeId: NodeId,
         metaData: MetaData,
-        ec: ExecutionContext,
         componentUseCase: ComponentUseCase
     ): (Map[String, AnyRef], Future[Any]) = {
 
       val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
+      val contextId           = ScenarioProcessingContextId(ctx.id)
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
-      (preparedParams, invoker.invokeService(preparedParams)(ec, collector, contextId, componentUseCase))
+      (
+        preparedParams,
+        invoker.invokeService(preparedParams)(
+          serviceExecutionContext.executionContext,
+          collector,
+          contextId,
+          componentUseCase
+        )
+      )
     }
 
   }
 
   private[service] class BaseServiceInvocationCollector(
       resultCollector: ResultCollector,
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       nodeId: NodeId,
       serviceRef: String
   ) extends ServiceInvocationCollector {

@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
 /**
@@ -19,7 +19,7 @@ trait FlinkSink extends Sink with Serializable {
   def prepareTestValue(value: Value): AnyRef = value
 
   def prepareValue(
-      dataStream: DataStream[Context],
+      dataStream: DataStream[ScenarioProcessingContext],
       flinkCustomNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]]
 
@@ -38,7 +38,7 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
   def typeResult: TypingResult = Unknown
 
   override def prepareValue(
-      dataStream: DataStream[Context],
+      dataStream: DataStream[ScenarioProcessingContext],
       flinkCustomNodeContext: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[Value]] =
     dataStream.flatMap(
@@ -60,7 +60,9 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
         .addSink(toFlinkFunction)
     )
 
-  def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[Value]]
+  def valueFunction(
+      helper: FlinkLazyParameterFunctionHelper
+  ): FlatMapFunction[ScenarioProcessingContext, ValueWithContext[Value]]
 
   def toFlinkFunction: SinkFunction[Value]
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.api.typeinformation
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 
 /**
  * This is *experimental* trait that allows for providing more details TypeInformation when ValidationContext is known
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
  */
 trait TypeInformationDetection extends Serializable {
 
-  def forContext(validationContext: ValidationContext): TypeInformation[Context]
+  def forContext(validationContext: ValidationContext): TypeInformation[ScenarioProcessingContext]
 
   def forValueWithContext[T](
       validationContext: ValidationContext,

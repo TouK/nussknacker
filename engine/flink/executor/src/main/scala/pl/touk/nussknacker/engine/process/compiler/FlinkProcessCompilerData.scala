@@ -6,7 +6,7 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ComponentUseCase}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContextPreparer}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyInterpreterDependencies
@@ -30,7 +30,7 @@ class FlinkProcessCompilerData(
     val jobData: JobData,
     // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
     exceptionHandler: FlinkExceptionHandler,
-    val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
+    val asyncExecutionContextPreparer: ServiceExecutionContextPreparer,
     val processTimeout: FiniteDuration,
     val componentUseCase: ComponentUseCase
 ) {
