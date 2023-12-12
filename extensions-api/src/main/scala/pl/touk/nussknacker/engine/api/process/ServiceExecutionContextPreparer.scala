@@ -8,8 +8,9 @@ trait AsyncExecutionContextPreparer {
 
   def defaultUseAsyncInterpretation: Option[Boolean]
 
-  def prepareExecutionContext(processId: String): ExecutionContext
+  def prepareExecutionContext(processId: String): AsyncExecutionContext
 
   def close(): Unit
-
 }
+
+final case class AsyncExecutionContext(context: ExecutionContext)
