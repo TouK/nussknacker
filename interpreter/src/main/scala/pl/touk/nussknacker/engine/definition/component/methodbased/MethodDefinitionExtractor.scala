@@ -9,7 +9,7 @@ import java.lang.reflect.Method
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
 // BindingAnnotation in guice meaning. Maybe we should switch to some lightweight DI framework (like guice) instead
 // of writing its on ours own?
-private[definition] trait MethodDefinitionExtractor[T] {
+private[component] trait MethodDefinitionExtractor[T] {
 
   def extractMethodDefinition(
       obj: T,

@@ -7,6 +7,7 @@ import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -26,15 +27,15 @@ import java.util.Collections
 
 class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
-  private lazy val creator = new KafkaSourceFactoryProcessConfigCreator()
-
   private lazy val config = ConfigFactory
     .empty()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
     .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
 
-  test("Should pass correct timestamp from test data") {
+  protected lazy val modelData: ModelData =
+    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
 
+  test("Should pass correct timestamp from test data") {
     val topic             = "simple"
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta =
@@ -44,7 +45,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .streaming("test")
       .source(
         "start",
-        "kafka-GenericJsonSourceFactory",
+        "kafka-jsonValueWithMeta",
         TopicParamName -> s"'$topic'",
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
@@ -55,12 +56,12 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .apply(inputMeta)
       .mapObject(
         _.add("key", Null)
-          .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa")))
+          .add("value", obj("id" -> fromString("fooId"), "field" -> fromString("fooField")))
       )
 
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
-    val testResultVars = results.nodeResults("end").head.context.variables
+    val testResultVars = results.nodeResults("end").head.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
     testResultVars.get("inputMeta") shouldBe Some(inputMeta)
   }
@@ -93,14 +94,13 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.nodeResults shouldBe Symbol("nonEmpty")
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
-        LocalModelData(config, creator),
+        modelData,
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration(),
-        identity
+        FlinkTestConfiguration.configuration()
       )
     }
   }

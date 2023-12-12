@@ -6,6 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
@@ -32,22 +33,14 @@ class ModelDataTestInfoProviderSpec
 
   private val modelData = LocalModelData(
     ConfigFactory.empty(),
-    new EmptyProcessConfigCreator {
-
-      override def sourceFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SourceFactory]] = {
-        Map(
-          "genericSource"                   -> WithCategories.anyCategory(new GenericParametersSource),
-          "genericSourceNoSupport"          -> WithCategories.anyCategory(new GenericParametersSourceNoTestSupport),
-          "genericSourceNoGenerate"         -> WithCategories.anyCategory(new GenericParametersSourceNoGenerate),
-          "genericSourceWithTestParameters" -> WithCategories.anyCategory(new SourceWithTestParameters),
-          "sourceEmptyTimestamp"            -> WithCategories.anyCategory(SourceGeneratingEmptyTimestamp),
-          "sourceGeneratingEmptyData"       -> WithCategories.anyCategory(SourceGeneratingEmptyData),
-        )
-      }
-
-    }
+    List(
+      ComponentDefinition("genericSource", new GenericParametersSource),
+      ComponentDefinition("genericSourceNoSupport", new GenericParametersSourceNoTestSupport),
+      ComponentDefinition("genericSourceNoGenerate", new GenericParametersSourceNoGenerate),
+      ComponentDefinition("genericSourceWithTestParameters", new SourceWithTestParameters),
+      ComponentDefinition("sourceEmptyTimestamp", SourceGeneratingEmptyTimestamp),
+      ComponentDefinition("sourceGeneratingEmptyData", SourceGeneratingEmptyData),
+    )
   )
 
   object SourceGeneratingEmptyTimestamp extends GenericParametersSource {

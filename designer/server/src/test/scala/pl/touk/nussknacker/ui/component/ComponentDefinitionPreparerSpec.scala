@@ -7,12 +7,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, CustomComponentSpecificData}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentStaticDefinition
-import pl.touk.nussknacker.engine.definition.model.{CustomTransformerAdditionalData, ModelDefinitionWithComponentIds}
+import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithComponentIds
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder.ComponentDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -140,20 +141,13 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
   test("return custom nodes with correct group") {
     val initialDefinition = ProcessTestData.modelDefinitionWithIds
-    val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
-      customStreamTransformers =
-        initialDefinition.customStreamTransformers.map { case (name, (componentDef, additionalData)) =>
-          (
-            name,
-            (
-              componentDef.copy(componentConfig =
-                componentDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
-              ),
-              additionalData
-            )
-          )
-        }
-    )
+    val definitionWithCustomNodesInSomeCategory = initialDefinition.transform {
+      case component if component.componentType == ComponentType.CustomComponent =>
+        component.copy(componentConfig =
+          component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
+        )
+      case other => other
+    }
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false
@@ -167,7 +161,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       .withCustomStreamTransformer(
         "fooTransformer",
         Some(Unknown),
-        CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true),
+        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
         parameter
       )
       .withComponentIds(new SimpleTestComponentIdProvider, TestProcessingTypes.Streaming)
@@ -180,58 +174,72 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("should prefer config over code configuration") {
-    val fixed = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+    val fixed = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
+      )
     )
 
-    val dynamic = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+    val dynamic = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
+        "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+      )
     )
 
-    val expected = Map(
-      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
-      "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
-      "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+    val expected = ComponentsUiConfig(
+      Map(
+        "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+        "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
+        "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
+      )
     )
 
     ComponentDefinitionPreparer.combineComponentsConfig(fixed, dynamic) shouldBe expected
   }
 
   test("should merge default value maps") {
-    val fixed = Map(
-      "service" -> SingleComponentConfig(
-        Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
-        None,
-        Some("doc"),
-        None,
-        None
+    val fixed = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
+          None,
+          Some("doc"),
+          None,
+          None
+        )
       )
     )
 
-    val dynamic = Map(
-      "service" -> SingleComponentConfig(
-        Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
-        None,
-        Some("doc1"),
-        None,
-        None
+    val dynamic = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))),
+          None,
+          Some("doc1"),
+          None,
+          None
+        )
       )
     )
 
-    val expected = Map(
-      "service" -> SingleComponentConfig(
-        Some(
-          Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None, None))
-        ),
-        None,
-        Some("doc"),
-        None,
-        None
+    val expected = ComponentsUiConfig(
+      Map(
+        "service" -> SingleComponentConfig(
+          Some(
+            Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv =>
+              ParameterConfig(Some(dv), None, None, None, None)
+            )
+          ),
+          None,
+          Some("doc"),
+          None,
+          None
+        )
       )
     )
 
@@ -250,11 +258,13 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentStaticDefinition]()
-    val dynamicComponentsConfig = modelDefinition.allDefinitions.toMap.map { case (idWithName, value) =>
+    val dynamicComponentsConfig = ComponentsUiConfig(modelDefinition.components.toMap.map { case (idWithName, value) =>
       idWithName.name -> value.componentConfig
-    }
+    })
     val fixedComponentsConfig =
-      fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+      ComponentsUiConfig(
+        fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+      )
     val componentsConfig =
       ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
@@ -266,9 +276,6 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
-        case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
       TestProcessingTypes.Streaming
     )
     groups
@@ -283,12 +290,9 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       modelDefinition = modelDefinition,
       fragmentComponents = Map.empty,
       isFragment = false,
-      componentsConfig = Map(),
+      componentsConfig = ComponentsUiConfig(Map.empty),
       componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = modelDefinition.customStreamTransformers.map {
-        case (idWithName, (_, additionalData)) => (idWithName.id, additionalData)
-      }.toMap,
       TestProcessingTypes.Streaming
     )
     groups

@@ -31,9 +31,10 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.api.NodeId
 
-case object UnionTransformer extends UnionTransformer(None) {
+object UnionTransformer extends UnionTransformer(None) {
 
-  private val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
+  @transient
+  private lazy val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
   def transformContextsDefinition(outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)(
       contexts: Map[String, ValidationContext]
@@ -87,7 +88,8 @@ case object UnionTransformer extends UnionTransformer(None) {
   */
 class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
     extends CustomStreamTransformer
-    with LazyLogging {
+    with LazyLogging
+    with Serializable {
 
   import UnionTransformer._
 

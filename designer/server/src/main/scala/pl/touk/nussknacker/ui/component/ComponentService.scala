@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser.ComponentsUiConfig
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{
   ComponentLink,
   ComponentListElement,
@@ -59,18 +59,17 @@ object DefaultComponentService {
   }
 
   private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentNodeTemplate): String =
-    componentConfig(componentsUiConfig, com)
-      .flatMap(_.icon)
+    componentConfig(componentsUiConfig, com).icon
       .getOrElse(DefaultsComponentIcon.fromComponentInfo(com.componentInfo, com.isEnricher))
 
   private def getComponentDoc(componentsUiConfig: ComponentsUiConfig, com: ComponentNodeTemplate): Option[String] =
-    componentConfig(componentsUiConfig, com).flatMap(_.docsUrl)
+    componentConfig(componentsUiConfig, com).docsUrl
 
   private def componentConfig(
       componentsUiConfig: ComponentsUiConfig,
       com: ComponentNodeTemplate
-  ): Option[SingleComponentConfig] =
-    componentsUiConfig.get(com.label)
+  ): SingleComponentConfig =
+    componentsUiConfig.getConfigByComponentName(com.label)
 
   private[component] def toComponentUsagesInScenario(
       process: ScenarioWithDetailsEntity[_],

@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializ
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, KafkaSpec, serialization}
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
@@ -40,8 +39,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val constTimestamp: Long          = 123L
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
 
-  lazy val processObjectDependencies: ProcessObjectDependencies =
-    ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))
+  lazy val processObjectDependencies: ProcessObjectDependencies = ProcessObjectDependencies.withConfig(config)
 
   protected def objToSerializeSerializationSchema(topic: String): serialization.KafkaSerializationSchema[Any] =
     new BaseSimpleSerializationSchema[ObjToSerialize](
@@ -59,7 +57,6 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   protected def pushMessage(
       kafkaSerializer: serialization.KafkaSerializationSchema[Any],
       obj: AnyRef,
-      topic: String,
       partition: Option[Int] = None,
       timestamp: Long = 0L
   ): RecordMetadata = {

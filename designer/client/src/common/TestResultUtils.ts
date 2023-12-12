@@ -12,10 +12,6 @@ export interface Context {
     variables: Record<string, Variable>;
 }
 
-export interface NodeResult {
-    context: Context;
-}
-
 export interface InvocationResult {
     contextId: Context["id"];
     name: string;
@@ -56,14 +52,14 @@ export interface TestFormParameters {
 export interface TestResults {
     externalInvocationResults: Record<NodeId, ExternalInvocationResult[]>;
     invocationResults: Record<NodeId, InvocationResult[]>;
-    nodeResults: Record<NodeId, NodeResult[]>;
+    nodeResults: Record<NodeId, Context[]>;
     exceptions: Error[];
 }
 
 export interface NodeTestResults {
     externalInvocationResults: ExternalInvocationResult[];
     invocationResults: InvocationResult[];
-    nodeResults: NodeResult[];
+    nodeResults: Context[];
     errors: Error[];
 }
 
@@ -107,14 +103,14 @@ class TestResultUtils {
     };
 
     availableContexts = (testResults: NodeTestResults) => {
-        return uniq(testResults.nodeResults.map((nr) => ({ id: nr.context.id, display: this._contextDisplay(nr.context) })));
+        return uniq(testResults.nodeResults.map((nr) => ({ id: nr.id, display: this._contextDisplay(nr) })));
     };
 
     hasTestResults = (testResults?: NodeTestResults): boolean => {
         return testResults && this.availableContexts(testResults).length > 0;
     };
 
-    private _nodeResults(results: TestResults, nodeId: NodeId): NodeResult[] {
+    private _nodeResults(results: TestResults, nodeId: NodeId): Context[] {
         return results?.nodeResults?.[nodeId] || [];
     }
 
@@ -138,7 +134,7 @@ class TestResultUtils {
     };
 
     private nodeResultsForContext = (nodeTestResults: NodeTestResults, contextId: string): NodeResultsForContext => {
-        const context = nodeTestResults.nodeResults.find((result) => result.context.id == contextId)?.context;
+        const context = nodeTestResults.nodeResults.find((result) => result.id == contextId);
         const expressionResults = Object.fromEntries(
             nodeTestResults.invocationResults
                 .filter((result) => result.contextId == contextId)

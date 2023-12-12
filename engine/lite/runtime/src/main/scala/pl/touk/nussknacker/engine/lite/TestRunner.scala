@@ -23,12 +23,11 @@ import scala.language.higherKinds
 
 trait TestRunner {
 
-  def runTest[T](
+  def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
-      process: CanonicalProcess,
-      variableEncoder: Any => T
-  ): TestResults[T]
+      process: CanonicalProcess
+  ): TestResults
 
 }
 
@@ -36,15 +35,14 @@ trait TestRunner {
 class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
     extends TestRunner {
 
-  def runTest[T](
+  def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
-      process: CanonicalProcess,
-      variableEncoder: Any => T
-  ): TestResults[T] = {
+      process: CanonicalProcess
+  ): TestResults = {
 
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
+    val collectingListener = ResultsCollectingListenerHolder.registerRun
     // in tests we don't send metrics anywhere
     val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime

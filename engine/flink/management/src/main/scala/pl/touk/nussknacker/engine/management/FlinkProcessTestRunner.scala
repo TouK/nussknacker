@@ -16,12 +16,12 @@ class FlinkProcessTestRunner(modelData: ModelData)
       "run"
     ) {
 
-  def test[T](canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T)(
+  def test(canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData)(
       implicit ec: ExecutionContext
-  ): Future[TestResults[T]] =
+  ): Future[TestResults] =
     Future {
-      tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration(), variableEncoder)
-        .asInstanceOf[TestResults[T]]
+      tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration())
+        .asInstanceOf[TestResults]
     }
 
 }

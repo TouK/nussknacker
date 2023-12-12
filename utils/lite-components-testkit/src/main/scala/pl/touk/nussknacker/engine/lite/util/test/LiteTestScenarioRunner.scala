@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
@@ -94,9 +95,12 @@ class LiteTestScenarioRunner(
     val inputId    = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
 
-    ModelWithTestExtensions.withExtensions(config, testSource :: testSink :: components, globalVariables) { modelData =>
-      SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
-    }
+    val allComponents = testSource ::
+      testSink ::
+      LiteBaseComponentProvider.Components :::
+      components
+    val modelData = ModelWithTestExtensions(config, allComponents, globalVariables)
+    SynchronousLiteInterpreter.run(modelData, scenario, inputBatch, componentUseCase)
   }
 
 }

@@ -27,21 +27,12 @@ trait KafkaAvroSinkSpecMixin {
   object KafkaAvroSinkMockSchemaRegistry {
 
     val fullnameTopic: String          = "fullname"
-    val generatedAvroTopic: String     = "generated-avro"
     val generatedNewSchemaVersion: Int = 3
 
     val schemaRegistryMockClient: CSchemaRegistryClient = new MockConfluentSchemaRegistryClientBuilder()
       .register(fullnameTopic, FullNameV1.schema, 1, isKey = false)
       .register(fullnameTopic, FullNameV2.schema, 2, isKey = false)
       .register(fullnameTopic, PaymentV1.schema, 3, isKey = false)
-      .register(generatedAvroTopic, GeneratedAvroClassWithLogicalTypesOldSchema.schema, 1, isKey = false)
-      .register(generatedAvroTopic, GeneratedAvroClassWithLogicalTypes.getClassSchema, 2, isKey = false)
-      .register(
-        generatedAvroTopic,
-        GeneratedAvroClassWithLogicalTypesNewSchema.schema,
-        generatedNewSchemaVersion,
-        isKey = false
-      )
       .build
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)

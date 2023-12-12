@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -45,7 +46,7 @@ class ManyParamsInterpreterBenchmark {
 
   private def prepareIoInterpreter(executionContext: ExecutionContext) = {
     val setup = new InterpreterSetup[String]
-      .sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
+      .sourceInterpretation[IO](process, List(ComponentDefinition("service", new ManyParamsService(executionContext))))
     (ctx: Context) => setup(ctx, executionContext)
   }
 

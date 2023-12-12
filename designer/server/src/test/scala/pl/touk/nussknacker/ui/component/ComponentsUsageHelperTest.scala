@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.definition.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -139,13 +140,17 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private val defaultComponentIdProvider = new DefaultComponentIdProvider(
     Map(
-      Streaming -> Map(
-        otherExistingStreamTransformer -> SingleComponentConfig.zero
-          .copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+      Streaming -> ComponentsUiConfig(
+        Map(
+          otherExistingStreamTransformer -> SingleComponentConfig.zero
+            .copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
+        )
       ),
-      Fraud -> Map(
-        otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId =
-          Some(ComponentId(overriddenOtherExistingStreamTransformer))
+      Fraud -> ComponentsUiConfig(
+        Map(
+          otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId =
+            Some(ComponentId(overriddenOtherExistingStreamTransformer))
+          )
         )
       )
     )

@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
+import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
@@ -65,7 +65,7 @@ sealed trait FragmentDefinitionError
 case object EmptyFragmentError extends FragmentDefinitionError
 
 class FragmentComponentDefinitionExtractor(
-    componentConfig: String => Option[SingleComponentConfig],
+    componentsUiConfig: ComponentsUiConfig,
     classLoader: ClassLoader,
     expressionCompiler: ExpressionCompiler,
 ) extends FragmentDefinitionExtractor {
@@ -75,7 +75,7 @@ class FragmentComponentDefinitionExtractor(
   ): Validated[FragmentDefinitionError, FragmentComponentDefinition] = {
     extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      val config      = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
+      val config      = componentsUiConfig.getConfigByComponentName(fragment.id).copy(docsUrl = docsUrl)
       val parameters  = input.parameters.map(toParameter(config)(_)(NodeId(input.id))).sequence.value
       val outputNames = outputs.map(_.name).sorted
       new FragmentComponentDefinition(parameters, config, outputNames)
@@ -100,7 +100,7 @@ class FragmentComponentDefinitionExtractor(
   private def extractFragmentParametersDefinition(componentId: String, parameters: List[FragmentParameter])(
       implicit nodeId: NodeId
   ): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    val config = componentsUiConfig.getConfigByComponentName(componentId)
     parameters
       .map(toParameter(config))
       .sequence
@@ -200,9 +200,8 @@ object FragmentComponentDefinitionExtractor {
       expressionCompiler: ExpressionCompiler
   ): FragmentComponentDefinitionExtractor = {
     val componentsConfig = ComponentsUiConfigParser.parse(modelConfig)
-
     new FragmentComponentDefinitionExtractor(
-      componentsConfig.get,
+      componentsConfig,
       classLoader,
       expressionCompiler
     )

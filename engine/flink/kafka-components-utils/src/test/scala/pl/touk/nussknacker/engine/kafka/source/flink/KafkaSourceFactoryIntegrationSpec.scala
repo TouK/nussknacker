@@ -76,8 +76,8 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     createTopic(topic)
     val objWithoutKey = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
     val correctObj    = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
-    pushMessage(objToSerializeSerializationSchema(topic), objWithoutKey, topic, timestamp = constTimestamp)
-    pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
+    pushMessage(objToSerializeSerializationSchema(topic), objWithoutKey, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), correctObj, timestamp = constTimestamp + 1)
     val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
     run(process) {
       eventually {
@@ -99,7 +99,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     val givenObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
     val process  = createProcess(topic, SourceType.jsonValueWithMeta)
     createTopic(topic)
-    pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), givenObj, timestamp = constTimestamp)
     run(process) {
       eventually {
         SinkForInputMeta.data shouldBe List(
@@ -126,8 +126,8 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     val process  = createProcess(topic, SourceType.jsonValueWithMeta)
     createTopic(topicOne)
     createTopic(topicTwo)
-    pushMessage(objToSerializeSerializationSchema(topicOne), givenObj, topicOne, timestamp = constTimestamp)
-    pushMessage(objToSerializeSerializationSchema(topicTwo), givenObj, topicTwo, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topicOne), givenObj, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topicTwo), givenObj, timestamp = constTimestamp)
     run(process) {
       eventually {
         SinkForInputMeta.data.map(_.topic).toSet shouldEqual Set(topicOne, topicTwo)
@@ -153,11 +153,10 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin {
     pushMessage(
       new SimpleSerializationSchema[String](topic, identity).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
       invalidJson,
-      topic,
       timestamp = constTimestamp
     )
     val correctObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
-    pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
+    pushMessage(objToSerializeSerializationSchema(topic), correctObj, timestamp = constTimestamp + 1)
     run(process) {
       eventually {
         SinkForSampleValue.data shouldBe List(correctObj.value)

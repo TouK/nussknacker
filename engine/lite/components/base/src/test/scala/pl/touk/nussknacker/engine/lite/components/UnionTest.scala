@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -17,36 +18,35 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import scala.concurrent.Future
 import scala.language.higherKinds
 
-class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
+class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("unification of same types") {
     val validationResult = validate("123", "234")
+    validationResult.result.validValue
     validationResult.typing("end").inputValidationContext("unified") shouldEqual Typed[Integer]
-    validationResult.result.toEither.rightValue
   }
 
   test("unification of types with common supertype") {
     val validationResult = validate("123", "234.56")
+    validationResult.result.validValue
     validationResult.typing("end").inputValidationContext("unified") shouldEqual Typed[Number]
-    validationResult.result.toEither.rightValue
   }
 
   test("unification of different types") {
     val validationResult = validate("123", "'foo'")
-    validationResult.result.toEither.leftValue.toList should contain(
+    validationResult.result.invalidValue.toList should contain(
       CannotCreateObjectError("All branch values must be of the same type", "union")
     )
   }
 
   test("unification of map types with common supertype") {
-    validate("{a: 123}", "{a: 234.56}").result.toEither.rightValue
-    validate("{a: 123}", "{a: 'string'}").result.toEither.leftValue
-    validate("{a: 123}", "{b: 234.56}").result.toEither.leftValue
+    validate("{a: 123}", "{a: 234.56}").result.validValue
+    validate("{a: 123}", "{a: 'string'}").result.invalidValue
+    validate("{a: 123}", "{b: 234.56}").result.invalidValue
   }
 
   private def validate(leftValueExpression: String, rightValueExpression: String): CompilationResult[Unit] = {
@@ -73,21 +73,13 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
               )
             )
           )
-          .processorEnd("end", "dumb")
+          .emptySink("end", "dead-end")
       )
 
-    val configCreator = new EmptyProcessConfigCreator {
-      override def sourceFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SourceFactory]] =
-        Map("typed-source" -> WithCategories.anyCategory(TypedSourceFactory))
-
-      override def services(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[Service]] =
-        Map("dumb" -> WithCategories.anyCategory(DumbService))
-    }
-    val modelData        = LocalModelData(ConfigFactory.empty(), configCreator)
+    val modelData = LocalModelData(
+      ConfigFactory.empty(),
+      ComponentDefinition("typed-source", TypedSourceFactory) :: LiteBaseComponentProvider.Components
+    )
     val validator        = ProcessValidator.default(modelData)
     val validationResult = validator.validate(scenario)
     validationResult
@@ -108,9 +100,4 @@ object TypedSourceFactory extends SourceFactory {
       override def returnType: typing.TypingResult = value.returnType
     }
 
-}
-
-object DumbService extends Service {
-  @MethodToInvoke
-  def invoke(): Future[Any] = ???
 }

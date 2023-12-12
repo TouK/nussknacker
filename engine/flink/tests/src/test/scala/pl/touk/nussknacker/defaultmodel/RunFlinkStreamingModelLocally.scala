@@ -17,7 +17,7 @@ object RunFlinkStreamingModelLocally extends IOApp.Simple {
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
     .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:1111"))
 
-  val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)
+  val modelData = LocalModelData(modelConfig, List.empty, configCreator = new DefaultConfigCreator)
 
   val managerConfig = ConfigFactory.empty()
   // For simplicity we use stub here, one can add real Flink implementation after add appropriate dependencies

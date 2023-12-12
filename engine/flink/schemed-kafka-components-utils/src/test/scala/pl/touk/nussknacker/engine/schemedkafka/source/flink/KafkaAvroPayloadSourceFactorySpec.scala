@@ -9,7 +9,6 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -32,10 +31,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters._
 
 class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
 
@@ -71,19 +70,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     )
   }
 
-  test("should read generated specific record in v1") {
-    val givenObj = FullNameV1.createSpecificRecord("Jan", "Kowalski")
-
-    roundTripKeyValueObject(
-      specificSourceFactory[FullNameV1],
-      useStringForKey = true,
-      RecordTopic,
-      ExistingSchemaVersion(1),
-      null,
-      givenObj
-    )
-  }
-
   test("should read last generated generic record with logical types") {
     val givenObj = PaymentDate.record
 
@@ -91,27 +77,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
       universalSourceFactory,
       useStringForKey = true,
       PaymentDateTopic,
-      ExistingSchemaVersion(1),
-      "",
-      givenObj
-    )
-  }
-
-  test("should read last generated specific record with logical types ") {
-    val date    = LocalDateTime.of(2020, 1, 2, 3, 14, 15)
-    val decimal = new java.math.BigDecimal("12.34")
-    val givenObj = new GeneratedAvroClassWithLogicalTypes(
-      "loremipsum",
-      date.toInstant(ZoneOffset.UTC),
-      date.toLocalDate,
-      date.toLocalTime,
-      decimal
-    )
-
-    roundTripKeyValueObject(
-      specificSourceFactory[GeneratedAvroClassWithLogicalTypes],
-      useStringForKey = true,
-      GeneratedWithLogicalTypesTopic,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -348,7 +313,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
           "'testAvroInvalidDefaultsTopic1'",
           "'testAvroRecordTopic1'",
           "'testAvroRecordTopic1WithKey'",
-          "'testGeneratedWithLogicalTypesTopic'",
           "'testPaymentDateTopic'"
         ),
         "id"
@@ -406,7 +370,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   private def validate(params: (String, Expression)*): TransformationResult = {
 
-    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
 
     val validator = new GenericNodeTransformationValidator(
       ExpressionCompiler.withoutOptimization(modelData),

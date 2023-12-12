@@ -13,7 +13,7 @@ import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
@@ -40,23 +40,16 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     def invoke(@ParamName("listParam") param: java.util.List[Any]): Future[Any] = Future.successful(param)
   }
 
-  class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
+  private val components = List(
+    ComponentDefinition(
+      "stringSource",
+      SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
+    ),
+    ComponentDefinition("service", new SomeService),
+  )
+
+  class WithConvUtilConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
       extends EmptyProcessConfigCreator {
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map(
-        "stringSource" -> WithCategories.anyCategory(
-          SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
-        )
-      )
-
-    override def services(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[Service]] = {
-      Map("service" -> WithCategories.anyCategory(new SomeService))
-    }
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
       ExpressionConfig(
@@ -105,7 +98,12 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       spelCustomConversionsProviderOpt: Option[SpelConversionsProvider],
       inputValue: Any
   ) = {
-    val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
+    val modelData =
+      LocalModelData(
+        ConfigFactory.empty(),
+        components,
+        configCreator = new WithConvUtilConfigCreator(spelCustomConversionsProviderOpt)
+      )
     val compilerData = ProcessCompilerData.prepare(
       process,
       modelData.modelConfig,

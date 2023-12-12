@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.namespaces
 
 import com.typesafe.config.Config
 
+// TODO: rename to NamingStrategy
 trait ObjectNaming extends Serializable {
   def prepareName(originalName: String, config: Config, namingContext: NamingContext): String
 
@@ -12,6 +13,25 @@ trait ObjectNaming extends Serializable {
   ): Option[ObjectNamingParameters]
 
   def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String]
+}
+
+object ObjectNaming {
+  val OriginalNames: ObjectNaming = OriginalNamesObjectNaming
+}
+
+object OriginalNamesObjectNaming extends ObjectNaming {
+  override def prepareName(originalName: String, config: Config, namingContext: NamingContext): String = originalName
+
+  override def objectNamingParameters(
+      originalName: String,
+      config: Config,
+      namingContext: NamingContext
+  ): Option[ObjectNamingParameters] = None
+
+  override def decodeName(preparedName: String, config: Config, namingContext: NamingContext): Option[String] = Some(
+    preparedName
+  )
+
 }
 
 trait ObjectNamingParameters {

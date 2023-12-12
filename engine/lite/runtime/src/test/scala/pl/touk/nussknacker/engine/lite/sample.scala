@@ -6,7 +6,7 @@ import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
@@ -66,7 +66,19 @@ object sample {
 
   type StateType[M] = State[Map[String, Double], M]
 
-  val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
+  private val components: List[ComponentDefinition] = List(
+    ComponentDefinition("sum", SumTransformerFactory),
+    ComponentDefinition("start", SimpleSourceFactory),
+    ComponentDefinition("parametersSupport", SimpleSourceWithParameterTestingFactory),
+    ComponentDefinition("failOnNumber1Source", FailOnNumber1SourceFactory),
+    ComponentDefinition("failOnNumber1", FailOnNumber1),
+    ComponentDefinition("noOpProcessor", NoOpProcessor),
+    ComponentDefinition("sumNumbers", SumNumbers),
+    ComponentDefinition("end", SimpleSinkFactory)
+  )
+
+  private val modelData: LocalModelData =
+    LocalModelData(ConfigFactory.empty(), components, configCreator = WithUtilConfigCreator)
 
   def run(
       scenario: CanonicalProcess,
@@ -89,12 +101,12 @@ object sample {
     resultWithInitialState
   }
 
-  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
     implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }
     val testRunner = new InterpreterTestRunner[StateType, SampleInput, AnyRef]
-    testRunner.runTest(modelData, scenarioTestData, scenario, identity)
+    testRunner.runTest(modelData, scenarioTestData, scenario)
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])
@@ -120,38 +132,12 @@ object sample {
     def largestListElement(list: java.util.List[Long]): Long = list.asScala.max
   }
 
-  object StateConfigCreator extends EmptyProcessConfigCreator {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] =
-      Map("sum" -> WithCategories.anyCategory(SumTransformerFactory))
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map(
-        "start"               -> WithCategories.anyCategory(SimpleSourceFactory),
-        "parametersSupport"   -> WithCategories.anyCategory(SimpleSourceWithParameterTestingFactory),
-        "failOnNumber1Source" -> WithCategories.anyCategory(FailOnNumber1SourceFactory)
-      )
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-      Map(
-        "failOnNumber1" -> WithCategories.anyCategory(FailOnNumber1),
-        "noOpProcessor" -> WithCategories.anyCategory(NoOpProcessor),
-        "sumNumbers"    -> WithCategories.anyCategory(SumNumbers),
-      )
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] =
-      Map("end" -> WithCategories.anyCategory(SimpleSinkFactory))
+  object WithUtilConfigCreator extends EmptyProcessConfigCreator {
 
     override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
       ExpressionConfig(
         Map("UTIL" -> WithCategories.anyCategory(new UtilHelpers)),
-        List()
+        List.empty
       )
 
   }

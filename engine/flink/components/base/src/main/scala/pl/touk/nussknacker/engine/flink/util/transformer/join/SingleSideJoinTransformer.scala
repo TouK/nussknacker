@@ -34,7 +34,8 @@ class SingleSideJoinTransformer(
     with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
-    with LazyLogging {
+    with LazyLogging
+    with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.SingleSideJoinTransformer._
 
@@ -177,7 +178,11 @@ class SingleSideJoinTransformer(
       convertToEngineRuntimeContext
     )
 
-  override def typesToExtract: List[typing.TypedClass] = List(Typed.typedClass[BranchType])
+  override def typesToExtract: List[typing.TypedClass] = List(
+    Typed.typedClass[BranchType],
+    Typed.typedClass[AggregateHelper]
+  )
+
 }
 
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {

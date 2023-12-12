@@ -16,7 +16,12 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
+  OnActionExecutionFinished,
+  OnDeployActionFailed,
+  OnDeployActionSuccess,
+  OnFinished
+}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -534,10 +539,13 @@ class DeploymentServiceImpl(
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
       implicit ec: ExecutionContext
   ): Future[Boolean] = {
+    implicit val user: AdminUser            = NussknackerInternalUser.instance
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     logger.debug(s"About to mark action ${actionId.value} as execution finished")
     dbioRunner.runInTransaction(actionRepository.getFinishedProcessAction(actionId).flatMap { actionOpt =>
       DBIOAction
         .sequenceOption(actionOpt.map { action =>
+          processChangeListener.handle(OnActionExecutionFinished(action.id, action.processId, action.processVersionId))
           doMarkActionExecutionFinished(action, processingType)
         })
         .map(_.getOrElse(false))

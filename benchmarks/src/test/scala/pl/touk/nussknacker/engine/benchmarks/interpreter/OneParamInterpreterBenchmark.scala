@@ -5,6 +5,7 @@ import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -37,16 +38,16 @@ class OneParamInterpreterBenchmark {
 
   private val interpreterFutureSync = {
     implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
-    new InterpreterSetup[String].sourceInterpretation[Future](process, Map("service" -> service), Nil)
+    new InterpreterSetup[String].sourceInterpretation[Future](process, List(ComponentDefinition("service", service)))
   }
 
   private val interpreterFutureAsync = {
     implicit val ec: ExecutionContext = ExecutionContext.global
-    new InterpreterSetup[String].sourceInterpretation[Future](process, Map("service" -> service), Nil)
+    new InterpreterSetup[String].sourceInterpretation[Future](process, List(ComponentDefinition("service", service)))
   }
 
   private val interpreterIO =
-    new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> service), Nil)
+    new InterpreterSetup[String].sourceInterpretation[IO](process, List(ComponentDefinition("service", service)))
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))

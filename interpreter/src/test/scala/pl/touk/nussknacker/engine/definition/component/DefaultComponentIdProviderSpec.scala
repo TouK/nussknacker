@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -23,8 +24,10 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
 
   private val componentIdProvider = new DefaultComponentIdProvider(
     Map(
-      processingType -> Map(
-        componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
+      processingType -> ComponentsUiConfig(
+        Map(
+          componentNameToOverride -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId))
+        )
       )
     )
   )
@@ -56,9 +59,11 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
 
     val provider = new DefaultComponentIdProvider(
       Map(
-        processingType -> componentsWithRestrictedType
-          .map(_.name -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
-          .toMap
+        processingType -> ComponentsUiConfig(
+          componentsWithRestrictedType
+            .map(_.name -> SingleComponentConfig.zero.copy(componentId = Some(overriddenId)))
+            .toMap
+        )
       )
     )
 

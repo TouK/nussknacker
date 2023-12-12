@@ -36,7 +36,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     )
     .emptySink("dead", "dead_end")
 
-  private lazy val modelData = LocalModelData(config, configCreator)
+  private lazy val modelData = LocalModelData(config, List.empty, configCreator = configCreator)
 
   test("should load classes correctly for tests") {
 
