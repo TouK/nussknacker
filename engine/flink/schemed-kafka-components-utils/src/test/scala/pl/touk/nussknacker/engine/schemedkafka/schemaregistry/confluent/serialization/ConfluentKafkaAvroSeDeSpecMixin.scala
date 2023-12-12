@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.helpers._
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientBuilder
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
@@ -26,22 +25,8 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
-  lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(
-    SchemaRegistryProviderSetupType.avro,
-    ConfluentSchemaBasedSerdeProvider.avroPayload(MockSchemaRegistry.factory),
-    new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
-    new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false)
-  )
-
-  lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(
-    SchemaRegistryProviderSetupType.json,
-    ConfluentSchemaBasedSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
-    SimpleKafkaJsonSerializer,
-    SimpleKafkaJsonDeserializer
-  )
-
   object SchemaRegistryProviderSetupType extends Enumeration {
-    val json, avro = Value
+    val avro = Value
   }
 
   case class SchemaRegistryProviderSetup(
@@ -51,7 +36,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
       valueDeserializer: Deserializer[Any]
   ) extends KafkaWithSchemaRegistryOperations {
 
-    override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] =
+    override protected def prepareValueDeserializer: Deserializer[Any] =
       valueDeserializer
 
     override protected def schemaRegistryClient: SchemaRegistryClient =

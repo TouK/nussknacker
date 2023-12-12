@@ -11,15 +11,10 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.{
   SimpleKafkaJsonDeserializer,
   SimpleKafkaJsonSerializer
 }
-import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSampleSchema, PaymentV1}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  ExistingSchemaVersion,
-  SchemaBasedSerdeProvider,
-  SchemaRegistryClientFactory
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -28,9 +23,6 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
-      ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
-
     override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
       MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
@@ -40,7 +32,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
-  override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] =
+  override protected def prepareValueDeserializer: Deserializer[Any] =
     SimpleKafkaJsonDeserializer
 
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
@@ -68,18 +60,6 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
       PaymentV1.exampleData,
       BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData)
     )
-  }
-
-  test("should read and write json of specific record via avro schema") {
-    val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassSampleSchema.schema)
-    val sourceParam = SourceAvroParam.forSpecific(topicConfig)
-    val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
-    val process     = createAvroProcess(sourceParam, sinkParam)
-
-    val givenObj     = GeneratedAvroClassSampleSchema.specificRecord
-    val expectedJson = BestEffortJsonEncoder.defaultForTests.encode(givenObj)
-
-    runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
   }
 
 }

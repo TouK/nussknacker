@@ -61,8 +61,6 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
 
   override type State = KafkaSourceFactoryState[K, V]
 
-  protected def handleExceptionInInitialParameters: List[Parameter] = Nil
-
   private def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): NodeTransformationDefinition = { case step @ TransformationStep(Nil, _) =>
