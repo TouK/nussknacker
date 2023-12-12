@@ -26,4 +26,4 @@ class SqlDialect(metaData: DialectMetaData) {
 
 final case class DbParameterMetaData(parameterCount: Int)
 
-final case class TableMetaData(tableDefinition: TableDefinition, dbParameterMetaData: DbParameterMetaData)
+final case class TableMetaData(tableDefinition: Option[TableDefinition], dbParameterMetaData: DbParameterMetaData)
