@@ -54,7 +54,7 @@ class OneParamInterpreterBenchmark {
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureSync(): AnyRef = {
     Await.result(
-      interpreterFutureSync(Context(""), SynchronousExecutionContextAndIORuntime.syncEc),
+      interpreterFutureSync(ScenarioProcessingContext(""), SynchronousExecutionContextAndIORuntime.syncEc),
       1 second
     )
   }
@@ -63,21 +63,21 @@ class OneParamInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureAsync(): AnyRef = {
-    Await.result(interpreterFutureAsync(Context(""), ExecutionContext.Implicits.global), 1 second)
+    Await.result(interpreterFutureAsync(ScenarioProcessingContext(""), ExecutionContext.Implicits.global), 1 second)
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSyncIO(): AnyRef = {
-    interpreterIO(Context(""), SynchronousExecutionContextAndIORuntime.syncEc).unsafeRunSync()
+    interpreterIO(ScenarioProcessingContext(""), SynchronousExecutionContextAndIORuntime.syncEc).unsafeRunSync()
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsyncIO(): AnyRef = {
-    interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()
+    interpreterIO(ScenarioProcessingContext(""), ExecutionContext.Implicits.global).unsafeRunSync()
   }
 
 }

@@ -34,11 +34,11 @@ object TestComponentProvider {
 
         override def topics: List[String] = topicName :: Nil
 
-        override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
+        override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ScenarioProcessingContext = {
           val value = new String(record.value())
           if (value == FailingInputValue)
             throw SourceFailure
-          Context(contextIdGenerator.nextContextId())
+          ScenarioProcessingContext(contextIdGenerator.nextContextId())
             .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
             .withVariable(VariableConstants.InputVariableName, value)
         }

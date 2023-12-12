@@ -4,7 +4,7 @@ import cats.Monad
 import cats.data.{Writer, WriterT}
 import cats.implicits._
 import cats.kernel.Monoid
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.language.higherKinds
@@ -12,11 +12,11 @@ import scala.language.higherKinds
 object commonTypes {
 
   object DataBatch {
-    def apply(ctxs: Context*): DataBatch = DataBatch(ctxs.toList)
+    def apply(ctxs: ScenarioProcessingContext*): DataBatch = DataBatch(ctxs.toList)
   }
 
-  case class DataBatch(value: List[Context]) {
-    def map[T](function: Context => T): List[T] = value.map(function)
+  case class DataBatch(value: List[ScenarioProcessingContext]) {
+    def map[T](function: ScenarioProcessingContext => T): List[T] = value.map(function)
   }
 
   type ErrorType = NuExceptionInfo[_ <: Throwable]

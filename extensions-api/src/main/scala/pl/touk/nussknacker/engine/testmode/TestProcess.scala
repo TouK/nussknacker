@@ -1,29 +1,39 @@
 package pl.touk.nussknacker.engine.testmode
 
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, ContextId}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ScenarioProcessingContextId}
 
 object TestProcess {
 
   case class TestResults(
-      nodeResults: Map[String, List[Context]],
+      nodeResults: Map[String, List[ScenarioProcessingContext]],
       invocationResults: Map[String, List[ExpressionInvocationResult]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult]],
       exceptions: List[NuExceptionInfo[_ <: Throwable]]
   ) {
 
-    def updateNodeResult(nodeId: String, context: Context): TestResults = {
+    def updateNodeResult(nodeId: String, context: ScenarioProcessingContext): TestResults = {
       copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ context)))
     }
 
-    def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any): TestResults = {
+    def updateExpressionResult(
+        nodeId: String,
+        context: ScenarioProcessingContext,
+        name: String,
+        result: Any
+    ): TestResults = {
       val invocationResult = ExpressionInvocationResult(context.id, name, result)
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
       )
     }
 
-    def updateExternalInvocationResult(nodeId: String, contextId: ContextId, name: String, result: Any): TestResults = {
+    def updateExternalInvocationResult(
+        nodeId: String,
+        contextId: ScenarioProcessingContextId,
+        name: String,
+        result: Any
+    ): TestResults = {
       val invocation = ExternalInvocationResult(contextId.value, name, result)
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))

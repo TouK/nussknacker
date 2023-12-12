@@ -35,7 +35,9 @@ class InterpreterSetup[T: ClassTag] {
   def sourceInterpretation[F[_]: Monad: InterpreterShape](
       process: CanonicalProcess,
       additionalComponents: List[ComponentDefinition]
-  ): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  ): (ScenarioProcessingContext, ExecutionContext) => F[
+    List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]
+  ] = {
     val compiledProcess = compile(additionalComponents, process)
     val interpreter     = compiledProcess.interpreter
     val parts           = failOnErrors(compiledProcess.compile())
@@ -44,7 +46,7 @@ class InterpreterSetup[T: ClassTag] {
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
 
     val compiled = compileNode(parts.sources.head)
-    (initialCtx: Context, ec: ExecutionContext) =>
+    (initialCtx: ScenarioProcessingContext, ec: ExecutionContext) =>
       interpreter.interpret[F](compiled, process.metaData, initialCtx, ServiceExecutionContext(ec))
   }
 

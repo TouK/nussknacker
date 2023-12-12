@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{ContextTypeHelpers, ValueWithContextTypeHelpers}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
@@ -42,7 +42,7 @@ object TypeInformationDetectionUtils extends LazyLogging {
 
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
-  override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
+  override def forContext(validationContext: ValidationContext): TypeInformation[ScenarioProcessingContext] =
     ContextTypeHelpers.infoFromVariablesAndParentOption(
       TypeInformation.of(new TypeHint[Map[String, Any]] {}),
       validationContext.parent.map(forContext)

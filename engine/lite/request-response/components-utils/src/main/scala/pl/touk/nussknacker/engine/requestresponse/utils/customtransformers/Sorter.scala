@@ -47,7 +47,7 @@ object Sorter extends CustomStreamTransformer {
             val listWithRank = ranks.zip(outputs)
             val finalList    = listWithRank.sortBy(_._1.doubleValue()).reverse.take(maxCount).map(_._2).asJava
             val sorted =
-              Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, finalList)
+              ScenarioProcessingContext(contextIdGenerator.nextContextId()).withVariable(outputVariable, finalList)
             continuation(DataBatch(sorted :: Nil))
         }
       })

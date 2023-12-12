@@ -5,7 +5,7 @@ import cats.Monad
 import cats.data.{EitherT, NonEmptyList}
 import cats.implicits.toFunctorOps
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -55,7 +55,7 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
           NuExceptionInfo(
             Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)),
             ex,
-            Context("")
+            ScenarioProcessingContext("")
           )
         )
       )

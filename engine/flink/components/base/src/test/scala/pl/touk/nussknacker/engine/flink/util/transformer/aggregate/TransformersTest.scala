@@ -16,11 +16,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{
-  Context,
   FragmentSpecificData,
   MetaData,
   ProcessListener,
   ProcessVersion,
+  ScenarioProcessingContext,
   VariableConstants
 }
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -524,7 +524,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       key: String,
       model: LocalModelData,
       testProcess: CanonicalProcess
-  ): List[Context] = {
+  ): List[ScenarioProcessingContext] = {
     val collectingListener = ResultsCollectingListenerHolder.registerRun
     runProcess(model, testProcess, collectingListener)
     variablesForKey(collectingListener, key)
@@ -554,7 +554,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def variablesForKey(
       collectingListener: ResultsCollectingListener,
       key: String
-  ): List[Context] = {
+  ): List[ScenarioProcessingContext] = {
     collectingListener.results
       .nodeResults("end")
       .filter(_.get(VariableConstants.KeyVariableName).contains(key))

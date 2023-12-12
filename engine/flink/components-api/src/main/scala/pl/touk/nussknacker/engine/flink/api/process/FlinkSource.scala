@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -16,7 +16,7 @@ trait FlinkSource extends Source {
   def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context]
+  ): DataStream[ScenarioProcessingContext]
 
 }
 
@@ -51,7 +51,7 @@ trait BasicFlinkSource[Raw] extends FlinkSource with FlinkIntermediateRawSource[
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context] = {
+  ): DataStream[ScenarioProcessingContext] = {
     prepareSourceStream(env, flinkNodeContext, flinkSourceFunction)
   }
 

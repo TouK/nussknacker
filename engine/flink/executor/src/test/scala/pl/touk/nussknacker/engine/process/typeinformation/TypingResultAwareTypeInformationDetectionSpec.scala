@@ -13,7 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
@@ -84,7 +84,9 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("test context serialization") {
-    val ctx = Context("11").copy(variables = Map("one" -> 11, "two" -> "ala", "three" -> Map("key" -> "value")))
+    val ctx = ScenarioProcessingContext("11").copy(variables =
+      Map("one" -> 11, "two" -> "ala", "three" -> Map("key" -> "value"))
+    )
     val vCtx = ValidationContext(
       Map(
         "one"   -> Typed[Int],
@@ -111,7 +113,7 @@ class TypingResultAwareTypeInformationDetectionSpec
   test("number promotion behaviour") {
     val vCtx = ValidationContext(Map("longField" -> Typed[Long])) // we declare Long variable
 
-    val ctx = Context("11").copy(variables =
+    val ctx = ScenarioProcessingContext("11").copy(variables =
       Map("longField" -> 11)
     ) // but we put Int in runtime (which e.g. in spel wouldn't be a problem...)!
 
@@ -197,9 +199,10 @@ class TypingResultAwareTypeInformationDetectionSpec
       serializer: TypeSerializer[_],
       nested: (String, TypeSerializer[_] => Assertion)*
   ): Unit = {
-    inside(serializer.asInstanceOf[TypeSerializer[Context]]) { case e: ScalaCaseClassSerializer[Context] @unchecked =>
-      e.getFieldSerializers should have length 3
-      assertNested(e.getFieldSerializers.apply(1), nested: _*)
+    inside(serializer.asInstanceOf[TypeSerializer[ScenarioProcessingContext]]) {
+      case e: ScalaCaseClassSerializer[ScenarioProcessingContext] @unchecked =>
+        e.getFieldSerializers should have length 3
+        assertNested(e.getFieldSerializers.apply(1), nested: _*)
 
     }
   }

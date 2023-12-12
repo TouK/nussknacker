@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.api.utils
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -14,7 +14,7 @@ object errors {
   def withErrors[F[_], T](
       customComponentContext: CustomComponentContext[F],
       componentInfo: Option[ComponentInfo],
-      ctx: Context
+      ctx: ScenarioProcessingContext
   )(action: => T): Either[ErrorType, T] = {
     Try(action).toEither.left
       .map(NuExceptionInfo(Some(NodeComponentInfo(customComponentContext.nodeId, componentInfo)), _, ctx))

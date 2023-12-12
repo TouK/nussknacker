@@ -33,7 +33,7 @@ private class InterpreterInternal[F[_]: Monad](
 
   private val expressionName = "expression"
 
-  def interpret(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
+  def interpret(node: Node, ctx: ScenarioProcessingContext): F[List[Result[InterpretationResult]]] = {
     try {
       interpretNode(node, ctx)
     } catch {
@@ -44,12 +44,12 @@ private class InterpreterInternal[F[_]: Monad](
 
   private implicit def nodeToId(implicit node: Node): NodeId = NodeId(node.id)
 
-  private def handleError(node: Node, ctx: Context): Throwable => NuExceptionInfo[_ <: Throwable] = {
+  private def handleError(node: Node, ctx: ScenarioProcessingContext): Throwable => NuExceptionInfo[_ <: Throwable] = {
     NuExceptionInfo(Some(NodeComponentInfoExtractor.fromCompiledNode(node)), _, ctx)
   }
 
   @silent("deprecated")
-  private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
+  private def interpretNode(node: Node, ctx: ScenarioProcessingContext): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
@@ -179,7 +179,7 @@ private class InterpreterInternal[F[_]: Monad](
   private def interpretOptionalNext(
       node: Node,
       optionalNext: Option[Next],
-      ctx: Context
+      ctx: ScenarioProcessingContext
   ): F[List[Result[InterpretationResult]]] = {
     optionalNext match {
       case Some(next) =>
@@ -190,7 +190,7 @@ private class InterpreterInternal[F[_]: Monad](
     }
   }
 
-  private def interpretNext(next: Next, ctx: Context): F[List[Result[InterpretationResult]]] =
+  private def interpretNext(next: Next, ctx: ScenarioProcessingContext): F[List[Result[InterpretationResult]]] =
     next match {
       case NextNode(node) => interpret(node, ctx)
       case pr @ PartRef(ref) => {
@@ -199,10 +199,10 @@ private class InterpreterInternal[F[_]: Monad](
       }
     }
 
-  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])(
+  private def createOrUpdateVariable(ctx: ScenarioProcessingContext, varName: String, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
-  ): Context = {
+  ): ScenarioProcessingContext = {
     val contextWithInitialVariable =
       ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
@@ -219,7 +219,7 @@ private class InterpreterInternal[F[_]: Monad](
     }
   }
 
-  private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
+  private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: ScenarioProcessingContext)(
       implicit node: Node
   ): F[Result[ValueWithContext[Any]]] = {
     interpreterShape.fromFuture
@@ -230,7 +230,7 @@ private class InterpreterInternal[F[_]: Monad](
       }
   }
 
-  private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
+  private def invoke(ref: ServiceRef, ctx: ScenarioProcessingContext)(implicit node: Node) = {
     implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
@@ -240,7 +240,7 @@ private class InterpreterInternal[F[_]: Monad](
     resultFuture.map(ValueWithContext(_, ctx))
   }
 
-  private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)(
+  private def evaluateExpression[R](expr: Expression, ctx: ScenarioProcessingContext, name: String)(
       implicit metaData: MetaData,
       node: Node
   ): ValueWithContext[R] = {
@@ -258,7 +258,7 @@ class Interpreter(
   def interpret[F[_]](
       node: Node,
       metaData: MetaData,
-      ctx: Context,
+      ctx: ScenarioProcessingContext,
       serviceExecutionContext: ServiceExecutionContext
   )(
       implicit monad: Monad[F],

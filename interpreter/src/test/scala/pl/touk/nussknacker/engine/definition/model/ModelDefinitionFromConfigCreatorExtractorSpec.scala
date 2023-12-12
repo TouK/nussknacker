@@ -367,7 +367,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
     override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ContextId,
+        contextId: ScenarioProcessingContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = ???

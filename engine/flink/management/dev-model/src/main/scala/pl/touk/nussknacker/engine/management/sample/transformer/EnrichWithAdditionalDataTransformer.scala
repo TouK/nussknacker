@@ -8,7 +8,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{
+  CustomStreamTransformer,
+  LazyParameter,
+  ScenarioProcessingContext,
+  ValueWithContext
+}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomJoinTransformation,
   FlinkCustomNodeContext,
@@ -108,7 +113,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
     val key       = params(keyParameter).asInstanceOf[Map[String, LazyParameter[String]]]
     new FlinkCustomJoinTransformation {
       override def transform(
-          inputs: Map[String, DataStream[Context]],
+          inputs: Map[String, DataStream[ScenarioProcessingContext]],
           context: FlinkCustomNodeContext
       ): DataStream[ValueWithContext[AnyRef]] = {
         val leftSide  = inputs(leftName.get)

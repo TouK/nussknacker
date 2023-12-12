@@ -27,27 +27,28 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
       @ParamName("key") @Nullable key: LazyParameter[CharSequence],
       @ParamName("delay") delay: Duration
   ): FlinkCustomStreamTransformation =
-    FlinkCustomStreamTransformation { (stream: DataStream[Context], nodeCtx: FlinkCustomNodeContext) =>
-      val keyedStream =
-        Option(key)
-          .map { _ =>
-            stream
-              .flatMap(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
-              .keyBy((v: ValueWithContext[String]) => v.value)
-          }
-          .getOrElse {
-            stream
-              .map(ctx => ValueWithContext(defaultKey(ctx), ctx))
-              .keyBy((v: ValueWithContext[String]) => v.value)
-          }
-      setUidToNodeIdIfNeed(
-        nodeCtx,
-        keyedStream
-          .process(prepareDelayFunction(nodeCtx, delay))
-      )
+    FlinkCustomStreamTransformation {
+      (stream: DataStream[ScenarioProcessingContext], nodeCtx: FlinkCustomNodeContext) =>
+        val keyedStream =
+          Option(key)
+            .map { _ =>
+              stream
+                .flatMap(new StringKeyOnlyMapper(nodeCtx.lazyParameterHelper, key))
+                .keyBy((v: ValueWithContext[String]) => v.value)
+            }
+            .getOrElse {
+              stream
+                .map(ctx => ValueWithContext(defaultKey(ctx), ctx))
+                .keyBy((v: ValueWithContext[String]) => v.value)
+            }
+        setUidToNodeIdIfNeed(
+          nodeCtx,
+          keyedStream
+            .process(prepareDelayFunction(nodeCtx, delay))
+        )
     }
 
-  protected def defaultKey(ctx: Context): String = ""
+  protected def defaultKey(ctx: ScenarioProcessingContext): String = ""
 
   protected def prepareDelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration): DelayFunction = {
     new DelayFunction(nodeCtx, delay)
@@ -61,13 +62,13 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
   type FlinkCtx      = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
   type FlinkTimerCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
 
-  private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
+  private val descriptor = new MapStateDescriptor[Long, java.util.List[api.ScenarioProcessingContext]](
     "state",
     TypeInformation.of(classOf[Long]),
     new ListTypeInfo(nodeCtx.contextTypeInfo)
   )
 
-  @transient private var state: MapState[Long, java.util.List[api.Context]] = _
+  @transient private var state: MapState[Long, java.util.List[api.ScenarioProcessingContext]] = _
 
   override def open(config: Configuration): Unit = {
     state = getRuntimeContext.getMapState(descriptor)
@@ -94,12 +95,12 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
     state.remove(timestamp)
   }
 
-  protected def emitValue(output: Collector[ValueWithContext[AnyRef]], ctx: api.Context): Unit = {
+  protected def emitValue(output: Collector[ValueWithContext[AnyRef]], ctx: api.ScenarioProcessingContext): Unit = {
     output.collect(ValueWithContext(null, ctx))
   }
 
-  private def readStateValueOrInitial(timestamp: Long): java.util.List[api.Context] = {
-    Option(state.get(timestamp)).getOrElse(new util.ArrayList[api.Context]())
+  private def readStateValueOrInitial(timestamp: Long): java.util.List[api.ScenarioProcessingContext] = {
+    Option(state.get(timestamp)).getOrElse(new util.ArrayList[api.ScenarioProcessingContext]())
   }
 
 }

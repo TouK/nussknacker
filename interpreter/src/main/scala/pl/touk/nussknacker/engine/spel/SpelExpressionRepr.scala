@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.spel
 
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 
 /*
   This is *very experimental* feature which enables access to expression AST in e.g. source or service. This can
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.Context
  */
 case class SpelExpressionRepr(
     parsed: org.springframework.expression.Expression,
-    context: Context,
+    context: ScenarioProcessingContext,
     globals: Map[String, Any],
     original: String
 )

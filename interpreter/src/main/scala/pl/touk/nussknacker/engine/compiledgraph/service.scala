@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{
   ToCollect,
   TransmissionNames
 }
-import pl.touk.nussknacker.engine.api.{Context, ContextId, MetaData, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContext, ScenarioProcessingContextId, ServiceInvoker}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import cats.implicits._
@@ -26,7 +26,7 @@ object service {
   ) {
 
     def invoke(
-        ctx: Context,
+        ctx: ScenarioProcessingContext,
         expressionEvaluator: ExpressionEvaluator,
         serviceExecutionContext: ServiceExecutionContext
     )(
@@ -36,7 +36,7 @@ object service {
     ): (Map[String, AnyRef], Future[Any]) = {
 
       val (_, preparedParams) = expressionEvaluator.evaluateParameters(parameters, ctx)
-      val contextId           = ContextId(ctx.id)
+      val contextId           = ScenarioProcessingContextId(ctx.id)
       val collector           = new BaseServiceInvocationCollector(resultCollector, contextId, nodeId, id)
       (
         preparedParams,
@@ -53,7 +53,7 @@ object service {
 
   private[service] class BaseServiceInvocationCollector(
       resultCollector: ResultCollector,
-      contextId: ContextId,
+      contextId: ScenarioProcessingContextId,
       nodeId: NodeId,
       serviceRef: String
   ) extends ServiceInvocationCollector {

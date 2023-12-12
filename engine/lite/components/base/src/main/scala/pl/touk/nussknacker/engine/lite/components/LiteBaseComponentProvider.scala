@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.Monad
 import cats.data.Writer
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -50,7 +50,7 @@ object DeadEndSink extends LiteSink[Nothing] {
 
   override def createTransformation[F[_]: Monad](
       evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]
-  ): (typing.TypingResult, commonTypes.DataBatch => F[ResultType[(Context, Nothing)]]) =
+  ): (typing.TypingResult, commonTypes.DataBatch => F[ResultType[(ScenarioProcessingContext, Nothing)]]) =
     (typing.Unknown, _ => implicitly[Monad[F]].pure(Writer.value(List.empty)))
 
 }

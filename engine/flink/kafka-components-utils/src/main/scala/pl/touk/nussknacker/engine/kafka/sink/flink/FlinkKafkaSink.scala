@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.kafka.sink.flink
 
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{LazyParameter, ScenarioProcessingContext, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyParameterFunctionHelper}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
@@ -23,7 +23,7 @@ class FlinkKafkaSink(
 
   override def valueFunction(
       helper: FlinkLazyParameterFunctionHelper
-  ): FlatMapFunction[Context, ValueWithContext[AnyRef]] =
+  ): FlatMapFunction[ScenarioProcessingContext, ValueWithContext[AnyRef]] =
     helper.lazyMapFunction(value)
 
   override def toFlinkFunction: SinkFunction[AnyRef] =

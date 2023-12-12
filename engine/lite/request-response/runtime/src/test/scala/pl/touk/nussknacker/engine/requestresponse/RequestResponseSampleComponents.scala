@@ -82,7 +82,7 @@ class EnricherService extends Service {
   def invoke()(
       implicit ex: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId
+      contextId: ScenarioProcessingContextId
   ): Future[Response] = {
     Future.successful(Response("alamakota-" + contextId.value))
   }
@@ -159,7 +159,7 @@ class EagerEnricherWithOpen extends EagerService with WithLifecycle {
           override def invokeService(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: ServiceInvocationCollector,
-              contextId: ContextId,
+              contextId: ScenarioProcessingContextId,
               componentUseCase: ComponentUseCase
           ): Future[Response] = {
             Future.successful(Response(opened.toString))
@@ -184,7 +184,7 @@ object CollectingEagerService extends EagerService {
     override def invokeService(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
-        contextId: ContextId,
+        contextId: ScenarioProcessingContextId,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
       collector.collect(s"static-$static-dynamic-${params("dynamic")}", Option(())) {
@@ -230,7 +230,7 @@ class CustomExtractor(outputVariableName: String, expression: LazyParameter[AnyR
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
   ): DataBatch => F[ResultType[Result]] = {
-    val exprInterpreter: engine.api.Context => Any =
+    val exprInterpreter: engine.api.ScenarioProcessingContext => Any =
       context.interpreter.syncInterpretationFunction(expression)
     (ctxs: DataBatch) => {
       val exprResults = ctxs.map(ctx => ctx.withVariable(outputVariableName, exprInterpreter(ctx)))
@@ -254,9 +254,10 @@ class CustomFilter(filterExpression: LazyParameter[java.lang.Boolean]) extends S
   override def createSingleTransformation[F[_]: Monad, Result](
       continuation: DataBatch => F[ResultType[Result]],
       context: CustomComponentContext[F]
-  ): Context => F[ResultType[Result]] = {
+  ): ScenarioProcessingContext => F[ResultType[Result]] = {
     val exprInterpreter = context.interpreter.syncInterpretationFunction(filterExpression)
-    (ctx: Context) => if (exprInterpreter(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
+    (ctx: ScenarioProcessingContext) =>
+      if (exprInterpreter(ctx)) continuation(DataBatch(ctx)) else continuation(DataBatch())
   }
 
 }

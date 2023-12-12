@@ -4,7 +4,7 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, ScenarioProcessingContextId, StreamMetaData}
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
@@ -19,10 +19,10 @@ trait BaseOpenAPITest {
 
   protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig(new URL("http://foo"))
 
-  implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
-  implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId               = ContextId("testContextId")
-  private val context                             = TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty))
+  implicit val componentUseCase: ComponentUseCase     = ComponentUseCase.EngineRuntime
+  implicit val metaData: MetaData                     = MetaData("testProc", StreamMetaData())
+  implicit val contextId: ScenarioProcessingContextId = ScenarioProcessingContextId("testContextId")
+  private val context = TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty))
 
   protected def parseServicesFromResource(
       name: String,

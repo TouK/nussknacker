@@ -114,12 +114,12 @@ object sample {
 
     override def createStateTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
-    ): Context => F[Context] = {
+    ): ScenarioProcessingContext => F[ScenarioProcessingContext] = {
       val interpreter = context.interpreter.syncInterpretationFunction(value)
       val convert = context.capabilityTransformer
         .transform[StateType]
         .getOrElse(throw new IllegalArgumentException("No capability!"))
-      (ctx: Context) =>
+      (ctx: ScenarioProcessingContext) =>
         convert(State((current: Map[String, Double]) => {
           val newValue = current.getOrElse(name, 0d) + interpreter(ctx)
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
@@ -181,8 +181,8 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInput => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(input.contextId, Map("input" -> input.value), None))
+      ): SampleInput => ValidatedNel[ErrorType, ScenarioProcessingContext] =
+        input => Valid(ScenarioProcessingContext(input.contextId, Map("input" -> input.value), None))
 
       override def testRecordParser: TestRecordParser[SampleInput] = (testRecord: TestRecord) => {
         val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
@@ -200,18 +200,18 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInput => ValidatedNel[ErrorType, Context] =
+      ): SampleInput => ValidatedNel[ErrorType, ScenarioProcessingContext] =
         input => {
           if (input.value == 1) {
             Invalid(
               NuExceptionInfo(
                 Some(NodeComponentInfo(nodeId.id, ComponentType.Source, "failOnNumber1SourceFactory")),
                 SourceFailure,
-                Context(input.contextId)
+                ScenarioProcessingContext(input.contextId)
               )
             ).toValidatedNel
           } else {
-            Valid(Context(input.contextId, Map("input" -> input.value), None))
+            Valid(ScenarioProcessingContext(input.contextId, Map("input" -> input.value), None))
           }
         }
 
@@ -229,8 +229,8 @@ object sample {
 
       override def createTransformation[F[_]: Monad](
           evaluateLazyParameter: CustomComponentContext[F]
-      ): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
-        input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
+      ): SampleInputWithListAndMap => ValidatedNel[ErrorType, ScenarioProcessingContext] =
+        input => Valid(ScenarioProcessingContext(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
 
       override def testParametersDefinition: List[Parameter] = List(
         Parameter("contextId", Typed.apply[String]),

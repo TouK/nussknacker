@@ -8,7 +8,7 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
@@ -56,9 +56,9 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     whenReady(deploymentManager.test(ProcessName(processId), process, scenarioTestData)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(Context(s"$processId-startProcess-0-0", Map("input" -> "terefere")))
+        "startProcess" -> List(ScenarioProcessingContext(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
+        "nightFilter"  -> List(ScenarioProcessingContext(s"$processId-startProcess-0-0", Map("input" -> "terefere"))),
+        "endSend"      -> List(ScenarioProcessingContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))
       )
     }
   }

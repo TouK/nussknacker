@@ -128,7 +128,7 @@ class FullOuterJoinTransformer(
 
     val baseElement: Map[String, AnyRef] = keyByBranchId.keySet.map(_ -> None).toMap
 
-    (inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext) => {
+    (inputs: Map[String, DataStream[ScenarioProcessingContext]], context: FlinkCustomNodeContext) => {
       val keyedStreams = inputs.map { case (id, stream) =>
         stream
           .flatMap(new StringKeyedValueMapper(context, keyByBranchId(id), aggregateByByBranchId(id)))

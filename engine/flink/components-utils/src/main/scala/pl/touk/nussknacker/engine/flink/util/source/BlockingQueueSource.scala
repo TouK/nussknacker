@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -72,7 +72,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context] = {
+  ): DataStream[ScenarioProcessingContext] = {
     env
       .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")

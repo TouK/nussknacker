@@ -106,7 +106,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
         new FlinkCustomJoinTransformation {
 
           override def transform(
-              inputs: Map[String, DataStream[Context]],
+              inputs: Map[String, DataStream[ScenarioProcessingContext]],
               context: FlinkCustomNodeContext
           ): DataStream[ValueWithContext[AnyRef]] = {
             val valuesWithContexts = inputs.map { case (branchId, stream) =>
@@ -137,11 +137,11 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
 class UnionMapFunction(valueParam: LazyParameter[AnyRef], customNodeContext: FlinkCustomNodeContext, branchId: String)
     extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
-    with FlatMapFunction[Context, ValueWithContext[AnyRef]] {
+    with FlatMapFunction[ScenarioProcessingContext, ValueWithContext[AnyRef]] {
 
   private lazy val evaluateValue = lazyParameterInterpreter.syncInterpretationFunction(valueParam)
 
-  override def flatMap(context: Context, out: Collector[ValueWithContext[AnyRef]]): Unit = {
+  override def flatMap(context: ScenarioProcessingContext, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val unionContext = context.appendIdSuffix(branchId)
     collectHandlingErrors(unionContext, out) {
       ValueWithContext[AnyRef](evaluateValue(unionContext), unionContext)

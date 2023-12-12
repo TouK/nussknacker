@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -58,8 +58,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val secondId   = contextIds.nextContextId()
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      Context(firstId, Map("input" -> Request1("a", "b"))),
-      Context(secondId, Map("input" -> Request1("c", "d")))
+      ScenarioProcessingContext(firstId, Map("input" -> Request1("a", "b"))),
+      ScenarioProcessingContext(secondId, Map("input" -> Request1("c", "d")))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -104,7 +104,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExpressionInvocationResult(secondId, "expression", true)
     )
     results.exceptions should have size 1
-    results.exceptions.head.context shouldBe Context(
+    results.exceptions.head.context shouldBe ScenarioProcessingContext(
       firstId,
       Map("input" -> Request1("a", "b")),
       None
@@ -131,7 +131,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      Context(firstId, Map("input" -> Request1("a", "b")))
+      ScenarioProcessingContext(firstId, Map("input" -> Request1("a", "b")))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
