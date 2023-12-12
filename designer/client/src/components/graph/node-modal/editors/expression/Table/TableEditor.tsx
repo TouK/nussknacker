@@ -430,7 +430,13 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                     ) : null}
                     {cellMenuData?.column >= 0 ? (
                         <DeleteColumnMenuItem
-                            indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
+                            indexes={
+                                selection.columns.toArray().length > 0
+                                    ? selection.columns.toArray()
+                                    : selection.current?.range
+                                    ? Array.from({ length: selection.current.range.width }, (_, i) => selection.current.range.x + i)
+                                    : [cellMenuData?.column]
+                            }
                             onClick={(indexes) => {
                                 dispatch({
                                     type: ActionTypes.deleteColumns,
@@ -443,7 +449,13 @@ export const TableEditor: SimpleEditor = ({ expressionObj, onValueChange }) => {
                     ) : null}
                     {cellMenuData?.row >= 0 ? (
                         <DeleteRowMenuItem
-                            indexes={selection.rows.toArray().length > 0 ? selection.rows.toArray() : [cellMenuData?.row]}
+                            indexes={
+                                selection.rows.toArray().length > 0
+                                    ? selection.rows.toArray()
+                                    : selection.current?.range
+                                    ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
+                                    : [cellMenuData?.row]
+                            }
                             onClick={(indexes) => {
                                 dispatch({
                                     type: ActionTypes.deleteRows,
