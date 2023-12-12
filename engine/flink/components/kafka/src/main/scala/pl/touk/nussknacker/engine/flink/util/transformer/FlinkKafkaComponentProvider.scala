@@ -2,7 +2,13 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentProvider,
+  ComponentType,
+  NussknackerVersion
+}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -28,7 +34,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val overriddenDependencies = TemporaryKafkaConfigMapping.prepareDependencies(config, dependencies)
     val docsConfig: DocsConfig = DocsConfig(config)
     import docsConfig._
-    def universal(typ: String) = s"DataSourcesAndSinks#kafka-$typ"
+    def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
@@ -41,7 +47,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           overriddenDependencies,
           new FlinkKafkaSourceImplFactory(None)
         )
-      ).withRelativeDocs(universal("source")),
+      ).withRelativeDocs(universal(ComponentType.Source)),
       ComponentDefinition(
         "kafka",
         new UniversalKafkaSinkFactory(
@@ -50,7 +56,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
           overriddenDependencies,
           FlinkKafkaUniversalSinkImplFactory
         )
-      ).withRelativeDocs(universal("sink"))
+      ).withRelativeDocs(universal(ComponentType.Sink))
     )
   }
 
