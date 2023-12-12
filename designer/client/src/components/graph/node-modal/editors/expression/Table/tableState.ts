@@ -186,7 +186,7 @@ function reducer(state: TableData, action: Action): TableData {
         case ActionTypes.resetColumnsSize:
             return {
                 ...state,
-                columns: state.columns.map((c, i) => (!action.columns.includes(i) ? c : c.slice(0, 2))),
+                columns: state.columns.map((c, i) => (!action.columns.includes(i) ? c : [...c.slice(0, 2), null, ...c.slice(3)])),
             };
         case ActionTypes.expand:
             return expandTable(state, action.rows, action.columns, action.dataType);
