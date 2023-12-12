@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NuScalaTestAssertions
@@ -43,7 +43,7 @@ trait KafkaSourceFactoryProcessMixin
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id)(action)
   }
 

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -70,6 +70,7 @@ class FlinkTestMain(
         modelData.objectNaming,
         scenarioTestData
       ),
+      FlinkJobConfig.parse(modelData.modelConfig).copy(rocksDB = None),
       ExecutionConfigPreparer.defaultChain(modelData)
     )
   }

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
@@ -31,7 +31,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val components = ProcessTestHelpers.prepareComponents(data)
       val env        = flinkMiniCluster.createExecutionEnvironment()
       val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-      TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
+      UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
 
       MockService.clear()
       SinkForStrings.clear()

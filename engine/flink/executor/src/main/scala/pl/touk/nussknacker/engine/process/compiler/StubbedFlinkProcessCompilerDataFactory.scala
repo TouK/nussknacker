@@ -25,14 +25,12 @@ abstract class StubbedFlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase
 ) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      diskStateBackendSupport,
       objectNaming,
       componentUseCase,
     ) {

@@ -30,10 +30,9 @@ import scala.concurrent.duration.FiniteDuration
 class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
-    val modelConfig: Config,
-    val diskStateBackendSupport: Boolean,
+    modelConfig: Config,
     objectNaming: ObjectNaming,
-    val componentUseCase: ComponentUseCase,
+    componentUseCase: ComponentUseCase,
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
@@ -43,7 +42,6 @@ class FlinkProcessCompilerDataFactory(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    diskStateBackendSupport = true,
     modelData.objectNaming,
     componentUseCase = ComponentUseCase.EngineRuntime,
   )
@@ -92,8 +90,7 @@ class FlinkProcessCompilerDataFactory(
     new FlinkProcessCompilerData(
       compilerData = compilerData,
       jobData = JobData(metaData, processVersion),
-      exceptionHandler =
-        exceptionHandler(metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
+      exceptionHandler = exceptionHandler(metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase

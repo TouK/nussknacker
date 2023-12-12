@@ -20,8 +20,8 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -103,7 +103,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
     val outValues = collectingListener.results
       .nodeResults(EndNodeId)
-      .filter(_.get(KeyVariableName).contains(key))
+      .filter(_.get[String](KeyVariableName).contains(key))
       .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
     outValues shouldEqual List(
@@ -120,7 +120,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
   ) = {
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)
   }
@@ -133,7 +133,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
     LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(input1, input2),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
 
 }

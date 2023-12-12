@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
   UnoptimizedSerializationPreparer
@@ -62,8 +62,11 @@ abstract class FlinkWithKafkaSuite
         .create(kafkaComponentsConfig, ProcessObjectDependencies.withConfig(config)) :::
         FlinkBaseComponentProvider.Components
     val modelData = LocalModelData(config, components, configCreator = creator)
-    registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(modelData), executionConfigPreparerChain(modelData))
+    registrar = FlinkProcessRegistrar(
+      new FlinkProcessCompilerDataFactory(modelData),
+      FlinkJobConfig.parse(modelData.modelConfig),
+      executionConfigPreparerChain(modelData)
+    )
   }
 
   private def executionConfigPreparerChain(modelData: LocalModelData) = {

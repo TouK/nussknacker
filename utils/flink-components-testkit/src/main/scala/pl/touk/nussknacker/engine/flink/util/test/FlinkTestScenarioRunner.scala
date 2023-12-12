@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
   testResultServiceComponent
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 import pl.touk.nussknacker.engine.util.test._
@@ -151,7 +151,11 @@ class FlinkTestScenarioRunner(
       )
 
       compileProcessData.compileProcess(scenario).map { _ =>
-        val registrar = FlinkProcessRegistrar(compilerFactory, ExecutionConfigPreparer.unOptimizedChain(modelData))
+        val registrar = FlinkProcessRegistrar(
+          compilerFactory,
+          FlinkJobConfig.parse(modelData.modelConfig),
+          ExecutionConfigPreparer.unOptimizedChain(modelData)
+        )
 
         registrar.register(
           env,

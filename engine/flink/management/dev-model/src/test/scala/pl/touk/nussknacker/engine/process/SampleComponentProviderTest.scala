@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
@@ -34,7 +34,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id)(action)
   }
 

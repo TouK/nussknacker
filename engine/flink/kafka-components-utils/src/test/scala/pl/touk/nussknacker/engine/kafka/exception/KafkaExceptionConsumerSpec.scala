@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -52,7 +52,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       .emptySink("end", "sink")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id) {
       val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
       consumed.key() shouldBe "testProcess-shouldFail"

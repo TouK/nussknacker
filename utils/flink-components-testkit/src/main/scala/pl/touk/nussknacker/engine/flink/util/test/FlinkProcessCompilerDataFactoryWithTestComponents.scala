@@ -19,7 +19,6 @@ class FlinkProcessCompilerDataFactoryWithTestComponents(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
-    diskStateBackendSupport: Boolean,
     objectNaming: ObjectNaming,
     componentUseCase: ComponentUseCase,
     testExtensionsHolder: TestExtensionsHolder,
@@ -28,7 +27,6 @@ class FlinkProcessCompilerDataFactoryWithTestComponents(
       creator,
       extractModelDefinition,
       modelConfig,
-      diskStateBackendSupport,
       objectNaming,
       componentUseCase,
     ) {
@@ -85,7 +83,6 @@ class FlinkProcessCompilerDataFactoryWithTestComponents(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    false,
     modelData.objectNaming,
     componentUseCase,
     testExtensionsHolder,

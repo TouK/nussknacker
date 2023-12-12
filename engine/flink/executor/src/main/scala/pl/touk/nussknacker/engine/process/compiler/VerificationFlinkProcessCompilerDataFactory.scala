@@ -23,7 +23,6 @@ class VerificationFlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,
-      diskStateBackendSupport = true,
       objectNaming,
       componentUseCase = ComponentUseCase.Validation
     ) {

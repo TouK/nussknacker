@@ -34,7 +34,6 @@ class TestFlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       inputConfigDuringExecution,
-      diskStateBackendSupport = false,
       objectNaming,
       ComponentUseCase.TestRuntime
     ) {

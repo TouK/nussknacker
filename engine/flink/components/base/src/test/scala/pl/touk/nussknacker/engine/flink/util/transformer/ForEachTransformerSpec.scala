@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
@@ -92,7 +92,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     LocalModelData(
       modelConfig,
       sourceComponent :: FlinkBaseComponentProvider.Components,
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
   }
 
@@ -125,7 +125,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 

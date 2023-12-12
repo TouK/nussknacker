@@ -28,8 +28,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -46,7 +46,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   def modelData(
       list: List[TestRecord] = List(),
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
-      collectingListener: ResultsCollectingListener = ResultsCollectingListenerHolder.registerRun
+      collectingListener: => ResultsCollectingListener = ResultsCollectingListenerHolder.registerRun
   ): LocalModelData = {
     val config = ConfigFactory
       .empty()
@@ -61,7 +61,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         DocsConfig.Default,
         aggregateWindowsConfig
       ),
-      configCreator = new ConfigCreatorWithListener(collectingListener)
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
 
@@ -226,7 +226,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         Map("windowLength" -> "T(java.time.Duration).parse('P1D')")
       )
 
-      val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
+      val aggregateVariables = runCollectOutputAggregate[java.util.Set[Number]](id, model, testProcess)
       var expected           = List(Set(1), Set(2, 5), Set(7))
       if (trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
         expected = expected :+ Set()
@@ -419,11 +419,15 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val model       = modelData(testRecords)
     val testProcess = session("#AGG.list", "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
-    aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(3), asList(4, 3), asList(5))
-
-    val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.get[TestRecordHours]("input")) shouldBe testRecords
+    val outputVariables = runCollectOutputVariables(id, model, testProcess)
+    outputVariables.map(_.get[java.util.List[Number]]("fragmentResult").get) shouldBe List(
+      asList(1),
+      asList(2, 1),
+      asList(3),
+      asList(4, 3),
+      asList(5)
+    )
+    outputVariables.map(_.get[TestRecordHours]("input").get) shouldBe testRecords
   }
 
   test("map aggregate") {
@@ -519,7 +523,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       testProcess: CanonicalProcess
   ): List[Context] = {
     runProcess(model, testProcess)
-    val collectingListener = model.configCreator.asInstanceOf[ConfigCreatorWithListener].collectingListener
+    val collectingListener = model.configCreator.asInstanceOf[ConfigCreatorWithCollectingListener].collectingListener
     variablesForKey(collectingListener, key)
   }
 
@@ -528,7 +532,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       testProcess: CanonicalProcess
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 
@@ -538,7 +542,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ): List[Context] = {
     collectingListener.results
       .nodeResults("end")
-      .filter(_.get(VariableConstants.KeyVariableName).contains(key))
+      .filter(_.get[String](VariableConstants.KeyVariableName).contains(key))
   }
 
   private def validateError(aggregator: String, aggregateBy: String, error: String): Unit = {

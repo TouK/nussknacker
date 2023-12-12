@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -27,8 +28,7 @@ import pl.touk.nussknacker.engine.process.compiler.{
   UsedNodes
 }
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
-import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkCompatibilityProvider}
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkCompatibilityProvider, FlinkJobConfig}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.end.BranchEnd
 import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
@@ -394,9 +394,6 @@ object FlinkProcessRegistrar {
   final val SinkInterpretationName       = "sinkInterpretation"
   final val BranchInterpretationName     = "branchInterpretation"
 
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
   private def enrichWithUsedNodes[T](
       original: (UsedNodes, ClassLoader) => T
   )(part: Option[ProcessPart]): ClassLoader => T = {
@@ -413,21 +410,16 @@ object FlinkProcessRegistrar {
 
   def apply(
       compilerFactory: FlinkProcessCompilerDataFactory,
+      jobConfig: FlinkJobConfig,
       prepareExecutionConfig: ExecutionConfigPreparer
   ): FlinkProcessRegistrar = {
-    val modelConfig = compilerFactory.modelConfig
-
-    val checkpointConfig = modelConfig.getAs[CheckpointConfig](path = "checkpointConfig")
-    val rocksDBStateBackendConfig =
-      modelConfig.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compilerFactory.diskStateBackendSupport)
-
     val defaultStreamExecutionEnvPreparer =
       ScalaServiceLoader
         .load[FlinkCompatibilityProvider](getClass.getClassLoader)
         .headOption
-        .map(_.createExecutionEnvPreparer(modelConfig, prepareExecutionConfig, compilerFactory.diskStateBackendSupport))
+        .map(_.createExecutionEnvPreparer(jobConfig, prepareExecutionConfig))
         .getOrElse(
-          new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig)
+          new DefaultStreamExecutionEnvPreparer(jobConfig, prepareExecutionConfig)
         )
     new FlinkProcessRegistrar(compilerFactory.prepareCompilerData, defaultStreamExecutionEnvPreparer)
   }

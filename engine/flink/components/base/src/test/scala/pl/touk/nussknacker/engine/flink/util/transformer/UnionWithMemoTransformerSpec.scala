@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -140,7 +140,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -192,7 +192,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -212,10 +212,10 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 

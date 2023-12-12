@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -54,7 +54,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
     val result = collectingListener.results
       .nodeResults("end")
       .map {
-        _.get("input")
+        _.get[Record]("input")
       }
 
     result shouldBe List(Some(record))
@@ -69,7 +69,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
         .empty()
         .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
       ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components,
-      new ConfigCreatorWithListener(collectingListener)
+      new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
 
@@ -78,7 +78,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       testProcess: CanonicalProcess
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 
