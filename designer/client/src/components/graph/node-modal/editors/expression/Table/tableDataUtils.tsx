@@ -29,7 +29,7 @@ export function longestRow<M, I = MatrixElement<M>>(matrix: Matrix<I>): readonly
 }
 
 export function transpose<M, I = MatrixElement<M>>(matrix: Matrix<I>, defaultValue?: I): Matrix<I> {
-    return longestRow(matrix).map((_, i) => matrix.map((row) => row[i] ?? defaultValue));
+    return Array.from(longestRow(matrix), (_, i) => matrix.map((row) => row[i] ?? defaultValue));
 }
 
 function getLetterColumnName(n = 0) {
