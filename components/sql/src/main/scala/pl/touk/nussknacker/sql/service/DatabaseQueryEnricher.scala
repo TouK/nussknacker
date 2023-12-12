@@ -139,6 +139,17 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       }
   }
 
+  private def tableDefinitionForStrategyOrError(
+      tableDefinition: Option[TableDefinition],
+      strategy: QueryResultStrategy
+  ): Either[String, TableDefinition] = {
+    (strategy, tableDefinition) match {
+      case (UpdateResultStrategy, None) => Right(TableDefinition(Nil))
+      case (_, Some(tableDefinition))   => Right(tableDefinition)
+      case (_, None)                    => Left("Prepared query returns no columns")
+    }
+  }
+
   private def parseQuery(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
@@ -148,27 +159,37 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     try {
       val queryMetaData  = dbMetaDataProvider.getQueryMetaData(query)
       val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
-      val state = TransformationState(
-        query = query,
-        argsCount = queryArgParams.size,
-        tableDef = queryMetaData.tableDefinition,
-        strategy = QueryResultStrategy(strategyName).get
-      )
-      if (queryArgParams.isEmpty) {
-        createFinalResults(context, dependencies, state)
-      } else {
-        NextParameters(parameters = queryArgParams, state = Some(state))
+      val strategy       = QueryResultStrategy(strategyName).get
+      tableDefinitionForStrategyOrError(queryMetaData.tableDefinition, strategy) match {
+        case Left(errorMsg) =>
+          FinalResults(
+            context,
+            errors = CustomNodeError(errorMsg, Some(QueryParamName)) :: Nil,
+            state = None
+          )
+        case Right(tableDefinition) =>
+          val state = TransformationState(
+            query = query,
+            argsCount = queryArgParams.size,
+            tableDef = tableDefinition,
+            strategy = strategy
+          )
+          if (queryArgParams.isEmpty) {
+            createFinalResults(context, dependencies, state)
+          } else {
+            NextParameters(parameters = queryArgParams, state = Some(state))
+          }
       }
     } catch {
       case e: SQLException =>
-        val error = CustomNodeError(messageFromSQLException(query, e), Some(DatabaseQueryEnricher.QueryParamName))
+        val error = CustomNodeError(messageFromSQLException(e), Some(QueryParamName))
         FinalResults.forValidation(context, errors = List(error))(
           _.withVariable(name = OutputVariableNameDependency.extract(dependencies), value = Unknown, paramName = None)
         )
     }
   }
 
-  private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
+  private def messageFromSQLException(sqlException: SQLException): String = sqlException match {
     case e: SQLSyntaxErrorException => e.getMessage
     case e                          => s"Failed to execute query: $e"
   }

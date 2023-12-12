@@ -20,7 +20,7 @@ class IgniteMetaDataProvider(getConnection: () => Connection) extends JdbcMetaDa
     Using.resource(getConnection()) { connection =>
       Using.resource(connection.prepareStatement(query(tableName))) { statement =>
         TableMetaData(
-          tableDefinition,
+          Option(tableDefinition),
           DbParameterMetaData(statement.getParameterMetaData.getParameterCount)
         )
       }
