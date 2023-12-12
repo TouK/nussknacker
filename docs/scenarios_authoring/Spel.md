@@ -264,10 +264,10 @@ When you access nested structure, you have to take care of null fields, otherwis
 error. SpEL provides helpful safe navigation operator, it's basically shorthand for conditional operator:
 `#someVar?.b` means `#someVar != null ? #someVar.b : null`
 
-| Expression        | Result                         | Type                           |
-| ------------      | --------                       | --------                       |
-| `null.someField`  | java.lang.NullPointerException | java.lang.NullPointerException |
-| `null?.someField` | null                           | Null                           |
+| Expression            | `#someVar` value | Result                         | Type                           |
+| ------------          | ---------------- | --------                       | --------                       |
+| `#someVar.someField`  | null             | java.lang.NullPointerException | java.lang.NullPointerException |
+| `#someVar?.someField` | null             | null                           | Null                           |
 
 ## Invoking static methods
 
