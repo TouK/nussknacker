@@ -5,7 +5,7 @@ import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService from "../http/HttpService";
 import { WindowContent } from "../windowManager";
-import { AddProcessForm } from "./AddProcessForm";
+import { AddProcessForm, FormValue } from "./AddProcessForm";
 import { extendErrors, getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
 import { NodeValidationError } from "../types";
@@ -20,18 +20,31 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const { t } = useTranslation();
     const { isFragment, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-
     const [value, setState] = useState({ processId: "", processCategory: "" });
+    const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
 
-    const fieldErrors = getValidationErrorsForField(extendErrors(errors, value.processId, "processName", nameValidators), "processName");
+    const fieldErrors = getValidationErrorsForField(
+        extendErrors([...errors, ...processNameFromBackend], value.processId, "processName", nameValidators),
+        "processName",
+    );
 
     const navigate = useNavigate();
     const createProcess = useCallback(async () => {
         if (isEmpty(fieldErrors)) {
             const { processId, processCategory } = value;
-            await HttpService.createProcess(processId, processCategory, isFragment);
-            passProps.close();
-            navigate(visualizationUrl(processId));
+            try {
+                await HttpService.createProcess(processId, processCategory, isFragment);
+                passProps.close();
+                navigate(visualizationUrl(processId));
+            } catch (error) {
+                if (error?.response?.status == 400) {
+                    setProcessNameFromBackendError(() => [
+                        { message: error?.response?.data, description: "", errorType: "SaveAllowed", fieldName: "processName", typ: "" },
+                    ]);
+                } else {
+                    throw error;
+                }
+            }
         }
     }, [isFragment, fieldErrors, navigate, passProps, value]);
 
@@ -43,9 +56,16 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         [createProcess, fieldErrors, passProps, t],
     );
 
+    const onChange = (value: FormValue) => {
+        setState(value);
+
+        if (processNameFromBackend.length > 0) {
+            setProcessNameFromBackendError([]);
+        }
+    };
     return (
         <WindowContent buttons={buttons} {...passProps}>
-            <AddProcessForm value={value} onChange={setState} fieldErrors={fieldErrors} />
+            <AddProcessForm value={value} onChange={onChange} fieldErrors={fieldErrors} />
         </WindowContent>
     );
 }

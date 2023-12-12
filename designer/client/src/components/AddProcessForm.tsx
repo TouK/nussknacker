@@ -10,7 +10,7 @@ import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
 import { NodeLabelStyled } from "./graph/node-modal/node";
 import { FieldError } from "./graph/node-modal/editors/Validators";
 
-type FormValue = { processId: string; processCategory: string };
+export type FormValue = { processId: string; processCategory: string };
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
     fieldErrors: FieldError[];
