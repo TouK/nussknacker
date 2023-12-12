@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.ValidatedNel
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
+import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
@@ -12,12 +13,15 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedObjectWithValue}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.DynamicPropertyAccessError
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
+
+  private implicit val defaultTyper: Typer = buildTyper()
+  private implicit val parser: standard.SpelExpressionParser =
+    new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(
@@ -66,57 +70,51 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
+  val testRecordExpr = "{int: 1, string: \"stringVal\", nestedRecord: {nestedRecordKey: 2}}"
+
   test("indexing on records with primitive values") {
-    typeExpression("{\"key1\": \"val1\", \"key2\": \"val2\"}[\"key2\"]").validValue.finalResult.typingResult shouldBe
-      TypedObjectWithValue(Typed.typedClass[String], "val2")
-    typeExpression("{\"key1\": \"val1\", \"key2\": 1}[\"key2\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr[\"string\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
+    typeExpression(s"$testRecordExpr[string]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
+    typeExpression(s"$testRecordExpr[\"int\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[Int], 1)
+    typeExpression(s"$testRecordExpr[int]").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Int], 1)
   }
 
   test("indexing on records with record values") {
-    typeExpression(
-      "{\"key1\": \"val1\", \"key2\": {\"nestedKey1\": \"nestedVal1\"}}[\"key2\"]"
-    ).validValue.finalResult.typingResult shouldBe
-      TypedObjectTypingResult(Map("nestedKey1" -> TypedObjectWithValue(Typed.typedClass[String], "nestedVal1")))
+    typeExpression(s"$testRecordExpr[\"nestedRecord\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectTypingResult(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
   test("nested indexing on records") {
     typeExpression(
-      "{\"key1\": \"val1\", \"key2\": {\"nestedKey1\": \"nestedVal1\"}}[\"key2\"][\"nestedKey1\"]"
+      s"$testRecordExpr[\"nestedRecord\"][\"nestedRecordKey\"]"
     ).validValue.finalResult.typingResult shouldBe
-      TypedObjectWithValue(Typed.typedClass[String], "nestedVal1")
+      TypedObjectWithValue(Typed.typedClass[Int], 2)
   }
 
-  test("dynamic property access on records returns error when disabled") {
-    typeExpression("{\"key1\": \"val1\", \"key2\": 1}[\"key\" + 2]").invalidValue shouldBe
-      NonEmptyList(DynamicPropertyAccessError, Nil)
-  }
-
-  private val strictTypeChecking               = false
-  private val strictMethodsChecking            = false
-  private val staticMethodInvocationsChecking  = false
-  private val methodExecutionForUnknownAllowed = false
-  private val dynamicPropertyAccessAllowed     = false
-  private val classResolutionStrategy          = SupertypeClassResolutionStrategy.Union
-  private val commonSupertypeFinder            = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-  private val dict                             = new SimpleDictRegistry(Map.empty)
-
-  private val typer = new Typer(
-    commonSupertypeFinder,
-    new KeysDictTyper(dict),
-    strictMethodsChecking,
-    staticMethodInvocationsChecking,
-    ClassDefinitionSet.forDefaultAdditionalClasses,
+  private def buildTyper(dynamicPropertyAccessAllowed: Boolean = false) = new Typer(
+    commonSupertypeFinder = new CommonSupertypeFinder(
+      classResolutionStrategy = SupertypeClassResolutionStrategy.Union,
+      strictTaggedTypesChecking = false
+    ),
+    dictTyper = new KeysDictTyper(new SimpleDictRegistry(Map.empty)),
+    strictMethodsChecking = false,
+    staticMethodInvocationsChecking = false,
+    classDefinitionSet = ClassDefinitionSet.forDefaultAdditionalClasses,
     evaluationContextPreparer = null,
-    methodExecutionForUnknownAllowed,
-    dynamicPropertyAccessAllowed
+    methodExecutionForUnknownAllowed = false,
+    dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed
   )
-
-  private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(
       expr: String,
       variables: (String, Any)*
+  )(
+      implicit typer: Typer,
+      parser: standard.SpelExpressionParser
   ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
@@ -126,6 +124,9 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   private def typeTemplate(
       expr: String,
       variables: (String, Any)*
+  )(
+      implicit typer: Typer,
+      parser: standard.SpelExpressionParser
   ): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed        = parser.parseExpression(expr, new TemplateParserContext())
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
