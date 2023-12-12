@@ -32,8 +32,8 @@ export default function ValidationLabels(props: Props) {
             {isEmpty(fieldErrors) ? (
                 <LimitedValidationLabel title={validationLabelInfo}>{validationLabelInfo}</LimitedValidationLabel>
             ) : (
-                fieldErrors.map((fieldErrors) => (
-                    <LimitedValidationLabel key={fieldErrors.message} title={fieldErrors.message} type="ERROR">
+                fieldErrors.map((fieldErrors, index) => (
+                    <LimitedValidationLabel key={index} title={fieldErrors.message} type="ERROR">
                         {fieldErrors.message}
                     </LimitedValidationLabel>
                 ))
