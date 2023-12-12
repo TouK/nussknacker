@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypedObjectWithValue}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypedObjectWithValue}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -70,25 +70,41 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
-  val testRecordExpr = "{int: 1, string: \"stringVal\", nestedRecord: {nestedRecordKey: 2}}"
+  val testRecordExpr =
+    "{int: 1, string: \"stringVal\", boolean: true, \"null\": null, nestedRecord: {nestedRecordKey: 2}}"
 
-  test("indexing on records with primitive values") {
+  test("indexing on records for primitive types") {
     typeExpression(s"$testRecordExpr[\"string\"]").validValue.finalResult.typingResult shouldBe
-      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
-    typeExpression(s"$testRecordExpr[string]").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], "stringVal")
     typeExpression(s"$testRecordExpr[\"int\"]").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Int], 1)
-    typeExpression(s"$testRecordExpr[int]").validValue.finalResult.typingResult shouldBe
-      TypedObjectWithValue(Typed.typedClass[Int], 1)
+    typeExpression(s"$testRecordExpr[\"boolean\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[Boolean], true)
+    typeExpression(s"$testRecordExpr[\"null\"]").validValue.finalResult.typingResult shouldBe
+      TypedNull
   }
 
-  test("indexing on records with record values") {
+  test("indexing on records with string literal index") {
+    typeExpression(s"$testRecordExpr[\"string\"]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
+  }
+
+  test("indexing on records with property reference index") {
+    typeExpression(s"$testRecordExpr[#var]", "var" -> "string").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
+  }
+
+  test("indexing on records with variable reference index") {
+    typeExpression(s"$testRecordExpr[string]").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(Typed.typedClass[String], "stringVal")
+  }
+
+  test("indexing on records for record values") {
     typeExpression(s"$testRecordExpr[\"nestedRecord\"]").validValue.finalResult.typingResult shouldBe
       TypedObjectTypingResult(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
-  test("nested indexing on records") {
+  test("indexing on records for nested record values") {
     typeExpression(
       s"$testRecordExpr[\"nestedRecord\"][\"nestedRecordKey\"]"
     ).validValue.finalResult.typingResult shouldBe
