@@ -186,33 +186,49 @@ private[spel] class Typer(
       typingResult.map(toNodeResult)
     }
 
+    def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
+      withTypedChildren {
+        case (indexKey: TypedObjectWithValue) :: Nil =>
+          indexer.childrenHead match {
+            case _: PropertyOrFieldReference =>
+              valid(indexKey)
+            case _: StringLiteral | _: VariableReference =>
+              indexKey.value match {
+                case indexString: String =>
+                  val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
+                  fieldIndexedByLiteralStringOpt.map(f => valid(f._2)).getOrElse {
+                    if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyError(record, indexString))
+                  }
+                case _ => invalid(IllegalIndexingOperation)
+              }
+            case _ => invalid(IllegalIndexingOperation)
+          }
+        case Unknown :: Nil =>
+          // TODO: what errors to throw here? we already get NoPropertyError from error from typing reference
+          if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+        case _ =>
+          invalid(IllegalIndexingOperation)
+      }
+    }
+
     @tailrec
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
         case TypedClass(clazz, param :: Nil)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
+          // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           validNodeResult(param)
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           validNodeResult(valueParam)
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case TypedUnion(possibleTypes)       => typeUnion(e, possibleTypes)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
-        case TypedObjectTypingResult(fields, _, _) if e.childrenHead.isInstanceOf[StringLiteral] =>
-          def stringValue(s: StringLiteral): String = {
-            s.toString.substring(1, s.toString.length - 1)
-          }
-          val indexKeyOpt = e.childrenHead match {
-            case impl: StringLiteral => Some(stringValue(impl))
-            case _                   => None
-          }
-          val fieldIndexedByLiteralStringOpt = for {
-            indexKey <- indexKeyOpt
-            field    <- fields.find(_._1 == indexKey)
-          } yield field
-          fieldIndexedByLiteralStringOpt.map(f => validNodeResult(f._2)).getOrElse(validNodeResult(Unknown))
+        case r: TypedObjectTypingResult      => typeIndexerOnRecord(e, r)
         // TODO: type null or return error for indexing on null?
         // TODO: add indexing on strings
         // TODO: how to handle other cases?
+        case TypedNull =>
+          invalidNodeResult(IllegalIndexingOperation)
         case _ =>
           val w = validNodeResult(Unknown)
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
