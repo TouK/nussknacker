@@ -140,10 +140,6 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                     opacity: node.isDisabled ? 0.65 : 1,
                     disabled: node.isDisabled,
                 },
-                infoBackground: {
-                    fill: customAttrs[node.type].styles.fill,
-                    opacity: node.isDisabled ? 0.4 : 1,
-                },
                 info: {
                     xlinkHref: iconHref,
                     opacity: node.additionalFields.description !== null && node.additionalFields.description.length >= 1 ? 1 : 0,

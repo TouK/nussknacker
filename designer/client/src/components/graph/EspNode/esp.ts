@@ -38,16 +38,6 @@ const iconBackground: dia.MarkupNodeJSON = {
         d: getRoundedRectPath(iconBackgroundSize, [BORDER_RADIUS, 0, 0, BORDER_RADIUS]),
     },
 };
-
-const infoBackground: dia.MarkupNodeJSON = {
-    selector: "infoBackground",
-    tagName: "path", //TODO: check if it's fast enough
-    attributes: {
-        x: 300,
-        d: getRoundedRectPath(iconBackgroundSize, [0, 100, 100, 0]),
-    },
-};
-
 const border: dia.MarkupNodeJSON = {
     selector: "border",
     tagName: "rect",
