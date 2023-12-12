@@ -84,13 +84,8 @@ class TestFlinkProcessCompiler(
       processObjectDependencies: ProcessObjectDependencies,
       listeners: Seq[ProcessListener],
       classLoader: ClassLoader
-  ): FlinkExceptionHandler = componentUseCase match {
-    case ComponentUseCase.TestRuntime =>
-      new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
-        override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-        override val consumer: FlinkEspExceptionConsumer                             = _ => {}
-      }
-    case _ => super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+  ): FlinkExceptionHandler = {
+    new TestFlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
   }
 
 }
@@ -136,5 +131,17 @@ class StubbedSourcePreparer(
       testDataPreparer.prepareRecordForTest[Object](originalSource, scenarioTestRecord)
     }
   }
+
+}
+
+class TestFlinkExceptionHandler(
+    metaData: MetaData,
+    processObjectDependencies: ProcessObjectDependencies,
+    listeners: Seq[ProcessListener],
+    classLoader: ClassLoader
+) extends FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+  override val consumer: FlinkEspExceptionConsumer = _ => {}
 
 }
