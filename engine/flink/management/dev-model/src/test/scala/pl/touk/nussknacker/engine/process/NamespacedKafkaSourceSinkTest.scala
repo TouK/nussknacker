@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -60,7 +60,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     val modelData =
       LocalModelData(config, List.empty, configCreator = configCreator, objectNaming = DefaultNamespacedObjectNaming)
     registrar = process.registrar.FlinkProcessRegistrar(
-      new FlinkProcessCompiler(modelData),
+      new FlinkProcessCompilerDataFactory(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)
     )
   }

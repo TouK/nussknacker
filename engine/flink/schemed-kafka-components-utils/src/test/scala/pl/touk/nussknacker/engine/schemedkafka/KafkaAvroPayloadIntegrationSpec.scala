@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
@@ -50,7 +50,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, List.empty, configCreator = creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
+    registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(modelData), executionConfigPreparerChain(modelData))
   }
 
   before {

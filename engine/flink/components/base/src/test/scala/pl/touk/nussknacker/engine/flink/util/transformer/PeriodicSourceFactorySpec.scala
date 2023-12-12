@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -42,7 +42,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
 
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, scenario, ProcessVersion.empty, DeploymentData.empty)
 
     val id = stoppableEnv.executeAndWaitForStart(scenario.id)

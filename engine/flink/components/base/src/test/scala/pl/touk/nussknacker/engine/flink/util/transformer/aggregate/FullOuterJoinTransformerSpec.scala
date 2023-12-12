@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -522,7 +522,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)

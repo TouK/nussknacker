@@ -12,13 +12,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
 
-class VerificationFlinkProcessCompiler(
+class VerificationFlinkProcessCompilerDataFactory(
     process: CanonicalProcess,
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
     objectNaming: ObjectNaming
-) extends StubbedFlinkProcessCompiler(
+) extends StubbedFlinkProcessCompilerDataFactory(
       process,
       creator,
       extractModelDefinition,
@@ -52,10 +52,10 @@ class VerificationFlinkProcessCompiler(
 
 }
 
-object VerificationFlinkProcessCompiler {
+object VerificationFlinkProcessCompilerDataFactory {
 
-  def apply(process: CanonicalProcess, modelData: ModelData): VerificationFlinkProcessCompiler = {
-    new VerificationFlinkProcessCompiler(
+  def apply(process: CanonicalProcess, modelData: ModelData): VerificationFlinkProcessCompilerDataFactory = {
+    new VerificationFlinkProcessCompilerDataFactory(
       process,
       modelData.configCreator,
       modelData.extractModelDefinitionFun,

@@ -6,7 +6,7 @@ import org.apache.avro.Schema
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
@@ -46,7 +46,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, List.empty, configCreator = creator, objectNaming = objectNaming)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
+    registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(modelData), executionConfigPreparerChain(modelData))
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

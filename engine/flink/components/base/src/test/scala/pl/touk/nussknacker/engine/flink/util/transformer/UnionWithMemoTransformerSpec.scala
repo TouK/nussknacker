@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -220,7 +220,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     )
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySour
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
-class TestFlinkProcessCompiler(
+class TestFlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     inputConfigDuringExecution: Config,
@@ -29,7 +29,7 @@ class TestFlinkProcessCompiler(
     process: CanonicalProcess,
     objectNaming: ObjectNaming,
     scenarioTestData: ScenarioTestData
-) extends StubbedFlinkProcessCompiler(
+) extends StubbedFlinkProcessCompilerDataFactory(
       process,
       creator,
       extractModelDefinition,

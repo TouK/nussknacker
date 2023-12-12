@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
@@ -144,7 +144,10 @@ class UnionTransformersTestModeSpec
   private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+      FlinkProcessRegistrar(
+        new FlinkProcessCompilerDataFactory(modelData),
+        ExecutionConfigPreparer.unOptimizedChain(modelData)
+      )
     registrar.register(stoppableEnv, scenario, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(scenario.id)()
   }

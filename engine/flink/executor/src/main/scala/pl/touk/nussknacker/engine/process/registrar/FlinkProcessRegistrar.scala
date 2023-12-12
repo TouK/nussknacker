@@ -13,17 +13,17 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
+import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
 import pl.touk.nussknacker.engine.process.compiler.{
   FlinkEngineRuntimeContextImpl,
-  FlinkProcessCompiler,
   FlinkProcessCompilerData,
+  FlinkProcessCompilerDataFactory,
   UsedNodes
 }
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
@@ -48,7 +48,7 @@ import scala.language.implicitConversions
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
 class FlinkProcessRegistrar(
-    compileProcess: (CanonicalProcess, ProcessVersion, ResultCollector) => (
+    prepareCompilerData: (MetaData, ProcessVersion, ResultCollector) => (
         UsedNodes,
         ClassLoader
     ) => FlinkProcessCompilerData,
@@ -75,15 +75,17 @@ class FlinkProcessRegistrar(
       resultCollector: ResultCollector
   ): Unit = {
     usingRightClassloader(env) { userClassLoader =>
-      val processCompilation = compileProcess(process, processVersion, resultCollector)
-      val processWithDeps    = processCompilation(UsedNodes.empty, userClassLoader)
+      val compilerDataForUsedNodesAndClassloader =
+        prepareCompilerData(process.metaData, processVersion, resultCollector)
+      val compilerData = compilerDataForUsedNodesAndClassloader(UsedNodes.empty, userClassLoader)
 
-      streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)
+      streamExecutionEnvPreparer.preRegistration(env, compilerData, deploymentData)
       val typeInformationDetection = TypeInformationDetectionUtils.forExecutionConfig(env.getConfig, userClassLoader)
 
-      val partCompilation = FlinkProcessRegistrar.partCompilation[FlinkProcessCompilerData](processCompilation) _
-      register(env, partCompilation, processWithDeps, resultCollector, typeInformationDetection)
-      streamExecutionEnvPreparer.postRegistration(env, processWithDeps, deploymentData)
+      val compilerDataForProcessPart =
+        FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
+      register(env, compilerDataForProcessPart, compilerData, process, resultCollector, typeInformationDetection)
+      streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
 
@@ -103,18 +105,19 @@ class FlinkProcessRegistrar(
   }
 
   protected def createInterpreter(
-      compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
+      compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
   ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
     (runtimeContext: RuntimeContext) =>
       new FlinkCompilerLazyInterpreterCreator(
         runtimeContext,
-        compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader)
+        compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
 
   private def register(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
+      compilerDataForProcessPart: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
       processWithDeps: FlinkProcessCompilerData,
+      process: CanonicalProcess,
       resultCollector: ResultCollector,
       typeInformationDetection: TypeInformationDetection
   ): Unit = {
@@ -127,7 +130,7 @@ class FlinkProcessRegistrar(
         validationContext: Either[ValidationContext, Map[String, ValidationContext]]
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
-        compiledProcessWithDeps(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
+        compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = processWithDeps.jobData
       FlinkCustomNodeContext(
         jobData,
@@ -137,7 +140,7 @@ class FlinkProcessRegistrar(
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
-          createInterpreter(compiledProcessWithDeps(None))
+          createInterpreter(compilerDataForProcessPart(None))
         ),
         exceptionHandlerPreparer = exceptionHandlerPreparer,
         globalParameters = globalParameters,
@@ -149,10 +152,14 @@ class FlinkProcessRegistrar(
 
     {
       // it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      processWithDeps.compileProcessOrFail().sources.toList.foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
-        case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next)
-        case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
-      }
+      processWithDeps
+        .compileProcessOrFail(process)
+        .sources
+        .toList
+        .foldLeft(Map.empty[BranchEndDefinition, BranchEndData]) {
+          case (branchEnds, next: SourcePart)         => branchEnds ++ registerSourcePart(next)
+          case (branchEnds, joinPart: CustomNodePart) => branchEnds ++ registerJoinPart(joinPart, branchEnds)
+        }
     }
 
     def registerSourcePart(part: SourcePart): Map[BranchEndDefinition, BranchEndData] = {
@@ -279,7 +286,7 @@ class FlinkProcessRegistrar(
               customNodeContext.valueWithContextInfo.forUnknown
             )
             // FIXME: ...
-            .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
+            .addSink(new CollectingSinkFunction[AnyRef](compilerDataForProcessPart(None), collectingSink, part.id))
         case _ =>
           sink.registerSink(withValuePrepared, nodeContext(nodeComponentInfoFrom(part), Left(contextBefore)))
       }
@@ -337,7 +344,7 @@ class FlinkProcessRegistrar(
 
       val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(
-          compiledProcessWithDeps(Some(part)),
+          compilerDataForProcessPart(Some(part)),
           node,
           validationContext,
           asyncExecutionContextPreparer,
@@ -358,7 +365,7 @@ class FlinkProcessRegistrar(
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(
-          new SyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad),
+          new SyncInterpretationFunction(compilerDataForProcessPart(Some(part)), node, validationContext, useIOMonad),
           ti
         )
       }
@@ -390,7 +397,7 @@ object FlinkProcessRegistrar {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-  private def partCompilation[T](
+  private def enrichWithUsedNodes[T](
       original: (UsedNodes, ClassLoader) => T
   )(part: Option[ProcessPart]): ClassLoader => T = {
     val (nodesToUse, endingParts) = part
@@ -404,22 +411,25 @@ object FlinkProcessRegistrar {
     original(UsedNodes(nodesToUse, endingParts), _)
   }
 
-  def apply(compiler: FlinkProcessCompiler, prepareExecutionConfig: ExecutionConfigPreparer): FlinkProcessRegistrar = {
-    val config = compiler.modelConfig
+  def apply(
+      compilerFactory: FlinkProcessCompilerDataFactory,
+      prepareExecutionConfig: ExecutionConfigPreparer
+  ): FlinkProcessRegistrar = {
+    val modelConfig = compilerFactory.modelConfig
 
-    val checkpointConfig = config.getAs[CheckpointConfig](path = "checkpointConfig")
+    val checkpointConfig = modelConfig.getAs[CheckpointConfig](path = "checkpointConfig")
     val rocksDBStateBackendConfig =
-      config.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compiler.diskStateBackendSupport)
+      modelConfig.getAs[RocksDBStateBackendConfig]("rocksDB").filter(_ => compilerFactory.diskStateBackendSupport)
 
     val defaultStreamExecutionEnvPreparer =
       ScalaServiceLoader
         .load[FlinkCompatibilityProvider](getClass.getClassLoader)
         .headOption
-        .map(_.createExecutionEnvPreparer(config, prepareExecutionConfig, compiler.diskStateBackendSupport))
+        .map(_.createExecutionEnvPreparer(modelConfig, prepareExecutionConfig, compilerFactory.diskStateBackendSupport))
         .getOrElse(
           new DefaultStreamExecutionEnvPreparer(checkpointConfig, rocksDBStateBackendConfig, prepareExecutionConfig)
         )
-    new FlinkProcessRegistrar(compiler.compileProcess, defaultStreamExecutionEnvPreparer)
+    new FlinkProcessRegistrar(compilerFactory.prepareCompilerData, defaultStreamExecutionEnvPreparer)
   }
 
   private[registrar] def operatorName(

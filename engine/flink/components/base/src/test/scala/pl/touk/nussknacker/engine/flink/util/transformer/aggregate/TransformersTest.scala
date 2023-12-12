@@ -37,7 +37,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -537,7 +537,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompiler(model) {
+      new FlinkProcessCompilerDataFactory(model) {
         override protected def adjustListeners(
             defaults: List[ProcessListener],
             processObjectDependencies: ProcessObjectDependencies
