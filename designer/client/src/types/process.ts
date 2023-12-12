@@ -44,10 +44,10 @@ export type ScenarioPropertiesConfig = Record<string, ScenarioPropertyConfig>;
 
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
-    display: string; //TODO: Check if we need this type required
-    type: string; //TODO: Check if we need this type required
+    display: string;
+    type: string;
     refClazzName: string;
-    params: []; //TODO: Check if we need this type required
+    params: [];
 }
 
 export interface NodeObjectTypeDefinition {

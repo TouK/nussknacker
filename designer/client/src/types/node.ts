@@ -53,7 +53,7 @@ export type Field = Parameter | FragmentInputParameter;
 export interface Parameter {
     uuid: string;
     name: string;
-    expression?: Expression; //TODO: Check if we need this type
+    expression: Expression;
     typ?: ReturnedType;
     hintText?: string;
 }
