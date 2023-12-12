@@ -39,7 +39,10 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
 
     const isUniqueValueValidator = !NodeUtils.nodeIsProperties(node) && uniqueScenarioValueValidator(otherNodes);
 
-    const fieldErrors = getValidationErrorsForField(extendErrors(errors, value, errorFieldName, [isUniqueValueValidator]), errorFieldName);
+    const fieldErrors = getValidationErrorsForField(
+        isUniqueValueValidator ? extendErrors(errors, value, errorFieldName, [isUniqueValueValidator]) : errors,
+        errorFieldName,
+    );
 
     return (
         <Field
