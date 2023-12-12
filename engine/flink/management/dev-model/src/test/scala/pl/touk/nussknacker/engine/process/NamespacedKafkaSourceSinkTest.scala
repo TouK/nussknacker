@@ -4,18 +4,15 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
+import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
@@ -53,21 +50,12 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   private lazy val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator
 
-  private var registrar: FlinkProcessRegistrar = _
-
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    val modelData =
-      LocalModelData(config, List.empty, configCreator = configCreator, objectNaming = DefaultNamespacedObjectNaming)
-    registrar = process.registrar.FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(modelData),
-      ExecutionConfigPreparer.unOptimizedChain(modelData)
-    )
-  }
+  private val modelData =
+    LocalModelData(config, List.empty, configCreator = configCreator, objectNaming = DefaultNamespacedObjectNaming)
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
+    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id)(action)
   }
 

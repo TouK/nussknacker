@@ -4,8 +4,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{
   KafkaAvroSpecMixin,
   SimpleKafkaJsonDeserializer,
@@ -39,14 +37,12 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(
+    modelData = LocalModelData(
       config
         .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)),
       List.empty,
       configCreator = creator,
     )
-    registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(modelData), executionConfigPreparerChain(modelData))
   }
 
   test("should read and write json of generic record via avro schema") {

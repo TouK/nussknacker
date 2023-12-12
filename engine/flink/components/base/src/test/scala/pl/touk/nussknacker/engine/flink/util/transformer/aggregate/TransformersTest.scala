@@ -15,19 +15,11 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 }
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{
-  Context,
-  FragmentSpecificData,
-  MetaData,
-  ProcessListener,
-  ProcessVersion,
-  VariableConstants
-}
+import pl.touk.nussknacker.engine.api.{Context, FragmentSpecificData, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
@@ -36,12 +28,11 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
+import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
@@ -54,7 +45,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
   def modelData(
       list: List[TestRecord] = List(),
-      aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default
+      aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
+      collectingListener: ResultsCollectingListener = ResultsCollectingListenerHolder.registerRun
   ): LocalModelData = {
     val config = ConfigFactory
       .empty()
@@ -68,7 +60,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-      )
+      ),
+      configCreator = new ConfigCreatorWithListener(collectingListener)
     )
   }
 
@@ -295,7 +288,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val model =
       modelData(List(TestRecordHours(id, 0, 1, "a"), TestRecordHours(id, 1, 2, "b"), TestRecordHours(id, 2, 5, "b")))
 
-    lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun)
+    lazy val run = runProcess(model, resolvedScenario)
 
     the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
@@ -468,14 +461,15 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   test("base aggregates test") {
-
     val id = "1"
 
+    val collectingListener = ResultsCollectingListenerHolder.registerRun
     val model = modelData(
       List(
         TestRecordHours(id, 1, 2, "a"),
         TestRecordHours(id, 2, 1, "b")
-      )
+      ),
+      collectingListener = collectingListener
     )
 
     val aggregates = List(
@@ -504,8 +498,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ): _*
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
-    runProcess(model, testProcess, collectingListener)
+    runProcess(model, testProcess)
     val lastResult = variablesForKey(collectingListener, id).last
     aggregates.foreach { case (name, expected) =>
       lastResult.get[AnyRef](s"fragmentResult$name").get shouldBe expected
@@ -525,29 +518,17 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       model: LocalModelData,
       testProcess: CanonicalProcess
   ): List[Context] = {
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
-    runProcess(model, testProcess, collectingListener)
+    runProcess(model, testProcess)
+    val collectingListener = model.configCreator.asInstanceOf[ConfigCreatorWithListener].collectingListener
     variablesForKey(collectingListener, key)
   }
 
   private def runProcess(
       model: LocalModelData,
-      testProcess: CanonicalProcess,
-      collectingListener: ResultsCollectingListener
+      testProcess: CanonicalProcess
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(model) {
-        override protected def adjustListeners(
-            defaults: List[ProcessListener],
-            processObjectDependencies: ProcessObjectDependencies
-        ): List[ProcessListener] = {
-          collectingListener :: defaults
-        }
-      },
-      ExecutionConfigPreparer.unOptimizedChain(model)
-    )
-    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
+    TestFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 

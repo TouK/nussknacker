@@ -3,18 +3,15 @@ package pl.touk.nussknacker.engine.kafka.exception
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.SinkFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -25,7 +22,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   private val topicName = "testingErrors"
 
-  protected var registrar: FlinkProcessRegistrar = _
+  protected var modelData: ModelData = _
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
@@ -35,7 +32,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       .withValue("exceptionHandler.additionalParams.configurableKey", fromAnyRef("sampleValue"))
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
-    val modelData = LocalModelData(
+    modelData = LocalModelData(
       configWithExceptionHandler,
       List(
         ComponentDefinition(
@@ -44,10 +41,6 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
         ),
         ComponentDefinition("sink", SinkFactory.noParam(SampleNodes.MonitorEmptySink))
       )
-    )
-    registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(modelData),
-      ExecutionConfigPreparer.unOptimizedChain(modelData)
     )
   }
 
@@ -59,7 +52,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       .emptySink("end", "sink")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
+    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id) {
       val consumed = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](topicName).take(1).head
       consumed.key() shouldBe "testProcess-shouldFail"

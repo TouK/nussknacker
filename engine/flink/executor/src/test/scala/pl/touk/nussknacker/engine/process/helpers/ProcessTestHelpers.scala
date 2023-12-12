@@ -10,12 +10,10 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
+import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, SimpleJavaEnum, registrar}
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
@@ -33,36 +31,12 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val components = ProcessTestHelpers.prepareComponents(data)
       val env        = flinkMiniCluster.createExecutionEnvironment()
       val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-      FlinkProcessRegistrar(
-        new FlinkProcessCompilerDataFactory(modelData),
-        ExecutionConfigPreparer.unOptimizedChain(modelData)
-      )
-        .register(env, process, ProcessVersion.empty, DeploymentData.empty)
+      TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
 
       MockService.clear()
       SinkForStrings.clear()
       SinkForInts.clear()
       env.executeAndWaitForFinished(process.id)()
-    }
-
-    def invoke(
-        process: CanonicalProcess,
-        creator: ProcessConfigCreator,
-        config: Config,
-        processVersion: ProcessVersion,
-        actionToInvokeWithJobRunning: => Unit
-    ): Unit = {
-      val env       = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(config, List.empty, configCreator = creator)
-      registrar
-        .FlinkProcessRegistrar(
-          new FlinkProcessCompilerDataFactory(modelData),
-          ExecutionConfigPreparer.unOptimizedChain(modelData)
-        )
-        .register(env, process, processVersion, DeploymentData.empty)
-
-      MockService.clear()
-      env.withJobRunning(process.id)(actionToInvokeWithJobRunning)
     }
 
   }

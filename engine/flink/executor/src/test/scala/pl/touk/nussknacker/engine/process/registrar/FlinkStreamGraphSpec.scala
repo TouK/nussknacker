@@ -5,12 +5,9 @@ import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.{ProcessTestHelpers, ProcessTestHelpersConfigCreator}
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -28,11 +25,7 @@ trait FlinkStreamGraphSpec
     val components = ProcessTestHelpers.prepareComponents(List.empty)
     val env        = flinkMiniCluster.createExecutionEnvironment()
     val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-    FlinkProcessRegistrar(
-      new FlinkProcessCompilerDataFactory(modelData),
-      ExecutionConfigPreparer.unOptimizedChain(modelData)
-    )
-      .register(env, process, ProcessVersion.empty, DeploymentData.empty)
+    TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.getStreamGraph
   }
 
