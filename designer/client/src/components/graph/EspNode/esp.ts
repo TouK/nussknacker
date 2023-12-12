@@ -39,6 +39,15 @@ const iconBackground: dia.MarkupNodeJSON = {
     },
 };
 
+const infoBackground: dia.MarkupNodeJSON = {
+    selector: "infoBackground",
+    tagName: "path", //TODO: check if it's fast enough
+    attributes: {
+        x: 300,
+        d: getRoundedRectPath(iconBackgroundSize, [0, 100, 100, 0]),
+    },
+};
+
 const border: dia.MarkupNodeJSON = {
     selector: "border",
     tagName: "rect",
@@ -60,6 +69,18 @@ const icon: dia.MarkupNodeJSON = {
         height: iconSize,
         x: iconSize / 2,
         y: iconSize / 2,
+    },
+};
+
+const info: dia.MarkupNodeJSON = {
+    selector: "info",
+    tagName: "use",
+    attributes: {
+        width: 20,
+        height: 20,
+        color: "#6492f5",
+        x: 275,
+        y: iconSize / 8,
     },
 };
 
@@ -171,7 +192,7 @@ const protoProps = {
     portMarkup: [portMarkup],
     portLabelMarkup: null,
 
-    markup: [background, iconBackground, border, icon, content, testResults],
+    markup: [background, iconBackground, border, icon, content, info, testResults],
 };
 
 export const EspNodeShape = shapes.devs.Model.define(`esp.Model`, defaults, protoProps) as typeof shapes.devs.Model;
