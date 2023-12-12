@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 
-class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
+class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matchers {
 
   private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
@@ -78,16 +78,16 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     )
 
   test("stubbing for verification purpose should stub all sources") {
-    val verificationCompiler = VerificationFlinkProcessCompiler(
+    val verificationCompilerFactory = VerificationFlinkProcessCompilerDataFactory(
       scenarioWithMultipleSources,
       modelData
     )
-    val compiledProcess = verificationCompiler
-      .compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, PreventInvocationCollector)(
+    val compiledProcess = verificationCompilerFactory
+      .prepareCompilerData(scenarioWithMultipleSources.metaData, ProcessVersion.empty, PreventInvocationCollector)(
         UsedNodes.empty,
         getClass.getClassLoader
       )
-      .compileProcessOrFail()
+      .compileProcessOrFail(scenarioWithMultipleSources)
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
@@ -146,7 +146,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
-    val testCompiler = new TestFlinkProcessCompiler(
+    val testCompilerFactory = new TestFlinkProcessCompilerDataFactory(
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
@@ -155,12 +155,12 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       modelData.objectNaming,
       scenarioTestData
     )
-    testCompiler
-      .compileProcess(scenario, ProcessVersion.empty, PreventInvocationCollector)(
+    testCompilerFactory
+      .prepareCompilerData(scenario.metaData, ProcessVersion.empty, PreventInvocationCollector)(
         UsedNodes.empty,
         getClass.getClassLoader
       )
-      .compileProcessOrFail()
+      .compileProcessOrFail(scenario)
   }
 
   object SampleTestSupportParametersSource

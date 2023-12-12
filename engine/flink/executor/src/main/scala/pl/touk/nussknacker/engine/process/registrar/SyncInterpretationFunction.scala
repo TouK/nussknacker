@@ -18,7 +18,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     useIOMonad: Boolean
@@ -26,9 +26,9 @@ private[registrar] class SyncInterpretationFunction(
     with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
-  private lazy val compiledNode                  = compiledProcessWithDeps.compileSubPart(node, validationContext)
+  private lazy val compiledNode                  = compilerData.compileSubPart(node, validationContext)
 
-  import compiledProcessWithDeps._
+  import compilerData._
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {

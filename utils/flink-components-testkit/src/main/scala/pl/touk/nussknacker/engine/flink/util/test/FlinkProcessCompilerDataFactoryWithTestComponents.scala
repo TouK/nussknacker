@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 import pl.touk.nussknacker.engine.definition.globalvariables.GlobalVariableDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompiler, TestFlinkExceptionHandler}
+import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerDataFactory, TestFlinkExceptionHandler}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
-class FlinkProcessCompilerWithTestComponents(
+class FlinkProcessCompilerDataFactoryWithTestComponents(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     modelConfig: Config,
@@ -24,7 +24,7 @@ class FlinkProcessCompilerWithTestComponents(
     componentUseCase: ComponentUseCase,
     testExtensionsHolder: TestExtensionsHolder,
     resultsCollectingListener: ResultsCollectingListener,
-) extends FlinkProcessCompiler(
+) extends FlinkProcessCompilerDataFactory(
       creator,
       extractModelDefinition,
       modelConfig,

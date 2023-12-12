@@ -22,13 +22,13 @@ trait StreamExecutionEnvPreparer {
 
   def preRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit
 
   def postRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit
 
@@ -50,15 +50,15 @@ class DefaultStreamExecutionEnvPreparer(
 
   override def preRegistration(
       env: StreamExecutionEnvironment,
-      processWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobData, deploymentData)
 
     val streamMetaData =
-      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](processWithDeps.metaData, StreamMetaData())
-    env.setRestartStrategy(processWithDeps.restartStrategy)
+      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](compilerData.metaData, StreamMetaData())
+    env.setRestartStrategy(compilerData.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
@@ -81,7 +81,7 @@ class DefaultStreamExecutionEnvPreparer(
 
   override def postRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit = {}
 

@@ -17,14 +17,14 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
 
   override def close(): Unit = {
     super.close()
-    if (compiledProcessWithDeps != null) {
-      compiledProcessWithDeps.close(nodesUsed)
+    if (compilerData != null) {
+      compilerData.close(nodesUsed)
     }
   }
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    compiledProcessWithDeps.open(getRuntimeContext, nodesUsed)
+    compilerData.open(getRuntimeContext, nodesUsed)
   }
 
 }
@@ -32,11 +32,11 @@ trait ProcessPartFunction extends ExceptionHandlerFunction {
 //Helper trait dealing with ExceptionHandler lifecycle
 trait ExceptionHandlerFunction extends RichFunction {
 
-  def compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData
+  def compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
 
   protected var exceptionHandler: FlinkExceptionHandler = _
 
-  protected lazy val compiledProcessWithDeps: FlinkProcessCompilerData = compiledProcessWithDepsProvider(
+  protected lazy val compilerData: FlinkProcessCompilerData = compilerDataForClassloader(
     getRuntimeContext.getUserCodeClassLoader
   )
 
@@ -47,7 +47,7 @@ trait ExceptionHandlerFunction extends RichFunction {
   }
 
   override def open(parameters: Configuration): Unit = {
-    exceptionHandler = compiledProcessWithDeps.prepareExceptionHandler(getRuntimeContext)
+    exceptionHandler = compilerData.prepareExceptionHandler(getRuntimeContext)
   }
 
 }

@@ -20,7 +20,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
@@ -29,16 +29,16 @@ private[registrar] class AsyncInterpretationFunction(
     with LazyLogging
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
+  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
 
-  import compiledProcessWithDeps._
+  import compilerData._
 
   private var executionContext: ExecutionContext = _
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
     executionContext = asyncExecutionContextPreparer.prepareExecutionContext(
-      compiledProcessWithDeps.metaData.id,
+      compilerData.metaData.id,
       getRuntimeContext.getExecutionConfig.getParallelism
     )
   }

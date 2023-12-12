@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -38,8 +38,10 @@ trait KafkaSourceFactoryProcessMixin
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
-    registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(
+      new FlinkProcessCompilerDataFactory(modelData),
+      ExecutionConfigPreparer.unOptimizedChain(modelData)
+    )
   }
 
   before {

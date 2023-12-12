@@ -135,23 +135,23 @@ class FlinkTestScenarioRunner(
     Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
       // It's copied from registrar.register only for handling compilation errors..
       // TODO: figure how to get compilation result on highest level - registrar.register?
-      val compiler =
-        new FlinkProcessCompilerWithTestComponents(
+      val compilerFactory =
+        new FlinkProcessCompilerDataFactoryWithTestComponents(
           testExtensionsHolder,
           testScenarioCollectorHandler.resultsCollectingListener,
           modelData,
           componentUseCase
         )
 
-      val compileProcessData = compiler.compileProcess(
-        scenario,
+      val compileProcessData = compilerFactory.prepareCompilerData(
+        scenario.metaData,
         ProcessVersion.empty,
         testScenarioCollectorHandler.resultCollector,
         getClass.getClassLoader
       )
 
-      compileProcessData.compileProcess().map { _ =>
-        val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+      compileProcessData.compileProcess(scenario).map { _ =>
+        val registrar = FlinkProcessRegistrar(compilerFactory, ExecutionConfigPreparer.unOptimizedChain(modelData))
 
         registrar.register(
           env,

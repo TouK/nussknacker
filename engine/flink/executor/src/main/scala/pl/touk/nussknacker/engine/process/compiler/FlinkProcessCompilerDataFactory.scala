@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-class FlinkProcessCompiler(
+class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
     val modelConfig: Config,
@@ -48,15 +48,15 @@ class FlinkProcessCompiler(
     componentUseCase = ComponentUseCase.EngineRuntime,
   )
 
-  def compileProcess(
-      process: CanonicalProcess,
+  def prepareCompilerData(
+      metaData: MetaData,
       processVersion: ProcessVersion,
       resultCollector: ResultCollector,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData =
-    compileProcess(process, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
+    prepareCompilerData(metaData, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
 
-  def compileProcess(process: CanonicalProcess, processVersion: ProcessVersion, resultCollector: ResultCollector)(
+  def prepareCompilerData(metaData: MetaData, processVersion: ProcessVersion, resultCollector: ResultCollector)(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
@@ -77,9 +77,8 @@ class FlinkProcessCompiler(
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
 
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
-    val compiledProcess =
+    val compilerData =
       ProcessCompilerData.prepare(
-        process,
         modelConfig,
         definitionWithTypes,
         dictRegistry,
@@ -91,10 +90,10 @@ class FlinkProcessCompiler(
       )
 
     new FlinkProcessCompilerData(
-      compiledProcess = compiledProcess,
-      jobData = JobData(process.metaData, processVersion),
+      compilerData = compilerData,
+      jobData = JobData(metaData, processVersion),
       exceptionHandler =
-        exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
+        exceptionHandler(metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase

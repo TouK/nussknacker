@@ -7,7 +7,7 @@ import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ValueWithContext, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.{BlockingQueueSource, EmitWatermarkAfterEachElementCollectionSource}
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{BranchType, SingleSideJoinTransformer}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -124,7 +124,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)

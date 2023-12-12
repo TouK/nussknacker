@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -45,8 +45,10 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
         ComponentDefinition("sink", SinkFactory.noParam(SampleNodes.MonitorEmptySink))
       )
     )
-    registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar = FlinkProcessRegistrar(
+      new FlinkProcessCompilerDataFactory(modelData),
+      ExecutionConfigPreparer.unOptimizedChain(modelData)
+    )
   }
 
   test("should record errors on topic") {

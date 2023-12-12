@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -82,7 +82,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompiler(model) {
+      new FlinkProcessCompilerDataFactory(model) {
         override protected def adjustListeners(
             defaults: List[ProcessListener],
             processObjectDependencies: ProcessObjectDependencies

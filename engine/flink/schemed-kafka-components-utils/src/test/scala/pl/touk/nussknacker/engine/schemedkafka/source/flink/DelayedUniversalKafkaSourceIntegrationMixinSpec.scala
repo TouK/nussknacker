@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
   DelayParameterName,
   TimestampFieldParamName
 }
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
@@ -51,7 +51,8 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     val modelData = LocalModelData(config, List.empty, creator)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
+    registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompilerDataFactory(modelData), executionConfigPreparerChain(modelData))
   }
 
   before {

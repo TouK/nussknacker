@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
@@ -39,7 +39,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
     super.beforeAll()
     val modelData = ModelData(config, ModelClassLoader(List.empty), None)
     registrar = process.registrar.FlinkProcessRegistrar(
-      new FlinkProcessCompiler(modelData),
+      new FlinkProcessCompilerDataFactory(modelData),
       ExecutionConfigPreparer.unOptimizedChain(modelData)
     )
   }

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, SimpleJavaEnum, registrar}
@@ -33,7 +33,10 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val components = ProcessTestHelpers.prepareComponents(data)
       val env        = flinkMiniCluster.createExecutionEnvironment()
       val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+      FlinkProcessRegistrar(
+        new FlinkProcessCompilerDataFactory(modelData),
+        ExecutionConfigPreparer.unOptimizedChain(modelData)
+      )
         .register(env, process, ProcessVersion.empty, DeploymentData.empty)
 
       MockService.clear()
@@ -52,7 +55,10 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val env       = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, List.empty, configCreator = creator)
       registrar
-        .FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+        .FlinkProcessRegistrar(
+          new FlinkProcessCompilerDataFactory(modelData),
+          ExecutionConfigPreparer.unOptimizedChain(modelData)
+        )
         .register(env, process, processVersion, DeploymentData.empty)
 
       MockService.clear()
