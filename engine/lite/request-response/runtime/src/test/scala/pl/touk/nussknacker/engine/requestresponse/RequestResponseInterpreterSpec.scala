@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -277,7 +277,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
         NuExceptionInfo(
           Some(NodeComponentInfo("sinkId", ComponentType.Sink, "unknown")),
           SinkException("FailingSink failed"),
-          ScenarioProcessingContext(contextId, Map("input" -> Request1("a", "b")), None)
+          Context(contextId, Map("input" -> Request1("a", "b")), None)
         )
       )
     )

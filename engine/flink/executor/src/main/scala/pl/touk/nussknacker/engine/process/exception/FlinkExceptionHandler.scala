@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.{NuExceptionInfo, WithExceptionExtractor}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.flink.api.exception.{
   ExceptionHandler,
   FlinkEspExceptionConsumer,
@@ -68,7 +68,7 @@ class FlinkExceptionHandler(
     consumer.consume(extractor.extractOrThrow(exceptionInfo))
   }
 
-  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: ScenarioProcessingContext)(
+  override def handling[T](nodeComponentInfo: Option[NodeComponentInfo], context: Context)(
       action: => T
   ): Option[T] =
     try {

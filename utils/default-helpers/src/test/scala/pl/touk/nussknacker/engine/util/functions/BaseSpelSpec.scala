@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -49,7 +49,7 @@ trait BaseSpelSpec {
       localVariables.mapValuesNow(Typed.fromInstance),
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
-    val evaluationCtx = ScenarioProcessingContext("fooId").withVariables(localVariables)
+    val evaluationCtx = Context("fooId").withVariables(localVariables)
     parser
       .parse(expr, validationCtx, Typed.fromDetailedType[T])
       .value
@@ -62,7 +62,7 @@ trait BaseSpelSpec {
       localVariables.mapValuesNow(Typed.fromInstance),
       globalVariables.mapValuesNow(Typed.fromInstance)
     )
-    val evaluationCtx = ScenarioProcessingContext("fooId").withVariables(localVariables)
+    val evaluationCtx = Context("fooId").withVariables(localVariables)
     parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
   }
 
@@ -83,7 +83,7 @@ trait BaseSpelSpec {
   }
 
   protected implicit class EvaluateSync(expression: Expression) {
-    def evaluateSync[T](ctx: ScenarioProcessingContext): T = expression.evaluate(ctx, Map.empty)
+    def evaluateSync[T](ctx: Context): T = expression.evaluate(ctx, Map.empty)
   }
 
 }

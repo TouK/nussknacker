@@ -5,7 +5,7 @@ import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ServiceExecutionContext
@@ -25,7 +25,7 @@ private[registrar] class SyncInterpretationFunction(
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     useIOMonad: Boolean
-) extends RichFlatMapFunction[ScenarioProcessingContext, InterpretationResult]
+) extends RichFlatMapFunction[Context, InterpretationResult]
     with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
@@ -34,7 +34,7 @@ private[registrar] class SyncInterpretationFunction(
   import SynchronousExecutionContextAndIORuntime._
   import compiledProcessWithDeps._
 
-  override def flatMap(input: ScenarioProcessingContext, collector: Collector[InterpretationResult]): Unit = {
+  override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {
       runInterpreter(input)
     } catch {
@@ -48,7 +48,7 @@ private[registrar] class SyncInterpretationFunction(
   }
 
   private def runInterpreter(
-      input: ScenarioProcessingContext
+      input: Context
   ): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {

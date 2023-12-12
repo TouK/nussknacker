@@ -4,11 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import pl.touk.nussknacker.engine.api.{
+  Context,
   CustomStreamTransformer,
   LazyParameter,
   MethodToInvoke,
   ParamName,
-  ScenarioProcessingContext,
   ValueWithContext
 }
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
@@ -18,7 +18,7 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
 
   @MethodToInvoke
   def execute(@ParamName("groupBy") groupBy: LazyParameter[String]): FlinkCustomStreamTransformation =
-    FlinkCustomStreamTransformation((start: DataStream[ScenarioProcessingContext], ctx: FlinkCustomNodeContext) => {
+    FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       start
         .flatMap(ctx.lazyParameterHelper.lazyMapFunction(groupBy))
         .keyBy((v: ValueWithContext[_]) => v.value)

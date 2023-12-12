@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.testmode
 
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ScenarioProcessingContextId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 
 object TestProcess {
 
@@ -13,13 +13,13 @@ object TestProcess {
       variableEncoder: Any => T
   ) {
 
-    def updateNodeResult(nodeId: String, context: ScenarioProcessingContext) = {
+    def updateNodeResult(nodeId: String, context: Context) = {
       copy(nodeResults =
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ NodeResult(toResult(context))))
       )
     }
 
-    def updateExpressionResult(nodeId: String, context: ScenarioProcessingContext, name: String, result: Any) = {
+    def updateExpressionResult(nodeId: String, context: Context, name: String, result: Any) = {
       val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
@@ -28,7 +28,7 @@ object TestProcess {
 
     def updateExternalInvocationResult(
         nodeId: String,
-        contextId: ScenarioProcessingContextId,
+        contextId: ContextId,
         name: String,
         result: Any
     ) = {
@@ -50,7 +50,7 @@ object TestProcess {
       res.contextId == invocationResult.contextId && res.name == invocationResult.name
     ) :+ invocationResult
 
-    private def toResult(context: ScenarioProcessingContext): ResultContext[T] =
+    private def toResult(context: Context): ResultContext[T] =
       ResultContext(context.id, context.variables.map { case (k, v) => k -> variableEncoder(v) })
 
   }

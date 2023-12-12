@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.sql.service
 
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContextId
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -52,7 +52,7 @@ class DatabaseEnricherInvokerWithCache(
   override def invokeService(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ScenarioProcessingContextId,
+      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {

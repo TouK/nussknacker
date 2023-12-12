@@ -26,7 +26,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
-  private implicit val ctxId: ScenarioProcessingContextId = ScenarioProcessingContextId("")
+  private implicit val ctxId: ContextId                   = ContextId("")
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
 
   private val nodeId           = NodeId("id")

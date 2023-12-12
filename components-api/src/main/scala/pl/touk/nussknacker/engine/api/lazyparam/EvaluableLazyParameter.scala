@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.lazyparam
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +17,7 @@ trait EvaluableLazyParameter[+T <: AnyRef] extends LazyParameter[T] {
   // TODO: get rid of Future[_] as we evaluate parameters synchronously...
   def prepareEvaluator(deps: LazyParameterInterpreter)(
       implicit ec: ExecutionContext
-  ): ScenarioProcessingContext => Future[T]
+  ): Context => Future[T]
 
 }
 
@@ -30,10 +30,10 @@ private[api] case class ProductLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def prepareEvaluator(
       lpi: LazyParameterInterpreter
-  )(implicit ec: ExecutionContext): ScenarioProcessingContext => Future[(T, Y)] = {
+  )(implicit ec: ExecutionContext): Context => Future[(T, Y)] = {
     val arg1Interpreter = arg1.prepareEvaluator(lpi)
     val arg2Interpreter = arg2.prepareEvaluator(lpi)
-    ctx: ScenarioProcessingContext =>
+    ctx: Context =>
       val arg1Value = arg1Interpreter(ctx)
       val arg2Value = arg2Interpreter(ctx)
       arg1Value.flatMap(left => arg2Value.map((left, _)))
@@ -52,9 +52,9 @@ private[api] case class SequenceLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def prepareEvaluator(
       lpi: LazyParameterInterpreter
-  )(implicit ec: ExecutionContext): ScenarioProcessingContext => Future[Y] = {
+  )(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argsInterpreters = args.map(_.prepareEvaluator(lpi))
-    ctx: ScenarioProcessingContext => Future.sequence(argsInterpreters.map(_(ctx))).map(wrapResult)
+    ctx: Context => Future.sequence(argsInterpreters.map(_(ctx))).map(wrapResult)
   }
 
 }
@@ -69,9 +69,9 @@ private[api] case class MappedLazyParameter[T <: AnyRef, Y <: AnyRef](
 
   override def prepareEvaluator(
       lpi: LazyParameterInterpreter
-  )(implicit ec: ExecutionContext): ScenarioProcessingContext => Future[Y] = {
+  )(implicit ec: ExecutionContext): Context => Future[Y] = {
     val argInterpreter = arg.prepareEvaluator(lpi)
-    ctx: ScenarioProcessingContext => argInterpreter(ctx).map(fun)
+    ctx: Context => argInterpreter(ctx).map(fun)
   }
 
 }
@@ -81,7 +81,7 @@ private[api] case class FixedLazyParameter[T <: AnyRef](value: T, returnType: Ty
 
   override def prepareEvaluator(deps: LazyParameterInterpreter)(
       implicit ec: ExecutionContext
-  ): ScenarioProcessingContext => Future[T] =
+  ): Context => Future[T] =
     _ => Future.successful(value)
 
 }

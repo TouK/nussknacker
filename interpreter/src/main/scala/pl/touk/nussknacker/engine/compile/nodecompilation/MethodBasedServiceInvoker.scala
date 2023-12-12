@@ -23,7 +23,7 @@ private[nodecompilation] class MethodBasedServiceInvoker(
   override def invokeService(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ScenarioProcessingContextId,
+      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
     componentDefWithImpl.implementationInvoker
@@ -48,7 +48,7 @@ private[nodecompilation] class JavaMethodBasedServiceInvoker(
   override def invokeService(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ScenarioProcessingContextId,
+      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
     val result = componentDefWithImpl.implementationInvoker.invokeMethod(

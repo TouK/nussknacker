@@ -29,7 +29,7 @@ object LoggingService extends EagerService {
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ScenarioProcessingContextId,
+          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         val message = params("message").asInstanceOf[String]

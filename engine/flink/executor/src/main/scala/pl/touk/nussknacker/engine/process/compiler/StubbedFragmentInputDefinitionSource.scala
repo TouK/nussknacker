@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.process.{
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, methodbased}
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
@@ -65,7 +65,7 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
         override def initContext(
             contextIdGenerator: ContextIdGenerator
         ): ContextInitializingFunction[Map[String, Any]] = { input =>
-          ScenarioProcessingContext(contextIdGenerator.nextContextId(), input, None)
+          Context(contextIdGenerator.nextContextId(), input, None)
         }
 
         override def validationContext(

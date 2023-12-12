@@ -11,7 +11,7 @@ import org.springframework.expression.common.{CompositeStringExpression, Literal
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
 import org.springframework.expression.{EvaluationContext, Expression}
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -74,7 +74,7 @@ private[spel] class Typer(
   import ast.SpelAst._
 
   private lazy val evaluationContext: EvaluationContext =
-    evaluationContextPreparer.prepareEvaluationContext(ScenarioProcessingContext(""), Map.empty)
+    evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
 
   private val methodReferenceTyper = new MethodReferenceTyper(classDefinitionSet, methodExecutionForUnknownAllowed)
 

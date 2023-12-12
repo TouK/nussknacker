@@ -118,7 +118,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ScenarioProcessingContextId,
+          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[String] = {
         collector.collect(s"test-service-$value", Option(MockedValued)) {

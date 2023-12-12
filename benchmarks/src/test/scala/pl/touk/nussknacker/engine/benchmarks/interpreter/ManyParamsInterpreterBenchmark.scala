@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, ScenarioProcessingContext, Service}
+import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -33,20 +33,20 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    interpreterSyncIO(ScenarioProcessingContext("")).unsafeRunSync()
+    interpreterSyncIO(Context("")).unsafeRunSync()
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    interpreterAsyncIO(ScenarioProcessingContext("")).unsafeRunSync()
+    interpreterAsyncIO(Context("")).unsafeRunSync()
   }
 
   private def prepareIoInterpreter(executionContext: ExecutionContext) = {
     val setup = new InterpreterSetup[String]
       .sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
-    (ctx: ScenarioProcessingContext) => setup(ctx, executionContext)
+    (ctx: Context) => setup(ctx, executionContext)
   }
 
 }

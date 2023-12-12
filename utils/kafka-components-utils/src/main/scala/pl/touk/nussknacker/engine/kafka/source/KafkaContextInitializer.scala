@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, VariableConstants}
+import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
@@ -19,7 +19,7 @@ import java.util
 /**
   * KafkaContextInitializer initializes Context variables with data provided in raw kafka event (see [[org.apache.kafka.clients.consumer.ConsumerRecord]]).
   * It is used when flink source function produces stream of ConsumerRecord (deserialized to proper key-value data types).
-  * Produces [[pl.touk.nussknacker.engine.api.ScenarioProcessingContext]] with two variables:
+  * Produces [[pl.touk.nussknacker.engine.api.Context]] with two variables:
   * - default "input" variable which is set up with ConsumerRecord.value
   * - metadata of kafka event, see [[InputMeta]]
   *
@@ -47,7 +47,7 @@ class KafkaContextInitializer[K, V](
   override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
 
-      override def apply(input: ConsumerRecord[K, V]): ScenarioProcessingContext = {
+      override def apply(input: ConsumerRecord[K, V]): Context = {
         // Scala map wrapper causes some serialization problems
         val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
         // null won't be serialized properly

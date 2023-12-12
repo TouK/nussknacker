@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInf
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{DisplayJson, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
@@ -75,7 +75,7 @@ object ManagementResources {
     implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
 
     // TODO: do we want more information here?
-    implicit val contextEncoder: Encoder[ScenarioProcessingContext] = (a: ScenarioProcessingContext) =>
+    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
       Json.obj(
         "id"        -> Json.fromString(a.id),
         "variables" -> a.variables.asJson

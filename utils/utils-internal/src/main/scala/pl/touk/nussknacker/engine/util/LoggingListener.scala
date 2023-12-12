@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util
 
 import org.slf4j.Logger
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
@@ -32,20 +32,20 @@ object LoggingListener extends ProcessListener with Serializable {
     }
   }
 
-  override def nodeEntered(nodeId: String, context: ScenarioProcessingContext, metadata: MetaData): Unit = {
+  override def nodeEntered(nodeId: String, context: Context, metadata: MetaData): Unit = {
     debug(List(metadata.id, nodeId), s"Node entered. Context: $context")
   }
 
   override def endEncountered(
       nodeId: String,
       ref: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       metadata: MetaData
   ): Unit = {
     debug(List(metadata.id, nodeId, "end", ref), s"End encountered. Context: $context")
   }
 
-  override def deadEndEncountered(lastNodeId: String, context: ScenarioProcessingContext, metadata: MetaData): Unit = {
+  override def deadEndEncountered(lastNodeId: String, context: Context, metadata: MetaData): Unit = {
     debug(List(metadata.id, lastNodeId, "deadEnd"), s"Dead end encountered. Context: $context")
   }
 
@@ -53,7 +53,7 @@ object LoggingListener extends ProcessListener with Serializable {
       nodeId: String,
       expressionId: String,
       expr: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       metadata: MetaData,
       result: Any
   ): Unit = {
@@ -63,7 +63,7 @@ object LoggingListener extends ProcessListener with Serializable {
   override def serviceInvoked(
       nodeId: String,
       id: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       metadata: MetaData,
       params: Map[String, Any],
       result: Try[Any]

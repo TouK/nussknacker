@@ -117,7 +117,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers { // TODO new tests
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
 
-    val initialCtx = ScenarioProcessingContext("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val initialCtx              = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
     val serviceExecutionContext = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
 
     val resultBeforeSink = interpreter
@@ -435,27 +435,27 @@ class InterpreterSpec extends AnyFunSuite with Matchers { // TODO new tests
 
     val listener = new ProcessListener {
 
-      override def nodeEntered(nodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData): Unit = {
+      override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
         nodeResults = nodeResults :+ nodeId
       }
 
       override def endEncountered(
           nodeId: String,
           ref: String,
-          context: ScenarioProcessingContext,
+          context: Context,
           processMetaData: MetaData
       ): Unit = {}
 
       override def deadEndEncountered(
           lastNodeId: String,
-          context: ScenarioProcessingContext,
+          context: Context,
           processMetaData: MetaData
       ): Unit = {}
 
       override def serviceInvoked(
           nodeId: String,
           id: String,
-          context: ScenarioProcessingContext,
+          context: Context,
           processMetaData: MetaData,
           params: Map[String, Any],
           result: Try[Any]
@@ -467,7 +467,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers { // TODO new tests
           nodeId: String,
           expressionId: String,
           expression: String,
-          context: ScenarioProcessingContext,
+          context: Context,
           processMetaData: MetaData,
           result: Any
       ): Unit = {}
@@ -1089,7 +1089,7 @@ object InterpreterSpec {
     override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ScenarioProcessingContextId,
+        contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
@@ -1111,7 +1111,7 @@ object InterpreterSpec {
     override def invoke(params: Map[String, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
-        contextId: ScenarioProcessingContextId,
+        contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
@@ -1143,7 +1143,7 @@ object InterpreterSpec {
     case class LiteralExpression(original: String) extends pl.touk.nussknacker.engine.api.expression.Expression {
       override def language: String = languageId
 
-      override def evaluate[T](ctx: ScenarioProcessingContext, globals: Map[String, Any]): T = original.asInstanceOf[T]
+      override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = original.asInstanceOf[T]
     }
 
   }
@@ -1164,7 +1164,7 @@ object InterpreterSpec {
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ScenarioProcessingContextId,
+          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = {
         Future.successful(param)
@@ -1192,7 +1192,7 @@ object InterpreterSpec {
             override def invokeService(params: Map[String, Any])(
                 implicit ec: ExecutionContext,
                 collector: InvocationCollectors.ServiceInvocationCollector,
-                contextId: ScenarioProcessingContextId,
+                contextId: ContextId,
                 componentUseCase: ComponentUseCase
             ): Future[AnyRef] = {
               Future.successful(params("lazy").asInstanceOf[AnyRef])
@@ -1240,7 +1240,7 @@ object InterpreterSpec {
         override def invokeService(params: Map[String, Any])(
             implicit ec: ExecutionContext,
             collector: InvocationCollectors.ServiceInvocationCollector,
-            contextId: ScenarioProcessingContextId,
+            contextId: ContextId,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
           Future.successful(params(paramName).asInstanceOf[AnyRef])

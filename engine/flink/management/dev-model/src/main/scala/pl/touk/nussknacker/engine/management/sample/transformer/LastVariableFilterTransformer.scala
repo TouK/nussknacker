@@ -13,12 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{
-  CustomStreamTransformer,
-  LazyParameter,
-  ScenarioProcessingContext,
-  ValueWithContext
-}
+import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation,
@@ -83,7 +78,7 @@ object LastVariableFilterTransformer
     val condition = params(conditionParameterName).asInstanceOf[LazyParameter[java.lang.Boolean]]
     val groupBy   = groupByParameter.extractValue(params)
 
-    FlinkCustomStreamTransformation((str: DataStream[ScenarioProcessingContext], ctx: FlinkCustomNodeContext) => {
+    FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str
         .flatMap(new StringKeyedValueMapper(ctx, groupBy, value))
         .keyBy(_.value.key)

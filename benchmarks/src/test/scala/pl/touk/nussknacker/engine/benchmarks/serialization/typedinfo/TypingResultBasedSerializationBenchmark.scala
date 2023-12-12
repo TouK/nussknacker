@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.benchmarks.serialization.typedinfo
 import java.util.concurrent.TimeUnit
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -40,12 +40,12 @@ class TypingResultBasedSerializationBenchmark {
   private val mapToSerializeType = Typed.fromInstance(mapToSerialize).asInstanceOf[TypedObjectTypingResult]
 
   private val contextToSerialize =
-    ScenarioProcessingContext("id").copy(variables = Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
+    Context("id").copy(variables = Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
 
   private val determiner = new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(Nil))
 
   private val genericContextSetup =
-    new SerializationBenchmarkSetup(TypeInformation.of(classOf[ScenarioProcessingContext]), contextToSerialize)
+    new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
 
   private val typingResultContextSetup = new SerializationBenchmarkSetup(
     determiner.forContext(

@@ -1710,7 +1710,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invokeService(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ScenarioProcessingContextId,
+              contextId: ContextId,
               componentUseCase: ComponentUseCase
           ): Future[Any] = Future.successful(null)
 
@@ -1747,7 +1747,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       override def invokeService(params: Map[String, Any])(
           implicit ec: ExecutionContext,
           collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ScenarioProcessingContextId,
+          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[Any] = Future.successful(null)
 
@@ -1796,7 +1796,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           override def invokeService(params: Map[String, Any])(
               implicit ec: ExecutionContext,
               collector: InvocationCollectors.ServiceInvocationCollector,
-              contextId: ScenarioProcessingContextId,
+              contextId: ContextId,
               componentUseCase: ComponentUseCase
           ): Future[Any] =
             Future.successful(
