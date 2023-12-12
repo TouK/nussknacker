@@ -38,7 +38,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
-            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: Boolean(fieldErrors) },
+            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: !isEmpty(fieldErrors) },
         ],
         [createProcess, fieldErrors, passProps, t],
     );
