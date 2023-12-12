@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefinitionSet}
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -21,14 +21,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 class SpelExpressionSuggester(
-    expressionDefinition: ExpressionDefinition[_],
+    expressionConfig: ExpressionConfigDefinition[_],
     clssDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader
 ) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
   private val typer =
-    Typer.default(classLoader, expressionDefinition, new LabelsDictTyper(uiDictServices.dictRegistry), clssDefinitions)
+    Typer.default(classLoader, expressionConfig, new LabelsDictTyper(uiDictServices.dictRegistry), clssDefinitions)
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 

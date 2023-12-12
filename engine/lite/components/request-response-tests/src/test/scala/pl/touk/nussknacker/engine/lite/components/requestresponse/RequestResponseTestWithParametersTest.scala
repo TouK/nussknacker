@@ -7,7 +7,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
@@ -158,7 +157,9 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate test parameters for fragment input definition") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+      FragmentComponentDefinitionExtractor(
+        LocalModelData(ConfigFactory.empty, List.empty)
+      )
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
@@ -181,7 +182,9 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate parameters for expanded fragment input definition without fixed values") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+      FragmentComponentDefinitionExtractor(
+        LocalModelData(ConfigFactory.empty, List.empty)
+      )
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
@@ -208,7 +211,9 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate complex parameters for expanded fragment input definition with fixed values") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+      FragmentComponentDefinitionExtractor(
+        LocalModelData(ConfigFactory.empty, List.empty)
+      )
 
     val fixedValuesList =
       List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))

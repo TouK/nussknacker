@@ -4,12 +4,12 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test._
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -28,10 +28,8 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
-  private val configCreator = new EmptyProcessConfigCreator()
-
   test("should handle exceptions in aggregate keys") {
-    checkExceptions(configCreator) { case (graph, generator) =>
+    checkExceptions(FlinkBaseComponentProvider.Components) { case (graph, generator) =>
       NonEmptyList.one(
         graph
           .customNode(
@@ -70,7 +68,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                 "windowLength" -> durationExpression,
                 "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
               )
-              .emptySink("end", "empty"),
+              .emptySink("end", "dead-end"),
             GraphBuilder
               .customNode(
                 "aggregate-session",
@@ -83,7 +81,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                 "endSessionCondition" -> "true",
                 "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
               )
-              .emptySink("end2", "empty"),
+              .emptySink("end2", "dead-end"),
             GraphBuilder.branchEnd("union1", "union1"),
             GraphBuilder.branchEnd("union2", "union2"),
           )
@@ -128,14 +126,15 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
             "aggregateBy"  -> s"'aggregate' + ${generator.throwFromString()}",
             "windowLength" -> durationExpression
           )
-          .emptySink("end4", "empty")
+          .emptySink("end4", "dead-end")
       )
 
     val runId  = UUID.randomUUID().toString
     val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)
-    val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
-    val env              = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
+    val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
+    val enrichedComponents        = sourceComponentDefinition :: FlinkBaseComponentProvider.Components
+    val env                       = flinkMiniCluster.createExecutionEnvironment()
+    registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
 
     env.executeAndWaitForFinished("test")()
 

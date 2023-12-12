@@ -3,13 +3,8 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  CustomNodeError,
-  EmptyMandatoryParameter,
-  InvalidPropertyFixedValue
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -33,7 +28,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
   private def validate(params: (String, Expression)*): TransformationResult = {
-    val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty(), List.empty)
     val validator = new GenericNodeTransformationValidator(
       ExpressionCompiler.withoutOptimization(modelData),
       modelData.modelDefinition.expressionConfig

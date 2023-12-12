@@ -11,10 +11,12 @@ import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.requestresponse.{
   FutureBasedRequestResponseScenarioInterpreter,
   Request1,
-  RequestResponseConfigCreator,
+  RequestResponseSampleComponents,
   Response
 }
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -26,7 +28,14 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
+  val requestResponseSampleComponents = new RequestResponseSampleComponents
+
+  private val modelData = LocalModelData(
+    ConfigFactory.load(),
+    requestResponseSampleComponents.components :::
+      LiteBaseComponentProvider.Components :::
+      RequestResponseComponentProvider.Components
+  )
 
   private val sourceId = "start"
 
@@ -49,8 +58,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val secondId   = contextIds.nextContextId()
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b")))),
-      NodeResult(ResultContext(secondId, Map("input" -> Request1("c", "d"))))
+      Context(firstId, Map("input" -> Request1("a", "b"))),
+      Context(secondId, Map("input" -> Request1("c", "d")))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
@@ -69,7 +78,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId"))
     )
 
-    RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
+    RequestResponseSampleComponents.processorService.get().invocationsCount.get shouldBe 0
 
   }
 
@@ -114,12 +123,11 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
-      scenarioTestData = scenarioTestData,
-      variableEncoder = identity
+      scenarioTestData = scenarioTestData
     )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      NodeResult(ResultContext(firstId, Map("input" -> Request1("a", "b"))))
+      Context(firstId, Map("input" -> Request1("a", "b")))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
@@ -160,7 +168,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
-    val unionContextIds = results.nodeResults("union1").map(_.context.id)
+    val unionContextIds = results.nodeResults("union1").map(_.id)
     unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     results.nodeResults("union1") shouldBe results.nodeResults("collect1")
@@ -184,7 +192,6 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity
     )
   }
 

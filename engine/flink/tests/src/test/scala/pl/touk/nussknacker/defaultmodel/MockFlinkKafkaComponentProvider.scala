@@ -7,8 +7,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 
 class MockFlinkKafkaComponentProvider extends FlinkKafkaComponentProvider {
 
-  override def providerName: String = "mockKafkaFlink"
-
   override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
     MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 

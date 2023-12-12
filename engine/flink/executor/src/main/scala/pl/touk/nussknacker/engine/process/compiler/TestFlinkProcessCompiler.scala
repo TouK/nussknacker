@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process._
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataP
 
 class TestFlinkProcessCompiler(
     creator: ProcessConfigCreator,
+    extractModelDefinition: ExtractDefinitionFun,
     inputConfigDuringExecution: Config,
     collectingListener: ResultsCollectingListener,
     process: CanonicalProcess,
@@ -30,6 +32,7 @@ class TestFlinkProcessCompiler(
 ) extends StubbedFlinkProcessCompiler(
       process,
       creator,
+      extractModelDefinition,
       inputConfigDuringExecution,
       diskStateBackendSupport = false,
       objectNaming,
@@ -94,7 +97,7 @@ class TestFlinkProcessCompiler(
 
 class StubbedSourcePreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
     dictRegistry: EngineDictRegistry,
     classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData,

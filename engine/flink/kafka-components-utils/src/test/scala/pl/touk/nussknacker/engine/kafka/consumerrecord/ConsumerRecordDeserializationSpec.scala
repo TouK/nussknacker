@@ -6,7 +6,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin
@@ -23,7 +22,7 @@ class ConsumerRecordDeserializationSpec
     with KafkaSourceFactoryMixin
     with FlinkTypeInformationSerializationMixin {
 
-  private val emptyModel = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
+  private val emptyModel = LocalModelData(ConfigFactory.empty(), List.empty)
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
 

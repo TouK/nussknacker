@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class CronEditorTest extends AnyFunSuite with Matchers {
 
-  private val modelData: LocalModelData = LocalModelData(ConfigFactory.load(), new DevProcessConfigCreator)
+  private val modelData: LocalModelData =
+    LocalModelData(ConfigFactory.load(), List.empty, configCreator = new DevProcessConfigCreator)
 
   private val compiler = ExpressionCompiler.withoutOptimization(modelData)
 

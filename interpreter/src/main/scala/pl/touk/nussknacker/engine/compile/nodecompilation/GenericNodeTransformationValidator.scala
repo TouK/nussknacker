@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 
 class GenericNodeTransformationValidator(
     expressionCompiler: ExpressionCompiler,
-    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation]
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation]
 ) {
 
   private val globalVariablesPreparer = GlobalVariablesPreparer(expressionConfig)

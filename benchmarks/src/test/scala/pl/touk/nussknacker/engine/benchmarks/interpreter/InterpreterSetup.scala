@@ -5,17 +5,24 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.model.{
+  ModelDefinition,
+  ModelDefinitionExtractor,
+  ModelDefinitionWithClasses
+}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, InterpretationResult, api}
 
 import scala.concurrent.ExecutionContext
@@ -26,10 +33,9 @@ class InterpreterSetup[T: ClassTag] {
 
   def sourceInterpretation[F[_]: InterpreterShape](
       process: CanonicalProcess,
-      services: Map[String, Service],
-      listeners: Seq[ProcessListener]
+      additionalComponents: List[ComponentDefinition]
   ): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
-    val compiledProcess = compile(services, process, listeners)
+    val compiledProcess = compile(additionalComponents, process)
     val interpreter     = compiledProcess.interpreter
     val parts           = failOnErrors(compiledProcess.compile())
 
@@ -43,34 +49,18 @@ class InterpreterSetup[T: ClassTag] {
   }
 
   def compile(
-      servicesToUse: Map[String, Service],
-      process: CanonicalProcess,
-      listeners: Seq[ProcessListener]
+      additionalComponents: List[ComponentDefinition],
+      process: CanonicalProcess
   ): ProcessCompilerData = {
+    val components = List(
+      ComponentDefinition("source", new Source),
+      ComponentDefinition("sink", SinkFactory.noParam(new Sink {}))
+    ) ::: additionalComponents
 
-    val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
-
-      override def services(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[Service]] = servicesToUse.mapValuesNow(WithCategories.anyCategory)
-
-      override def sourceFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SourceFactory]] =
-        Map("source" -> WithCategories.anyCategory(new Source))
-
-      override def sinkFactories(
-          processObjectDependencies: ProcessObjectDependencies
-      ): Map[String, WithCategories[SinkFactory]] = Map(
-        "sink" -> WithCategories.anyCategory(SinkFactory.noParam(new Sink {}))
-      )
-    }
-
-    val definitions = ModelDefinitionExtractor.extractModelDefinition(
-      configCreator,
-      getClass.getClassLoader,
-      api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)),
-      category = None
+    val definitions = ModelDefinition(
+      ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+      ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
+      ClassExtractionSettings.Default
     )
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
@@ -79,7 +69,7 @@ class InterpreterSetup[T: ClassTag] {
       ConfigFactory.empty(),
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
-      listeners,
+      List.empty,
       getClass.getClassLoader,
       ProductionServiceInvocationCollector,
       ComponentUseCase.EngineRuntime,

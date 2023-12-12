@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ClassLoaderModelData.ExtractDefinitionFunImpl
+import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -22,6 +24,9 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import java.net.URL
 
 object ModelData extends LazyLogging {
+
+  type ExtractDefinitionFun =
+    (ClassLoader, ProcessObjectDependencies) => ModelDefinition[ComponentDefinitionWithImplementation]
 
   def apply(processingTypeConfig: ProcessingTypeConfig): ModelData = {
     ModelData(
@@ -92,6 +97,31 @@ case class ClassLoaderModelData private (
   }
 
   override def objectNaming: ObjectNaming = ObjectNamingProvider(modelClassLoader.classLoader)
+
+  override val extractModelDefinitionFun: ExtractDefinitionFun = new ExtractDefinitionFunImpl(configCreator, category)
+
+}
+
+object ClassLoaderModelData {
+
+  class ExtractDefinitionFunImpl(configCreator: ProcessConfigCreator, category: Option[String])
+      extends ExtractDefinitionFun
+      with Serializable {
+
+    override def apply(
+        classLoader: ClassLoader,
+        modelDependencies: ProcessObjectDependencies
+    ): ModelDefinition[ComponentDefinitionWithImplementation] = {
+      ModelDefinitionExtractor.extractModelDefinition(
+        configCreator,
+        classLoader,
+        modelDependencies,
+        category
+      )
+    }
+
+  }
+
 }
 
 trait ModelData extends BaseModelData with AutoCloseable {
@@ -103,17 +133,16 @@ trait ModelData extends BaseModelData with AutoCloseable {
   // It won't be necessary after we get rid of ProcessConfigCreator API
   def category: Option[String]
 
-  lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
+  final lazy val modelDefinitionWithClasses: ModelDefinitionWithClasses = {
     val modelDefinitions = withThisAsContextClassLoader {
-      ModelDefinitionExtractor.extractModelDefinition(
-        configCreator,
-        modelClassLoader.classLoader,
-        ProcessObjectDependencies(modelConfig, objectNaming),
-        category
-      )
+      extractModelDefinitionFun(modelClassLoader.classLoader, ProcessObjectDependencies(modelConfig, objectNaming))
     }
     ModelDefinitionWithClasses(modelDefinitions)
   }
+
+  // This has to be a function instead of method to explicitly define what scope will be serializable by Flink.
+  // See parameters of implementing functions
+  def extractModelDefinitionFun: ExtractDefinitionFun
 
   final def modelDefinition: ModelDefinition[ComponentDefinitionWithImplementation] =
     modelDefinitionWithClasses.modelDefinition
@@ -121,32 +150,32 @@ trait ModelData extends BaseModelData with AutoCloseable {
   private lazy val dictServicesFactory: DictServicesFactory =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
 
-  lazy val designerDictServices: UiDictServices =
+  final lazy val designerDictServices: UiDictServices =
     dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, modelConfig)
 
-  lazy val engineDictRegistry: EngineDictRegistry =
+  final lazy val engineDictRegistry: EngineDictRegistry =
     dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
-  def customProcessValidator: CustomProcessValidator = {
+  final def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, modelConfig)
   }
 
-  def withThisAsContextClassLoader[T](block: => T): T = {
+  final def withThisAsContextClassLoader[T](block: => T): T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {
       block
     }
   }
 
-  override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
+  final override def modelClassLoaderUrls: List[URL] = modelClassLoader.urls
 
   def modelClassLoader: ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
 
-  override lazy val modelConfig: Config =
+  final override lazy val modelConfig: Config =
     modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
-  def close(): Unit = {
+  final def close(): Unit = {
     designerDictServices.close()
   }
 

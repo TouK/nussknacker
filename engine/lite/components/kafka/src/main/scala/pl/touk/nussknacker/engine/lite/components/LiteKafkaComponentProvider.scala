@@ -52,7 +52,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val docsConfig: DocsConfig = new DocsConfig(config)
+    val docsConfig = DocsConfig(config)
     import docsConfig._
     val avro                    = "DataSourcesAndSinks#schema-registry--avro-serialization"
     def universal(typ: String)  = s"DataSourcesAndSinks#kafka-$typ"

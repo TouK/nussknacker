@@ -6,12 +6,14 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
+import io.circe.parser._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.OpenApiDefinitionConfig.defaultOpenApiVersion
@@ -23,7 +25,6 @@ import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import io.circe.parser._
 
 import scala.concurrent.Future
 
@@ -43,7 +44,8 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     .source("start", "request")
     .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
+  private val modelData =
+    LocalModelData(ConfigFactory.load(), RequestResponseComponentProvider.Components)
 
   private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
 

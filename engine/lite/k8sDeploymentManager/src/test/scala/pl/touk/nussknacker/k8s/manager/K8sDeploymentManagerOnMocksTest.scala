@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import skuber.api.Configuration
@@ -58,7 +58,7 @@ class K8sDeploymentManagerOnMocksTest
     val clientIdleTimeout = 1.second
     val k8sConfig         = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
     val manager = new K8sDeploymentManager(
-      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+      LocalModelData(ConfigFactory.empty, List.empty),
       k8sConfig,
       ConfigFactory.empty()
     ) {

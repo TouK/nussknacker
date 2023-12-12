@@ -7,11 +7,8 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.compile.nodecompilation.MethodBasedServiceInvoker
-import pl.touk.nussknacker.engine.definition.component.methodbased.{
-  MethodBasedComponentDefinitionWithImplementation,
-  MethodDefinitionExtractor
-}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.definition.WithJobData
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -35,7 +32,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation
-      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .withEmptyConfig(mock)
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     val invoker = MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
@@ -47,7 +44,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation
-      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .withEmptyConfig(mock)
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     val invoker = nodecompilation.MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 
@@ -59,7 +56,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   it should "invoke service method with CompletionStage return type" in {
     val mock = new MockCompletionStageService(jobData)
     val definition = ComponentDefinitionWithImplementation
-      .withEmptyConfig(mock, MethodDefinitionExtractor.Service)
+      .withEmptyConfig(mock)
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
     val invoker = nodecompilation.MethodBasedServiceInvoker(metadata, nodeId, None, definition)
 

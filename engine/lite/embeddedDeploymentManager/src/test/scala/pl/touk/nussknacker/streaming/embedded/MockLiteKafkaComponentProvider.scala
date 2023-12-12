@@ -6,11 +6,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 import pl.touk.nussknacker.streaming.embedded.MockSchemaRegistry.schemaRegistryMockClient
 
 class MockLiteKafkaComponentProvider
-    extends LiteKafkaComponentProvider(MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)) {
-
-  override def providerName: String = "mockKafkaLite"
-
-}
+    extends LiteKafkaComponentProvider(MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient))
 
 object MockSchemaRegistry extends Serializable {
 

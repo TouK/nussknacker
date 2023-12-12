@@ -26,7 +26,10 @@ object ProcessChangeEvent {
   final case class OnDeployActionFailed(processId: ProcessId, reason: Throwable) extends ProcessChangeEvent
   final case class OnRenamed(processId: ProcessId, oldName: ProcessName, newName: ProcessName)
       extends ProcessChangeEvent
-  final case class OnSaved(processId: ProcessId, version: VersionId)    extends ProcessChangeEvent
-  final case class OnFinished(processId: ProcessId, version: VersionId) extends ProcessChangeEvent
-  final case class OnUnarchived(processId: ProcessId)                   extends ProcessChangeEvent
+  final case class OnSaved(processId: ProcessId, version: VersionId) extends ProcessChangeEvent
+  // Deprecated: OnFinished event is published only by legacy periodic processes which dont have actionId field filled
+  // It should be removed as soon as we get rid of these legacy processes
+  final case class OnFinished(processId: ProcessId, version: VersionId)                extends ProcessChangeEvent
+  final case class OnUnarchived(processId: ProcessId)                                  extends ProcessChangeEvent
+  final case class OnActionExecutionFinished(processId: ProcessId, version: VersionId) extends ProcessChangeEvent
 }

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -82,7 +82,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   }
 
   private def prepareInterpreter = {
-    val exprDef = ExpressionDefinition[ComponentDefinitionWithImplementation](
+    val exprDef = ExpressionConfigDefinition[ComponentDefinitionWithImplementation](
       Map.empty,
       List.empty,
       List.empty,
@@ -99,7 +99,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       customConversionsProviders = List.empty
     )
     val processDef: ModelDefinition[ComponentDefinitionWithImplementation] =
-      ModelDefinition(Map.empty, Map.empty, Map.empty, Map.empty, exprDef, ClassExtractionSettings.Default)
+      ModelDefinition(List.empty, exprDef, ClassExtractionSettings.Default)
     val definitionWithTypes = ModelDefinitionWithClasses(processDef)
     val lazyInterpreterDeps = prepareLazyInterpreterDeps(definitionWithTypes)
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.helpers
 import com.typesafe.config.Config
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
@@ -27,15 +28,13 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invokeWithSampleData(
         process: CanonicalProcess,
         data: List[SimpleRecord],
-        config: Config,
-        processVersion: ProcessVersion = ProcessVersion.empty
+        config: Config
     ): Unit = {
-      val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
-
-      val env       = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(config, creator)
+      val components = ProcessTestHelpers.prepareComponents(data)
+      val env        = flinkMiniCluster.createExecutionEnvironment()
+      val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(env, process, processVersion, DeploymentData.empty)
+        .register(env, process, ProcessVersion.empty, DeploymentData.empty)
 
       MockService.clear()
       SinkForStrings.clear()
@@ -51,7 +50,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
         actionToInvokeWithJobRunning: => Unit
     ): Unit = {
       val env       = flinkMiniCluster.createExecutionEnvironment()
-      val modelData = LocalModelData(config, creator)
+      val modelData = LocalModelData(config, List.empty, configCreator = creator)
       registrar
         .FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
         .register(env, process, processVersion, DeploymentData.empty)
@@ -65,59 +64,44 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 }
 
 object ProcessTestHelpers {
-  def prepareCreator(data: List[SimpleRecord], config: Config): ProcessConfigCreator = new ProcessBaseTestHelpers(data)
+
+  def prepareComponents(data: List[SimpleRecord]): List[ComponentDefinition] = List(
+    ComponentDefinition("logService", new MockService),
+    ComponentDefinition("lifecycleService", LifecycleService),
+    ComponentDefinition("eagerLifecycleService", EagerLifecycleService),
+    ComponentDefinition("enricherWithOpenService", new EnricherWithOpenService),
+    ComponentDefinition("serviceAcceptingOptionalValue", ServiceAcceptingScalaOption),
+    ComponentDefinition("returningComponentUseCaseService", ReturningComponentUseCaseService),
+    ComponentDefinition(
+      "throwingNonTransientErrors",
+      new ThrowingService(NonTransientException("test input", "test msg"))
+    ),
+    ComponentDefinition("input", SampleNodes.simpleRecordSource(data)),
+    ComponentDefinition("intInputWithParam", new IntParamSourceFactory),
+    ComponentDefinition("genericParametersSource", GenericParametersSource),
+    ComponentDefinition("genericSourceWithCustomVariables", GenericSourceWithCustomVariables),
+    ComponentDefinition("monitor", SinkFactory.noParam(MonitorEmptySink)),
+    ComponentDefinition("sinkForInts", SinkForInts.toSinkFactory),
+    ComponentDefinition("sinkForStrings", SinkForStrings.toSinkFactory),
+    ComponentDefinition("eagerOptionalParameterSink", EagerOptionalParameterSinkFactory),
+    ComponentDefinition("genericParametersSink", GenericParametersSink),
+    ComponentDefinition("stateCustom", StateCustomNode),
+    ComponentDefinition("customFilter", CustomFilter),
+    ComponentDefinition("customFilterContextTransformation", CustomFilterContextTransformation),
+    ComponentDefinition("customContextClear", CustomContextClear),
+    ComponentDefinition("sampleJoin", CustomJoin),
+    ComponentDefinition("joinBranchExpression", CustomJoinUsingBranchExpressions),
+    ComponentDefinition("transformWithNullable", TransformerWithNullableParam),
+    ComponentDefinition("optionalEndingCustom", OptionalEndingCustom),
+    ComponentDefinition("genericParametersNode", GenericParametersNode),
+    ComponentDefinition("nodePassingStateToImplementation", NodePassingStateToImplementation),
+  )
+
 }
 
-class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCreator {
-
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-    Map(
-      "logService"                       -> WithCategories.anyCategory(new MockService),
-      "lifecycleService"                 -> WithCategories.anyCategory(LifecycleService),
-      "eagerLifecycleService"            -> WithCategories.anyCategory(EagerLifecycleService),
-      "enricherWithOpenService"          -> WithCategories.anyCategory(new EnricherWithOpenService),
-      "serviceAcceptingOptionalValue"    -> WithCategories.anyCategory(ServiceAcceptingScalaOption),
-      "returningComponentUseCaseService" -> WithCategories.anyCategory(ReturningComponentUseCaseService),
-      "throwingNonTransientErrors" -> WithCategories.anyCategory(
-        new ThrowingService(NonTransientException("test input", "test msg"))
-      ),
-    )
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = Map(
-    "input"                            -> WithCategories.anyCategory(SampleNodes.simpleRecordSource(data)),
-    "intInputWithParam"                -> WithCategories.anyCategory(new IntParamSourceFactory),
-    "genericParametersSource"          -> WithCategories.anyCategory(GenericParametersSource),
-    "genericSourceWithCustomVariables" -> WithCategories.anyCategory(GenericSourceWithCustomVariables)
-  )
-
-  override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SinkFactory]] = Map(
-    "monitor"                    -> WithCategories.anyCategory(SinkFactory.noParam(MonitorEmptySink)),
-    "sinkForInts"                -> WithCategories.anyCategory(SinkForInts.toSinkFactory),
-    "sinkForStrings"             -> WithCategories.anyCategory(SinkForStrings.toSinkFactory),
-    "eagerOptionalParameterSink" -> WithCategories.anyCategory(EagerOptionalParameterSinkFactory),
-    "genericParametersSink"      -> WithCategories.anyCategory(GenericParametersSink)
-  )
-
-  override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom"                       -> WithCategories.anyCategory(StateCustomNode),
-    "customFilter"                      -> WithCategories.anyCategory(CustomFilter),
-    "customFilterContextTransformation" -> WithCategories.anyCategory(CustomFilterContextTransformation),
-    "customContextClear"                -> WithCategories.anyCategory(CustomContextClear),
-    "sampleJoin"                        -> WithCategories.anyCategory(CustomJoin),
-    "joinBranchExpression"              -> WithCategories.anyCategory(CustomJoinUsingBranchExpressions),
-    "transformWithNullable"             -> WithCategories.anyCategory(TransformerWithNullableParam),
-    "optionalEndingCustom"              -> WithCategories.anyCategory(OptionalEndingCustom),
-    "genericParametersNode"             -> WithCategories.anyCategory(GenericParametersNode),
-    "nodePassingStateToImplementation"  -> WithCategories.anyCategory(NodePassingStateToImplementation)
-  )
-
-  override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(CountingNodesListener)
+object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
+  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+    List(CountingNodesListener)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
@@ -135,5 +119,4 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
     )
   }
 
-  override def buildInfo(): Map[String, String] = Map.empty
 }

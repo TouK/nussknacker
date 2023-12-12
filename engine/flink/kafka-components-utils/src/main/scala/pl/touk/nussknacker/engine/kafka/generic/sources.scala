@@ -35,17 +35,6 @@ object sources {
       )
       with BaseGenericTypedJsonSourceFactory
 
-  class DelayedGenericTypedJsonSourceFactory(
-      formatterFactory: RecordFormatterFactory,
-      processObjectDependencies: ProcessObjectDependencies,
-      timestampAssigner: Option[TimestampWatermarkHandler[TypedJson]]
-  ) extends DelayedKafkaSourceFactory[String, TypedMap](
-        new FixedValueDeserializationSchemaFactory(JsonTypedMapDeserialization),
-        formatterFactory,
-        processObjectDependencies,
-        new FlinkKafkaDelayedSourceImplFactory(timestampAssigner, TypedJsonTimestampFieldAssigner(_))
-      )
-
   object JsonMapDeserialization
       extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)(
         TypeInformation.of(new TypeHint[java.util.Map[_, _]] {})

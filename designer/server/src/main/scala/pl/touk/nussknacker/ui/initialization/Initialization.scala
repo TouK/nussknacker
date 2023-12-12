@@ -66,16 +66,16 @@ class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOp
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     // `insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
     import dbRef.profile.api._
-    val espTables = new NuTables {
+    val nuTables = new NuTables {
       override implicit val profile: JdbcProfile = dbRef.profile
     }
     val uppsertEnvironmentAction = for {
-      alreadyExists <- espTables.environmentsTable.filter(_.name === environmentName).exists.result
+      alreadyExists <- nuTables.environmentsTable.filter(_.name === environmentName).exists.result
       _ <-
         if (alreadyExists) {
           DBIO.successful(())
         } else {
-          espTables.environmentsTable += EnvironmentsEntityData(environmentName)
+          nuTables.environmentsTable += EnvironmentsEntityData(environmentName)
         }
     } yield ()
     uppsertEnvironmentAction

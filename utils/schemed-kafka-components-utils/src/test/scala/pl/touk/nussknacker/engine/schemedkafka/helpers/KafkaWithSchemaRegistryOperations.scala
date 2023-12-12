@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets
 trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with Eventually {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-
   override implicit def patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 

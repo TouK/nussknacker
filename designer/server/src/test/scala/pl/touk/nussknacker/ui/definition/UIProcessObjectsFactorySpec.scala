@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -76,12 +76,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      new EmptyProcessConfigCreator() {
-        override def services(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories.anyCategory(TestService))
-      }
+      List(ComponentDefinition("enricher", TestService))
     )
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
@@ -101,7 +96,9 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(
       typeConfig.modelConfig.resolved,
-      new EmptyProcessConfigCreator() {
+      List.empty,
+      // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
+      new EmptyProcessConfigCreator {
         override def services(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[Service]] =
@@ -125,7 +122,9 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(
       typeConfig.modelConfig.resolved,
-      new EmptyProcessConfigCreator() {
+      List.empty,
+      // TODO: use ComponentDefinition instead. Before this, add component group parameter into ComponentDefinition
+      new EmptyProcessConfigCreator {
         override def customStreamTransformers(
             processObjectDependencies: ProcessObjectDependencies
         ): Map[String, WithCategories[CustomStreamTransformer]] =
@@ -147,7 +146,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should override fragment's docsUrl from config with value from 'properties'") {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
     val fragment         = ProcessTestData.sampleFragmentOneOut
     val docsUrl          = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData =
@@ -161,7 +160,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should skip empty fragments in definitions") {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
     val fragment       = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
@@ -172,12 +171,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should override component's parameter config with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      new EmptyProcessConfigCreator() {
-        override def services(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories.anyCategory(TestService))
-      }
+      List(ComponentDefinition("enricher", TestService))
     )
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
@@ -191,12 +185,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should override component's component groups with additionally provided config") {
     val model: ModelData = LocalModelData(
       ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-      new EmptyProcessConfigCreator() {
-        override def services(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[Service]] =
-          Map("enricher" -> WithCategories.anyCategory(TestService))
-      }
+      List(ComponentDefinition("enricher", TestService))
     )
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
@@ -209,7 +198,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should override scenario properties with additionally provided config") {
     val typeConfig       = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, List.empty)
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 

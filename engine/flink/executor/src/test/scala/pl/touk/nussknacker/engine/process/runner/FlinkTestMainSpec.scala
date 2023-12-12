@@ -6,6 +6,7 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -387,7 +388,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
     val nodeResults = results.nodeResults
 
-    nodeResults("out").map(_.context.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
+    nodeResults("out").map(_.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
 
   }
 
@@ -608,21 +609,21 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       config: Config = ConfigFactory.load()
-  ): TestResults[Any] = {
+  ): TestResults = {
     // We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty, None)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration(), identity)
+      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): NodeResult[Any] =
+  private def nodeResult(count: Int, vars: (String, Any)*): Context =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): NodeResult[Any] =
-    NodeResult(ResultContext[Any](s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*)))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
 
-  private def nodeResult(count: Int, sourceId: String, branchId: String, vars: (String, Any)*): NodeResult[Any] =
-    NodeResult(ResultContext[Any](s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*)))
+  private def nodeResult(count: Int, sourceId: String, branchId: String, vars: (String, Any)*): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
 
 }

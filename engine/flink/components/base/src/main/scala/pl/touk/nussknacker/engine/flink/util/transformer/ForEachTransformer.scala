@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters._
   * Transforms the stream in a way that succeeding nodes are executed multiple times - once for every value
   * in the 'elements' list.
   */
-object ForEachTransformer extends CustomStreamTransformer {
+object ForEachTransformer extends CustomStreamTransformer with Serializable {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(

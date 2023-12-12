@@ -117,7 +117,7 @@ object SampleNodes {
   }
 
   // data is static, to be able to track, Service is object, to initialize metrics properly...
-  class MockService extends Service with TimeMeasuringService {
+  class MockService extends Service with TimeMeasuringService with Serializable {
 
     val serviceName = "mockService"
 
@@ -130,7 +130,7 @@ object SampleNodes {
 
   }
 
-  class EnricherWithOpenService extends Service with TimeMeasuringService {
+  class EnricherWithOpenService extends Service with TimeMeasuringService with Serializable {
 
     val serviceName = "enricherWithOpenService"
 
@@ -172,7 +172,7 @@ object SampleNodes {
 
   }
 
-  object LifecycleService extends Service with WithLifecycle {
+  object LifecycleService extends Service with WithLifecycle with Serializable {
 
     @MethodToInvoke
     def invoke(): Future[Unit] = {
@@ -181,8 +181,9 @@ object SampleNodes {
 
   }
 
-  object EagerLifecycleService extends EagerService with WithLifecycle {
+  object EagerLifecycleService extends EagerService with WithLifecycle with Serializable {
 
+    @transient
     var list: List[(String, WithLifecycle)] = Nil
 
     override def open(engineRuntimeContext: EngineRuntimeContext): Unit = {
@@ -222,7 +223,7 @@ object SampleNodes {
 
   }
 
-  object CollectingEagerService extends EagerService {
+  object CollectingEagerService extends EagerService with Serializable {
 
     @MethodToInvoke
     def invoke(
@@ -245,7 +246,7 @@ object SampleNodes {
 
   }
 
-  object ServiceAcceptingScalaOption extends Service {
+  object ServiceAcceptingScalaOption extends Service with Serializable {
 
     @MethodToInvoke
     def invoke(@ParamName("scalaOptionParam") scalaOptionParam: Option[String]): Future[Option[String]] =
@@ -253,7 +254,7 @@ object SampleNodes {
 
   }
 
-  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+  object StateCustomNode extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
 
     @MethodToInvoke(returnType = classOf[SimpleRecordWithPreviousValue])
     def execute(
@@ -281,7 +282,7 @@ object SampleNodes {
 
   }
 
-  object CustomFilter extends CustomStreamTransformer {
+  object CustomFilter extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[Void])
     def execute(@ParamName("input") input: LazyParameter[String], @ParamName("stringVal") stringVal: String) =
@@ -298,7 +299,7 @@ object SampleNodes {
 
   }
 
-  object CustomFilterContextTransformation extends CustomStreamTransformer {
+  object CustomFilterContextTransformation extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[Void])
     def execute(
@@ -322,7 +323,7 @@ object SampleNodes {
 
   }
 
-  object CustomContextClear extends CustomStreamTransformer {
+  object CustomContextClear extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[Void])
     def execute(@ParamName("value") value: LazyParameter[String]) = {
@@ -343,7 +344,7 @@ object SampleNodes {
 
   }
 
-  object CustomJoin extends CustomStreamTransformer {
+  object CustomJoin extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String)(implicit nodeId: NodeId): JoinContextTransformation = {
@@ -369,7 +370,7 @@ object SampleNodes {
 
   }
 
-  object CustomJoinUsingBranchExpressions extends CustomStreamTransformer {
+  object CustomJoinUsingBranchExpressions extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute(
@@ -397,7 +398,7 @@ object SampleNodes {
 
   }
 
-  object ExtractAndTransformTimestamp extends CustomStreamTransformer {
+  object ExtractAndTransformTimestamp extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[Long])
     def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
@@ -419,7 +420,7 @@ object SampleNodes {
 
   }
 
-  object ReturningDependentTypeService extends EagerService {
+  object ReturningDependentTypeService extends EagerService with Serializable {
 
     @MethodToInvoke
     def invoke(
@@ -474,7 +475,7 @@ object SampleNodes {
 
   }
 
-  class ThrowingService(exception: Exception) extends Service {
+  class ThrowingService(exception: Exception) extends Service with Serializable {
 
     @MethodToInvoke
     def invoke(@ParamName("throw") throwing: Boolean): Future[String] = {
@@ -485,7 +486,7 @@ object SampleNodes {
 
   }
 
-  object TransformerWithTime extends CustomStreamTransformer {
+  object TransformerWithTime extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute(@OutputVariableName outputVarName: String, @ParamName("seconds") seconds: Int)(
@@ -510,7 +511,7 @@ object SampleNodes {
 
   }
 
-  object TransformerWithNullableParam extends CustomStreamTransformer {
+  object TransformerWithNullableParam extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke(returnType = classOf[String])
     def execute(@ParamName("param") @Nullable param: LazyParameter[String]) =
@@ -521,7 +522,7 @@ object SampleNodes {
 
   }
 
-  object TransformerAddingComponentUseCase extends CustomStreamTransformer {
+  object TransformerAddingComponentUseCase extends CustomStreamTransformer with Serializable {
 
     @MethodToInvoke
     def execute = {
@@ -537,7 +538,7 @@ object SampleNodes {
 
   }
 
-  object OptionalEndingCustom extends CustomStreamTransformer {
+  object OptionalEndingCustom extends CustomStreamTransformer with Serializable {
 
     override def canBeEnding: Boolean = true
 
@@ -580,7 +581,7 @@ object SampleNodes {
 
   object MockService extends Service with WithDataList[Any]
 
-  case object MonitorEmptySink extends EmptySink {
+  case object MonitorEmptySink extends EmptySink with Serializable {
 
     val invocationsCount = new AtomicInteger(0)
 
@@ -604,11 +605,14 @@ object SampleNodes {
 
   case object SinkForAny extends SinkForType[AnyRef]
 
-  object EmptyService extends Service {
+  object EmptyService extends Service with Serializable {
     def invoke(): Future[Unit] = Future.successful(())
   }
 
-  object GenericParametersNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
+  object GenericParametersNode
+      extends CustomStreamTransformer
+      with SingleInputGenericNodeTransformation[AnyRef]
+      with Serializable {
 
     override type State = List[String]
 
@@ -663,7 +667,8 @@ object SampleNodes {
 
   object NodePassingStateToImplementation
       extends CustomStreamTransformer
-      with SingleInputGenericNodeTransformation[AnyRef] {
+      with SingleInputGenericNodeTransformation[AnyRef]
+      with Serializable {
 
     val VariableThatshouldBeDefinedBeforeNodeName = "foo"
 
@@ -696,7 +701,10 @@ object SampleNodes {
 
   }
 
-  object GenericParametersSource extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+  object GenericParametersSource
+      extends SourceFactory
+      with SingleInputGenericNodeTransformation[Source]
+      with Serializable {
 
     override type State = Nothing
 
@@ -753,7 +761,10 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
   }
 
-  object GenericSourceWithCustomVariables extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+  object GenericSourceWithCustomVariables
+      extends SourceFactory
+      with SingleInputGenericNodeTransformation[Source]
+      with Serializable {
 
     private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -832,7 +843,7 @@ object SampleNodes {
 
   }
 
-  object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink] {
+  object GenericParametersSink extends SinkFactory with SingleInputGenericNodeTransformation[Sink] with Serializable {
 
     private val componentUseCaseDependency = TypedNodeDependency[ComponentUseCase]
 
@@ -965,7 +976,7 @@ object SampleNodes {
     }
   )
 
-  object TypedJsonSource extends SourceFactory with ReturningType {
+  object TypedJsonSource extends SourceFactory with ReturningType with Serializable {
 
     @MethodToInvoke
     def create(
@@ -992,7 +1003,7 @@ object SampleNodes {
 
   @JsonCodec case class KeyValue(key: String, value: Int, date: Long)
 
-  object ReturningComponentUseCaseService extends Service {
+  object ReturningComponentUseCaseService extends Service with Serializable {
 
     @MethodToInvoke
     def invoke(implicit componentUseCase: ComponentUseCase): Future[ComponentUseCase] = {

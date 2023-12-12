@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -17,13 +18,12 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.model.ModelDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
@@ -43,7 +43,10 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   test("doesn't allow LazyParameter with fixed value") {
-    val modelData        = LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(new IncorrectService2))
+    val modelData = LocalModelData(
+      ConfigFactory.empty(),
+      List(ComponentDefinition("one", new IncorrectService2))
+    )
     val fragmentResolver = FragmentResolver(List.empty)
     val result = new NodeDataValidator(modelData, fragmentResolver).validate(
       node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
@@ -59,15 +62,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   }
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
-    ModelDefinitionExtractor
-      .extractModelDefinition(
-        new CreatorWithComponent(sourceFactory),
-        getClass.getClassLoader,
-        ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming),
-        category = None
-      )
-      .sourceFactories
-      .head
+    ComponentDefinitionExtractor
+      .extract(ComponentDefinition("one", sourceFactory), SingleComponentConfig.zero)
       ._2
       .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
       .parameters
@@ -126,15 +122,6 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     ): Source = null
 
     override def nodeDependencies: List[NodeDependency] = Nil
-
-  }
-
-  class CreatorWithComponent(component: SourceFactory) extends EmptyProcessConfigCreator {
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] =
-      Map("one" -> WithCategories.anyCategory(component))
 
   }
 

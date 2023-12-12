@@ -25,7 +25,10 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  object SlidingAggregateTransformerV2 extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+  object SlidingAggregateTransformerV2
+      extends CustomStreamTransformer
+      with ExplicitUidInOperatorsSupport
+      with Serializable {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -74,7 +77,8 @@ object sampleTransformers {
    */
   class TumblingAggregateTransformer(config: AggregateWindowsConfig)
       extends CustomStreamTransformer
-      with ExplicitUidInOperatorsSupport {
+      with ExplicitUidInOperatorsSupport
+      with Serializable {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(
@@ -125,7 +129,10 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  object SessionWindowAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+  object SessionWindowAggregateTransformer
+      extends CustomStreamTransformer
+      with ExplicitUidInOperatorsSupport
+      with Serializable {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(

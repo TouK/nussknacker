@@ -6,17 +6,19 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
+import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 
@@ -26,55 +28,30 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   import spel.Implicits._
 
-  class MyProcessConfigCreator extends EmptyProcessConfigCreator {
-
-    override def customStreamTransformers(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-      "myCustomStreamTransformer"        -> WithCategories.anyCategory(SimpleStreamTransformer),
-      "addingVariableStreamTransformer"  -> WithCategories.anyCategory(AddingVariableStreamTransformer),
-      "clearingContextStreamTransformer" -> WithCategories.anyCategory(ClearingContextStreamTransformer),
-      "producingTupleTransformer"        -> WithCategories.anyCategory(ProducingTupleTransformer),
-      "unionTransformer"                 -> WithCategories.anyCategory(UnionTransformer),
-      "unionTransformerWithMainBranch"   -> WithCategories.anyCategory(UnionTransformerWithMainBranch),
-      "nonEndingCustomNodeReturningTransformation" -> WithCategories.anyCategory(
-        NonEndingCustomNodeReturningTransformation
-      ),
-      "nonEndingCustomNodeReturningUnit" -> WithCategories.anyCategory(NonEndingCustomNodeReturningUnit),
-      "addingVariableOptionalEndingCustomNode" -> WithCategories.anyCategory(
-        AddingVariableOptionalEndingStreamTransformer
-      ),
-      "optionalEndingTransformer" -> WithCategories.anyCategory(OptionalEndingStreamTransformer),
-      "noBranchParameters"        -> WithCategories.anyCategory(DynamicNoBranchParameterJoinTransformer)
-    )
-
-    override def sourceFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SourceFactory]] = Map("mySource" -> WithCategories.anyCategory(SimpleStringSource))
-
-    override def sinkFactories(
-        processObjectDependencies: ProcessObjectDependencies
-    ): Map[String, WithCategories[SinkFactory]] = Map(
-      "dummySink" -> WithCategories.anyCategory(SinkFactory.noParam(new Sink {}))
-    )
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-      Map(
-        "stringService" -> WithCategories.anyCategory(SimpleStringService),
-        "enricher"      -> WithCategories.anyCategory(Enricher)
-      )
-
-  }
+  private val components = List(
+    ComponentDefinition("myCustomStreamTransformer", SimpleStreamTransformer),
+    ComponentDefinition("addingVariableStreamTransformer", AddingVariableStreamTransformer),
+    ComponentDefinition("clearingContextStreamTransformer", ClearingContextStreamTransformer),
+    ComponentDefinition("producingTupleTransformer", ProducingTupleTransformer),
+    ComponentDefinition("unionTransformer", UnionTransformer),
+    ComponentDefinition("unionTransformerWithMainBranch", UnionTransformerWithMainBranch),
+    ComponentDefinition("nonEndingCustomNodeReturningTransformation", NonEndingCustomNodeReturningTransformation),
+    ComponentDefinition("nonEndingCustomNodeReturningUnit", NonEndingCustomNodeReturningUnit),
+    ComponentDefinition("addingVariableOptionalEndingCustomNode", AddingVariableOptionalEndingStreamTransformer),
+    ComponentDefinition("optionalEndingTransformer", OptionalEndingStreamTransformer),
+    ComponentDefinition("noBranchParameters", DynamicNoBranchParameterJoinTransformer),
+    ComponentDefinition("mySource", SimpleStringSource),
+    ComponentDefinition("dummySink", SinkFactory.noParam(new Sink {})),
+    ComponentDefinition("stringService", SimpleStringService),
+    ComponentDefinition("enricher", Enricher)
+  )
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
 
-  private val configCreator = new MyProcessConfigCreator
-
-  private val modelDefinition = ModelDefinitionExtractor.extractModelDefinition(
-    configCreator,
-    getClass.getClassLoader,
-    process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)),
-    category = None
+  private val modelDefinition = ModelDefinition(
+    ComponentDefinitionWithImplementation.forList(components, ComponentsUiConfig.Empty),
+    ModelDefinitionBuilder.toDefinitionWithImpl(ModelDefinitionBuilder.emptyExpressionConfig),
+    ClassExtractionSettings.Default
   )
 
   private val validator = ProcessValidator.default(
