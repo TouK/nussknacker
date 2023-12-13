@@ -443,17 +443,10 @@ class BestEffortJsonSchemaEncoderTest
   }
 
   test("should reject when missing required field") {
-    val objWithReqAndDefault = StringSchema.builder().defaultValue("def").build()
-
     forAll(
       Table(
         ("data", "schema"),
-        (Map(), createSchemaObjWithFooField(true, schemaString)),
-        (
-          Map(),
-          createSchemaObjWithFooField(true, objWithReqAndDefault)
-        ), // Everit throws exception for required field even if schema has default value
-        (Map(), schemaObjUnionNullStringRequired),
+        (Map(), createSchemaObjWithFooField(true, schemaString))
       )
     ) { (data, schema) =>
       val expected = invalid(s"Missing property: $FieldName for schema: $schema.")

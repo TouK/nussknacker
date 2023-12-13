@@ -99,9 +99,18 @@ object BestEffortJsonSchemaEncoder {
   private def encodeFieldWithSchema: PartialFunction[ObjectField, WithError[(String, Json)]] = {
     case ObjectField(fieldName, Some(null), Some(schema), _) if schema.isNullableSchema =>
       Valid((fieldName, Json.Null))
+    case ObjectField(fieldName, None, Some(schema), parentSchema)
+        if parentSchema.getRequiredProperties.contains(fieldName) && schema.isNullableSchema =>
+      // We implicitly add a missing null because for a user it will be difficult to handle that using available in Nussknacker tools
+      Valid((fieldName, Json.Null))
+    case ObjectField(fieldName, Some(null) | None, Some(schema), parentSchema)
+        if parentSchema.getRequiredProperties.contains(fieldName) && schema.hasDefaultValue =>
+      // We implicitly add a missing default value because for a user it will be difficult to handle that using available in Nussknacker tools
+      encode(schema.getDefaultValue, schema, Some(fieldName)).map(fieldName -> _)
     case ObjectField(fieldName, None, Some(_), parentSchema)
         if parentSchema.getRequiredProperties.contains(fieldName) =>
       error(s"Missing property: $fieldName for schema: $parentSchema.")
+    // We implicitly remove redundant null because for a user it will be difficult to handle that using available in Nussknacker tools
     case ObjectField(fieldName, Some(value), Some(schema), parentSchema)
         if parentSchema.getRequiredProperties.contains(fieldName) || value != null =>
       encode(value, schema, Some(fieldName)).map(fieldName -> _)

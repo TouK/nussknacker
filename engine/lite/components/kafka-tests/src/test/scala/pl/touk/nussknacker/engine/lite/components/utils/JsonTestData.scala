@@ -208,6 +208,10 @@ object JsonTestData {
 
   def createObjSchema(schemas: Schema*): ObjectSchema = createObjSchema(false, false, schemas: _*)
 
+  def createObjSchema(required: Boolean, schemas: Schema*): ObjectSchema = {
+    createObjSchema(false, required, schemas: _*)
+  }
+
   def createObjSchema(additionalProperties: Any, required: Boolean, schemas: Schema*): ObjectSchema = {
     val schema  = asSchema(schemas: _*)
     val builder = ObjectSchema.builder()

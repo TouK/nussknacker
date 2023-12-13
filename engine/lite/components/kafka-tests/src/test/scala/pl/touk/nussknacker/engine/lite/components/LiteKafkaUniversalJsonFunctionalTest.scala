@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
-import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromFields, fromInt, fromJsonObject, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{Schema => EveritSchema}
-import org.scalatest.{Assertion, Inside}
+import org.everit.json.schema.{Schema => EveritSchema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -407,19 +407,36 @@ class LiteKafkaUniversalJsonFunctionalTest
   }
 
   test("various combinations of optional-like fields with sink in editor mode") {
-    val notFilledExpression = ""
-    def expectValidObjectWithoutField(result: ValidatedNel[ProcessCompilationError, Map[String, String]]): Assertion =
-      result shouldBe Valid(Map.empty)
-    def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, String]]): Assertion =
+    def expectValidObject(expectedObject: Map[String, Json])(
+        result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
+    ): Assertion =
+      result shouldBe Valid(expectedObject)
+    def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
         case NonEmptyList(EmptyMandatoryParameter(_, _, `ObjectFieldName`, `sinkName`), Nil) =>
       }
     forAll(
-      Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, String]] => Assertion](
+      Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, Json]] => Assertion](
         ("outputSchema", "fieldExpression", "expectationCheckingFun"),
-        (createObjSchema(false, false, schemaString), notFilledExpression, expectValidObjectWithoutField),
-        (createObjSchema(false, true, schemaString, schemaNull), notFilledExpression, expectedMissingValue)
-        // TODO: add other combinations
+        (createObjSchema(required = false, schemaString), "", expectValidObject(Map.empty)),
+        (createObjSchema(required = true, schemaString, schemaNull), "", expectedMissingValue),
+        (
+          createObjSchema(required = true, schemaString, schemaNull),
+          "null",
+          expectValidObject(Map(ObjectFieldName -> Json.Null))
+        ),
+        (
+          createObjSchema(required = false, schemaString, schemaNull),
+          "",
+          // We don't want user to decide if he/she want a null or to remove field, so we make a choice for him/her
+          expectValidObject(Map(ObjectFieldName -> Json.Null))
+        ),
+        (
+          createObjSchema(required = false, schemaString, schemaNull),
+          // This case is treated the same by Nussknacker - empty expression is just an expression that always returns null
+          "null",
+          expectValidObject(Map(ObjectFieldName -> Json.Null))
+        )
       )
     ) { (outputSchema, fieldExpression, expectationCheckingFun) =>
       val dummyInputObject = obj()
@@ -433,14 +450,63 @@ class LiteKafkaUniversalJsonFunctionalTest
 
       val validatedDecodedResult = validatedResults.map { result =>
         result.errors shouldBe empty
-        result.success should have size 1
-        CirceUtil.decodeJsonUnsafe[Map[String, String]](result.success.head.value())
+        result.successes should have size 1
+        CirceUtil.decodeJsonUnsafe[Map[String, Json]](result.successes.head.value())
       }
       expectationCheckingFun(validatedDecodedResult)
     }
   }
 
-  // TODO: add tests for raw mode
+  test("schema evolution on output") {
+    forAll(
+      Table(
+        ("inputSchema", "outputSchema", "inputRecord", "expectedOutputRecord"),
+        (
+          createObjSchema(required = true, schemaString, schemaNull),
+          createObjSchema(required = false, schemaString),
+          fromFields(List(ObjectFieldName -> Json.Null)),
+          fromFields(List.empty)
+        ),
+        (
+          createObjSchema(required = true, schemaString, schemaNull),
+          createObjSchema(required = false, schemaString, schemaNull),
+          fromFields(List(ObjectFieldName -> Json.Null)),
+          fromFields(List(ObjectFieldName -> Json.Null))
+        ),
+        (
+          createObjSchema(required = false, schemaString),
+          createObjSchema(required = true, schemaString, schemaNull),
+          fromFields(List.empty),
+          fromFields(List(ObjectFieldName -> Json.Null))
+        ),
+        // schema evolution on input - it is done by external mechanism
+        (
+          createObjSchema(required = false, StringSchema.builder().defaultValue("foo").build()),
+          createObjSchema(required = true, schemaString),
+          fromFields(List.empty),
+          fromFields(List(ObjectFieldName -> fromString("foo")))
+        ),
+        // schema evolution on output - it is done by Nussknacker's code - see BestEffortJsonSchemaEncoder
+        (
+          createObjSchema(required = true, schemaString, schemaNull),
+          createObjSchema(required = true, StringSchema.builder().defaultValue("foo").build()),
+          fromFields(List(ObjectFieldName -> Json.Null)),
+          fromFields(List(ObjectFieldName -> fromString("foo")))
+        ),
+        (
+          createObjSchema(required = false, schemaString),
+          createObjSchema(required = true, StringSchema.builder().defaultValue("foo").build()),
+          fromFields(List.empty),
+          fromFields(List(ObjectFieldName -> fromString("foo")))
+        )
+      )
+    ) { (inputSchema, outputSchema, inputRecord, expectedOutputRecord) =>
+      val result = runWithValueResults(config(inputRecord, inputSchema, outputSchema)).validValue
+      result.errors shouldBe empty
+      result.successes should have size 1
+      result.successes.head shouldBe expectedOutputRecord
+    }
+  }
 
   private def createEditorModeScenario(
       config: ScenarioConfig,
