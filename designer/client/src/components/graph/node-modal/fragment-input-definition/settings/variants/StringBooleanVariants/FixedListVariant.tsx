@@ -5,8 +5,7 @@ import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { FixedValuesPresets, VariableTypes } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
+import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -15,10 +14,10 @@ interface Props {
     fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     variableTypes: VariableTypes;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, fieldsErrors }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, errors }: Props) => {
     const { t } = useTranslation();
 
     const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
@@ -40,7 +39,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
@@ -52,7 +51,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>

@@ -42,7 +42,6 @@ export interface UIParameter {
     name: string;
     typ: TypingResult;
     editor: $TodoType;
-    validators: $TodoType;
     defaultValue: {
         language: string;
         expression: string;

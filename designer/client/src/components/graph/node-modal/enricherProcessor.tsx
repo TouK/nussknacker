@@ -6,13 +6,12 @@ import { serviceParameters } from "./NodeDetailsContent/helpers";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
-import { errorValidator } from "./editors/Validators";
 import { DisableField } from "./DisableField";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
 
 export function EnricherProcessor({
-    fieldErrors,
+    errors,
     findAvailableVariables,
     isEditMode,
     node,
@@ -22,7 +21,7 @@ export function EnricherProcessor({
     showSwitch,
     showValidation,
 }: {
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
@@ -40,7 +39,7 @@ export function EnricherProcessor({
                 node={node}
                 setProperty={setProperty}
                 renderFieldLabel={renderFieldLabel}
-                errors={fieldErrors}
+                errors={errors}
             />
             {serviceParameters(node).map((param, index) => {
                 return (
@@ -52,7 +51,7 @@ export function EnricherProcessor({
                             node={node}
                             findAvailableVariables={findAvailableVariables}
                             parameterDefinitions={parameterDefinitions}
-                            fieldErrors={fieldErrors}
+                            errors={errors}
                             renderFieldLabel={renderFieldLabel}
                             setProperty={setProperty}
                             parameter={param}
@@ -70,8 +69,8 @@ export function EnricherProcessor({
                     setProperty={setProperty}
                     fieldType={FieldType.input}
                     fieldLabel={"Output"}
-                    fieldProperty={"output"}
-                    validators={[errorValidator(fieldErrors || [], "output")]}
+                    fieldName={"output"}
+                    errors={errors}
                 />
             ) : null}
             {node.type === "Processor" ? (
@@ -81,6 +80,7 @@ export function EnricherProcessor({
                     showValidation={showValidation}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
+                    errors={errors}
                 />
             ) : null}
             <DescriptionField
@@ -89,6 +89,7 @@ export function EnricherProcessor({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
         </NodeTableBody>
     );

@@ -9,9 +9,9 @@ import { getProcessId } from "../../reducers/selectors/graph";
 import { CustomAction } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager/WindowKind";
+import { WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
-import { editors } from "../graph/node-modal/editors/expression/Editor";
+import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ValidationLabel } from "../common/ValidationLabel";
@@ -38,11 +38,12 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
+    console.log("props check", props);
     return (
         <NodeTable>
             {(action?.parameters || []).map((param) => {
                 const editorType = param.editor.type;
-                const Editor = editors[editorType];
+                const Editor: SimpleEditor | ExtendedEditor = editors[editorType];
                 const fieldName = param.name;
                 return (
                     <NodeRow key={param.name}>
@@ -52,12 +53,11 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                         <Editor
                             editorConfig={param?.editor}
                             className={"node-value"}
-                            validators={[]}
+                            fieldErrors={undefined}
                             formatter={null}
                             expressionInfo={null}
                             onValueChange={setParam(fieldName)}
                             expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
-                            values={[]}
                             readOnly={false}
                             key={fieldName}
                             showSwitch={false}

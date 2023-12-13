@@ -4,12 +4,12 @@ import { FieldName, FixedValuesOption } from "../../../item";
 import { ListItemContainer, ListItemWrapper } from "./StyledSettingsComponnets";
 import { Option } from "../../../TypeSelect";
 import { ValidationLabel } from "../../../../../../common/ValidationLabel";
-import { Error } from "../../../../editors/Validators";
+import { NodeValidationError } from "../../../../../../../types";
 
 interface ListItemsProps {
     items: (FixedValuesOption | Option)[];
     handleDelete?: (currentIndex: number) => void;
-    errors: Error[];
+    errors: NodeValidationError[];
     fieldName: FieldName;
 }
 

@@ -8,6 +8,8 @@ import { getProcessId, getProcessToDisplay } from "../../reducers/selectors/grap
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { PromptContent } from "../../windowManager";
 import {
+    extendErrors,
+    getValidationErrorsForField,
     literalIntegerValueValidator,
     mandatoryValueValidator,
     maximalNumberValidator,
@@ -15,6 +17,7 @@ import {
 } from "../graph/node-modal/editors/Validators";
 import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
+import { isEmpty } from "lodash";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -33,7 +36,8 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     }, [processId, processToDisplay, props, testSampleSize]);
 
     const validators = [literalIntegerValueValidator, minimalNumberValidator(0), maximalNumberValidator(maxSize), mandatoryValueValidator];
-    const isValid = validators.every((v) => v.isValid(testSampleSize));
+    const errors = extendErrors([], testSampleSize, "testData", validators);
+    const isValid = isEmpty(errors);
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
@@ -55,7 +59,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
                     })}
                     autoFocus
                 />
-                <ValidationLabels validators={validators} values={[testSampleSize]} />
+                <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testData")} />
             </div>
         </PromptContent>
     );

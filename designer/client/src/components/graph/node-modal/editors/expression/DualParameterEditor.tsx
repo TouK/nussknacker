@@ -1,12 +1,12 @@
-import { DualEditorMode, editors, EditorType, SimpleEditor } from "./Editor";
+import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, SimpleEditor } from "./Editor";
 import React, { useCallback, useMemo, useState } from "react";
 import { ExpressionObj } from "./types";
-import RawEditor from "./RawEditor";
+import { RawEditor } from "./RawEditor";
 import { VariableTypes } from "../../../../../types";
 import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
-import { Validator } from "../Validators";
+import { FieldError } from "../Validators";
 
 type Props = {
     editorConfig: {
@@ -18,34 +18,26 @@ type Props = {
     expressionObj: ExpressionObj;
     readOnly?: boolean;
     valueClassName?: string;
-
-    validators?: Validator[];
+    fieldErrors: FieldError[];
     isMarked?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     onValueChange: (value: string) => void;
     className: string;
     variableTypes: VariableTypes;
     showSwitch?: boolean;
 };
 
-export default function DualParameterEditor(props: Props): JSX.Element {
+export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    const SimpleEditor = useMemo(
-        () =>
-            editors[editorConfig.simpleEditor.type] as SimpleEditor<{
-                onValueChange: (value: string) => void;
-                editorConfig?: unknown;
-            }>,
-        [editorConfig.simpleEditor.type],
-    );
+    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
 
-    const showSwitch = useMemo(() => props.showSwitch && SimpleEditor, [SimpleEditor, props.showSwitch]);
+    const showSwitch = useMemo(() => props.showSwitch && Editor, [Editor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => SimpleEditor?.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
-        [SimpleEditor, editorConfig.simpleEditor, expressionObj],
+        () => isExtendedEditor(Editor) && Editor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
+        [Editor, editorConfig.simpleEditor, expressionObj],
     );
 
     const initialDisplaySimple = useMemo(
@@ -70,12 +62,16 @@ export default function DualParameterEditor(props: Props): JSX.Element {
             return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
         }
 
-        if (simpleEditorAllowsSwitch) {
-            return SimpleEditor?.switchableToHint();
+        if (!isExtendedEditor(Editor)) {
+            return;
         }
 
-        return SimpleEditor?.notSwitchableToHint();
-    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, SimpleEditor, t]);
+        if (simpleEditorAllowsSwitch) {
+            return Editor?.switchableToHint();
+        }
+
+        return Editor?.notSwitchableToHint();
+    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, Editor, t]);
 
     const editorProps = useMemo(
         () => ({
@@ -93,7 +89,7 @@ export default function DualParameterEditor(props: Props): JSX.Element {
                 gap: 5,
             })}
         >
-            {displayRawEditor ? <RawEditor {...editorProps} /> : <SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
+            {displayRawEditor ? <RawEditor {...editorProps} /> : <Editor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
                     {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}
@@ -101,4 +97,4 @@ export default function DualParameterEditor(props: Props): JSX.Element {
             ) : null}
         </div>
     );
-}
+};

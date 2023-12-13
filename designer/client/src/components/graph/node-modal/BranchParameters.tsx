@@ -1,16 +1,16 @@
 import React from "react";
 import ExpressionField from "./editors/expression/ExpressionField";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeType, UIParameter } from "../../../types";
-import { Error } from "./editors/Validators";
+import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 import { BranchParameterRowStyled } from "../focusableStyled";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 export interface BranchParametersProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    errors: Error[];
+    errors: NodeValidationError[];
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     testResultsToShow: NodeResultsForContext;
@@ -32,6 +32,7 @@ export default function BranchParameters({
 }: BranchParametersProps): JSX.Element {
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
+
     return (
         <>
             {branchParameters?.map((param) => {
@@ -77,7 +78,7 @@ export default function BranchParameters({
                                                     testResultsToShow={testResultsToShow}
                                                     renderFieldLabel={() => false}
                                                     variableTypes={variables}
-                                                    errors={errors}
+                                                    fieldErrors={getValidationErrorsForField(errors, paramName)}
                                                 />
                                             </div>
                                         </BranchParameterRowStyled>
