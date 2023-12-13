@@ -182,16 +182,19 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       }
     } catch {
       case e: SQLException =>
-        val error = CustomNodeError(messageFromSQLException(e), Some(QueryParamName))
+        val error = CustomNodeError(messageFromSQLException(query, e), Some(QueryParamName))
         FinalResults.forValidation(context, errors = List(error))(
           _.withVariable(name = OutputVariableNameDependency.extract(dependencies), value = Unknown, paramName = None)
         )
     }
   }
 
-  private def messageFromSQLException(sqlException: SQLException): String = sqlException match {
+  private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
     case e: SQLSyntaxErrorException => e.getMessage
-    case e                          => s"Failed to execute query: $e"
+    case e                          =>
+      // We choose to inform user about all problems, such as missing column as well as auth / connection issues
+      logger.warn(s"Failed to execute query: $query", e)
+      s"Failed to execute query: $e"
   }
 
   protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
