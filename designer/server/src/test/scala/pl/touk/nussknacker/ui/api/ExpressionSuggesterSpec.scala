@@ -274,7 +274,7 @@ class ExpressionSuggesterSpec
 
   test("should not suggest unreferenceable fields after dot for map literal after dot") {
     nonStandardFieldNames.foreach { fieldName =>
-      spelSuggestionsFor(s"{\"$fieldName\": 1}.") shouldBe List(
+      spelSuggestionsFor(s"{\"${fieldName}\": 1}.") shouldBe List(
         // TODO: shouldBe fromClass = true? - correct it after it is fixed
         ExpressionSuggestion("empty", Typed[Boolean], fromClass = false, None, Nil)
       )
@@ -283,7 +283,7 @@ class ExpressionSuggesterSpec
 
   test("should suggest all fields after dot for map literal for indexer") {
     (nonStandardFieldNames ++ standardFieldNames ++ javaKeywordNames).foreach { fieldName =>
-      val expression = s"{\"$fieldName\": 1}['']"
+      val expression = s"{\"${fieldName}\": 1}['']"
       spelSuggestionsFor(expression, 0, expression.length - 2) shouldBe List(
         ExpressionSuggestion(fieldName, TypedObjectWithValue(Typed.typedClass[Int], 1), fromClass = false, None, Nil)
       )
