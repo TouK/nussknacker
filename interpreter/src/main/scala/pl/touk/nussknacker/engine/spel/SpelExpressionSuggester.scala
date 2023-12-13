@@ -83,6 +83,7 @@ class SpelExpressionSuggester(
             }
             val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
               .filter { case (fieldName, _) =>
+                // TODO: signal to user that we some values have been filtered
                 filterIllegalIdentifierAfterDot(fieldName)
               }
               .map { case (methodName, clazzRef) =>
@@ -182,7 +183,9 @@ class SpelExpressionSuggester(
                     dictQueryService
                       .queryEntriesByLabel(td.dictId, s.getLiteralValue.getValue.toString)
                       .map(
-                        _.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))
+                        _.map(list =>
+                          list.map(e => ExpressionSuggestion(e.label, td.valueType, fromClass = false, None, Nil))
+                        )
                       )
                       .getOrElse(successfulNil)
                   case TypedObjectTypingResult(fields, _, _) =>
