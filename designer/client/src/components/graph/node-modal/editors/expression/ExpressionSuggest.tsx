@@ -1,12 +1,11 @@
 import "ace-builds/src-noconflict/ace";
-import { isEmpty } from "lodash";
+import { has, isEmpty } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
-import { allValid, Validator } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
@@ -15,6 +14,7 @@ import { SerializedStyles } from "@emotion/react";
 import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { cx } from "@emotion/css";
 import { VariableTypes } from "../../../../../types";
+import { FieldError } from "../Validators";
 
 interface InputProps {
     value: string;
@@ -31,7 +31,7 @@ interface InputProps {
 
 interface Props {
     inputProps: InputProps;
-    validators: Validator[];
+    fieldErrors: FieldError[];
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
@@ -39,8 +39,8 @@ interface Props {
     editorMode?: EditorMode;
 }
 
-function ExpressionSuggest(props: Props): JSX.Element {
-    const { isMarked, showValidation, inputProps, validators, variableTypes, validationLabelInfo } = props;
+export function ExpressionSuggest(props: Props): JSX.Element {
+    const { isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
@@ -64,7 +64,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
             <div
                 className={cx([
                     "row-ace-editor",
-                    showValidation && !allValid(validators, [value]) && "node-input-with-error",
+                    showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                     isMarked && "marked",
                     editorFocused && "focused",
                     inputProps.readOnly && "read-only",
@@ -80,9 +80,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
                     customAceEditorCompleter={customAceEditorCompleter}
                 />
             </div>
-            {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={validationLabelInfo} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;
 }
-
-export default ExpressionSuggest;

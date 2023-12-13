@@ -4,9 +4,10 @@ import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { getValidationErrorsForField } from "./editors/Validators";
 
 interface ParameterExpressionField {
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     listFieldPath: string;
@@ -21,7 +22,7 @@ interface ParameterExpressionField {
 //this is for "dynamic" parameters in sources, sinks, services etc.
 export function ParameterExpressionField(props: ParameterExpressionField): JSX.Element {
     const {
-        fieldErrors,
+        errors,
         findAvailableVariables,
         isEditMode,
         listFieldPath,
@@ -53,7 +54,7 @@ export function ParameterExpressionField(props: ParameterExpressionField): JSX.E
                 node.id,
                 parameterDefinitions?.find((p) => p.name === parameter.name),
             )}
-            errors={fieldErrors || []}
+            fieldErrors={getValidationErrorsForField(errors, parameter.name)}
         />
     );
 }

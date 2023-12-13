@@ -28,7 +28,7 @@
         },
         "typeRoots": ["node_modules/@types", "types/@remote", "types"]
     },
-    "exclude": ["node_modules", ".federated-types", "cypress"],
+    "exclude": ["node_modules", ".federated-types", "cypress", "./cypress.config.ts"],
     "ts-node": {
         "compilerOptions": {
             "target": "es5",

@@ -1,5 +1,4 @@
 import { TypingInfo, TypingResult, UIParameter } from "./definition";
-import { Error } from "../components/graph/node-modal/editors/Validators";
 
 export type ValidationResult = {
     validationErrors: ValidationErrors[];
@@ -29,8 +28,12 @@ export type ValidationErrors = {
     globalErrors: NodeValidationError[];
 };
 
-export interface NodeValidationError extends Error {
+type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed";
+
+export interface NodeValidationError {
+    fieldName: string;
+    message: string;
+    description: string;
+    typ: string;
     errorType: ErrorType;
 }
-
-type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed";

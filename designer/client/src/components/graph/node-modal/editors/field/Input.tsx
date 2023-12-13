@@ -1,8 +1,9 @@
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
-import { allValid, Validator } from "../Validators";
 import { cx } from "@emotion/css";
+import { FieldError } from "../Validators";
+import { isEmpty } from "lodash";
 
 export interface InputProps
     extends Pick<
@@ -10,9 +11,8 @@ export interface InputProps
         "className" | "placeholder" | "autoFocus" | "onChange" | "readOnly" | "type" | "onFocus" | "disabled"
     > {
     value: string;
-    formattedValue?: string;
     inputClassName?: string;
-    validators?: Validator[];
+    fieldErrors: FieldError[];
     isMarked?: boolean;
     showValidation?: boolean;
 }
@@ -23,8 +23,7 @@ export default function Input(props: InputProps): JSX.Element {
         showValidation,
         className,
         value,
-        validators,
-        formattedValue,
+        fieldErrors,
         type = "text",
         inputClassName,
         autoFocus,
@@ -33,6 +32,7 @@ export default function Input(props: InputProps): JSX.Element {
         onFocus,
         onChange,
     } = props;
+
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
@@ -45,14 +45,14 @@ export default function Input(props: InputProps): JSX.Element {
                         onFocus={onFocus}
                         type={type}
                         className={cx([
-                            showValidation && !allValid(validators, [formattedValue ? formattedValue : value]) && "node-input-with-error",
+                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
                             inputClassName,
                         ])}
                         value={value || ""}
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }

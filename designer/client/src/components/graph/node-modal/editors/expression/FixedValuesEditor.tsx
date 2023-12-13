@@ -1,12 +1,13 @@
 import React from "react";
 import Creatable from "react-select/creatable";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { Validator } from "../Validators";
 import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
+import { ExtendedEditor } from "./Editor";
+import { FieldError } from "../Validators";
 
 type Props = {
     editorConfig: $TodoType;
@@ -16,7 +17,7 @@ type Props = {
     className: string;
     param?: $TodoType;
     showValidation: boolean;
-    validators: Array<Validator>;
+    fieldErrors: FieldError[];
 };
 
 interface Option {
@@ -36,7 +37,7 @@ function getOptions(
     }));
 }
 
-const FixedValuesEditorComponent = (props: Props) => {
+export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
@@ -45,7 +46,7 @@ const FixedValuesEditorComponent = (props: Props) => {
         ); // just leave undefined and let the user explicitly select one
     };
 
-    const { expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig } = props;
+    const { expressionObj, readOnly, onValueChange, className, showValidation, editorConfig, fieldErrors } = props;
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
@@ -86,14 +87,12 @@ const FixedValuesEditorComponent = (props: Props) => {
                 }}
             />
 
-            {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 };
 
-export default FixedValuesEditorComponent;
-
-FixedValuesEditorComponent.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
+FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
     editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
-FixedValuesEditorComponent.switchableToHint = () => "Switch to basic mode";
-FixedValuesEditorComponent.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
+FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
+FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
