@@ -545,7 +545,7 @@ class DeploymentServiceImpl(
     dbioRunner.runInTransaction(actionRepository.getFinishedProcessAction(actionId).flatMap { actionOpt =>
       DBIOAction
         .sequenceOption(actionOpt.map { action =>
-          processChangeListener.handle(OnActionExecutionFinished(action.processId, action.processVersionId))
+          processChangeListener.handle(OnActionExecutionFinished(action.id, action.processId, action.processVersionId))
           doMarkActionExecutionFinished(action, processingType)
         })
         .map(_.getOrElse(false))

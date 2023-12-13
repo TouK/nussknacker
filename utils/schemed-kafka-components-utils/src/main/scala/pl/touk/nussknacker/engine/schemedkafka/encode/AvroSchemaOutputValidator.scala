@@ -5,14 +5,14 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.Schema.Type
-import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
+import org.apache.avro.{LogicalTypes, Schema}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.output._
 
 import java.nio.ByteBuffer
@@ -21,7 +21,6 @@ import java.util.UUID
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputValidatorExpected {
   override def expected: String = AvroSchemaOutputValidatorPrinter.print(schema)
@@ -30,6 +29,7 @@ private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputVali
 class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
 
   import cats.implicits.{catsStdInstancesForList, toTraverseOps}
+
   import scala.jdk.CollectionConverters._
 
   private val valid = Validated.Valid(())
@@ -56,8 +56,6 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         valid
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
-      case (tc @ TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
-        validateSpecificRecord(tc, schema, path)
       case (typingResult: TypedObjectTypingResult, Type.RECORD) =>
         validateRecordSchema(typingResult, schema, path)
       case (typingResult, Type.MAP) =>
@@ -100,18 +98,6 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       invalid(union, schema, path)
     else
       valid
-  }
-
-  private def validateSpecificRecord(typedClass: TypedClass, schema: Schema, path: Option[String]) = {
-    val valueSchema = AvroUtils.extractAvroSpecificSchema(typedClass.klass)
-    // checkReaderWriterCompatibility is more accurate than our validation with given ValidationMode
-    val compatibility = SchemaCompatibility.checkReaderWriterCompatibility(schema, valueSchema)
-    if (compatibility.getType == SchemaCompatibilityType.COMPATIBLE) {
-      valid
-    } else {
-      val typingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(valueSchema)
-      validateTypingResult(typingResult, schema, path)
-    }
   }
 
   private def validateRecordSchema(

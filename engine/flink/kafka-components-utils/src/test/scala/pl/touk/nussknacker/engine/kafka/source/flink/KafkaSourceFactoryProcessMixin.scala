@@ -61,7 +61,7 @@ trait KafkaSourceFactoryProcessMixin
       obj: ObjToSerialize
   ): List[InputMeta[Any]] = {
     val topic = createTopic(topicName)
-    pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), obj, timestamp = constTimestamp)
     run(process) {
       eventually {
         SinkForInputMeta.data shouldBe List(

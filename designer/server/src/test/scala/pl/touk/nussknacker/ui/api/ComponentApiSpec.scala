@@ -87,7 +87,6 @@ class ComponentApiSpec
         "streaming-service-unionreturnobjectservice",
         "streaming-sink-communicationsink",
         "streaming-sink-dead-end-lite",
-        "streaming-sink-kafka-avro",
         "streaming-sink-kafka-string",
         "streaming-sink-monitor",
         "streaming-sink-sendsms",
@@ -100,7 +99,6 @@ class ComponentApiSpec
         "streaming-source-kafka-transaction",
         "streaming-source-onesource",
         "streaming-source-real-kafka",
-        "streaming-source-real-kafka-avro",
         "streaming-source-real-kafka-json-sampleproduct",
         "streaming-source-sql-source"
       )
@@ -168,7 +166,6 @@ class ComponentApiSpec
           "streaming-service-unionreturnobjectservice",
           "streaming-sink-communicationsink",
           "streaming-sink-dead-end-lite",
-          "streaming-sink-kafka-avro",
           "streaming-sink-kafka-string",
           "streaming-sink-monitor",
           "streaming-sink-sendsms",
@@ -181,7 +178,6 @@ class ComponentApiSpec
           "streaming-source-kafka-transaction",
           "streaming-source-onesource",
           "streaming-source-real-kafka",
-          "streaming-source-real-kafka-avro",
           "streaming-source-real-kafka-json-sampleproduct",
           "streaming-source-sql-source",
           "streaming2-custom-additionalvariable",
@@ -226,7 +222,6 @@ class ComponentApiSpec
           "streaming2-service-unionreturnobjectservice",
           "streaming2-sink-communicationsink",
           "streaming2-sink-dead-end-lite",
-          "streaming2-sink-kafka-avro",
           "streaming2-sink-kafka-string",
           "streaming2-sink-monitor",
           "streaming2-sink-sendsms",
@@ -239,7 +234,6 @@ class ComponentApiSpec
           "streaming2-source-kafka-transaction",
           "streaming2-source-onesource",
           "streaming2-source-real-kafka",
-          "streaming2-source-real-kafka-avro",
           "streaming2-source-real-kafka-json-sampleproduct",
           "streaming2-source-sql-source"
         )

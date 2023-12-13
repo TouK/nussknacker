@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
@@ -9,19 +8,16 @@ import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependency
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
-import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaSpec}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.util.Collections.singletonMap
 import java.util.Optional
 
 class KafkaSourceFactorySpec
@@ -78,57 +74,8 @@ class KafkaSourceFactorySpec
       KafkaRecordUtils.emptyHeaders,
       Optional.of(0: Integer)
     )
-    pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
+    pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, timestamp = constTimestamp)
     val result = readLastMessage(StringSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, String]]
-    checkResult(result, expectedObj)
-  }
-
-  test("read and deserialize from simple json source") {
-    val topic    = createTopic("simpleJson")
-    val givenObj = sampleValue
-    val expectedObj = createConsumerRecord[String, SampleValue](
-      topic,
-      0,
-      0L,
-      constTimestamp,
-      TimestampType.CREATE_TIME,
-      null,
-      givenObj,
-      KafkaRecordUtils.emptyHeaders,
-      Optional.of(0)
-    )
-    pushMessage(
-      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
-      givenObj,
-      topic,
-      timestamp = constTimestamp
-    )
-    val result = readLastMessage(SampleEventSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
-    checkResult(result, expectedObj)
-  }
-
-  test("read and deserialize consumer record with value only") {
-    val topic    = createTopic("consumerRecordNoKey")
-    val givenObj = sampleValue
-    val expectedObj = createConsumerRecord[String, SampleValue](
-      topic,
-      0,
-      0L,
-      constTimestamp,
-      TimestampType.CREATE_TIME,
-      null,
-      givenObj,
-      KafkaRecordUtils.emptyHeaders,
-      Optional.of(0)
-    )
-    pushMessage(
-      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
-      givenObj,
-      topic,
-      timestamp = constTimestamp
-    )
-    val result =
-      readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
     checkResult(result, expectedObj)
   }
 
@@ -146,60 +93,10 @@ class KafkaSourceFactorySpec
       KafkaRecordUtils.toHeaders(sampleHeadersMap),
       Optional.of(0)
     )
-    pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), givenObj, timestamp = constTimestamp)
     val result = readLastMessage(ConsumerRecordKeyValueSourceFactory, topic).head
       .asInstanceOf[ConsumerRecord[SampleKey, SampleValue]]
     checkResult(result, expectedObj)
-  }
-
-  test("read and deserialize consumer record with value only, multiple partitions and offsets") {
-    val topic = createTopic("consumerRecordNoKeyTwoPartitions", 2)
-    val givenObj = List(
-      SampleValue("first0", "last0"),
-      SampleValue("first1", "last1"),
-      SampleValue("first2", "last2"),
-      SampleValue("first3", "last3")
-    )
-    val serializationSchema =
-      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
-
-    pushMessage(serializationSchema, givenObj(0), topic, partition = Some(0), timestamp = constTimestamp)
-    pushMessage(serializationSchema, givenObj(1), topic, partition = Some(0), timestamp = constTimestamp)
-    pushMessage(serializationSchema, givenObj(2), topic, partition = Some(1), timestamp = constTimestamp)
-    pushMessage(serializationSchema, givenObj(3), topic, partition = Some(1), timestamp = constTimestamp)
-
-    val result = readLastMessage(ConsumerRecordValueSourceFactory, topic, 4)
-    val valuePartitionOffsetToCheck = result
-      .asInstanceOf[List[ConsumerRecord[SampleKey, SampleValue]]]
-      .map(record => (record.value, record.partition, record.offset))
-      .toSet
-
-    valuePartitionOffsetToCheck shouldBe Set(
-      (givenObj(0), 0, 0),
-      (givenObj(1), 0, 1),
-      (givenObj(2), 1, 0),
-      (givenObj(3), 1, 1)
-    )
-  }
-
-  test("should generate and parse data for kafka-json") {
-    val topic = createTopic("kafka-json-test-data", 1)
-
-    kafkaClient.sendMessage[Json](topic, Json.obj("key" -> Json.fromString("value1")))
-    kafkaClient.sendMessage[Json](topic, Json.obj("key" -> Json.fromString("value2")))
-
-    def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
-      val source   = createSource(sourceFactory, topic)
-      val testData = source.generateTestData(2)
-
-      testData.testRecords.map(source.testRecordParser.parse).map(_.value())
-    }
-
-    generatedForSource(new GenericJsonSourceFactory(processObjectDependencies)) shouldBe
-      List(singletonMap("key", "value1"), singletonMap("key", "value2"))
-    generatedForSource(new GenericTypedJsonSourceFactory(processObjectDependencies)) shouldBe
-      List(singletonMap("key", "value1"), singletonMap("key", "value2"))
-
   }
 
 }

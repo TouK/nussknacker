@@ -70,19 +70,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     )
   }
 
-  test("should read generated specific record in v1") {
-    val givenObj = FullNameV1.createSpecificRecord("Jan", "Kowalski")
-
-    roundTripKeyValueObject(
-      specificSourceFactory[FullNameV1],
-      useStringForKey = true,
-      RecordTopic,
-      ExistingSchemaVersion(1),
-      null,
-      givenObj
-    )
-  }
-
   test("should read last generated generic record with logical types") {
     val givenObj = PaymentDate.record
 
@@ -90,27 +77,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
       universalSourceFactory,
       useStringForKey = true,
       PaymentDateTopic,
-      ExistingSchemaVersion(1),
-      "",
-      givenObj
-    )
-  }
-
-  test("should read last generated specific record with logical types ") {
-    val date    = LocalDateTime.of(2020, 1, 2, 3, 14, 15)
-    val decimal = new java.math.BigDecimal("12.34")
-    val givenObj = new GeneratedAvroClassWithLogicalTypes(
-      "loremipsum",
-      date.toInstant(ZoneOffset.UTC),
-      date.toLocalDate,
-      date.toLocalTime,
-      decimal
-    )
-
-    roundTripKeyValueObject(
-      specificSourceFactory[GeneratedAvroClassWithLogicalTypes],
-      useStringForKey = true,
-      GeneratedWithLogicalTypesTopic,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -347,7 +313,6 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
           "'testAvroInvalidDefaultsTopic1'",
           "'testAvroRecordTopic1'",
           "'testAvroRecordTopic1WithKey'",
-          "'testGeneratedWithLogicalTypesTopic'",
           "'testPaymentDateTopic'"
         ),
         "id"
