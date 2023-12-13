@@ -444,7 +444,7 @@ paths:
         schema:
           type: string
           format: date-time
-        example: '2023-12-13T12:29:57.776678Z'
+        example: '2023-07-29T19:30:00Z'
       responses:
         '200':
           description: ''

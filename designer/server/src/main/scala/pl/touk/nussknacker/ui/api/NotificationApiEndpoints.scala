@@ -18,7 +18,7 @@ class NotificationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends Bas
       .tag("Notifications")
       .get
       .in("notifications")
-      .in(query[Option[Instant]]("after").example(Some(Instant.now())))
+      .in(query[Option[Instant]]("after").example(Some(Instant.parse("2023-07-29T19:30:00Z"))))
       .out(
         statusCode(Ok).and(
           jsonBody[List[Notification]]
