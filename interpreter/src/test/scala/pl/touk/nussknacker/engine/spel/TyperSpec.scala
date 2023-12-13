@@ -81,18 +81,18 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   test("indexing on records for primitive types") {
-    typeExpression(s"$testRecordExpr[\"string\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['string']").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], "stringVal")
-    typeExpression(s"$testRecordExpr[\"int\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['int']").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Int], 1)
-    typeExpression(s"$testRecordExpr[\"boolean\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['boolean']").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Boolean], true)
-    typeExpression(s"$testRecordExpr[\"null\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['null']").validValue.finalResult.typingResult shouldBe
       TypedNull
   }
 
   test("indexing on records with string literal index") {
-    typeExpression(s"$testRecordExpr[\"string\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['string']").validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[String], "stringVal")
   }
 
@@ -107,13 +107,13 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   test("indexing on records for record values") {
-    typeExpression(s"$testRecordExpr[\"nestedRecord\"]").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"$testRecordExpr['nestedRecord']").validValue.finalResult.typingResult shouldBe
       TypedObjectTypingResult(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
   test("indexing on records for nested record values") {
     typeExpression(
-      s"$testRecordExpr[\"nestedRecord\"][\"nestedRecordKey\"]"
+      s"$testRecordExpr['nestedRecord']['nestedRecordKey']"
     ).validValue.finalResult.typingResult shouldBe
       TypedObjectWithValue(Typed.typedClass[Int], 2)
   }
