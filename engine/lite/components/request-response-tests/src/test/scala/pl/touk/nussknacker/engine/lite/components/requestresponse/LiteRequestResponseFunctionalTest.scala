@@ -323,10 +323,6 @@ class LiteRequestResponseFunctionalTest
         s"Not expected field with name: field2 for schema: $schemaObjStr."
       ),
       (
-        config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)),
-        s"Not expected type: Null for field: 'field' with schema: $schemaStr."
-      ),
-      (
         config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()),
         s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."
       ),

@@ -102,7 +102,10 @@ object BestEffortJsonSchemaEncoder {
     case ObjectField(fieldName, None, Some(_), parentSchema)
         if parentSchema.getRequiredProperties.contains(fieldName) =>
       error(s"Missing property: $fieldName for schema: $parentSchema.")
-    case ObjectField(fieldName, Some(value), Some(schema), _) =>
+    case ObjectField(fieldName, Some(value), Some(schema), parentSchema)
+        if parentSchema.getRequiredProperties.contains(fieldName) =>
+      encode(value, schema, Some(fieldName)).map(fieldName -> _)
+    case ObjectField(fieldName, Some(value), Some(schema), _) if value != null =>
       encode(value, schema, Some(fieldName)).map(fieldName -> _)
   }
 

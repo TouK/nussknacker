@@ -5,17 +5,23 @@ import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
 import io.circe.Json.{Null, obj}
 import org.everit.json.schema._
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import java.util.Collections
 
-class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
+class BestEffortJsonSchemaEncoderTest
+    extends AnyFunSuite
+    with ValidatedValuesDetailedMessage
+    with OptionValues
+    with EitherValuesDetailedMessage {
 
   import scala.jdk.CollectionConverters._
 
@@ -207,12 +213,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
           Map(FieldName -> null),
           createSchemaObjWithFooField(true, schemaString),
           invalid(s"Not expected type: Null for field: '$FieldName' with schema: $schemaString.")
-        ),
-        (
-          Map(FieldName -> null),
-          schemaObjString,
-          invalid(s"Not expected type: Null for field: 'foo' with schema: $schemaString.")
-        ),
+        )
       )
     ) { (data, schema, expected) =>
       encoder.encodeWithJsonValidation(data, schema) shouldBe expected
@@ -458,6 +459,23 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       val expected = invalid(s"Missing property: $FieldName for schema: $schema.")
       encoder.encodeWithJsonValidation(data, schema) shouldBe expected
     }
+  }
+
+  test("should skip nulls when they are not allowed") {
+    val schema = JsonSchemaBuilder.parseSchema("""
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": { "type": "string" },
+        |    "bar": { "type": "string" }
+        |  },
+        |  "additionalProperties": false
+        |}
+        |""".stripMargin)
+    val data    = Map("foo" -> null, "bar" -> "not-null")
+    val encoded = encoder.encodeWithJsonValidation(data, schema).validValue
+
+    encoded.as[Map[String, String]].rightValue shouldBe Map("bar" -> "not-null")
   }
 
   test("should encode anyOf") {

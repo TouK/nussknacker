@@ -340,25 +340,6 @@ class LiteKafkaUniversalJsonFunctionalTest
   }
 
   test("pattern properties validations should work in editor mode") {
-    def scenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
-      val sinkParams = (Map(
-        TopicParamName         -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName       -> "",
-        SinkRawEditorParamName -> "false",
-      ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
-
-      ScenarioBuilder
-        .streamingLite("check json validation")
-        .source(
-          sourceName,
-          KafkaUniversalName,
-          TopicParamName         -> s"'${config.sourceTopic}'",
-          SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
-        )
-        .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
-    }
-
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
@@ -409,9 +390,9 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) {
       (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
-        val dummyInputObject               = obj()
-        val cfg                            = config(dummyInputObject, schemaMapAny, sinkSchema)
-        val jsonScenario: CanonicalProcess = scenario(cfg, sinkFields)
+        val dummyInputObject = obj()
+        val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
+        val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
         runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
         runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
 
@@ -421,6 +402,40 @@ class LiteKafkaUniversalJsonFunctionalTest
           .map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
         results shouldBe expected
     }
+  }
+
+  test("optional field with sink in editor mode") {
+    val cfg = config(obj(), schemaMapAny, schemaObjStr)
+    // we generate empty optional parameter in this situation so empty expression is correct
+    val jsonScenario = createEditorModeScenario(cfg, Map(ObjectFieldName -> ""))
+    runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
+    runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+    val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
+
+    val result = runner.runWithStringData(jsonScenario, List(input)).validValue
+
+    result.errors shouldBe empty
+    result.success should have size 1
+    CirceUtil.decodeJsonUnsafe[Map[String, String]](result.success.head.value()) shouldBe empty
+  }
+
+  def createEditorModeScenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
+    val sinkParams = (Map(
+      TopicParamName         -> s"'${config.sinkTopic}'",
+      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+      SinkKeyParamName       -> "",
+      SinkRawEditorParamName -> "false",
+    ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
+
+    ScenarioBuilder
+      .streamingLite("check json validation")
+      .source(
+        sourceName,
+        KafkaUniversalName,
+        TopicParamName         -> s"'${config.sourceTopic}'",
+        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      )
+      .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
 
   test("should catch runtime errors at deserialization - source") {
@@ -464,10 +479,6 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("should catch runtime errors at encoding - sink") {
     val testData = Table(
       ("config", "expected"),
-      (
-        config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField),
-        s"Not expected type: Null for field: 'field' with schema: $schemaString."
-      ),
       (
         config(
           obj("foo_int" -> fromString("foo")),
