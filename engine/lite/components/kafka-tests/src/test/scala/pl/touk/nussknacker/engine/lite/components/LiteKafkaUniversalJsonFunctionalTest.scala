@@ -1,19 +1,21 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.Invalid
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
-import org.scalatest.Inside
+import org.scalatest.{Assertion, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
+  EmptyMandatoryParameter,
   ExpressionParserCompilationError
 }
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -404,20 +406,41 @@ class LiteKafkaUniversalJsonFunctionalTest
     }
   }
 
-  test("optional field with sink in editor mode") {
-    val cfg = config(obj(), schemaMapAny, schemaObjStr)
-    // we generate empty optional parameter in this situation so empty expression is correct
-    val jsonScenario = createEditorModeScenario(cfg, Map(ObjectFieldName -> ""))
-    runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-    runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
-    val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
+  test("various combinations of optional-like fields with sink in editor mode") {
+    val notFilledExpression = ""
+    def expectValidObjectWithoutField(result: ValidatedNel[ProcessCompilationError, Map[String, String]]): Assertion =
+      result shouldBe Valid(Map.empty)
+    def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, String]]): Assertion =
+      result.invalidValue should matchPattern {
+        case NonEmptyList(EmptyMandatoryParameter(_, _, `ObjectFieldName`, `sinkName`), Nil) =>
+      }
+    forAll(
+      Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, String]] => Assertion](
+        ("outputSchema", "fieldExpression", "expectationCheckingFun"),
+        (createObjSchema(false, false, schemaString), notFilledExpression, expectValidObjectWithoutField),
+        (createObjSchema(false, true, schemaString, schemaNull), notFilledExpression, expectedMissingValue)
+        // TODO: add other combinations
+      )
+    ) { (outputSchema, fieldExpression, expectationCheckingFun) =>
+      val dummyInputObject = obj()
+      val cfg              = config(dummyInputObject, schemaMapAny, outputSchema)
+      val jsonScenario     = createEditorModeScenario(cfg, Map(ObjectFieldName -> fieldExpression))
+      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+      val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
 
-    val result = runner.runWithStringData(jsonScenario, List(input)).validValue
+      val validatedResults = runner.runWithStringData(jsonScenario, List(input))
 
-    result.errors shouldBe empty
-    result.success should have size 1
-    CirceUtil.decodeJsonUnsafe[Map[String, String]](result.success.head.value()) shouldBe empty
+      val validatedDecodedResult = validatedResults.map { result =>
+        result.errors shouldBe empty
+        result.success should have size 1
+        CirceUtil.decodeJsonUnsafe[Map[String, String]](result.success.head.value())
+      }
+      expectationCheckingFun(validatedDecodedResult)
+    }
   }
+
+  // TODO: add tests for raw mode
 
   private def createEditorModeScenario(
       config: ScenarioConfig,
