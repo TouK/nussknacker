@@ -419,7 +419,10 @@ class LiteKafkaUniversalJsonFunctionalTest
     CirceUtil.decodeJsonUnsafe[Map[String, String]](result.success.head.value()) shouldBe empty
   }
 
-  def createEditorModeScenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
+  private def createEditorModeScenario(
+      config: ScenarioConfig,
+      fieldsExpressions: Map[String, String]
+  ): CanonicalProcess = {
     val sinkParams = (Map(
       TopicParamName         -> s"'${config.sinkTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
