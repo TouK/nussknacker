@@ -68,7 +68,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       ),
     )
 
-    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
+    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
     }
@@ -109,7 +109,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (config(sampleJStr, schemaString, schemaBigDecimal, sampleLong), valid(sampleJBigDecimalFromLong)),
     )
 
-    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
+    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
     }
@@ -152,7 +152,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       ),
     )
 
-    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
+    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
     }
@@ -199,7 +199,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           sourceSchema: EveritSchema,
           sinkSchema: EveritSchema,
           validationModes: List[ValidationMode],
-          expected: Validated[_, RunResult[_]]
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
           val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
@@ -226,7 +226,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           sourceSchema: EveritSchema,
           sinkSchema: EveritSchema,
           validationModes: List[ValidationMode],
-          expected: Validated[_, RunResult[_]]
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
           val cfg     = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
@@ -268,7 +268,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           sourceSchema: EveritSchema,
           sinkSchema: EveritSchema,
           validationModes: List[ValidationMode],
-          expected: Validated[_, RunResult[_]]
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
           val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
@@ -331,7 +331,7 @@ class LiteKafkaUniversalJsonFunctionalTest
           sinkSchema: EveritSchema,
           sinkExpression: SpecialSpELElement,
           validationModes: List[ValidationMode],
-          expected: Validated[_, RunResult[_]]
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
           val cfg     = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
@@ -390,19 +390,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       ),
     )
 
-    forAll(testData) {
-      (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
-        val dummyInputObject = obj()
-        val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
-        val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
-        runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-        runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+    forAll(testData) { (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult]) =>
+      val dummyInputObject = obj()
+      val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
+      val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
+      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
 
-        val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
-        val results = runner
-          .runWithStringData(jsonScenario, List(input))
-          .map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
-        results shouldBe expected
+      val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
+      val results = runner
+        .runWithStringData(jsonScenario, List(input))
+        .map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
+      results shouldBe expected
     }
   }
 
@@ -625,7 +624,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (samplePerson, valid(samplePerson))
     )
 
-    forAll(testData) { (input: Json, expected: Validated[_, RunResult[_]]) =>
+    forAll(testData) { (input: Json, expected: Validated[_, RunResult]) =>
       List(schemaTrue, schemaEmpty).foreach { schema =>
         val results = runWithValueResults(config(input, schema, schema))
         results shouldBe expected

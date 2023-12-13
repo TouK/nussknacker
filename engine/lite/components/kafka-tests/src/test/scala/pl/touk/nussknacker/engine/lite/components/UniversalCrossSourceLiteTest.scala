@@ -95,7 +95,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     val result = runner.runWithRawData(scenario, List(input)).validValue
 
     // Then
-    CirceUtil.decodeJsonUnsafe[Json](result.success.head.value()) shouldBe CirceUtil.decodeJsonUnsafe[Json](
+    CirceUtil.decodeJsonUnsafe[Json](result.successes.head.value()) shouldBe CirceUtil.decodeJsonUnsafe[Json](
       inputJsonBytes
     )
   }
@@ -135,7 +135,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     result.errors shouldBe empty
     val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21))
     val resultRecord =
-      runner.deserializeAvroData[GenericData.Record](result.success.head.value(), new RecordHeaders(), isKey = false)
+      runner.deserializeAvroData[GenericData.Record](result.successes.head.value(), new RecordHeaders(), isKey = false)
     resultRecord shouldBe expectedRecord
   }
 
@@ -211,7 +211,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     result.errors shouldBe empty
     val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21))
     val resultRecord =
-      runner.deserializeAvroData[GenericData.Record](result.success.head.value(), new RecordHeaders(), isKey = false)
+      runner.deserializeAvroData[GenericData.Record](result.successes.head.value(), new RecordHeaders(), isKey = false)
     resultRecord shouldBe expectedRecord
   }
 
