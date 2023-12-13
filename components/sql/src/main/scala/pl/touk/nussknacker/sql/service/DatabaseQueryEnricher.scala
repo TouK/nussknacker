@@ -44,8 +44,8 @@ object DatabaseQueryEnricher {
   val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(editor = Some(SqlParameterEditor))
 
   val ResultStrategyParam: Parameter = {
-    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name).map { strategyName =>
-      FixedExpressionValue(s"'$strategyName'", strategyName)
+    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name).map {
+      strategyName => FixedExpressionValue(s"'$strategyName'", strategyName)
     }
     Parameter(ResultStrategyParamName, Typed[String]).copy(
       editor = Some(FixedValuesParameterEditor(strategyNames))
@@ -139,6 +139,17 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       }
   }
 
+  private def tableDefinitionForStrategyOrError(
+      tableDefinition: Option[TableDefinition],
+      strategy: QueryResultStrategy
+  ): Either[String, TableDefinition] = {
+    (strategy, tableDefinition) match {
+      case (UpdateResultStrategy, None) => Right(TableDefinition(Nil))
+      case (_, Some(tableDefinition))   => Right(tableDefinition)
+      case (_, None)                    => Left("Prepared query returns no columns")
+    }
+  }
+
   private def parseQuery(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
@@ -148,34 +159,42 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     try {
       val queryMetaData  = dbMetaDataProvider.getQueryMetaData(query)
       val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
-      val state = TransformationState(
-        query = query,
-        argsCount = queryArgParams.size,
-        tableDef = queryMetaData.tableDefinition,
-        strategy = QueryResultStrategy(strategyName).get
-      )
-      if (queryArgParams.isEmpty) {
-        createFinalResults(context, dependencies, state)
-      } else {
-        NextParameters(parameters = queryArgParams, state = Some(state))
+      val strategy       = QueryResultStrategy(strategyName).get
+      tableDefinitionForStrategyOrError(queryMetaData.tableDefinition, strategy) match {
+        case Left(errorMsg) =>
+          FinalResults(
+            context,
+            errors = CustomNodeError(errorMsg, Some(QueryParamName)) :: Nil,
+            state = None
+          )
+        case Right(tableDefinition) =>
+          val state = TransformationState(
+            query = query,
+            argsCount = queryArgParams.size,
+            tableDef = tableDefinition,
+            strategy = strategy
+          )
+          if (queryArgParams.isEmpty) {
+            createFinalResults(context, dependencies, state)
+          } else {
+            NextParameters(parameters = queryArgParams, state = Some(state))
+          }
       }
     } catch {
       case e: SQLException =>
-        val error = CustomNodeError(messageFromSQLException(query, e), Some(DatabaseQueryEnricher.QueryParamName))
+        val error = CustomNodeError(messageFromSQLException(query, e), Some(QueryParamName))
         FinalResults.forValidation(context, errors = List(error))(
           _.withVariable(name = OutputVariableNameDependency.extract(dependencies), value = Unknown, paramName = None)
         )
     }
   }
 
-  // SyntaxErrorException should have message meaningful for users, for others (connection problem?) it's better
-  // to return generic message and log details...
   private def messageFromSQLException(query: String, sqlException: SQLException): String = sqlException match {
-    case e: SQLSyntaxErrorException =>
-      e.getMessage
-    case e =>
-      logger.info(s"Failed to execute query: $query", e)
-      s"Failed to execute query: ${e.getClass.getSimpleName}"
+    case e: SQLSyntaxErrorException => e.getMessage
+    case e                          =>
+      // We choose to inform user about all problems, such as missing column as well as auth / connection issues
+      logger.warn(s"Failed to execute query: $query", e)
+      s"Failed to execute query: $e"
   }
 
   protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =

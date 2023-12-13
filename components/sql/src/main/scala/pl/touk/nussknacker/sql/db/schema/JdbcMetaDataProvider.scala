@@ -16,9 +16,8 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
 
   def getSchemaDefinition(): SchemaDefinition =
     Using.resource(getConnection()) { connection =>
-      val metaData = connection.getMetaData
-      val tables =
-        metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM").map(_.toString))
+      val metaData        = connection.getMetaData
+      val tables          = metaData.getTables(null, connection.getSchema, "%", Array("TABLE", "VIEW", "SYNONYM"))
       var results         = List[String]()
       val columnNameIndex = 3
       while (tables.next()) {
@@ -31,8 +30,8 @@ class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataPr
   override def getQueryMetaData(query: String): TableMetaData =
     Using.resource(getConnection()) { connection =>
       Using.resource(connection.prepareStatement(query)) { statement =>
-        TableMetaData(
-          TableDefinition(statement.getMetaData),
+        TableMetaData( // For updates getMetaData return null, so TableDefinition is None
+          Option(statement.getMetaData).map(TableDefinition(_)),
           DbParameterMetaData(statement.getParameterMetaData.getParameterCount)
         )
       }

@@ -21,6 +21,16 @@ trait QueryExecutor {
 
 }
 
+class UpdateQueryExecutor extends QueryExecutor {
+
+  override type QueryResult = UpdateResultStrategy.updateResultType
+
+  def execute(statement: PreparedStatement): QueryResult = {
+    statement.executeUpdate()
+  }
+
+}
+
 class SingleResultQueryExecutor(tableDef: TableDefinition) extends QueryExecutor {
 
   override type QueryResult = TypedMap
