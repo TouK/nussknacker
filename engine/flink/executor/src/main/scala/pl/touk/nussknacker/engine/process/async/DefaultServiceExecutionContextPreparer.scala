@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, ServiceE
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??
-object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
+object DefaultServiceExecutionContextPreparer extends LazyLogging {
 
   private final var asyncExecutionContext: Option[(String, ExecutionContextExecutorService)] = None
 
@@ -24,7 +24,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
       ex
     }
 
-  private[DefaultAsyncExecutionConfigPreparer] def getExecutionContext(
+  private[DefaultServiceExecutionContextPreparer] def getExecutionContext(
       workers: Int,
       process: String
   ): ServiceExecutionContext = synchronized {
@@ -42,7 +42,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
     }
   }
 
-  private[DefaultAsyncExecutionConfigPreparer] def close(): Unit = {
+  private[DefaultServiceExecutionContextPreparer] def close(): Unit = {
     logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)} counter is ${counter.get()}")
     if (counter.decrementAndGet() == 0) {
       asyncExecutionContext.foreach(_._2.shutdownNow())
@@ -52,7 +52,7 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 }
 
-final case class DefaultAsyncExecutionConfigPreparer(
+final case class DefaultServiceExecutionContextPreparer(
     bufferSize: Int,
     workers: Int,
     defaultUseAsyncInterpretation: Option[Boolean]
@@ -61,11 +61,11 @@ final case class DefaultAsyncExecutionConfigPreparer(
 
   def prepare(processId: String): ServiceExecutionContext = {
     logger.info(s"Creating asyncExecutor for $processId, workers: $workers")
-    DefaultAsyncExecutionConfigPreparer.getExecutionContext(workers, processId)
+    DefaultServiceExecutionContextPreparer.getExecutionContext(workers, processId)
   }
 
   def close(): Unit = {
-    DefaultAsyncExecutionConfigPreparer.close()
+    DefaultServiceExecutionContextPreparer.close()
   }
 
 }
