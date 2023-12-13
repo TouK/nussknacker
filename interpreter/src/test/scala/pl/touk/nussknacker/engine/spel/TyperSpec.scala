@@ -121,7 +121,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   test(
     "indexing on records with string literal or variable reference for not present keys returns error when dynamic access is disabled"
   ) {
-    typeExpression(s"$testRecordExpr[\"$nonPresentKey\"]").invalidValue.toList should matchPattern {
+    typeExpression(s"$testRecordExpr['$nonPresentKey']").invalidValue.toList should matchPattern {
       case NoPropertyError(typingResult, key) :: Nil if typingResult == testRecordTyped && key == nonPresentKey =>
     }
     typeExpression(s"$testRecordExpr[#var]", "var" -> s"$nonPresentKey").invalidValue.toList should matchPattern {
@@ -135,7 +135,7 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   test("indexing on records for not present keys returns unknown type or error when dynamic access is enabled") {
-    typeExpression(s"$testRecordExpr[\"$nonPresentKey\"]")(
+    typeExpression(s"$testRecordExpr['$nonPresentKey']")(
       dynamicAccessTyper
     ).validValue.finalResult.typingResult shouldBe
       Unknown
