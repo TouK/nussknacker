@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 
+import javax.lang.model.SourceVersion
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -77,12 +78,20 @@ class SpelExpressionSuggester(
                 .getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
-            val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map {
-              case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
+            def filterIllegalIdentifierAfterDot(name: String) = {
+              SourceVersion.isIdentifier(name)
             }
+            val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
+              .filter { case (fieldName, _) =>
+                filterIllegalIdentifierAfterDot(fieldName)
+              }
+              .map { case (methodName, clazzRef) =>
+                ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
+              }
             val suggestionsFromClass = clssDefinitions
               .get(to.objType.klass)
               .map(c =>
+                // TODO: Why is it fromClass = suggestionsFromFields.nonEmpty? instead of just false?
                 filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)
               )
               .getOrElse(Nil)
@@ -176,6 +185,8 @@ class SpelExpressionSuggester(
                         _.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))
                       )
                       .getOrElse(successfulNil)
+                  case TypedObjectTypingResult(fields, _, _) =>
+                    Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
               case _ => successfulNil
