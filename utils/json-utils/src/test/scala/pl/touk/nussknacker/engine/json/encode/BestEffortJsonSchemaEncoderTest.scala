@@ -7,8 +7,8 @@ import io.circe.Json.{Null, obj}
 import org.everit.json.schema._
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
@@ -27,7 +27,7 @@ class BestEffortJsonSchemaEncoderTest
 
   private val FieldName = "foo"
 
-  private val encoder = BestEffortJsonSchemaEncoder
+  private val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
 
   private val schemaNumber: NumberSchema        = NumberSchema.builder().build()
   private val schemaIntegerNumber: NumberSchema = NumberSchema.builder().requiresInteger(true).build()

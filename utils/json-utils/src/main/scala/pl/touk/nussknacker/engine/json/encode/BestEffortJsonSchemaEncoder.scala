@@ -6,6 +6,7 @@ import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
@@ -13,7 +14,7 @@ import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-object BestEffortJsonSchemaEncoder {
+class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
 
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
@@ -121,9 +122,10 @@ object BestEffortJsonSchemaEncoder {
     // instead of encoding with all of: property and pattern property schemas.
     case PatternPropertySchema(schema, ObjectField(fieldName, Some(value), _, _)) =>
       encode(value, schema, Some(fieldName)).map(fieldName -> _)
-    case ObjectField(fieldName, _, None, parentSchema) if !parentSchema.permitsAdditionalProperties() =>
+    case ObjectField(fieldName, _, None, parentSchema)
+        if !parentSchema.permitsAdditionalProperties() && validationMode != ValidationMode.lax =>
       error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
-    case ObjectField(fieldName, Some(value), None, parentSchema) =>
+    case ObjectField(fieldName, Some(value), None, parentSchema) if parentSchema.permitsAdditionalProperties =>
       Option(parentSchema.getSchemaOfAdditionalProperties) match {
         case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
         case None                           => Valid(jsonEncoder.encode(value)).map(fieldName -> _)

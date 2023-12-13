@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
 import io.circe.Json.{Null, fromFields, fromInt, fromJsonObject, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{Schema => EveritSchema, StringSchema}
+import org.everit.json.schema.{ObjectSchema, Schema => EveritSchema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -506,6 +506,33 @@ class LiteKafkaUniversalJsonFunctionalTest
       result.successes should have size 1
       result.successes.head shouldBe expectedOutputRecord
     }
+  }
+
+  test("schema evolution on output - redundant fields") {
+    val secondsField = ObjectFieldName + "2"
+    val twoFieldsSchema = ObjectSchema.builder
+      .addPropertySchema(ObjectFieldName, schemaString)
+      .addPropertySchema(secondsField, schemaString)
+      .additionalProperties(false)
+      .build()
+
+    val strictConfig = config(
+      inputData = fromFields(List(ObjectFieldName -> fromString("foo"), secondsField -> fromString("bar"))),
+      sourceSchema = twoFieldsSchema,
+      sinkSchema = createObjSchema(schemaString),
+      validationMode = Some(ValidationMode.strict)
+    )
+    val strictValidationErrors = runWithValueResults(strictConfig).invalidValue
+    strictValidationErrors should matchPattern {
+      case NonEmptyList(CustomNodeError(`sinkName`, message, _), Nil)
+          if message.contains(s"Redundant fields: $secondsField") =>
+    }
+
+    val laxConfig = strictConfig.copy(validationMode = Some(ValidationMode.lax))
+    val laxResult = runWithValueResults(laxConfig).validValue
+    laxResult.errors shouldBe empty
+    laxResult.successes should have size 1
+    laxResult.successes.head shouldBe fromFields(List(ObjectFieldName -> fromString("foo")))
   }
 
   private def createEditorModeScenario(
