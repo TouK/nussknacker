@@ -133,16 +133,16 @@ class FlinkTestScenarioRunner(
     val env = flinkMiniCluster.createExecutionEnvironment()
 
     Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
-      // It's copied from registrar.register only for handling compilation errors..
-      // TODO: figure how to get compilation result on highest level - registrar.register?
       val compilerFactory =
-        new FlinkProcessCompilerDataFactoryWithTestComponents(
+        FlinkProcessCompilerDataFactoryWithTestComponents(
           testExtensionsHolder,
           testScenarioCollectorHandler.resultsCollectingListener,
           modelData,
           componentUseCase
         )
 
+      // We directly use Compiler even if registrar already do this to return compilation errors
+      // TODO: figure how to get compilation result on highest level - registrar.register?
       val compileProcessData = compilerFactory.prepareCompilerData(
         scenario.metaData,
         ProcessVersion.empty,

@@ -146,14 +146,11 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   }
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
-    val testCompilerFactory = new TestFlinkProcessCompilerDataFactory(
-      modelData.configCreator,
-      modelData.extractModelDefinitionFun,
-      modelData.modelConfig,
-      ResultsCollectingListenerHolder.registerRun,
+    val testCompilerFactory = TestFlinkProcessCompilerDataFactory(
       scenario,
-      modelData.objectNaming,
-      scenarioTestData
+      scenarioTestData,
+      modelData,
+      ResultsCollectingListenerHolder.registerRun
     )
     testCompilerFactory
       .prepareCompilerData(scenario.metaData, ProcessVersion.empty, PreventInvocationCollector)(
