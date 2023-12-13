@@ -437,6 +437,14 @@ paths:
       - Notifications
       summary: Endpoint to display notifications
       operationId: getApiNotifications
+      parameters:
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+        example: '2023-12-13T12:29:57.776678Z'
       responses:
         '200':
           description: ''
@@ -446,6 +454,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Notification'
+        '400':
+          description: 'Invalid value for: query parameter after'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:

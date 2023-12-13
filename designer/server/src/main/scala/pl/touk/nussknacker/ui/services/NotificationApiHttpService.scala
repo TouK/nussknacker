@@ -22,14 +22,11 @@ class NotificationApiHttpService(
   private val notificationApiEndpoints = new NotificationApiEndpoints(authenticator.authenticationMethod())
 
   expose {
-//    Was before ->  Symbol("after").as[Instant].optional
-    val notificationsAfter = Some(Instant.now())
-
     notificationApiEndpoints.notificationEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogic { user: LoggedUser => _ =>
+      .serverLogic { user: LoggedUser => after: Option[Instant] =>
         notificationService
-          .notifications(notificationsAfter)(user, executionContext)
+          .notifications(after)(user, executionContext)
           .map { notificationList => success(notificationList) }
       }
   }
