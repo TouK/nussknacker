@@ -125,9 +125,12 @@ describe("Fragment", () => {
             });
         cy.layoutScenario();
 
+        cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
+
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("#nk-graph-fragment [model-id='input']").should("be.visible");
 
+        cy.wait("@fragmentInputValidation");
         cy.get("[data-testid=window]").matchImage();
 
         cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find('[title="Switch to expression mode"]');
