@@ -189,10 +189,9 @@ private[spel] class Typer(
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
       withTypedChildren {
         case (indexKey: TypedObjectWithValue) :: Nil =>
-          indexer.childrenHead match {
-            case _: PropertyOrFieldReference =>
-              valid(indexKey)
-            case _: StringLiteral | _: VariableReference =>
+          indexer.children match {
+            case (_: PropertyOrFieldReference) :: Nil => valid(indexKey)
+            case _ =>
               indexKey.value match {
                 case indexString: String =>
                   val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
@@ -201,10 +200,10 @@ private[spel] class Typer(
                   }
                 case _ => invalid(IllegalIndexingOperation)
               }
-            case _ => invalid(IllegalIndexingOperation)
           }
+        case (indexKey: TypedClass) :: Nil if indexKey.klass.isAssignableFrom(classOf[String]) =>
+          invalid(DynamicPropertyAccessError)
         case Unknown :: Nil =>
-          // TODO: what errors to throw here? we already get NoPropertyError from error from typing reference
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
         case _ =>
           invalid(IllegalIndexingOperation)
