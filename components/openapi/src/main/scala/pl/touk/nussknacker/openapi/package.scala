@@ -47,6 +47,7 @@ package openapi {
       categories: List[String],
       documentation: Option[String],
       pathParts: List[PathPart],
+      // FIXME: we should serialize input schema instead of our model of schema
       parameters: List[SwaggerParameter],
       responseSwaggerType: Option[SwaggerTyped],
       method: String,

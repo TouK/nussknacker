@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder, Json}
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
+import io.swagger.v3.parser.ObjectMapperFactory
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -23,6 +25,7 @@ import scala.jdk.CollectionConverters._
 case object AdditionalPropertiesDisabled                    extends AdditionalProperties
 case class AdditionalPropertiesEnabled(value: SwaggerTyped) extends AdditionalProperties
 
+// TODO: Get rid of this and use underlying, json schema instead
 @JsonCodec sealed trait SwaggerTyped {
   self =>
   def typingResult: TypingResult =
@@ -112,7 +115,11 @@ object SwaggerTyped {
         case Some(ref) if usedSchemas.contains(ref) =>
           SwaggerAny
         case Some(ref) =>
-          SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
+          // FIXME: we should use everit schema instead of swagger's
+          val resolvedSchema      = swaggerRefSchemas(ref)
+          val swaggerSchemaAsJson = ObjectMapperFactory.createJson().writeValueAsString(resolvedSchema)
+          val everitSchema        = JsonSchemaBuilder.parseSchema(swaggerSchemaAsJson)
+          SwaggerTyped(resolvedSchema, swaggerRefSchemas, usedSchemas = usedSchemas + ref)
         case None =>
           (extractType(schema), Option(schema.getFormat)) match {
             case (_, _) if schema.getEnum != null => SwaggerEnum(schema)
