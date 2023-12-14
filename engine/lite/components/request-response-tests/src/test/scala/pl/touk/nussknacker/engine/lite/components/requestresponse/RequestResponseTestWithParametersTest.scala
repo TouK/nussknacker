@@ -259,7 +259,10 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate fragment parameter with spel expression validator") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator))
+      FragmentComponentDefinitionExtractor(
+        LocalModelData(ConfigFactory.empty, List.empty)
+      )
+
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
