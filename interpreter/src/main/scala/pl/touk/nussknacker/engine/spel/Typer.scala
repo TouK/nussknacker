@@ -223,7 +223,6 @@ private[spel] class Typer(
         case TypedUnion(possibleTypes)       => typeUnion(e, possibleTypes)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
         case r: TypedObjectTypingResult      => typeIndexerOnRecord(e, r)
-        // TODO: type null or return error for indexing on null?
         // TODO: add indexing on strings
         // TODO: how to handle other cases?
         case TypedNull =>
