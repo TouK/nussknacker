@@ -255,7 +255,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (
         TypedObjectTypingResult(ListMap("explicitProperty" -> Typed[String], "additionalProperty" -> Typed[String])),
         false,
-        false
+        true
       ),
       (TypedObjectTypingResult(ListMap[String, TypingResult]()), false, true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), false, true),

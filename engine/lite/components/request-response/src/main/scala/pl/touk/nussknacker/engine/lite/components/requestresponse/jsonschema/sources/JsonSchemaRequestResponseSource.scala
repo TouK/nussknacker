@@ -40,6 +40,10 @@ class JsonSchemaRequestResponseSource(
 
   private val deserializer = new CirceJsonDeserializer(inputSchema)
 
+  // So far, we don't expose validation mode as a parameter to not overload the interface. We pick lax mode because
+  // we don't want to block user in some edge cases such as output = input but without redundant fields
+  private val validationMode = ValidationMode.lax
+
   override def parse(parameters: Array[Byte]): Any = {
     val parametersString = new String(parameters, StandardCharsets.UTF_8)
     validateAndReturnTypedMap(parametersString)
@@ -62,10 +66,12 @@ class JsonSchemaRequestResponseSource(
     validateAndReturnTypedMap(testRecord.json.noSpaces)
   }
 
-  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))
+  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(
+    new SchemaResponseEncoder(outputSchema, validationMode)
+  )
 
   override def testParametersDefinition: List[Parameter] = {
-    JsonSchemaBasedParameter(inputSchema, SinkRawValueParamName, ValidationMode.lax)(nodeId)
+    JsonSchemaBasedParameter(inputSchema, SinkRawValueParamName, validationMode)(nodeId)
       .map(_.toParameters)
       .valueOr(errors =>
         throw new IllegalArgumentException(s"Cannot provide test parameters definition: ${errors.toList.mkString(" ")}")
