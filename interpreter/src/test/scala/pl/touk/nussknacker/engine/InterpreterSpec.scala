@@ -110,7 +110,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val metaData = scenario.metaData
     val processCompilerData =
-      preapreCompilerData(additionalComponents, scenario, listeners)
+      prepareCompilerData(additionalComponents, listeners)
     val interpreter = processCompilerData.interpreter
     val parts       = failOnErrors(processCompilerData.compile(scenario))
 
@@ -155,9 +155,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  def preapreCompilerData(
+  def prepareCompilerData(
       additionalComponents: List[ComponentDefinition],
-      process: CanonicalProcess,
       listeners: Seq[ProcessListener]
   ): ProcessCompilerData = {
     val components =

@@ -31,8 +31,6 @@ private[registrar] class AsyncInterpretationFunction(
 
   private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
 
-  import compilerData._
-
   private var executionContext: ExecutionContext = _
 
   override def open(parameters: Configuration): Unit = {
@@ -68,10 +66,12 @@ private[registrar] class AsyncInterpretationFunction(
     implicit val ec: ExecutionContext = executionContext
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
+      compilerData.interpreter.interpret[IO](compiledNode, compilerData.metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
+      compilerData.interpreter
+        .interpret[Future](compiledNode, compilerData.metaData, input)
+        .onComplete(result => callback(result.toEither))
     }
   }
 

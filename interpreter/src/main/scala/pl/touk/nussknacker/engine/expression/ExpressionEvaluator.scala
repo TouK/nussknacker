@@ -46,6 +46,7 @@ class ExpressionEvaluator(
   private def prepareGlobals(metaData: MetaData): Map[String, Any] =
     globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.obj)
 
+  // We have an assumption, that ExpressionEvaluator will be used only with the same scenario
   private val optimizedGlobals: AtomicReference[Option[Map[String, Any]]] = new AtomicReference(None)
 
   def evaluateParameters(

@@ -116,13 +116,13 @@ class FlinkProcessRegistrar(
   private def register(
       env: StreamExecutionEnvironment,
       compilerDataForProcessPart: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
-      processWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
       typeInformationDetection: TypeInformationDetection
   ): Unit = {
 
-    val metaData         = processWithDeps.metaData
+    val metaData         = compilerData.metaData
     val globalParameters = NkGlobalParameters.readFromContext(env.getConfig)
 
     def nodeContext(
@@ -131,11 +131,11 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData = processWithDeps.jobData
+      val jobData = compilerData.jobData
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
-        processWithDeps.processTimeout,
+        compilerData.processTimeout,
         convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
@@ -146,13 +146,13 @@ class FlinkProcessRegistrar(
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        processWithDeps.componentUseCase
+        compilerData.componentUseCase
       )
     }
 
     {
       // it is *very* important that source are in correct order here - see ProcessCompiler.compileSources comments
-      processWithDeps
+      compilerData
         .compileProcessOrFail(process)
         .sources
         .toList
@@ -332,8 +332,8 @@ class FlinkProcessRegistrar(
         case e: PotentiallyStartPart => e.nextParts.map(np => np.id -> np.validationContext).toMap
         case _                       => Map.empty
       })
-      val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
-      val metaData                      = processWithDeps.metaData
+      val asyncExecutionContextPreparer = compilerData.asyncExecutionContextPreparer
+      val metaData                      = compilerData.metaData
       val streamMetaData =
         MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](metaData, StreamMetaData())
 
@@ -357,7 +357,7 @@ class FlinkProcessRegistrar(
           AsyncDataStream.orderedWait(
             stream,
             asyncFunction,
-            processWithDeps.processTimeout.toMillis,
+            compilerData.processTimeout.toMillis,
             TimeUnit.MILLISECONDS,
             asyncExecutionContextPreparer.bufferSize
           )

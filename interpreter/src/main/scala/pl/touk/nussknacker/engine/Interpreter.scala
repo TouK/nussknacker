@@ -79,7 +79,7 @@ private class InterpreterInternal[F[_]](
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
             // TODO simplify
             val withModifiedVariable = createOrUpdateVariable(ctx, varName, fields)
-            parentContext.withVariable(varName, withModifiedVariable[Any](varName))
+            parentContext.withVariable(varName, withModifiedVariable(varName))
           case None => parentContext
         }
         interpretNext(next, newParentContext)
