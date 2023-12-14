@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
+import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 
 object BaseComponentValidationHelper {
 

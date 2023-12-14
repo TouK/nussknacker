@@ -91,9 +91,9 @@ case class LiteKafkaTestScenarioRunnerBuilder(
     copy(schemaRegistryClientFactor = schemaRegistryClientFactor)
 
   override def build(): LiteKafkaTestScenarioRunner = {
-    val processObjectDependencies     = ProcessObjectDependencies.withConfig(config)
+    val modelDependencies             = ProcessObjectDependencies.withConfig(config)
     val mockedKafkaComponentsProvider = new LiteKafkaComponentProvider(schemaRegistryClientFactor)
-    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, processObjectDependencies)
+    val mockedKafkaComponents         = mockedKafkaComponentsProvider.create(config, modelDependencies)
     val schemaRegistryClient          = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
@@ -49,7 +48,7 @@ object node {
   case class FragmentOutput(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean)
       extends Node
 
-  case class FragmentUsageStart(id: String, params: List[Parameter], next: Next) extends Node
+  case class FragmentUsageStart(id: String, params: List[CompiledParameter], next: Next) extends Node
 
   case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Next)
       extends Node

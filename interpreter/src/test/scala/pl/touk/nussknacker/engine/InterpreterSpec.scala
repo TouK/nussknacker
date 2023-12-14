@@ -19,12 +19,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputGenericNodeTransformation
 }
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{
-  NodeDependency,
-  OutputVariableNameDependency,
-  ParameterWithExtractor,
-  SpelTemplateParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -40,7 +35,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPar
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
@@ -657,7 +652,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment1", List(Parameter("param", "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment1", List(NodeParameter("param", "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
@@ -1055,7 +1050,7 @@ object InterpreterSpec {
 
   object WithExplicitDefinitionService extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def parameters: List[api.definition.Parameter] = List(api.definition.Parameter[Long]("param1"))
+    override def parameters: List[Parameter] = List(Parameter[Long]("param1"))
 
     override def returnType: typing.TypingResult = Typed[String]
 
@@ -1073,11 +1068,11 @@ object InterpreterSpec {
 
   object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
 
-    private val spelTemplateParameter = api.definition.Parameter
+    private val spelTemplateParameter = Parameter
       .optional[String]("template")
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
-    override def parameters: List[api.definition.Parameter] = List(spelTemplateParameter)
+    override def parameters: List[Parameter] = List(spelTemplateParameter)
 
     override def returnType: typing.TypingResult = Typed[String]
 

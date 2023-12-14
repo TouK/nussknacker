@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 class ConfigCreatorWithCollectingListener(val collectingListener: ResultsCollectingListener)
     extends EmptyProcessConfigCreator {
 
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Seq(collectingListener)
 
 }

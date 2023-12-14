@@ -12,20 +12,20 @@ object ModelDefinitionExtractor {
   def extractModelDefinition(
       creator: ProcessConfigCreator,
       classLoader: ClassLoader,
-      processObjectDependencies: ProcessObjectDependencies,
+      modelDependencies: ProcessObjectDependencies,
       // It won't be needed to pass category after we get rid of ProcessConfigCreator API
       category: Option[String]
   ): ModelDefinition[ComponentDefinitionWithImplementation] = {
-    val componentsUiConfig = ComponentsUiConfigParser.parse(processObjectDependencies.config)
+    val componentsUiConfig = ComponentsUiConfigParser.parse(modelDependencies.config)
     val modelDefinitionBasedOnConfigCreator =
       ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
         creator,
         category,
-        processObjectDependencies,
+        modelDependencies,
         componentsUiConfig
       )
     val componentsFromProviders =
-      ComponentsFromProvidersExtractor(classLoader).extractComponents(processObjectDependencies, componentsUiConfig)
+      ComponentsFromProvidersExtractor(classLoader).extractComponents(modelDependencies, componentsUiConfig)
     modelDefinitionBasedOnConfigCreator.withComponents(componentsFromProviders)
   }
 

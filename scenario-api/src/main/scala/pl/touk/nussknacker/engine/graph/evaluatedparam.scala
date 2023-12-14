@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.graph
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+// TODO: rename to NodeParameter
 object evaluatedparam {
 
   object Parameter {

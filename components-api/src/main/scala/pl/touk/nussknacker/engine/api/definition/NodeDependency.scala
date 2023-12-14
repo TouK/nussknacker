@@ -263,6 +263,7 @@ case class Parameter(
 
 }
 
+// TODO: rename to AdditionalVariableDefinition
 sealed trait AdditionalVariable {
   def typingResult: TypingResult
 }

@@ -19,7 +19,7 @@ trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchem
       .withValue(s"kafka.kafkaEspProperties.autoRegisterRecordSchemaIdSerialization", fromAnyRef(false))
   }
 
-  protected lazy val testProcessObjectDependencies: ProcessObjectDependencies =
+  protected lazy val testModelDependencies: ProcessObjectDependencies =
     ProcessObjectDependencies.withConfig(config)
 
   protected lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)

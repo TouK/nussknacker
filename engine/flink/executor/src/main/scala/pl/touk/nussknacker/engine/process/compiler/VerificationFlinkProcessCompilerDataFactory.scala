@@ -23,7 +23,7 @@ object VerificationFlinkProcessCompilerDataFactory {
 
       override protected def adjustListeners(
           defaults: List[ProcessListener],
-          processObjectDependencies: ProcessObjectDependencies
+          modelDependencies: ProcessObjectDependencies
       ): List[ProcessListener] = Nil
 
       override protected def prepareService(

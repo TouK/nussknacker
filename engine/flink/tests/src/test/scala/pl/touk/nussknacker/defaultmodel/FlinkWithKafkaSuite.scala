@@ -229,7 +229,7 @@ object MockSchemaRegistry extends Serializable {
 
 class TestDefaultConfigCreator extends DefaultConfigCreator {
 
-  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Seq(LoggingListener)
 
 }
