@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
   testResultServiceComponent
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 import pl.touk.nussknacker.engine.util.test._
@@ -133,25 +133,29 @@ class FlinkTestScenarioRunner(
     val env = flinkMiniCluster.createExecutionEnvironment()
 
     Using.resource(TestScenarioCollectorHandler.createHandler(componentUseCase)) { testScenarioCollectorHandler =>
-      // It's copied from registrar.register only for handling compilation errors..
-      // TODO: figure how to get compilation result on highest level - registrar.register?
-      val compiler =
-        new FlinkProcessCompilerWithTestComponents(
+      val compilerFactory =
+        FlinkProcessCompilerDataFactoryWithTestComponents(
           testExtensionsHolder,
           testScenarioCollectorHandler.resultsCollectingListener,
           modelData,
           componentUseCase
         )
 
-      val compileProcessData = compiler.compileProcess(
-        scenario,
+      // We directly use Compiler even if registrar already do this to return compilation errors
+      // TODO: figure how to get compilation result on highest level - registrar.register?
+      val compileProcessData = compilerFactory.prepareCompilerData(
+        scenario.metaData,
         ProcessVersion.empty,
         testScenarioCollectorHandler.resultCollector,
         getClass.getClassLoader
       )
 
-      compileProcessData.compileProcess().map { _ =>
-        val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
+      compileProcessData.compileProcess(scenario).map { _ =>
+        val registrar = FlinkProcessRegistrar(
+          compilerFactory,
+          FlinkJobConfig.parse(modelData.modelConfig),
+          ExecutionConfigPreparer.unOptimizedChain(modelData)
+        )
 
         registrar.register(
           env,

@@ -62,7 +62,7 @@ object ResultsCollectingListenerHolder {
   private var results = Map[TestRunId, TestResults]()
 
   // TODO: casting is not so nice, but currently no other idea...
-  def resultsForId(id: TestRunId): TestResults = results(id).asInstanceOf[TestResults]
+  def resultsForId(id: TestRunId): TestResults = results(id)
 
   def registerRun: ResultsCollectingListener = synchronized {
     val runId = TestRunId.generate
