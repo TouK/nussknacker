@@ -38,6 +38,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
+import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord.testRecordExpr
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -483,10 +484,34 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("access list elements by index") {
     parse[String]("#obj.children[0].id").validExpression.evaluateSync[String](ctx) shouldEqual "3"
-    parse[String]("#mapValue['foo']", dynamicPropertyAccessAllowed = true).validExpression
-      .evaluateSync[String](ctx) shouldEqual "bar"
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
+  }
 
+  test("access map elements by index") {
+    val ctxWithVal = ctx.withVariable("stringKey", "string")
+    parse[String](s"$testRecordExpr['string']").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
+    parse[String](s"$testRecordExpr[string]").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
+    parse[String](s"$testRecordExpr['str' + 'ing']").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
+    parse[String](s"$testRecordExpr[#stringKey]", ctxWithVal).validExpression
+      .evaluateSync[String](ctxWithVal) shouldBe "stringVal"
+    parse[Int](s"$testRecordExpr['nestedRecord']['nestedRecordKey']").validExpression.evaluateSync[Int](ctx) shouldBe 2
+  }
+
+  test("should return error for dynamic property access for map non-present element when enabled") {
+    inside(parse[Any](s"$testRecordExpr[nonPresentField]")) {
+      case Invalid(l: NonEmptyList[ExpressionParseError])
+          if l.toList.exists(error => error.message == "Dynamic property access is not allowed") &&
+            l.toList.exists(error => error.message.startsWith("There is no property 'nonPresentField' in type:")) =>
+    }
+    inside(parse[Any](s"$testRecordExpr['nonPresentField']")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message should startWith("There is no property 'nonPresentField' in type:")
+    }
+  }
+
+  test("should return null for dynamic property access for map non-present element when enabled") {
+    parse[Any](s"$testRecordExpr['nonPresentField']", dynamicPropertyAccessAllowed = true).validExpression
+      .evaluateSync[Any](ctx) == null shouldBe true
   }
 
   test("filter by list predicates") {
