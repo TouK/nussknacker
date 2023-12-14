@@ -1,14 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider.SingleComponentConfigWithoutId
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  ComponentGroupName,
-  ComponentId,
-  ParameterConfig,
-  ScenarioPropertyConfig
-}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 
 object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
@@ -34,10 +27,8 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       Map(
         ComponentId("streaming-service-enricher") -> SingleComponentConfigWithoutId.zero.copy(
           params = Map(
-            "paramDualEditor" -> ParameterConfig.empty.copy(
-              validators = Some(
-                List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
-              ),
+            "paramStringEditor" -> ParameterConfig.empty.copy(
+              defaultValue = Some("'default-from-additional-ui-config-provider'"),
             )
           ),
           componentGroup = Some(componentGroupName)
