@@ -11,7 +11,14 @@ import pl.touk.nussknacker.test.{
   PatientScalaFutures,
   RestAssuredVerboseLogging
 }
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
+import pl.touk.nussknacker.ui.api.helpers.{
+  NuItTest,
+  NuScenarioConfigurationHelper,
+  TestCategories,
+  WithMockableDeploymentManager
+}
+
+import java.time.{Instant, LocalDateTime}
 
 class NotificationApiTest
     extends AnyFreeSpecLike
@@ -38,7 +45,7 @@ class NotificationApiTest
           )
       }
 
-      "return a list of notifications" in {
+      "return a list of notifications without providing 'after' parameter" in {
         given()
           .auth()
           .basic("admin", "admin")
@@ -97,6 +104,119 @@ class NotificationApiTest
                  |   "type": null,
                  |   "toRefresh": [ "versions", "activity", "state" ]
                  |}]""".stripMargin
+            )
+          )
+      }
+
+      "return a list of notifications with correct 'after' parameter" in {
+        val time = Instant.parse("2023-07-29T19:30:00Z")
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=\"$time\"")
+          .Then()
+          .statusCode(200)
+          .body(
+            equalTo("[]")
+          )
+
+        val deployedProcessName = ProcessName("process-execution-canceled")
+        val processId           = createDeployedProcess(deployedProcessName)
+
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=\"$time\"")
+          .Then()
+          .statusCode(200)
+          .body(
+            matchJsonWithRegexValues(
+              s"""[{
+                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |  "scenarioName": "$deployedProcessName",
+                 |  "message": "Deployment finished",
+                 |  "type": null,
+                 |  "toRefresh": [ "versions", "activity", "state" ]
+                 |}]""".stripMargin
+            )
+          )
+
+        prepareCancel(processId)
+
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=\"$time\"")
+          .Then()
+          .statusCode(200)
+          .body(
+            matchJsonWithRegexValues(
+              s"""[{
+                 |  "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |  "scenarioName": "$deployedProcessName",
+                 |  "message": "Deployment finished",
+                 |  "type": null,
+                 |  "toRefresh": [ "versions", "activity", "state" ]
+                 |},
+                 |{
+                 |   "id": "^\\\\w{8}-\\\\w{4}-\\\\w{4}-\\\\w{4}-\\\\w{12}$$",
+                 |   "scenarioName": "$deployedProcessName",
+                 |   "message": "Cancel finished",
+                 |   "type": null,
+                 |   "toRefresh": [ "versions", "activity", "state" ]
+                 |}]""".stripMargin
+            )
+          )
+      }
+
+      "return empty list if 'after' parameter is after actions" in {
+        val deployedProcessName = ProcessName("process-execution-canceled")
+        createDeployedCanceledProcess(deployedProcessName, TestCategories.Category1)
+
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=\"${Instant.now()}\"")
+          .Then()
+          .statusCode(200)
+          .body(
+            equalTo("[]")
+          )
+      }
+
+      "return error if wrong 'after' parameter is passed" in {
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=5")
+          .Then()
+          .statusCode(400)
+          .body(
+            equalTo(
+              "The query parameter 'after' was malformed:\n" +
+                "DecodingFailure at : Got value '5' with wrong type, expecting string"
+            )
+          )
+      }
+      "return 400 when 'after' parameter passed in LocalDateTime format" in {
+        val timeInLocalDateTime = LocalDateTime.now
+
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/notifications?after=\"$timeInLocalDateTime\"")
+          .Then()
+          .statusCode(400)
+          .body(
+            equalTo(
+              "The query parameter 'after' was malformed:\n" +
+                s"DecodingFailure at : Text '$timeInLocalDateTime' could not be parsed at index 26"
             )
           )
       }

@@ -443,8 +443,11 @@ paths:
         required: false
         schema:
           type: string
-          format: date-time
-        example: '2023-07-29T19:30:00Z'
+        examples:
+          Example:
+            summary: Example usage - to work properly need to add " on both sides
+              of parameter
+            value: '2023-07-29T19:30:00Z'
       responses:
         '200':
           description: ''
@@ -455,11 +458,17 @@ paths:
                 items:
                   $ref: '#/components/schemas/Notification'
         '400':
-          description: 'Invalid value for: query parameter after'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Number passed instead of Date
+                  value: |-
+                    The query parameter 'after' was malformed:
+                    DecodingFailure at : Got value '2000' with wrong type, expecting string
         '401':
           description: ''
           content:
