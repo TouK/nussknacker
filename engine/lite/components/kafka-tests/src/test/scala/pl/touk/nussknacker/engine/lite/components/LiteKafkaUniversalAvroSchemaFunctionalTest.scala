@@ -1090,8 +1090,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
     )
   }
 
-  private def testEnd2End(testData: TableFor2[ScenarioConfig, ValidatedNel[ProcessCompilationError, RunResult[_]]]) = {
-    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
+  private def testEnd2End(testData: TableFor2[ScenarioConfig, ValidatedNel[ProcessCompilationError, RunResult]]) = {
+    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
     }

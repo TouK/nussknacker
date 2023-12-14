@@ -110,7 +110,7 @@ class FlinkTestScenarioRunner(
   /**
    * Can be used to test Flink based sinks.
    */
-  def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
+  def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
@@ -120,7 +120,7 @@ class FlinkTestScenarioRunner(
     }
   }
 
-  private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult[Unit] = {
+  private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult = {
     val modelData = LocalModelData(
       inputConfig = config,
       // We can't just pass extra components here because we don't want Flink to serialize them.
@@ -174,10 +174,10 @@ class FlinkTestScenarioRunner(
 
   private def collectResults[R](
       testExtensionsHolder: TestExtensionsHolder,
-      runResult: RunResult[Unit]
+      runResult: RunResult
   ): RunListResult[R] = {
     val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder)
-    RunListResult(success = results, errors = runResult.errors)
+    RunListResult(successes = results, errors = runResult.errors)
   }
 
 }
