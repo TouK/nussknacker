@@ -3,11 +3,12 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.confluent.kafka.schemaregistry.json.JsonSchema
+import org.apache.avro.Schema
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.Eventually
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
+import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, RecordSchemaV2}
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -28,7 +29,7 @@ import java.time.LocalDate
 object StateCompatibilityTest {
 
   @JsonCodec(decodeOnly = true)
-  case class InputEvent(first: String, last: String)
+  case class InputEvent(first: String, middle: Option[String], last: String)
 
   @JsonCodec(decodeOnly = true)
   case class OutputEvent(input: InputEvent, previousInput: InputEvent)
@@ -87,8 +88,38 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }"
     )
 
-  private val event1: InputEvent = InputEvent("Jan", "Kowalski")
-  private val event2             = InputEvent("Zenon", "Nowak")
+  private val event1: InputEvent = InputEvent("Jan", Some("Henryk"), "Kowalski")
+  private val event2             = InputEvent("Zenon", None, "Nowak")
+
+  val InputRecordSchemaString: String =
+    """{
+      |  "type": "record",
+      |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
+      |  "name": "StateCompatibilityTestInput",
+      |  "fields": [
+      |    { "name": "first", "type": "string" },
+      |    { "name": "middle", "type": ["null", "string"], "default": null },
+      |    { "name": "last", "type": "string" }
+      |  ]
+      |}
+    """.stripMargin
+
+  val InputRecordSchema: Schema = AvroUtils.parseSchema(InputRecordSchemaString)
+
+  private val event2AvroMessage = avroEncoder.encodeRecordOrError(
+    Map("first" -> "Zenon", "last" -> "Nowak"),
+    InputRecordSchema
+  )
+
+  private val event1AvroMessage = avroEncoder.encodeRecordOrError(
+    Map("first" -> "Jan", "middle" -> "Henryk", "last" -> "Kowalski"),
+    InputRecordSchema
+  )
+
+  private val dummyInputAvroMessage = avroEncoder.encodeRecordOrError(
+    Map("first" -> "Dummy", "last" -> "Dummy"),
+    InputRecordSchema
+  )
 
   private val JsonSchemaV1 = new JsonSchema("""|{
        |  "type": "object",
@@ -97,6 +128,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
        |      "type": "object",
        |      "properties": {
        |        "first" : { "type": "string" },
+       |        "middle" : { "type": ["string", "null"] },
        |        "last" : { "type": "string" }
        |      },
        |      "required": ["first", "last"]
@@ -105,6 +137,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
        |      "type": "object",
        |      "properties": {
        |        "first" : { "type": "string" },
+       |        "middle" : { "type": ["string", "null"] },
        |        "last" : { "type": "string" }
        |      },
        |      "required": ["first", "last"]
@@ -121,11 +154,11 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     * 3. go back to ignore :)
     */
   ignore("should create savepoint and save to disk") {
-    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
     val clusterClient = flinkMiniCluster.asInstanceOf[FlinkMiniClusterHolderImpl].getClusterClient
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(event1AvroMessage, inputTopicConfig.input)
 
     run(
       stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output),
@@ -144,7 +177,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   test("should restore from snapshot") {
-    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
@@ -157,11 +190,11 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
     )
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(dummyInputAvroMessage, inputTopicConfig.input)
 
     val jobExecutionResult = env.execute(streamGraph)
     env.waitForStart(jobExecutionResult.getJobID, process1.id)()
-    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(event2AvroMessage, inputTopicConfig.input)
 
     verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     env.stopJob(process1.id, jobExecutionResult)
