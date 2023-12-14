@@ -1,11 +1,12 @@
 import { ExpressionObj } from "../types";
-import { Validator } from "../../Validators";
 import React, { useCallback, useMemo } from "react";
 import moment from "moment";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
+import { ExtendedEditor } from "../Editor";
+import { FieldError } from "../../Validators";
 
 export type Period = {
     years: number;
@@ -16,8 +17,8 @@ export type Period = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
-    showValidation?: boolean;
+    fieldErrors: FieldError[];
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
     editorConfig: $TodoType;
@@ -32,8 +33,8 @@ const NONE_PERIOD = {
     days: () => null,
 };
 
-export default function PeriodEditor(props: Props): JSX.Element {
-    const { expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
+export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
+    const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const periodFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Period] : formatter), [formatter]);
 
@@ -52,7 +53,7 @@ export default function PeriodEditor(props: Props): JSX.Element {
     const decode = useCallback(
         (expression: string): Period => {
             const result = periodFormatter.decode(expression);
-            const period = result == null ? NONE_PERIOD : moment.duration(result);
+            const period = result == null || typeof result !== "string" ? NONE_PERIOD : moment.duration(result);
             return {
                 years: period.years(),
                 months: period.months(),
@@ -70,12 +71,12 @@ export default function PeriodEditor(props: Props): JSX.Element {
             editorConfig={editorConfig}
             readOnly={readOnly}
             showValidation={showValidation}
-            validators={validators}
+            fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
         />
     );
-}
+};
 
 PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);

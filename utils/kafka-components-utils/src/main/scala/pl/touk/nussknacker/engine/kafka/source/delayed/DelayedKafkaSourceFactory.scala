@@ -1,81 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.source.delayed
 
-import cats.data.Validated.{Invalid, Valid}
-import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
-import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.{
-  TypeDefinition,
-  TypeDefinitionParamName,
-  TypeParameter,
-  calculateTypingResult
-}
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
-import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 import pl.touk.nussknacker.engine.util.TimestampUtils
-
-import scala.reflect.ClassTag
-
-class DelayedKafkaSourceFactory[K: ClassTag, V: ClassTag](
-    deserializationSchemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[K, V]],
-    formatterFactory: RecordFormatterFactory,
-    processObjectDependencies: ProcessObjectDependencies,
-    implProvider: KafkaSourceImplFactory[K, V]
-) extends KafkaSourceFactory[K, V](
-      deserializationSchemaFactory,
-      formatterFactory,
-      processObjectDependencies,
-      implProvider
-    ) {
-
-  override protected def prepareInitialParameters: List[Parameter] = super.prepareInitialParameters ++ List(
-    TypeParameter,
-    TimestampFieldParameter,
-    DelayParameter
-  )
-
-  override def nextSteps(context: ValidationContext, dependencies: List[NodeDependencyValue])(
-      implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
-    case step @ TransformationStep(
-          (TopicParamName, DefinedEagerParameter(topic: String, _)) ::
-          (TypeDefinitionParamName, DefinedEagerParameter(definition: TypeDefinition, _)) ::
-          (TimestampFieldParamName, DefinedEagerParameter(field, _)) ::
-          (DelayParameterName, DefinedEagerParameter(_, _)) :: Nil,
-          _
-        ) =>
-      val topicValidationErrors = topicsValidationErrors(topic)
-      calculateTypingResult(definition) match {
-        case Valid((definition, typingResult)) =>
-          val timestampValidationErrors =
-            Option(field.asInstanceOf[String]).map(f => validateTimestampField(f, typingResult)).getOrElse(Nil)
-          val errors = topicValidationErrors ++ timestampValidationErrors
-          prepareSourceFinalResults(context, dependencies, step.parameters, keyTypingResult, typingResult, errors)
-        case Invalid(exc) =>
-          val errors = topicValidationErrors ++ List(exc.toCustomNodeError(nodeId))
-          prepareSourceFinalErrors(context, dependencies, step.parameters, errors = errors)
-      }
-    case step @ TransformationStep(
-          (TopicParamName, _) :: (TypeDefinitionParamName, _) :: (TimestampFieldParamName, _) :: (
-            DelayParameterName,
-            _
-          ) :: Nil,
-          _
-        ) =>
-      prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
-  }
-
-}
 
 object DelayedKafkaSourceFactory {
 

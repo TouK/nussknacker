@@ -14,8 +14,10 @@ module.exports = {
         "\\.(css|less|scss|sss|styl)$": "<rootDir>/node_modules/jest-css-modules",
         "\\.(svg)$": "<rootDir>/__mocks__/svgComponentMock",
         uuid: require.resolve("uuid"),
+        "@fontsource/roboto-mono": "<rootDir>/node_modules/jest-css-modules",
     },
     testMatch: ["**/*test.[tj]s?(x)"],
     snapshotSerializers: ["@emotion/jest/serializer"],
     setupFilesAfterEnv: ["<rootDir>/jest-setup.js"],
+    transformIgnorePatterns: ["<rootDir>/node_modules/(?!react-cron-generator)/.*"],
 };

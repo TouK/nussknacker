@@ -4,20 +4,9 @@ import io.circe.Decoder
 import org.apache.avro.Conversions.UUIDConversion
 import org.apache.avro.data.RecordBuilderBase
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import org.apache.avro.specific.SpecificRecordBase
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.schemedkafka.LogicalTypesGenericRecordBuilder
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter._
-import tech.allegro.schema.json2avro.converter.types.{
-  AvroTypeConverter,
-  BytesDecimalConverter,
-  IntDateConverter,
-  IntTimeMillisConverter,
-  LongTimeMicrosConverter,
-  LongTimestampMicrosConverter,
-  LongTimestampMillisConverter,
-  RecordConverter
-}
+import tech.allegro.schema.json2avro.converter.types._
 import tech.allegro.schema.json2avro.converter.{
   CompositeJsonToAvroReader,
   JsonAvroConverter,
@@ -25,14 +14,14 @@ import tech.allegro.schema.json2avro.converter.{
   UnknownFieldListener
 }
 
-import java.time.{Instant, LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDate, LocalTime}
 import java.util
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class JsonPayloadToAvroConverter(specificClass: Option[Class[SpecificRecordBase]]) {
+object JsonPayloadToAvroConverter {
 
   private val converter = new JsonAvroConverter(
     new CompositeJsonToAvroReader(
@@ -52,6 +41,7 @@ class JsonPayloadToAvroConverter(specificClass: Option[Class[SpecificRecordBase]
           override def createRecordBuilder(schema: Schema): RecordBuilderBase[GenericData.Record] = {
             new LogicalTypesGenericRecordBuilder(schema)
           }
+
           override def setField(
               builder: RecordBuilderBase[GenericData.Record],
               subField: Schema.Field,
@@ -66,17 +56,10 @@ class JsonPayloadToAvroConverter(specificClass: Option[Class[SpecificRecordBase]
   )
 
   def convert(payload: Array[Byte], schema: Schema): GenericRecord = {
-    specificClass match {
-      case Some(kl) => converter.convertToSpecificRecord(payload, kl, schema)
-      case None     => converter.convertToGenericDataRecord(payload, schema)
-    }
+    converter.convertToGenericDataRecord(payload, schema)
   }
 
-}
-
-object JsonPayloadToAvroConverter {
-
-  object LogicalTypeIntDateConverter extends IntDateConverter(DateTimeFormatter.ISO_DATE) {
+  private object LogicalTypeIntDateConverter extends IntDateConverter(DateTimeFormatter.ISO_DATE) {
     override def convertDateTimeString(dateTimeString: String): AnyRef = parseLocalDate(dateTimeString)
 
     override def convertNumber(daysFromEpoch: Number): AnyRef = LocalDate.ofEpochDay(daysFromEpoch.intValue())
@@ -89,20 +72,22 @@ object JsonPayloadToAvroConverter {
       LocalTime.ofNanoOfDay(TimeUnit.MILLISECONDS.toNanos(millisFromMidnight.intValue()))
   }
 
-  object LogicalTypeLongTimeMicrosConverter extends LongTimeMicrosConverter(DateTimeFormatter.ISO_TIME) {
+  private object LogicalTypeLongTimeMicrosConverter extends LongTimeMicrosConverter(DateTimeFormatter.ISO_TIME) {
     override def convertDateTimeString(dateTimeString: String): AnyRef = parseLocalTime(dateTimeString)
 
     override def convertNumber(microsFromMidnight: Number): AnyRef =
       LocalTime.ofNanoOfDay(TimeUnit.MICROSECONDS.toNanos(microsFromMidnight.longValue()))
   }
 
-  object LogicalTypeLongTimestampMillisConverter extends LongTimestampMillisConverter(DateTimeFormatter.ISO_DATE_TIME) {
+  private object LogicalTypeLongTimestampMillisConverter
+      extends LongTimestampMillisConverter(DateTimeFormatter.ISO_DATE_TIME) {
     override def convertDateTimeString(dateTimeString: String): AnyRef = parseInstant(dateTimeString)
 
     override def convertNumber(millisFromEpoch: Number): AnyRef = Instant.ofEpochMilli(millisFromEpoch.longValue())
   }
 
-  object LogicalTypeLongTimestampMicrosConverter extends LongTimestampMicrosConverter(DateTimeFormatter.ISO_DATE_TIME) {
+  private object LogicalTypeLongTimestampMicrosConverter
+      extends LongTimestampMicrosConverter(DateTimeFormatter.ISO_DATE_TIME) {
     override def convertDateTimeString(dateTimeString: String): AnyRef = parseInstant(dateTimeString)
 
     override def convertNumber(microsFromEpoch: Number): AnyRef = {
@@ -114,12 +99,12 @@ object JsonPayloadToAvroConverter {
 
   }
 
-  object DecimalConverter extends BytesDecimalConverter {
+  private object DecimalConverter extends BytesDecimalConverter {
     override def convertDecimal(value: Any, scale: Int, path: util.Deque[String]): AnyRef =
       bigDecimalWithExpectedScale(value.toString, scale, path)
   }
 
-  object UUIDConverter extends BaseAvroTypeConverter {
+  private object UUIDConverter extends BaseAvroTypeConverter {
 
     private val conversion = new UUIDConversion
 
@@ -138,7 +123,7 @@ object JsonPayloadToAvroConverter {
 
   }
 
-  trait BaseAvroTypeConverter extends AvroTypeConverter {
+  private trait BaseAvroTypeConverter extends AvroTypeConverter {
 
     def expectedFormat: String
 
@@ -162,15 +147,7 @@ object JsonPayloadToAvroConverter {
       Try(doConvert).fold(ex => handleUnexpectedFormat(path, silently, Some(ex)), identity)
     }
 
-    protected implicit class DecoderResultExt[A <: AnyRef](decoderResult: Decoder.Result[A]) {
-
-      def toValue(path: util.Deque[String], silently: Boolean): AnyRef = {
-        decoderResult.fold(ex => handleUnexpectedFormat(path, silently, Some(ex)), identity)
-      }
-
-    }
-
-    protected def handleUnexpectedFormat(
+    private def handleUnexpectedFormat(
         path: util.Deque[String],
         silently: Boolean,
         cause: Option[Throwable]

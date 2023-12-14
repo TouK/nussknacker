@@ -3,11 +3,11 @@ import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import { UnknownFunction } from "../../../../../types/common";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { Error } from "../Validators";
 import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
+import { FieldError } from "../Validators";
 
 type Props = {
     fieldName: string;
@@ -21,8 +21,8 @@ type Props = {
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     testResultsToShow: NodeResultsForContext;
     renderFieldLabel: UnknownFunction;
-    errors: Array<Error>;
     variableTypes: VariableTypes;
+    fieldErrors: FieldError[];
 };
 
 function ExpressionField(props: Props): JSX.Element {
@@ -38,8 +38,8 @@ function ExpressionField(props: Props): JSX.Element {
         setNodeDataAt,
         testResultsToShow,
         renderFieldLabel,
-        errors,
         variableTypes,
+        fieldErrors,
     } = props;
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
@@ -53,7 +53,6 @@ function ExpressionField(props: Props): JSX.Element {
         return (
             <EditableEditor
                 fieldLabel={fieldLabel}
-                fieldName={fieldName}
                 param={parameterDefinition}
                 expressionObj={expressionObj}
                 renderFieldLabel={renderFieldLabel}
@@ -61,9 +60,9 @@ function ExpressionField(props: Props): JSX.Element {
                 showSwitch={showSwitch}
                 readOnly={readOnly}
                 onValueChange={onValueChange}
-                errors={errors}
                 variableTypes={variableTypes}
                 showValidation={showValidation}
+                fieldErrors={fieldErrors}
             />
         );
     }
@@ -74,7 +73,6 @@ function ExpressionField(props: Props): JSX.Element {
                 param={parameterDefinition}
                 renderFieldLabel={renderFieldLabel}
                 fieldLabel={fieldLabel}
-                fieldName={fieldName}
                 expressionObj={expressionObj}
                 isMarked={isMarked(exprTextPath)}
                 showValidation={showValidation}
@@ -82,7 +80,7 @@ function ExpressionField(props: Props): JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                errors={errors}
+                fieldErrors={fieldErrors}
             />
         </ExpressionTestResults>
     );

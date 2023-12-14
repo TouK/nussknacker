@@ -5,31 +5,32 @@ import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService from "../http/HttpService";
 import { WindowContent } from "../windowManager";
-import { AddProcessForm } from "./AddProcessForm";
-import { allValid, errorValidator } from "./graph/node-modal/editors/Validators";
+import { AddProcessForm, FormValue } from "./AddProcessForm";
+import { extendErrors, getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import { useNavigate } from "react-router-dom";
+import { NodeValidationError } from "../types";
+import { isEmpty } from "lodash";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
+    errors: NodeValidationError[];
 }
 
 export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
-    const { isFragment, ...passProps } = props;
+    const { t } = useTranslation();
+    const { isFragment, errors = [], ...passProps } = props;
     const nameValidators = useProcessNameValidators();
-
     const [value, setState] = useState({ processId: "", processCategory: "" });
-    const [processNameError, setProcessNameError] = useState({
-        fieldName: "processName",
-        message: "",
-        description: "",
-        typ: "",
-    });
+    const [processNameFromBackend, setProcessNameFromBackendError] = useState<NodeValidationError[]>([]);
 
-    const isValid = useMemo(() => value.processCategory && allValid(nameValidators, [value.processId]), [nameValidators, value]);
+    const fieldErrors = getValidationErrorsForField(
+        extendErrors([...errors, ...processNameFromBackend], value.processId, "processName", nameValidators),
+        "processName",
+    );
 
     const navigate = useNavigate();
     const createProcess = useCallback(async () => {
-        if (isValid) {
+        if (isEmpty(fieldErrors)) {
             const { processId, processCategory } = value;
             try {
                 await HttpService.createProcess(processId, processCategory, isFragment);
@@ -37,31 +38,34 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 navigate(visualizationUrl(processId));
             } catch (error) {
                 if (error?.response?.status == 400) {
-                    //TODO: change to pass error from BE as whole object not just the message
-                    setProcessNameError({ fieldName: "processName", message: error?.response?.data, description: "", typ: "" });
+                    setProcessNameFromBackendError(() => [
+                        { message: error?.response?.data, description: "", errorType: "SaveAllowed", fieldName: "processName", typ: "" },
+                    ]);
                 } else {
                     throw error;
                 }
             }
         }
-    }, [isFragment, isValid, navigate, passProps, value]);
+    }, [isFragment, fieldErrors, navigate, passProps, value]);
 
-    const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             { title: t("dialog.button.cancel", "Cancel"), action: () => passProps.close() },
-            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: !isValid },
+            { title: t("dialog.button.create", "create"), action: () => createProcess(), disabled: !isEmpty(fieldErrors) },
         ],
-        [createProcess, isValid, passProps, t],
+        [createProcess, fieldErrors, passProps, t],
     );
 
+    const onChange = (value: FormValue) => {
+        setState(value);
+
+        if (processNameFromBackend.length > 0) {
+            setProcessNameFromBackendError([]);
+        }
+    };
     return (
         <WindowContent buttons={buttons} {...passProps}>
-            <AddProcessForm
-                value={value}
-                onChange={setState}
-                nameValidators={nameValidators.concat(errorValidator([processNameError], "processName"))}
-            />
+            <AddProcessForm value={value} onChange={onChange} fieldErrors={fieldErrors} />
         </WindowContent>
     );
 }

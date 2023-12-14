@@ -4,7 +4,6 @@ import { Category } from "./process";
 export type ParameterConfig = {
     defaultValue?: string;
     editor?: $TodoType;
-    validators?: $TodoType;
     label?: string;
 };
 export type SingleComponentConfig = {

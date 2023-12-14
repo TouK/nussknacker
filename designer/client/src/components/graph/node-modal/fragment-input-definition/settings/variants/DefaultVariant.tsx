@@ -3,10 +3,9 @@ import { CustomSwitch, SettingLabelStyled, SettingRow, SettingsWrapper } from ".
 import { FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { DefaultParameterVariant, onChangeType } from "../../item";
-import { VariableTypes } from "../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import InitialValue from "./fields/InitialValue";
-import { Error } from "../../../editors/Validators";
 import { ValidationsFields } from "./fields/validation";
 
 interface Props {
@@ -15,10 +14,10 @@ interface Props {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, fieldsErrors, ...props }: Props) => {
+export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, errors, ...props }: Props) => {
     const { t } = useTranslation();
 
     return (
@@ -44,7 +43,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 path={path}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fieldsErrors={fieldsErrors}
+                errors={errors}
                 fieldName={`$param.${item.name}.$initialValue`}
             />
             <SettingRow>

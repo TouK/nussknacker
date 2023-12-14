@@ -27,15 +27,14 @@ trait KafkaAvroSourceSpecMixin {
 
   object KafkaAvroSourceMockSchemaRegistry {
 
-    val RecordTopic: String                    = "testAvroRecordTopic1"
-    val RecordTopicWithKey: String             = "testAvroRecordTopic1WithKey"
-    val IntTopicWithKey: String                = "testAvroIntTopic1WithKey"
-    val IntTopicNoKey: String                  = "testAvroIntTopic1NoKey"
-    val ArrayOfNumbersTopic: String            = "testArrayOfNumbersTopic"
-    val ArrayOfRecordsTopic: String            = "testArrayOfRecordsTopic"
-    val InvalidDefaultsTopic: String           = "testAvroInvalidDefaultsTopic1"
-    val PaymentDateTopic: String               = "testPaymentDateTopic"
-    val GeneratedWithLogicalTypesTopic: String = "testGeneratedWithLogicalTypesTopic"
+    val RecordTopic: String          = "testAvroRecordTopic1"
+    val RecordTopicWithKey: String   = "testAvroRecordTopic1WithKey"
+    val IntTopicWithKey: String      = "testAvroIntTopic1WithKey"
+    val IntTopicNoKey: String        = "testAvroIntTopic1NoKey"
+    val ArrayOfNumbersTopic: String  = "testArrayOfNumbersTopic"
+    val ArrayOfRecordsTopic: String  = "testArrayOfRecordsTopic"
+    val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
+    val PaymentDateTopic: String     = "testPaymentDateTopic"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
       """{
@@ -89,7 +88,6 @@ trait KafkaAvroSourceSpecMixin {
       .register(ArrayOfRecordsTopic, ArrayOfRecordsV1Schema, 1, isKey = false)
       .register(ArrayOfRecordsTopic, ArrayOfRecordsV2Schema, 2, isKey = false)
       .register(PaymentDateTopic, PaymentDate.schema, 1, isKey = false)
-      .register(GeneratedWithLogicalTypesTopic, GeneratedAvroClassWithLogicalTypes.getClassSchema, 1, isKey = false)
       .build
 
     val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)

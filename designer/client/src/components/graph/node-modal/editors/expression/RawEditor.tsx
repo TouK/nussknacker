@@ -1,18 +1,18 @@
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
-import ExpressionSuggest from "./ExpressionSuggest";
+import { ExpressionSuggest } from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
-import { Validator } from "../Validators";
 import { NodeInputCss } from "../../../../NodeInput";
 import { useTheme } from "@mui/material";
 import { cx } from "@emotion/css";
+import { FieldError } from "../Validators";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
-    validators?: Validator[];
+    fieldErrors: FieldError[];
     isMarked?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     readOnly?: boolean;
     onValueChange: (value: string) => void;
     rows?: number;
@@ -23,10 +23,10 @@ export type RawEditorProps = {
     editorMode?: EditorMode;
 };
 
-const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
+const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
-        validators,
+        fieldErrors,
         isMarked,
         showValidation,
         readOnly,
@@ -64,7 +64,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}
-                validators={validators}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}
@@ -72,6 +72,6 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             />
         </div>
     );
-});
+};
 
-export default RawEditor;
+export const RawEditor = forwardRef(RawEditorComponent);

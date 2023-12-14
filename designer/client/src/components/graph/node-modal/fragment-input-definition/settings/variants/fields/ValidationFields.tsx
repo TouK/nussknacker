@@ -1,46 +1,33 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FieldName, FragmentValidation, onChangeType } from "../../../item";
+import { FragmentValidation, onChangeType } from "../../../item";
 import { SettingRow, fieldLabel } from "./StyledSettingsComponnets";
-import { VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
 import { NodeInput } from "../../../../../../withFocus";
-import { errorValidator, Error } from "../../../../editors/Validators";
-import { EditorType } from "../../../../editors/expression/Editor";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 
 interface ValidationFields extends Omit<FragmentValidation["validationExpression"], "validation" | "language"> {
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     readOnly: boolean;
-    fieldsErrors: Error[];
-    validationExpressionFieldName: FieldName;
+    errors: NodeValidationError[];
 }
 
-export default function ValidationFields({
-    expression,
-    failedMessage,
-    variableTypes,
-    path,
-    onChange,
-    readOnly,
-    fieldsErrors,
-    validationExpressionFieldName,
-}: ValidationFields) {
+export default function ValidationFields({ expression, failedMessage, variableTypes, path, onChange, readOnly, errors }: ValidationFields) {
     const { t } = useTranslation();
 
     return (
         <>
             <EditableEditor
-                fieldName={validationExpressionFieldName}
                 fieldLabel={t("fragment.validation.validationExpression", "Validation expression:")}
                 renderFieldLabel={() => fieldLabel(t("fragment.validation.validationExpression", "Validation expression:"))}
                 expressionObj={{ language: expression.language, expression: expression.expression }}
                 onValueChange={(value) => onChange(`${path}.validationExpression.expression.expression`, value)}
                 variableTypes={variableTypes}
                 readOnly={readOnly}
-                errors={fieldsErrors}
-                param={{ validators: [errorValidator], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                fieldErrors={getValidationErrorsForField(errors, "validationExpression")}
                 showValidation
             />
             <SettingRow>

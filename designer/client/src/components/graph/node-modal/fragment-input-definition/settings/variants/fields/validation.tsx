@@ -4,7 +4,7 @@ import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
 import { onChangeType, AnyValueWithSuggestionsParameterVariant, AnyValueParameterVariant, DefaultParameterVariant } from "../../../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
-import { VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { Error } from "../../../../editors/Validators";
 
 interface Validation {
@@ -13,13 +13,12 @@ interface Validation {
     path: string;
     variableTypes: VariableTypes;
     readOnly: boolean;
-    fieldErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export function ValidationsFields(props: Validation) {
-    const { onChange, path, variableTypes, item, readOnly, fieldErrors } = props;
-
-    const validation = item.validationExpression.validation;
+export function ValidationsFields(props: ValidationsFields) {
+    const { onChange, path, variableTypes, item, readOnly, errors } = props;
+    const [validation, setValidation] = useState(true);
 
     return (
         <>
@@ -52,8 +51,7 @@ export function ValidationsFields(props: Validation) {
                     expression={item.validationExpression.expression}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
-                    fieldsErrors={fieldErrors}
-                    validationExpressionFieldName={`$param.${item.name}.$validationExpression.expression`}
+                    errors={errors}
                 />
             )}
         </>
