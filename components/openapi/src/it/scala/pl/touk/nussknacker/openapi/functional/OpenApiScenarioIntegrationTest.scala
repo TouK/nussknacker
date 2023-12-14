@@ -19,12 +19,13 @@ import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Response, SttpBackend}
+import sttp.client3.{RequestT, Response, StringBody, SttpBackend}
 import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.MapHasAsScala
 
 class OpenApiScenarioIntegrationTest
     extends AnyFlatSpec
@@ -42,6 +43,11 @@ class OpenApiScenarioIntegrationTest
   def withSwagger(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
     new StubService().withCustomerService { port =>
       test(prepareScenarioRunner(port, sttpBackend))
+    }
+
+  def withRecordRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
+    new StubService("/customer-record-request-swagger.yaml").withCustomerService { port =>
+      test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
     }
 
   def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
@@ -110,6 +116,30 @@ class OpenApiScenarioIntegrationTest
     result.validValue shouldBe RunResult.success("justAString")
   }
 
+  it should "call enricher with optional non-nullable field in request" in withRecordRequestBody(
+    SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
+      case RequestT(_, _, StringBody(stringBody, _, _), _, _, _, _) => Response.ok(stringBody)
+    }
+  ) { testScenarioRunner =>
+    // given
+
+    def runWithScenarioWithParameterExpression(paramExpression: String) = {
+      val data     = List("")
+      val scenario = scenarioWithEnricher(("id", paramExpression))
+
+      // when
+      val results = testScenarioRunner.runWithData[String, java.util.Map[String, String]](scenario, data)
+
+      // then
+      val validResults = results.validValue.mapSuccesses(_.asScala)
+      validResults.errors shouldBe empty
+      validResults.successes should have length 1
+      validResults.successes.head
+    }
+    runWithScenarioWithParameterExpression("'foo'") shouldBe Map("id" -> "foo")
+    runWithScenarioWithParameterExpression("") shouldBe Map.empty
+  }
+
   private def scenarioWithEnricher(params: (String, Expression)*) = {
     ScenarioBuilder
       .streaming("openapi-test")
@@ -141,9 +171,8 @@ class OpenApiScenarioIntegrationTest
       url: URL
   ) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
-    val services = SwaggerParser.parse(definition, openAPIsConfig).collect { case Valid(service) =>
-      service
-    }
+    val services   = SwaggerParser.parse(definition, openAPIsConfig).map(_.validValue)
+    services should have length 1
     val stubbedGetCustomerOpenApiService =
       new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend, Nil)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
