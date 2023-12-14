@@ -281,6 +281,13 @@ class ExpressionSuggesterSpec
     }
   }
 
+  test("should suggest fields for map literal using indexing by property") {
+    val expression = s"{key: 1}[k]"
+    spelSuggestionsFor(expression, 0, expression.length - 1) shouldBe List(
+      ExpressionSuggestion("key", Typed.fromInstance(1), fromClass = false, None, Nil)
+    )
+  }
+
   test("should suggest fields for map literal in indexer") {
     (nonStandardFieldNames ++ standardFieldNames ++ javaKeywordNames).foreach { fieldName =>
       val expression = s"{'$fieldName': 1}['']"

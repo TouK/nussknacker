@@ -63,8 +63,14 @@ class SpelExpressionSuggester(
         nodeInPosition: NuSpelNode,
         p: PropertyOrFieldReference
     ): Future[Iterable[ExpressionSuggestion]] = {
-      val typedPrevNode = nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
-      typedPrevNode
+      val nuSpelNodeParentOpt = nodeInPosition.parent.map(_.node)
+      val typedNode = nuSpelNodeParentOpt.flatMap {
+        case nuSpelNodeParent if nuSpelNodeParent.spelNode.isInstanceOf[Indexer] =>
+          // TODO: in this case we shouldn't suggest suggestionsFromClass
+          nuSpelNodeParent.prevNode().flatMap(_.typingResultWithContext)
+        case _ => None
+      } orElse nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
+      typedNode
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
