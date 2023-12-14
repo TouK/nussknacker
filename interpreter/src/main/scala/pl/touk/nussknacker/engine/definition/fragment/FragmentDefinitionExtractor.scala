@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{Validated, Writer}
 import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  FragmentParamClassLoadError,
-  MultipleOutputsForName
-}
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -144,14 +141,14 @@ class FragmentComponentDefinitionExtractor(
       }
       .getOrElse(EditorExtractor.extract(parameterData, config))
 
-    val customExpressionValidator = fragmentParameter.validationExpression.flatMap(expr => {
+    val customExpressionValidator = fragmentParameter.valueCompileTimeValidation.flatMap(expr => {
       expressionCompiler
-        .compileWithoutContextValidation(expr.expression, fragmentParameter.name, Typed[Boolean])
+        .compileWithoutContextValidation(expr.validationExpression, fragmentParameter.name, Typed[Boolean])
         .toOption
         .map { expression =>
           ValidationExpressionParameterValidator(
             expression,
-            fragmentParameter.validationExpression.map(_.failedMessage)
+            fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
           )
         }
     })

@@ -326,7 +326,7 @@ object node {
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
         valueEditor: Option[ValueInputWithFixedValues],
-        validationExpression: Option[ValidationExpression],
+        valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 
     @JsonCodec case class FixedExpressionValue(expression: String, label: String)
@@ -341,7 +341,7 @@ object node {
           initialValue = None,
           hintText = None,
           valueEditor = None,
-          validationExpression = None
+          valueCompileTimeValidation = None
         )
       }
 
@@ -353,7 +353,10 @@ object node {
 
     }
 
-    @JsonCodec case class ValidationExpression(expression: Expression, failedMessage: String)
+    @JsonCodec case class ParameterValueCompileTimeValidation(
+        validationExpression: Expression,
+        validationFailedMessage: Option[String]
+    )
 
     @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression
+  ParameterValueCompileTimeValidation
 }
 import pl.touk.nussknacker.engine.graph.node.{FixedValuesListFieldName, InitialValueFieldName}
 
@@ -51,8 +51,8 @@ class FragmentParameterValidator(
   private def validateValidationExpression(
       fragmentParameter: FragmentParameter,
       validationContext: ValidationContext
-  )(implicit nodeId: NodeId) = fragmentParameter.validationExpression match {
-    case Some(ValidationExpression(expression, _)) =>
+  )(implicit nodeId: NodeId) = fragmentParameter.valueCompileTimeValidation match {
+    case Some(ParameterValueCompileTimeValidation(expression, _)) =>
       val ctx = ValidationContext(
         Map(ValidationExpressionParameterValidator.variableName -> validationContext(fragmentParameter.name))
       ) // TODO in the future, we'd like to support more references than just "#value", see ValidationExpressionParameterValidator

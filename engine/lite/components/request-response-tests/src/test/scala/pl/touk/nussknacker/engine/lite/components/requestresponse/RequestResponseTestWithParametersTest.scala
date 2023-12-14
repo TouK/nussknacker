@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue => FragmentFixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
@@ -193,7 +193,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           initialValue = Some(FragmentFixedExpressionValue("'Tomasz'", "Tomasz")),
           hintText = Some("some hint text"),
           valueEditor = None,
-          validationExpression = None
+          valueCompileTimeValidation = None
         )
       )
     )
@@ -229,7 +229,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
               fixedValuesList = fixedValuesList
             )
           ),
-          validationExpression = None
+          valueCompileTimeValidation = None
         )
       )
     )
@@ -265,8 +265,9 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           initialValue = None,
           hintText = None,
           valueEditor = None,
-          validationExpression =
-            Some(ValidationExpression(Expression.spel("#name.length() < 100"), "some validation error"))
+          valueCompileTimeValidation = Some(
+            ParameterValueCompileTimeValidation(Expression.spel("#name.length() < 100"), Some("some validation error"))
+          )
         )
       )
     )

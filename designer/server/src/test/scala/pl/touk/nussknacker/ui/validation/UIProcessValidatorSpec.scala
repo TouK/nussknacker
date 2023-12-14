@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.node._
@@ -434,7 +434,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  validationExpression = None
+                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -486,7 +486,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                       allowOtherValue = false
                     )
                   ),
-                  validationExpression = None
+                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   "subParam2",
@@ -500,7 +500,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                       allowOtherValue = false
                     )
                   ),
-                  validationExpression = None
+                  valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
                   "subParam3",
@@ -509,7 +509,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   initialValue = None,
                   hintText = None,
                   valueEditor = None,
-                  validationExpression = Some(ValidationExpression(Expression.spel("'a' + 'b'"), "some failed message"))
+                  valueCompileTimeValidation =
+                    Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
                 )
               )
             )
@@ -610,7 +611,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                     allowOtherValue = false
                   )
                 ),
-                validationExpression = None
+                valueCompileTimeValidation = None
               ),
             )
           )
@@ -996,10 +997,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            validationExpression = Some(
-              ValidationExpression(
+            valueCompileTimeValidation = Some(
+              ParameterValueCompileTimeValidation(
                 s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
-                "some failed message"
+                None
               )
             )
           )
@@ -1034,10 +1035,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            validationExpression = Some(
-              ValidationExpression(
+            valueCompileTimeValidation = Some(
+              ParameterValueCompileTimeValidation(
                 s"#${ValidationExpressionParameterValidator.variableName}.length() < 7",
-                "some failed message"
+                Some("some failed message")
               )
             )
           )

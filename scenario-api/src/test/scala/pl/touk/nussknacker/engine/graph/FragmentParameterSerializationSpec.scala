@@ -9,15 +9,14 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
   FragmentClazzRef,
   FragmentParameter,
-  ValidationExpression,
+  ParameterValueCompileTimeValidation,
   ValueInputWithFixedValuesProvided
 }
 
 class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
 
-  // todo add validationExpression
   test(
-    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, validationExpression [backwards compatibility test]"
+    "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, valueCompileTimeValidation [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
       "paramString",
@@ -26,7 +25,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       initialValue = None,
       hintText = None,
       valueEditor = None,
-      validationExpression = None
+      valueCompileTimeValidation = None
     )
 
     decode[FragmentParameter]("""{
@@ -45,7 +44,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |  "initialValue" : null,
         |  "hintText" : null,
         |  "valueEditor" : null,
-        |  "validationExpression" : null
+        |  "valueCompileTimeValidation" : null
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
@@ -75,12 +74,12 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
           }
         ]
       },
-      "validationExpression" : {
-        "expression" : {
+      "valueCompileTimeValidation" : {
+        "validationExpression" : {
           "expression" : "#value.length() < 7",
           "language" : "spel"
         },
-        "failedMessage" : "some failed message"
+        "validationFailedMessage" : "some failed message"
       }
     }""") shouldBe Right(
       FragmentParameter(
@@ -98,8 +97,9 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
             allowOtherValue = true
           )
         ),
-        validationExpression =
-          Some(ValidationExpression(Expression.spel("#value.length() < 7"), "some failed message")),
+        valueCompileTimeValidation = Some(
+          ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 7"), Some("some failed message"))
+        ),
       )
     )
   }
