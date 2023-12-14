@@ -207,9 +207,6 @@ object UIProcessObjectsFactory {
       types: Set[UIClassDefinition],
       processCategoryService: ProcessCategoryService
   ): UIModelDefinition = {
-    def createUIComponentDef(componentDef: ComponentStaticDefinition) =
-      createUIComponentDefinition(componentDef, processCategoryService)
-
     def createUIFragmentComponentDef(fragmentDef: FragmentStaticDefinition) =
       createUIFragmentComponentDefinition(fragmentDef, processCategoryService)
 
@@ -221,7 +218,6 @@ object UIProcessObjectsFactory {
         }
         .toMap
 
-    val transformed = modelDefinition.transform(createUIComponentDef)
     UIModelDefinition(
       services = filterByTypeAndTransform(ComponentType.Service),
       sourceFactories = filterByTypeAndTransform(ComponentType.Source),
