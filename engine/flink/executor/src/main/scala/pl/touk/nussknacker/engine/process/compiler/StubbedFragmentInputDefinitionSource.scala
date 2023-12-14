@@ -40,7 +40,7 @@ class StubbedFragmentInputDefinitionSource(modelData: ModelData) {
         componentConfig = SingleComponentConfig.zero,
         componentTypeSpecificData = FragmentSpecificData
       )
-    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+    val inputParameters = fragmentDefinitionExtractor.extractParametersDefinition(frag, None).value
 
     methodbased.MethodBasedComponentDefinitionWithImplementation(
       (_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => buildSource(inputParameters),

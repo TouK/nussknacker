@@ -5,6 +5,7 @@ import io.circe.parser.parse
 import org.everit.json.schema.EmptySchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -169,7 +170,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     val stubbedSource = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
-    val parameters: Seq[Parameter] = stubbedSource.createSource().testParametersDefinition
+    val parameters: Seq[Parameter] = stubbedSource.createSource(ValidationContext.empty).testParametersDefinition
     val expectedParameters = List(
       SimplifiedParam(
         "name",
@@ -201,7 +202,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
-    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+    val parameter: Parameter = stubbedSource.createSource(ValidationContext.empty).testParametersDefinition.head
 
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed[String]
@@ -240,7 +241,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     )
 
     val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
-    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+    val parameter: Parameter = stubbedSource.createSource(ValidationContext.empty).testParametersDefinition.head
 
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed[String]
@@ -274,13 +275,13 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
           hintText = None,
           valueEditor = None,
           valueCompileTimeValidation = Some(
-            ParameterValueCompileTimeValidation(Expression.spel("#name.length() < 100"), Some("some validation error"))
+            ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 100"), Some("some validation error"))
           )
         )
       )
     )
     val stubbedSource        = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
-    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+    val parameter: Parameter = stubbedSource.createSource(ValidationContext.empty).testParametersDefinition.head
 
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed(classOf[String])
@@ -290,7 +291,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     }
     val validationExpression =
       parameter.validators.head.asInstanceOf[ValidationExpressionParameterValidator].validationExpression
-    validationExpression.original shouldBe "#name.length() < 100"
+    validationExpression.original shouldBe "#value.length() < 100"
     validationExpression.language shouldBe "spel"
   }
 

@@ -511,6 +511,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
                   valueEditor = None,
                   valueCompileTimeValidation =
                     Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
+                ),
+                FragmentParameter(
+                  "subParam4",
+                  FragmentClazzRef[java.lang.String],
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation = Some(
+                    ParameterValueCompileTimeValidation(
+                      s"#${ValidationExpressionParameterValidator.variableName} < 7", // invalid operation (comparing string with int)
+                      None
+                    )
+                  )
                 )
               )
             )
@@ -549,6 +563,13 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
               "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
               "There is a problem with validation expression: 'a' + 'b'",
               Some("$param.subParam3.$validationExpression"),
+              NodeValidationErrorType.SaveAllowed
+            ),
+            NodeValidationError(
+              "InvalidValidationExpression",
+              "Invalid validation expression: Wrong part types",
+              "There is a problem with validation expression: #value < 7",
+              Some("$param.subParam4.$validationExpression"),
               NodeValidationErrorType.SaveAllowed
             )
           ) =>

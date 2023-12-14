@@ -1024,6 +1024,53 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should fail on invalid-type validation expression") {
+    val nodeId: String = "in"
+    val paramName      = "param1"
+    val invalidExpression =
+      s"#${ValidationExpressionParameterValidator.variableName} > 0" // invalid operation (comparing string with int)
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(
+                  invalidExpression,
+                  Some("some failed message")
+                )
+              )
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Wrong part types",
+                nodeId,
+                paramName,
+                invalidExpression
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   test("should fail on non-boolean-result-type validation expression") {
     val nodeId: String   = "in"
     val paramName        = "param1"
