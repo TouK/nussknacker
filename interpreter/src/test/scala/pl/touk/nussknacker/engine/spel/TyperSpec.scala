@@ -191,7 +191,7 @@ object TyperSpecTestData {
   object TestRecord {
     val nonPresentKey: String = "nonPresentKey"
     val testRecordExpr: String =
-      "{int: 1, string: \"stringVal\", boolean: true, \"null\": null, nestedRecord: {nestedRecordKey: 2}}"
+      "{int: 1, string: 'stringVal', boolean: true, 'null': null, nestedRecord: {nestedRecordKey: 2}}"
 
     val testRecordTyped: TypedObjectTypingResult = TypedObjectTypingResult(
       Map(
