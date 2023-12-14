@@ -9,15 +9,15 @@ import org.everit.json.schema.TrueSchema
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, WithCategories}
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
+import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.{RequestResponseHttpHandler, RequestResponseInterpreter}
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.test.{
-  ModelWithTestExtensions,
   TestScenarioCollectorHandler,
   TestScenarioRunner,
   TestScenarioRunnerBuilder
@@ -60,27 +60,32 @@ class RequestResponseTestScenarioRunner(
       scenario: CanonicalProcess
   )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     val testScenarioCollectorHandler = TestScenarioCollectorHandler.createHandler(componentUseCase)
-    ModelWithTestExtensions.withExtensions(config, components, globalVariables) { modelData =>
-      RequestResponseInterpreter[Id](
-        scenario,
-        ProcessVersion.empty,
-        LiteEngineRuntimeContextPreparer.noOp,
-        modelData,
-        additionalListeners = Nil,
-        resultCollector = testScenarioCollectorHandler.resultCollector,
-        componentUseCase = componentUseCase
-      ).map { interpreter =>
-        interpreter.open()
-        try {
-          val handler = new RequestResponseHttpHandler(interpreter)
-          run(req => {
-            val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
-            handler.invoke(req, entity)
-          })
-        } finally {
-          testScenarioCollectorHandler.close()
-          interpreter.close()
-        }
+    val modelData = ModelWithTestExtensions(
+      config,
+      LiteBaseComponentProvider.Components :::
+        RequestResponseComponentProvider.Components :::
+        components,
+      globalVariables
+    )
+    RequestResponseInterpreter[Id](
+      scenario,
+      ProcessVersion.empty,
+      LiteEngineRuntimeContextPreparer.noOp,
+      modelData,
+      additionalListeners = Nil,
+      resultCollector = testScenarioCollectorHandler.resultCollector,
+      componentUseCase = componentUseCase
+    ).map { interpreter =>
+      interpreter.open()
+      try {
+        val handler = new RequestResponseHttpHandler(interpreter)
+        run(req => {
+          val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
+          handler.invoke(req, entity)
+        })
+      } finally {
+        testScenarioCollectorHandler.close()
+        interpreter.close()
       }
     }
   }

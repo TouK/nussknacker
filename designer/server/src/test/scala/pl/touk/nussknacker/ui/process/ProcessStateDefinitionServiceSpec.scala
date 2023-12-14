@@ -7,10 +7,9 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{CategoryConfig, ProcessingTypeData}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
@@ -185,7 +184,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     ProcessingTypeData.createProcessingTypeData(
       MockManagerProvider,
       deploymentManager,
-      LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
+      LocalModelData(ConfigFactory.empty(), List.empty),
       ConfigFactory.empty(),
       CategoryConfig(category)
     )

@@ -18,7 +18,6 @@ import scala.util.{Failure, Try}
 
 class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
-  private val jsonToAvroConverter = new JsonPayloadToAvroConverter(None)
   val avroToJsonEncoder: PartialFunction[Any, Json] =
     new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
 
@@ -134,11 +133,11 @@ class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with Opti
   }
 
   private def convert(fieldJsonValue: String, schema: Schema): GenericRecord = {
-    jsonToAvroConverter.convert(s"""{"field": $fieldJsonValue}""".getBytes(StandardCharsets.UTF_8), schema)
+    JsonPayloadToAvroConverter.convert(s"""{"field": $fieldJsonValue}""".getBytes(StandardCharsets.UTF_8), schema)
   }
 
   private def convertMissingField(schema: Schema): GenericRecord = {
-    jsonToAvroConverter.convert("{}".getBytes(StandardCharsets.UTF_8), schema)
+    JsonPayloadToAvroConverter.convert("{}".getBytes(StandardCharsets.UTF_8), schema)
   }
 
   implicit class GenericRecordExt(record: GenericRecord) {

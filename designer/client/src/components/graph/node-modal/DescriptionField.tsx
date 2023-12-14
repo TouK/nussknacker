@@ -2,8 +2,7 @@
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import React from "react";
-import { NodeType } from "../../../types";
-import { Validator } from "./editors/Validators";
+import { NodeType, NodeValidationError } from "../../../types";
 
 interface DescriptionFieldProps {
     autoFocus?: boolean;
@@ -14,7 +13,7 @@ interface DescriptionFieldProps {
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
-    validators?: Validator[];
+    errors: NodeValidationError[];
 }
 
 export function DescriptionField({
@@ -26,7 +25,7 @@ export function DescriptionField({
     renderFieldLabel,
     setProperty,
     showValidation,
-    validators,
+    errors,
 }: DescriptionFieldProps): JSX.Element {
     return (
         <NodeField
@@ -38,10 +37,10 @@ export function DescriptionField({
             isEditMode={isEditMode}
             showValidation={showValidation}
             readonly={readonly}
-            validators={validators}
+            errors={errors}
             fieldType={FieldType.plainTextarea}
             fieldLabel={"Description"}
-            fieldProperty={"additionalFields.description"}
+            fieldName={"additionalFields.description"}
         />
     );
 }

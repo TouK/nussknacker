@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, Record
 
 class FlinkKafkaSourceImplFactory[K, V](
     protected val timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]]
-) extends KafkaSourceImplFactory[K, V] {
+) extends KafkaSourceImplFactory[K, V]
+    with Serializable {
 
   override def createSource(
       params: Map[String, Any],

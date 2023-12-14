@@ -1,12 +1,13 @@
-import { flow, startsWith } from "lodash";
+import { startsWith } from "lodash";
 import moment from "moment";
 import { Duration } from "./Duration/DurationEditor";
 import { Period } from "./Duration/PeriodEditor";
 import { CronExpression } from "./Cron/CronEditor";
 
+type FormatterValueType = string | Duration | Period | moment.Moment | null;
 export type Formatter = {
-    encode: (value: any) => string;
-    decode: (value: string) => any;
+    encode: (value: FormatterValueType) => string;
+    decode: (value: string) => FormatterValueType;
 };
 
 export enum FormatterType {
@@ -116,7 +117,7 @@ const dateTimeFormatter: Formatter = {
 };
 
 const defaultFormatter: Formatter = {
-    encode: (value) => value,
+    encode: (value: string) => value,
     decode: (value) => value,
 };
 

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-object FlinkKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
+object FlinkKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory with Serializable {
 
   def createSink(
       preparedTopic: PreparedKafkaTopic,

@@ -2,6 +2,7 @@
 
 1.13.0 (Not released yet)
 -------------------------
+* [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
 * [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
@@ -34,6 +35,7 @@
 * [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) Component and User API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Breaking change: some components changed identifier - url's and identifiers in node errors are changed
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Component `mapVariable` was renamed to `record-variable`
+* [#5223](https://github.com/TouK/nussknacker/pull/5223) Legacy low level kafka components were removed
 
 * 1.12.5 (1 Dec 2023)
 ------------------------

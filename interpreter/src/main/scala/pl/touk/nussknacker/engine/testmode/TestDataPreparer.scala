@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 
 class TestDataPreparer(
     classloader: ClassLoader,
-    expressionConfig: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    expressionConfig: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
     dictRegistry: EngineDictRegistry,
     classDefinitionSet: ClassDefinitionSet,
     metaData: MetaData

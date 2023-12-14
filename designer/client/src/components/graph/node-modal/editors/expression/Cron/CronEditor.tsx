@@ -1,5 +1,4 @@
 import { ExpressionObj } from "../types";
-import { Validator } from "../../Validators";
 import React, { useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
@@ -7,18 +6,18 @@ import Input from "../../field/Input";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { CronEditorStyled } from "./CronEditorStyled";
+import { ExtendedEditor } from "../Editor";
+import { FieldError } from "../../Validators";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
-    showValidation?: boolean;
+    fieldErrors: FieldError[];
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
-    editorFocused: boolean;
-    className: string;
     formatter: Formatter;
 };
 
@@ -26,10 +25,10 @@ type Props = {
 // when expression is empty - this component sets some default cron value and trigger onValueChange - we don't want that
 const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 
-export default function CronEditor(props: Props) {
+export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     const node = useRef(null);
 
-    const { expressionObj, validators, isMarked, onValueChange, showValidation, readOnly, formatter } = props;
+    const { expressionObj, isMarked, onValueChange, showValidation, readOnly, formatter, fieldErrors } = props;
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
@@ -39,7 +38,7 @@ export default function CronEditor(props: Props) {
 
     function decode(expression: string): CronExpression {
         const result = cronFormatter.decode(expression);
-        return result == null ? "" : result;
+        return result == null || typeof result !== "string" ? "" : result;
     }
 
     const [value, setValue] = useState(decode(expressionObj.expression));
@@ -77,8 +76,7 @@ export default function CronEditor(props: Props) {
         <CronEditorStyled ref={node}>
             <Input
                 value={value}
-                formattedValue={expressionObj.expression}
-                validators={validators}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 onFocus={onInputFocus}
                 showValidation={showValidation}
@@ -97,7 +95,7 @@ export default function CronEditor(props: Props) {
             )}
         </CronEditorStyled>
     );
-}
+};
 
 CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";

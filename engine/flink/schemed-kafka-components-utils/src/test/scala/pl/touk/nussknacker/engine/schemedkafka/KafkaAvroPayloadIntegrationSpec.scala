@@ -49,7 +49,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config, List.empty, configCreator = creator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
@@ -352,48 +352,6 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     )
 
     runAndVerifyResult(process, topicConfig, PaymentDate.recordWithData, PaymentDate.record)
-  }
-
-  test("should accept logical types in specific record") {
-    val topicConfig = createAndRegisterTopicConfig(
-      "logical-fields-specific",
-      List(
-        GeneratedAvroClassWithLogicalTypesOldSchema.schema,
-        GeneratedAvroClassWithLogicalTypes.SCHEMA$,
-        GeneratedAvroClassWithLogicalTypesNewSchema.schema
-      )
-    )
-    val sourceParam = SourceAvroParam.forSpecificWithLogicalTypes(topicConfig)
-    val sinkParam   = UniversalSinkParam(topicConfig, ExistingSchemaVersion(2), "#input")
-
-    val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(
-      PaymentDate.instant,
-      PaymentDate.date.toLocalDate,
-      PaymentDate.date.toLocalTime,
-      java.math.BigDecimal.valueOf(PaymentDate.decimal)
-    )
-
-    val expectedRecord = GeneratedAvroClassWithLogicalTypes
-      .newBuilder()
-      .setDateTime(PaymentDate.instant)
-      .setDate(PaymentDate.date.toLocalDate)
-      .setTime(PaymentDate.date.toLocalTime)
-      .setDecimal(java.math.BigDecimal.valueOf(PaymentDate.decimal))
-      .build()
-
-    val process = createAvroProcess(
-      sourceParam,
-      sinkParam,
-      Some(
-        s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
-          s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
-          s"#input.time.hour == ${PaymentDate.date.getHour} AND #input.time.minute == ${PaymentDate.date.getMinute} AND #input.time.second == ${PaymentDate.date.getSecond} AND " +
-          s"#input.getDecimal == ${PaymentDate.decimal} AND" +
-          s"#input.text.toString == '123'"
-      )
-    ) // default value
-
-    runAndVerifyResult(process, topicConfig, givenRecord, expectedRecord, useSpecificAvroReader = true)
   }
 
   test("should define kafka key for output record") {

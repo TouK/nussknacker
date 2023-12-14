@@ -4,23 +4,15 @@ import io.circe.{Decoder, Encoder}
 import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{
-  EmptyProcessConfigCreator,
-  ProcessObjectDependencies,
-  SinkFactory,
-  SourceFactory,
-  WithCategories
-}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
-import pl.touk.nussknacker.engine.kafka.generic.sources.GenericJsonSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{
   SampleKey,
   SampleValue,
   createDeserializer
 }
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator._
+import pl.touk.nussknacker.engine.kafka.source.{InputMeta, KafkaSourceFactory}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{ExtractAndTransformTimestamp, SinkForStrings}
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 
@@ -31,20 +23,18 @@ class KafkaSourceFactoryProcessConfigCreator extends EmptyProcessConfigCreator {
   override def sourceFactories(
       processObjectDependencies: ProcessObjectDependencies
   ): Map[String, WithCategories[SourceFactory]] = {
-    val kafkaConfig = KafkaConfig.parseConfig(processObjectDependencies.config)
     Map(
       "kafka-jsonKeyJsonValueWithMeta" -> defaultCategory(
         KafkaConsumerRecordSourceHelper
-          .jsonKeyValueWithMeta[SampleKey, SampleValue](processObjectDependencies, kafkaConfig)
+          .jsonKeyValueWithMeta[SampleKey, SampleValue](processObjectDependencies)
       ),
       "kafka-jsonValueWithMeta" -> defaultCategory(
-        KafkaConsumerRecordSourceHelper.jsonValueWithMeta[SampleValue](processObjectDependencies, kafkaConfig)
+        KafkaConsumerRecordSourceHelper.jsonValueWithMeta[SampleValue](processObjectDependencies)
       ),
       "kafka-jsonValueWithMeta-withException" -> defaultCategory(
         KafkaConsumerRecordSourceHelper
-          .jsonValueWithMetaWithException[SampleValue](processObjectDependencies, kafkaConfig)
-      ),
-      "kafka-GenericJsonSourceFactory" -> defaultCategory(new GenericJsonSourceFactory(processObjectDependencies))
+          .jsonValueWithMetaWithException[SampleValue](processObjectDependencies)
+      )
     )
   }
 
@@ -75,8 +65,7 @@ object KafkaSourceFactoryProcessConfigCreator {
   object KafkaConsumerRecordSourceHelper {
 
     def jsonKeyValueWithMeta[K: ClassTag: Encoder: Decoder, V: ClassTag: Encoder: Decoder](
-        processObjectDependencies: ProcessObjectDependencies,
-        kafkaConfig: KafkaConfig
+        processObjectDependencies: ProcessObjectDependencies
     ): KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory =
@@ -93,7 +82,6 @@ object KafkaSourceFactoryProcessConfigCreator {
 
     def jsonValueWithMeta[V: ClassTag: Encoder: Decoder](
         processObjectDependencies: ProcessObjectDependencies,
-        kafkaConfig: KafkaConfig
     ): KafkaSourceFactory[Any, Any] = {
 
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(
@@ -113,7 +101,6 @@ object KafkaSourceFactoryProcessConfigCreator {
     // For scenario when prepareInitialParameters fetches list of available topics form some external repository and an exception occurs.
     def jsonValueWithMetaWithException[V: ClassTag: Encoder: Decoder](
         processObjectDependencies: ProcessObjectDependencies,
-        kafkaConfig: KafkaConfig
     ): KafkaSourceFactory[Any, Any] = {
       val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(
         new StringDeserializer with Serializable,

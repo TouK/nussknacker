@@ -173,13 +173,12 @@ class PeriodicDeploymentManager private[periodic] (
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
     Future.failed(new UnsupportedOperationException(s"Cancelling of deployment it not supported"))
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults] =
+    delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def getProcessStates(
       name: ProcessName

@@ -189,7 +189,7 @@ class DefinitionResourcesSpec
         .downField("componentGroups")
         .downAt(_.hcursor.get[String]("name").rightValue == "sources")
         .downField("components")
-        .downAt(_.hcursor.get[String]("label").rightValue == "kafka")
+        .downAt(_.hcursor.get[String]("label").rightValue == "communicationSource")
         .downField("node")
         .downField("ref")
         .downField("parameters")
@@ -200,12 +200,13 @@ class DefinitionResourcesSpec
 
       val initialParamNames = parameters.map(_.hcursor.downField("name").focus.value.asString.value)
       initialParamNames shouldEqual List(
-        KafkaUniversalComponentTransformer.TopicParamName,
-        KafkaUniversalComponentTransformer.SchemaVersionParamName
+        "communicationType",
+        "Number",
+        "Text",
       )
       val initialExpressions =
         parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
-      initialExpressions shouldEqual List("", s"'${SchemaVersionOption.LatestOptionName}'")
+      initialExpressions shouldEqual List("'SMS'", "''", "''")
     }
   }
 

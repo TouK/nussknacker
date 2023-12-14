@@ -1019,7 +1019,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
       )
     }
   )
-  .dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils, defaultHelpers % "test")
+  .dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils, flinkBaseComponents, defaultModel)
 
 //this should be only added in scope test - 'module % "test"'
 lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
@@ -1031,9 +1031,10 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit"))
     componentsTestkit,
     requestResponseRuntime,
     liteEngineRuntime,
+    liteBaseComponents,
     liteKafkaComponents,
     liteRequestResponseComponents,
-    defaultHelpers % "test"
+    defaultModel
   )
 
 lazy val commonUtils = (project in utils("utils"))
@@ -1660,18 +1661,13 @@ lazy val sqlComponents = (project in component("sql"))
     ),
   )
   .dependsOn(
-    componentsUtils                % Provided,
-    componentsApi                  % Provided,
-    commonUtils                    % Provided,
-    requestResponseRuntime         % "test",
-    requestResponseComponentsUtils % "test",
-    flinkTestUtils                 % "test",
-    kafkaTestUtils                 % "test"
+    componentsUtils       % Provided,
+    componentsApi         % Provided,
+    commonUtils           % Provided,
+    liteComponentsTestkit % "test"
   )
 
 lazy val flinkBaseComponents = (project in flink("components/base"))
-  .configs(IntegrationTest)
-  .settings(itSettings())
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkBase.jar"): _*)
   .settings(publishAssemblySettings: _*)
@@ -1679,7 +1675,7 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     name := "nussknacker-flink-base-components",
     libraryDependencies ++= Seq(
       "org.apache.flink"          % "flink-streaming-java" % flinkV     % Provided,
-      "org.scalatest"            %% "scalatest"            % scalaTestV % "it,test",
+      "org.scalatest"            %% "scalatest"            % scalaTestV % Test,
       "com.clearspring.analytics" % "stream"               % "2.9.8" excludeAll (
         // It is used only in QDigest which we don't use, while it's >20MB in size...
         ExclusionRule("it.unimi.dsi", "fastutil"),
@@ -1687,11 +1683,19 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     ),
   )
   .dependsOn(
-    flinkComponentsUtils   % Provided,
-    componentsUtils        % Provided,
-    flinkComponentsTestkit % "it, test",
-    kafkaTestUtils         % "it,test"
+    flinkComponentsUtils % Provided,
+    componentsUtils      % Provided,
+    flinkTestUtils       % Test,
+    flinkExecutor        % Test,
+    kafkaTestUtils       % Test
   )
+
+lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-flink-base-components-tests",
+  )
+  .dependsOn(flinkComponentsTestkit % Test)
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))
   .settings(commonSettings)
@@ -1956,6 +1960,7 @@ lazy val modules = List[ProjectReference](
   sqlComponents,
   schemedKafkaComponentsUtils,
   flinkBaseComponents,
+  flinkBaseComponentsTests,
   flinkKafkaComponents,
   liteComponentsApi,
   liteEngineKafkaComponentsApi,

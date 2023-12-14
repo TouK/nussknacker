@@ -4,7 +4,8 @@ import Input from "./Input";
 import LabeledInput from "./LabeledInput";
 import LabeledTextarea from "./LabeledTextarea";
 import UnknownField from "./UnknownField";
-import { Validator } from "../Validators";
+import { NodeValidationError } from "../../../../../types";
+import { FieldError } from "../Validators";
 
 export enum FieldType {
     input = "input",
@@ -19,7 +20,7 @@ interface FieldProps {
     showValidation: boolean;
     autoFocus: boolean;
     className: string;
-    validators: Validator[];
+    fieldErrors: FieldError[];
     type: FieldType;
     value: string | boolean;
     onChange: (value: string | boolean) => void;

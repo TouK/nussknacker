@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.definition.fragment
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.Output
-import pl.touk.nussknacker.engine.definition.component.ComponentStaticDefinition
+import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, FragmentSpecificData}
 
 class FragmentComponentDefinition(
     parameters: List[Parameter],
@@ -17,7 +16,8 @@ class FragmentComponentDefinition(
       parameters,
       Some(Typed[java.util.Map[String, Any]]),
       Some(List(category)),
-      config
+      config,
+      FragmentSpecificData
     )
     FragmentStaticDefinition(componentDefinition, outputNames)
   }

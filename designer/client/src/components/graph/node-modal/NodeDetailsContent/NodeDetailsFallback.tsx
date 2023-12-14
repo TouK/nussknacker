@@ -9,12 +9,12 @@ export function NodeDetailsFallback(props: {
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     isEditMode?: boolean;
     showValidation?: boolean;
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
 }): JSX.Element {
     return (
         <>
             <NodeTableBody>
-                <IdField {...props} errors={props.fieldErrors} />
+                <IdField {...props} errors={props.errors} />
             </NodeTableBody>
             <span>Node type not known.</span>
             <pre>{JSON.stringify(props.node, null, 2)}</pre>

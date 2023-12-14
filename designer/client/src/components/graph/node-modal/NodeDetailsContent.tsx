@@ -28,17 +28,17 @@ export const NodeDetailsContent = ({
     showTestResults?: boolean;
 }): JSX.Element => {
     const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(node.id, nodeErrors));
-    const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
+    const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 
     return (
         <NodeTable editable={!!onChange}>
-            <NodeErrors errors={otherErrors} message="Node has errors" />
+            <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
                 <NodeTypeDetailsContent
                     node={node}
                     edges={edges}
                     onChange={onChange}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     showValidation={showValidation}
                     showSwitch={showSwitch}
                 />

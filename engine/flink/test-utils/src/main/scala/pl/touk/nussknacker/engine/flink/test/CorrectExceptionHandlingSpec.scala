@@ -5,13 +5,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -26,15 +25,19 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
   protected def checkExceptions(
-      configCreator: ProcessConfigCreator
+      components: List[ComponentDefinition]
   )(prepareScenario: (GraphBuilder[SourceNode], ExceptionGenerator) => NonEmptyList[SourceNode]): Unit = {
     val generator                 = new ExceptionGenerator
     val NonEmptyList(start, rest) = prepareScenario(GraphBuilder.source("source", "source"), generator)
     val scenario                  = ScenarioBuilder.streaming("test").sources(start, rest: _*)
-    val recordingCreator          = new RecordingConfigCreator(configCreator, generator.count)
+    val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
 
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registerInEnvironment(env, LocalModelData(config, recordingCreator), scenario)
+    registerInEnvironment(
+      env,
+      LocalModelData(config, sourceComponentDefinition :: components),
+      scenario
+    )
 
     env.executeAndWaitForFinished("test")()
     RecordingExceptionConsumer.dataFor(runId) should have length generator.count
@@ -67,44 +70,20 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
 
 }
 
-class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) extends EmptyProcessConfigCreator {
+object SamplesComponent extends Serializable {
 
-  private val samples =
-    (0 to samplesCount).map(sample => (0 to samplesCount).map(idx => if (sample == idx) 0 else 1).toList.asJava).toList
-
-  override def sourceFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SourceFactory]] = {
-    val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
-    val inputType  = Typed.fromDetailedType[java.util.List[Int]]
-    Map(
-      "source" -> WithCategories.anyCategory(
-        SourceFactory.noParam(
-          CollectionSource(
-            samples,
-            Some(timestamps),
-            inputType
-          )(TypeInformation.of(classOf[AnyRef])),
-          inputType
-        )
-      )
-    )
+  def create(samplesCount: Int): SourceFactory = {
+    def createSource = {
+      val samples = (0 to samplesCount)
+        .map(sample => (0 to samplesCount).map(idx => if (sample == idx) 0 else 1).toList.asJava)
+        .toList
+      CollectionSource(
+        samples,
+        Some(StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)),
+        Typed.fromDetailedType[java.util.List[Int]]
+      )(TypeInformation.of(classOf[AnyRef]))
+    }
+    SourceFactory.noParam(createSource, Typed.fromDetailedType[java.util.List[Int]])
   }
 
-  override def customStreamTransformers(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[CustomStreamTransformer]] = delegate.customStreamTransformers(processObjectDependencies)
-
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
-    delegate.services(processObjectDependencies)
-
-  override def sinkFactories(
-      processObjectDependencies: ProcessObjectDependencies
-  ): Map[String, WithCategories[SinkFactory]] =
-    delegate.sinkFactories(processObjectDependencies) + ("empty" -> WithCategories.anyCategory(
-      SinkFactory.noParam(EmptySink)
-    ))
-
-  override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
-    delegate.expressionConfig(processObjectDependencies)
 }

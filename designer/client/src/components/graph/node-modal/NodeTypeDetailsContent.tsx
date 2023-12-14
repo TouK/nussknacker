@@ -39,14 +39,14 @@ interface NodeTypeDetailsContentProps {
     onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void;
     showValidation?: boolean;
     showSwitch?: boolean;
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
 }
 
 export function NodeTypeDetailsContent({
     node,
     edges,
     onChange,
-    fieldErrors,
+    errors,
     showValidation,
     showSwitch,
 }: NodeTypeDetailsContentProps): JSX.Element {
@@ -156,7 +156,7 @@ export function NodeTypeDetailsContent({
         case "Source":
             return (
                 <Source
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -170,7 +170,7 @@ export function NodeTypeDetailsContent({
         case "Sink":
             return (
                 <Sink
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -185,7 +185,7 @@ export function NodeTypeDetailsContent({
             return (
                 <FragmentInputDefinition
                     addElement={addElement}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node as NodeType<FragmentInputParameter>}
                     removeElement={removeElement}
@@ -199,7 +199,7 @@ export function NodeTypeDetailsContent({
             return (
                 <FragmentOutputDefinition
                     addElement={addElement}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node}
                     removeElement={removeElement}
@@ -213,7 +213,7 @@ export function NodeTypeDetailsContent({
             return (
                 <Filter
                     edges={edges}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -229,7 +229,7 @@ export function NodeTypeDetailsContent({
         case "Processor":
             return (
                 <EnricherProcessor
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -243,7 +243,7 @@ export function NodeTypeDetailsContent({
         case "FragmentInput":
             return (
                 <FragmentInput
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -259,7 +259,7 @@ export function NodeTypeDetailsContent({
         case "CustomNode":
             return (
                 <JoinCustomNode
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -275,7 +275,7 @@ export function NodeTypeDetailsContent({
             return (
                 <VariableBuilder
                     addElement={addElement}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node}
                     removeElement={removeElement}
@@ -288,7 +288,7 @@ export function NodeTypeDetailsContent({
         case "Variable":
             return (
                 <Variable
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
@@ -301,7 +301,7 @@ export function NodeTypeDetailsContent({
             return (
                 <Switch
                     edges={edges}
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
@@ -318,7 +318,7 @@ export function NodeTypeDetailsContent({
         case "Split":
             return (
                 <Split
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
@@ -329,7 +329,7 @@ export function NodeTypeDetailsContent({
         case "Properties":
             return (
                 <Properties
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     isEditMode={isEditMode}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
@@ -341,7 +341,7 @@ export function NodeTypeDetailsContent({
         default:
             return (
                 <NodeDetailsFallback
-                    fieldErrors={fieldErrors}
+                    errors={errors}
                     node={node}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}

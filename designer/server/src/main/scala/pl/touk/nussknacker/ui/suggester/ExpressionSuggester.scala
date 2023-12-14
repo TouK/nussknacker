@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSuggester}
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExpressionSuggester(
-    expressionDefinition: ExpressionDefinition[ComponentDefinitionWithImplementation],
+    expressionDefinition: ExpressionConfigDefinition[ComponentDefinitionWithImplementation],
     classDefinitions: ClassDefinitionSet,
     uiDictServices: UiDictServices,
     classLoader: ClassLoader,

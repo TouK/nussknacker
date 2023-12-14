@@ -13,12 +13,9 @@ object ModelClassDefinitionDiscovery {
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted components.
   // We don't do it during component extraction because this is needed only in some cases (e.g. suggestions/validations) and it is costly
   def discoverClasses(definition: ModelDefinition[ComponentDefinitionWithImplementation]): Set[ClassDefinition] = {
-    ComponentClassDefinitionDiscovery.discoverClasses(
-      definition.services.values ++
-        definition.sourceFactories.values ++
-        definition.customStreamTransformers.values.map(_._1) ++
-        definition.expressionConfig.globalVariables.values
-    )(definition.settings) ++
+    val componentsAndGlobalVariables =
+      definition.components.values ++ definition.expressionConfig.globalVariables.values
+    ComponentClassDefinitionDiscovery.discoverClasses(componentsAndGlobalVariables)(definition.settings) ++
       ClassDefinitionDiscovery
         .discoverClassesFromTypes(definition.expressionConfig.additionalClasses.map(Typed(_)))(definition.settings)
   }

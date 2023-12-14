@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
@@ -686,7 +686,7 @@ object Typer {
 
   def default(
       classLoader: ClassLoader,
-      expressionConfig: ExpressionDefinition[_],
+      expressionConfig: ExpressionConfigDefinition[_],
       spelDictTyper: SpelDictTyper,
       classDefinitionSet: ClassDefinitionSet
   ): Typer = {

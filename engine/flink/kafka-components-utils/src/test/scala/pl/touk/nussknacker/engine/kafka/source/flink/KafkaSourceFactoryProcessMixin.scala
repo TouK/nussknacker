@@ -4,11 +4,9 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
-import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinitionExtractor, ModelDefinitionWithClasses}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
@@ -21,7 +19,6 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, Sin
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.NuScalaTestAssertions
 
 import scala.jdk.CollectionConverters._
@@ -36,21 +33,11 @@ trait KafkaSourceFactoryProcessMixin
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
-
-  protected lazy val modelDefinitionWithTypes: ModelDefinitionWithClasses =
-    ModelDefinitionWithClasses(
-      ModelDefinitionExtractor.extractModelDefinition(
-        creator,
-        getClass.getClassLoader,
-        process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)),
-        category = None
-      )
-    )
+  protected lazy val modelData =
+    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
     registrar =
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
@@ -74,7 +61,7 @@ trait KafkaSourceFactoryProcessMixin
       obj: ObjToSerialize
   ): List[InputMeta[Any]] = {
     val topic = createTopic(topicName)
-    pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), obj, timestamp = constTimestamp)
     run(process) {
       eventually {
         SinkForInputMeta.data shouldBe List(

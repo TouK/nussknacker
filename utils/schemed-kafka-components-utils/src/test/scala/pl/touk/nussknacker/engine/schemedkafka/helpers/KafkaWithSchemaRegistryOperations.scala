@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets
 trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with Eventually {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-
   override implicit def patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 
@@ -94,36 +93,35 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
       }
       .toList
 
-  def consumeAndVerifyMessage(topic: String, expected: Any, useSpecificAvroReader: Boolean = false): Assertion =
-    consumeAndVerifyMessages(topic, List(expected), useSpecificAvroReader)
+  def consumeAndVerifyMessage(topic: String, expected: Any): Assertion =
+    consumeAndVerifyMessages(topic, List(expected))
 
   protected def consumeAndVerifyMessages(
       topic: String,
-      expected: List[Any],
-      useSpecificAvroReader: Boolean = false
+      expected: List[Any]
   ): Assertion = {
-    val result = consumeMessages(topic, expected.length, useSpecificAvroReader)
+    val result = consumeMessages(topic, expected.length)
     result shouldBe expected
   }
 
-  private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] =
+  private def consumeMessages(topic: String, count: Int): List[Any] =
     kafkaClient
       .createConsumer()
       .consumeWithConsumerRecord(topic)
       .take(count)
       .map { record =>
-        deserialize(useSpecificAvroReader)(topic, record.value())
+        deserialize(topic, record.value())
       }
       .toList
 
-  protected def deserialize(useSpecificAvroReader: Boolean)(objectTopic: String, obj: Array[Byte]): Any =
-    prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
+  protected def deserialize(objectTopic: String, obj: Array[Byte]): Any =
+    prepareValueDeserializer.deserialize(objectTopic, obj)
 
   /**
    * Default Confluent Avro serialization components
    */
-  protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] =
-    new SimpleKafkaAvroDeserializer(schemaRegistryClient, useSpecificAvroReader)
+  protected def prepareValueDeserializer: Deserializer[Any] =
+    new SimpleKafkaAvroDeserializer(schemaRegistryClient)
 
   protected def schemaRegistryClient: CSchemaRegistryClient
 
@@ -180,12 +178,11 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
 }
 
-class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient, _useSpecificAvroReader: Boolean)
+class SimpleKafkaAvroDeserializer(schemaRegistryClient: CSchemaRegistryClient)
     extends AbstractConfluentKafkaAvroDeserializer
     with Deserializer[Any] {
 
   this.schemaRegistry = schemaRegistryClient
-  this.useSpecificAvroReader = _useSpecificAvroReader
 
   def deserialize(topic: String, record: Array[Byte]): Any = {
     deserialize(topic, isKey = false, record, None)

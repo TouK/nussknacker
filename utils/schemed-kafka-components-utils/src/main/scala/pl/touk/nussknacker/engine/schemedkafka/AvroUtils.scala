@@ -8,7 +8,7 @@ import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.{GenericContainer, GenericData, GenericDatumReader, GenericDatumWriter, GenericRecord}
+import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificDatumWriter, SpecificRecord}
@@ -27,15 +27,6 @@ import scala.util.Using
 object AvroUtils extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
-
-  def isSpecificRecord[T: ClassTag]: Boolean = {
-    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
-    isSpecificRecord(clazz)
-  }
-
-  def isSpecificRecord(clazz: Class[_]): Boolean = {
-    classOf[SpecificRecord].isAssignableFrom(clazz)
-  }
 
   def genericData: GenericData = addLogicalTypeConversions(new GenericData(_) {
 
@@ -122,21 +113,6 @@ object AvroUtils extends LazyLogging {
 
   def extractSchema(parsedSchema: ParsedSchema): Schema =
     parsedSchema.rawSchema().asInstanceOf[Schema]
-
-  // Copy from LogicalTypesAvroFactory
-  def extractAvroSpecificSchema(clazz: Class[_]): Schema = {
-    tryExtractAvroSchemaViaInstance(clazz).getOrElse(specificData.getSchema(clazz))
-  }
-
-  private def tryExtractAvroSchemaViaInstance(clazz: Class[_]) =
-    try {
-      val instance = clazz.getDeclaredConstructor().newInstance().asInstanceOf[SpecificRecord]
-      Option(instance.getSchema)
-    } catch {
-      case e @ (_: InstantiationException | _: IllegalAccessException) =>
-        logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
-        None
-    }
 
   def serializeContainerToBytesArray(container: GenericContainer): Array[Byte] = {
     Using.resource(new ByteArrayOutputStream()) { output =>

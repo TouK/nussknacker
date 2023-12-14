@@ -45,7 +45,8 @@ class FullOuterJoinTransformer(
     with JoinGenericNodeTransformation[FlinkCustomJoinTransformation]
     with ExplicitUidInOperatorsSupport
     with WithExplicitTypesToExtract
-    with LazyLogging {
+    with LazyLogging
+    with Serializable {
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer._
 
@@ -190,10 +191,14 @@ class FullOuterJoinTransformer(
       KeyFieldName
     )
 
-  override def typesToExtract: List[typing.TypedClass] = List(Typed.typedClass[BranchType])
+  override def typesToExtract: List[typing.TypedClass] = List(
+    Typed.typedClass[BranchType],
+    Typed.typedClass[AggregateHelper]
+  )
+
 }
 
-case object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
+object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
   val KeyFieldName = "key"
 
   val KeyParamName = "key"

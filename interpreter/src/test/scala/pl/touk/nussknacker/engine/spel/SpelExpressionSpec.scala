@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
+import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.scalacheck.Gen
 import org.scalatest.Inside.inside
@@ -23,7 +24,7 @@ import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, GeneratedAvroClass, JavaClassWithVarargs}
+import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   InvalidMethodReference,
@@ -590,18 +591,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("check property if is defined even if class has get method - avro generic record") {
-    val record = new GenericData.Record(GeneratedAvroClass.SCHEMA$)
+    val schema = new Schema.Parser().parse("""{
+        |  "type": "record",
+        |  "name": "Foo",
+        |  "fields": [
+        |    { "name": "text", "type": "string" }
+        |  ]
+        |}
+      """.stripMargin)
+    val record = new GenericData.Record(schema)
     record.put("text", "foo")
     val withObjVar = ctx.withVariable("obj", record)
-
     parse[String]("#obj.text", withObjVar).validExpression.evaluateSync[String](withObjVar) shouldEqual "foo"
-  }
-
-  test("exact check properties in generated avro classes") {
-    val withObjVar = ctx.withVariable("obj", GeneratedAvroClass.newBuilder().setText("123").build())
-
-    parse[Boolean]("#obj.notExistingProperty == 123", withObjVar) shouldBe Symbol("invalid")
-    parse[Boolean]("#obj.getText == '123'", withObjVar).validExpression.evaluateSync[Boolean](withObjVar) shouldBe true
   }
 
   test("allow access to statics") {

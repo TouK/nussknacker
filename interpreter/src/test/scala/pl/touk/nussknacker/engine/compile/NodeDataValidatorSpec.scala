@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
-import scala.jdk.CollectionConverters._
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{
@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.definition.{
   ValidationExpressionParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -50,6 +49,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.jdk.CollectionConverters._
+
 class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with TableDrivenPropertyChecks {
 
   private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
@@ -72,39 +73,19 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   def getModelData(aConfig: Config = defaultConfig): LocalModelData = {
     LocalModelData(
       aConfig,
-      new EmptyProcessConfigCreator {
-        override def customStreamTransformers(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-          "genericJoin"        -> WithCategories.anyCategory(DynamicParameterJoinTransformer),
-          "genericTransformer" -> WithCategories.anyCategory(GenericParametersTransformer),
-          "genericTransformerUsingParameterValidator" -> WithCategories.anyCategory(
-            GenericParametersTransformerUsingParameterValidator
-          )
-        )
-
-        override def services(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[Service]] = Map(
-          "stringService"                      -> WithCategories.anyCategory(SimpleStringService),
-          "genericParametersThrowingException" -> WithCategories.anyCategory(GenericParametersThrowingException),
-          "missingParamHandleGenericNodeTransformation" -> WithCategories.anyCategory(
-            MissingParamHandleGenericNodeTransformation
-          )
-        )
-
-        override def sourceFactories(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[SourceFactory]] = Map(
-          "genericParametersSource" -> WithCategories.anyCategory(new GenericParametersSource)
-        )
-
-        override def sinkFactories(
-            processObjectDependencies: ProcessObjectDependencies
-        ): Map[String, WithCategories[SinkFactory]] = Map(
-          "genericParametersSink" -> WithCategories.anyCategory(GenericParametersSink)
-        )
-      }
+      List(
+        ComponentDefinition("genericJoin", DynamicParameterJoinTransformer),
+        ComponentDefinition("genericTransformer", GenericParametersTransformer),
+        ComponentDefinition(
+          "genericTransformerUsingParameterValidator",
+          GenericParametersTransformerUsingParameterValidator
+        ),
+        ComponentDefinition("stringService", SimpleStringService),
+        ComponentDefinition("genericParametersThrowingException", GenericParametersThrowingException),
+        ComponentDefinition("missingParamHandleGenericNodeTransformation", MissingParamHandleGenericNodeTransformation),
+        ComponentDefinition("genericParametersSource", new GenericParametersSource),
+        ComponentDefinition("genericParametersSink", GenericParametersSink)
+      )
     )
   }
 
@@ -116,7 +97,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         "tst1",
         SinkRef(
           "genericParametersSink",
-          List(par("par1", "'a,b'"), par("lazyPar1", "#aVar + 3"), par("a", "'a'"), par("b", "'dd'"))
+          List(
+            par("par1", "'a,b'"),
+            par("lazyPar1", "#aVar + 3"),
+            par("a", "'a'"),
+            par("b", "'dd'")
+          )
         )
       ),
       ValidationContext(Map("aVar" -> Typed[Long]))

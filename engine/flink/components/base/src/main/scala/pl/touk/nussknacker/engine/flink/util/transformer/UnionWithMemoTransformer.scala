@@ -38,6 +38,7 @@ class UnionWithMemoTransformer(
       TimestampWatermarkHandler[TimestampedValue[ValueWithContext[StringKeyedValue[java.util.Map[String, AnyRef]]]]]
     ]
 ) extends CustomStreamTransformer
+    with Serializable
     with ExplicitUidInOperatorsSupport {
 
   val KeyField = "key"

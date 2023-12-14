@@ -8,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -371,9 +371,8 @@ class K8sDeploymentManagerKafkaTest
       // e.g. when we want to run Designer locally with some proxy?
       .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("localhost:19092"))
       .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
-      .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")),
-    new EmptyProcessConfigCreator
+    List.empty
   )
 
   private def prepareManager(
