@@ -9,7 +9,12 @@ import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, RecordSchemaV2}
-import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
+import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{
+  INPUT_MESSAGE_SCHEMA_ID,
+  InputEvent,
+  OUTPUT_MESSAGE_SCHEMA_ID,
+  OutputEvent
+}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -34,6 +39,8 @@ object StateCompatibilityTest {
   @JsonCodec(decodeOnly = true)
   case class OutputEvent(input: InputEvent, previousInput: InputEvent)
 
+  private val INPUT_MESSAGE_SCHEMA_ID  = 5546
+  private val OUTPUT_MESSAGE_SCHEMA_ID = 5556
 }
 
 /**
@@ -154,8 +161,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     * 3. go back to ignore :)
     */
   ignore("should create savepoint and save to disk") {
-    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema)
-    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema, INPUT_MESSAGE_SCHEMA_ID)
+    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1, OUTPUT_MESSAGE_SCHEMA_ID)
 
     val clusterClient = flinkMiniCluster.asInstanceOf[FlinkMiniClusterHolderImpl].getClusterClient
     sendAvro(event1AvroMessage, inputTopicConfig.input)
@@ -177,8 +184,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   test("should restore from snapshot") {
-    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema)
-    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
+    val inputTopicConfig  = createAndRegisterAvroTopicConfig(inTopic, InputRecordSchema, INPUT_MESSAGE_SCHEMA_ID)
+    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1, OUTPUT_MESSAGE_SCHEMA_ID)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
     val env                       = flinkMiniCluster.createExecutionEnvironment()
