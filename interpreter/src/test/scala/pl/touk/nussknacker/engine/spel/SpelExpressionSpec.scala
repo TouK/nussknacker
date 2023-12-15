@@ -38,7 +38,6 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord.testRecordExpr
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -489,28 +488,41 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("access record elements by index") {
     val ctxWithVal = ctx.withVariable("stringKey", "string")
+    val testRecordExpr: String =
+      "{int: 1, string: 'stringVal', boolean: true, 'null': null, nestedRecord: {nestedRecordKey: 2}, nestedList: {1,2,3}}"
+
     parse[String](s"$testRecordExpr['string']").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
     parse[String](s"$testRecordExpr[string]").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
     parse[String](s"$testRecordExpr['str' + 'ing']").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
     parse[String](s"$testRecordExpr[#stringKey]", ctxWithVal).validExpression
       .evaluateSync[String](ctxWithVal) shouldBe "stringVal"
-    parse[Int](s"$testRecordExpr['nestedRecord']['nestedRecordKey']").validExpression.evaluateSync[Int](ctx) shouldBe 2
+
+    parse[Any](s"$testRecordExpr['nestedRecord']").validExpression
+      .evaluateSync[Any](ctx) shouldBe Collections.singletonMap("nestedRecordKey", 2)
+    parse[Any](s"$testRecordExpr[nestedRecord]").validExpression
+      .evaluateSync[Any](ctx) shouldBe Collections.singletonMap("nestedRecordKey", 2)
+
     parse[Int](s"$testRecordExpr[nestedRecord][nestedRecordKey]").validExpression.evaluateSync[Int](ctx) shouldBe 2
+    parse[Int](s"$testRecordExpr['nestedRecord']['nestedRecordKey']").validExpression.evaluateSync[Int](ctx) shouldBe 2
+
+    parse[Any](s"$testRecordExpr[nestedList]").validExpression
+      .evaluateSync[Any](ctx) shouldBe util.Arrays.asList(1, 2, 3)
+    parse[Any](s"$testRecordExpr['nestedList']").validExpression
+      .evaluateSync[Any](ctx) shouldBe util.Arrays.asList(1, 2, 3)
   }
 
-  test("should return no property present error for map non-present element when enabled") {
-    inside(parse[Any](s"$testRecordExpr[nonPresentField]")) {
+  test("should return no property present error for record non-present element when enabled") {
+    inside(parse[Any]("{key: 1}[nonPresentField]")) {
       case Invalid(l: NonEmptyList[ExpressionParseError])
           if l.toList.exists(error => error.message.startsWith("There is no property 'nonPresentField' in type:")) =>
     }
-    inside(parse[Any](s"$testRecordExpr['nonPresentField']")) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
-        error.message should startWith("There is no property 'nonPresentField' in type:")
+    inside(parse[Any]("{key: 1}['nonPresentField']")) { case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      error.message should startWith("There is no property 'nonPresentField' in type:")
     }
   }
 
-  test("should return null for dynamic property access for map non-present element when enabled") {
-    parse[Any](s"$testRecordExpr['nonPresentField']", dynamicPropertyAccessAllowed = true).validExpression
+  test("should return null for dynamic property access for record non-present element when enabled") {
+    parse[Any](s"{key: 1}['nonPresentField']", dynamicPropertyAccessAllowed = true).validExpression
       .evaluateSync[Any](ctx) == null shouldBe true
   }
 

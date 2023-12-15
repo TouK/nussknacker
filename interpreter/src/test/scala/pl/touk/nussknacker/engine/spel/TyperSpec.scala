@@ -203,7 +203,7 @@ object TyperSpecTestData {
           Map(
             "nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)
           )
-        )
+        ),
       )
     )
 
