@@ -4,11 +4,10 @@ import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { editNode } from "../../../../actions/nk";
-import { setAndPreserveLocationParams, visualizationUrl } from "../../../../common/VisualizationUrl";
+import { visualizationUrl } from "../../../../common/VisualizationUrl";
 import { getProcessToDisplay } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType, Process } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
-import { parseWindowsQueryParams } from "../../../../windowManager/useWindows";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
 import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
@@ -20,9 +19,9 @@ import { RootState } from "../../../../reducers";
 import { applyIdFromFakeName } from "../IdField";
 import { mapValues } from "lodash";
 import { ensureArray } from "../../../../common/arrayUtils";
-import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material";
 import { alpha, tint } from "../../../../containers/theme/helpers";
+import { parseWindowsQueryParams, replaceSearchQuery, setAndPreserveLocationParams } from "../../../../containers/hooks/useSearchQuery";
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; process: Process }> {
     readOnly?: boolean;
