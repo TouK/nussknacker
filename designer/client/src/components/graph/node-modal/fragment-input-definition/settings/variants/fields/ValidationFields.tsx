@@ -57,10 +57,7 @@ export default function ValidationFields({
                     value={validationFailedMessage}
                     onChange={(event) => onChange(`${path}.valueCompileTimeValidation.validationFailedMessage`, event.currentTarget.value)}
                     readOnly={readOnly}
-                    placeholder={t(
-                        "fragment.validation.validationErrorMessagePlaceholder",
-                        "eg. There was a problem with expression validation.",
-                    )}
+                    placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
                 />
             </SettingRow>
         </>
