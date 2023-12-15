@@ -98,7 +98,7 @@ class SpelExpressionSuggester(
               .get(to.objType.klass)
               .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
               .getOrElse(Nil)
-            val applicableSuggestions = if (nuSpelNodeParentOpt.exists(a => a.spelNode.isInstanceOf[Indexer])) {
+            val applicableSuggestions = if (nuSpelNodeParentOpt.exists(_.spelNode.isInstanceOf[Indexer])) {
               suggestionsFromFields
             } else {
               suggestionsFromFields ++ suggestionsFromClass
