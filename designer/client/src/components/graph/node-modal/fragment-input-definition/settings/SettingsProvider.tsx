@@ -1,23 +1,45 @@
 import React, { createContext, PropsWithChildren, useContext, useState } from "react";
-import { FixedValuesOption } from "../item";
+import { FixedValuesOption, ValueCompileTimeValidation } from "../item";
 
 const SettingsContext = createContext<{
     temporaryUserDefinedList: FixedValuesOption[];
     handleTemporaryUserDefinedList: (listItem: FixedValuesOption[]) => void;
+    temporaryValueCompileTimeValidation: ValueCompileTimeValidation;
+    handleTemporaryValueCompileTimeValidation: (valueCompileTimeValidation: ValueCompileTimeValidation) => void;
 }>(null);
 
 export const SettingsProvider = ({
     initialFixedValuesList,
+    initialTemporaryValueCompileTimeValidation,
     children,
-}: PropsWithChildren<{ initialFixedValuesList: FixedValuesOption[] }>) => {
+}: PropsWithChildren<{
+    initialFixedValuesList: FixedValuesOption[];
+    initialTemporaryValueCompileTimeValidation: ValueCompileTimeValidation;
+}>) => {
     const [temporaryUserDefinedList, setTemporaryUserDefinedList] = useState<FixedValuesOption[]>(initialFixedValuesList || []);
+    const [temporaryValueCompileTimeValidation, setTemporaryValueCompileTimeValidation] = useState<ValueCompileTimeValidation>(
+        initialTemporaryValueCompileTimeValidation || null,
+    );
 
     const handleTemporaryUserDefinedList = (listItem: FixedValuesOption[]) => {
         setTemporaryUserDefinedList(listItem);
     };
 
+    const handleTemporaryValueCompileTimeValidation = (valueCompileTimeValidation: ValueCompileTimeValidation) => {
+        setTemporaryValueCompileTimeValidation(valueCompileTimeValidation);
+    };
+
     return (
-        <SettingsContext.Provider value={{ temporaryUserDefinedList, handleTemporaryUserDefinedList }}>{children}</SettingsContext.Provider>
+        <SettingsContext.Provider
+            value={{
+                temporaryUserDefinedList,
+                handleTemporaryUserDefinedList,
+                temporaryValueCompileTimeValidation,
+                handleTemporaryValueCompileTimeValidation,
+            }}
+        >
+            {children}
+        </SettingsContext.Provider>
     );
 };
 

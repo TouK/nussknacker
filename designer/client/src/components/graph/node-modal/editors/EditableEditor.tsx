@@ -24,6 +24,7 @@ interface Props {
     fieldErrors: FieldError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
+    placeholder?: string;
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {

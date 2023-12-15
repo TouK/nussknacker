@@ -2,10 +2,17 @@ import React from "react";
 import { t } from "i18next";
 import { FormControlLabel } from "@mui/material";
 import ValidationFields from "./ValidationFields";
-import { onChangeType, AnyValueWithSuggestionsParameterVariant, AnyValueParameterVariant, DefaultParameterVariant } from "../../../item";
+import {
+    onChangeType,
+    AnyValueWithSuggestionsParameterVariant,
+    AnyValueParameterVariant,
+    DefaultParameterVariant,
+    ValueCompileTimeValidation,
+} from "../../../item";
 import { SettingRow, SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
-import { Error } from "../../../../editors/Validators";
+import { ExpressionLang } from "../../../../editors/expression/types";
+import { useSettings } from "../../SettingsProvider";
 
 interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
@@ -16,9 +23,11 @@ interface Validation {
     errors: NodeValidationError[];
 }
 
-export function ValidationsFields(props: ValidationsFields) {
+export function ValidationsFields(props: Validation) {
     const { onChange, path, variableTypes, item, readOnly, errors } = props;
-    const [validation, setValidation] = useState(true);
+
+    const validationEnabled = Boolean(item.valueCompileTimeValidation);
+    const { temporaryValueCompileTimeValidation, handleTemporaryValueCompileTimeValidation } = useSettings();
 
     return (
         <>
@@ -28,8 +37,26 @@ export function ValidationsFields(props: ValidationsFields) {
                     control={
                         <CustomSwitch
                             disabled={readOnly}
-                            checked={validation}
-                            onChange={(event) => onChange(`${path}.validationExpression.validation`, event.currentTarget.checked)}
+                            checked={validationEnabled}
+                            onChange={(event) => {
+                                if (event.currentTarget.checked) {
+                                    const defaultValueCompileTimeValidation: ValueCompileTimeValidation = {
+                                        validationExpression: {
+                                            language: ExpressionLang.SpEL,
+                                            expression: "",
+                                        },
+                                        validationFailedMessage: "",
+                                    };
+
+                                    onChange(
+                                        `${path}.valueCompileTimeValidation`,
+                                        temporaryValueCompileTimeValidation || defaultValueCompileTimeValidation,
+                                    );
+                                } else {
+                                    handleTemporaryValueCompileTimeValidation(item.valueCompileTimeValidation);
+                                    onChange(`${path}.valueCompileTimeValidation`, null);
+                                }
+                            }}
                         />
                     }
                     label=""
@@ -43,15 +70,16 @@ export function ValidationsFields(props: ValidationsFields) {
                     </SettingLabelStyled>
                 </div>
             </SettingRow>
-            {validation && (
+            {validationEnabled && (
                 <ValidationFields
                     path={path}
                     onChange={onChange}
-                    failedMessage={item.validationExpression.failedMessage}
-                    expression={item.validationExpression.expression}
+                    validationFailedMessage={item.valueCompileTimeValidation.validationFailedMessage}
+                    validationExpression={item.valueCompileTimeValidation.validationExpression}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
                     errors={errors}
+                    name={item.name}
                 />
             )}
         </>

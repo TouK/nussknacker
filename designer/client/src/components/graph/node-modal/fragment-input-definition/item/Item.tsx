@@ -75,7 +75,10 @@ export function Item(props: ItemProps): JSX.Element {
                 />
                 <SettingsButton isOpen={isOpen} toggleIsOpen={openSettingMenu} />
             </FieldsRow>
-            <SettingsProvider initialFixedValuesList={item?.valueEditor?.fixedValuesList}>
+            <SettingsProvider
+                initialFixedValuesList={item?.valueEditor?.fixedValuesList}
+                initialTemporaryValueCompileTimeValidation={item?.valueCompileTimeValidation}
+            >
                 {isOpen && (
                     <Settings
                         path={path}

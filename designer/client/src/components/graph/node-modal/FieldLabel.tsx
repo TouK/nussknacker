@@ -25,7 +25,7 @@ const Footer = styled("div")({
     overflow: "hidden",
 });
 
-const StyledNodeTip = styled(NodeTip)`
+export const StyledNodeTip = styled(NodeTip)`
     margin: 0 8px;
 `;
 export function FieldLabel({

@@ -7,6 +7,7 @@ import { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { TextAreaNodeWithFocus } from "../../../../../withFocus";
 import InitialValue from "./fields/InitialValue";
 import { ValidationsFields } from "./fields/validation";
+import { getValidationErrorsForField } from "../../../editors/Validators";
 
 interface Props {
     item: DefaultParameterVariant;
@@ -35,7 +36,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 item={item}
                 variableTypes={variableTypes}
                 readOnly={readOnly}
-                fieldErrors={fieldsErrors}
+                errors={errors}
             />
             <InitialValue
                 onChange={onChange}
@@ -43,8 +44,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                 path={path}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={errors}
-                fieldName={`$param.${item.name}.$initialValue`}
+                fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

@@ -6,6 +6,7 @@ import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled, SettingRow } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -51,8 +52,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={errors}
-                fieldName={`$param.${item.name}.$initialValue`}
+                fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
