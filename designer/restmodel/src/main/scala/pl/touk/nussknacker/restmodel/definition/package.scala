@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
