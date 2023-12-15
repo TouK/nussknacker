@@ -156,11 +156,18 @@ abstract class FlinkWithKafkaSuite
     topicConfig
   }
 
-  protected def createAndRegisterAvroTopicConfig(name: String, schema: Schema): TopicConfig =
-    createAndRegisterAvroTopicConfig(name, List(schema))
+  protected def createAndRegisterAvroTopicConfig(name: String, schema: Schema, schemaId: Int = -1): TopicConfig =
+    createAndRegisterTopicConfig(name, ConfluentUtils.convertToAvroSchema(schema), schemaId)
 
-  protected def createAndRegisterTopicConfig(name: String, schema: ParsedSchema): TopicConfig =
-    createAndRegisterTopicConfig(name, List(schema))
+  protected def createAndRegisterTopicConfig(name: String, schema: ParsedSchema, schemaId: Int): TopicConfig = {
+    val topicConfig   = TopicConfig(name, schema :: Nil)
+    val inputSubject  = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+    val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
+    schemaRegistryMockClient.register(inputSubject, schema, 0, schemaId)
+    schemaRegistryMockClient.register(outputSubject, schema, 0, schemaId)
+    topicConfig
+  }
+
 }
 
 case class TopicConfig(input: String, output: String, schemas: List[ParsedSchema], isKey: Boolean)

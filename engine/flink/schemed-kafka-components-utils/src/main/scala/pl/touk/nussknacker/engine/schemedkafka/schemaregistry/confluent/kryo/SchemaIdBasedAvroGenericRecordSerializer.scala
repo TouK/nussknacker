@@ -92,6 +92,7 @@ class SchemaIdBasedAvroGenericRecordSerializer(
 
   private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
     val parsedSchema = schemaRegistry.getSchemaById(schemaId).schema
+    println(s"---PARSED SCHEMA $parsedSchema for SCHEMA ID $schemaId")
     val writerSchema = AvroUtils.extractSchema(parsedSchema)
     val reader =
       createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
