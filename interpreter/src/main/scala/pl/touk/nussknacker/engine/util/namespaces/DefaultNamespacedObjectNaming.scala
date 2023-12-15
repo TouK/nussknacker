@@ -3,7 +3,10 @@ package pl.touk.nussknacker.engine.util.namespaces
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.namespaces._
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNamingParameters.{namespaceTag, originalNameTag}
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNamingParameters.{
+  namespaceTag,
+  originalNameTag
+}
 
 import scala.util.matching.Regex
 

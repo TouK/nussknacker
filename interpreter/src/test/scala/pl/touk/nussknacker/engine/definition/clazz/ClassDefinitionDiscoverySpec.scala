@@ -8,9 +8,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.api.generics._
-import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
+import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{
+  AddPropertyNextToGetter,
+  DoNothing,
+  ReplaceGetterWithProperty
+}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{
+  CommonSupertypeFinder,
+  NumberTypesPromotionStrategy,
+  SupertypeClassResolutionStrategy
+}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}

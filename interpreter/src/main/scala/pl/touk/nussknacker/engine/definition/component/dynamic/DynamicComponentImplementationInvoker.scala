@@ -1,6 +1,10 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
-import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  GenericNodeTransformation,
+  OutputVariableNameValue,
+  TypedNodeDependencyValue
+}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.definition.component.ComponentImplementationInvoker
 

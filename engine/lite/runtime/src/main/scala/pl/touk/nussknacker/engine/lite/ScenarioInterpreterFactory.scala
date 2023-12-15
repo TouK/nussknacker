@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._

@@ -2,7 +2,11 @@ package pl.touk.nussknacker.engine.api.definition
 
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  NodeDependencyValue,
+  OutputVariableNameValue,
+  TypedNodeDependencyValue
+}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
