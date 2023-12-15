@@ -32,7 +32,7 @@
 * [#4978](https://github.com/TouK/nussknacker/pull/4978) Expand FragmentParameter with new fields: hintText, initialValue, required, inputMode
 * [#4953](https://github.com/TouK/nussknacker/pull/4953) Improved node validation
 * [#5141](https://github.com/TouK/nussknacker/pull/5141) Security improvement: API endpoints check if user has access rights to Category associated with Processing Type provided in API
-* [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) Component and User API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#5182](https://github.com/TouK/nussknacker/pull/5182) [#5203](https://github.com/TouK/nussknacker/pull/5203) [#5250](https://github.com/TouK/nussknacker/pull/5250) Component, User and Notification API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Breaking change: some components changed identifier - url's and identifiers in node errors are changed
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Component `mapVariable` was renamed to `record-variable`
 * [#5223](https://github.com/TouK/nussknacker/pull/5223) Legacy low level kafka components were removed
