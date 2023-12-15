@@ -54,52 +54,47 @@ class FragmentParameterValidator(
       fragmentParameter: FragmentParameter,
       typ: TypingResult
   )(implicit nodeId: NodeId) =
-    fragmentParameter.valueCompileTimeValidation
-      .map { expr =>
-        expressionCompiler
-          .compile(
-            expr.validationExpression,
-            fieldName = Some(fragmentParameter.name),
-            validationCtx = ValidationContext(
-              Map(ValidationExpressionParameterValidator.variableName -> typ)
-            ), // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
-            expectedType = Typed[Boolean],
-          )
-          .leftMap(_.map {
-            case e: ExpressionParserCompilationError =>
-              InvalidValidationExpression(
-                e.message,
-                nodeId.id,
-                fragmentParameter.name,
-                e.originalExpr
+    fragmentParameter.valueCompileTimeValidation.map { expr =>
+      expressionCompiler
+        .compile(
+          expr.validationExpression,
+          fieldName = Some(fragmentParameter.name),
+          validationCtx = ValidationContext(
+            Map(ValidationExpressionParameterValidator.variableName -> typ)
+          ), // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
+          expectedType = Typed[Boolean],
+        )
+        .leftMap(_.map {
+          case e: ExpressionParserCompilationError =>
+            InvalidValidationExpression(
+              e.message,
+              nodeId.id,
+              fragmentParameter.name,
+              e.originalExpr
+            )
+          case e => e
+        })
+        .andThen {
+          _.expression match {
+            case _: NullExpression =>
+              invalidNel(
+                InvalidValidationExpression(
+                  "Validation expression cannot be blank",
+                  nodeId.id,
+                  fragmentParameter.name,
+                  expr.validationExpression.expression
+                )
               )
-            case e => e
-          })
-          .andThen {
-            _.expression match {
-              case _: NullExpression =>
-                invalidNel(
-                  InvalidValidationExpression(
-                    "Validation expression cannot be blank",
-                    nodeId.id,
-                    fragmentParameter.name,
-                    expr.validationExpression.expression
-                  )
+            case expression =>
+              Valid(
+                ValidationExpressionParameterValidator(
+                  expression,
+                  fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
                 )
-              case expression =>
-                Valid(
-                  List(
-                    ValidationExpressionParameterValidator(
-                      expression,
-                      fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
-                    )
-                  )
-                )
-            }
+              )
           }
-      }
-      .sequence
-      .map(_.getOrElse(List.empty))
+        }
+    }.sequence
 
   private def validateFixedValuesSupportedType(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
     fragmentParameter.valueEditor match {

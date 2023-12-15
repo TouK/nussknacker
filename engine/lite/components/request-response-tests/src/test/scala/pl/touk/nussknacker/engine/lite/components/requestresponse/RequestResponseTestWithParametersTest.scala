@@ -9,7 +9,13 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter, ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided, FixedExpressionValue => FragmentFixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
+  FixedExpressionValue => FragmentFixedExpressionValue,
+  FragmentClazzRef,
+  FragmentParameter,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawValueParamName
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources.JsonSchemaRequestResponseSource
