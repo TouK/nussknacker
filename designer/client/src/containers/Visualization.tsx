@@ -15,7 +15,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ProcessUtils from "../common/ProcessUtils";
 import { useWindows } from "../windowManager";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { parseWindowsQueryParams } from "../windowManager/useWindows";
 import NodeUtils from "../components/graph/NodeUtils";
 import { isEdgeEditable } from "../common/EdgeUtils";
 import * as VisualizationUrl from "../common/VisualizationUrl";
@@ -23,11 +22,12 @@ import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { Process } from "../types";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "../actions/nk";
+import { clearProcess, fetchAndDisplayProcessCounts, loadProcessState } from "../actions/nk";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { DndProvider } from "react-dnd-multi-backend";
 import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
+import { parseWindowsQueryParams, setAndPreserveLocationParams } from "./hooks/useSearchQuery";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -102,7 +102,7 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
 
             navigate(
                 {
-                    search: VisualizationUrl.setAndPreserveLocationParams({
+                    search: setAndPreserveLocationParams({
                         nodeId: nodeIds.map(encodeURIComponent),
                         edgeId: [],
                     }),
