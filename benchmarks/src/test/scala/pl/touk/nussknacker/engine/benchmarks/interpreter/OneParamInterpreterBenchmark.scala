@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.ServiceExecutionContext
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -36,13 +36,8 @@ class OneParamInterpreterBenchmark {
 
   private val service = new OneParamService(instantlyCompletedFuture)
 
-  private val interpreterFutureSync = {
+  private val interpreterFuture = {
     implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
-    new InterpreterSetup[String].sourceInterpretation[Future](process, List(ComponentDefinition("service", service)))
-  }
-
-  private val interpreterFutureAsync = {
-    implicit val ec: ExecutionContext = ExecutionContext.global
     new InterpreterSetup[String].sourceInterpretation[Future](process, List(ComponentDefinition("service", service)))
   }
 
@@ -52,9 +47,9 @@ class OneParamInterpreterBenchmark {
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkFutureSync(): AnyRef = {
+  def benchmarkFutureSyncService(): AnyRef = {
     Await.result(
-      interpreterFutureSync(Context(""), SynchronousExecutionContextAndIORuntime.syncEc),
+      interpreterFuture(Context(""), ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)),
       1 second
     )
   }
@@ -62,22 +57,29 @@ class OneParamInterpreterBenchmark {
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkFutureAsync(): AnyRef = {
-    Await.result(interpreterFutureAsync(Context(""), ExecutionContext.Implicits.global), 1 second)
+  def benchmarkFutureAsyncService(): AnyRef = {
+    Await.result(
+      interpreterFuture(Context(""), ServiceExecutionContext(ExecutionContext.global)),
+      1 second
+    )
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkSyncIO(): AnyRef = {
-    interpreterIO(Context(""), SynchronousExecutionContextAndIORuntime.syncEc).unsafeRunSync()
+  def benchmarkIOSyncService(): AnyRef = {
+    import SynchronousExecutionContextAndIORuntime.syncIoRuntime
+    interpreterIO(Context(""), ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc))
+      .unsafeRunSync()
   }
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkAsyncIO(): AnyRef = {
-    interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()
+  def benchmarkIOAsyncService(): AnyRef = {
+    import SynchronousExecutionContextAndIORuntime.syncIoRuntime
+    interpreterIO(Context(""), ServiceExecutionContext(ExecutionContext.global))
+      .unsafeRunSync()
   }
 
 }
