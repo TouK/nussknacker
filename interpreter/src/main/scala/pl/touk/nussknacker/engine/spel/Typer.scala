@@ -204,7 +204,7 @@ private[spel] class Typer(
                 case _                   => invalid(IllegalIndexingOperation)
               }
           }
-        case (indexKey: TypedClass) :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
+        case indexKey :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
         case _ =>
           invalid(IllegalIndexingOperation)

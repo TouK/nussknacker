@@ -497,11 +497,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Int](s"$testRecordExpr['nestedRecord']['nestedRecordKey']").validExpression.evaluateSync[Int](ctx) shouldBe 2
   }
 
-  test("should return error for dynamic property access for map non-present element when enabled") {
+  test("should return no property present error for map non-present element when enabled") {
     inside(parse[Any](s"$testRecordExpr[nonPresentField]")) {
       case Invalid(l: NonEmptyList[ExpressionParseError])
-          if l.toList.exists(error => error.message == "Dynamic property access is not allowed") &&
-            l.toList.exists(error => error.message.startsWith("There is no property 'nonPresentField' in type:")) =>
+          if l.toList.exists(error => error.message.startsWith("There is no property 'nonPresentField' in type:")) =>
     }
     inside(parse[Any](s"$testRecordExpr['nonPresentField']")) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
