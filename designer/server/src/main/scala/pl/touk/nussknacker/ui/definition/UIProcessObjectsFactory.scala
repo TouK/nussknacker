@@ -21,8 +21,7 @@ import pl.touk.nussknacker.engine.definition.model.{
   ModelDefinitionWithComponentIds
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfigParser
-import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
+import pl.touk.nussknacker.engine.modelconfig.{ComponentsUiConfig, ComponentsUiConfigParser}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -237,7 +236,6 @@ object UIProcessObjectsFactory {
       name = parameter.name,
       typ = parameter.typ,
       editor = parameter.editor.getOrElse(RawParameterEditor),
-      validators = parameter.validators,
       defaultValue = defaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult),
       variablesToHide = parameter.variablesToHide,
