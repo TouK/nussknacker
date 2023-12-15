@@ -981,6 +981,49 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     }
   }
 
+  test("should fail on blank validation expression") {
+    val nodeId: String  = "in"
+    val paramName       = "param1"
+    val blankExpression = "     "
+
+    inside(
+      validate(
+        FragmentInputDefinition(
+          nodeId,
+          List(
+            FragmentParameter(
+              paramName,
+              FragmentClazzRef[String],
+              required = false,
+              initialValue = None,
+              hintText = None,
+              valueEditor = None,
+              valueCompileTimeValidation = Some(
+                ParameterValueCompileTimeValidation(Expression.spel(blankExpression), Some("some failed message"))
+              ),
+            )
+          ),
+        ),
+        ValidationContext.empty,
+        Map.empty,
+        outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
+      )
+    ) {
+      case ValidationPerformed(
+            List(
+              InvalidValidationExpression(
+                "Validation expression cannot be blank",
+                nodeId,
+                paramName,
+                blankExpression
+              )
+            ),
+            None,
+            None
+          ) =>
+    }
+  }
+
   test("should fail on invalid validation expression") {
     val nodeId: String   = "in"
     val paramName        = "param1"

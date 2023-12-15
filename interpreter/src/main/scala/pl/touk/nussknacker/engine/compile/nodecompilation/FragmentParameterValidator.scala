@@ -54,33 +54,44 @@ class FragmentParameterValidator(
       typ: TypingResult
   )(implicit nodeId: NodeId) = fragmentParameter.valueCompileTimeValidation match {
     case Some(expr) =>
-      expressionCompiler
-        .compile(
-          expr.validationExpression,
-          fieldName = Some(fragmentParameter.name),
-          validationCtx = ValidationContext(
-            Map(ValidationExpressionParameterValidator.variableName -> typ)
-          ), // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
-          expectedType = Typed[Boolean],
-        )
-        .leftMap(_.map {
-          case e: ExpressionParserCompilationError =>
-            InvalidValidationExpression(
-              e.message,
-              nodeId.id,
-              fragmentParameter.name,
-              e.originalExpr
-            )
-          case e => e
-        })
-        .map { typedExpression =>
-          List(
-            ValidationExpressionParameterValidator(
-              typedExpression.expression,
-              fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
-            )
+      if (expr.validationExpression.expression.isBlank) {
+        invalidNel(
+          InvalidValidationExpression(
+            "Validation expression cannot be blank",
+            nodeId.id,
+            fragmentParameter.name,
+            expr.validationExpression.expression
           )
-        }
+        )
+      } else {
+        expressionCompiler
+          .compile(
+            expr.validationExpression,
+            fieldName = Some(fragmentParameter.name),
+            validationCtx = ValidationContext(
+              Map(ValidationExpressionParameterValidator.variableName -> typ)
+            ), // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
+            expectedType = Typed[Boolean],
+          )
+          .leftMap(_.map {
+            case e: ExpressionParserCompilationError =>
+              InvalidValidationExpression(
+                e.message,
+                nodeId.id,
+                fragmentParameter.name,
+                e.originalExpr
+              )
+            case e => e
+          })
+          .map { typedExpression =>
+            List(
+              ValidationExpressionParameterValidator(
+                typedExpression.expression,
+                fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
+              )
+            )
+          }
+      }
     case None => Valid(List.empty)
   }
 
