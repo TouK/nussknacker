@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 
+import javax.lang.model.SourceVersion
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
@@ -62,8 +63,18 @@ class SpelExpressionSuggester(
         nodeInPosition: NuSpelNode,
         p: PropertyOrFieldReference
     ): Future[Iterable[ExpressionSuggestion]] = {
-      val typedPrevNode = nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
-      typedPrevNode
+
+      val nuSpelNodeParentOpt = nodeInPosition.parent.map(_.node)
+      val parentIsIndexer     = nuSpelNodeParentOpt.exists(_.spelNode.isInstanceOf[Indexer])
+
+      val typedNode = nuSpelNodeParentOpt.flatMap {
+        case nuSpelNodeParent if parentIsIndexer =>
+          nuSpelNodeParent.prevNode().flatMap(_.typingResultWithContext)
+        case _ =>
+          nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
+      }
+
+      typedNode
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
@@ -77,16 +88,28 @@ class SpelExpressionSuggester(
                 .getOrElse(Nil)
             )
           case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
-            val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map {
-              case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
+            def filterIllegalIdentifierAfterDot(name: String) = {
+              SourceVersion.isIdentifier(name)
             }
+            val collectSuggestionsFromClass = parentIsIndexer
+            val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
+              .filter { case (fieldName, _) =>
+                // TODO: signal to user that some values have been filtered
+                filterIllegalIdentifierAfterDot(fieldName)
+              }
+              .map { case (methodName, clazzRef) =>
+                ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil)
+              }
             val suggestionsFromClass = clssDefinitions
               .get(to.objType.klass)
-              .map(c =>
-                filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)
-              )
+              .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
               .getOrElse(Nil)
-            Future.successful(suggestionsFromFields ++ suggestionsFromClass)
+            val applicableSuggestions = if (collectSuggestionsFromClass) {
+              suggestionsFromFields
+            } else {
+              suggestionsFromFields ++ suggestionsFromClass
+            }
+            Future.successful(applicableSuggestions)
           case TypingResultWithContext(tu: TypedUnion, staticContext) =>
             Future.successful(
               tu.possibleTypes
@@ -173,9 +196,13 @@ class SpelExpressionSuggester(
                     dictQueryService
                       .queryEntriesByLabel(td.dictId, s.getLiteralValue.getValue.toString)
                       .map(
-                        _.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))
+                        _.map(list =>
+                          list.map(e => ExpressionSuggestion(e.label, td.valueType, fromClass = false, None, Nil))
+                        )
                       )
                       .getOrElse(successfulNil)
+                  case TypedObjectTypingResult(fields, _, _) =>
+                    Future.successful(fields.map(f => ExpressionSuggestion(f._1, f._2, fromClass = false, None, Nil)))
                   case _ => successfulNil
                 }
               case _ => successfulNil
