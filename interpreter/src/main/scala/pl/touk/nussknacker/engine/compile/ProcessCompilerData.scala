@@ -29,7 +29,6 @@ import scala.concurrent.duration.FiniteDuration
 object ProcessCompilerData {
 
   def prepare(
-      process: CanonicalProcess,
       modelConfig: Config,
       definitionWithTypes: ModelDefinitionWithClasses,
       dictRegistry: EngineDictRegistry,
@@ -75,7 +74,7 @@ object ProcessCompilerData {
     val globalVariablesPreparer = GlobalVariablesPreparer(definitionWithTypes.modelDefinition.expressionConfig)
 
     val expressionEvaluator =
-      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
+      ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners)
 
     val interpreter = Interpreter(listeners, expressionEvaluator, componentUseCase)
 
@@ -84,7 +83,6 @@ object ProcessCompilerData {
       subCompiler,
       LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, FiniteDuration(10, TimeUnit.SECONDS)),
       interpreter,
-      process,
       listeners,
       servicesDefs.map { case (info, servicesDef) => info.name -> servicesDef.implementation.asInstanceOf[Lifecycle] }
     )
@@ -93,12 +91,11 @@ object ProcessCompilerData {
 
 }
 
-class ProcessCompilerData(
+final class ProcessCompilerData(
     compiler: ProcessCompiler,
     val subPartCompiler: PartSubGraphCompiler,
     val lazyInterpreterDeps: LazyInterpreterDependencies,
     val interpreter: Interpreter,
-    process: CanonicalProcess,
     val listeners: Seq[ProcessListener],
     services: Map[String, Lifecycle]
 ) {
@@ -115,8 +112,6 @@ class ProcessCompilerData(
     listeners ++ servicesToUse
   }
 
-  def metaData: MetaData = process.metaData
-
-  def compile(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+  def compile(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compiler.compile(process).result
 }

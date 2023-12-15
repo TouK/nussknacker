@@ -31,7 +31,7 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult[R]     = ValidatedNel[ProcessCompilationError, RunResult[R]]
+  type RunnerResult        = ValidatedNel[ProcessCompilationError, RunResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
   // Maybe we should replace ids with more meaningful: test-data, rest-result?
@@ -103,20 +103,15 @@ object RunResult {
 
 }
 
-sealed trait RunResult[T] {
+sealed trait RunResult {
   def errors: List[NuExceptionInfo[_]]
-  def success: T
 }
 
-case class RunListResult[T](errors: List[NuExceptionInfo[_]], success: List[T]) extends RunResult[List[T]] {
-
-  def successes: List[T] = success
+case class RunListResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) extends RunResult {
 
   def mapSuccesses[U](f: T => U): RunListResult[U] =
-    copy(success = success.map(f))
+    copy(successes = successes.map(f))
 
 }
 
-case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult[Unit] {
-  override def success: Unit = ()
-}
+case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult

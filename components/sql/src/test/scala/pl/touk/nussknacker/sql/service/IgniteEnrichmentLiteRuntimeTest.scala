@@ -63,7 +63,7 @@ class IgniteEnrichmentLiteRuntimeTest
 
     val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
 
-    val resultList = validatedResult.validValue.success
+    val resultList = validatedResult.validValue.successes
     resultList should have length 1
     resultList.head shouldEqual "Warszawa"
   }

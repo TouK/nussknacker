@@ -6,8 +6,6 @@ import org.apache.avro.Schema
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
@@ -18,7 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSche
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues {
+class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
 
   import KafkaAvroNamespacedMockSchemaRegistry._
 
@@ -45,8 +43,7 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, List.empty, configCreator = creator, objectNaming = objectNaming)
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
+    modelData = LocalModelData(config, List.empty, configCreator = creator, objectNaming = objectNaming)
   }
 
   test("should read event in the same version as source requires and save it in the same version") {

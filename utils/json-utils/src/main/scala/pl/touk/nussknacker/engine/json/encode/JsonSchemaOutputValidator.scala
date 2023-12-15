@@ -280,7 +280,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   ): ValidatedNel[OutputValidatorRedundantFieldsError, Unit] = {
     val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
     condNel(
-      redundantFields.isEmpty || schema.permitsAdditionalProperties(),
+      redundantFields.isEmpty || schema.permitsAdditionalProperties() || validationMode == ValidationMode.lax,
       (),
       OutputValidatorRedundantFieldsError(buildFieldsPaths(redundantFields, path))
     )

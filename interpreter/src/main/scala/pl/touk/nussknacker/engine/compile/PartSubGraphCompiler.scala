@@ -210,7 +210,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler, nodeCompiler:
 
       case enricher @ Enricher(id, _, output, _) =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, validatedServiceRef, _) =
-          nodeCompiler.compileEnricher(enricher, ctx, outputVar = Some(OutputVar.enricher(output)))
+          nodeCompiler.compileEnricher(enricher, ctx, outputVar = OutputVar.enricher(output))
 
         CompilationResult.map3(
           toCompilationResult(validatedServiceRef, typingInfo, parameters),
