@@ -27,7 +27,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val fragmentComponentDefinitionExtractor = FragmentCompleteDefinitionExtractor(modelData)
+  private lazy val fragmentComponentDefinitionExtractor =
+    FragmentCompleteDefinitionExtractor(
+      modelData.modelConfig,
+      modelData.modelClassLoader.classLoader,
+      expressionCompiler
+    )
 
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,

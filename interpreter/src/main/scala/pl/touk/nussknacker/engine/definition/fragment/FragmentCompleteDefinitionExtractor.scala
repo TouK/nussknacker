@@ -5,7 +5,6 @@ import cats.data.{ValidatedNel, Writer}
 import cats.implicits.{catsKernelStdMonoidForList, toTraverseOps}
 import cats.instances.list._
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
@@ -20,7 +19,6 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 }
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
-import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 class FragmentCompleteDefinitionExtractor(
     withoutValidatorsExtractor: FragmentWithoutValidatorsDefinitionExtractor,
@@ -122,22 +120,6 @@ class FragmentCompleteDefinitionExtractor(
 }
 
 object FragmentCompleteDefinitionExtractor {
-
-  def apply(modelData: ModelData): FragmentCompleteDefinitionExtractor = {
-    val expressionConfig = ModelDefinitionBuilder.empty.expressionConfig
-    val expressionCompiler = ExpressionCompiler.withOptimization(
-      modelData.modelClassLoader.classLoader,
-      modelData.engineDictRegistry,
-      expressionConfig,
-      modelData.modelDefinitionWithClasses.classDefinitions
-    )
-
-    FragmentCompleteDefinitionExtractor(
-      modelData.modelConfig,
-      modelData.modelClassLoader.classLoader,
-      expressionCompiler
-    )
-  }
 
   def apply(
       modelConfig: Config,

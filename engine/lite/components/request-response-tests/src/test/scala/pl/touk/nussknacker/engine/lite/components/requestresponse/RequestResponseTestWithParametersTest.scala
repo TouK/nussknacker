@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, StubbedFragmentInputTestSource}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
@@ -157,11 +157,15 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     source.parametersToTestData(parameters) shouldBe TypedMap(Map("errorCode" -> 20L))
   }
 
+  val modelData = LocalModelData(ConfigFactory.empty, List.empty)
+
+  val fragmentDefinitionExtractor = FragmentCompleteDefinitionExtractor(
+    modelData.modelConfig,
+    modelData.modelClassLoader.classLoader,
+    ExpressionCompiler.withoutOptimization(modelData)
+  )
+
   test("should generate test parameters for fragment input definition") {
-    val fragmentDefinitionExtractor =
-      FragmentCompleteDefinitionExtractor(
-        LocalModelData(ConfigFactory.empty, List.empty)
-      )
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
@@ -183,10 +187,6 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   }
 
   test("should generate parameters for expanded fragment input definition without fixed values") {
-    val fragmentDefinitionExtractor =
-      FragmentCompleteDefinitionExtractor(
-        LocalModelData(ConfigFactory.empty, List.empty)
-      )
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
@@ -213,11 +213,6 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   }
 
   test("should generate complex parameters for expanded fragment input definition with fixed values") {
-    val fragmentDefinitionExtractor =
-      FragmentCompleteDefinitionExtractor(
-        LocalModelData(ConfigFactory.empty, List.empty)
-      )
-
     val fixedValuesList =
       List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -259,11 +254,6 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   }
 
   test("should generate fragment parameter with spel expression validator") {
-    val fragmentDefinitionExtractor =
-      FragmentCompleteDefinitionExtractor(
-        LocalModelData(ConfigFactory.empty, List.empty)
-      )
-
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
