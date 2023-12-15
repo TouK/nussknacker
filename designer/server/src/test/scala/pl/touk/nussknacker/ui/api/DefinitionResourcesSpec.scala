@@ -10,10 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.TestAdditionalUIConfigProvider
@@ -103,36 +100,6 @@ class DefinitionResourcesSpec
         .value
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
-    }
-  }
-
-  it("return info about validator based on param fixed value editor for scenario properties") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
-      status shouldBe StatusCodes.OK
-
-      val validators: Json = responseAs[Json].hcursor
-        .downField("scenarioPropertiesConfig")
-        .downField("numberOfThreads")
-        .downField("validators")
-        .focus
-        .value
-
-      validators shouldBe
-        Json.arr(
-          Json.obj(
-            "possibleValues" -> Json.arr(
-              Json.obj(
-                "expression" -> Json.fromString("1"),
-                "label"      -> Json.fromString("1")
-              ),
-              Json.obj(
-                "expression" -> Json.fromString("2"),
-                "label"      -> Json.fromString("2")
-              )
-            ),
-            "type" -> Json.fromString("FixedValuesValidator")
-          )
-        )
     }
   }
 
@@ -238,32 +205,6 @@ class DefinitionResourcesSpec
         "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'"
       )
     }
-  }
-
-  private def getServices: Option[Iterable[String]] = {
-    responseAs[Json].hcursor.downField("streaming").keys
-  }
-
-  private def getParamEditor(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("editor")
-      .focus
-      .value
-  }
-
-  private def getParamValidator(serviceName: String, paramName: String) = {
-    responseAs[Json].hcursor
-      .downField("streaming")
-      .downField(serviceName)
-      .downField("parameters")
-      .downAt(_.hcursor.get[String]("name").rightValue == paramName)
-      .downField("validators")
-      .focus
-      .value
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {

@@ -139,7 +139,6 @@ package object definition {
   @JsonCodec final case class UiScenarioPropertyConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
-      validators: List[ParameterValidator],
       label: Option[String]
   )
 

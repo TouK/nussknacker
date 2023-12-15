@@ -233,19 +233,16 @@ class BaseFlowTest
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
-        validators = List(MandatoryParameterValidator),
         label = Some("Environment")
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
-        validators = List(LiteralIntegerValidator),
         label = Some("Max events")
       ),
       "numberOfThreads" -> UiScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
-        validators = List(FixedValuesValidator(fixedPossibleValues)),
         label = Some("Number of threads")
       ),
       TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(

@@ -24,10 +24,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
-import pl.touk.nussknacker.ui.definition.scenarioproperty.{
-  ScenarioPropertyValidatorDeterminerChain,
-  UiScenarioPropertyEditorDeterminer
-}
+import pl.touk.nussknacker.ui.definition.scenarioproperty.UiScenarioPropertyEditorDeterminer
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -210,9 +207,6 @@ object UIProcessObjectsFactory {
       types: Set[UIClassDefinition],
       processCategoryService: ProcessCategoryService
   ): UIModelDefinition = {
-    def createUIComponentDef(componentDef: ComponentStaticDefinition) =
-      createUIComponentDefinition(componentDef, processCategoryService)
-
     def createUIFragmentComponentDef(fragmentDef: FragmentStaticDefinition) =
       createUIFragmentComponentDefinition(fragmentDef, processCategoryService)
 
@@ -224,7 +218,6 @@ object UIProcessObjectsFactory {
         }
         .toMap
 
-    val transformed = modelDefinition.transform(createUIComponentDef)
     UIModelDefinition(
       services = filterByTypeAndTransform(ComponentType.Service),
       sourceFactories = filterByTypeAndTransform(ComponentType.Source),
@@ -251,9 +244,8 @@ object UIProcessObjectsFactory {
   }
 
   def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
-    val editor               = UiScenarioPropertyEditorDeterminer.determine(config)
-    val determinedValidators = ScenarioPropertyValidatorDeterminerChain(config).determine()
-    UiScenarioPropertyConfig(config.defaultValue, editor, determinedValidators, config.label)
+    val editor = UiScenarioPropertyEditorDeterminer.determine(config)
+    UiScenarioPropertyConfig(config.defaultValue, editor, config.label)
   }
 
 }
