@@ -14,9 +14,7 @@ final case class NotificationConfig(duration: FiniteDuration)
 
 trait NotificationService {
 
-  def notifications(
-      notificationsAfter: Option[Instant]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]]
+  def notifications(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]]
 
 }
 
@@ -27,13 +25,9 @@ class NotificationServiceImpl(
     clock: Clock = Clock.systemUTC()
 ) extends NotificationService {
 
-  override def notifications(
-      notificationsAfter: Option[Instant]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
-    val now                                              = clock.instant()
-    val limitBasedOnConfig                               = now.minusMillis(config.duration.toMillis)
-    def maxInstant(instant1: Instant, instant2: Instant) = if (instant1.compareTo(instant2) > 0) instant1 else instant2
-    val limit = notificationsAfter.map(maxInstant(_, limitBasedOnConfig)).getOrElse(limitBasedOnConfig)
+  override def notifications(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
+    val now   = clock.instant()
+    val limit = now.minusMillis(config.duration.toMillis)
     dbioRunner
       .run(
         actionRepository.getUserActionsAfter(

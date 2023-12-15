@@ -73,8 +73,8 @@ class NotificationServiceTest
     val deploymentManager                        = mock[DeploymentManager]
     val (deploymentService, notificationService) = createServices(deploymentManager)
 
-    def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] =
-      notificationService.notifications(after)(user, ctx).futureValue
+    def notificationsFor(user: LoggedUser): List[Notification] =
+      notificationService.notifications(user, ctx).futureValue
 
     def deployProcess(
         givenDeployResult: Try[Option[ExternalDeploymentId]],
@@ -99,10 +99,9 @@ class NotificationServiceTest
 
     notificationsFor(userForFail).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
 
-    notificationsFor(userForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe List(
+    notificationsFor(userForFail).map(_.toRefresh) shouldBe List(
       expectedRefreshAfterFail
     )
-    notificationsFor(userForFail, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe Symbol("empty")
 
     currentInstant = currentInstant.plus(1, ChronoUnit.HOURS)
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
@@ -133,12 +132,12 @@ class NotificationServiceTest
 
     val user = TestFactory.adminUser("fooUser", "fooUser")
     deployProcess(Success(None), user)
-    val notificationsAfterDeploy = notificationService.notifications(None)(user, ctx).futureValue
+    val notificationsAfterDeploy = notificationService.notifications(user, ctx).futureValue
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
     deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
-    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, ctx).futureValue
+    val notificationAfterExecutionFinished = notificationService.notifications(user, ctx).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
     notificationAfterExecutionFinished.head.id should not equal deployNotificationId
