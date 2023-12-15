@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
@@ -29,13 +27,12 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-class FlinkProcessCompiler(
+class FlinkProcessCompilerDataFactory(
     creator: ProcessConfigCreator,
     extractModelDefinition: ExtractDefinitionFun,
-    val modelConfig: Config,
-    val diskStateBackendSupport: Boolean,
+    modelConfig: Config,
     objectNaming: ObjectNaming,
-    val componentUseCase: ComponentUseCase,
+    componentUseCase: ComponentUseCase,
 ) extends Serializable {
 
   import net.ceedubs.ficus.Ficus._
@@ -45,20 +42,19 @@ class FlinkProcessCompiler(
     modelData.configCreator,
     modelData.extractModelDefinitionFun,
     modelData.modelConfig,
-    diskStateBackendSupport = true,
     modelData.objectNaming,
     componentUseCase = ComponentUseCase.EngineRuntime,
   )
 
-  def compileProcess(
-      process: CanonicalProcess,
+  def prepareCompilerData(
+      metaData: MetaData,
       processVersion: ProcessVersion,
       resultCollector: ResultCollector,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData =
-    compileProcess(process, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
+    prepareCompilerData(metaData, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
 
-  def compileProcess(process: CanonicalProcess, processVersion: ProcessVersion, resultCollector: ResultCollector)(
+  def prepareCompilerData(metaData: MetaData, processVersion: ProcessVersion, resultCollector: ResultCollector)(
       usedNodes: UsedNodes,
       userCodeClassLoader: ClassLoader
   ): FlinkProcessCompilerData = {
@@ -79,9 +75,8 @@ class FlinkProcessCompiler(
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
 
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, modelConfig)
-    val compiledProcess =
+    val compilerData =
       ProcessCompilerData.prepare(
-        process,
         modelConfig,
         definitionWithTypes,
         dictRegistry,
@@ -93,10 +88,9 @@ class FlinkProcessCompiler(
       )
 
     new FlinkProcessCompilerData(
-      compiledProcess = compiledProcess,
-      jobData = JobData(process.metaData, processVersion),
-      exceptionHandler =
-        exceptionHandler(process.metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
+      compilerData = compilerData,
+      jobData = JobData(metaData, processVersion),
+      exceptionHandler = exceptionHandler(metaData, processObjectDependencies, listenersToUse, userCodeClassLoader),
       asyncExecutionContextPreparer = asyncExecutionContextPreparer,
       processTimeout = timeout,
       componentUseCase = componentUseCase
@@ -151,15 +145,7 @@ class FlinkProcessCompiler(
       listeners: Seq[ProcessListener],
       classLoader: ClassLoader
   ): FlinkExceptionHandler = {
-    componentUseCase match {
-      case ComponentUseCase.TestRuntime =>
-        new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
-          override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-
-          override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
-        }
-      case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
-    }
+    new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
   }
 
 }

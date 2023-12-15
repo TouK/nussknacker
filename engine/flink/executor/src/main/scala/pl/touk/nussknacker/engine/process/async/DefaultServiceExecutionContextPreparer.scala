@@ -4,7 +4,7 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicLong
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
-import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, ServiceExecutionContextPreparer}
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ServiceExecutionContext}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
@@ -56,7 +56,7 @@ final case class DefaultServiceExecutionContextPreparer(
     bufferSize: Int,
     workers: Int,
     defaultUseAsyncInterpretation: Option[Boolean]
-) extends ServiceExecutionContextPreparer
+) extends AsyncExecutionContextPreparer
     with LazyLogging {
 
   def prepare(processId: String): ServiceExecutionContext = {

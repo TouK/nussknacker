@@ -2,6 +2,7 @@
 
 1.13.0 (Not released yet)
 -------------------------
+* [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
 * [#4988](https://github.com/TouK/nussknacker/pull/4988) Refactor: Allow to use custom authentication methods in user-defined Authentication Providers
 * [#4711](https://github.com/TouK/nussknacker/pull/4711) [#4862](https://github.com/TouK/nussknacker/pull/4862) Added AdditionalUIConfigProviderFactory API that allows changing components' configs and scenario properties' UI configs without model reload
 * [#4860](https://github.com/TouK/nussknacker/pull/4860) Rename `additionalProperties` to `scenarioProperties`
@@ -35,8 +36,10 @@
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Breaking change: some components changed identifier - url's and identifiers in node errors are changed
 * [#5171](https://github.com/TouK/nussknacker/pull/5171) Component `mapVariable` was renamed to `record-variable`
 * [#5223](https://github.com/TouK/nussknacker/pull/5223) Legacy low level kafka components were removed
+* [#5233](https://github.com/TouK/nussknacker/pull/5233) Fix: Not expected type: Null runtime error for non-nullable, optional json fields that were not provided by user in sink
+* [#5233](https://github.com/TouK/nussknacker/pull/5233) Added support for schema evolution in kafka using json schema and response sink
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.2
-* 
+
 * 1.12.5 (1 Dec 2023)
 ------------------------
 * [#5110](https://github.com/TouK/nussknacker/pull/5110) Fix: The compare option doesn't display fragment input properties between the two versions

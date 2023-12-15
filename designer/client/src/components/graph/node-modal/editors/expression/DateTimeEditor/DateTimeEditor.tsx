@@ -5,6 +5,7 @@ import { DatepickerEditor, DatepickerEditorProps } from "./DatepickerEditor";
 import { isEmpty } from "lodash";
 import { FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import moment from "moment";
+import { ExtendedEditor } from "../Editor";
 
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm";
@@ -14,7 +15,9 @@ const isParseable = (expression: ExpressionObj): boolean => {
     return date && moment(date, dateTimeFormat).isValid();
 };
 
-export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "expressionType">) {
+type DateTimeEditorProps = Omit<DatepickerEditorProps, "dateFormat" | "expressionType">;
+
+export const DateTimeEditor: ExtendedEditor<DateTimeEditorProps> = (props: DateTimeEditorProps) => {
     const { formatter } = props;
     const dateFormatter = formatter == null ? typeFormatters[FormatterType.DateTime] : formatter;
 
@@ -27,7 +30,7 @@ export function DateTimeEditor(props: Omit<DatepickerEditorProps, "dateFormat" |
             formatter={dateFormatter}
         />
     );
-}
+};
 
 DateTimeEditor.switchableToHint = () => i18next.t("editors.LocalDateTime.switchableToHint", "Switch to basic mode");
 DateTimeEditor.notSwitchableToHint = () =>

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.NodeId
@@ -86,19 +86,27 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
           state = None
         )
       } else {
-        val query         = s"SELECT * FROM $tableName"
-        val queryMetaData = dbMetaDataProvider.getTableMetaData(tableName)
-        NextParameters(
-          parameters = keyColumnParam(queryMetaData.tableDefinition) :: Nil,
-          state = Some(
-            TransformationState(
-              query = query,
-              argsCount = 1,
-              queryMetaData.tableDefinition,
-              strategy = SingleResultStrategy
+        val query = s"SELECT * FROM $tableName"
+        dbMetaDataProvider.getTableMetaData(tableName).tableDefinition match {
+          case Some(tableDefinition) =>
+            NextParameters(
+              parameters = keyColumnParam(tableDefinition) :: Nil,
+              state = Some(
+                TransformationState(
+                  query = query,
+                  argsCount = 1,
+                  tableDefinition,
+                  strategy = SingleResultStrategy
+                )
+              )
             )
-          )
-        )
+          case None =>
+            FinalResults(
+              context,
+              errors = CustomNodeError("Prepared query returns no columns", Some(TableParamName)) :: Nil,
+              state = None
+            )
+        }
       }
   }
 

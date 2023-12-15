@@ -35,24 +35,21 @@ class InterpreterSetup[T: ClassTag] {
   def sourceInterpretation[F[_]: Monad: InterpreterShape](
       process: CanonicalProcess,
       additionalComponents: List[ComponentDefinition]
-  ): (Context, ExecutionContext) => F[
-    List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]
-  ] = {
-    val compiledProcess = compile(additionalComponents, process)
-    val interpreter     = compiledProcess.interpreter
-    val parts           = failOnErrors(compiledProcess.compile())
+  ): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+    val compilerData = prepareCompilerData(additionalComponents)
+    val interpreter  = compilerData.interpreter
+    val parts        = failOnErrors(compilerData.compile(process))
 
     def compileNode(part: ProcessPart) =
-      failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+      failOnErrors(compilerData.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
 
     val compiled = compileNode(parts.sources.head)
     (initialCtx: Context, ec: ExecutionContext) =>
       interpreter.interpret[F](compiled, process.metaData, initialCtx, ServiceExecutionContext(ec))
   }
 
-  def compile(
+  def prepareCompilerData(
       additionalComponents: List[ComponentDefinition],
-      process: CanonicalProcess
   ): ProcessCompilerData = {
     val components = List(
       ComponentDefinition("source", new Source),
@@ -67,7 +64,6 @@ class InterpreterSetup[T: ClassTag] {
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
     ProcessCompilerData.prepare(
-      process,
       ConfigFactory.empty(),
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,

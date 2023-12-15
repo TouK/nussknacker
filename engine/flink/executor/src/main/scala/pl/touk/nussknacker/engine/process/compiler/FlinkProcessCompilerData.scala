@@ -6,8 +6,9 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.Interpreter
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContextPreparer}
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ComponentUseCase}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyInterpreterDependencies
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
@@ -26,28 +27,28 @@ import scala.concurrent.duration.FiniteDuration
   NOTE: this class is *NOT* serializable, it should be created on each operator via FlinkProcessCompiler.
  */
 class FlinkProcessCompilerData(
-    compiledProcess: ProcessCompilerData,
+    compilerData: ProcessCompilerData,
     val jobData: JobData,
     // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
     exceptionHandler: FlinkExceptionHandler,
-    val asyncExecutionContextPreparer: ServiceExecutionContextPreparer,
+    val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
     val processTimeout: FiniteDuration,
     val componentUseCase: ComponentUseCase
 ) {
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
-    val lifecycle = compiledProcess.lifecycle(nodesToUse)
+    val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
       _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     }
   }
 
   def close(nodesToUse: List[_ <: NodeData]): Unit = {
-    compiledProcess.lifecycle(nodesToUse).foreach(_.close())
+    compilerData.lifecycle(nodesToUse).foreach(_.close())
   }
 
   def compileSubPart(node: SplittedNode[_], validationContext: ValidationContext): Node = {
-    validateOrFail(compiledProcess.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result)
+    validateOrFail(compilerData.subPartCompiler.compile(node, validationContext)(jobData.metaData).result)
   }
 
   private def validateOrFail[T](validated: ValidatedNel[ProcessCompilationError, T]): T = validated match {
@@ -55,15 +56,16 @@ class FlinkProcessCompilerData(
     case Invalid(err) => throw new scala.IllegalArgumentException(err.toList.mkString("Compilation errors: ", ", ", ""))
   }
 
-  val metaData: MetaData = compiledProcess.metaData
+  def metaData: MetaData = jobData.metaData
 
-  val interpreter: Interpreter = compiledProcess.interpreter
+  def interpreter: Interpreter = compilerData.interpreter
 
-  val lazyInterpreterDeps: LazyInterpreterDependencies = compiledProcess.lazyInterpreterDeps
+  def lazyInterpreterDeps: LazyInterpreterDependencies = compilerData.lazyInterpreterDeps
 
-  def compileProcess(): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = compiledProcess.compile()
+  def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
+    compilerData.compile(process)
 
-  def compileProcessOrFail(): CompiledProcessParts = validateOrFail(compileProcess())
+  def compileProcessOrFail(process: CanonicalProcess): CompiledProcessParts = validateOrFail(compileProcess(process))
 
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 

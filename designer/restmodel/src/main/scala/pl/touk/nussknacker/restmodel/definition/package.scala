@@ -3,10 +3,9 @@ package pl.touk.nussknacker.restmodel
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -17,9 +16,11 @@ import java.net.URI
 
 package object definition {
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
-      // TODO: rename
+      // TODO: rename to modelDefinition
       processDefinition: UIModelDefinition,
       componentsConfig: Map[String, SingleComponentConfig],
       scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
@@ -53,23 +54,35 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
-      validators: List[ParameterValidator],
       defaultValue: Expression,
+      // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
+      // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
       additionalVariables: Map[String, TypingResult],
       variablesToHide: Set[String],
+      // FE need this information because branch parameters aren't changed dynamically during node validation so they never
+      // should be invalidated
       branchParam: Boolean,
       hintText: Option[String]
   )
 
   @JsonCodec(encodeOnly = true) final case class UIComponentDefinition(
+      // These parameters are mostly used for method based, static components. For dynamic components, it is the last fallback
+      // when scenario validation doesn't returned node results (e.g. when DisplayableProcess can't be translated to CanonicalProcess).
+      // And node validation wasn't performed yet (e.g. just after node details modal open) or for branch parameters
+      // which aren't handled dynamically. See getDynamicParameterDefinitions in selectors.tsx.
       parameters: List[UIParameter],
+      // TODO: remove this field
+      // We use it for two purposes:
+      // 1. Because we have a special "Output variable name" parameter which is treated specially both in scenario format
+      //    (see CustomNode.outputVar and Join.outputVar) and accordingly in the component definition
+      //    We can easily move this parameter to normal parameters but in the join case, it will change the order parameters
+      //    (it will be after branch parameters instead of before them)
+      // 2. We have a heuristic that trying to figure out context of variables to pass to node validation and to suggestions
+      //    (see. ProcessUtils.findAvailableVariables). This heuristic is used when DisplayableProcess can't be translated
+      //    to CanonicalProcess. When we replace CanonicalProcess by DisplayableProcess, it won't be needed anymore
       returnType: Option[TypingResult],
       categories: List[String],
-  ) {
-
-    def hasNoReturn: Boolean = returnType.isEmpty
-
-  }
+  )
 
   @JsonCodec(encodeOnly = true) final case class UIFragmentComponentDefinition(
       parameters: List[UIParameter],
@@ -88,8 +101,6 @@ package object definition {
       canChooseNodes: Boolean,
       isForInputDefinition: Boolean
   )
-
-  import pl.touk.nussknacker.engine.graph.node.NodeData._
 
   object ComponentNodeTemplate {
 
@@ -126,7 +137,6 @@ package object definition {
   @JsonCodec final case class UiScenarioPropertyConfig(
       defaultValue: Option[String],
       editor: ParameterEditor,
-      validators: List[ParameterValidator],
       label: Option[String]
   )
 
@@ -136,8 +146,6 @@ package object definition {
   }
 
   object UICustomAction {
-
-    import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
       name = action.name,

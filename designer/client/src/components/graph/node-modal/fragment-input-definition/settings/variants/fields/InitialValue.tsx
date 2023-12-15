@@ -5,8 +5,8 @@ import { onChangeType, FragmentInputParameter, FixedValuesOption, FieldName } fr
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { EditableEditor } from "../../../../editors/EditableEditor";
-import { VariableTypes } from "../../../../../../../types";
-import { Error, errorValidator } from "../../../../editors/Validators";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { EditorType } from "../../../../editors/expression/Editor";
 
 interface InitialValue {
@@ -17,19 +17,10 @@ interface InitialValue {
     options?: FixedValuesOption[];
     readOnly: boolean;
     variableTypes: VariableTypes;
-    fieldsErrors: Error[];
+    errors: NodeValidationError[];
 }
 
-export default function InitialValue({
-    onChange,
-    fieldName,
-    item,
-    path,
-    options,
-    readOnly,
-    variableTypes,
-    fieldsErrors = [],
-}: InitialValue) {
+export default function InitialValue({ onChange, fieldName, item, path, options, readOnly, variableTypes, errors = [] }: InitialValue) {
     const { t } = useTranslation();
 
     const emptyOption = { label: "", value: "" };
@@ -40,7 +31,6 @@ export default function InitialValue({
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
             {options ? (
                 <TypeSelect
-                    fieldName={fieldName}
                     onChange={(value) => {
                         const selectedOption = options.find((option) => option.label === value);
                         onChange(`${path}.initialValue`, selectedOption);
@@ -48,19 +38,18 @@ export default function InitialValue({
                     value={optionsToDisplay.find((option) => option.value === item?.initialValue?.label)}
                     options={optionsToDisplay}
                     readOnly={readOnly}
-                    fieldErrors={fieldsErrors}
                     placeholder={""}
+                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
                 />
             ) : (
                 <EditableEditor
-                    fieldName={fieldName}
                     expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.label }}
                     onValueChange={(value) => onChange(`${path}.initialValue`, { label: value, expression: value })}
                     variableTypes={variableTypes}
                     readOnly={readOnly}
-                    errors={fieldsErrors}
-                    param={{ validators: [errorValidator], editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
+                    param={{ editor: { type: EditorType.RAW_PARAMETER_EDITOR } }}
                     showValidation
+                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
                 />
             )}
         </SettingRow>

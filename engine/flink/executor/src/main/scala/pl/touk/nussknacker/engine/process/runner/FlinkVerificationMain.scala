@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompiler
+import pl.touk.nussknacker.engine.process.compiler.VerificationFlinkProcessCompilerDataFactory
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testmode.{TestRunId, TestServiceInvocationCollector}
 
 object FlinkVerificationMain extends FlinkRunner {
@@ -46,7 +46,8 @@ class FlinkVerificationMain(
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(
-      VerificationFlinkProcessCompiler(process, modelData),
+      VerificationFlinkProcessCompilerDataFactory(process, modelData),
+      FlinkJobConfig.parse(modelData.modelConfig),
       ExecutionConfigPreparer.defaultChain(modelData)
     )
   }

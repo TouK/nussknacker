@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, ServiceExecutionContextPreparer}
+import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -22,24 +22,22 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
-    serviceExecutionContextPreparer: ServiceExecutionContextPreparer,
+    serviceExecutionContextPreparer: AsyncExecutionContextPreparer,
     useIOMonad: Boolean
 ) extends RichAsyncFunction[Context, InterpretationResult]
     with LazyLogging
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
-
-  import compiledProcessWithDeps._
+  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
 
   private var serviceExecutionContext: ServiceExecutionContext = _
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
-    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compiledProcessWithDeps.metaData.id)
+    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.id)
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -67,13 +65,13 @@ private[registrar] class AsyncInterpretationFunction(
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
-      interpreter
-        .interpret[IO](compiledNode, metaData, input, serviceExecutionContext)
+      compilerData.interpreter
+        .interpret[IO](compiledNode, compilerData.metaData, input, serviceExecutionContext)
         .unsafeRunAsync(callback)
     } else {
       implicit val executionContext: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
-      interpreter
-        .interpret[Future](compiledNode, metaData, input, serviceExecutionContext)
+      compilerData.interpreter
+        .interpret[Future](compiledNode, compilerData.metaData, input, serviceExecutionContext)
         .onComplete { result => callback(result.toEither) }
     }
   }

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.process.ServiceExecutionContextPreparer
+import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
 import pl.touk.nussknacker.engine.flink.api.ConfigGlobalParameters
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData, Processor}
 import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splittednode}
 
 private[registrar] case class AsyncInterpretationDeterminer(
     configParameters: Option[ConfigGlobalParameters],
-    asyncExecutionContextPreparer: ServiceExecutionContextPreparer
+    asyncExecutionContextPreparer: AsyncExecutionContextPreparer
 ) {
 
   def determine(splittedNode: splittednode.SplittedNode[NodeData], streamMetaData: StreamMetaData): Boolean = {

@@ -154,7 +154,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   }
 
   override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = { (value: Any) =>
-    BestEffortJsonSchemaEncoder.encodeOrError(value, schema.cast().rawSchema())
+    new BestEffortJsonSchemaEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
   }
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =

@@ -10,14 +10,14 @@ export function Split({
     renderFieldLabel,
     setProperty,
     showValidation,
-    fieldErrors,
+    errors,
 }: {
     isEditMode?: boolean;
     node: NodeType;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
-    fieldErrors?: NodeValidationError[];
+    errors: NodeValidationError[];
 }): JSX.Element {
     return (
         <NodeTableBody>
@@ -27,7 +27,7 @@ export function Split({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                errors={fieldErrors}
+                errors={errors}
             />
             <DescriptionField
                 isEditMode={isEditMode}
@@ -35,6 +35,7 @@ export function Split({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={errors}
             />
         </NodeTableBody>
     );

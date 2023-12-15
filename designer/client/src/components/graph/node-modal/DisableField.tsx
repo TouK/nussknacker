@@ -1,8 +1,7 @@
 import { FieldType } from "./editors/field/Field";
 import React from "react";
 import { NodeField } from "./NodeField";
-import { NodeType } from "../../../types";
-import { Validator } from "./editors/Validators";
+import { NodeType, NodeValidationError } from "../../../types";
 
 interface DisableFieldProps {
     autoFocus?: boolean;
@@ -13,7 +12,7 @@ interface DisableFieldProps {
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
-    validators?: Validator[];
+    errors: NodeValidationError[];
 }
 
 export function DisableField({
@@ -25,7 +24,7 @@ export function DisableField({
     renderFieldLabel,
     setProperty,
     showValidation,
-    validators,
+    errors,
 }: DisableFieldProps): JSX.Element {
     return (
         <NodeField
@@ -37,10 +36,10 @@ export function DisableField({
             isEditMode={isEditMode}
             showValidation={showValidation}
             readonly={readonly}
-            validators={validators}
             fieldType={FieldType.checkbox}
             fieldLabel={"Disabled"}
-            fieldProperty={"isDisabled"}
+            errors={errors}
+            fieldName={"isDisabled"}
         />
     );
 }

@@ -214,7 +214,6 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
     val withoutVariablesToHide = ctx.copy(localVariables =
       ctx.localVariables
         .filterKeysNow(variableName => !definition.variablesToHide.contains(variableName))
-        .toMap
     )
     definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](
       Valid(withoutVariablesToHide)

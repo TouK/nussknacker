@@ -47,6 +47,8 @@ case class Context(
   def appendIdSuffix(suffix: String): Context =
     copy(id = s"$id-$suffix")
 
+  // TODO: all methods should has NotNothing type check to avoid situation when scala's compiler implicitly put Nothing
+  //       into parameter
   def apply[T](name: String): T =
     getOrElse(name, throw new RuntimeException(s"Unknown variable: $name"))
 

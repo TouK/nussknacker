@@ -2,11 +2,11 @@ import { isEmpty } from "lodash";
 import React, { forwardRef, useMemo } from "react";
 import { VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
-import { editors, EditorType, simpleEditorValidators } from "./expression/Editor";
+import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
-import { Error, PosibleValues, Validator } from "./Validators";
+import { FieldError, PossibleValue } from "./Validators";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 import { cx } from "@emotion/css";
 
@@ -17,25 +17,21 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     param?: ParamType;
-    values?: Array<PosibleValues>;
-    fieldName?: string;
+    values?: Array<PossibleValue>;
     isMarked?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     onValueChange: (value: string) => void;
-    errors?: Error[];
+    fieldErrors: FieldError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
-    validators?: Validator[];
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {
-    const { expressionObj, valueClassName, param, fieldLabel, errors, fieldName, validationLabelInfo, validators = [] } = props;
+    const { expressionObj, valueClassName, param, fieldErrors, validationLabelInfo } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
 
-    const Editor = useMemo(() => editors[editorType], [editorType]);
-
-    const mergedValidators = validators.concat(simpleEditorValidators(param, errors, fieldName, fieldLabel));
+    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorType], [editorType]);
 
     const formatter = useMemo(
         () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
@@ -48,7 +44,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
             ref={ref}
             editorConfig={param?.editor}
             className={`${valueClassName ? valueClassName : "node-value"}`}
-            validators={mergedValidators}
+            fieldErrors={fieldErrors}
             formatter={formatter}
             expressionInfo={validationLabelInfo}
         />

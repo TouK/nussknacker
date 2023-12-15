@@ -3,9 +3,9 @@ import i18next from "i18next";
 import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
-import { SimpleEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
 import { Formatter } from "./Formatter";
-import RawEditor, { RawEditorProps } from "./RawEditor";
+import { RawEditor, RawEditorProps } from "./RawEditor";
 import { isSwitchableTo } from "./StringEditor";
 import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
@@ -94,7 +94,7 @@ function useAliasUsageHighlight(token = "alias") {
     return ref;
 }
 
-const SqlEditor: SimpleEditor<Props> = (props: Props) => {
+export const SqlEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, className, ...passProps } = props;
     const ref = useAliasUsageHighlight();
 
@@ -118,5 +118,3 @@ SqlEditor.notSwitchableToHint = () =>
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-
-export default SqlEditor;

@@ -325,14 +325,14 @@ class NodeCompiler(
     compileService(n.service, ctx, None)
   }
 
-  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: Option[OutputVar])(
+  def compileEnricher(n: Enricher, ctx: ValidationContext, outputVar: OutputVar)(
       implicit nodeId: NodeId,
       metaData: MetaData
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
-    compileService(n.service, ctx, outputVar)
+    compileService(n.service, ctx, Some(outputVar))
   }
 
-  def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
+  private def compileService(n: ServiceRef, validationContext: ValidationContext, outputVar: Option[OutputVar])(
       implicit nodeId: NodeId,
       metaData: MetaData
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {

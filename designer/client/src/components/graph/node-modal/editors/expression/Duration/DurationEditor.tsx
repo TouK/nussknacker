@@ -1,11 +1,12 @@
 import React, { useCallback, useMemo } from "react";
 import { ExpressionObj } from "../types";
-import { Validator } from "../../Validators";
+import { FieldError } from "../../Validators";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
+import { ExtendedEditor } from "../Editor";
 
 export type Duration = {
     days: number;
@@ -16,8 +17,8 @@ export type Duration = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
-    showValidation?: boolean;
+    fieldErrors: FieldError[];
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
     editorConfig: $TodoType;
@@ -32,8 +33,8 @@ const NONE_DURATION = {
     minutes: () => null,
 };
 
-export default function DurationEditor(props: Props): JSX.Element {
-    const { expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
+export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
+    const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const durationFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Duration] : formatter), [formatter]);
 
@@ -53,7 +54,9 @@ export default function DurationEditor(props: Props): JSX.Element {
     const decode = useCallback(
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
-            const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult);
+
+            const duration =
+                decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
             return {
                 days: duration.days(),
                 hours: duration.hours(),
@@ -71,12 +74,12 @@ export default function DurationEditor(props: Props): JSX.Element {
             editorConfig={editorConfig}
             readOnly={readOnly}
             showValidation={showValidation}
-            validators={validators}
+            fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
         />
     );
-}
+};
 
 DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);

@@ -85,7 +85,6 @@ object ScenarioInterpreterFactory {
       val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
       val compilerData = ProcessCompilerData.prepare(
-        process,
         modelData.modelConfig,
         modelData.modelDefinitionWithClasses,
         modelData.engineDictRegistry,
@@ -96,7 +95,7 @@ object ScenarioInterpreterFactory {
         modelData.customProcessValidator
       )
 
-      compilerData.compile().andThen { compiledProcess =>
+      compilerData.compile(process).andThen { compiledProcess =>
         val components = extractComponents(compiledProcess.sources.toList)
         val sources    = collectSources(components)
 
@@ -176,7 +175,7 @@ object ScenarioInterpreterFactory {
     private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
 
-      override def metaData: MetaData = processCompilerData.metaData
+      override def metaData: MetaData = compiledProcess.metaData
 
       override def close(): Unit = {}
     }
@@ -325,12 +324,9 @@ object ScenarioInterpreterFactory {
       })
     }
 
-    private def invokeInterpreterOnContext(
-        node: Node
-    )(ctx: Context): F[ResultType[InterpretationResult]] = {
-      implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
+    private def invokeInterpreterOnContext(node: Node)(ctx: Context): F[ResultType[InterpretationResult]] = {
       processCompilerData.interpreter
-        .interpret[F](node, processCompilerData.metaData, ctx, ServiceExecutionContext(ec))
+        .interpret[F](node, compiledProcess.metaData, ctx, ServiceExecutionContext(ec))
         .map(listOfResults => {
           val results = listOfResults.collect { case Left(value) =>
             value

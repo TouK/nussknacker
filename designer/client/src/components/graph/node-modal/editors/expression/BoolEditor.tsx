@@ -1,16 +1,18 @@
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
-import FixedValuesEditor from "./FixedValuesEditor";
+import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
-import { SimpleEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
+import { FieldError, getValidationErrorsForField } from "../Validators";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     readOnly: boolean;
     className: string;
-    values?: $TodoType;
+    fieldErrors: FieldError[];
+    showValidation: boolean;
 };
 
 const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;
@@ -23,9 +25,14 @@ const parseable = (expressionObj) => {
     return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
 };
 
-const BoolEditor: SimpleEditor<Props> = (props: Props) => {
-    const { expressionObj, readOnly, onValueChange, className } = props;
-
+export const BoolEditor: ExtendedEditor<Props> = ({
+    expressionObj,
+    readOnly,
+    onValueChange,
+    className,
+    fieldErrors,
+    showValidation = true,
+}: Props) => {
     const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
     const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
     const editorConfig = { possibleValues: [trueValue, falseValue] };
@@ -37,13 +44,11 @@ const BoolEditor: SimpleEditor<Props> = (props: Props) => {
             onValueChange={onValueChange}
             readOnly={readOnly}
             className={className}
-            validators={[]}
-            showValidation={true}
+            fieldErrors={fieldErrors}
+            showValidation={showValidation}
         />
     );
 };
-
-export default BoolEditor;
 
 BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
 BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");

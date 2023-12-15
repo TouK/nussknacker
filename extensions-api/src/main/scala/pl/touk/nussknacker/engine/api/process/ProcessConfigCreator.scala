@@ -26,7 +26,7 @@ trait ProcessConfigCreator extends Serializable {
 
   def asyncExecutionContextPreparer(
       processObjectDependencies: ProcessObjectDependencies
-  ): Option[ServiceExecutionContextPreparer] = None
+  ): Option[AsyncExecutionContextPreparer] = None
 
   def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings =
     ClassExtractionSettings.Default

@@ -21,14 +21,14 @@ import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     useIOMonad: Boolean
 ) extends RichFlatMapFunction[Context, InterpretationResult]
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
+  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
   private lazy val serviceExecutionContext: ServiceExecutionContext = ServiceExecutionContext(syncEc)
 
   import SynchronousExecutionContextAndIORuntime._
@@ -52,17 +52,19 @@ private[registrar] class SyncInterpretationFunction(
   ): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      val resultOpt = interpreter
-        .interpret[IO](compiledNode, metaData, input, serviceExecutionContext)
-        .unsafeRunTimed(processTimeout)
+      val resultOpt = compilerData.interpreter
+        .interpret[IO](compiledNode, compilerData.metaData, input, serviceExecutionContext)
+        .unsafeRunTimed(compilerData.processTimeout)
       resultOpt match {
         case Some(result) => result
-        case None         => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
+        case None =>
+          throw new TimeoutException(s"Interpreter is running too long (timeout: ${compilerData.processTimeout})")
       }
     } else {
       Await.result(
-        awaitable = interpreter.interpret[Future](compiledNode, metaData, input, serviceExecutionContext),
-        atMost = processTimeout
+        awaitable = compilerData.interpreter
+          .interpret[Future](compiledNode, compilerData.metaData, input, serviceExecutionContext),
+        atMost = compilerData.processTimeout
       )
     }
   }

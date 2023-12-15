@@ -3,23 +3,18 @@ import { ExpressionObj } from "../types";
 import { useDebouncedCallback } from "use-debounce";
 import moment from "moment";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
-import i18next from "i18next";
-import { allValid, HandledErrorType, Validator, ValidatorType } from "../../Validators";
 import { Formatter } from "../Formatter";
 import { DTPicker } from "../../../../../common/DTPicker";
 import { cx } from "@emotion/css";
+import { FieldError } from "../../Validators";
+import { isEmpty } from "lodash";
 
-/* eslint-disable i18next/no-literal-string */
-export enum JavaTimeTypes {
-    LOCAL_DATE_TIME = "LocalDateTime",
-}
-
-export type DatepickerEditorProps = {
+export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly: boolean;
     className: string;
     onValueChange: (value: string) => void;
-    validators: Validator[];
+    fieldErrors: FieldError[];
     showValidation: boolean;
     isMarked: boolean;
     editorFocused: boolean;
@@ -27,7 +22,7 @@ export type DatepickerEditorProps = {
     momentFormat: string;
     dateFormat?: string;
     timeFormat?: string;
-};
+}
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
     const {
@@ -35,7 +30,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
         expressionObj,
         onValueChange,
         readOnly,
-        validators,
+        fieldErrors,
         showValidation,
         isMarked,
         editorFocused,
@@ -67,19 +62,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
 
     useEffect(() => {
         onChange(value);
-    }, [value]);
-
-    const isValid = allValid(validators, [expression]);
-
-    const getDateValidator = (value: string | moment.Moment): Validator => ({
-        description: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
-        message: () => i18next.t("validation.wrongDateFormat", "Wrong date format"),
-        isValid: () => !value || !!encode(value),
-        validatorType: ValidatorType.Frontend,
-        handledErrorType: HandledErrorType.WrongDateFormat,
-    });
-
-    const localValidators = [getDateValidator(value)];
+    }, [onChange, value]);
 
     return (
         <div className={className}>
@@ -89,7 +72,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 inputProps={{
                     className: cx([
                         "node-input",
-                        showValidation && !isValid && "node-input-with-error",
+                        showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                         isMarked && "marked",
                         editorFocused && "focused",
                         readOnly && "read-only",
@@ -99,7 +82,7 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 }}
                 {...other}
             />
-            {showValidation && <ValidationLabels validators={[...localValidators, ...validators]} values={[expression]} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 }

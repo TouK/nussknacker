@@ -165,7 +165,7 @@
         "@types/react-select": "3.1.2",
         "@types/react-transition-group": "4.4.4",
         "@types/redux-state-sync": "3.1.2",
-        "@types/testing-library__jest-dom": "5.14.6",
+        "@types/testing-library__jest-dom": "5.14.9",
         "@types/uuid": "8.3.4",
         "@types/webpack-dev-server": "4.7.2",
         "@types/webpack-env": "1.16.3",
@@ -248,7 +248,7 @@
         ]
     },
     "engines": {
-        "node": ">=16.0.0",
-        "npm": ">=7.0.0"
+        "node": ">=20.10.0",
+        "npm": ">=10.2.3"
     }
 }

@@ -4,6 +4,7 @@ import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
 import { NodeLabelStyled } from "../node";
+import { getValidationErrorsForField } from "../editors/Validators";
 
 interface Props {
     edge: Edge;
@@ -57,6 +58,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
                         showValidation={showValidation}
                         showSwitch={showSwitch}
                         onValueChange={changeEdgeTypeCondition}
+                        fieldErrors={getValidationErrorsForField(edgeErrors, "edgeType.condition.expression")}
                     />
                 </BaseModalContent>
             );

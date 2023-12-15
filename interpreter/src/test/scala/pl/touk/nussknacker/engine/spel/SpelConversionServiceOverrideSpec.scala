@@ -105,7 +105,6 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         configCreator = new WithConvUtilConfigCreator(spelCustomConversionsProviderOpt)
       )
     val compilerData = ProcessCompilerData.prepare(
-      process,
       modelData.modelConfig,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
@@ -115,7 +114,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       ComponentUseCase.EngineRuntime,
       CustomProcessValidatorLoader.emptyCustomProcessValidator
     )
-    val parts  = compilerData.compile().value
+    val parts  = compilerData.compile(process).value
     val source = parts.sources.head
     val compiledNode =
       compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
