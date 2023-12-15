@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
-import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 
@@ -260,7 +260,7 @@ private class TestSpelExpression(expression: String) extends ApiExpression {
 
   override def original: String = expression
 
-  override def evaluate[T](ctx: ScenarioProcessingContext, globals: Map[String, Any]): T = {
+  override def evaluate[T](ctx: Context, globals: Map[String, Any]): T = {
     val context = new StandardEvaluationContext()
     ctx.variables.foreach { case (param, value) => context.setVariable(param, value) }
     new SpelExpressionParser().parseRaw(expression).getValue(context).asInstanceOf[T]

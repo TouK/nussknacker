@@ -20,7 +20,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
       @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
       @ParamName("value") value: LazyParameter[Value]
   ) = FlinkCustomStreamTransformation(
-    (start: DataStream[ScenarioProcessingContext], ctx: FlinkCustomNodeContext) => {
+    (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
       setUidToNodeIdIfNeed(
         ctx,

@@ -6,7 +6,7 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -650,18 +650,18 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): ScenarioProcessingContext =
+  private def nodeResult(count: Int, vars: (String, Any)*): Context =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): ScenarioProcessingContext =
-    ScenarioProcessingContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
 
   private def nodeResult(
       count: Int,
       sourceId: String,
       branchId: String,
       vars: (String, Any)*
-  ): ScenarioProcessingContext =
-    ScenarioProcessingContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
+  ): Context =
+    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
 
 }

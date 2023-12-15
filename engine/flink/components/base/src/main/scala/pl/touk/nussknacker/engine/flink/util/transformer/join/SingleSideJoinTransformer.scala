@@ -113,7 +113,7 @@ class SingleSideJoinTransformer(
 
     new FlinkCustomJoinTransformation with Serializable {
       override def transform(
-          inputs: Map[String, DataStream[ScenarioProcessingContext]],
+          inputs: Map[String, DataStream[Context]],
           context: FlinkCustomNodeContext
       ): DataStream[ValueWithContext[AnyRef]] = {
         val keyedMainBranchStream = inputs(mainId(branchTypeByBranchId).get)

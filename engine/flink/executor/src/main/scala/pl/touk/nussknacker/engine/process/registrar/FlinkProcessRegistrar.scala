@@ -175,7 +175,7 @@ class FlinkProcessRegistrar(
         joinPart: CustomNodePart,
         branchEnds: Map[BranchEndDefinition, BranchEndData]
     ): Map[BranchEndDefinition, BranchEndData] = {
-      val inputs: Map[String, (DataStream[ScenarioProcessingContext], ValidationContext)] = branchEnds.collect {
+      val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
           id -> (stream.map(
             (value: InterpretationResult) => value.finalContext,
@@ -238,7 +238,7 @@ class FlinkProcessRegistrar(
     }
 
     def registerSubsequentPart(
-        start: SingleOutputStreamOperator[ScenarioProcessingContext],
+        start: SingleOutputStreamOperator[Context],
         processPart: SubsequentPart
     ): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
@@ -253,7 +253,7 @@ class FlinkProcessRegistrar(
       }
 
     def registerSinkPark(
-        start: SingleOutputStreamOperator[ScenarioProcessingContext],
+        start: SingleOutputStreamOperator[Context],
         part: SinkPart,
         sink: FlinkSink,
         contextBefore: ValidationContext
@@ -289,7 +289,7 @@ class FlinkProcessRegistrar(
     }
 
     def registerCustomNodePart(
-        start: DataStream[ScenarioProcessingContext],
+        start: DataStream[Context],
         part: CustomNodePart
     ): Map[BranchEndDefinition, BranchEndData] = {
       val transformer = part.transformer match {
@@ -299,7 +299,7 @@ class FlinkProcessRegistrar(
       }
 
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(part.contextBefore))
-      val newContextFun: ValueWithContext[_] => ScenarioProcessingContext = part.node.data.outputVar match {
+      val newContextFun: ValueWithContext[_] => Context = part.node.data.outputVar match {
         case Some(name) => vwc => vwc.context.withVariable(name, vwc.value)
         case None       => _.context
       }
@@ -315,7 +315,7 @@ class FlinkProcessRegistrar(
     }
 
     def registerInterpretationPart(
-        stream: SingleOutputStreamOperator[ScenarioProcessingContext],
+        stream: SingleOutputStreamOperator[Context],
         part: ProcessPart,
         name: String
     ): SingleOutputStreamOperator[Unit] = {

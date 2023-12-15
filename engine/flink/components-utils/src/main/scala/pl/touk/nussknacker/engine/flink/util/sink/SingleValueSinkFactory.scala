@@ -21,7 +21,7 @@ class SingleValueSinkFactory[T <: AnyRef](sink: => SinkFunction[T]) extends Sink
 
       override def valueFunction(
           helper: FlinkLazyParameterFunctionHelper
-      ): FlatMapFunction[ScenarioProcessingContext, ValueWithContext[Value]] = helper.lazyMapFunction(value)
+      ): FlatMapFunction[Context, ValueWithContext[Value]] = helper.lazyMapFunction(value)
 
       override def toFlinkFunction: SinkFunction[Value] = sink
     }

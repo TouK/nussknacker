@@ -5,12 +5,7 @@ import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
-import pl.touk.nussknacker.engine.api.{
-  CustomStreamTransformer,
-  MethodToInvoke,
-  ScenarioProcessingContext,
-  ValueWithContext
-}
+import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, MethodToInvoke, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 
 //FIXME: remove?
@@ -20,10 +15,10 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
 
   @MethodToInvoke
   def execute(): FlinkCustomStreamTransformation =
-    FlinkCustomStreamTransformation((start: DataStream[ScenarioProcessingContext]) => {
+    FlinkCustomStreamTransformation((start: DataStream[Context]) => {
       start
-        .keyBy((_: ScenarioProcessingContext) => "1")
-        .map(new RichMapFunction[ScenarioProcessingContext, ValueWithContext[AnyRef]] {
+        .keyBy((_: Context) => "1")
+        .map(new RichMapFunction[Context, ValueWithContext[AnyRef]] {
 
           var constantState: ValueState[T] = _
 
@@ -33,7 +28,7 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
             constantState = getRuntimeContext.getState(descriptor)
           }
 
-          override def map(value: ScenarioProcessingContext): ValueWithContext[AnyRef] = {
+          override def map(value: Context): ValueWithContext[AnyRef] = {
             constantState.update(defaultValue)
             ValueWithContext[AnyRef]("", value)
           }

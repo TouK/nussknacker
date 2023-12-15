@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, SingleOutputStreamOperator}
-import pl.touk.nussknacker.engine.api.{LazyParameter, ScenarioProcessingContext, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValueMapper}
@@ -12,7 +12,7 @@ import scala.reflect.runtime.universe.TypeTag
 
 object richflink {
 
-  implicit class FlinkKeyOperations(dataStream: DataStream[ScenarioProcessingContext]) {
+  implicit class FlinkKeyOperations(dataStream: DataStream[Context]) {
 
     def groupBy(
         groupBy: LazyParameter[CharSequence]

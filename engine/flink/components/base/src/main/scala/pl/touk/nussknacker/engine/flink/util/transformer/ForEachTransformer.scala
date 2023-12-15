@@ -22,7 +22,7 @@ object ForEachTransformer extends CustomStreamTransformer with Serializable {
       @OutputVariableName outputVariable: String
   ): FlinkCustomStreamTransformation with ReturningType = {
     FlinkCustomStreamTransformation(
-      { (stream: DataStream[ScenarioProcessingContext], ctx: FlinkCustomNodeContext) =>
+      { (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
         stream
           .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
           .flatMap(

@@ -5,7 +5,7 @@ import cats.{Monad, ~>}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{Sink, Source}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{LazyParameterInterpreter, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType}
 
 import scala.language.higherKinds
@@ -30,7 +30,7 @@ object customComponentTypes {
 
     def createTransformation[F[_]: Monad](
         evaluateLazyParameter: CustomComponentContext[F]
-    ): Input => ValidatedNel[ErrorType, ScenarioProcessingContext]
+    ): Input => ValidatedNel[ErrorType, Context]
 
   }
 
@@ -46,7 +46,7 @@ object customComponentTypes {
 
   case class BranchId(value: String)
 
-  case class JoinDataBatch(value: List[(BranchId, ScenarioProcessingContext)])
+  case class JoinDataBatch(value: List[(BranchId, Context)])
 
   trait LiteJoinCustomComponent {
 
@@ -61,7 +61,7 @@ object customComponentTypes {
 
     def createTransformation[F[_]: Monad](
         evaluateLazyParameter: CustomComponentContext[F]
-    ): (TypingResult, DataBatch => F[ResultType[(ScenarioProcessingContext, Res)]])
+    ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]])
 
   }
 

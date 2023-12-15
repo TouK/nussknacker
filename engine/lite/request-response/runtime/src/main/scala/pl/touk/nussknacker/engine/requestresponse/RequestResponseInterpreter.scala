@@ -143,6 +143,6 @@ object RequestResponseInterpreter {
   }
 
   def testRunner[Effect[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper]: TestRunner =
-    new InterpreterTestRunner[Effect, ScenarioProcessingContext, AnyRef]
+    new InterpreterTestRunner[Effect, Context, AnyRef]
 
 }

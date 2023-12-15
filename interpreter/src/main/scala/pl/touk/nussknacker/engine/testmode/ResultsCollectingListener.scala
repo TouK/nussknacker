@@ -21,20 +21,20 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   def clean() = ResultsCollectingListenerHolder.cleanResult(runId)
 
-  override def nodeEntered(nodeId: String, context: ScenarioProcessingContext, processMetaData: MetaData) = {
+  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData) = {
     ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context))
   }
 
   override def endEncountered(
       nodeId: String,
       ref: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       processMetaData: MetaData
   ): Unit = {}
 
   override def deadEndEncountered(
       lastNodeId: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       processMetaData: MetaData
   ) = {}
 
@@ -42,7 +42,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       nodeId: String,
       expressionId: String,
       expression: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       processMetaData: MetaData,
       result: Any
   ) = {
@@ -55,7 +55,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
   override def serviceInvoked(
       nodeId: String,
       id: String,
-      context: ScenarioProcessingContext,
+      context: Context,
       processMetaData: MetaData,
       params: Map[String, Any],
       result: Try[Any]

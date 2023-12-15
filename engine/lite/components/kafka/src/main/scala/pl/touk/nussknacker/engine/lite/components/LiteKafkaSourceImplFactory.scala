@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext, VariableConstants}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process._
@@ -66,7 +66,7 @@ class LiteKafkaSourceImpl[K, V](
 
   override val topics: List[String] = preparedTopics.map(_.prepared)
 
-  override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): ScenarioProcessingContext = {
+  override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
     val deserialized = deserializationSchema.deserialize(record)
     // TODO: what about other properties based on kafkaConfig?
     initializerFun(deserialized)

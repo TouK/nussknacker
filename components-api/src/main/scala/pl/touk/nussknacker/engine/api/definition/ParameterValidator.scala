@@ -14,7 +14,7 @@ import io.circe.parser._
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator.variableName
-import pl.touk.nussknacker.engine.api.{NodeId, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.api.expression.{Expression => ApiExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
@@ -275,7 +275,7 @@ case class ValidationExpressionParameterValidator(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
-    val context = ScenarioProcessingContext("validator", Map(variableName -> value), None)
+    val context = Context("validator", Map(variableName -> value), None)
     Try(validationExpression.evaluate[Boolean](context, Map())).fold(
       e =>
         invalid(

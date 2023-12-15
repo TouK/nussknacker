@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.sample.source
 import cats.data.ValidatedNel
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
@@ -40,7 +40,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
     override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[String] =
       new BasicContextInitializingFunction[String](contextIdGenerator, outputVariableName) {
 
-        override def apply(input: String): ScenarioProcessingContext = {
+        override def apply(input: String): Context = {
           // perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
             "additionalOne" -> s"transformed:$input",

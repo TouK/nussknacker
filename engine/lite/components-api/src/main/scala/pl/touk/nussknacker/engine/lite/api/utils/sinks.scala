@@ -5,7 +5,7 @@ import cats.implicits._
 import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteSink}
 import pl.touk.nussknacker.engine.lite.api.utils.errors.withErrors
@@ -18,17 +18,17 @@ object sinks {
 
     def createSingleTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
-    ): (TypingResult, ScenarioProcessingContext => F[Either[ErrorType, Res]])
+    ): (TypingResult, Context => F[Either[ErrorType, Res]])
 
     override def createTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
-    ): (TypingResult, DataBatch => F[ResultType[(ScenarioProcessingContext, Res)]]) = {
+    ): (TypingResult, DataBatch => F[ResultType[(Context, Res)]]) = {
       val (typeResult, invocation) = createSingleTransformation[F](context)
       (
         typeResult,
         ctxs => {
           Monoid.combineAll(ctxs.map { ctx =>
-            invocation(ctx).map[ResultType[(ScenarioProcessingContext, Res)]] {
+            invocation(ctx).map[ResultType[(Context, Res)]] {
               case Left(error)   => Writer(List(error), Nil)
               case Right(output) => Writer.value((ctx, output) :: Nil)
             }
@@ -46,7 +46,7 @@ object sinks {
 
     override def createSingleTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
-    ): (TypingResult, ScenarioProcessingContext => F[Either[ErrorType, Res]]) = {
+    ): (TypingResult, Context => F[Either[ErrorType, Res]]) = {
       val response    = prepareResponse(context.interpreter)
       val interpreter = context.interpreter.syncInterpretationFunction(response)
       (

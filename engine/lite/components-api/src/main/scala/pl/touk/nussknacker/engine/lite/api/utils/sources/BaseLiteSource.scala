@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.api.utils.sources
 import cats.Monad
 import cats.data.{Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
-import pl.touk.nussknacker.engine.api.{Lifecycle, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, Lifecycle}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -28,7 +28,7 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
 
   override def createTransformation[F[_]: Monad](
       componentContext: customComponentTypes.CustomComponentContext[F]
-  ): T => ValidatedNel[ErrorType, ScenarioProcessingContext] =
+  ): T => ValidatedNel[ErrorType, Context] =
     record =>
       Validated
         .fromEither(Try(transform(record)).toEither)
@@ -36,11 +36,11 @@ trait BaseLiteSource[T] extends LiteSource[T] with Lifecycle {
           NuExceptionInfo(
             Some(NodeComponentInfo(componentContext.nodeId, ComponentType.Source, "unknown")),
             ex,
-            ScenarioProcessingContext(contextIdGenerator.nextContextId())
+            Context(contextIdGenerator.nextContextId())
           )
         )
         .toValidatedNel
 
-  def transform(record: T): ScenarioProcessingContext
+  def transform(record: T): Context
 
 }

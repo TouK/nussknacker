@@ -49,7 +49,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
 
     val lazyParameterInterpreter = prepareInterpreter
     val fun                      = lazyParameterInterpreter.syncInterpretationFunction(tupled)
-    val result                   = fun(ScenarioProcessingContext(""))
+    val result                   = fun(Context(""))
 
     result shouldEqual (123, "foo")
   }
@@ -62,7 +62,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     val evalParameter = new EvaluableLazyParameter[Integer] {
       override def prepareEvaluator(
           deps: LazyParameterInterpreter
-      )(implicit ec: ExecutionContext): ScenarioProcessingContext => Future[Integer] = {
+      )(implicit ec: ExecutionContext): Context => Future[Integer] = {
         invoked += 1
         _ => {
           Future.successful(123)
@@ -75,8 +75,8 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     val mappedParam              = transform(evalParameter)
     val lazyParameterInterpreter = prepareInterpreter
     val fun                      = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
-    fun(ScenarioProcessingContext(""))
-    fun(ScenarioProcessingContext(""))
+    fun(Context(""))
+    fun(Context(""))
 
     invoked shouldEqual 1
   }

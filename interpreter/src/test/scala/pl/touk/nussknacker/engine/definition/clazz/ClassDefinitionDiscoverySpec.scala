@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, _}
-import pl.touk.nussknacker.engine.api.{Documentation, Hidden, HideToString, ParamName, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionDiscovery._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
@@ -37,9 +37,9 @@ import scala.reflect.runtime.universe._
 class ClassDefinitionDiscoverySpec extends AnyFunSuite with Matchers with OptionValues {
 
   case class SampleClass(foo: Int, bar: String) extends SampleAbstractClass with SampleInterface {
-    def returnContext: ScenarioProcessingContext = null
-    def decoder: Decoder[SampleClass]            = null
-    def classParam(parameter: Class[_]): String  = null
+    def returnContext: Context                  = null
+    def decoder: Decoder[SampleClass]           = null
+    def classParam(parameter: Class[_]): String = null
 
   }
 
@@ -72,7 +72,7 @@ class ClassDefinitionDiscoverySpec extends AnyFunSuite with Matchers with Option
       "bar"      -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "bar", None)),
       "toString" -> List(StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
       "returnContext" -> List(
-        StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[ScenarioProcessingContext]), "returnContext", None)
+        StaticMethodDefinition(MethodTypeInfo(Nil, None, Typed[Context]), "returnContext", None)
       )
     )
   }
@@ -160,7 +160,7 @@ class ClassDefinitionDiscoverySpec extends AnyFunSuite with Matchers with Option
                 Pattern.compile("is.*")
               ),
               ReturnMemberPredicate(
-                ExactClassPredicate[ScenarioProcessingContext],
+                ExactClassPredicate[Context],
                 BasePackagePredicate("pl.touk.nussknacker.engine.definition.clazz")
               )
             )

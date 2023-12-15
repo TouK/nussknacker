@@ -1,24 +1,24 @@
 package pl.touk.nussknacker.engine.testmode
 
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{ScenarioProcessingContext, ScenarioProcessingContextId}
+import pl.touk.nussknacker.engine.api.{Context, ContextId}
 
 object TestProcess {
 
   case class TestResults(
-      nodeResults: Map[String, List[ScenarioProcessingContext]],
+      nodeResults: Map[String, List[Context]],
       invocationResults: Map[String, List[ExpressionInvocationResult]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult]],
       exceptions: List[NuExceptionInfo[_ <: Throwable]]
   ) {
 
-    def updateNodeResult(nodeId: String, context: ScenarioProcessingContext): TestResults = {
+    def updateNodeResult(nodeId: String, context: Context): TestResults = {
       copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ context)))
     }
 
     def updateExpressionResult(
         nodeId: String,
-        context: ScenarioProcessingContext,
+        context: Context,
         name: String,
         result: Any
     ): TestResults = {
@@ -30,7 +30,7 @@ object TestProcess {
 
     def updateExternalInvocationResult(
         nodeId: String,
-        contextId: ScenarioProcessingContextId,
+        contextId: ContextId,
         name: String,
         result: Any
     ): TestResults = {

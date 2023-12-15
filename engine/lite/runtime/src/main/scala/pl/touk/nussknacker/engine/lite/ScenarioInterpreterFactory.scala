@@ -189,7 +189,7 @@ object ScenarioInterpreterFactory {
               NuExceptionInfo(
                 Some(NodeComponentInfo(source.value, ComponentType.Source, "source")),
                 new IllegalArgumentException(s"Unknown source ${source.value}"),
-                ScenarioProcessingContext("")
+                Context("")
               ) :: Nil,
               Nil
             )
@@ -327,7 +327,7 @@ object ScenarioInterpreterFactory {
 
     private def invokeInterpreterOnContext(
         node: Node
-    )(ctx: ScenarioProcessingContext): F[ResultType[InterpretationResult]] = {
+    )(ctx: Context): F[ResultType[InterpretationResult]] = {
       implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
       processCompilerData.interpreter
         .interpret[F](node, processCompilerData.metaData, ctx, ServiceExecutionContext(ec))
@@ -386,7 +386,7 @@ object ScenarioInterpreterFactory {
 
     private def compileSource(
         sourcePart: SourcePart
-    ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, ScenarioProcessingContext]] = {
+    ): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input @unchecked], _) => Valid(s)
@@ -407,8 +407,8 @@ object ScenarioInterpreterFactory {
 
           override def createTransformation[F[_]: Monad](
               evaluateLazyParameter: CustomComponentContext[F]
-          ): Input => ValidatedNel[ErrorType, ScenarioProcessingContext] = { input =>
-            Valid(ScenarioProcessingContext(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+          ): Input => ValidatedNel[ErrorType, Context] = { input =>
+            Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
           }
 
         }
@@ -444,9 +444,8 @@ object ScenarioInterpreterFactory {
 
   private sealed trait PartResult
 
-  private case class EndPartResult[Result](nodeId: String, context: ScenarioProcessingContext, result: Result)
-      extends PartResult
+  private case class EndPartResult[Result](nodeId: String, context: Context, result: Result) extends PartResult
 
-  private case class JoinResult(reference: JoinReference, context: ScenarioProcessingContext) extends PartResult
+  private case class JoinResult(reference: JoinReference, context: Context) extends PartResult
 
 }

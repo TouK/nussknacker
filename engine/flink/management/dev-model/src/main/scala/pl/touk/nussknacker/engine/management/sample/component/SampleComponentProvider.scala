@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDe
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContextId}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import scala.jdk.CollectionConverters._
@@ -38,7 +38,7 @@ case class SampleProvidedComponent(param: String) extends EagerServiceWithStatic
   override def invoke(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ScenarioProcessingContextId,
+      contextId: ContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[Any] = {

@@ -12,7 +12,7 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{DisplayJson, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -63,7 +63,7 @@ object ManagementResources {
     }
 
     // TODO: do we want more information here?
-    implicit val contextEncoder: Encoder[ScenarioProcessingContext] = (a: ScenarioProcessingContext) =>
+    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
       Json.obj(
         "id"        -> Json.fromString(a.id),
         "variables" -> a.variables.asJson

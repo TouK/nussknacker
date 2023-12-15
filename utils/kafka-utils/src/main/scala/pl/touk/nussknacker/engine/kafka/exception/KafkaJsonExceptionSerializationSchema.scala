@@ -4,7 +4,7 @@ import io.circe.Json
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.{MetaData, ScenarioProcessingContext}
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

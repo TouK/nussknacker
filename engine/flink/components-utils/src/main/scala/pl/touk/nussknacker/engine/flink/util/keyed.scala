@@ -41,7 +41,7 @@ object keyed {
   }
 
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef: TypeTag, OutputValue <: AnyRef: TypeTag]
-      extends RichFlatMapFunction[ScenarioProcessingContext, ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
+      extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
       with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
@@ -49,16 +49,16 @@ object keyed {
     protected def prepareInterpreter(
         key: LazyParameter[OutputKey],
         value: LazyParameter[OutputValue]
-    ): ScenarioProcessingContext => KeyedValue[OutputKey, OutputValue] = {
+    ): Context => KeyedValue[OutputKey, OutputValue] = {
       lazyParameterInterpreter.syncInterpretationFunction(
         key.product(value).map(tuple => KeyedValue(tuple._1, tuple._2))
       )
     }
 
-    protected def interpret(ctx: ScenarioProcessingContext): KeyedValue[OutputKey, OutputValue]
+    protected def interpret(ctx: Context): KeyedValue[OutputKey, OutputValue]
 
     override def flatMap(
-        ctx: ScenarioProcessingContext,
+        ctx: Context,
         out: Collector[ValueWithContext[KeyedValue[OutputKey, OutputValue]]]
     ): Unit = {
       collectHandlingErrors(ctx, out) {
@@ -76,7 +76,7 @@ object keyed {
 
     private lazy val interpreter = prepareInterpreter(key, value)
 
-    override protected def interpret(ctx: ScenarioProcessingContext): KeyedValue[AnyRef, AnyRef] = interpreter(ctx)
+    override protected def interpret(ctx: Context): KeyedValue[AnyRef, AnyRef] = interpreter(ctx)
 
   }
 
@@ -95,27 +95,27 @@ object keyed {
       Option(keyValue).map(_.toString).getOrElse("")
     }
 
-    override protected def interpret(ctx: ScenarioProcessingContext): KeyedValue[String, T] = interpreter(ctx)
+    override protected def interpret(ctx: Context): KeyedValue[String, T] = interpreter(ctx)
 
   }
 
   class StringKeyOnlyMapper(
       protected val lazyParameterHelper: FlinkLazyParameterFunctionHelper,
       key: LazyParameter[CharSequence]
-  ) extends RichFlatMapFunction[ScenarioProcessingContext, ValueWithContext[String]]
+  ) extends RichFlatMapFunction[Context, ValueWithContext[String]]
       with LazyParameterInterpreterFunction {
 
     protected implicit def lazyParameterInterpreterImpl: LazyParameterInterpreter = lazyParameterInterpreter
 
     private lazy val interpreter = lazyParameterInterpreter.syncInterpretationFunction(key.map(transformKey))
 
-    protected def interpret(ctx: ScenarioProcessingContext): String = interpreter(ctx)
+    protected def interpret(ctx: Context): String = interpreter(ctx)
 
     protected def transformKey(keyValue: CharSequence): String = {
       Option(keyValue).map(_.toString).getOrElse("")
     }
 
-    override def flatMap(ctx: ScenarioProcessingContext, out: Collector[ValueWithContext[String]]): Unit = {
+    override def flatMap(ctx: Context, out: Collector[ValueWithContext[String]]): Unit = {
       collectHandlingErrors(ctx, out) {
         ValueWithContext(interpret(ctx), ctx)
       }
@@ -125,10 +125,10 @@ object keyed {
 
   object KeyEnricher {
 
-    def enrichWithKey[V](ctx: ScenarioProcessingContext, keyedValue: StringKeyedValue[V]): ScenarioProcessingContext =
+    def enrichWithKey[V](ctx: Context, keyedValue: StringKeyedValue[V]): Context =
       enrichWithKey(ctx, keyedValue.key)
 
-    def enrichWithKey[V](ctx: ScenarioProcessingContext, key: String): ScenarioProcessingContext =
+    def enrichWithKey[V](ctx: Context, key: String): Context =
       ctx.withVariable(VariableConstants.KeyVariableName, key)
 
     def contextTransformation(ctx: ValidationContext)(

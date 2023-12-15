@@ -53,7 +53,7 @@ class CollectTransformer(outputVariable: String, inputExpression: LazyParameter[
       val outputList = inputCtx.map(outputInterpreter(_)).asJava
       continuation(
         DataBatch(
-          ScenarioProcessingContext(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil
+          Context(contextIdGenerator.nextContextId()).withVariable(outputVariable, outputList) :: Nil
         )
       )
   }

@@ -38,7 +38,7 @@ trait ServiceInvoker {
   def invokeService(params: Map[String, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ScenarioProcessingContextId,
+      contextId: ContextId,
       componentUseCase: ComponentUseCase
   ): Future[Any]
 

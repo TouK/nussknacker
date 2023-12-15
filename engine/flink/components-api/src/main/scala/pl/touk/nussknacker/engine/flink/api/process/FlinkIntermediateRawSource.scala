@@ -6,7 +6,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{
   BasicContextInitializer,
   ContextInitializer,
@@ -44,7 +44,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext,
       sourceFunction: SourceFunction[Raw]
-  ): DataStream[ScenarioProcessingContext] = {
+  ): DataStream[Context] = {
 
     // 1. add source and 2. set UID
     val rawSourceWithUid = setUidToNodeIdIfNeed(
@@ -78,7 +78,7 @@ class FlinkContextInitializingFunction[Raw](
     contextInitializer: ContextInitializer[Raw],
     nodeId: String,
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-) extends RichMapFunction[Raw, ScenarioProcessingContext] {
+) extends RichMapFunction[Raw, Context] {
 
   private var initializingStrategy: ContextInitializingFunction[Raw] = _
 
@@ -87,7 +87,7 @@ class FlinkContextInitializingFunction[Raw](
     initializingStrategy = contextInitializer.initContext(contextIdGenerator)
   }
 
-  override def map(input: Raw): ScenarioProcessingContext = {
+  override def map(input: Raw): Context = {
     initializingStrategy(input)
   }
 

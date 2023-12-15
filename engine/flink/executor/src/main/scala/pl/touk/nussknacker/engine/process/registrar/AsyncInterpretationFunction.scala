@@ -7,7 +7,7 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
-import pl.touk.nussknacker.engine.api.ScenarioProcessingContext
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ServiceExecutionContext, ServiceExecutionContextPreparer}
@@ -27,7 +27,7 @@ private[registrar] class AsyncInterpretationFunction(
     validationContext: ValidationContext,
     serviceExecutionContextPreparer: ServiceExecutionContextPreparer,
     useIOMonad: Boolean
-) extends RichAsyncFunction[ScenarioProcessingContext, InterpretationResult]
+) extends RichAsyncFunction[Context, InterpretationResult]
     with LazyLogging
     with ProcessPartFunction {
 
@@ -42,7 +42,7 @@ private[registrar] class AsyncInterpretationFunction(
     serviceExecutionContext = serviceExecutionContextPreparer.prepare(compiledProcessWithDeps.metaData.id)
   }
 
-  override def asyncInvoke(input: ScenarioProcessingContext, collector: ResultFuture[InterpretationResult]): Unit = {
+  override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
     try {
       invokeInterpreter(input) {
         case Right(results) =>
@@ -62,7 +62,7 @@ private[registrar] class AsyncInterpretationFunction(
   }
 
   private def invokeInterpreter(
-      input: ScenarioProcessingContext
+      input: Context
   )(callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
