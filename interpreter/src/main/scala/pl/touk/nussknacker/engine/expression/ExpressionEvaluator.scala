@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import java.util.concurrent.atomic.AtomicReference
+
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
   - CompilerLazyInterpreter - evaluation of parameters of CustomStreamTransformers
@@ -22,15 +24,14 @@ object ExpressionEvaluator {
   def optimizedEvaluator(
       globalVariablesPreparer: GlobalVariablesPreparer,
       listeners: Seq[ProcessListener],
-      metaData: MetaData
   ): ExpressionEvaluator = {
-    new ExpressionEvaluator(globalVariablesPreparer, listeners, Some(metaData))
+    new ExpressionEvaluator(globalVariablesPreparer, listeners, cacheGlobalVariables = true)
   }
 
   // This is for evaluation expressions fixed expressions during object creation *and* during tests/service queries
   // Should *NOT* be used for evaluating expressions on events in *production*
   def unOptimizedEvaluator(globalVariablesPreparer: GlobalVariablesPreparer) =
-    new ExpressionEvaluator(globalVariablesPreparer, Nil, None)
+    new ExpressionEvaluator(globalVariablesPreparer, Nil, cacheGlobalVariables = false)
 
   def unOptimizedEvaluator(modelData: ModelData): ExpressionEvaluator =
     unOptimizedEvaluator(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig))
@@ -40,12 +41,13 @@ object ExpressionEvaluator {
 class ExpressionEvaluator(
     globalVariablesPreparer: GlobalVariablesPreparer,
     listeners: Seq[ProcessListener],
-    metaDataToUse: Option[MetaData]
+    cacheGlobalVariables: Boolean
 ) {
   private def prepareGlobals(metaData: MetaData): Map[String, Any] =
     globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.obj)
 
-  private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
+  // We have an assumption, that ExpressionEvaluator will be used only with the same scenario
+  private val optimizedGlobals: AtomicReference[Option[Map[String, Any]]] = new AtomicReference(None)
 
   def evaluateParameters(
       params: List[pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter],
@@ -83,7 +85,17 @@ class ExpressionEvaluator(
   def evaluate[R](expr: Expression, expressionId: String, nodeId: String, ctx: Context)(
       implicit metaData: MetaData
   ): ValueWithContext[R] = {
-    val globalVariables = optimizedGlobals.getOrElse(prepareGlobals(metaData))
+    val globalVariables = if (cacheGlobalVariables) {
+      optimizedGlobals
+        .updateAndGet { initializedVariablesOpt =>
+          Some(initializedVariablesOpt.getOrElse(prepareGlobals(metaData)))
+        }
+        .getOrElse {
+          throw new IllegalStateException("Optimized global variables not initialized")
+        }
+    } else {
+      prepareGlobals(metaData)
+    }
 
     val value = expr.evaluate[R](ctx, globalVariables)
     listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, value))

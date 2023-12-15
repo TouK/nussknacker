@@ -6,20 +6,16 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -144,7 +140,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -196,7 +192,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val processValidator = ProcessValidator.default(model)
     val validationResult = processValidator.validate(process).result
@@ -216,12 +212,10 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(
       ConfigFactory.empty(),
       prepareComponents(sourceFoo, sourceBar),
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 

@@ -9,16 +9,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
@@ -49,21 +46,21 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       set = mutable.Set("def").asJava
     )
 
-    val model = modelData(List(record))
-
     val collectingListener = ResultsCollectingListenerHolder.registerRun
-    runProcess(model, process, collectingListener)
+    val model              = modelData(collectingListener, List(record))
+
+    runProcess(model, process)
 
     val result = collectingListener.results
       .nodeResults("end")
       .map {
-        _.get("input")
+        _.get[Record]("input")
       }
 
     result shouldBe List(Some(record))
   }
 
-  def modelData(list: List[Record] = List()): LocalModelData = {
+  def modelData(collectingListener: ResultsCollectingListener, list: List[Record] = List()): LocalModelData = {
     val sourceComponent = SourceFactory.noParam[Record](
       CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])(TypeInformation.of(classOf[Record]))
     )
@@ -71,28 +68,17 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       ConfigFactory
         .empty()
         .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components,
+      new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }
 
   protected def runProcess(
       model: LocalModelData,
-      testProcess: CanonicalProcess,
-      collectingListener: ResultsCollectingListener
+      testProcess: CanonicalProcess
   ): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(
-      new FlinkProcessCompiler(model) {
-        override protected def adjustListeners(
-            defaults: List[ProcessListener],
-            processObjectDependencies: ProcessObjectDependencies
-        ): List[ProcessListener] = {
-          collectingListener :: defaults
-        }
-      },
-      ExecutionConfigPreparer.unOptimizedChain(model)
-    )
-    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 

@@ -4,19 +4,15 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{SinkForLongs, SinkForStrings}
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NuScalaTestAssertions
@@ -31,15 +27,11 @@ trait KafkaSourceFactoryProcessMixin
     with BeforeAndAfter
     with NuScalaTestAssertions {
 
-  protected var registrar: FlinkProcessRegistrar = _
-
   protected lazy val modelData =
     LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator)
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
-    registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   before {
@@ -51,7 +43,7 @@ trait KafkaSourceFactoryProcessMixin
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
     env.withJobRunning(process.id)(action)
   }
 

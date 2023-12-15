@@ -113,17 +113,20 @@ class BaseFlowTest
       "enricher" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
-            "paramDualEditor" -> ParameterConfig(
-              None,
-              None,
-              Some(
-                List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))
-              ),
-              None,
-              None
+            "param" -> ParameterConfig(
+              defaultValue = Some("'default value'"),
+              editor = Some(StringParameterEditor),
+              validators = None,
+              label = None,
+              hintText = None
             ),
-            "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None, None),
+            "paramStringEditor" -> ParameterConfig(
+              defaultValue = Some("'default-from-additional-ui-config-provider'"),
+              editor = None,
+              validators = None,
+              label = None,
+              hintText = None
+            ),
           )
         ),
         icon = Some("/assets/components/Filter.svg"),
@@ -135,19 +138,20 @@ class BaseFlowTest
         params = Some(
           Map(
             "baz" -> ParameterConfig(
-              None,
-              Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
-              None,
-              None,
-              Some("some hint text")
+              defaultValue = None,
+              editor =
+                Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
+              validators = None,
+              label = None,
+              hintText = Some("some hint text")
             ),
             "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
             "foo" -> ParameterConfig(
-              None,
-              Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
-              None,
-              None,
-              None
+              defaultValue = None,
+              editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+              validators = None,
+              label = None,
+              hintText = None
             ),
           )
         ),
@@ -166,7 +170,13 @@ class BaseFlowTest
       "sub1" -> SingleComponentConfig(
         params = Some(
           Map(
-            "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
+            "param1" -> ParameterConfig(
+              defaultValue = None,
+              editor = Some(StringParameterEditor),
+              validators = None,
+              label = None,
+              hintText = None
+            )
           )
         ),
         icon = None,
@@ -177,13 +187,19 @@ class BaseFlowTest
       "optionalTypesService" -> SingleComponentConfig(
         params = Some(
           Map(
-            "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None, None),
+            "overriddenByFileConfigParam" -> ParameterConfig(
+              defaultValue = None,
+              editor = None,
+              validators = Some(List.empty),
+              label = None,
+              hintText = None
+            ),
             "overriddenByDevConfigParam" -> ParameterConfig(
-              None,
-              None,
-              Some(List(MandatoryParameterValidator)),
-              None,
-              None
+              defaultValue = None,
+              editor = None,
+              validators = Some(List(MandatoryParameterValidator)),
+              label = None,
+              hintText = None
             )
           )
         ),
@@ -233,19 +249,16 @@ class BaseFlowTest
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
-        validators = List(MandatoryParameterValidator),
         label = Some("Environment")
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
-        validators = List(LiteralIntegerValidator),
         label = Some("Max events")
       ),
       "numberOfThreads" -> UiScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
-        validators = List(FixedValuesValidator(fixedPossibleValues)),
         label = Some("Number of threads")
       ),
       TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(

@@ -6,20 +6,16 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
-import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithListener
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
+import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
@@ -124,7 +120,7 @@ class UnionTransformersTestModeSpec
     LocalModelData(
       ConfigFactory.empty(),
       sourceComponent :: FlinkBaseComponentProvider.Components,
-      configCreator = new ConfigCreatorWithListener(collectingListener),
+      configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
   }
 
@@ -143,9 +139,7 @@ class UnionTransformersTestModeSpec
 
   private def runProcess(modelData: LocalModelData, scenario: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar =
-      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-    registrar.register(stoppableEnv, scenario, ProcessVersion.empty, DeploymentData.empty)
+    UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, modelData)(scenario)
     stoppableEnv.executeAndWaitForFinished(scenario.id)()
   }
 

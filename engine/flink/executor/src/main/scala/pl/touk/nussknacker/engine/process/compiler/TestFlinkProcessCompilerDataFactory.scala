@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -21,76 +22,73 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySour
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
-class TestFlinkProcessCompiler(
-    creator: ProcessConfigCreator,
-    extractModelDefinition: ExtractDefinitionFun,
-    inputConfigDuringExecution: Config,
-    collectingListener: ResultsCollectingListener,
-    process: CanonicalProcess,
-    objectNaming: ObjectNaming,
-    scenarioTestData: ScenarioTestData
-) extends StubbedFlinkProcessCompiler(
+object TestFlinkProcessCompilerDataFactory {
+
+  def apply(
+      process: CanonicalProcess,
+      scenarioTestData: ScenarioTestData,
+      modelData: ModelData,
+      collectingListener: ResultsCollectingListener
+  ): FlinkProcessCompilerDataFactory = {
+    new StubbedFlinkProcessCompilerDataFactory(
       process,
-      creator,
-      extractModelDefinition,
-      inputConfigDuringExecution,
-      diskStateBackendSupport = false,
-      objectNaming,
+      modelData.configCreator,
+      modelData.extractModelDefinitionFun,
+      modelData.modelConfig,
+      modelData.objectNaming,
       ComponentUseCase.TestRuntime
     ) {
 
-  override protected def adjustListeners(
-      defaults: List[ProcessListener],
-      processObjectDependencies: ProcessObjectDependencies
-  ): List[ProcessListener] = {
-    collectingListener :: defaults
-  }
-
-  override protected def prepareSourceFactory(
-      sourceFactory: ComponentDefinitionWithImplementation,
-      context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation = {
-    sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
-      override def handleInvoke(
-          originalSource: Any,
-          returnTypeOpt: Option[typing.TypingResult],
-          nodeId: NodeId
-      ): Any = {
-        originalSource match {
-          case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked] =>
-            val sourcePreparer = new StubbedSourcePreparer(
-              context.userCodeClassLoader,
-              context.originalDefinitionWithTypes.modelDefinition.expressionConfig,
-              context.originalDictRegistry,
-              context.originalDefinitionWithTypes.classDefinitions,
-              process.metaData,
-              scenarioTestData
-            )
-            sourcePreparer.prepareStubbedSource(sourceWithTestSupport, returnTypeOpt, nodeId)
-          case _ =>
-            EmptySource[Object](returnTypeOpt.getOrElse(Unknown))(TypeInformation.of(classOf[Object]))
-        }
+      override protected def adjustListeners(
+          defaults: List[ProcessListener],
+          processObjectDependencies: ProcessObjectDependencies
+      ): List[ProcessListener] = {
+        collectingListener :: defaults
       }
-    })
-  }
 
-  override protected def prepareService(
-      service: ComponentDefinitionWithImplementation,
-      context: ComponentDefinitionContext
-  ): ComponentDefinitionWithImplementation = service
-
-  override protected def exceptionHandler(
-      metaData: MetaData,
-      processObjectDependencies: ProcessObjectDependencies,
-      listeners: Seq[ProcessListener],
-      classLoader: ClassLoader
-  ): FlinkExceptionHandler = componentUseCase match {
-    case ComponentUseCase.TestRuntime =>
-      new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
-        override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-        override val consumer: FlinkEspExceptionConsumer                             = _ => {}
+      override protected def prepareSourceFactory(
+          sourceFactory: ComponentDefinitionWithImplementation,
+          context: ComponentDefinitionContext
+      ): ComponentDefinitionWithImplementation = {
+        sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
+          override def handleInvoke(
+              originalSource: Any,
+              returnTypeOpt: Option[typing.TypingResult],
+              nodeId: NodeId
+          ): Any = {
+            originalSource match {
+              case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked] =>
+                val sourcePreparer = new StubbedSourcePreparer(
+                  context.userCodeClassLoader,
+                  context.originalDefinitionWithTypes.modelDefinition.expressionConfig,
+                  context.originalDictRegistry,
+                  context.originalDefinitionWithTypes.classDefinitions,
+                  process.metaData,
+                  scenarioTestData
+                )
+                sourcePreparer.prepareStubbedSource(sourceWithTestSupport, returnTypeOpt, nodeId)
+              case _ =>
+                EmptySource[Object](returnTypeOpt.getOrElse(Unknown))(TypeInformation.of(classOf[Object]))
+            }
+          }
+        })
       }
-    case _ => super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+
+      override protected def prepareService(
+          service: ComponentDefinitionWithImplementation,
+          context: ComponentDefinitionContext
+      ): ComponentDefinitionWithImplementation = service
+
+      override protected def exceptionHandler(
+          metaData: MetaData,
+          processObjectDependencies: ProcessObjectDependencies,
+          listeners: Seq[ProcessListener],
+          classLoader: ClassLoader
+      ): FlinkExceptionHandler = {
+        new TestFlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+      }
+
+    }
   }
 
 }
@@ -136,5 +134,17 @@ class StubbedSourcePreparer(
       testDataPreparer.prepareRecordForTest[Object](originalSource, scenarioTestRecord)
     }
   }
+
+}
+
+class TestFlinkExceptionHandler(
+    metaData: MetaData,
+    processObjectDependencies: ProcessObjectDependencies,
+    listeners: Seq[ProcessListener],
+    classLoader: ClassLoader
+) extends FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
+  override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
+  override val consumer: FlinkEspExceptionConsumer = _ => {}
 
 }

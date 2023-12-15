@@ -73,7 +73,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
         case a: Sink           => toValidationResponse(compiler.compileSink(a, validationContext))
         case a: Enricher =>
           toValidationResponse(
-            compiler.compileEnricher(a, validationContext, outputVar = Some(OutputVar.enricher(a.output)))
+            compiler.compileEnricher(a, validationContext, outputVar = OutputVar.enricher(a.output))
           )
         case a: Processor => toValidationResponse(compiler.compileProcessor(a, validationContext))
         case a: Filter =>

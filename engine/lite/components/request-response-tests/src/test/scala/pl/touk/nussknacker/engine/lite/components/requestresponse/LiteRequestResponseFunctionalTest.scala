@@ -58,7 +58,9 @@ class LiteRequestResponseFunctionalTest
 
   private val schemaStr = StringSchema.builder().build()
 
-  private val schemaInt = NumberSchema.builder().requiresNumber(true).minimum(1).maximum(16).build()
+  private val schemaNumber = NumberSchema.builder().requiresNumber(true).build()
+
+  private val schemaIntInRange = NumberSchema.builder().requiresNumber(true).minimum(1).maximum(16).build()
 
   private val schemaObjNull = JsonSchemaBuilder.parseSchema(
     s"""{"type":"object","properties": {"$ObjectFieldName": $schemaNull}, "additionalProperties": false}"""
@@ -257,9 +259,9 @@ class LiteRequestResponseFunctionalTest
     val testData = Table(
       ("config", "result"),
       // Primitive integer validations
-      (config(fromInt(1), schemaInt, schemaInt), Valid(fromInt(1))),
-      (conf(schemaInt, 1), Valid(fromInt(1))),
-      (conf(schemaInt, 100), invalidRange("actual value: '100' should be between 1 and 16")),
+      (config(fromInt(1), schemaIntInRange, schemaIntInRange), Valid(fromInt(1))),
+      (conf(schemaIntInRange, 1), Valid(fromInt(1))),
+      (conf(schemaIntInRange, 100), invalidRange("actual value: '100' should be between 1 and 16")),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -316,21 +318,9 @@ class LiteRequestResponseFunctionalTest
         config(sampleObjWithAdds, schemaObjUnionNullString(), schemaObjUnionNullString(true)),
         "#: extraneous key [field2] is not permitted"
       ),
-
+      (config(fromInt(Int.MaxValue), schemaIntInRange, schemaNumber), s"#: ${Int.MaxValue} is not less or equal to 16"),
       // Errors at sink
-      (
-        config(sampleObjWithAdds, schemaObjString(true), schemaObjStr),
-        s"Not expected field with name: field2 for schema: $schemaObjStr."
-      ),
-      (
-        config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)),
-        s"Not expected type: Null for field: 'field' with schema: $schemaStr."
-      ),
-      (
-        config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()),
-        s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."
-      ),
-      (config(fromInt(Int.MaxValue), schemaInt, schemaInt), s"#: ${Int.MaxValue} is not less or equal to 16"),
+      (config(fromInt(Int.MaxValue), schemaNumber, schemaIntInRange), s"#: ${Int.MaxValue} is not less or equal to 16"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>

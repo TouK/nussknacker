@@ -28,6 +28,7 @@ class DatabaseEnricherInvoker(
   protected val queryExecutor: QueryExecutor = strategy match {
     case SingleResultStrategy => new SingleResultQueryExecutor(tableDef)
     case ResultSetStrategy    => new ResultSetQueryExecutor(tableDef)
+    case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
   override def invokeService(params: Map[String, Any])(
