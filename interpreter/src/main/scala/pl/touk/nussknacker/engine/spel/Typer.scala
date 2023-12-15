@@ -186,6 +186,13 @@ private[spel] class Typer(
       typingResult.map(toNodeResult)
     }
 
+    def typeFieldNameReferenceOnRecord(indexString: String, record: TypedObjectTypingResult): TypingR[TypingResult] = {
+      val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
+      fieldIndexedByLiteralStringOpt.map(f => valid(f._2)).getOrElse {
+        if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyError(record, indexString))
+      }
+    }
+
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
       withTypedChildren {
         case (indexKeyOrResolvedReference: TypedObjectWithValue) :: Nil =>
@@ -193,12 +200,8 @@ private[spel] class Typer(
             case (_: PropertyOrFieldReference) :: Nil => valid(indexKeyOrResolvedReference)
             case _ =>
               indexKeyOrResolvedReference.value match {
-                case indexString: String =>
-                  val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
-                  fieldIndexedByLiteralStringOpt.map(f => valid(f._2)).getOrElse {
-                    if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(NoPropertyError(record, indexString))
-                  }
-                case _ => invalid(IllegalIndexingOperation)
+                case indexString: String => typeFieldNameReferenceOnRecord(indexString, record)
+                case _                   => invalid(IllegalIndexingOperation)
               }
           }
         case (indexKey: TypedClass) :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
