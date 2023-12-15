@@ -6,7 +6,7 @@ sidebar_position: 3
 
 ## Overview
 
-Nussknacker can use services documented with OpenAPI specification.
+Nussknacker can use services documented with OpenAPI interface definition.
 We use Swagger to parse OpenAPI, versions 2.x and 3.x are supported
 (version 2.x should be considered as deprecated).
 
@@ -67,15 +67,15 @@ components {
 }
 ```
 
-| Parameter              | Required | Default | Description                                                                                                                                               |
-|------------------------|----------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| url                    | true     |         | URL of the [*OpenAPI document*](https://swagger.io/specification/v3/). It contains specification of the service you want to interact with.                |
-| rootUrl                | false    |         | The URL of the service. If not specified, the URL of the service is taken from the *OpenAPI document*.                                                    |
-| allowedMethods         | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                                                      |
-| namePattern            | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                                                       |
-| security               | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/) for each `securitySchemas` defined in the OpenAPI configuration |
-| security.*.type        | false    |         | Type of security configuration for a given security schema. Currently only `apiKey` is supported                                                          |
-| security.*.apiKeyValue | false    |         | API key that will be passed into the service via header, query parameter or cookie (depending on definition provided in OpenAPI)                          |
+| Parameter              | Required | Default | Description                                                                                                                                                        |
+|------------------------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| url                    | true     |         | URL of the [*OpenAPI interface definition*](https://swagger.io/specification/v3/). It contains definition of the service you want to interact with.                |
+| rootUrl                | false    |         | The URL of the service. If not specified, the URL of the service is taken from the *OpenAPI interface definition*.                                                 |
+| allowedMethods         | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                                                               |
+| namePattern            | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                                                                |
+| security               | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/) for each `securitySchemas` defined in the *OpenAPI interface definition* |
+| security.*.type        | false    |         | Type of security configuration for a given security schema. Currently only `apiKey` is supported                                                                   |
+| security.*.apiKeyValue | false    |         | API key that will be passed into the service via header, query parameter or cookie (depending on definition provided in OpenAPI)                                   |
 
 ## Operations
 
