@@ -204,15 +204,15 @@ private[spel] class Typer(
                 case _                   => invalid(IllegalIndexingOperation)
               }
           }
+        case TypedNull :: Nil => invalid(IllegalIndexingOperation)
         case indexKey :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
         case _ :: Nil =>
           indexer.children match {
             case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
-            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+            case _                                      => invalid(IllegalIndexingOperation)
           }
-        case _ =>
-          invalid(IllegalIndexingOperation)
+        case _ => invalid(IllegalIndexingOperation)
       }
     }
 
