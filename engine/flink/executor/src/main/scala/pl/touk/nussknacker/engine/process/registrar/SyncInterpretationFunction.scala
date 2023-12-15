@@ -32,7 +32,6 @@ private[registrar] class SyncInterpretationFunction(
   private lazy val serviceExecutionContext: ServiceExecutionContext = ServiceExecutionContext(syncEc)
 
   import SynchronousExecutionContextAndIORuntime._
-  import compiledProcessWithDeps._
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {
