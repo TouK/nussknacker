@@ -64,11 +64,11 @@ class SpelExpressionSuggester(
         p: PropertyOrFieldReference
     ): Future[Iterable[ExpressionSuggestion]] = {
 
-      val nuSpelNodeParentOpt         = nodeInPosition.parent.map(_.node)
-      val collectSuggestionsFromClass = nuSpelNodeParentOpt.exists(_.spelNode.isInstanceOf[Indexer])
+      val nuSpelNodeParentOpt = nodeInPosition.parent.map(_.node)
+      val parentIsIndexer     = nuSpelNodeParentOpt.exists(_.spelNode.isInstanceOf[Indexer])
 
       val typedNode = nuSpelNodeParentOpt.flatMap {
-        case nuSpelNodeParent if collectSuggestionsFromClass =>
+        case nuSpelNodeParent if parentIsIndexer =>
           nuSpelNodeParent.prevNode().flatMap(_.typingResultWithContext)
         case _ =>
           nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
@@ -91,6 +91,7 @@ class SpelExpressionSuggester(
             def filterIllegalIdentifierAfterDot(name: String) = {
               SourceVersion.isIdentifier(name)
             }
+            val collectSuggestionsFromClass = parentIsIndexer
             val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
               .filter { case (fieldName, _) =>
                 // TODO: signal to user that some values have been filtered
