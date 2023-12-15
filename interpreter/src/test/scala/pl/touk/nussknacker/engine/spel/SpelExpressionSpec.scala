@@ -487,7 +487,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
   }
 
-  test("access map elements by index") {
+  test("access record elements by index") {
     val ctxWithVal = ctx.withVariable("stringKey", "string")
     parse[String](s"$testRecordExpr['string']").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"
     parse[String](s"$testRecordExpr[string]").validExpression.evaluateSync[String](ctx) shouldBe "stringVal"

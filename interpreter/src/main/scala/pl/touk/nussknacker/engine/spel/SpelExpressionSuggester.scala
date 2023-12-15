@@ -63,8 +63,13 @@ class SpelExpressionSuggester(
         nodeInPosition: NuSpelNode,
         p: PropertyOrFieldReference
     ): Future[Iterable[ExpressionSuggestion]] = {
-      val typedPrevNode = nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
-      typedPrevNode
+      val nuSpelNodeParentOpt = nodeInPosition.parent.map(_.node)
+      val typedNode = nuSpelNodeParentOpt.flatMap {
+        case nuSpelNodeParent if nuSpelNodeParent.spelNode.isInstanceOf[Indexer] =>
+          nuSpelNodeParent.prevNode().flatMap(_.typingResultWithContext)
+        case _ => nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
+      }
+      typedNode
         .collect {
           case TypingResultWithContext(tc: TypedClass, staticContext) =>
             Future.successful(
@@ -83,7 +88,7 @@ class SpelExpressionSuggester(
             }
             val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList
               .filter { case (fieldName, _) =>
-                // TODO: signal to user that we some values have been filtered
+                // TODO: signal to user that some values have been filtered
                 filterIllegalIdentifierAfterDot(fieldName)
               }
               .map { case (methodName, clazzRef) =>
@@ -91,12 +96,14 @@ class SpelExpressionSuggester(
               }
             val suggestionsFromClass = clssDefinitions
               .get(to.objType.klass)
-              .map(c =>
-                // TODO: Why is it fromClass = suggestionsFromFields.nonEmpty? instead of just false?
-                filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)
-              )
+              .map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = true))
               .getOrElse(Nil)
-            Future.successful(suggestionsFromFields ++ suggestionsFromClass)
+            val applicableSuggestions = if (nuSpelNodeParentOpt.exists(a => a.spelNode.isInstanceOf[Indexer])) {
+              suggestionsFromFields
+            } else {
+              suggestionsFromFields ++ suggestionsFromClass
+            }
+            Future.successful(applicableSuggestions)
           case TypingResultWithContext(tu: TypedUnion, staticContext) =>
             Future.successful(
               tu.possibleTypes

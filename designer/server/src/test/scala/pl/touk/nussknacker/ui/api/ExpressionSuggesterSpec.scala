@@ -275,10 +275,16 @@ class ExpressionSuggesterSpec
   test("should not suggest unreferenceable fields for map literal after dot") {
     nonStandardFieldNames.foreach { fieldName =>
       spelSuggestionsFor(s"{'$fieldName': 1}.") shouldBe List(
-        // TODO: shouldBe fromClass = true? - correct it after it is fixed
-        ExpressionSuggestion("empty", Typed[Boolean], fromClass = false, None, Nil)
+        ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil)
       )
     }
+  }
+
+  test("should suggest fields for map literal using indexing by property") {
+    val expression = s"{key: 1}[k]"
+    spelSuggestionsFor(expression, 0, expression.length - 1) shouldBe List(
+      ExpressionSuggestion("key", Typed.fromInstance(1), fromClass = false, None, Nil)
+    )
   }
 
   test("should suggest fields for map literal in indexer") {

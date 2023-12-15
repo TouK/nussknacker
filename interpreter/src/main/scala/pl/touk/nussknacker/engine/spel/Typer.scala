@@ -188,11 +188,11 @@ private[spel] class Typer(
 
     def typeIndexerOnRecord(indexer: Indexer, record: TypedObjectTypingResult) = {
       withTypedChildren {
-        case (indexKey: TypedObjectWithValue) :: Nil =>
+        case (indexKeyOrResolvedReference: TypedObjectWithValue) :: Nil =>
           indexer.children match {
-            case (_: PropertyOrFieldReference) :: Nil => valid(indexKey)
+            case (_: PropertyOrFieldReference) :: Nil => valid(indexKeyOrResolvedReference)
             case _ =>
-              indexKey.value match {
+              indexKeyOrResolvedReference.value match {
                 case indexString: String =>
                   val fieldIndexedByLiteralStringOpt = record.fields.find(_._1 == indexString)
                   fieldIndexedByLiteralStringOpt.map(f => valid(f._2)).getOrElse {
@@ -201,9 +201,7 @@ private[spel] class Typer(
                 case _ => invalid(IllegalIndexingOperation)
               }
           }
-        case (indexKey: TypedClass) :: Nil if indexKey.klass.isAssignableFrom(classOf[String]) =>
-          invalid(DynamicPropertyAccessError)
-        case Unknown :: Nil =>
+        case (indexKey: TypedClass) :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
         case _ =>
           invalid(IllegalIndexingOperation)
