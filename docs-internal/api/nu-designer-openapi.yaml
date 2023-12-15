@@ -446,6 +446,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Notification'
+              examples:
+                Example:
+                  summary: Display simple deployment notification
+                  value:
+                  - id: 0351c45a-2c4c-4ffd-8848-ae6c2f281ef1
+                    scenarioName: scenario1
+                    message: Deployment finished
+                    toRefresh:
+                    - versions
+                    - activity
+                    - state
         '401':
           description: ''
           content:
