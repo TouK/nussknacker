@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 // TODO: This class currently is used also for global variables. We should rather extract some other class for them
 trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
 
-  // TODO: It should be exposed only for real components - not for global variables
   def implementationInvoker: ComponentImplementationInvoker
 
   // For purpose of transforming (e.g.) stubbing of the implementation
@@ -20,10 +19,11 @@ trait ComponentDefinitionWithImplementation extends BaseComponentDefinition {
       implementationInvoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation
 
-  // In  could be of type Component
+  // TODO In should be of type Component, but currently this class is used also for global variables
   def implementation: Any
 
-  // TODO: it should be available only for MethodBasedComponentDefinitionWithImplementation
+  // TODO: it should be only available for MethodBasedComponentDefinitionWithImplementation for purpose of collecting
+  //       ClassDefinition, but currently it is also served to FE - see a comment next to UIComponentDefinition
   def returnType: Option[TypingResult]
 
   def componentTypeSpecificData: ComponentTypeSpecificData

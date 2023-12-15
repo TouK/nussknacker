@@ -65,6 +65,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Classes `NodeResult` is removed. Instead, `Context` is used directly
   * Removed `variableEncoder` from `ResultsCollectingListenerHolder.registerRun`
   * Removed `ResultContext`, please use `Context` instead of it
+* [#5240](https://github.com/TouK/nussknacker/pull/5240) Simpler result types in `TestScenarioRunner`
+  * `RunResult` and `RunUnitResult` has no generic parameter anymore
+  * `RunResult` and its descendants has no `success` method anymore - for `RunListResult` should be used `successes` instead
 
 ### REST API changes
 * [#4745](https://github.com/TouK/nussknacker/pull/4745) Change `api/properties/*/validation` endpoint request type

@@ -140,14 +140,14 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return custom nodes with correct group") {
-    val initialDefinition = ProcessTestData.modelDefinitionWithIds
-    val definitionWithCustomNodesInSomeCategory = initialDefinition.transform {
-      case component if component.componentType == ComponentType.CustomComponent =>
-        component.copy(componentConfig =
-          component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
-        )
-      case other => other
-    }
+    val definitionWithCustomNodesInSomeCategory = ProcessTestData.modelDefinitionWithIds.copy(
+      components = ProcessTestData.modelDefinitionWithIds.components.map {
+        case (idWithName, component) if component.componentType == ComponentType.CustomComponent =>
+          val updatedComponentConfig = component.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
+          (idWithName, component.copy(componentConfig = updatedComponentConfig))
+        case other => other
+      }
+    )
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
     groups.exists(_.name == ComponentGroupName("custom")) shouldBe false

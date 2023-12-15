@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
-import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
+import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 /*
@@ -22,13 +22,13 @@ trait StreamExecutionEnvPreparer {
 
   def preRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit
 
   def postRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit
 
@@ -42,28 +42,27 @@ trait StreamExecutionEnvPreparer {
 }
 
 class DefaultStreamExecutionEnvPreparer(
-    checkpointConfig: Option[CheckpointConfig],
-    rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
+    jobConfig: FlinkJobConfig,
     executionConfigPreparer: ExecutionConfigPreparer
 ) extends StreamExecutionEnvPreparer
     with LazyLogging {
 
   override def preRegistration(
       env: StreamExecutionEnvironment,
-      processWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit = {
 
-    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
+    executionConfigPreparer.prepareExecutionConfig(env.getConfig)(compilerData.jobData, deploymentData)
 
     val streamMetaData =
-      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](processWithDeps.metaData, StreamMetaData())
-    env.setRestartStrategy(processWithDeps.restartStrategy)
+      MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](compilerData.metaData, StreamMetaData())
+    env.setRestartStrategy(compilerData.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
 
-    (rocksDBStateBackendConfig, streamMetaData.spillStateToDisk) match {
+    (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
         logger.info("Using RocksDB state backend")
         configureRocksDBBackend(env, config)
@@ -81,26 +80,28 @@ class DefaultStreamExecutionEnvPreparer(
 
   override def postRegistration(
       env: StreamExecutionEnvironment,
-      compiledProcessWithDeps: FlinkProcessCompilerData,
+      compilerData: FlinkProcessCompilerData,
       deploymentData: DeploymentData
   ): Unit = {}
 
   protected def configureCheckpoints(env: StreamExecutionEnvironment, streamMetaData: StreamMetaData): Unit = {
     val processSpecificCheckpointIntervalDuration = streamMetaData.checkpointIntervalDuration
     val checkpointIntervalToSet =
-      processSpecificCheckpointIntervalDuration.orElse(checkpointConfig.map(_.checkpointInterval)).map(_.toMillis)
+      processSpecificCheckpointIntervalDuration
+        .orElse(jobConfig.checkpointConfig.map(_.checkpointInterval))
+        .map(_.toMillis)
     checkpointIntervalToSet.foreach { checkpointIntervalToSetInMillis =>
       env.enableCheckpointing(checkpointIntervalToSetInMillis)
       env.getCheckpointConfig.setMinPauseBetweenCheckpoints(
-        checkpointConfig
+        jobConfig.checkpointConfig
           .flatMap(_.minPauseBetweenCheckpoints)
           .map(_.toMillis)
           .getOrElse(checkpointIntervalToSetInMillis / 2)
       )
       env.getCheckpointConfig.setMaxConcurrentCheckpoints(
-        checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1)
+        jobConfig.checkpointConfig.flatMap(_.maxConcurrentCheckpoints).getOrElse(1)
       )
-      checkpointConfig
+      jobConfig.checkpointConfig
         .flatMap(_.tolerableCheckpointFailureNumber)
         .foreach(env.getCheckpointConfig.setTolerableCheckpointFailureNumber)
     }

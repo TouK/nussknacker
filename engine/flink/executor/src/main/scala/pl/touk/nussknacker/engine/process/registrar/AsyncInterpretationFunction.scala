@@ -20,7 +20,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
@@ -29,16 +29,14 @@ private[registrar] class AsyncInterpretationFunction(
     with LazyLogging
     with ProcessPartFunction {
 
-  private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
-
-  import compiledProcessWithDeps._
+  private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
 
   private var executionContext: ExecutionContext = _
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
     executionContext = asyncExecutionContextPreparer.prepareExecutionContext(
-      compiledProcessWithDeps.metaData.id,
+      compilerData.metaData.id,
       getRuntimeContext.getExecutionConfig.getParallelism
     )
   }
@@ -68,10 +66,12 @@ private[registrar] class AsyncInterpretationFunction(
     implicit val ec: ExecutionContext = executionContext
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
+      compilerData.interpreter.interpret[IO](compiledNode, compilerData.metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
+      compilerData.interpreter
+        .interpret[Future](compiledNode, compilerData.metaData, input)
+        .onComplete(result => callback(result.toEither))
     }
   }
 

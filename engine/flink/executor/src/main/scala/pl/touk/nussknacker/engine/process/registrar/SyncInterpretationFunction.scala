@@ -18,7 +18,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(
-    val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
+    val compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData,
     val node: SplittedNode[_ <: NodeData],
     validationContext: ValidationContext,
     useIOMonad: Boolean
@@ -26,9 +26,7 @@ private[registrar] class SyncInterpretationFunction(
     with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
-  private lazy val compiledNode                  = compiledProcessWithDeps.compileSubPart(node, validationContext)
-
-  import compiledProcessWithDeps._
+  private lazy val compiledNode                  = compilerData.compileSubPart(node, validationContext)
 
   override def flatMap(input: Context, collector: Collector[InterpretationResult]): Unit = {
     (try {
@@ -46,13 +44,19 @@ private[registrar] class SyncInterpretationFunction(
   private def runInterpreter(input: Context): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      interpreter.interpret(compiledNode, metaData, input).unsafeRunTimed(processTimeout) match {
+      compilerData.interpreter
+        .interpret(compiledNode, compilerData.metaData, input)
+        .unsafeRunTimed(compilerData.processTimeout) match {
         case Some(result) => result
-        case None         => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
+        case None =>
+          throw new TimeoutException(s"Interpreter is running too long (timeout: ${compilerData.processTimeout})")
       }
     } else {
       implicit val futureShape: FutureShape = new FutureShape()
-      Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)
+      Await.result(
+        compilerData.interpreter.interpret[Future](compiledNode, compilerData.metaData, input),
+        compilerData.processTimeout
+      )
     }
   }
 
