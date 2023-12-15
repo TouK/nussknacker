@@ -7,7 +7,7 @@ import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -150,6 +150,66 @@ class NodeApiSpec
             )
           )
           .body("validationErrors[0].fieldName", equalTo(SinkValueParamName))
+      }
+
+      "validate nodes using dictionaries" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
+        val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+
+        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
+          .body(equalsJson(s"""{
+               |    "parameters": null,
+               |    "expressionType": {
+               |        "display": "Boolean",
+               |        "type": "TypedClass",
+               |        "refClazzName": "java.lang.Boolean",
+               |        "params": []
+               |    },
+               |    "validationErrors": [],
+               |    "validationPerformed": true
+               |}""".stripMargin))
+      }
+
+      "return additional info for process properties" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val processProperties = ProcessProperties.combineTypeSpecificProperties(
+          StreamMetaData(),
+          additionalFields = ProcessAdditionalFields(
+            None,
+            Map("numberOfThreads" -> "2", "environment" -> "test"),
+            StreamMetaData.typeName
+          )
+        )
+        val json = Encoder[ProcessProperties].apply(processProperties)
+
+        given()
+          .contentType("application/json")
+          .body(json.toString())
+          .and()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/additionalInfo")
+          .Then()
+          .body(
+            equalsJson(s"""{
+                |  "content": "2 threads will be used on environment 'test'",
+                |  "type": "MarkdownAdditionalInfo"
+                |}""".stripMargin)
+          )
+      }
+
+      "validate node id" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val blankValue        = " "
+        val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
+        val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+
+        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
+          .body("validationErrors[0].typ", equalTo("NodeIdValidationError"))
+          .body("validationErrors[0].message", equalTo("Node name cannot be blank"))
+          .body("validationErrors[0].fieldName", equalTo("$id"))
       }
     }
 
