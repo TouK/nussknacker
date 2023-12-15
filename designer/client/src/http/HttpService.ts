@@ -9,16 +9,7 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import {
-    Expression,
-    Process,
-    ProcessAdditionalFields,
-    ProcessDefinitionData,
-    ProcessId,
-    PropertiesType,
-    TypingResult,
-    VariableTypes,
-} from "../types";
+import { Expression, Process, ProcessAdditionalFields, ProcessDefinitionData, ProcessId, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
