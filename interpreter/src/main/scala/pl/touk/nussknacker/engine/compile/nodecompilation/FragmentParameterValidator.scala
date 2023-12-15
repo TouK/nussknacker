@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, Val
 import pl.touk.nussknacker.engine.api.definition.ValidationExpressionParameterValidator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
   FixedExpressionValue,
@@ -52,18 +53,9 @@ class FragmentParameterValidator(
   private def compileExpressionValidator(
       fragmentParameter: FragmentParameter,
       typ: TypingResult
-  )(implicit nodeId: NodeId) = fragmentParameter.valueCompileTimeValidation match {
-    case Some(expr) =>
-      if (expr.validationExpression.expression.isBlank) {
-        invalidNel(
-          InvalidValidationExpression(
-            "Validation expression cannot be blank",
-            nodeId.id,
-            fragmentParameter.name,
-            expr.validationExpression.expression
-          )
-        )
-      } else {
+  )(implicit nodeId: NodeId) =
+    fragmentParameter.valueCompileTimeValidation
+      .map { expr =>
         expressionCompiler
           .compile(
             expr.validationExpression,
@@ -83,17 +75,31 @@ class FragmentParameterValidator(
               )
             case e => e
           })
-          .map { typedExpression =>
-            List(
-              ValidationExpressionParameterValidator(
-                typedExpression.expression,
-                fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
-              )
-            )
+          .andThen {
+            _.expression match {
+              case _: NullExpression =>
+                invalidNel(
+                  InvalidValidationExpression(
+                    "Validation expression cannot be blank",
+                    nodeId.id,
+                    fragmentParameter.name,
+                    expr.validationExpression.expression
+                  )
+                )
+              case expression =>
+                Valid(
+                  List(
+                    ValidationExpressionParameterValidator(
+                      expression,
+                      fragmentParameter.valueCompileTimeValidation.flatMap(_.validationFailedMessage)
+                    )
+                  )
+                )
+            }
           }
       }
-    case None => Valid(List.empty)
-  }
+      .sequence
+      .map(_.getOrElse(List.empty))
 
   private def validateFixedValuesSupportedType(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
     fragmentParameter.valueEditor match {

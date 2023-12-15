@@ -157,7 +157,7 @@ class NodeCompiler(
             Map.empty,
             None,
             Valid(validationContext),
-            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource(validationContext))
+            Valid(new StubbedFragmentInputTestSource(parameterDefinitions.value).createSource())
           )
       }
 
