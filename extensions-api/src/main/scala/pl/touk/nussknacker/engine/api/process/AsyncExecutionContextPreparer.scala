@@ -9,7 +9,7 @@ trait AsyncExecutionContextPreparer {
 
   def defaultUseAsyncInterpretation: Option[Boolean]
 
-  @deprecated("Use 'prepare' instead")
+  @deprecated("Use 'prepare' instead", "1.13.0")
   def prepareExecutionContext(processId: String, parallelism: Int): ExecutionContext =
     prepare(processId).executionContext
 
