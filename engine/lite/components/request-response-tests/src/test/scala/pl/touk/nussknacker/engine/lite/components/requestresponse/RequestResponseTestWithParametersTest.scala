@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{
@@ -159,7 +159,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate test parameters for fragment input definition") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(
+      FragmentCompleteDefinitionExtractor(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -184,7 +184,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate parameters for expanded fragment input definition without fixed values") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(
+      FragmentCompleteDefinitionExtractor(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
     val fragmentInputDefinition = FragmentInputDefinition(
@@ -214,7 +214,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate complex parameters for expanded fragment input definition with fixed values") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(
+      FragmentCompleteDefinitionExtractor(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
 
@@ -260,7 +260,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   test("should generate fragment parameter with spel expression validator") {
     val fragmentDefinitionExtractor =
-      FragmentComponentDefinitionExtractor(
+      FragmentCompleteDefinitionExtractor(
         LocalModelData(ConfigFactory.empty, List.empty)
       )
 

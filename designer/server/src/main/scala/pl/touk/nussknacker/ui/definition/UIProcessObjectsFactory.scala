@@ -11,7 +11,10 @@ import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinition
 import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinition, DefaultComponentIdProvider}
-import pl.touk.nussknacker.engine.definition.fragment.{FragmentComponentDefinitionExtractor, FragmentStaticDefinition}
+import pl.touk.nussknacker.engine.definition.fragment.{
+  FragmentStaticDefinition,
+  FragmentWithoutValidatorsDefinitionExtractor
+}
 import pl.touk.nussknacker.engine.definition.model.{
   ComponentIdWithName,
   ModelDefinition,
@@ -169,7 +172,7 @@ object UIProcessObjectsFactory {
       modelDataForType: ModelData,
       fragmentsDetails: Set[FragmentDetails],
   ): Map[String, FragmentStaticDefinition] = {
-    val definitionExtractor = FragmentComponentDefinitionExtractor(modelDataForType)
+    val definitionExtractor = FragmentWithoutValidatorsDefinitionExtractor(modelDataForType)
     (for {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption

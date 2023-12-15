@@ -36,7 +36,7 @@ import pl.touk.nussknacker.engine.definition.component.dynamic.{
 }
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.fragment.FragmentCompleteDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -73,7 +73,7 @@ object NodeCompiler {
 
 class NodeCompiler(
     definitions: ModelDefinition[ComponentDefinitionWithImplementation],
-    fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor,
+    fragmentDefinitionExtractor: FragmentCompleteDefinitionExtractor,
     objectParametersExpressionCompiler: ExpressionCompiler,
     classLoader: ClassLoader,
     resultCollector: ResultCollector,
@@ -135,9 +135,9 @@ class NodeCompiler(
             contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
-    case frag @ FragmentInputDefinition(id, params, _) =>
+    case frag @ FragmentInputDefinition(id, _, _) =>
       val parameterDefinitions =
-        fragmentDefinitionExtractor.extractParametersDefinition(frag, Some(contextWithOnlyGlobalVariables))
+        fragmentDefinitionExtractor.extractParametersDefinition(frag, contextWithOnlyGlobalVariables)
       val variables: Map[String, TypingResult] = parameterDefinitions.value.map(a => a.name -> a.typ).toMap
       val validationContext                    = contextWithOnlyGlobalVariables.copy(localVariables = variables)
 
