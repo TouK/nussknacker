@@ -197,7 +197,7 @@ private[spel] class Typer(
       withTypedChildren {
         case (indexKeyOrResolvedReference: TypedObjectWithValue) :: Nil =>
           indexer.children match {
-            case (_: PropertyOrFieldReference) :: Nil => valid(indexKeyOrResolvedReference)
+            case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
             case _ =>
               indexKeyOrResolvedReference.value match {
                 case indexString: String => typeFieldNameReferenceOnRecord(indexString, record)
@@ -206,6 +206,11 @@ private[spel] class Typer(
           }
         case indexKey :: Nil if indexKey.canBeSubclassOf(Typed[String]) =>
           if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+        case _ :: Nil =>
+          indexer.children match {
+            case (ref: PropertyOrFieldReference) :: Nil => typeFieldNameReferenceOnRecord(ref.getName, record)
+            case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else invalid(DynamicPropertyAccessError)
+          }
         case _ =>
           invalid(IllegalIndexingOperation)
       }

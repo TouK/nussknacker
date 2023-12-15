@@ -495,6 +495,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[String](s"$testRecordExpr[#stringKey]", ctxWithVal).validExpression
       .evaluateSync[String](ctxWithVal) shouldBe "stringVal"
     parse[Int](s"$testRecordExpr['nestedRecord']['nestedRecordKey']").validExpression.evaluateSync[Int](ctx) shouldBe 2
+    parse[Int](s"$testRecordExpr[nestedRecord][nestedRecordKey]").validExpression.evaluateSync[Int](ctx) shouldBe 2
   }
 
   test("should return no property present error for map non-present element when enabled") {
