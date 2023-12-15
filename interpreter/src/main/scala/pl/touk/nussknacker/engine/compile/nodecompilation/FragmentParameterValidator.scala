@@ -100,7 +100,7 @@ class FragmentParameterValidator(
     fragmentParameter.valueEditor match {
       case Some(_) =>
         if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(fragmentParameter.typ)) {
-          Valid(List.empty)
+          Valid(None)
         } else
           invalidNel(
             UnsupportedFixedValuesType(
@@ -109,7 +109,7 @@ class FragmentParameterValidator(
               nodeId.id
             )
           )
-      case None => Valid(List.empty)
+      case None => Valid(None)
     }
 
   private def validateFixedExpressionValues(
@@ -155,7 +155,7 @@ class FragmentParameterValidator(
         fixedValuesList,
         Some(FixedValuesListFieldName)
       )
-    ).sequence.map(_ => List.empty)
+    ).sequence.map(_ => None)
   }
 
   private def validateFixedValuesList(
@@ -170,8 +170,8 @@ class FragmentParameterValidator(
           if (initialValueNotPresentInPossibleValues(fragmentParameter))
             invalidNel(InitialValueNotPresentInPossibleValues(fragmentParameter.name, nodeId.id))
           else Valid(())
-        ).sequence.map(_ => List.empty)
-      case _ => Valid(List.empty)
+        ).sequence.map(_ => None)
+      case _ => Valid(None)
     }
 
   private def initialValueNotPresentInPossibleValues(
