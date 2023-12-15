@@ -3,10 +3,9 @@ package pl.touk.nussknacker.restmodel
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentInfo, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -16,6 +15,8 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import java.net.URI
 
 package object definition {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   @JsonCodec(encodeOnly = true) final case class UIProcessObjects(
       componentGroups: List[ComponentGroup],
@@ -53,7 +54,6 @@ package object definition {
       name: String,
       typ: TypingResult,
       editor: ParameterEditor,
-      validators: List[ParameterValidator],
       defaultValue: Expression,
       // additionalVariables and variablesToHide are served to FE because suggestions API requires full set of variables
       // and ScenarioWithDetails.json.validationResult.nodeResults is not enough
@@ -102,8 +102,6 @@ package object definition {
       isForInputDefinition: Boolean
   )
 
-  import pl.touk.nussknacker.engine.graph.node.NodeData._
-
   object ComponentNodeTemplate {
 
     def create(
@@ -148,8 +146,6 @@ package object definition {
   }
 
   object UICustomAction {
-
-    import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(
       name = action.name,
