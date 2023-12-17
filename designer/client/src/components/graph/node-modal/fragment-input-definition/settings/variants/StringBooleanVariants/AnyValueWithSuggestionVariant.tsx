@@ -6,6 +6,8 @@ import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType 
 import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { ValidationsFields } from "../fields/validation";
+import { getValidationErrorsForField } from "../../../../editors/Validators";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -44,7 +46,14 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 name={item.name}
                 initialValue={item.initialValue}
             />
-            {/*<ValidationsFields path={path} onChange={onChange} item={item} variableTypes={variableTypes} />*/}
+            <ValidationsFields
+                path={path}
+                onChange={onChange}
+                item={item}
+                variableTypes={variableTypes}
+                readOnly={readOnly}
+                errors={errors}
+            />
             <InitialValue
                 path={path}
                 item={item}
@@ -52,8 +61,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                errors={errors}
-                fieldName={`$param.${item.name}.$initialValue`}
+                fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />
             <SettingRow>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>

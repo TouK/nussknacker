@@ -102,6 +102,17 @@ describe("Fragment", () => {
         toggleSettings(6);
         cy.get("[data-testid='settings:6']").find("[id='ace-editor']").type("1");
 
+        // Activate a validation
+        cy.get("[data-testid='settings:6']")
+            .find("label")
+            .contains(/validation/i)
+            .siblings()
+            .eq(0)
+            .click();
+        cy.get("[data-testid='settings:6']")
+            .find("label")
+            .contains(/Validation expression/i);
+
         cy.get("@window").find("[data-testid='settings:6']").matchImage();
 
         cy.get("@window")
