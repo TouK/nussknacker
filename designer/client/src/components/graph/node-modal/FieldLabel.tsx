@@ -27,6 +27,10 @@ const Footer = styled("div")({
 
 export const StyledNodeTip = styled(NodeTip)`
     margin: 0 8px;
+    svg {
+        width: 16px;
+        height: 16px;
+    }
 `;
 export function FieldLabel({
     nodeId,
