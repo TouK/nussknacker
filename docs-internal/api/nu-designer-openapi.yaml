@@ -431,6 +431,55 @@ paths:
                     resource
       security:
       - httpAuth: []
+  /api/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Endpoint to display notifications
+      operationId: getApiNotifications
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+              examples:
+                Example:
+                  summary: Display simple deployment notification
+                  value:
+                  - id: 0351c45a-2c4c-4ffd-8848-ae6c2f281ef1
+                    scenarioName: scenario1
+                    message: Deployment finished
+                    toRefresh:
+                    - versions
+                    - activity
+                    - state
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - httpAuth: []
   /api/user:
     get:
       tags:
@@ -620,6 +669,12 @@ components:
           type: string
         lastAction:
           $ref: '#/components/schemas/ProcessAction'
+    DataToRefresh:
+      type: string
+      enum:
+      - versions
+      - activity
+      - state
     DisplayableUser:
       required:
       - id
@@ -706,6 +761,32 @@ components:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
+    Notification:
+      required:
+      - id
+      - message
+      type: object
+      properties:
+        id:
+          type: string
+        scenarioName:
+          type:
+          - string
+          - 'null'
+        message:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        toRefresh:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataToRefresh'
+    NotificationType:
+      type: string
+      enum:
+      - info
+      - success
+      - error
     ProcessAction:
       required:
       - id

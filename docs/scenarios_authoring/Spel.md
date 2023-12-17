@@ -217,10 +217,21 @@ are shown in code completion hints.
 
 ## Accessing elements of a list or a record
 
-| Expression                  | Result                                | Type     |
-| ------------                | --------                              | -------- |
-| `{1,2,3,4}[0]`              | 1                                     | Integer  |
-| `{jan:300, alex:400}[alex]` | a value of field 'alex', which is 400 | Integer  |
+| Expression                                        | Result                                | Type    |
+|---------------------------------------------------|---------------------------------------|---------|
+| `{1,2,3,4}[0]`                                    | 1                                     | Integer |
+| `{jan:300, alex:400}[alex]`                       | a value of field 'alex', which is 400 | Integer |
+| `{jan:300, alex:400}['alex']`                     | 400                                   | Integer |
+| `{jan:{age:24}}, alex:{age: 30}}}['alex']['age']` | 30                                    | Integer |
+
+
+Attempting to access non-present elements will cause exceptions. For lists, they are thrown in runtime and for records
+they occur before deployment of a scenario during expression validation.
+
+| Expression                    | Error                                           |
+|-------------------------------|-------------------------------------------------|
+| `{1,2,3,4}[4]`                | Runtime error: Index out of bounds              |
+| `{jan:300, alex:400}['anna']` | Compilation error: No property 'anna' in record |
 
 ## Filtering lists
                           

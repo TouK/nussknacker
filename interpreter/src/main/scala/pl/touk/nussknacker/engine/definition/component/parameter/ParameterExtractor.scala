@@ -13,9 +13,15 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
+import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
+  DefaultValueDeterminerChain,
+  DefaultValueDeterminerParameters
+}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.EditorExtractor
-import pl.touk.nussknacker.engine.definition.component.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
+  ValidatorExtractorParameters,
+  ValidatorsExtractor
+}
 
 import scala.util.control.NonFatal
 
