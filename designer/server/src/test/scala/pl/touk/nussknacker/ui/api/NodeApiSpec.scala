@@ -5,10 +5,17 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
-import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.{equalTo, equalToObject}
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.must.Matchers.contain
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  BlankId,
+  ExpressionParserCompilationError,
+  InvalidPropertyFixedValue,
+  ScenarioIdError,
+  ScenarioNameValidationError
+}
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -64,9 +71,9 @@ class NodeApiSpec
           .statusCode(200)
           .body(
             equalsJson(s"""{
-               |  "content": "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n",
-               |  "type": "MarkdownAdditionalInfo"
-               |}""".stripMargin)
+                 |  "content": "\\nSamples:\\n\\n| id  | value |\\n| --- | ----- |\\n| a   | generated |\\n| b   | not existent |\\n\\nResults for a can be found [here](http://touk.pl?id=a)\\n",
+                 |  "type": "MarkdownAdditionalInfo"
+                 |}""".stripMargin)
           )
 
         val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
@@ -194,9 +201,9 @@ class NodeApiSpec
           .Then()
           .body(
             equalsJson(s"""{
-                |  "content": "2 threads will be used on environment 'test'",
-                |  "type": "MarkdownAdditionalInfo"
-                |}""".stripMargin)
+                 |  "content": "2 threads will be used on environment 'test'",
+                 |  "type": "MarkdownAdditionalInfo"
+                 |}""".stripMargin)
           )
       }
 
@@ -210,6 +217,126 @@ class NodeApiSpec
           .body("validationErrors[0].typ", equalTo("NodeIdValidationError"))
           .body("validationErrors[0].message", equalTo("Node name cannot be blank"))
           .body("validationErrors[0].fieldName", equalTo("$id"))
+      }
+
+      "validate properties" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val request = PropertiesValidationRequest(
+          additionalFields = ProcessAdditionalFields(
+            properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
+            metaDataType = StreamMetaData.typeName,
+            description = None
+          ),
+          id = process.id
+        )
+
+        val json = Encoder[PropertiesValidationRequest].apply(request)
+
+        given
+          .contentType("application/json")
+          .body(json.toString())
+          .and()
+          .auth()
+          .basic("admin", "admin")
+          .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
+          .Then()
+          .statusCode(200)
+          .body("parameters", equalTo(null))
+          .body("expressionType", equalTo(null))
+          .body("validationErrors[0].typ", equalTo("InvalidPropertyFixedValue"))
+          .body(
+            "validationErrors[0].message",
+            equalTo("Property numberOfThreads (Number of threads) has invalid value")
+          )
+          .body("validationErrors[0].description", equalTo("Expected one of 1, 2, got: a."))
+          .body("validationErrors[0].fieldName", equalTo("numberOfThreads"))
+          .body("validationPerformed", equalTo(true))
+      }
+
+      "validate scenario id" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val blankValue = " "
+        val request = PropertiesValidationRequest(
+          additionalFields = ProcessAdditionalFields(
+            properties = StreamMetaData().toMap ++ Map("numberOfThreads" -> "a", "environment" -> "test"),
+            metaDataType = StreamMetaData.typeName,
+            description = None
+          ),
+          id = blankValue
+        )
+
+        val json = Encoder[PropertiesValidationRequest].apply(request)
+
+        given
+          .contentType("application/json")
+          .body(json.toString())
+          .and()
+          .auth()
+          .basic("admin", "admin")
+          .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
+          .Then()
+          .statusCode(200)
+          .body(
+            equalsJson(
+              s"""{
+                 |"parameters": null,
+                 |    "expressionType": null,
+                 |    "validationErrors": [
+                 |        {
+                 |            "typ": "ScenarioIdError",
+                 |            "message": "Scenario name cannot be blank",
+                 |            "description": "Blank scenario name",
+                 |            "fieldName": "$$id",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "InvalidPropertyFixedValue",
+                 |            "message": "Property numberOfThreads (Number of threads) has invalid value",
+                 |            "description": "Expected one of 1, 2, got: a.",
+                 |            "fieldName": "numberOfThreads",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "UnknownProperty",
+                 |            "message": "Unknown property parallelism",
+                 |            "description": "Property parallelism is not known",
+                 |            "fieldName": "parallelism",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "UnknownProperty",
+                 |            "message": "Unknown property checkpointIntervalInSeconds",
+                 |            "description": "Property checkpointIntervalInSeconds is not known",
+                 |            "fieldName": "checkpointIntervalInSeconds",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "UnknownProperty",
+                 |            "message": "Unknown property spillStateToDisk",
+                 |            "description": "Property spillStateToDisk is not known",
+                 |            "fieldName": "spillStateToDisk",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "UnknownProperty",
+                 |            "message": "Unknown property useAsyncInterpretation",
+                 |            "description": "Property useAsyncInterpretation is not known",
+                 |            "fieldName": "useAsyncInterpretation",
+                 |            "errorType": "SaveAllowed"
+                 |        },
+                 |        {
+                 |            "typ": "ScenarioNameValidationError",
+                 |            "message": "Invalid scenario name  . Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
+                 |            "description": "Provided scenario name is invalid for this category. Please enter valid name using only specified characters.",
+                 |            "fieldName": "$$id",
+                 |            "errorType": "SaveAllowed"
+                 |        }
+                 |    ],
+                 |    "validationPerformed": true
+                 |}
+                 |""".stripMargin
+            )
+          )
       }
     }
 
