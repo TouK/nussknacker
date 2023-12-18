@@ -64,7 +64,6 @@ class InterpreterSetup[T: ClassTag] {
     val definitionsWithTypes = ModelDefinitionWithClasses(definitions)
 
     ProcessCompilerData.prepare(
-      ConfigFactory.empty(),
       definitionsWithTypes,
       new SimpleDictRegistry(Map.empty).toEngineRegistry,
       List.empty,

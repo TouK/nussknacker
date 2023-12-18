@@ -175,7 +175,6 @@ object TestFactory extends TestPermissions {
   def createValidator(modelDefinition: ModelDefinition[ComponentStaticDefinition]): ProcessValidator = {
     ProcessValidator.default(
       ModelDefinitionWithClasses(ModelDefinitionBuilder.withNullImplementation(modelDefinition)),
-      ConfigFactory.empty(),
       new SimpleDictRegistry(Map.empty),
       CustomProcessValidatorLoader.emptyCustomProcessValidator
     )

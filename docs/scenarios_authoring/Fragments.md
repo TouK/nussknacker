@@ -16,7 +16,7 @@ Fragment can have one input. You can define parameters of a fragment:
 ## Outputs
 Fragment can define zero, one or more outputs. Each of them has a name (which should be unique), main scenario can then choose appropriate output. Below you can see fragment with two outputs:
 
-![fragment output](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Inputs1.png)
+![fragment output](img/fragment_output.png)
 
 ## Limitations of fragments
 - They cannot access variables from the main scenario if they are not passed as parameters.

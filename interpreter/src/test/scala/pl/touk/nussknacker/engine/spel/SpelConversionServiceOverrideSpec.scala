@@ -103,7 +103,6 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
         configCreator = new WithConvUtilConfigCreator(spelCustomConversionsProviderOpt)
       )
     val compilerData = ProcessCompilerData.prepare(
-      modelData.modelConfig,
       modelData.modelDefinitionWithClasses,
       modelData.engineDictRegistry,
       Seq.empty,

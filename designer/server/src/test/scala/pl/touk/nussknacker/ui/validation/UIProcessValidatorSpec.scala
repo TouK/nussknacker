@@ -935,17 +935,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   test("validates scenario with fragment parameters - P1 as mandatory param with with missing actual value") {
     val fragmentId = "fragment1"
 
-    val configWithValidators: Config = defaultConfig
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
+      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "")))
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true
@@ -962,21 +956,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
   ) {
     val fragmentId = "fragment1"
 
-    val configWithValidators: Config = defaultConfig
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P1.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-      .withValue(
-        s"componentsUiConfig.$fragmentId.params.P2.validators",
-        fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava)
-      )
-
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(
       fragmentId,
       List(
-        FragmentParameter("P1", FragmentClazzRef[Short]),
-        FragmentParameter("P2", FragmentClazzRef[String])
+        FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
+        FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
       )
     )
 
@@ -988,7 +972,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidator = mockedProcessValidator(fragmentDefinition, configWithValidators)
+    val processValidator = mockedProcessValidator(fragmentDefinition, defaultConfig)
     val result           = processValidator.validate(processWithFragment)
 
     result.hasErrors shouldBe true

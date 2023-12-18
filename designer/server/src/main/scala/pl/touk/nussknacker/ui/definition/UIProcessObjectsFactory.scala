@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import cats.implicits.catsSyntaxSemigroup
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
@@ -31,6 +32,8 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import scala.util.Try
+
 object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
@@ -49,16 +52,11 @@ object UIProcessObjectsFactory {
   ): UIProcessObjects = {
     val fixedComponentsUiConfig = ComponentsUiConfigParser.parse(modelDataForType.modelConfig)
 
-    val fragmentComponents =
-      extractFragmentComponents(modelDataForType, fragmentsDetails)
+    val combinedComponentsConfig = getCombinedComponentsConfig(fixedComponentsUiConfig, modelDefinition)
 
-    val combinedComponentsConfig =
-      getCombinedComponentsConfig(fixedComponentsUiConfig, fragmentComponents, modelDefinition)
-
-    val componentIdProvider =
-      new DefaultComponentIdProvider(
-        Map(processingType -> combinedComponentsConfig)
-      ) // combinedComponentsConfig potentially changes componentIds
+    val componentIdProvider = new DefaultComponentIdProvider(
+      Map(processingType -> combinedComponentsConfig)
+    ) // combinedComponentsConfig potentially changes componentIds
 
     val finalModelDefinition = finalizeModelDefinition(
       modelDefinition.withComponentIds(componentIdProvider, processingType),
@@ -68,10 +66,13 @@ object UIProcessObjectsFactory {
         .mapValuesNow(_.toSingleComponentConfig)
     )
 
+    val fragmentComponents = extractFragmentComponents(modelDataForType, fragmentsDetails)
+
+    // merging because ModelDefinition doesn't contain configs for base components and fragments
     val finalComponentsConfig =
-      toComponentsUiConfig(
-        finalModelDefinition
-      ) |+| combinedComponentsConfig // merging with combinedComponentsConfig, because ModelDefinition doesn't contain configs for base components and fragments
+      toComponentsUiConfig(finalModelDefinition) |+| combinedComponentsConfig |+| ComponentsUiConfig(
+        fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
+      )
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
@@ -138,12 +139,8 @@ object UIProcessObjectsFactory {
 
   private def getCombinedComponentsConfig(
       fixedComponentsUiConfig: ComponentsUiConfig,
-      fragmentComponents: Map[String, FragmentStaticDefinition],
       modelDefinition: ModelDefinition[ComponentStaticDefinition],
   ): ComponentsUiConfig = {
-    val fragmentsComponentsConfig = ComponentsUiConfig(
-      fragmentComponents.mapValuesNow(_.componentDefinition.componentConfig)
-    )
     val modelDefinitionComponentsConfig = ComponentsUiConfig(modelDefinition.components.map { case (info, component) =>
       info.name -> component.componentConfig
     })
@@ -151,7 +148,6 @@ object UIProcessObjectsFactory {
     // we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in modelDefinitionComponentsConfig...
     // maybe we can put them also in uiProcessDefinition.allDefinitions?
     ComponentDefinitionPreparer.combineComponentsConfig(
-      fragmentsComponentsConfig,
       fixedComponentsUiConfig,
       modelDefinitionComponentsConfig
     )
@@ -176,7 +172,10 @@ object UIProcessObjectsFactory {
       details    <- fragmentsDetails
       definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
     } yield {
-      details.canonical.id -> definition.toStaticDefinition(details.category)
+      details.canonical.id -> definition.toStaticDefinition(
+        details.category,
+        Try(details.canonical.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl).getOrElse(None)
+      )
     }).toMap
   }
 

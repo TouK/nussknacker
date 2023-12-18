@@ -7,16 +7,15 @@ import pl.touk.nussknacker.engine.definition.component.{ComponentStaticDefinitio
 
 class FragmentComponentDefinition(
     parameters: List[Parameter],
-    config: SingleComponentConfig,
     outputNames: List[String]
 ) {
 
-  def toStaticDefinition(category: String): FragmentStaticDefinition = {
+  def toStaticDefinition(category: String, docsUrl: Option[String]): FragmentStaticDefinition = {
     val componentDefinition = ComponentStaticDefinition(
       parameters,
       Some(Typed[java.util.Map[String, Any]]),
       Some(List(category)),
-      config,
+      SingleComponentConfig.zero.copy(docsUrl = docsUrl),
       FragmentSpecificData
     )
     FragmentStaticDefinition(componentDefinition, outputNames)

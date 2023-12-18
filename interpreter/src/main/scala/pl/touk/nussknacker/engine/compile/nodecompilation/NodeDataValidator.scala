@@ -49,7 +49,6 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     FragmentCompleteDefinitionExtractor(
-      modelData.modelConfig,
       modelData.modelClassLoader.classLoader,
       expressionCompiler
     ),
