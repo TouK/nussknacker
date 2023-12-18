@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -13,11 +15,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
-  noopSourceComponent,
-  testDataSourceComponent,
-  testResultServiceComponent
-}
+import pl.touk.nussknacker.engine.flink.util.test.testComponents.{noopSourceComponent, testDataSourceComponent, testResultServiceComponent}
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -59,7 +57,8 @@ class FlinkTestScenarioRunner(
     val globalVariables: Map[String, AnyRef],
     val config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
-    componentUseCase: ComponentUseCase
+    componentUseCase: ComponentUseCase,
+    savepointRestoreSettings: Option[SavepointRestoreSettings] = None
 ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
@@ -161,8 +160,14 @@ class FlinkTestScenarioRunner(
           testScenarioCollectorHandler.resultCollector
         )
 
+        val streamGraph = env.getStreamGraph
+        savepointRestoreSettings.foreach { srs =>
+          streamGraph.setSavepointRestoreSettings(srs)
+        }
+          val result = env.execute(streamGraph)
+        env.waitForJobState(result.getJobID, , ExecutionState.FINISHED)(patience)
         env.executeAndWaitForFinished(scenario.id)()
-
+        Thread.sleep(1000)
         RunUnitResult(errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions)
       }
     }
@@ -195,7 +200,8 @@ case class FlinkTestScenarioRunnerBuilder(
     globalVariables: Map[String, AnyRef],
     config: Config,
     flinkMiniCluster: FlinkMiniClusterHolder,
-    testRuntimeMode: Boolean
+    testRuntimeMode: Boolean,
+    savepointRestoreSettings: Option[SavepointRestoreSettings] = None
 ) extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
   import TestScenarioRunner._
@@ -212,13 +218,17 @@ case class FlinkTestScenarioRunnerBuilder(
   override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
+  def withSavepointSettings(savepointRestoreSettings: SavepointRestoreSettings): FlinkTestScenarioRunnerBuilder =
+    copy(savepointRestoreSettings = Some(savepointRestoreSettings))
+
   override def build() =
     new FlinkTestScenarioRunner(
       components,
       globalVariables,
       config,
       flinkMiniCluster,
-      componentUseCase(testRuntimeMode)
+      componentUseCase(testRuntimeMode),
+      savepointRestoreSettings
     )
 
 }

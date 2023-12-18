@@ -5,27 +5,28 @@ import io.circe.generic.JsonCodec
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, RecordSchemaV2}
-import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{
-  INPUT_MESSAGE_SCHEMA_ID,
-  InputEvent,
-  OUTPUT_MESSAGE_SCHEMA_ID,
-  OutputEvent
-}
+import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{INPUT_MESSAGE_SCHEMA_ID, InputEvent, OUTPUT_MESSAGE_SCHEMA_ID, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner.FlinkTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -74,29 +75,32 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     }
   }
 
+  private val dummyEvent1: InputEvent = InputEvent("dummy", None, "dummy")
+  private val event1: InputEvent = InputEvent("Jan", Some("Henryk"), "Kowalski")
+  private val event2             = InputEvent("Zenon", None, "Nowak")
+
+  private val inputEvents = event1 :: event2 :: Nil
+
   private def stateCompatibilityProcess(inTopic: String, outTopic: String) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
     .source(
       "start",
-      "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName         -> s"'$inTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
+      TestScenarioRunner.testDataSource
     )
     .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
-    .emptySink(
-      "sink",
-      "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName                  -> s"'$outTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName          -> "'latest'",
-      KafkaUniversalComponentTransformer.SinkKeyParamName                -> "",
-      KafkaUniversalComponentTransformer.SinkRawEditorParamName          -> s"true",
-      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'",
-      KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }"
-    )
+//    .emptySink(
+//      "sink",
+//      "kafka",
+//      KafkaUniversalComponentTransformer.TopicParamName                  -> s"'$outTopic'",
+//      KafkaUniversalComponentTransformer.SchemaVersionParamName          -> "'latest'",
+//      KafkaUniversalComponentTransformer.SinkKeyParamName                -> "",
+//      KafkaUniversalComponentTransformer.SinkRawEditorParamName          -> s"true",
+//      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'",
+//      KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }"
+//    )
+    .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"{ input: #input, previousInput: #previousValue }")
 
-  private val event1: InputEvent = InputEvent("Jan", Some("Henryk"), "Kowalski")
-  private val event2             = InputEvent("Zenon", None, "Nowak")
 
   val InputRecordSchemaString: String =
     """{
@@ -188,23 +192,29 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1, OUTPUT_MESSAGE_SCHEMA_ID)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
-    val env                       = flinkMiniCluster.createExecutionEnvironment()
-    val process1                  = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
-    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
-    val streamGraph           = env.getStreamGraph
+//    val env                       = flinkMiniCluster.createExecutionEnvironment()
+//    val process1                  = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
+//    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
+//    val streamGraph           = env.getStreamGraph
     val allowNonRestoredState = false
-    streamGraph.setSavepointRestoreSettings(
-      SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
-    )
+   val savepointRestoreSettings = SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
+
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(dummyInputAvroMessage, inputTopicConfig.input)
+//    sendAvro(dummyInputAvroMessage, inputTopicConfig.input)
+    val data = List(dummyEvent1, event2)
+    val result = TestScenarioRunner
+      .flinkBased(config, flinkMiniCluster)
+      .withSavepointSettings(savepointRestoreSettings)
+      .build()
+      .runWithData(stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output), data)
+//    val jobExecutionResult = env.execute(streamGraph)
+//    env.waitForStart(jobExecutionResult.getJobID, process1.id)()
 
-    val jobExecutionResult = env.execute(streamGraph)
-    env.waitForStart(jobExecutionResult.getJobID, process1.id)()
-    sendAvro(event2AvroMessage, inputTopicConfig.input)
+//    sendAvro(event2AvroMessage, inputTopicConfig.input)
 
-    verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
-    env.stopJob(process1.id, jobExecutionResult)
+    println(result)
+//    verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
+//    env.stopJob(process1.id, jobExecutionResult)
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {

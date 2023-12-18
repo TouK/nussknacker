@@ -742,7 +742,9 @@ lazy val flinkTests = (project in flink("tests"))
     flinkBaseComponents  % "test",
     flinkTestUtils       % "test",
     kafkaTestUtils       % "test",
-    // for local development
+    flinkComponentsTestkit % "test",
+
+      // for local development
     designer             % "test",
     deploymentManagerApi % "test"
   )
