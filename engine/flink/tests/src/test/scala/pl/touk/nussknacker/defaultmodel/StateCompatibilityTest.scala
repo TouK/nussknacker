@@ -10,7 +10,12 @@ import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, RecordSchemaV2}
-import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{INPUT_MESSAGE_SCHEMA_ID, InputEvent, OUTPUT_MESSAGE_SCHEMA_ID, OutputEvent}
+import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{
+  INPUT_MESSAGE_SCHEMA_ID,
+  InputEvent,
+  OUTPUT_MESSAGE_SCHEMA_ID,
+  OutputEvent
+}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -76,8 +81,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   private val dummyEvent1: InputEvent = InputEvent("dummy", None, "dummy")
-  private val event1: InputEvent = InputEvent("Jan", Some("Henryk"), "Kowalski")
-  private val event2             = InputEvent("Zenon", None, "Nowak")
+  private val event1: InputEvent      = InputEvent("Jan", Some("Henryk"), "Kowalski")
+  private val event2                  = InputEvent("Zenon", None, "Nowak")
 
   private val inputEvents = event1 :: event2 :: Nil
 
@@ -99,8 +104,11 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
 //      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'",
 //      KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }"
 //    )
-    .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"{ input: #input, previousInput: #previousValue }")
-
+    .processorEnd(
+      "end",
+      TestScenarioRunner.testResultService,
+      "value" -> s"{ input: #input, previousInput: #previousValue }"
+    )
 
   val InputRecordSchemaString: String =
     """{
@@ -197,7 +205,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
 //    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
 //    val streamGraph           = env.getStreamGraph
     val allowNonRestoredState = false
-   val savepointRestoreSettings = SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
+    val savepointRestoreSettings =
+      SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
 
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
 //    sendAvro(dummyInputAvroMessage, inputTopicConfig.input)
