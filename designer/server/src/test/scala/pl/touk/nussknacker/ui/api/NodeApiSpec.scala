@@ -3,28 +3,26 @@ package pl.touk.nussknacker.ui.api
 import io.circe.Encoder
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
-import org.hamcrest.Matchers.{equalTo, equalToObject}
+import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import org.scalatest.matchers.must.Matchers.contain
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
-  BlankId,
-  ExpressionParserCompilationError,
-  InvalidPropertyFixedValue,
-  ScenarioIdError,
-  ScenarioNameValidationError
-}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -32,12 +30,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLogging
 }
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
-import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.DefaultExpressionId
-import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 
 class NodeApiSpec
     extends AnyFreeSpecLike
@@ -64,7 +56,7 @@ class NodeApiSpec
 
         createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
 
-        sendNodeAsJsonAsAdmin(data)
+        sendNodeAsJsonAsAllpermuser(data)
           .when()
           .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
           .Then()
@@ -78,7 +70,7 @@ class NodeApiSpec
 
         val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
 
-        sendNodeAsJsonAsAdmin(dataEmpty)
+        sendNodeAsJsonAsAllpermuser(dataEmpty)
           .when()
           .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
           .Then()
@@ -100,7 +92,11 @@ class NodeApiSpec
           None
         )
 
-        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
+        sendRequestAsJsonAsAllpermuser(request)
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+          .Then()
+          .statusCode(200)
           .body(
             equalsJson(
               Encoder[NodeValidationResult]
@@ -148,7 +144,11 @@ class NodeApiSpec
           None
         )
 
-        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
+        sendRequestAsJsonAsAllpermuser(request)
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+          .Then()
+          .statusCode(200)
           .body("validationErrors[0].typ", equalTo("ExpressionParserCompilationError"))
           .body(
             "validationErrors[0].message",
@@ -164,7 +164,11 @@ class NodeApiSpec
         val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
         val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
+        sendRequestAsJsonAsAllpermuser(request)
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+          .Then()
+          .statusCode(200)
           .body(equalsJson(s"""{
                |    "parameters": null,
                |    "expressionType": {
@@ -176,6 +180,22 @@ class NodeApiSpec
                |    "validationErrors": [],
                |    "validationPerformed": true
                |}""".stripMargin))
+      }
+
+      "validate node id" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val blankValue        = " "
+        val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
+        val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+
+        sendRequestAsJsonAsAllpermuser(request)
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
+          .Then()
+          .statusCode(200)
+          .body("validationErrors[0].typ", equalTo("NodeIdValidationError"))
+          .body("validationErrors[0].message", equalTo("Node name cannot be blank"))
+          .body("validationErrors[0].fieldName", equalTo("$id"))
       }
 
       "return additional info for process properties" in {
@@ -207,18 +227,6 @@ class NodeApiSpec
           )
       }
 
-      "validate node id" in {
-        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-        val blankValue        = " "
-        val data: node.Filter = node.Filter(blankValue, Expression.spel("true"))
-        val request           = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
-
-        sendRequestToValidationAsJsonAsAdminWithSuccess(request)
-          .body("validationErrors[0].typ", equalTo("NodeIdValidationError"))
-          .body("validationErrors[0].message", equalTo("Node name cannot be blank"))
-          .body("validationErrors[0].fieldName", equalTo("$id"))
-      }
-
       "validate properties" in {
         createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
         val request = PropertiesValidationRequest(
@@ -237,7 +245,7 @@ class NodeApiSpec
           .body(json.toString())
           .and()
           .auth()
-          .basic("admin", "admin")
+          .basic("allpermuser", "allpermuser")
           .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
           .Then()
           .statusCode(200)
@@ -272,7 +280,7 @@ class NodeApiSpec
           .body(json.toString())
           .and()
           .auth()
-          .basic("admin", "admin")
+          .basic("allpermuser", "allpermuser")
           .post(s"$nuDesignerHttpAddress/api/properties/${process.id}/validation")
           .Then()
           .statusCode(200)
@@ -338,8 +346,53 @@ class NodeApiSpec
             )
           )
       }
+
+      "return 405 when invalid HTTP method is passed" in {
+        given()
+          .auth()
+          .basic("admin", "admin")
+          .when()
+          .get(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
+          .Then()
+          .statusCode(405)
+          .body(
+            equalTo(
+              s"HTTP method not allowed, supported methods: POST"
+            )
+          )
+      }
     }
 
+    "not authenticated should" - {
+      "forbid access" in {
+        createSavedProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
+        val data: NodeData =
+          Enricher(
+            "enricher",
+            ServiceRef(
+              "paramService",
+              List(Parameter("id", Expression.spel("'a'")))
+            ),
+            "out",
+            None
+          )
+        val json = Encoder[NodeData].apply(data)
+
+        given
+          .contentType("application/json")
+          .body(json.toString())
+          .and()
+          .auth()
+          .none
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/additionalInfo")
+          .Then()
+          .statusCode(401)
+          .body(
+            equalTo("The resource requires authentication, which was not supplied with the request")
+          )
+      }
+    }
   }
 
   def sendNodeAsJsonAsAdmin(data: NodeData): RequestSpecification =
@@ -359,13 +412,13 @@ class NodeApiSpec
       .basic(user, user)
   }
 
-  def sendRequestToValidationAsJsonAsAdminWithSuccess(request: NodeValidationRequest): ValidatableResponse =
-    sendRequestToValidationAsJsonWithSuccess(request, "admin")
+  def sendRequestAsJsonAsAdmin(request: NodeValidationRequest): RequestSpecification =
+    sendRequestToValidationAsJson(request, "admin")
 
-  def sendRequestAsJsonAsAllpermuser(request: NodeValidationRequest): ValidatableResponse =
-    sendRequestToValidationAsJsonWithSuccess(request, "allpermuser")
+  def sendRequestAsJsonAsAllpermuser(request: NodeValidationRequest): RequestSpecification =
+    sendRequestToValidationAsJson(request, "allpermuser")
 
-  def sendRequestToValidationAsJsonWithSuccess(request: NodeValidationRequest, user: String): ValidatableResponse = {
+  def sendRequestToValidationAsJson(request: NodeValidationRequest, user: String): RequestSpecification = {
     val json = Encoder[NodeValidationRequest].apply(request)
 
     given
@@ -374,9 +427,6 @@ class NodeApiSpec
       .and()
       .auth()
       .basic(user, user)
-      .post(s"$nuDesignerHttpAddress/api/nodes/${process.id}/validation")
-      .Then()
-      .statusCode(200)
   }
 
 }
