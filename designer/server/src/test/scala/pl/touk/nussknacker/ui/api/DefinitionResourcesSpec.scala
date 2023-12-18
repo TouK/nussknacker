@@ -134,19 +134,18 @@ class DefinitionResourcesSpec
         .value
 
       editor shouldBe parser
-        .parse("""{
-                                     |  "possibleValues" : [
-                                     |    {
-                                     |      "expression" : "",
-                                     |      "label" : ""
-                                     |    },
-                                     |    {
-                                     |      "expression" : "'someValue'",
-                                     |      "label" : "someValue"
-                                     |    }
-                                     |  ],
-                                     |  "type" : "FixedValuesParameterEditor"
-                                     |}""".stripMargin)
+        .parse("""{"possibleValues" : [
+                   |    {
+                   |      "expression" : "",
+                   |      "label" : ""
+                   |    },
+                   |    {
+                   |      "expression" : "'someValue'",
+                   |      "label" : "someValue"
+                   |    }
+                   |  ],
+                   |  "type" : "FixedValuesParameterEditor"
+                   |}""".stripMargin)
         .toOption
         .get
     }
