@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -59,9 +60,11 @@ trait CompilerLazyParameterInterpreter extends LazyParameterInterpreter {
     }
   }
 
-  override def syncInterpretationFunction[T <: AnyRef](lazyInterpreter: LazyParameter[T]): Context => T = {
+  override def syncInterpretationFunction[T <: AnyRef](
+      lazyInterpreter: LazyParameter[T]
+  ): Context => T = {
 
-    implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.syncEc
     val interpreter                   = createInterpreter(ec, lazyInterpreter)
     v1: Context => Await.result(interpreter(v1), deps.processTimeout)
   }

@@ -14,25 +14,26 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
   final val stateName = "constantState"
 
   @MethodToInvoke
-  def execute(): FlinkCustomStreamTransformation = FlinkCustomStreamTransformation((start: DataStream[Context]) => {
-    start
-      .keyBy((_: Context) => "1")
-      .map(new RichMapFunction[Context, ValueWithContext[AnyRef]] {
+  def execute(): FlinkCustomStreamTransformation =
+    FlinkCustomStreamTransformation((start: DataStream[Context]) => {
+      start
+        .keyBy((_: Context) => "1")
+        .map(new RichMapFunction[Context, ValueWithContext[AnyRef]] {
 
-        var constantState: ValueState[T] = _
+          var constantState: ValueState[T] = _
 
-        override def open(parameters: Configuration): Unit = {
-          super.open(parameters)
-          val descriptor = new ValueStateDescriptor[T]("constantState", implicitly[TypeInformation[T]])
-          constantState = getRuntimeContext.getState(descriptor)
-        }
+          override def open(parameters: Configuration): Unit = {
+            super.open(parameters)
+            val descriptor = new ValueStateDescriptor[T]("constantState", implicitly[TypeInformation[T]])
+            constantState = getRuntimeContext.getState(descriptor)
+          }
 
-        override def map(value: Context): ValueWithContext[AnyRef] = {
-          constantState.update(defaultValue)
-          ValueWithContext[AnyRef]("", value)
-        }
-      })
-      .uid("customStateId")
-  })
+          override def map(value: Context): ValueWithContext[AnyRef] = {
+            constantState.update(defaultValue)
+            ValueWithContext[AnyRef]("", value)
+          }
+        })
+        .uid("customStateId")
+    })
 
 }

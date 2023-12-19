@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -54,7 +55,7 @@ import pl.touk.nussknacker.engine.util.service.{
   EagerServiceWithStaticParametersAndReturnType,
   EnricherContextTransformation
 }
-import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
+import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContextAndIORuntime}
 
 import java.util.{Collections, Optional}
 import javax.annotation.Nullable
@@ -103,7 +104,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       listeners: Seq[ProcessListener] = listenersDef(),
   ): Any = {
     import Interpreter._
-    import SynchronousExecutionContext.ctx
 
     AccountService.clear()
     NameDictService.clear()
@@ -117,10 +117,17 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     def compileNode(part: ProcessPart) =
       failOnErrors(processCompilerData.subPartCompiler.compile(part.node, part.validationContext)(metaData).result)
 
-    val initialCtx = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val initialCtx                    = Context("abc").withVariable(VariableConstants.InputVariableName, transaction)
+    val serviceExecutionContext       = ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
+    implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.syncIoRuntime
 
     val resultBeforeSink = interpreter
-      .interpret[IO](compileNode(parts.sources.head), scenario.metaData, initialCtx)
+      .interpret[IO](
+        compileNode(parts.sources.head),
+        scenario.metaData,
+        initialCtx,
+        serviceExecutionContext
+      )
       .unsafeRunSync()
       .head match {
       case Left(result)         => result
@@ -134,7 +141,12 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
         interpreter
-          .interpret(compileNode(sink), metaData, resultBeforeSink.finalContext)
+          .interpret[IO](
+            compileNode(sink),
+            metaData,
+            resultBeforeSink.finalContext,
+            serviceExecutionContext
+          )
           .unsafeRunSync()
           .head
           .swap
@@ -401,9 +413,18 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         nodeResults = nodeResults :+ nodeId
       }
 
-      override def endEncountered(nodeId: String, ref: String, context: Context, processMetaData: MetaData): Unit = {}
+      override def endEncountered(
+          nodeId: String,
+          ref: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = {}
 
-      override def deadEndEncountered(lastNodeId: String, context: Context, processMetaData: MetaData): Unit = {}
+      override def deadEndEncountered(
+          lastNodeId: String,
+          context: Context,
+          processMetaData: MetaData
+      ): Unit = {}
 
       override def serviceInvoked(
           nodeId: String,

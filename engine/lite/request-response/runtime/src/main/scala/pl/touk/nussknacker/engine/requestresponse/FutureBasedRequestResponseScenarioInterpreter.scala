@@ -13,8 +13,6 @@ object FutureBasedRequestResponseScenarioInterpreter {
 
   implicit val cap: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  implicit def interpreterShape(implicit ec: ExecutionContext): FutureShape = new FutureShape()
-
   def testRunner(implicit ec: ExecutionContext): TestRunner = RequestResponseInterpreter.testRunner[Future]
 
 }

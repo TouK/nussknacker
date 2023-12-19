@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
@@ -76,7 +76,7 @@ case class SharedProducerKafkaExceptionConsumer(
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
     sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(
-      SynchronousExecutionContext.ctx
+      SynchronousExecutionContextAndIORuntime.syncEc
     )
   }
 

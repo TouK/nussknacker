@@ -42,7 +42,9 @@ object transformers {
       ctx => transformation(ctx).flatMap(newCtx => continuation(DataBatch(newCtx :: Nil)))
     }
 
-    def createStateTransformation[F[_]: Monad](context: CustomComponentContext[F]): Context => F[Context]
+    def createStateTransformation[F[_]: Monad](
+        context: CustomComponentContext[F]
+    ): Context => F[Context]
 
   }
 

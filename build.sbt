@@ -327,7 +327,7 @@ val circeGenericExtrasV     = "0.14.3"
 val jwtCirceV               = "9.3.0"
 val jacksonV                = "2.14.3"
 val catsV                   = "2.9.0"
-val catsEffectV             = "2.5.5"
+val catsEffectV             = "3.5.2"
 val everitSchemaV           = "1.14.2"
 val slf4jV                  = "1.7.36"
 val scalaLoggingV           = "3.9.5"
@@ -1049,6 +1049,7 @@ lazy val commonUtils = (project in utils("utils"))
         "commons-io"                    % "commons-io"         % flinkCommonsIOV,
         "org.slf4j"                     % "jul-to-slf4j"       % slf4jV,
         "com.iheart"                   %% "ficus"              % ficusV,
+        "org.typelevel"                %% "cats-effect"        % catsEffectV,
       )
     }
   )

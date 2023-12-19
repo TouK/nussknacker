@@ -52,7 +52,11 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
     EitherT.fromEither[Effect](
       Try(value).toEither.left.map(ex =>
         NonEmptyList.one(
-          NuExceptionInfo(Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)), ex, Context(""))
+          NuExceptionInfo(
+            Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)),
+            ex,
+            Context("")
+          )
         )
       )
     )

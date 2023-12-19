@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.model.ModelDefinitionWithClasses
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
-import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
+import pl.touk.nussknacker.engine.process.async.DefaultServiceExecutionContextPreparer
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -67,7 +67,7 @@ class FlinkProcessCompilerDataFactory(
     val asyncExecutionContextPreparer = creator
       .asyncExecutionContextPreparer(processObjectDependencies)
       .getOrElse(
-        modelConfig.as[DefaultAsyncExecutionConfigPreparer]("asyncExecutionConfig")
+        modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
       )
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse   = adjustListeners(defaultListeners, processObjectDependencies)

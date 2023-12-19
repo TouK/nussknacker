@@ -5,7 +5,7 @@ import dasniko.testcontainers.keycloak.KeycloakContainer
 import org.apache.commons.text.StringEscapeUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.security.oidc.{
   DefaultOidcAuthorizationData,

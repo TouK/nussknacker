@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.{Id, ~>}
+import cats.{Id, Monad, ~>}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source}
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode._
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -32,7 +32,7 @@ trait TestRunner {
 }
 
 //TODO: integrate with Engine somehow?
-class InterpreterTestRunner[F[_]: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
+class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
     extends TestRunner {
 
   def runTest(
@@ -55,7 +55,12 @@ class InterpreterTestRunner[F[_]: InterpreterShape: CapabilityTransformer: Effec
       additionalListeners = List(collectingListener),
       testServiceInvocationCollector,
       componentUseCase
-    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
+    )(
+      implicitly[Monad[F]],
+      SynchronousExecutionContextAndIORuntime.syncEc,
+      implicitly[InterpreterShape[F]],
+      implicitly[CapabilityTransformer[F]]
+    ) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) =>
         throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))

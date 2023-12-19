@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
+import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances._
@@ -50,7 +51,7 @@ object TestFactory extends TestPermissions {
         ).asJava
       ).asJava
     )
-    DbRef.create(dbConfig).allocated.unsafeRunSync()
+    DbRef.create(dbConfig).allocated.unsafeRunSync()(IORuntime.global)
   }
 
   // FIXME: remove testCategory dummy implementation

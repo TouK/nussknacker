@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.benchmarks.interpreter
 import cats.effect.IO
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.ServiceExecutionContext
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,32 +27,40 @@ class ManyParamsInterpreterBenchmark {
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")
 
-  private def prepareIoInterpreter(executionContext: ExecutionContext) = {
+  private val interpreterIOSyncService = prepareIoInterpreter(
+    ServiceExecutionContext(SynchronousExecutionContextAndIORuntime.syncEc)
+  )
+
+  private val interpreterIOAsyncService = prepareIoInterpreter(ServiceExecutionContext(ExecutionContext.global))
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.Throughput))
+  @OutputTimeUnit(TimeUnit.SECONDS)
+  def benchmarkSyncService(): AnyRef = {
+    import SynchronousExecutionContextAndIORuntime.syncIoRuntime
+    interpreterIOSyncService(Context("")).unsafeRunSync()
+  }
+
+  @Benchmark
+  @BenchmarkMode(Array(Mode.Throughput))
+  @OutputTimeUnit(TimeUnit.SECONDS)
+  def benchmarkAsyncService(): AnyRef = {
+    import SynchronousExecutionContextAndIORuntime.syncIoRuntime
+    interpreterIOAsyncService(Context("")).unsafeRunSync()
+  }
+
+  private def prepareIoInterpreter(serviceExecutionContext: ServiceExecutionContext) = {
     val setup = new InterpreterSetup[String]
-      .sourceInterpretation[IO](process, List(ComponentDefinition("service", new ManyParamsService(executionContext))))
-    (ctx: Context) => setup(ctx, executionContext)
-  }
-
-  private val interpreterSyncIO  = prepareIoInterpreter(SynchronousExecutionContext.ctx)
-  private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkSync(): AnyRef = {
-    interpreterSyncIO(Context("")).unsafeRunSync()
-  }
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.Throughput))
-  @OutputTimeUnit(TimeUnit.SECONDS)
-  def benchmarkAsync(): AnyRef = {
-    interpreterAsyncIO(Context("")).unsafeRunSync()
+      .sourceInterpretation[IO](
+        process,
+        List(ComponentDefinition("service", new ManyParamsService(serviceExecutionContext)))
+      )
+    (ctx: Context) => setup(ctx, serviceExecutionContext)
   }
 
 }
 
-class ManyParamsService(expectedEc: ExecutionContext) extends Service {
+class ManyParamsService(serviceExecutionContext: ServiceExecutionContext) extends Service {
 
   @MethodToInvoke
   def methodToInvoke(
@@ -76,7 +85,7 @@ class ManyParamsService(expectedEc: ExecutionContext) extends Service {
       @ParamName("p19") s19: String,
       @ParamName("p20") s20: String
   )(implicit ec: ExecutionContext): Future[String] = {
-    if (ec != expectedEc) {
+    if (ec != serviceExecutionContext.executionContext) {
       Future.failed(new IllegalArgumentException("Should be normal EC..."))
     } else {
       Future.successful(s1)

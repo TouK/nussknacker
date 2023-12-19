@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
+import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef

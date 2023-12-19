@@ -60,7 +60,9 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
         .addSink(toFlinkFunction)
     )
 
-  def valueFunction(helper: FlinkLazyParameterFunctionHelper): FlatMapFunction[Context, ValueWithContext[Value]]
+  def valueFunction(
+      helper: FlinkLazyParameterFunctionHelper
+  ): FlatMapFunction[Context, ValueWithContext[Value]]
 
   def toFlinkFunction: SinkFunction[Value]
 

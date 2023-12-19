@@ -6,13 +6,16 @@ import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 
 object FlinkCustomStreamTransformation {
-  def apply(fun: DataStream[Context] => DataStream[ValueWithContext[AnyRef]]): FlinkCustomStreamTransformation =
+
+  def apply(
+      fun: DataStream[Context] => DataStream[ValueWithContext[AnyRef]]
+  ): FlinkCustomStreamTransformation =
     apply((data, _) => fun(data))
 
   def apply(
       fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]]
-  ): FlinkCustomStreamTransformation = (start: DataStream[Context], context: FlinkCustomNodeContext) =>
-    fun(start, context)
+  ): FlinkCustomStreamTransformation =
+    (start: DataStream[Context], context: FlinkCustomNodeContext) => fun(start, context)
 
   def apply(
       fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
@@ -33,7 +36,10 @@ object FlinkCustomStreamTransformation {
 trait FlinkCustomStreamTransformation {
 
   // TODO: To be consistent with ContextTransformation should return Context
-  def transform(start: DataStream[Context], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]]
+  def transform(
+      start: DataStream[Context],
+      context: FlinkCustomNodeContext
+  ): DataStream[ValueWithContext[AnyRef]]
 
 }
 
