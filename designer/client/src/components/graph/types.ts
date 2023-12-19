@@ -13,7 +13,7 @@ import {
 import { Capabilities } from "../../reducers/selectors/other";
 import { ProcessType } from "../Process/types";
 
-export interface GraphProps {
+type ScenarioGraphProps = {
     nodesConnected: typeof nodesConnected;
     nodesDisconnected: typeof nodesDisconnected;
     layoutChanged: typeof layoutChanged;
@@ -33,10 +33,22 @@ export interface GraphProps {
     readonly?: boolean;
     nodeSelectionEnabled?: boolean;
     isDraggingOver?: boolean;
-    isFragment?: boolean;
+    isFragment?: false | null;
 
     connectDropTarget;
-}
+};
+
+export type FragmentGraphProps = {
+    processToDisplay: Process;
+    divId: string;
+    nodeIdPrefixForFragmentTests: string;
+    processCounts: ProcessCounts;
+    layout: Layout;
+    isFragment: true;
+    readonly: true;
+};
+
+export type GraphProps = ScenarioGraphProps | FragmentGraphProps;
 
 export enum Events {
     LINK_CONNECT = "link:connect",

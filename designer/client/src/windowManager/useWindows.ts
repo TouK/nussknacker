@@ -15,7 +15,7 @@ export function useWindows(parent?: WindowId) {
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
             const isModal = windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
-            await _open({ isResizable: false, ...windowData, isModal });
+            return await _open({ isResizable: false, ...windowData, isModal });
         },
         [forceDisableModals, _open],
     );
