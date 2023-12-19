@@ -28,10 +28,15 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
     )
   }
 
+  // note: we provide a dummy implementation of scheduler, because IORuntime requires some. We don't want to use real
+  //       (e.g. ScheduledExecutorService-based) implementation, because we will need to close it. Currently, closing
+  //       shared resources used by Flink's Task Manager is tricky and doesn't work well. Moreover, currently we don't
+  //       use a scheduler from the `syncIoRuntime` anywhere. With the dummy implementation of Scheduler we don't have
+  //       to bother with closing it.
   private object DummyScheduler extends Scheduler {
 
     override def sleep(delay: FiniteDuration, task: Runnable): Runnable = {
-      throw new IllegalStateException("I'm dummy scheduled. I should not be used by the production code.")
+      throw new IllegalStateException("I'm dummy scheduler. I should not be used by the production code.")
     }
 
     override def nowMillis(): Long = System.currentTimeMillis()

@@ -51,10 +51,9 @@ private[registrar] class SyncInterpretationFunction(
   ): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     // we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      val resultOpt = compilerData.interpreter
+      compilerData.interpreter
         .interpret[IO](compiledNode, compilerData.metaData, input, serviceExecutionContext)
-        .unsafeRunTimed(compilerData.processTimeout)
-      resultOpt match {
+        .unsafeRunTimed(compilerData.processTimeout) match {
         case Some(result) => result
         case None =>
           throw new TimeoutException(s"Interpreter is running too long (timeout: ${compilerData.processTimeout})")

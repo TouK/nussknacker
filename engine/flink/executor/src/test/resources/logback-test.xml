@@ -11,6 +11,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="pl.touk" level="INGO"/>
+    <logger name="pl.touk" level="INFO"/>
 
 </configuration>

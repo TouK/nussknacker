@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.akka.http.metrics.core.HttpMetrics._
@@ -18,9 +17,8 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem, materializer: Materializer)(
-    implicit ioRuntime: IORuntime
-) extends LazyLogging {
+class NussknackerHttpServer(routeProvider: RouteProvider[Route], system: ActorSystem, materializer: Materializer)
+    extends LazyLogging {
 
   private implicit val systemImplicit: ActorSystem                = system
   private implicit val materializerImplicit: Materializer         = materializer
