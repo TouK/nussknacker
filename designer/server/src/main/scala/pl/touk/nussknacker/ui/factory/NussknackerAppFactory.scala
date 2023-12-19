@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -39,7 +38,7 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory)(system, materializer),
         system,
         materializer
-      )(IORuntime.global)
+      )
       _ <- server.start(config, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
