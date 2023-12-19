@@ -473,7 +473,10 @@ class AkkaHttpBasedRouteProvider(
       )(
         release = reload =>
           IO {
-            reload.all(NussknackerInternalUser.instance).values.foreach(_.close())
+            reload
+              .all(NussknackerInternalUser.instance)
+              .values
+              .foreach(_.close())
           }
       )
   }

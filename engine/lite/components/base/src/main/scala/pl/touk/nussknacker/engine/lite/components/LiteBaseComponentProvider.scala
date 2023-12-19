@@ -39,7 +39,10 @@ object LiteBaseComponentProvider {
     List(
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend")
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
+      ComponentDefinition("decision-table", DecisionTableTransformer).withRelativeDocs(
+        "BasicNodes#decisiontable"
+      ),
     )
 
   }

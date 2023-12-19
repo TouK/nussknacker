@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.util.control.NonFatal
 
-object NodeValidationExceptionHandler {
+object NodeValidationExceptionHandler extends LazyLogging {
 
   def handleExceptions[T](f: => T)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, T] = {
     handleExceptionsInValidation(Valid(f))
@@ -30,6 +31,7 @@ object NodeValidationExceptionHandler {
       case exc: CustomNodeValidationException =>
         Invalid(NonEmptyList.of(CustomNodeError(exc.message, exc.paramName)))
       case NonFatal(e) =>
+        logger.error("Exception during validation", e)
         // TODO: better message?
         Invalid(NonEmptyList.of(CannotCreateObjectError(e.getMessage, nodeId.id)))
     }
